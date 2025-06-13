@@ -15,7 +15,6 @@ out/
 .env.local
 .env.development.local
 .env.test.local
-
 .env.production.local
 
 # Logs
@@ -49,3 +48,10 @@ package-lock.json
 # Optional: if you commit production builds for deployment
 # build/
 # dist/
+
+# Add any other files or directories you want to ignore
+
+# Note: The following lines from the remote were related to GNU build systems
+# and are generally not needed for a Node.js/Next.js/Firebase project.
+# If your project *does* use Autotools or similar, you might need to
+# carefully integrate those patterns.
