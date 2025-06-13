@@ -20,7 +20,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/s
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge'; // Added missing import
+import { Badge } from '@/components/ui/badge';
 
 
 interface NavItem {
@@ -41,7 +41,7 @@ const mainSidebarNavItems: NavItem[] = [
 
 const managementSidebarNavItems: NavItem[] = [
   { title: 'Analytics', href: '/dispensary-admin/analytics', icon: BarChart3 },
-  { title: 'Manage Staff', href: '/dispensary-admin/users', icon: Users, disabled: true, badge: 'Soon' },
+  { title: 'Manage Staff', href: '/dispensary-admin/users', icon: Users },
   { title: 'Marketing', href: '/dispensary-admin/marketing', icon: Megaphone, disabled: true, badge: 'Soon' },
 ];
 
@@ -128,7 +128,6 @@ export default function DispensaryAdminDashboardLayout({
       };
       fetchDispensaryData();
     } else {
-       // This case should ideally be caught by canAccessDispensaryPanel if dispensaryId is missing
        toast({ title: "Configuration Error", description: "No dispensary associated with your account.", variant: "destructive" });
        firebaseAuthInstance.signOut();
        router.push('/auth/signin');
@@ -157,8 +156,6 @@ export default function DispensaryAdminDashboardLayout({
   }
 
   if (!currentUser || !canAccessDispensaryPanel || !dispensary) {
-     // This state should ideally be handled by the useEffect redirect,
-     // but it's a fallback. canAccessDispensaryPanel check implies dispensary is approved.
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background p-4">
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
@@ -293,35 +290,36 @@ export default function DispensaryAdminDashboardLayout({
       <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm">
         <SidebarNavigation />
       </aside>
-
-      {/* Mobile Sidebar */}
+      
+      {/* Sheet component now wraps the main content area AND the SheetContent */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+        <div className="flex flex-1 flex-col">
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
+              {/* SheetTrigger is now a child of the Sheet component */}
+              <SheetTrigger asChild>
+                  <Button size="icon" variant="outline" className="md:hidden">
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Toggle Menu</span>
+                  </Button>
+              </SheetTrigger>
+              <div className="flex-1">
+                  <h1 className="text-lg font-semibold text-primary truncate">{dispensary.dispensaryName}</h1>
+              </div>
+          </header>
+          <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
+              {children}
+          </main>
+        </div>
+
+        {/* SheetContent is also a child of the same Sheet component */}
         <SheetContent side="left" className="p-0 w-72 flex flex-col bg-background">
-             <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+            <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                 <X className="h-4 w-4" />
                 <span className="sr-only">Close</span>
             </SheetClose>
-          <SidebarNavigation />
+            <SidebarNavigation />
         </SheetContent>
       </Sheet>
-      
-      <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
-            <SheetTrigger asChild>
-                <Button size="icon" variant="outline" className="md:hidden">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle Menu</span>
-                </Button>
-            </SheetTrigger>
-            <div className="flex-1">
-                <h1 className="text-lg font-semibold text-primary truncate">{dispensary.dispensaryName}</h1>
-            </div>
-        </header>
-        <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
-            {children}
-        </main>
-      </div>
     </div>
   );
 }
-
