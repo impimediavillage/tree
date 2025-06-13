@@ -157,6 +157,7 @@ export const dispensaryTypeSchema = z.object({
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
+  productCategories: z.array(z.string()).optional().default([]), // Added for type-specific product categories
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 
@@ -387,6 +388,7 @@ export const dispensaryTypeDbSchema = z.object({
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
+  productCategories: z.array(z.string()).optional().default([]), // Added
   createdAt: z.any().optional(),
   updatedAt: z.any().optional(),
 });

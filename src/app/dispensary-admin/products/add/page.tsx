@@ -9,11 +9,11 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary } from '@/types';
-import { cn } from '@/lib/utils'; // Added this import
+import type { Dispensary, DispensaryType as AppDispensaryType } from '@/types'; // Renamed to avoid conflict
+import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,9 +26,10 @@ import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIco
 import { MultiInputTags } from '@/components/ui/multi-input-tags'; 
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Sample data - in a real app, these might come from a config or another Firestore collection
-const sampleCategories = ["Flower", "Edible", "Concentrate", "Tincture", "Topical", "Vape", "Pre-Roll", "Seed", "Clone", "Accessory", "Apparel", "Other"];
+// const sampleCategories = ["Flower", "Edible", "Concentrate", "Tincture", "Topical", "Vape", "Pre-Roll", "Seed", "Clone", "Accessory", "Apparel", "Other"];
 const sampleUnits = ["gram", "oz", "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"];
 
 export default function AddProductPage() {
@@ -36,7 +37,11 @@ export default function AddProductPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
+  const [dispensaryTypeDetails, setDispensaryTypeDetails] = useState<AppDispensaryType | null>(null);
+  const [productCategories, setProductCategories] = useState<string[]>([]);
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -52,7 +57,7 @@ export default function AddProductPage() {
       thcContent: undefined,
       cbdContent: undefined,
       price: undefined,
-      currency: dispensaryData?.currency || 'ZAR', // Default to dispensary currency or ZAR
+      currency: 'ZAR', 
       unit: '',
       quantityInStock: undefined,
       imageUrl: null,
@@ -66,23 +71,56 @@ export default function AddProductPage() {
   });
 
   useEffect(() => {
-    if (!authLoading && currentUser?.dispensaryId) {
-      const fetchDispensaryData = async () => {
-        const docRef = doc(db, "dispensaries", currentUser.dispensaryId!);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const fetchedDispensary = docSnap.data() as Dispensary;
+    if (authLoading || !currentUser) {
+      if (!authLoading && !currentUser) router.push("/auth/signin");
+      return;
+    }
+    if (!currentUser.dispensaryId) {
+      toast({ title: "Error", description: "No dispensary associated with your account.", variant: "destructive" });
+      router.push("/dispensary-admin/dashboard");
+      return;
+    }
+
+    const fetchInitialData = async () => {
+      setIsLoadingInitialData(true);
+      try {
+        const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId!);
+        const dispensarySnap = await getDoc(dispensaryDocRef);
+
+        if (dispensarySnap.exists()) {
+          const fetchedDispensary = dispensarySnap.data() as Dispensary;
           setDispensaryData(fetchedDispensary);
-          form.setValue('currency', fetchedDispensary.currency || 'ZAR'); // Set default currency from dispensary
+          form.setValue('currency', fetchedDispensary.currency || 'ZAR');
+
+          if (fetchedDispensary.dispensaryType) {
+            const typeQuery = firestoreQuery(collection(db, 'dispensaryTypes'), where('name', '==', fetchedDispensary.dispensaryType));
+            const typeSnapshot = await getDocs(typeQuery);
+            if (!typeSnapshot.empty) {
+              const typeData = typeSnapshot.docs[0].data() as AppDispensaryType;
+              setDispensaryTypeDetails(typeData);
+              setProductCategories(typeData.productCategories || []);
+              if (typeData.productCategories && typeData.productCategories.length > 0) {
+                form.setValue('category', ''); // Clear to force selection
+              } else {
+                 toast({ title: "Notice", description: `No specific product categories found for "${fetchedDispensary.dispensaryType}". Using general input.`, variant: "default" });
+              }
+            } else {
+              toast({ title: "Warning", description: `Details for dispensary type "${fetchedDispensary.dispensaryType}" not found. Using general input for categories.`, variant: "destructive" });
+            }
+          }
         } else {
           toast({ title: "Error", description: "Dispensary data not found.", variant: "destructive" });
           router.push("/dispensary-admin/dashboard");
         }
-      };
-      fetchDispensaryData();
-    } else if (!authLoading && !currentUser) {
-      router.push("/auth/signin");
-    }
+      } catch (error) {
+        console.error("Error fetching initial data for Add Product page:", error);
+        toast({ title: "Error", description: "Could not load necessary data.", variant: "destructive" });
+      } finally {
+        setIsLoadingInitialData(false);
+      }
+    };
+
+    fetchInitialData();
   }, [currentUser, authLoading, router, toast, form]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,7 +140,7 @@ export default function AddProductPage() {
     setImagePreview(null);
     form.setValue('imageUrl', null);
     if (imageInputRef.current) {
-      imageInputRef.current.value = ""; // Reset file input
+      imageInputRef.current.value = ""; 
     }
   };
 
@@ -110,6 +148,11 @@ export default function AddProductPage() {
     if (!currentUser?.dispensaryId || !dispensaryData) {
       toast({ title: "Error", description: "User or dispensary data not found.", variant: "destructive" });
       return;
+    }
+    if (productCategories.length > 0 && !data.category) {
+        toast({ title: "Category Required", description: "Please select a product category.", variant: "destructive"});
+        form.setError("category", { type: "manual", message: "Category is required." });
+        return;
     }
     setIsLoading(true);
     setUploadProgress(null);
@@ -144,15 +187,15 @@ export default function AddProductPage() {
         return;
       }
     }
-    setUploadProgress(100); // Mark as complete if upload was successful
+    setUploadProgress(100);
 
     try {
       const productData = {
         ...data,
         dispensaryId: currentUser.dispensaryId,
         dispensaryName: dispensaryData.dispensaryName,
-        dispensaryType: dispensaryData.dispensaryType, // Add dispensaryType
-        productOwnerEmail: dispensaryData.ownerEmail, // Add productOwnerEmail
+        dispensaryType: dispensaryData.dispensaryType,
+        productOwnerEmail: dispensaryData.ownerEmail,
         imageUrl: uploadedImageUrl,
         thcContent: data.thcContent === undefined ? null : data.thcContent,
         cbdContent: data.cbdContent === undefined ? null : data.cbdContent,
@@ -174,8 +217,23 @@ export default function AddProductPage() {
     }
   };
   
-  if (authLoading || !dispensaryData) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /> <p className="ml-2">Loading dispensary data...</p></div>;
+  if (isLoadingInitialData) {
+    return (
+        <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-10 w-1/3" />
+                <Skeleton className="h-9 w-24" />
+            </div>
+            <Skeleton className="h-8 w-1/2" />
+            <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-12 w-full" />
+            </div>
+        </div>
+    );
   }
 
 
@@ -190,7 +248,11 @@ export default function AddProductPage() {
                 <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Products</Link>
             </Button>
         </div>
-        <CardDescription>Fill in the details for your new product. Fields marked with * are required.</CardDescription>
+        <CardDescription>Fill in the details for your new product. Fields marked with * are required.
+        {dispensaryTypeDetails?.name && (
+            <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{dispensaryTypeDetails.name}</span></span>
+        )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -201,12 +263,21 @@ export default function AddProductPage() {
                 <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem><FormLabel>Category *</FormLabel>
-                   <select {...field} className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-input-custom-bg px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", "hover:bg-input-hover dark:hover:bg-input-hover")}>
-                      <option value="" disabled>Select category</option>
-                      {sampleCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                <FormMessage /></FormItem>
+                <FormItem>
+                  <FormLabel>Category *</FormLabel>
+                  {isLoadingInitialData ? <Skeleton className="h-10 w-full" /> : 
+                    productCategories.length > 0 ? (
+                      <select {...field} className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-input-custom-bg px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", "hover:bg-input-hover dark:hover:bg-input-hover")}>
+                          <option value="" disabled>Select category</option>
+                          {productCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    ) : (
+                      <FormControl><Input placeholder="Enter category manually" {...field} /></FormControl>
+                    )
+                  }
+                  {productCategories.length === 0 && !isLoadingInitialData && <FormDescription>No specific categories for this dispensary type. Enter manually.</FormDescription>}
+                  <FormMessage />
+                </FormItem>
               )} />
             </div>
 
@@ -219,7 +290,7 @@ export default function AddProductPage() {
                 <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
                <FormField control={form.control} name="currency" render={({ field }) => (
-                <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="e.g., ZAR" {...field} maxLength={3} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="e.g., ZAR" {...field} maxLength={3} readOnly disabled/></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="unit" render={({ field }) => (
                 <FormItem><FormLabel>Unit *</FormLabel>
@@ -269,12 +340,12 @@ export default function AddProductPage() {
 
             <Separator />
              <h3 className="text-lg font-medium">Product Image</h3>
-            <FormField control={form.control} name="imageUrl" render={({ field }) => ( // Keep this for schema validation message if needed
+            <FormField control={form.control} name="imageUrl" render={({ field }) => ( 
               <FormItem>
                 <div className="flex items-center gap-4">
                   {imagePreview ? (
                     <div className="relative w-32 h-32 rounded border p-1 bg-muted">
-                      <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" />
+                      <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" />
                     </div>
                   ) : (
                     <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center">
@@ -309,7 +380,7 @@ export default function AddProductPage() {
                 )}
                 {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Click "Add Product" to save.</p>}
                 <FormDescription>Upload a clear image of your product (PNG, JPG, WEBP). Max 5MB.</FormDescription>
-                <FormMessage />
+                <FormMessage /> 
               </FormItem>
             )} />
 
@@ -332,12 +403,12 @@ export default function AddProductPage() {
 
             <CardFooter className="px-0 pt-8">
               <div className="flex gap-4 w-full">
-                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
+                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                   Add Product
                 </Button>
                 <Link href="/dispensary-admin/products" passHref legacyBehavior>
-                  <Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading}>Cancel</Button>
+                  <Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>Cancel</Button>
                 </Link>
               </div>
             </CardFooter>

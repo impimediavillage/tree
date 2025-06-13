@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2 } from 'lucide-react'; // Renamed ImageIcon to avoid conflict
+import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2, ListPlus } from 'lucide-react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
@@ -34,7 +34,8 @@ import type { DispensaryType } from '@/types';
 import { dispensaryTypeSchema, type DispensaryTypeFormData } from '@/lib/schemas';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import Image from 'next/image'; // Next.js Image component
+import Image from 'next/image';
+import { MultiInputTags } from '@/components/ui/multi-input-tags';
 
 interface DispensaryTypeDialogProps {
   dispensaryType?: DispensaryType | null;
@@ -70,9 +71,10 @@ export function DispensaryTypeDialog({
     defaultValues: {
       name: '',
       description: '',
-      iconPath: null, // Ensure default is null
-      image: null,   // Ensure default is null
+      iconPath: null,
+      image: null,
       advisorFocusPrompt: '',
+      productCategories: [],
     },
   });
 
@@ -82,16 +84,16 @@ export function DispensaryTypeDialog({
         form.reset({
           name: dispensaryType.name || '',
           description: dispensaryType.description || '',
-          // Explicitly convert empty strings from DB to null for form state
           iconPath: dispensaryType.iconPath === "" ? null : (dispensaryType.iconPath || null),
           image: dispensaryType.image === "" ? null : (dispensaryType.image || null),
           advisorFocusPrompt: dispensaryType.advisorFocusPrompt || '',
+          productCategories: dispensaryType.productCategories || [],
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
       } else { 
         form.reset({
-          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '',
+          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', productCategories: [],
         });
         setIconPreview(null);
         setImagePreview(null);
@@ -102,11 +104,11 @@ export function DispensaryTypeDialog({
       setImageUploadProgress(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispensaryType, isOpen, isEditing]); // form object removed from deps
+  }, [dispensaryType, isOpen, isEditing]);
 
 
   const handleDialogTriggerClick = (e: React.MouseEvent) => {
-    if (!isSuperAdmin) {
+    if (!isSuperAdmin && !isEditing) { // Allow viewing if editing, but not adding new if not super admin
       e.preventDefault();
       const action = isEditing ? "edit" : "add new";
       toast({ title: "Permission Denied", description: `Only Super Admins can ${action} types.`, variant: "destructive" });
@@ -163,7 +165,7 @@ export function DispensaryTypeDialog({
         },
         async () => {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          progressSetter(null); // Clear progress after successful upload
+          progressSetter(null); 
           resolve(downloadURL);
         }
       );
@@ -177,38 +179,35 @@ export function DispensaryTypeDialog({
     }
     setIsSubmitting(true);
 
-    let newIconUrl: string | null = dispensaryType?.iconPath || null;
-    let newImageUrl: string | null = dispensaryType?.image || null;
+    let newIconUrl: string | null = form.getValues('iconPath');
+    let newImageUrl: string | null = form.getValues('image');
+    const oldIconUrl = dispensaryType?.iconPath;
+    const oldImageUrl = dispensaryType?.image;
 
     try {
-      // Handle Icon
       if (selectedIconFile) {
         toast({ title: "Uploading Icon...", description: selectedIconFile.name, variant: "default" });
-        const uploadedIconUrl = await handleFileUpload(selectedIconFile, 'dispensary-type-assets/icons', setIconUploadProgress);
-        // Delete old icon from storage if it existed and was a firebase storage URL
-        if (newIconUrl && newIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
-            try { await deleteObject(storageRef(storage, newIconUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed during new upload:", e); }
+        const uploadedUrl = await handleFileUpload(selectedIconFile, 'dispensary-type-assets/icons', setIconUploadProgress);
+        if (oldIconUrl && oldIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
+            try { await deleteObject(storageRef(storage, oldIconUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
         }
-        newIconUrl = uploadedIconUrl;
+        newIconUrl = uploadedUrl;
         toast({ title: "Icon Uploaded!", description: selectedIconFile.name, variant: "default" });
-      } else if (formData.iconPath === null && newIconUrl && newIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
-        // User explicitly removed icon (formData.iconPath is null), and there was an old one
-        try { await deleteObject(storageRef(storage, newIconUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed on removal:", e); }
+      } else if (formData.iconPath === null && oldIconUrl && oldIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
+        try { await deleteObject(storageRef(storage, oldIconUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
         newIconUrl = null; 
       }
-      // If neither of above, newIconUrl retains its initial value (from dispensaryType or null if new)
 
-      // Handle Image
       if (selectedImageFile) {
         toast({ title: "Uploading Image...", description: selectedImageFile.name, variant: "default" });
-        const uploadedImageUrl = await handleFileUpload(selectedImageFile, 'dispensary-type-assets/images', setImageUploadProgress);
-        if (newImageUrl && newImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-            try { await deleteObject(storageRef(storage, newImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed during new upload:", e); }
+        const uploadedUrl = await handleFileUpload(selectedImageFile, 'dispensary-type-assets/images', setImageUploadProgress);
+        if (oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
+            try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed:", e); }
         }
-        newImageUrl = uploadedImageUrl;
+        newImageUrl = uploadedUrl;
         toast({ title: "Image Uploaded!", description: selectedImageFile.name, variant: "default" });
-      } else if (formData.image === null && newImageUrl && newImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-        try { await deleteObject(storageRef(storage, newImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed on removal:", e); }
+      } else if (formData.image === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
+        try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed:", e); }
         newImageUrl = null; 
       }
 
@@ -218,6 +217,7 @@ export function DispensaryTypeDialog({
         iconPath: newIconUrl,
         image: newImageUrl,
         advisorFocusPrompt: formData.advisorFocusPrompt || null,
+        productCategories: formData.productCategories || [],
         updatedAt: serverTimestamp(),
       };
 
@@ -245,7 +245,7 @@ export function DispensaryTypeDialog({
   };
   
   const renderAssetPreview = (previewUrl: string | null, assetType: 'icon' | 'image') => {
-    const displayUrl = previewUrl; // Use the state variable for preview directly
+    const displayUrl = previewUrl;
     const altText = `${assetType} preview`;
     const dataAiHint = `dispensary type ${assetType}`;
 
@@ -267,7 +267,8 @@ export function DispensaryTypeDialog({
           <DialogTitle>{isEditing ? 'Edit' : 'Add New'} Dispensary Type</DialogTitle>
           <DialogDescription>
             {isEditing ? 'Update the details for this dispensary type.' : 'Enter the details for the new dispensary type.'}
-            {isSuperAdmin ? '' : ' (Read-only mode)'}
+            {!isSuperAdmin && isEditing ? ' (Viewing details)' : ''}
+            {!isSuperAdmin && !isEditing ? ' (Requires Super Admin)' : ''}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow overflow-y-auto px-6 pb-2 scrollbar-thin scrollbar-thumb-muted-foreground/50 scrollbar-track-transparent scrollbar-thumb-rounded-full">
@@ -314,15 +315,31 @@ export function DispensaryTypeDialog({
                         disabled={!isSuperAdmin || isSubmitting}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Guides the AI advisor for this type. (Optional)
-                    </FormDescription>
+                    <FormDescription>Guides the AI advisor for this type. (Optional)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              {/* Icon Upload and Preview */}
+              <Controller
+                control={form.control}
+                name="productCategories"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Categories</FormLabel>
+                    <MultiInputTags 
+                      value={field.value || []} 
+                      onChange={field.onChange} 
+                      placeholder="Add category (e.g., Flower, Edibles)" 
+                      disabled={!isSuperAdmin || isSubmitting} 
+                    />
+                    <FormDescription>Define product categories specific to this dispensary type.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+
               <FormItem>
                 <FormLabel>Icon</FormLabel>
                 <div className="flex items-center gap-4">
@@ -346,7 +363,6 @@ export function DispensaryTypeDialog({
                  <FormField control={form.control} name="iconPath" render={() => <FormMessage>{form.formState.errors.iconPath?.message}</FormMessage>} />
               </FormItem>
 
-              {/* Image Upload and Preview */}
               <FormItem>
                 <FormLabel>Image (Banner)</FormLabel>
                  <div className="flex items-center gap-4">
@@ -372,7 +388,7 @@ export function DispensaryTypeDialog({
 
               {isSuperAdmin && (
                 <div className="pt-4">
-                  <DialogFooter className="bg-transparent sticky bottom-0 py-4 px-6 border-t -mx-6"> {/* Made footer sticky */}
+                  <DialogFooter className="bg-transparent sticky bottom-0 py-4 px-6 border-t -mx-6">
                     <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSubmitting}>
                         Cancel
                     </Button>
@@ -390,4 +406,3 @@ export function DispensaryTypeDialog({
     </Dialog>
   );
 }
-
