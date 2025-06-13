@@ -121,11 +121,11 @@ export function DispensaryTypeDialog({
         if (type === 'icon') {
           setSelectedIconFile(file);
           setIconPreview(reader.result as string);
-          form.setValue('iconPath', ''); // Clear path if uploading new file
+          form.setValue('iconPath', null); // Set to null, new file will generate URL
         } else {
           setSelectedImageFile(file);
           setImagePreview(reader.result as string);
-          form.setValue('image', ''); // Clear path if uploading new file
+          form.setValue('image', null); // Set to null, new file will generate URL
         }
       };
       reader.readAsDataURL(file);
@@ -186,7 +186,12 @@ export function DispensaryTypeDialog({
         toast({ title: "Uploading Icon...", description: "Please wait.", variant: "default" });
         finalIconPath = await handleFileUpload(selectedIconFile, 'dispensary-type-assets/icons', setIconUploadProgress);
         toast({ title: "Icon Uploaded!", description: selectedIconFile.name, variant: "default" });
-      } else if (data.iconPath === null) { // Explicitly removed
+      } else if (data.iconPath === null && dispensaryType?.iconPath) { // Explicitly removed existing
+        if(dispensaryType.iconPath.startsWith('https://firebasestorage.googleapis.com')) { // Only delete if it's a firebase storage URL
+            try {
+                await deleteObject(storageRef(storage, dispensaryType.iconPath));
+            } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
+        }
         finalIconPath = null;
       }
 
@@ -195,7 +200,12 @@ export function DispensaryTypeDialog({
         toast({ title: "Uploading Image...", description: "Please wait.", variant: "default" });
         finalImagePath = await handleFileUpload(selectedImageFile, 'dispensary-type-assets/images', setImageUploadProgress);
         toast({ title: "Image Uploaded!", description: selectedImageFile.name, variant: "default" });
-      } else if (data.image === null) { // Explicitly removed
+      } else if (data.image === null && dispensaryType?.image) { // Explicitly removed existing
+        if(dispensaryType.image.startsWith('https://firebasestorage.googleapis.com')) {
+            try {
+                await deleteObject(storageRef(storage, dispensaryType.image));
+            } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed:", e); }
+        }
         finalImagePath = null;
       }
 
