@@ -70,8 +70,8 @@ export function DispensaryTypeDialog({
     defaultValues: {
       name: '',
       description: '',
-      iconPath: null, // Changed from ''
-      image: null,    // Changed from ''
+      iconPath: null,
+      image: null,
       advisorFocusPrompt: '',
     },
   });
@@ -82,15 +82,15 @@ export function DispensaryTypeDialog({
         form.reset({
           name: dispensaryType.name || '',
           description: dispensaryType.description || '',
-          iconPath: dispensaryType.iconPath || null, // Changed from || ''
-          image: dispensaryType.image || null,       // Changed from || ''
+          iconPath: dispensaryType.iconPath === "" ? null : (dispensaryType.iconPath || null),
+          image: dispensaryType.image === "" ? null : (dispensaryType.image || null),
           advisorFocusPrompt: dispensaryType.advisorFocusPrompt || '',
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
-      } else { // Adding new or dialog closed then reopened for add
+      } else { 
         form.reset({
-          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', // Ensure null here too
+          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '',
         });
         setIconPreview(null);
         setImagePreview(null);
@@ -101,7 +101,7 @@ export function DispensaryTypeDialog({
       setImageUploadProgress(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispensaryType, isOpen, isEditing]); // Removed form.reset from dependencies as per react-hook-form guidance
+  }, [dispensaryType, isOpen, isEditing]);
 
 
   const handleDialogTriggerClick = (e: React.MouseEvent) => {
@@ -110,7 +110,6 @@ export function DispensaryTypeDialog({
       const action = isEditing ? "edit" : "add new";
       toast({ title: "Permission Denied", description: `Only Super Admins can ${action} types.`, variant: "destructive" });
     }
-    // If Super Admin, allow dialog to open normally
   };
   
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, type: 'icon' | 'image') => {
@@ -121,11 +120,11 @@ export function DispensaryTypeDialog({
         if (type === 'icon') {
           setSelectedIconFile(file);
           setIconPreview(reader.result as string);
-          form.setValue('iconPath', null); // Set to null, new file will generate URL
+          form.setValue('iconPath', null); 
         } else {
           setSelectedImageFile(file);
           setImagePreview(reader.result as string);
-          form.setValue('image', null); // Set to null, new file will generate URL
+          form.setValue('image', null); 
         }
       };
       reader.readAsDataURL(file);
@@ -136,12 +135,12 @@ export function DispensaryTypeDialog({
     if (type === 'icon') {
       setSelectedIconFile(null);
       setIconPreview(null);
-      form.setValue('iconPath', null); // Set to null to indicate removal
+      form.setValue('iconPath', null); 
       if (iconFileRef.current) iconFileRef.current.value = "";
     } else {
       setSelectedImageFile(null);
       setImagePreview(null);
-      form.setValue('image', null); // Set to null to indicate removal
+      form.setValue('image', null); 
       if (imageFileRef.current) imageFileRef.current.value = "";
     }
   };
@@ -178,40 +177,34 @@ export function DispensaryTypeDialog({
     }
     setIsSubmitting(true);
 
-    let finalIconPath = data.iconPath; // This will be the existing URL or null if a new file was selected/removed
-    let finalImagePath = data.image;   // This will be the existing URL or null if a new file was selected/removed
+    let finalIconPath = data.iconPath; 
+    let finalImagePath = data.image;   
 
 
     try {
-      // Handle icon upload/deletion
       if (selectedIconFile) {
         toast({ title: "Uploading Icon...", description: "Please wait.", variant: "default" });
         finalIconPath = await handleFileUpload(selectedIconFile, 'dispensary-type-assets/icons', setIconUploadProgress);
         toast({ title: "Icon Uploaded!", description: selectedIconFile.name, variant: "default" });
-        // Delete old icon if a new one was successfully uploaded
         if (dispensaryType?.iconPath && dispensaryType.iconPath.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, dispensaryType.iconPath)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed during new upload:", e); }
         }
       } else if (data.iconPath === null && dispensaryType?.iconPath && dispensaryType.iconPath.startsWith('https://firebasestorage.googleapis.com')) {
-        // Icon was explicitly removed by user, and there was an old one
         try { await deleteObject(storageRef(storage, dispensaryType.iconPath)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed on removal:", e); }
-        finalIconPath = null; // Ensure it's set to null
+        finalIconPath = null; 
       }
 
 
-      // Handle image upload/deletion
       if (selectedImageFile) {
         toast({ title: "Uploading Image...", description: "Please wait.", variant: "default" });
         finalImagePath = await handleFileUpload(selectedImageFile, 'dispensary-type-assets/images', setImageUploadProgress);
         toast({ title: "Image Uploaded!", description: selectedImageFile.name, variant: "default" });
-         // Delete old image if a new one was successfully uploaded
         if (dispensaryType?.image && dispensaryType.image.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, dispensaryType.image)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed during new upload:", e); }
         }
       } else if (data.image === null && dispensaryType?.image && dispensaryType.image.startsWith('https://firebasestorage.googleapis.com')) {
-        // Image was explicitly removed by user, and there was an old one
         try { await deleteObject(storageRef(storage, dispensaryType.image)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed on removal:", e); }
-        finalImagePath = null; // Ensure it's set to null
+        finalImagePath = null; 
       }
 
 
@@ -394,4 +387,3 @@ export function DispensaryTypeDialog({
     </Dialog>
   );
 }
-
