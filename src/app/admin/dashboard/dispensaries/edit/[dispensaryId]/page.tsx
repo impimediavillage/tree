@@ -21,6 +21,7 @@ import { collection, doc, getDoc, updateDoc, Timestamp, getDocs, query as firest
 import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryType, User as AppUser } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext'; // Ensure useAuth is imported
 
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -55,7 +56,7 @@ const dispensaryTypeIcons: Record<string, string> = {
   "THC - CBD - Mushrooms dispensary": "/icons/thc-cbd-mushroom.png",
   "Homeopathic dispensary": "/icons/homeopathy.png",
   "African Traditional Medicine dispensary": "/icons/traditional-medicine.png",
-  "Flower Store": "/icons/default-pin.png", 
+  "Flower Store": "/icons/default-pin.png",
   "Permaculture & gardening store": "/icons/permaculture.png",
   "Traditional Medicine": "/icons/traditional-medicine.png", // Fallback for older name
   "Homeopathy": "/icons/homeopathy.png", // Fallback for older name
@@ -87,11 +88,12 @@ export default function AdminEditDispensaryPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
+  const { currentUser, loading: authLoading } = useAuth(); // Get authLoading here
 
   const [isFetching, setIsFetching] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dispensary, setDispensary] = useState<Dispensary | null>(null);
-  
+
   const [openHour, setOpenHour] = useState<string | undefined>();
   const [openMinute, setOpenMinute] = useState<string | undefined>();
   const [openAmPm, setOpenAmPm] = useState<string | undefined>();
@@ -101,13 +103,13 @@ export default function AdminEditDispensaryPage() {
   const [closeMinute, setCloseMinute] = useState<string | undefined>();
   const [closeAmPm, setCloseAmPm] = useState<string | undefined>();
   const [isCloseTimePopoverOpen, setIsCloseTimePopoverOpen] = useState(false);
-  
+
   const [dispensaryTypes, setDispensaryTypes] = useState<DispensaryType[]>([]);
   const [newDispensaryTypeName, setNewDispensaryTypeName] = useState('');
   const [newDispensaryTypeIconPath, setNewDispensaryTypeIconPath] = useState('');
   const [newDispensaryTypeImage, setNewDispensaryTypeImage] = useState('');
   const [isAddTypeDialogOpen, setIsAddTypeDialogOpen] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false); // Default to false until verified
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
@@ -117,7 +119,7 @@ export default function AdminEditDispensaryPage() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerInstanceRef = useRef<google.maps.Marker | null>(null);
-  
+
   const [currentLat, setCurrentLat] = useState<number | undefined>(undefined);
   const [currentLng, setCurrentLng] = useState<number | undefined>(undefined);
 
@@ -141,38 +143,32 @@ export default function AdminEditDispensaryPage() {
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
   useEffect(() => {
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-        try {
-            const storedUser: AppUser = JSON.parse(storedUserString);
-             if (storedUser.role === 'Super Admin') { // Corrected permission check
-                setIsSuperAdmin(true);
-            } else {
-                toast({ title: "Access Denied", description: "Only Super Admins can edit dispensaries.", variant: "destructive"});
-                router.push('/admin/dashboard'); // Or another appropriate redirect
-            }
-        } catch (e) {
-             console.error("Error parsing current user from localStorage", e);
-             router.push('/auth/signin');
+    // Use currentUser from useAuth context for role check
+    if (!authLoading) { // Wait for auth state to be resolved
+        if (currentUser && currentUser.role === 'Super Admin') {
+            setIsSuperAdmin(true);
+        } else if (currentUser) { // User is loaded but not Super Admin
+            toast({ title: "Access Denied", description: "Only Super Admins can edit dispensaries.", variant: "destructive"});
+            router.push('/admin/dashboard');
+        } else { // No current user
+            toast({ title: "Not Authenticated", description: "Please sign in.", variant: "destructive"});
+            router.push('/auth/signin');
         }
-    } else {
-        toast({ title: "Not Authenticated", description: "Please sign in.", variant: "destructive"});
-        router.push('/auth/signin');
     }
-  }, [toast, router]);
+  }, [currentUser, authLoading, toast, router]);
 
   const fetchDispensaryTypes = useCallback(async () => {
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
-      const q = firestoreQuery(typesCollectionRef); // No ordering needed here as it's for selection
+      const q = firestoreQuery(typesCollectionRef);
       const querySnapshot = await getDocs(q);
       const fetchedTypes: DispensaryType[] = [];
       querySnapshot.forEach((docSnap) => {
-         fetchedTypes.push({ 
-            id: docSnap.id, 
+         fetchedTypes.push({
+            id: docSnap.id,
             name: docSnap.data().name,
             iconPath: docSnap.data().iconPath,
-            image: docSnap.data().image // Ensure image is also fetched
+            image: docSnap.data().image
         } as DispensaryType);
       });
       setDispensaryTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
@@ -187,7 +183,7 @@ export default function AdminEditDispensaryPage() {
   }, [fetchDispensaryTypes]);
 
   const handleAddNewDispensaryType = async () => {
-     if (!isSuperAdmin) { // Re-check, though page access should already gate this
+     if (!isSuperAdmin) {
         toast({ title: "Permission Denied", description: "Only Super Admins can add new dispensary types.", variant: "destructive"});
         return;
     }
@@ -199,10 +195,9 @@ export default function AdminEditDispensaryPage() {
       toast({ title: "Duplicate Error", description: "This dispensary type already exists.", variant: "destructive" });
       return;
     }
-    // Auto-generate paths if not provided
     const defaultIcon = `/icons/${newDispensaryTypeName.trim().toLowerCase().replace(/\s+/g, '-')}.png`;
-    const defaultImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(newDispensaryTypeName.trim())}`; // Use placeholder.co
-    const newTypeData = { 
+    const defaultImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(newDispensaryTypeName.trim())}`;
+    const newTypeData = {
       name: newDispensaryTypeName.trim(),
       iconPath: newDispensaryTypeIconPath.trim() || defaultIcon,
       image: newDispensaryTypeImage.trim() || defaultImage
@@ -210,11 +205,10 @@ export default function AdminEditDispensaryPage() {
     try {
       const newTypeRef = await addDoc(collection(db, 'dispensaryTypes'), newTypeData);
       toast({ title: "Success", description: `Dispensary type "${newDispensaryTypeName.trim()}" added.` });
-      // Add new type to local state and select it
       const newType = { id: newTypeRef.id, ...newTypeData };
       const updatedTypes = [...dispensaryTypes, newType].sort((a,b) => a.name.localeCompare(b.name));
       setDispensaryTypes(updatedTypes);
-      form.setValue('dispensaryType', newType.name, {shouldValidate: true}); // Select newly added type
+      form.setValue('dispensaryType', newType.name, {shouldValidate: true});
       setNewDispensaryTypeName('');
       setNewDispensaryTypeIconPath('');
       setNewDispensaryTypeImage('');
@@ -224,7 +218,7 @@ export default function AdminEditDispensaryPage() {
       toast({ title: "Error", description: "Failed to add new dispensary type.", variant: "destructive" });
     }
   };
-  
+
   const watchDispensaryType = form.watch("dispensaryType");
 
   const initializeMapAndAutocomplete = useCallback(() => {
@@ -233,23 +227,21 @@ export default function AdminEditDispensaryPage() {
       return;
     }
 
-    // Use currentLat/Lng from state if available (updated by map interaction or fetched data)
-    // Fallback to dispensary data, then to a default (e.g., Durban)
     const lat = currentLat ?? dispensary.latitude ?? -29.8587;
     const lng = currentLng ?? dispensary.longitude ?? 31.0218;
     const zoom = (currentLat && currentLng) || (dispensary.latitude && dispensary.longitude) ? 17 : 6;
-    
-    const currentTypeName = form.getValues('dispensaryType');
-    let initialIconUrl = dispensaryTypeIcons.default; // Fallback to hardcoded default
-    if (currentTypeName) {
-        const selectedTypeObject = dispensaryTypes.find(dt => dt.name === currentTypeName);
+
+    const currentTypeNameVal = form.getValues('dispensaryType');
+    let initialIconUrl = dispensaryTypeIcons.default;
+    if (currentTypeNameVal) {
+        const selectedTypeObject = dispensaryTypes.find(dt => dt.name === currentTypeNameVal);
         if (selectedTypeObject?.iconPath) {
             initialIconUrl = selectedTypeObject.iconPath;
-        } else if (dispensaryTypeIcons[currentTypeName]) { // Fallback to hardcoded map
-            initialIconUrl = dispensaryTypeIcons[currentTypeName];
+        } else if (dispensaryTypeIcons[currentTypeNameVal]) {
+            initialIconUrl = dispensaryTypeIcons[currentTypeNameVal];
         }
     }
-    
+
     if (!mapInstanceRef.current && mapContainerRef.current) {
       const map = new window.google.maps.Map(mapContainerRef.current, {
         center: { lat, lng }, zoom,
@@ -269,7 +261,7 @@ export default function AdminEditDispensaryPage() {
             mapInstanceRef.current.panTo(pos);
             form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
             form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
-            setCurrentLat(pos.lat()); setCurrentLng(pos.lng()); // Update state for map re-centering
+            setCurrentLat(pos.lat()); setCurrentLng(pos.lng());
             geocoder.geocode({ location: pos }, (results, status) => {
                 if (status === 'OK' && results && results[0]) {
                     form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
@@ -294,7 +286,7 @@ export default function AdminEditDispensaryPage() {
           const loc = place.geometry.location;
           form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
           form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-          setCurrentLat(loc.lat()); setCurrentLng(loc.lng()); // Update state for map recentering
+          setCurrentLat(loc.lat()); setCurrentLng(loc.lng());
           if (mapInstanceRef.current && markerInstanceRef.current) {
             mapInstanceRef.current.setCenter(loc);
             mapInstanceRef.current.setZoom(17);
@@ -303,11 +295,11 @@ export default function AdminEditDispensaryPage() {
         }
       });
     }
-  }, [dispensary, form, currentLat, currentLng, dispensaryTypes]); // Added dispensaryTypes as dependency
+  }, [dispensary, form, currentLat, currentLng, dispensaryTypes]);
 
   // Fetch dispensary data
   useEffect(() => {
-    if (dispensaryId && isSuperAdmin) { // Ensure super admin before fetching
+    if (dispensaryId && isSuperAdmin) {
       const fetchDispensary = async () => {
         setIsFetching(true);
         try {
@@ -319,45 +311,43 @@ export default function AdminEditDispensaryPage() {
 
             let appDateString = '';
             if (data.applicationDate) {
-              if ((data.applicationDate as Timestamp).toDate) { // Firestore Timestamp
+              if ((data.applicationDate as Timestamp).toDate) {
                 appDateString = (data.applicationDate as Timestamp).toDate().toISOString().split('T')[0];
-              } else if (data.applicationDate instanceof Date) { // JS Date
+              } else if (data.applicationDate instanceof Date) {
                 appDateString = (data.applicationDate as Date).toISOString().split('T')[0];
-              } else if (typeof data.applicationDate === 'string') { // String date
+              } else if (typeof data.applicationDate === 'string') {
                 try {
                   appDateString = new Date(data.applicationDate).toISOString().split('T')[0];
                 } catch (e) {
                   console.warn("Could not parse applicationDate string:", data.applicationDate);
-                  appDateString = ''; 
+                  appDateString = '';
                 }
               }
             }
 
             form.reset({
               ...data,
-              applicationDate: appDateString, // Use formatted string if available
-              operatingDays: data.operatingDays || [], // Ensure it's an array
-              latitude: data.latitude === null ? undefined : data.latitude, // Handle null from Firestore
-              longitude: data.longitude === null ? undefined : data.longitude, // Handle null from Firestore
+              applicationDate: appDateString,
+              operatingDays: data.operatingDays || [],
+              latitude: data.latitude === null ? undefined : data.latitude,
+              longitude: data.longitude === null ? undefined : data.longitude,
             });
             setCurrentLat(data.latitude === null ? undefined : data.latitude);
             setCurrentLng(data.longitude === null ? undefined : data.longitude);
-            
+
             const openTimeComps = parseTimeToComponents(data.openTime);
             setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
             const closeTimeComps = parseTimeToComponents(data.closeTime);
             setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
 
-            // Parse existing phone number
             if (data.phone) {
                 const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
                 if (foundCountry) {
                     setSelectedCountryCode(foundCountry.value);
                     setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
                 } else {
-                    // If no known prefix, assume it's a national number for the default country
-                    setNationalPhoneNumber(data.phone); // Could be improved if other default countries are added
-                    setSelectedCountryCode(countryCodes[0].value); // Default to SA if no prefix match
+                    setNationalPhoneNumber(data.phone);
+                    setSelectedCountryCode(countryCodes[0].value);
                 }
             }
 
@@ -373,15 +363,14 @@ export default function AdminEditDispensaryPage() {
         }
       };
       fetchDispensary();
-    } else if (!isSuperAdmin && typeof window !== 'undefined' && !authLoading) { // If not super admin and auth check done
-        // Handled by page-level auth check, but an extra guard
+    } else if (!isSuperAdmin && typeof window !== 'undefined' && !authLoading) {
         router.push('/admin/dashboard');
     }
-  }, [dispensaryId, form, router, toast, isSuperAdmin, authLoading]);
+  }, [dispensaryId, form, router, toast, isSuperAdmin, authLoading]); // Added authLoading
 
   // Initialize Google Maps once data is fetched and API is ready
   useEffect(() => {
-    if (isFetching || !dispensary || !isSuperAdmin) return; // Only init map once data is fetched and user is admin
+    if (isFetching || !dispensary || !isSuperAdmin) return;
 
     let checkGoogleInterval: NodeJS.Timeout;
     if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
@@ -392,69 +381,63 @@ export default function AdminEditDispensaryPage() {
                 console.log("Google Maps API loaded via interval, initializing.");
                 initializeMapAndAutocomplete();
             }
-        }, 500); // Check every 500ms
-        return () => clearInterval(checkGoogleInterval); // Cleanup on unmount
+        }, 500);
+        return () => clearInterval(checkGoogleInterval);
     } else {
         console.log("Google Maps API already loaded, initializing.");
         initializeMapAndAutocomplete();
     }
-  }, [isFetching, dispensary, initializeMapAndAutocomplete, isSuperAdmin]); // Added isSuperAdmin
+  }, [isFetching, dispensary, initializeMapAndAutocomplete, isSuperAdmin]);
 
   // Update marker icon when dispensary type changes
   useEffect(() => {
     if (markerInstanceRef.current && window.google && window.google.maps) {
-      let iconUrl = dispensaryTypeIcons.default; // Fallback to hardcoded default
+      let iconUrl = dispensaryTypeIcons.default;
       if (watchDispensaryType) {
           const selectedTypeObject = dispensaryTypes.find(dt => dt.name === watchDispensaryType);
           if (selectedTypeObject?.iconPath) {
               iconUrl = selectedTypeObject.iconPath;
-          } else if (dispensaryTypeIcons[watchDispensaryType]) { // Fallback to hardcoded map
+          } else if (dispensaryTypeIcons[watchDispensaryType]) {
               iconUrl = dispensaryTypeIcons[watchDispensaryType];
           }
       }
       markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
     }
-  }, [watchDispensaryType, dispensaryTypes]); // Ensure dispensaryTypes is a dependency
-  
+  }, [watchDispensaryType, dispensaryTypes]);
+
   const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
     if (!hourStr || !minuteStr || !amPmStr) return '';
     let hour = parseInt(hourStr, 10);
     if (amPmStr === 'PM' && hour !== 12) hour += 12;
-    else if (amPmStr === 'AM' && hour === 12) hour = 0; // Midnight case
+    else if (amPmStr === 'AM' && hour === 12) hour = 0;
     return `${hour.toString().padStart(2, '0')}:${minuteStr}`;
   };
 
   useEffect(() => {
     const formattedOpenTime = formatTo24Hour(openHour, openMinute, openAmPm);
     if(formattedOpenTime) form.setValue('openTime', formattedOpenTime, { shouldValidate: true, shouldDirty: true });
-    else if (form.getValues('openTime') !== '') form.setValue('openTime', '', { shouldValidate: true, shouldDirty: true }); // Clear if components are cleared
+    else if (form.getValues('openTime') !== '') form.setValue('openTime', '', { shouldValidate: true, shouldDirty: true });
   }, [openHour, openMinute, openAmPm, form]);
 
   useEffect(() => {
     const formattedCloseTime = formatTo24Hour(closeHour, closeMinute, closeAmPm);
     if(formattedCloseTime) form.setValue('closeTime', formattedCloseTime, { shouldValidate: true, shouldDirty: true });
-    else if (form.getValues('closeTime') !== '') form.setValue('closeTime', '', { shouldValidate: true, shouldDirty: true }); // Clear
+    else if (form.getValues('closeTime') !== '') form.setValue('closeTime', '', { shouldValidate: true, shouldDirty: true });
   }, [closeHour, closeMinute, closeAmPm, form]);
 
   async function onSubmit(data: EditDispensaryFormData) {
-    if (!dispensaryId || !isSuperAdmin) return; // Guard against submission if not admin
+    if (!dispensaryId || !isSuperAdmin) return;
     setIsSubmitting(true);
     try {
       const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-      // Prepare data for update, ensuring timestamps are handled correctly
       const updateData = {
         ...data,
-        latitude: data.latitude === undefined ? null : data.latitude, // Ensure undefined becomes null for Firestore
+        latitude: data.latitude === undefined ? null : data.latitude,
         longitude: data.longitude === undefined ? null : data.longitude,
-        // applicationDate is read-only in this form, so no need to convert it back to Timestamp
-        // approvedDate would be set by the cloud function if status changes to Approved
-        lastActivityDate: serverTimestamp(), // Always update last activity
+        lastActivityDate: serverTimestamp(),
       };
-      
-      // Remove applicationDate from updateData as it's not meant to be edited here by admin
-      // And it was converted to string for display.
-      delete (updateData as any).applicationDate;
 
+      delete (updateData as any).applicationDate;
 
       await updateDoc(dispensaryDocRef, updateData);
       toast({ title: "Dispensary Updated", description: `${data.dispensaryName} has been successfully updated.` });
@@ -472,11 +455,11 @@ export default function AdminEditDispensaryPage() {
     let hour24 = parseInt(hour24Str, 10);
     const amPm = hour24 >= 12 ? 'PM' : 'AM';
     let hour12 = hour24 % 12;
-    if (hour12 === 0) hour12 = 12; // For 12 AM or 12 PM
+    if (hour12 === 0) hour12 = 12;
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (isFetching) {
+  if (authLoading || isFetching) { // Use authLoading from context
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" />
@@ -491,12 +474,10 @@ export default function AdminEditDispensaryPage() {
     );
   }
 
-  if (!dispensary || !isSuperAdmin) { // Final check after loading and auth
-    // This path should ideally be caught by the useEffect redirects,
-    // but it's a good fallback to prevent rendering the form without data or permission.
+  if (!dispensary || !isSuperAdmin) {
     return <div className="text-center py-10">Dispensary not found, failed to load, or access denied.</div>;
   }
-  
+
   return (
     <Card className="max-w-3xl mx-auto my-8 shadow-xl">
       <CardHeader>
@@ -533,15 +514,14 @@ export default function AdminEditDispensaryPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input 
-                    type="tel" 
-                    placeholder="National number" 
+                  <Input
+                    type="tel"
+                    placeholder="National number"
                     value={nationalPhoneNumber}
-                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} 
+                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}
                   />
                 </div>
                  <FormField control={form.control} name="phone" render={({ field }) => (
-                    // This hidden input receives the combined phone number for validation
                     <FormItem className="mt-0 pt-0"><FormControl><input type="hidden" {...field} /></FormControl><FormMessage /></FormItem>
                  )} />
               </FormItem>
@@ -565,7 +545,7 @@ export default function AdminEditDispensaryPage() {
                             {dispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
                         </SelectContent>
                         </Select>
-                        {isSuperAdmin && ( // Only super admin can add types from here
+                        {isSuperAdmin && (
                             <Dialog open={isAddTypeDialogOpen} onOpenChange={setIsAddTypeDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button>
@@ -697,13 +677,13 @@ export default function AdminEditDispensaryPage() {
               <FormItem><FormLabel>Order Types Fulfilled</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            
+
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
               <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
                 <FormDescription>Allows sharing products with same-type dispensaries.</FormDescription><FormMessage /></FormItem>)} />
-            
+
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
                 <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel>
@@ -713,9 +693,9 @@ export default function AdminEditDispensaryPage() {
 
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
-            
+
              <div className="flex gap-4 pt-4">
-                <Button type="submit" size="lg" className="flex-1 text-lg" 
+                <Button type="submit" size="lg" className="flex-1 text-lg"
                   disabled={isSubmitting || isFetching || (form.formState.isSubmitted && !form.formState.isValid)}
                 >
                   {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
@@ -731,5 +711,4 @@ export default function AdminEditDispensaryPage() {
     </Card>
   );
 }
-
     
