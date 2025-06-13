@@ -4,132 +4,156 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // Helper function to check if a user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Helper function to get user's role from a custom claim
+    // Assumes you are setting a 'role' custom claim on user authentication
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+
+    // Helper function to check if a user is a Super Admin
     function isSuperAdmin() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+      return isAuthenticated() && getUserRole() == 'Super Admin';
     }
 
-    function isDispensaryOwner(dispensaryId) {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
+    // Helper function to check if a user is a Dispensary Owner
+    function isDispensaryOwner() {
+      return isAuthenticated() && getUserRole() == 'DispensaryOwner';
+    }
+    
+    // Helper function to check if the request is coming from the owner of the specific dispensary document
+    function isOwnerOfDispensary(dispensaryId) {
+      // Ensure request.auth.token.dispensaryId exists before comparing
+      return isDispensaryOwner() && request.auth.token.dispensaryId != null && request.auth.token.dispensaryId == dispensaryId;
     }
 
-    function isDispensaryStaff(dispensaryIdFromResource) {
-      return isAuthenticated() &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryStaff' &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryIdFromResource &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'Active';
+    // Helper function to check if a user is the owner of the user document being accessed
+    function isSelf(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isOwnerOfDoc(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isApprovedDispensary(dispensaryId) {
-        return exists(/databases/$(database)/documents/dispensaries/$(dispensaryId)) &&
-               get(/databases/$(database)/documents/dispensaries/$(dispensaryId)).data.status == 'Approved';
-    }
-
-    // Users Collection
+    // General Users collection
     match /users/{userId} {
-      allow read: if isAuthenticated() && (isOwnerOfDoc(userId) || isSuperAdmin() ||
-                    (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
-                     resource.data.dispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId)
-                  );
-      allow create: if isAuthenticated(); // Signup, or admin/owner creating users
-      allow update: if isAuthenticated() && (
-                      (isOwnerOfDoc(userId) && request.resource.data.keys().hasOnly(['displayName', 'photoURL', 'preferredDispensaryTypes', 'lastLoginAt'])) ||
-                      isSuperAdmin() ||
-                      (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
-                       resource.data.dispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId &&
-                       request.resource.data.keys().hasOnly(['displayName', 'status', 'role', 'credits', 'welcomeCreditsAwarded', 'updatedAt']) && // Owner can update these for their staff/leaf users
-                       (resource.data.role == 'DispensaryStaff' || resource.data.role == 'LeafUser') // Can only manage staff or leaf users
-                      )
-                    );
+      // Allow users to read and update their own profile
+      // Super Admins can read/write any user profile
+      allow read, update: if isSelf(userId) || isSuperAdmin();
+      // Allow authenticated users to create their own user document (e.g., on signup)
+      // Also allow SuperAdmins to create users (e.g. from admin panel)
+      allow create: if (isAuthenticated() && request.auth.uid == userId) || isSuperAdmin();
+      // Super Admins can delete users (use with caution)
       allow delete: if isSuperAdmin();
     }
 
-    // Dispensaries Collection
+    // Dispensaries collection
     match /dispensaries/{dispensaryId} {
-      allow read: if isApprovedDispensary(dispensaryId) || isDispensaryOwner(dispensaryId) || isSuperAdmin() || isDispensaryStaff(dispensaryId);
-      allow create: if isAuthenticated(); // Public signup or Super Admin
-      allow update: if (isAuthenticated() && isDispensaryOwner(dispensaryId) && request.resource.data.ownerEmail == resource.data.ownerEmail && request.resource.data.status == resource.data.status) || isSuperAdmin();
+      // Public can read approved dispensaries. Super Admins can read any dispensary.
+      allow read: if (resource.data.status == 'Approved') || isSuperAdmin(); 
+      
+      // Authenticated users can create new dispensary applications (status will be 'Pending Approval')
+      allow create: if isAuthenticated() && request.resource.data.status == 'Pending Approval';
+      
+      // Only the owner of the dispensary or a Super Admin can update it
+      allow update: if isOwnerOfDispensary(dispensaryId) || isSuperAdmin();
+      
+      // Only Super Admins can delete dispensaries (use with caution)
       allow delete: if isSuperAdmin();
     }
 
-    // DispensaryTypes Collection
+    // Dispensary Types collection
     match /dispensaryTypes/{typeId} {
-      allow read: if true; // Publicly readable
-      allow write: if isSuperAdmin();
+      // Anyone can read dispensary types (e.g., to populate dropdowns)
+      allow read: if true;
+      // Only Super Admins can create, update, or delete dispensary types
+      allow write: if isSuperAdmin(); // Covers create, update, delete
     }
 
-    // DispensaryTypeProductCategories Collection
-    match /dispensaryTypeProductCategories/{typeName} {
-      allow read: if true; // Publicly readable for product forms etc.
-      allow write: if isSuperAdmin(); // Typically written by a seeding function with admin privileges
-    }
-
-    // Products Collection
+    // Products collection
     match /products/{productId} {
-      allow read: if isApprovedDispensary(resource.data.dispensaryId) ||
-                     (isAuthenticated() && (
-                       isDispensaryOwner(resource.data.dispensaryId) ||
-                       isDispensaryStaff(resource.data.dispensaryId) ||
-                       isSuperAdmin()
-                     ));
-      allow create: if isAuthenticated() && isDispensaryOwner(request.resource.data.dispensaryId);
-      allow update: if isAuthenticated() && isDispensaryOwner(resource.data.dispensaryId); // Owner of product's dispensary
-      allow delete: if isAuthenticated() && (isDispensaryOwner(resource.data.dispensaryId) || isSuperAdmin());
+      // Public can read products (assuming they belong to an approved dispensary)
+      // For more robust security, you might want to check the status of the linked dispensary
+      // This simple rule allows any read for now.
+      allow read: if true; 
+      
+      // Helper function to check if the product belongs to the requesting owner's dispensary
+      function isProductOwner() {
+        return isDispensaryOwner() && 
+               request.auth.token.dispensaryId != null && 
+               request.auth.token.dispensaryId == request.resource.data.dispensaryId;
+      }
+      // Helper function for delete, checking existing resource
+      function wasProductOwner() {
+        return isDispensaryOwner() && 
+               request.auth.token.dispensaryId != null && 
+               request.auth.token.dispensaryId == resource.data.dispensaryId;
+      }
+      
+      allow create: if isProductOwner() || isSuperAdmin(); 
+      allow update: if isProductOwner() || isSuperAdmin(); 
+      allow delete: if wasProductOwner() || isSuperAdmin(); 
     }
 
-    // ProductRequests Collection
+    // Product Requests collection
     match /productRequests/{requestId} {
-      allow read: if isAuthenticated() && (
-                    resource.data.requesterDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId ||
-                    resource.data.productOwnerDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId ||
-                    isSuperAdmin()
-                  );
-      allow create: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner';
-      allow update: if isAuthenticated() && (
-                      (resource.data.requesterDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId && request.resource.data.keys().hasAny(['requestStatus', 'notes'])) ||
-                      (resource.data.productOwnerDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId && request.resource.data.keys().hasAny(['requestStatus', 'notes'])) ||
-                      isSuperAdmin()
-                    );
-      allow delete: if isSuperAdmin(); // Or potentially involved parties for cancellation
+      // Involved parties (requester or product owner) or Super Admin can read
+      allow read: if (isAuthenticated() && (request.auth.token.dispensaryId == resource.data.requesterDispensaryId || request.auth.token.dispensaryId == resource.data.productOwnerDispensaryId)) || isSuperAdmin();
+      
+      // Requester dispensary owner can create a request
+      allow create: if isAuthenticated() && request.auth.token.dispensaryId != null && request.auth.token.dispensaryId == request.resource.data.requesterDispensaryId;
+      
+      // Involved parties or Super Admin can update (e.g., status, add notes)
+      allow update: if (isAuthenticated() && (request.auth.token.dispensaryId == resource.data.requesterDispensaryId || request.auth.token.dispensaryId == resource.data.productOwnerDispensaryId)) || isSuperAdmin();
+      
+      // Super Admin or original requester (if pending) can delete
+      allow delete: if (isAuthenticated() && request.auth.token.dispensaryId != null && request.auth.token.dispensaryId == resource.data.requesterDispensaryId && resource.data.requestStatus == 'pending_owner_approval') || isSuperAdmin();
     }
 
-    // PoolIssues Collection
+    // Pool Issues collection
     match /poolIssues/{issueId} {
-      allow read, update: if isAuthenticated() && isSuperAdmin(); // Super admin manages these
-      allow create: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner';
+      // Involved parties or Super Admin can read
+      allow read: if (isAuthenticated() && (request.auth.token.dispensaryId == resource.data.reporterDispensaryId || request.auth.token.dispensaryId == resource.data.reportedDispensaryId)) || isSuperAdmin();
+      
+      // Authenticated dispensary owners can create an issue
+      allow create: if isDispensaryOwner() && request.auth.token.dispensaryId != null && request.auth.token.dispensaryId == request.resource.data.reporterDispensaryId;
+      
+      // Only Super Admins can update (e.g., status, resolution)
+      allow update: if isSuperAdmin();
+      
+      // Only Super Admins can delete issues
       allow delete: if isSuperAdmin();
     }
 
-    // Notifications Collection
+    // Notifications collection
     match /notifications/{notificationId} {
-      allow read, update: if isAuthenticated() && resource.data.recipientUid == request.auth.uid; // User can read/update their own
-      allow create: if false; // Created by backend functions only
-      allow delete: if isAuthenticated() && resource.data.recipientUid == request.auth.uid; // User can delete their own
+      // Only the recipient or a Super Admin can read/update (e.g., mark as read)
+      allow read, update: if (isAuthenticated() && request.auth.uid == resource.data.recipientUid) || isSuperAdmin();
+      // Notifications are typically created by backend functions, not directly by clients, but Super Admin could.
+      allow create: if isSuperAdmin(); 
+      allow delete: if isSuperAdmin();
     }
 
-    // AIInteractionsLog Collection
+    // AI Interaction Logs collection
     match /aiInteractionsLog/{logId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
-      allow create: if false; // Created by backend functions only
-      allow write: if isSuperAdmin(); // Allow admin to modify/delete if necessary
+      // User can read their own logs. Super Admin can read all.
+      allow read: if (isAuthenticated() && request.auth.uid == resource.data.userId) || isSuperAdmin();
+      // Logs are created by a backend function (deductCreditsAndLogInteraction)
+      // Allow if authenticated (function will verify user) OR if Super Admin (e.g., manual adjustment/test)
+      allow create: if isAuthenticated() || isSuperAdmin(); 
+      // No updates/deletes by client typically, only Super Admin
+      allow update, delete: if isSuperAdmin();
     }
 
-    // CreditPackages Collection
+    // Credit Packages collection
     match /creditPackages/{packageId} {
-      allow read: if true; // Publicly readable for purchase page
-      allow write: if isSuperAdmin(); // Managed by Super Admin
+      // Anyone can read active credit packages
+      // Super Admins can read all packages (even inactive ones)
+      allow read: if (resource.data.isActive == true) || isSuperAdmin();
+      
+      // Only Super Admins can create, update, or delete credit packages
+      allow write: if isSuperAdmin(); // Covers create, update, delete
     }
   }
 }
-
-    
