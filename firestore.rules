@@ -1,0 +1,135 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+
+    function isDispensaryOwner(dispensaryId) {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
+    }
+
+    function isDispensaryStaff(dispensaryIdFromResource) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryStaff' &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryIdFromResource &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'Active';
+    }
+
+    function isOwnerOfDoc(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isApprovedDispensary(dispensaryId) {
+        return exists(/databases/$(database)/documents/dispensaries/$(dispensaryId)) &&
+               get(/databases/$(database)/documents/dispensaries/$(dispensaryId)).data.status == 'Approved';
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwnerOfDoc(userId) || isSuperAdmin() ||
+                    (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
+                     resource.data.dispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId)
+                  );
+      allow create: if isAuthenticated(); // Signup, or admin/owner creating users
+      allow update: if isAuthenticated() && (
+                      (isOwnerOfDoc(userId) && request.resource.data.keys().hasOnly(['displayName', 'photoURL', 'preferredDispensaryTypes', 'lastLoginAt'])) ||
+                      isSuperAdmin() ||
+                      (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
+                       resource.data.dispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId &&
+                       request.resource.data.keys().hasOnly(['displayName', 'status', 'role', 'credits', 'welcomeCreditsAwarded', 'updatedAt']) && // Owner can update these for their staff/leaf users
+                       (resource.data.role == 'DispensaryStaff' || resource.data.role == 'LeafUser') // Can only manage staff or leaf users
+                      )
+                    );
+      allow delete: if isSuperAdmin();
+    }
+
+    // Dispensaries Collection
+    match /dispensaries/{dispensaryId} {
+      allow read: if isApprovedDispensary(dispensaryId) || isDispensaryOwner(dispensaryId) || isSuperAdmin() || isDispensaryStaff(dispensaryId);
+      allow create: if isAuthenticated(); // Public signup or Super Admin
+      allow update: if (isAuthenticated() && isDispensaryOwner(dispensaryId) && request.resource.data.ownerEmail == resource.data.ownerEmail && request.resource.data.status == resource.data.status) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // DispensaryTypes Collection
+    match /dispensaryTypes/{typeId} {
+      allow read: if true; // Publicly readable
+      allow write: if isSuperAdmin();
+    }
+
+    // DispensaryTypeProductCategories Collection
+    match /dispensaryTypeProductCategories/{typeName} {
+      allow read: if true; // Publicly readable for product forms etc.
+      allow write: if isSuperAdmin(); // Typically written by a seeding function with admin privileges
+    }
+
+    // Products Collection
+    match /products/{productId} {
+      allow read: if isApprovedDispensary(resource.data.dispensaryId) ||
+                     (isAuthenticated() && (
+                       isDispensaryOwner(resource.data.dispensaryId) ||
+                       isDispensaryStaff(resource.data.dispensaryId) ||
+                       isSuperAdmin()
+                     ));
+      allow create: if isAuthenticated() && isDispensaryOwner(request.resource.data.dispensaryId);
+      allow update: if isAuthenticated() && isDispensaryOwner(resource.data.dispensaryId); // Owner of product's dispensary
+      allow delete: if isAuthenticated() && (isDispensaryOwner(resource.data.dispensaryId) || isSuperAdmin());
+    }
+
+    // ProductRequests Collection
+    match /productRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+                    resource.data.requesterDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId ||
+                    resource.data.productOwnerDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId ||
+                    isSuperAdmin()
+                  );
+      allow create: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner';
+      allow update: if isAuthenticated() && (
+                      (resource.data.requesterDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId && request.resource.data.keys().hasAny(['requestStatus', 'notes'])) ||
+                      (resource.data.productOwnerDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId && request.resource.data.keys().hasAny(['requestStatus', 'notes'])) ||
+                      isSuperAdmin()
+                    );
+      allow delete: if isSuperAdmin(); // Or potentially involved parties for cancellation
+    }
+
+    // PoolIssues Collection
+    match /poolIssues/{issueId} {
+      allow read, update: if isAuthenticated() && isSuperAdmin(); // Super admin manages these
+      allow create: if isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner';
+      allow delete: if isSuperAdmin();
+    }
+
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read, update: if isAuthenticated() && resource.data.recipientUid == request.auth.uid; // User can read/update their own
+      allow create: if false; // Created by backend functions only
+      allow delete: if isAuthenticated() && resource.data.recipientUid == request.auth.uid; // User can delete their own
+    }
+
+    // AIInteractionsLog Collection
+    match /aiInteractionsLog/{logId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create: if false; // Created by backend functions only
+      allow write: if isSuperAdmin(); // Allow admin to modify/delete if necessary
+    }
+
+    // CreditPackages Collection
+    match /creditPackages/{packageId} {
+      allow read: if true; // Publicly readable for purchase page
+      allow write: if isSuperAdmin(); // Managed by Super Admin
+    }
+  }
+}
+
+    

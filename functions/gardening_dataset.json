@@ -1,0 +1,394 @@
+{
+    "PermacultureOrganicProducts": {
+      "Soil & Amendments": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/soil.svg",
+        "description": "Natural amendments that regenerate and nourish soil health.",
+        "subcategories": {
+          "Organic Compost": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/compost.svg",
+            "description": "Rich, fully decomposed organic matter teeming with life."
+          },
+          "Vermicompost": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/vermicompost.svg",
+            "description": "Earthworm-processed compost with high nutrient concentration."
+          },
+          "Biochar": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/biochar.svg",
+            "description": "Stable carbon charcoal that improves water retention & sequesters carbon."
+          },
+          "Mycorrhizal Fungi": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/mycorrhiza.svg",
+            "description": "Fungal inoculants that boost root nutrient absorption."
+          },
+          "Rock Dust": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/rockdust.svg",
+            "description": "Mineral micronutrients from basalt, azomite, and other stone dusts."
+          },
+          "Seaweed Extract": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/seaweed.svg",
+            "description": "Organic seaweed concentrate rich in hormones and trace elements."
+          },
+          "Organic Mulch": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/mulch.svg",
+            "description": "Straw, bark or leaf mulch to conserve moisture and suppress weeds."
+          },
+          "Green Manures": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/greenmanure.svg",
+            "description": "Cover crops grown and incorporated to enhance fertility."
+          },
+          "Worm Castings": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/wormcastings.svg",
+            "description": "Nutrient-rich granules produced by worm digestion."
+          },
+          "Humic & Fulvic Acids": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/humicacid.svg",
+            "description": "Organic acids that improve nutrient uptake and soil structure."
+          }
+        }
+      },
+      "Seeds & Plants": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/seeds.svg",
+        "description": "Quality seeds and plants tailored to South African permaculture.",
+        "subcategories": {
+          "Heirloom Seeds": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/heirloom.svg",
+            "description": "Traditional, open-pollinated seeds passed down over generations."
+          },
+          "Organic Vegetable Seeds": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/vegetables.svg",
+            "description": "Certified organic vegetable seeds for healthy home gardens."
+          },
+          "Organic Herb Seeds": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/herbs.svg",
+            "description": "Seeds for culinary and medicinal herbs grown organically."
+          },
+          "Organic Fruit Tree Saplings": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/fruit.svg",
+            "description": "Young trees, organically grown, ready for planting."
+          },
+          "Indigenous Medicinal Plants": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/medicinalherb.svg",
+            "description": "Endemic South African plants with traditional healing uses."
+          },
+          "Pollinator-Friendly Flower Seeds": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/flowerseed.svg",
+            "description": "Flowers seeded to attract bees, butterflies & other pollinators."
+          },
+          "Cover Crops Seeds": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/covercrop.svg",
+            "description": "Seeds that protect and replenish soil between main crops."
+          },
+          "Endemic South African Plant Seeds": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/southafrica.svg",
+            "description": "Native plant species selected for local permaculture."
+          }
+        }
+      },
+      "Water & Irrigation": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/irrigation.svg",
+        "description": "Efficient systems for capturing, storing and delivering water.",
+        "subcategories": {
+          "Drip Irrigation Kits": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/drip.svg",
+            "description": "Water-saving systems that deliver moisture directly to roots."
+          },
+          "Rainwater Harvesting Systems": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/rainwater.svg",
+            "description": "Tanks and fittings to capture and store seasonal rain."
+          },
+          "Swales & Contour Tools": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/swale.svg",
+            "description": "Guide tools to build earthworks that slow and store run-off."
+          },
+          "Greywater Recycling Systems": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/greywater.svg",
+            "description": "Filtered household water reuse systems for watering gardens."
+          },
+          "Mulching Mats": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/mat.svg",
+            "description": "Reusable mats for moisture control and weed suppression."
+          },
+          "Water Testing Kits": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/watertesting.svg",
+            "description": "Test kits to analyse pH, nutrient levels and quality."
+          }
+        }
+      },
+      "Pest & Disease Management": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/shield.svg",
+        "description": "Organic methods that respect ecological balance and biodiversity.",
+        "subcategories": {
+          "Organic Pesticides": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/neem.svg",
+            "description": "Natural pest control agents like neem or pyrethrin."
+          },
+          "Beneficial Insects": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/ladybug.svg",
+            "description": "Predatory insects that help manage pests naturally."
+          },
+          "Companion Planting Charts": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/chart.svg",
+            "description": "Guides for planting combos that deter pests and build soil."
+          },
+          "Neem Oil": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/neemoil.svg",
+            "description": "Broad-spectrum botanical pesticide from neem seeds."
+          },
+          "Insecticidal Soaps": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/soap.svg",
+            "description": "Plant-safe insect control using natural soap formulas."
+          },
+          "BT (Bacillus thuringiensis)": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bt.svg",
+            "description": "Biological pesticide targeting caterpillars and worms."
+          },
+          "Organic Fungicides": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/fungicide.svg",
+            "description": "Copper and sulphur-based organic disease management."
+          }
+        }
+      },
+      "Animal Integration": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/paw.svg",
+        "description": "Incorporate animals to enhance fertility and ecosystem diversity.",
+        "subcategories": {
+          "Chicken Tractors": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/chicken.svg",
+            "description": "Portable chicken coops that recycle manure directly into beds."
+          },
+          "Duck Housing": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/duck.svg",
+            "description": "Specialised shelters for ducks in permaculture setups."
+          },
+          "Beehives & Bee Tools": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/beehive.svg",
+            "description": "Natural beekeeping equipment for pollination and honey."
+          },
+          "Rabbit Pens": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/rabbit.svg",
+            "description": "Rabbit enclosures that yield manure and clear weeds."
+          },
+          "Aquaponics Systems": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/aquaponics.svg",
+            "description": "Fish–plant symbiotic systems for food and nutrient cycling."
+          },
+          "Pasture Rotation Tools": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/fence.svg",
+            "description": "Poultry netting and mobile fencing for rotational grazing."
+          }
+        }
+      },
+      "Garden Tools": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/tools.svg",
+        "description": "Durable hand tools chosen for regenerative gardening practices.",
+        "subcategories": {
+          "Broadforks": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/broadfork.svg",
+            "description": "Manual tool for deep soil aeration without disturbance."
+          },
+          "Hori Hori Knives": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/knife.svg",
+            "description": "Multi-use digging knife perfect for planting and chopping roots."
+          },
+          "Compost Thermometers": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/thermometer.svg",
+            "description": "Temperature gauge for managing compost decomposition."
+          },
+          "Seed Spreaders": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/seeds.svg",
+            "description": "Devices for evenly spreading seeds over beds."
+          },
+          "Permaculture Design Tools": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/design.svg",
+            "description": "Planning tools—maps, journals, software—for layout design."
+          },
+          "Raised Bed Kits": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/raisedbed.svg",
+            "description": "Modular bed frames for healthy soil containment."
+          },
+          "Pruners & Loppers": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/pruner.svg",
+            "description": "Essential cutting tools for maintaining plant health."
+          }
+        }
+      },
+      "Structures & Infrastructure": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/structure.svg",
+        "description": "Sustainable structures that support ecological systems.",
+        "subcategories": {
+          "Polytunnels & Greenhouses": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/greenhouse.svg",
+            "description": "Framed covers to extend growing seasons and protect crops."
+          },
+          "Compost Toilets": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/toilet.svg",
+            "description": "Eco-sanitation systems that recycle human waste into compost."
+          },
+          "Rocket Stoves": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/rocket.svg",
+            "description": "High-efficiency wood cook stoves with minimal emissions."
+          },
+          "Earthbag Building Supplies": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/earthbag.svg",
+            "description": "Sand-filled bags for creating sustainable, durable walls."
+          },
+          "Solar Dehydrators": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/dehydrator.svg",
+            "description": "Sun-powered drying for fruits, herbs, and seeds."
+          },
+          "Rainwater Tanks": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/tank.svg",
+            "description": "Water storage scalable to home and farm systems."
+          },
+          "Food Forest Starter Kits": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/foodforest.svg",
+            "description": "Young trees, guides and mulch for layered garden systems."
+          }
+        }
+      },
+      "Energy & Sustainability": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/energy.svg",
+        "description": "Low-impact energy solutions and tools that build resilience.",
+        "subcategories": {
+          "Solar Panels": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/solar.svg",
+            "description": "Photovoltaic arrays for renewable electricity generation."
+          },
+          "Biogas Digesters": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/biogas.svg",
+            "description": "Convert organic waste into cooking fuel and fertilizer."
+          },
+          "Solar Water Heaters": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/water.svg",
+            "description": "Panels to harness solar energy for hot water needs."
+          },
+          "Wind Turbines": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/wind.svg",
+            "description": "Small-scale units for generating off-grid electricity."
+          },
+          "Hand Tools (Non-electric)": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/handtool.svg",
+            "description": "Manual implements that require no electricity to operate."
+          }
+        }
+      },
+      "Education & Design": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/book.svg",
+        "description": "Knowledge resources to guide permaculture planning and implementation.",
+        "subcategories": {
+          "Permaculture Design Books": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/book.svg",
+            "description": "Guides on permaculture principles and system design."
+          },
+          "Bill Mollison & David Holmgren Books": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/author.svg",
+            "description": "Foundational works authored by permaculture pioneers."
+          },
+          "Online Course Subscriptions": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/onlinecourse.svg",
+            "description": "On-demand video and webinar courses in permaculture."
+          },
+          "Companion Planting Guides": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/chart.svg",
+            "description": "Planting maps that leverage mutual benefits."
+          },
+          "Soil Testing Kits": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/testtube.svg",
+            "description": "Kits to evaluate soil nutrient levels and pH."
+          },
+          "Permaculture Zoning Charts": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/zone.svg",
+            "description": "Visual tools for organizing land design by usage areas."
+          }
+        }
+      },
+      "Organic Fertilizers": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/fertilizer.svg",
+        "description": "Certified organic fertilizers and soil enhancers.",
+        "subcategories": {
+          "Fish Emulsion": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/fish.svg",
+            "description": "Liquid fertilizer derived from fish byproducts."
+          },
+          "Comfrey Tea": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/herbaltea.svg",
+            "description": "Fermented comfrey extract rich in potassium."
+          },
+          "Bone Meal": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bonemeal.svg",
+            "description": "Ground bone powder for phosphorus supply."
+          },
+          "Kelp Meal": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/kelp.svg",
+            "description": "Organic seaweed meal with micronutrients and growth hormones."
+          },
+          "Liquid Fertilizers": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/liquid.svg",
+            "description": "Water-soluble organic nutrient blends for foliar and soil feeding."
+          },
+          "Blood Meal": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/blood.svg",
+            "description": "Nitrogen-rich dry blood powder used as fertilizer."
+          },
+          "Guano": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/guano.svg",
+            "description": "Bird or bat droppings high in nitrogen, phosphorus, and potassium."
+          }
+        }
+      },
+      "Composting & Waste": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/compost.svg",
+        "description": "Systems for turning organic waste into rich soil."
+        ,
+        "subcategories": {
+          "Worm Farms": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/worm.svg",
+            "description": "Enclosed systems for vermiculture and worm casting production."
+          },
+          "Compost Bins": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bin.svg",
+            "description": "Containers for decomposing kitchen and garden organic matter."
+          },
+          "Bokashi Buckets": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bokashi.svg",
+            "description": "Fermentation bins for fast kitchen waste breakdown."
+          },
+          "Mulching Tools": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/chipper.svg",
+            "description": "Tools like shredders and chippers for biomass reduction."
+          },
+          "Green Waste Shredders": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/shredder.svg",
+            "description": "Powered equipment to shred garden waste into mulch."
+          }
+        }
+      },
+      "Natural Building Materials": {
+        "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/architecture.svg",
+        "description": "Eco-conscious materials for sustainable construction."
+        ,
+        "subcategories": {
+          "Cob Supplies": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/cob.svg",
+            "description": "Mixtures of clay, sand, and straw for earthwork building."
+          },
+          "Bamboo": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/bamboo.svg",
+            "description": "Rapid-growth timber alternative for structural use."
+          },
+          "Straw Bales": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/straw.svg",
+            "description": "Natural insulation & building blocks made from straw."
+          },
+          "Clay & Lime Plaster": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/plaster.svg",
+            "description": "Breathable natural plaster for earthen walls."
+          },
+          "Natural Insulation": {
+            "icon": "https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/insulation.svg",
+            "description": "Eco-friendly insulation including wool, hemp, cork."
+          }
+        }
+      }
+    }
+  }  

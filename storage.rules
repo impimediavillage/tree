@@ -1,0 +1,36 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Products:
+    // - Product images can be read by anyone (public).
+    // - Only authenticated 'DispensaryOwner' for their specific dispensaryId 
+    //   or a 'Super Admin' can write (upload/update/delete) product images.
+    // - The path structure is assumed to be: products/{dispensaryId}/{imageFileName}
+    match /products/{dispensaryId}/{imageFileName} {
+      allow read: if true; // Publicly readable images
+
+      allow write: if request.auth != null &&
+                     (
+                       (request.auth.token.role == 'DispensaryOwner' && request.auth.token.dispensaryId == dispensaryId) ||
+                       request.auth.token.role == 'Super Admin'
+                     );
+    }
+
+    // Example for User Profile Pictures (if you add this feature later):
+    // - Users can read their own profile picture.
+    // - Users can write (upload/update/delete) their own profile picture.
+    // - Super Admin can manage all profile pictures.
+    // - Path: profile-pictures/{userId}/{imageFileName}
+    // match /profile-pictures/{userId}/{imageFileName} {
+    //   allow read: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'Super Admin');
+    //   allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'Super Admin');
+    // }
+
+    // Default deny all other paths for security
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

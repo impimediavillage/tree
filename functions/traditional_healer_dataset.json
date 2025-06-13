@@ -1,0 +1,178 @@
+{
+    "traditionalMedicineCategories": [
+      {
+        "useCase": "Physical Health",
+        "categories": [
+          {
+            "type": "Herbal Remedies",
+            "subtypes": [
+              "Roots (Imizi - Xhosa / Izimpande - Zulu)",
+              "Barks (Amagxolo - Xhosa / Imiqolo - Zulu)",
+              "Leaves (Amagqabi - Xhosa / Amaqabunga - Zulu)",
+              "Flowers (Iintyatyambo - Xhosa / Iimbali - Zulu)",
+              "Seeds (Iimbewu - Xhosa / Izinhlamvu - Zulu)",
+              "Stems (Izikhondo)",
+              "Whole Plant Extracts",
+              "Herbal Mixtures (Imithi Ehlanganisiweyo)",
+              "Plant Oils and Resins",
+              "Herbal Smoke Remedies"
+            ]
+          },
+          {
+            "type": "Animal-Based Remedies",
+            "subtypes": [
+              "Animal Fats and Oils (Amafutha)",
+              "Bones and Horn Fragments (Amaqatha / Izinsipho)",
+              "Dried Animal Parts (Izitho ezomileyo)",
+              "Animal Organs and Glands",
+              "Animal Blood Preparations"
+            ]
+          },
+          {
+            "type": "Mineral-Based Remedies",
+            "subtypes": [
+              "Clays (Udaka / Ububende)",
+              "Salt Minerals (Usawoti wemvelo)",
+              "Ashes (Umlotha)",
+              "Sacred Stones and Crystals",
+              "Charcoal-Based Compounds"
+            ]
+          },
+          {
+            "type": "Prepared Products",
+            "subtypes": [
+              "Teas and Decoctions (Itiyi)",
+              "Topical Balms (Amafutha okunakekela)",
+              "Poultices and Compresses",
+              "Medicinal Powders (Imithi elomile)",
+              "Tinctures and Elixirs",
+              "Capsules and Pills"
+            ]
+          },
+          {
+            "type": "Purpose-Based Products",
+            "subtypes": [
+              "Pain Relief (Ukwelapha ubuhlungu)",
+              "Digestive Health",
+              "Wound Healing",
+              "Immune Support",
+              "Respiratory Ailments",
+              "Reproductive Health",
+              "Detoxification",
+              "Skin Conditions",
+              "Joint and Bone Health"
+            ]
+          }
+        ]
+      },
+      {
+        "useCase": "Mental Health",
+        "categories": [
+          {
+            "type": "Herbal Remedies",
+            "subtypes": [
+              "Calming Herbs (Imifino yokuthomalalisa)",
+              "Mind-Clearing Plants (Ukucacisa ingqondo)",
+              "Dream Herbs (Imifino yamaphupha)",
+              "Mood Stabilizing Plants",
+              "Herbs for Memory Enhancement"
+            ]
+          },
+          {
+            "type": "Spiritual and Ritual Items",
+            "subtypes": [
+              "Imphepho for Calming and Ancestral Communication",
+              "Holy Water (Amanzi angcwele)",
+              "Charms for Mind Protection (Amatshoba engqondo)",
+              "Sacred Beads and Necklaces",
+              "Ritual Powders for Mind Peace"
+            ]
+          },
+          {
+            "type": "Prepared Products",
+            "subtypes": [
+              "Snuffs and Inhalants for Mental Alertness",
+              "Herbal Infusions for Peace",
+              "Balms for Stress Relief",
+              "Bath Products for Mental Healing"
+            ]
+          },
+          {
+            "type": "Purpose-Based Products",
+            "subtypes": [
+              "Depression Relief",
+              "Anxiety Reduction",
+              "Mental Clarity",
+              "Insomnia and Sleep Support",
+              "Spirit Possession Release (Ukukhupha imimoya emibi)",
+              "Emotional Balance",
+              "Focus and Concentration Support"
+            ]
+          }
+        ]
+      },
+      {
+        "useCase": "General Wellbeing",
+        "categories": [
+          {
+            "type": "Herbal Remedies",
+            "subtypes": [
+              "Daily Tonic Herbs (Itiyi yempilo)",
+              "Adaptogenic Plants",
+              "Cleansing Herbs (Ukuhlambulula)",
+              "Energy-Enhancing Herbs",
+              "Balancing Herbal Tonics"
+            ]
+          },
+          {
+            "type": "Spiritual and Ritual Items",
+            "subtypes": [
+              "Protection Charms (Ukuvikela)",
+              "Good Luck Herbs (Inhlanhla)",
+              "Love and Relationship Herbs (Uthando)",
+              "Ritual Waters",
+              "Spiritual Protection Incense"
+            ]
+          },
+          {
+            "type": "Prepared Products",
+            "subtypes": [
+              "Daily Use Teas",
+              "Body Cleansing Balms",
+              "Infused Oils",
+              "Spiritual Bath Mixtures",
+              "Anointing Oils"
+            ]
+          },
+          {
+            "type": "Purpose-Based Products",
+            "subtypes": [
+              "Spiritual Awakening (Ukuvuka komoya)",
+              "Fertility and Conception (Ukukhulelwa)",
+              "Energy Boost",
+              "Immunity Boost",
+              "Relationship Harmony",
+              "General Prosperity",
+              "Career and Success Herbs",
+              "Home Protection Mixes"
+            ]
+          },
+          {
+            "type": "Regional Systems",
+            "subtypes": [
+              "African Traditional Medicine",
+              "Zulu/Xhosa Healing",
+              "Ayurveda",
+              "Traditional Chinese Medicine",
+              "Amazonian Shamanism",
+              "Native American Medicine",
+              "Unani",
+              "Kampo (Japanese Traditional Medicine)",
+              "Tibetan Medicine",
+              "Islamic Prophetic Medicine"
+            ]
+          }
+        ]
+      }
+    ]
+  }  

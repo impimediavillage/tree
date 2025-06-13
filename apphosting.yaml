@@ -1,0 +1,49 @@
+
+# Settings to manage and configure a Firebase App Hosting backend.
+# https://firebase.google.com/docs/app-hosting/configure
+
+# Specifies the version of the App Hosting platform.
+# This field is optional, but we recommend specifying the latest version.
+# If you don't specify a version, App Hosting uses an older version by default.
+# We'll notify you before we stop supporting a version of the platform.
+# The current latest version is 0.2.0
+# apiVersion: 0.2.0
+
+# Specifies the commands for building and running your app.
+# If you don't specify `bundleCommand` and `startCommand`, App Hosting
+# attempts to automatically detect these for you.
+# bundleCommand: npm run build
+# startCommand: npm run start
+
+# Controls the number of instances of your app that are spun up.
+# If you don't specify `runConfig`, App Hosting uses default values.
+runConfig:
+  # Sets the minimum number of instances for your app.
+  # Default is 0.
+  minInstances: 0
+  # Sets the maximum number of instances for your app.
+  # Default value is 1. Increase this value to automatically spin up
+  # more instances in response to increased traffic.
+  maxInstances: 2
+  # Sets the number of concurrent requests an instance can handle.
+  # Default value is 100.
+  concurrency: 100
+  # Sets the maximum amount of memory App Hosting provisions for each instance of your app.
+  # Default value is "512MiB". Valid units are "B", "K", "M", "G" for bytes,
+  # kilobytes, megabytes, or gigabytes, and "Ki", "Mi", "Gi" for kibibytes,
+  # mebibytes, or gibibytes.
+  memoryMiB: 512
+  # Sets the CPU limit per instance.
+  # Default value is "1". For valid values, see
+  # https://cloud.google.com/run/docs/configuring/cpu-limits.
+  cpu: 1
+  # Sets the request timeout for your app, in seconds.
+  # Default value is 60.
+  timeoutSeconds: 60
+
+# Defines environment variables that are available to your app's build process and at runtime.
+# env:
+#   - variable: API_KEY
+#     value: "your_api_key_here" # It's recommended to use secrets for sensitive data.
+#   - variable: SECRET_API_KEY
+#     secret: SECRET_API_KEY_NAME # Name of the secret stored in Cloud Secret Manager.
