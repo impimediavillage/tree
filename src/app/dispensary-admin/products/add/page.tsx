@@ -9,10 +9,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, getDocs } from 'firebase/firestore'; // Added where, getDocs
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryType as AppDispensaryType } from '@/types'; // Renamed to avoid conflict
+import type { Dispensary, DispensaryType as AppDispensaryType, ProductCategory } from '@/types';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -21,15 +21,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Added Select components
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
-import { MultiInputTags } from '@/components/ui/multi-input-tags'; 
+import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Sample data - in a real app, these might come from a config or another Firestore collection
-// const sampleCategories = ["Flower", "Edible", "Concentrate", "Tincture", "Topical", "Vape", "Pre-Roll", "Seed", "Clone", "Accessory", "Apparel", "Other"];
 const sampleUnits = ["gram", "oz", "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"];
 
 export default function AddProductPage() {
@@ -39,8 +38,11 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
-  const [dispensaryTypeDetails, setDispensaryTypeDetails] = useState<AppDispensaryType | null>(null);
-  const [productCategories, setProductCategories] = useState<string[]>([]);
+  
+  const [definedProductCategories, setDefinedProductCategories] = useState<ProductCategory[]>([]);
+  const [selectedMainCategory, setSelectedMainCategory] = useState<string>('');
+  const [availableSubcategories, setAvailableSubcategories] = useState<string[]>([]);
+
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -53,11 +55,12 @@ export default function AddProductPage() {
       name: '',
       description: '',
       category: '',
+      subcategory: null, // Initialize subcategory
       strain: '',
       thcContent: undefined,
       cbdContent: undefined,
       price: undefined,
-      currency: 'ZAR', 
+      currency: 'ZAR',
       unit: '',
       quantityInStock: undefined,
       imageUrl: null,
@@ -97,15 +100,12 @@ export default function AddProductPage() {
             const typeSnapshot = await getDocs(typeQuery);
             if (!typeSnapshot.empty) {
               const typeData = typeSnapshot.docs[0].data() as AppDispensaryType;
-              setDispensaryTypeDetails(typeData);
-              setProductCategories(typeData.productCategories || []);
-              if (typeData.productCategories && typeData.productCategories.length > 0) {
-                form.setValue('category', ''); // Clear to force selection
-              } else {
-                 toast({ title: "Notice", description: `No specific product categories found for "${fetchedDispensary.dispensaryType}". Using general input.`, variant: "default" });
+              setDefinedProductCategories(typeData.productCategories || []);
+              if (!typeData.productCategories || typeData.productCategories.length === 0) {
+                 toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Contact admin to add categories.`, variant: "default" });
               }
             } else {
-              toast({ title: "Warning", description: `Details for dispensary type "${fetchedDispensary.dispensaryType}" not found. Using general input for categories.`, variant: "destructive" });
+              toast({ title: "Warning", description: `Details for dispensary type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "destructive" });
             }
           }
         } else {
@@ -122,6 +122,18 @@ export default function AddProductPage() {
 
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, form]);
+
+  useEffect(() => {
+    if (selectedMainCategory && definedProductCategories.length > 0) {
+      const categoryData = definedProductCategories.find(cat => cat.name === selectedMainCategory);
+      setAvailableSubcategories(categoryData?.subcategories || []);
+      form.setValue('subcategory', null); // Reset subcategory when main category changes
+    } else {
+      setAvailableSubcategories([]);
+      form.setValue('subcategory', null);
+    }
+  }, [selectedMainCategory, definedProductCategories, form]);
+
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -140,7 +152,7 @@ export default function AddProductPage() {
     setImagePreview(null);
     form.setValue('imageUrl', null);
     if (imageInputRef.current) {
-      imageInputRef.current.value = ""; 
+      imageInputRef.current.value = "";
     }
   };
 
@@ -149,7 +161,7 @@ export default function AddProductPage() {
       toast({ title: "Error", description: "User or dispensary data not found.", variant: "destructive" });
       return;
     }
-    if (productCategories.length > 0 && !data.category) {
+    if (definedProductCategories.length > 0 && !data.category) {
         toast({ title: "Category Required", description: "Please select a product category.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." });
         return;
@@ -199,12 +211,15 @@ export default function AddProductPage() {
         imageUrl: uploadedImageUrl,
         thcContent: data.thcContent === undefined ? null : data.thcContent,
         cbdContent: data.cbdContent === undefined ? null : data.cbdContent,
+        subcategory: data.subcategory || null, // Ensure subcategory is saved
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
       await addDoc(collection(db, 'products'), productData);
       toast({ title: "Product Added!", description: `${data.name} has been successfully added.` });
       form.reset();
+      setSelectedMainCategory('');
+      setAvailableSubcategories([]);
       setImageFile(null);
       setImagePreview(null);
       setUploadProgress(null);
@@ -216,7 +231,7 @@ export default function AddProductPage() {
       setIsLoading(false);
     }
   };
-  
+
   if (isLoadingInitialData) {
     return (
         <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
@@ -249,37 +264,94 @@ export default function AddProductPage() {
             </Button>
         </div>
         <CardDescription>Fill in the details for your new product. Fields marked with * are required.
-        {dispensaryTypeDetails?.name && (
-            <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{dispensaryTypeDetails.name}</span></span>
+        {dispensaryData?.dispensaryType && (
+            <span className="block mt-1">Product categories for: <span className="font-semibold text-primary">{dispensaryData.dispensaryType}</span></span>
         )}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
+
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category *</FormLabel>
-                  {isLoadingInitialData ? <Skeleton className="h-10 w-full" /> : 
-                    productCategories.length > 0 ? (
-                      <select {...field} className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-input-custom-bg px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", "hover:bg-input-hover dark:hover:bg-input-hover")}>
-                          <option value="" disabled>Select category</option>
-                          {productCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                      </select>
-                    ) : (
-                      <FormControl><Input placeholder="Enter category manually" {...field} /></FormControl>
-                    )
-                  }
-                  {productCategories.length === 0 && !isLoadingInitialData && <FormDescription>No specific categories for this dispensary type. Enter manually.</FormDescription>}
-                  <FormMessage />
-                </FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category *</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedMainCategory(value);
+                        form.setValue('subcategory', null); // Reset subcategory
+                      }}
+                      value={field.value || ''} // Ensure value is not null for Select
+                      disabled={isLoadingInitialData || definedProductCategories.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={definedProductCategories.length === 0 ? "No categories defined" : "Select category"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {definedProductCategories.length === 0 && !isLoadingInitialData && (
+                          <SelectItem value="no-categories-placeholder" disabled>No categories defined for this type</SelectItem>
+                        )}
+                        {definedProductCategories.map((cat) => (
+                          <SelectItem key={cat.name} value={cat.name}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {definedProductCategories.length === 0 && !isLoadingInitialData && (
+                      <FormDescription>No specific categories available. Contact admin.</FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+
+             <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ''}
+                      disabled={isLoadingInitialData || availableSubcategories.length === 0 || !selectedMainCategory}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={availableSubcategories.length === 0 ? "N/A (Select main category or no subcategories)" : "Select subcategory"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableSubcategories.map((subCat) => (
+                          <SelectItem key={subCat} value={subCat}>
+                            {subCat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!selectedMainCategory && (
+                        <FormDescription>Select a main category to see subcategories.</FormDescription>
+                    )}
+                    {selectedMainCategory && availableSubcategories.length === 0 && (
+                      <FormDescription>No subcategories available for {selectedMainCategory}.</FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
 
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description of the product..." {...field} rows={4} /></FormControl><FormMessage /></FormItem>
@@ -294,10 +366,16 @@ export default function AddProductPage() {
               )} />
               <FormField control={form.control} name="unit" render={({ field }) => (
                 <FormItem><FormLabel>Unit *</FormLabel>
-                  <select {...field} className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-input-custom-bg px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm", "hover:bg-input-hover dark:hover:bg-input-hover")}>
-                      <option value="" disabled>Select unit</option>
-                      {sampleUnits.map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
+                   <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 <FormMessage /></FormItem>
               )} />
             </div>
@@ -310,7 +388,7 @@ export default function AddProductPage() {
                 <FormItem><FormLabel>Strain (Optional)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            
+
             <Separator />
             <h3 className="text-lg font-medium">Product Details (Optional)</h3>
 
@@ -322,7 +400,7 @@ export default function AddProductPage() {
                     <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 0.8" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
-            
+
             <div className="space-y-4">
               <Controller control={form.control} name="effects" render={({ field }) => (
                 <FormItem><FormLabel>Effects</FormLabel><MultiInputTags value={field.value} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy)" disabled={isLoading} /><FormMessage /></FormItem>
@@ -340,7 +418,7 @@ export default function AddProductPage() {
 
             <Separator />
              <h3 className="text-lg font-medium">Product Image</h3>
-            <FormField control={form.control} name="imageUrl" render={({ field }) => ( 
+            <FormField control={form.control} name="imageUrl" render={({ field }) => (
               <FormItem>
                 <div className="flex items-center gap-4">
                   {imagePreview ? (
@@ -356,13 +434,13 @@ export default function AddProductPage() {
                     <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}>
                       <UploadCloud className="mr-2 h-4 w-4" /> {imageFile ? "Change Image" : "Upload Image"}
                     </Button>
-                    <Input 
+                    <Input
                         id="imageUpload"
-                        type="file" 
-                        className="hidden" 
-                        ref={imageInputRef} 
-                        accept="image/png, image/jpeg, image/webp" 
-                        onChange={handleImageChange} 
+                        type="file"
+                        className="hidden"
+                        ref={imageInputRef}
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={handleImageChange}
                         disabled={isLoading}
                     />
                     {imagePreview && (
@@ -380,7 +458,7 @@ export default function AddProductPage() {
                 )}
                 {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Click "Add Product" to save.</p>}
                 <FormDescription>Upload a clear image of your product (PNG, JPG, WEBP). Max 5MB.</FormDescription>
-                <FormMessage /> 
+                <FormMessage />
               </FormItem>
             )} />
 

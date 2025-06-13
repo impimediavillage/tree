@@ -88,7 +88,7 @@ export type AdminCreateDispensaryFormData = z.infer<typeof adminCreateDispensary
 // Schema for Admin Editing Dispensary
 export const editDispensarySchema = baseDispensarySchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
-  applicationDate: z.string().optional(), 
+  applicationDate: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
     ctx.addIssue({
@@ -113,9 +113,9 @@ export const editDispensarySchema = baseDispensarySchema.extend({
 export type EditDispensaryFormData = z.infer<typeof editDispensarySchema>;
 
 // Schema for Dispensary Owner Editing their Dispensary Profile
-export const ownerEditDispensarySchema = baseDispensarySchema.omit({ 
-  ownerEmail: true, 
-  fullName: true, 
+export const ownerEditDispensarySchema = baseDispensarySchema.omit({
+  ownerEmail: true,
+  fullName: true,
 }).extend({
   // status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended']), // Status not editable by owner
   // applicationDate: z.string().optional(),
@@ -150,6 +150,13 @@ export const userProfileSchema = z.object({
 });
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;
 
+// Schema for Product Category object (can include subcategories)
+export const productCategorySchema = z.object({
+  name: z.string().min(1, "Category name cannot be empty."),
+  subcategories: z.array(z.string().min(1, "Subcategory name cannot be empty.")).optional().default([]),
+});
+export type ProductCategoryFormData = z.infer<typeof productCategorySchema>;
+
 // Schema for Dispensary Type (used in admin forms for adding new types)
 export const dispensaryTypeSchema = z.object({
   name: z.string().min(2, { message: "Dispensary type name must be at least 2 characters." }),
@@ -157,7 +164,7 @@ export const dispensaryTypeSchema = z.object({
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
-  productCategories: z.array(z.string()).optional().default([]), // Added for type-specific product categories
+  productCategories: z.array(productCategorySchema).optional().default([]), // Updated to use productCategorySchema
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 
@@ -166,6 +173,7 @@ export const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
+  subcategory: z.string().optional().nullable(), // New field for subcategory
   strain: z.string().optional().nullable(),
   thcContent: z.coerce.number().min(0).max(100).optional().nullable(),
   cbdContent: z.coerce.number().min(0).max(100).optional().nullable(),
@@ -173,7 +181,7 @@ export const productSchema = z.object({
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
   unit: z.string().min(1, "Unit is required (e.g., gram, oz, ml, piece)."),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative."),
-  imageUrl: z.string().url("Invalid image URL.").optional().nullable(),
+  imageUrl: z.string().url("Invalid image URL.").or(z.literal(null)).optional().nullable(),
   labTested: z.boolean().default(false).optional(),
   effects: z.array(z.string()).optional().default([]),
   flavors: z.array(z.string()).optional().default([]),
@@ -215,7 +223,7 @@ export const productRequestSchema = z.object({
     note: z.string(),
     byName: z.string(),
     senderRole: z.enum(['requester', 'owner', 'super_admin']),
-    timestamp: z.any() 
+    timestamp: z.any()
   })).optional().default([]),
 });
 export type ProductRequestFormData = z.infer<typeof productRequestSchema>;
@@ -388,7 +396,7 @@ export const dispensaryTypeDbSchema = z.object({
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
-  productCategories: z.array(z.string()).optional().default([]), // Added
+  productCategories: z.array(productCategorySchema).optional().default([]), // Corrected
   createdAt: z.any().optional(),
   updatedAt: z.any().optional(),
 });
@@ -419,11 +427,11 @@ export const productDbSchema = productSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),
-  dispensaryType: z.string(), 
+  dispensaryType: z.string(),
   productOwnerEmail: z.string().email(),
   createdAt: z.any(),
   updatedAt: z.any(),
-  dispensaryLocation: z.object({ 
+  dispensaryLocation: z.object({
     address: z.string(),
     latitude: z.number().optional().nullable(),
     longitude: z.number().optional().nullable(),
