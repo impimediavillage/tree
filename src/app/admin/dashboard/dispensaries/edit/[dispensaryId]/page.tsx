@@ -17,11 +17,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, updateDoc, Timestamp, getDocs, query as firestoreQuery, addDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, updateDoc, Timestamp, getDocs, query as firestoreQuery, addDoc, serverTimestamp } from 'firebase/firestore';
 import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryType, User as AppUser } from '@/types';
+import type { Dispensary, DispensaryType } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/contexts/AuthContext'; // Ensure useAuth is imported
+import { useAuth } from '@/contexts/AuthContext';
 
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -51,17 +51,16 @@ const hourOptions = Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toStr
 const minuteOptions = [ { value: "00", label: "00" }, { value: "15", label: "15" }, { value: "30", label: "30" }, { value: "45", label: "45" }];
 const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
 
-// This hardcoded map serves as a fallback if Firestore data for iconPath is missing
 const dispensaryTypeIcons: Record<string, string> = {
   "THC - CBD - Mushrooms dispensary": "/icons/thc-cbd-mushroom.png",
   "Homeopathic dispensary": "/icons/homeopathy.png",
   "African Traditional Medicine dispensary": "/icons/traditional-medicine.png",
   "Flower Store": "/icons/default-pin.png",
   "Permaculture & gardening store": "/icons/permaculture.png",
-  "Traditional Medicine": "/icons/traditional-medicine.png", // Fallback for older name
-  "Homeopathy": "/icons/homeopathy.png", // Fallback for older name
-  "THC / CBD / Mushroom Products": "/icons/thc-cbd-mushroom.png", // Fallback for older name
-  "Permaculture Products": "/icons/permaculture.png", // Fallback for older name
+  "Traditional Medicine": "/icons/traditional-medicine.png",
+  "Homeopathy": "/icons/homeopathy.png",
+  "THC / CBD / Mushroom Products": "/icons/thc-cbd-mushroom.png",
+  "Permaculture Products": "/icons/permaculture.png",
   "default": "/icons/default-pin.png"
 };
 
@@ -79,7 +78,7 @@ function parseTimeToComponents(time24?: string): { hour?: string, minute?: strin
   let hour = parseInt(hourStr, 10);
   const amPm = hour >= 12 ? 'PM' : 'AM';
   hour = hour % 12;
-  if (hour === 0) hour = 12; // 12 AM or 12 PM
+  if (hour === 0) hour = 12;
   return { hour: hour.toString(), minute: minuteStr, amPm };
 }
 
@@ -88,9 +87,9 @@ export default function AdminEditDispensaryPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { currentUser, loading: authLoading } = useAuth(); // Get authLoading here
+  const { currentUser, loading: authLoading } = useAuth();
 
-  const [isFetching, setIsFetching] = useState(true);
+  const [isFetchingData, setIsFetchingData] = useState(true); // Combined fetching state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dispensary, setDispensary] = useState<Dispensary | null>(null);
 
@@ -109,7 +108,6 @@ export default function AdminEditDispensaryPage() {
   const [newDispensaryTypeIconPath, setNewDispensaryTypeIconPath] = useState('');
   const [newDispensaryTypeImage, setNewDispensaryTypeImage] = useState('');
   const [isAddTypeDialogOpen, setIsAddTypeDialogOpen] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
@@ -127,14 +125,7 @@ export default function AdminEditDispensaryPage() {
   const form = useForm<EditDispensaryFormData>({
     resolver: zodResolver(editDispensarySchema),
     mode: "onChange",
-    defaultValues: {
-      fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
-      dispensaryType: undefined, currency: undefined, openTime: '', closeTime: '',
-      operatingDays: [], location: '', latitude: undefined, longitude: undefined,
-      deliveryRadius: undefined, bulkDeliveryRadius: undefined, collectionOnly: false,
-      orderType: undefined, participateSharing: undefined, leadTime: undefined,
-      message: '', status: 'Pending Approval',
-    },
+    defaultValues: { /* Defaults will be set from fetched data */ },
   });
 
   useEffect(() => {
@@ -142,51 +133,113 @@ export default function AdminEditDispensaryPage() {
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
-  useEffect(() => {
-    // Use currentUser from useAuth context for role check
-    if (!authLoading) { // Wait for auth state to be resolved
-        if (currentUser && currentUser.role === 'Super Admin') {
-            setIsSuperAdmin(true);
-        } else if (currentUser) { // User is loaded but not Super Admin
-            toast({ title: "Access Denied", description: "Only Super Admins can edit dispensaries.", variant: "destructive"});
-            router.push('/admin/dashboard');
-        } else { // No current user
-            toast({ title: "Not Authenticated", description: "Please sign in.", variant: "destructive"});
-            router.push('/auth/signin');
-        }
-    }
-  }, [currentUser, authLoading, toast, router]);
-
   const fetchDispensaryTypes = useCallback(async () => {
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
       const q = firestoreQuery(typesCollectionRef);
       const querySnapshot = await getDocs(q);
-      const fetchedTypes: DispensaryType[] = [];
-      querySnapshot.forEach((docSnap) => {
-         fetchedTypes.push({
-            id: docSnap.id,
-            name: docSnap.data().name,
-            iconPath: docSnap.data().iconPath,
-            image: docSnap.data().image
-        } as DispensaryType);
-      });
-      setDispensaryTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
+      const fetchedTypes: DispensaryType[] = querySnapshot.docs.map(docSnap => ({
+        id: docSnap.id, ...docSnap.data()
+      } as DispensaryType)).sort((a, b) => a.name.localeCompare(b.name));
+      setDispensaryTypes(fetchedTypes);
     } catch (error) {
       console.error("Error fetching dispensary types for admin edit:", error);
       toast({ title: "Error", description: "Failed to fetch dispensary types.", variant: "destructive" });
     }
   }, [toast]);
 
+  // Main useEffect for auth check and data fetching
   useEffect(() => {
-    fetchDispensaryTypes();
-  }, [fetchDispensaryTypes]);
+    if (authLoading) {
+      setIsFetchingData(true);
+      return;
+    }
+
+    if (!currentUser) {
+      toast({ title: "Not Authenticated", description: "Please sign in.", variant: "destructive" });
+      router.push('/auth/signin');
+      setIsFetchingData(false);
+      return;
+    }
+
+    if (currentUser.role !== 'Super Admin') {
+      toast({ title: "Access Denied", description: "Only Super Admins can edit dispensaries.", variant: "destructive" });
+      router.push('/admin/dashboard');
+      setIsFetchingData(false);
+      return;
+    }
+
+    // At this point, user is authenticated and is Super Admin
+    fetchDispensaryTypes(); // Fetch types needed for the form
+
+    if (dispensaryId) {
+      const fetchDispensary = async () => {
+        setIsFetchingData(true);
+        try {
+          const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
+          const docSnap = await getDoc(dispensaryDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data() as Dispensary;
+            setDispensary(data);
+
+            let appDateString = '';
+            if (data.applicationDate) {
+                const appDate = (data.applicationDate as Timestamp)?.toDate ? (data.applicationDate as Timestamp).toDate() : new Date(data.applicationDate as string);
+                appDateString = appDate.toISOString().split('T')[0];
+            }
+
+            form.reset({
+              ...data,
+              applicationDate: appDateString,
+              operatingDays: data.operatingDays || [],
+              latitude: data.latitude === null ? undefined : data.latitude,
+              longitude: data.longitude === null ? undefined : data.longitude,
+            });
+            setCurrentLat(data.latitude === null ? undefined : data.latitude);
+            setCurrentLng(data.longitude === null ? undefined : data.longitude);
+
+            const openTimeComps = parseTimeToComponents(data.openTime);
+            setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+            const closeTimeComps = parseTimeToComponents(data.closeTime);
+            setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+
+            if (data.phone) {
+                const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
+                if (foundCountry) {
+                    setSelectedCountryCode(foundCountry.value);
+                    setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+                } else {
+                    setNationalPhoneNumber(data.phone);
+                    setSelectedCountryCode(countryCodes[0].value); // Default if no match
+                }
+            }
+
+          } else {
+            toast({ title: "Not Found", description: "Dispensary not found.", variant: "destructive" });
+            router.push('/admin/dashboard/dispensaries');
+          }
+        } catch (error) {
+          console.error("Error fetching dispensary:", error);
+          toast({ title: "Error", description: "Failed to fetch dispensary details.", variant: "destructive" });
+        } finally {
+          setIsFetchingData(false);
+        }
+      };
+      fetchDispensary();
+    } else {
+      toast({ title: "Error", description: "No dispensary ID provided.", variant: "destructive" });
+      router.push('/admin/dashboard/dispensaries');
+      setIsFetchingData(false);
+    }
+  }, [authLoading, currentUser, dispensaryId, router, toast, form, fetchDispensaryTypes]);
+
 
   const handleAddNewDispensaryType = async () => {
-     if (!isSuperAdmin) {
+     if (!currentUser || currentUser.role !== 'Super Admin') {
         toast({ title: "Permission Denied", description: "Only Super Admins can add new dispensary types.", variant: "destructive"});
         return;
     }
+    // (Rest of the add new type logic - unchanged)
     if (!newDispensaryTypeName.trim()) {
       toast({ title: "Validation Error", description: "New dispensary type name cannot be empty.", variant: "destructive" });
       return;
@@ -226,7 +279,6 @@ export default function AdminEditDispensaryPage() {
       console.warn("Google Maps API, dispensary data, or refs not ready for edit page map initialization.");
       return;
     }
-
     const lat = currentLat ?? dispensary.latitude ?? -29.8587;
     const lng = currentLng ?? dispensary.longitude ?? 31.0218;
     const zoom = (currentLat && currentLng) || (dispensary.latitude && dispensary.longitude) ? 17 : 6;
@@ -235,17 +287,13 @@ export default function AdminEditDispensaryPage() {
     let initialIconUrl = dispensaryTypeIcons.default;
     if (currentTypeNameVal) {
         const selectedTypeObject = dispensaryTypes.find(dt => dt.name === currentTypeNameVal);
-        if (selectedTypeObject?.iconPath) {
-            initialIconUrl = selectedTypeObject.iconPath;
-        } else if (dispensaryTypeIcons[currentTypeNameVal]) {
-            initialIconUrl = dispensaryTypeIcons[currentTypeNameVal];
-        }
+        if (selectedTypeObject?.iconPath) initialIconUrl = selectedTypeObject.iconPath;
+        else if (dispensaryTypeIcons[currentTypeNameVal]) initialIconUrl = dispensaryTypeIcons[currentTypeNameVal];
     }
 
     if (!mapInstanceRef.current && mapContainerRef.current) {
       const map = new window.google.maps.Map(mapContainerRef.current, {
-        center: { lat, lng }, zoom,
-        mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+        center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
       });
       mapInstanceRef.current = map;
       const marker = new window.google.maps.Marker({
@@ -288,118 +336,33 @@ export default function AdminEditDispensaryPage() {
           form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
           setCurrentLat(loc.lat()); setCurrentLng(loc.lng());
           if (mapInstanceRef.current && markerInstanceRef.current) {
-            mapInstanceRef.current.setCenter(loc);
-            mapInstanceRef.current.setZoom(17);
-            markerInstanceRef.current.setPosition(loc);
+            mapInstanceRef.current.setCenter(loc); mapInstanceRef.current.setZoom(17); markerInstanceRef.current.setPosition(loc);
           }
         }
       });
     }
   }, [dispensary, form, currentLat, currentLng, dispensaryTypes]);
 
-  // Fetch dispensary data
   useEffect(() => {
-    if (dispensaryId && isSuperAdmin) {
-      const fetchDispensary = async () => {
-        setIsFetching(true);
-        try {
-          const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-          const docSnap = await getDoc(dispensaryDocRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data() as Dispensary;
-            setDispensary(data);
-
-            let appDateString = '';
-            if (data.applicationDate) {
-              if ((data.applicationDate as Timestamp).toDate) {
-                appDateString = (data.applicationDate as Timestamp).toDate().toISOString().split('T')[0];
-              } else if (data.applicationDate instanceof Date) {
-                appDateString = (data.applicationDate as Date).toISOString().split('T')[0];
-              } else if (typeof data.applicationDate === 'string') {
-                try {
-                  appDateString = new Date(data.applicationDate).toISOString().split('T')[0];
-                } catch (e) {
-                  console.warn("Could not parse applicationDate string:", data.applicationDate);
-                  appDateString = '';
-                }
-              }
-            }
-
-            form.reset({
-              ...data,
-              applicationDate: appDateString,
-              operatingDays: data.operatingDays || [],
-              latitude: data.latitude === null ? undefined : data.latitude,
-              longitude: data.longitude === null ? undefined : data.longitude,
-            });
-            setCurrentLat(data.latitude === null ? undefined : data.latitude);
-            setCurrentLng(data.longitude === null ? undefined : data.longitude);
-
-            const openTimeComps = parseTimeToComponents(data.openTime);
-            setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-            const closeTimeComps = parseTimeToComponents(data.closeTime);
-            setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-
-            if (data.phone) {
-                const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-                if (foundCountry) {
-                    setSelectedCountryCode(foundCountry.value);
-                    setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
-                } else {
-                    setNationalPhoneNumber(data.phone);
-                    setSelectedCountryCode(countryCodes[0].value);
-                }
-            }
-
-          } else {
-            toast({ title: "Not Found", description: "Dispensary not found.", variant: "destructive" });
-            router.push('/admin/dashboard/dispensaries');
-          }
-        } catch (error) {
-          console.error("Error fetching dispensary:", error);
-          toast({ title: "Error", description: "Failed to fetch dispensary details.", variant: "destructive" });
-        } finally {
-          setIsFetching(false);
-        }
-      };
-      fetchDispensary();
-    } else if (!isSuperAdmin && typeof window !== 'undefined' && !authLoading) {
-        router.push('/admin/dashboard');
-    }
-  }, [dispensaryId, form, router, toast, isSuperAdmin, authLoading]); // Added authLoading
-
-  // Initialize Google Maps once data is fetched and API is ready
-  useEffect(() => {
-    if (isFetching || !dispensary || !isSuperAdmin) return;
-
+    if (isFetchingData || !dispensary || (currentUser && currentUser.role !== 'Super Admin')) return;
     let checkGoogleInterval: NodeJS.Timeout;
     if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
-        console.log("Google Maps API not loaded yet, setting up interval check.");
         checkGoogleInterval = setInterval(() => {
             if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
-                clearInterval(checkGoogleInterval);
-                console.log("Google Maps API loaded via interval, initializing.");
-                initializeMapAndAutocomplete();
+                clearInterval(checkGoogleInterval); initializeMapAndAutocomplete();
             }
         }, 500);
         return () => clearInterval(checkGoogleInterval);
-    } else {
-        console.log("Google Maps API already loaded, initializing.");
-        initializeMapAndAutocomplete();
-    }
-  }, [isFetching, dispensary, initializeMapAndAutocomplete, isSuperAdmin]);
+    } else { initializeMapAndAutocomplete(); }
+  }, [isFetchingData, dispensary, initializeMapAndAutocomplete, currentUser]);
 
-  // Update marker icon when dispensary type changes
   useEffect(() => {
     if (markerInstanceRef.current && window.google && window.google.maps) {
       let iconUrl = dispensaryTypeIcons.default;
       if (watchDispensaryType) {
           const selectedTypeObject = dispensaryTypes.find(dt => dt.name === watchDispensaryType);
-          if (selectedTypeObject?.iconPath) {
-              iconUrl = selectedTypeObject.iconPath;
-          } else if (dispensaryTypeIcons[watchDispensaryType]) {
-              iconUrl = dispensaryTypeIcons[watchDispensaryType];
-          }
+          if (selectedTypeObject?.iconPath) iconUrl = selectedTypeObject.iconPath;
+          else if (dispensaryTypeIcons[watchDispensaryType]) iconUrl = dispensaryTypeIcons[watchDispensaryType];
       }
       markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
     }
@@ -426,7 +389,7 @@ export default function AdminEditDispensaryPage() {
   }, [closeHour, closeMinute, closeAmPm, form]);
 
   async function onSubmit(data: EditDispensaryFormData) {
-    if (!dispensaryId || !isSuperAdmin) return;
+    if (!dispensaryId || !currentUser || currentUser.role !== 'Super Admin') return;
     setIsSubmitting(true);
     try {
       const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
@@ -436,9 +399,7 @@ export default function AdminEditDispensaryPage() {
         longitude: data.longitude === undefined ? null : data.longitude,
         lastActivityDate: serverTimestamp(),
       };
-
       delete (updateData as any).applicationDate;
-
       await updateDoc(dispensaryDocRef, updateData);
       toast({ title: "Dispensary Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
@@ -459,22 +420,19 @@ export default function AdminEditDispensaryPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (authLoading || isFetching) { // Use authLoading from context
+  if (authLoading || isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
-        <Skeleton className="h-10 w-1/3" />
-        <Skeleton className="h-8 w-1/2" />
+        <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
         <div className="space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-96 w-full" />
-          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" /> <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-96 w-full" /> <Skeleton className="h-12 w-full" />
         </div>
       </div>
     );
   }
 
-  if (!dispensary || !isSuperAdmin) {
+  if (!dispensary || (currentUser && currentUser.role !== 'Super Admin')) {
     return <div className="text-center py-10">Dispensary not found, failed to load, or access denied.</div>;
   }
 
@@ -503,27 +461,12 @@ export default function AdminEditDispensaryPage() {
                 <FormLabel>Owner's Phone</FormLabel>
                 <div className="flex items-center gap-2">
                   <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                    <SelectTrigger className="w-[120px] shrink-0">
-                      <SelectValue placeholder="Code" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countryCodes.map(cc => (
-                        <SelectItem key={cc.value} value={cc.value}>
-                          {cc.flag} {cc.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger className="w-[120px] shrink-0"><SelectValue placeholder="Code" /></SelectTrigger>
+                    <SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}>{cc.flag} {cc.code}</SelectItem>))}</SelectContent>
                   </Select>
-                  <Input
-                    type="tel"
-                    placeholder="National number"
-                    value={nationalPhoneNumber}
-                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  />
+                  <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
                 </div>
-                 <FormField control={form.control} name="phone" render={({ field }) => (
-                    <FormItem className="mt-0 pt-0"><FormControl><input type="hidden" {...field} /></FormControl><FormMessage /></FormItem>
-                 )} />
+                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="mt-0 pt-0"><FormControl><input type="hidden" {...field} /></FormControl><FormMessage /></FormItem>)} />
               </FormItem>
             </div>
             <FormField control={form.control} name="ownerEmail" render={({ field }) => (
@@ -541,18 +484,13 @@ export default function AdminEditDispensaryPage() {
                     <div className="flex items-center gap-2">
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            {dispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
-                        </SelectContent>
+                        <SelectContent>{dispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent>
                         </Select>
-                        {isSuperAdmin && (
+                        {currentUser && currentUser.role === 'Super Admin' && (
                             <Dialog open={isAddTypeDialogOpen} onOpenChange={setIsAddTypeDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button>
-                                </DialogTrigger>
+                                <DialogTrigger asChild><Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button></DialogTrigger>
                                 <DialogContent>
-                                    <DialogHeader><DialogTitle>Add New Dispensary Type</DialogTitle>
-                                     <DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
+                                    <DialogHeader><DialogTitle>Add New Dispensary Type</DialogTitle><DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
                                     <div className="space-y-3 py-2">
                                         <Input value={newDispensaryTypeName} onChange={(e) => setNewDispensaryTypeName(e.target.value)} placeholder="New type name (e.g., Wellness Center)" />
                                         <Input value={newDispensaryTypeIconPath} onChange={(e) => setNewDispensaryTypeIconPath(e.target.value)} placeholder="Icon path (e.g., /icons/wellness.png)" />
@@ -563,8 +501,7 @@ export default function AdminEditDispensaryPage() {
                                 </DialogContent>
                             </Dialog>
                         )}
-                    </div>
-                    <FormMessage/>
+                    </div><FormMessage/>
                  </FormItem>
                 )} />
             </div>
@@ -574,9 +511,7 @@ export default function AdminEditDispensaryPage() {
                 <FormItem><FormLabel>Status</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {dispensaryStatusOptions.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{dispensaryStatusOptions.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
                 </FormItem>
               )} />
@@ -605,11 +540,7 @@ export default function AdminEditDispensaryPage() {
                 <FormField control={form.control} name="openTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
                     <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}>
-                    <PopoverTrigger asChild><FormControl>
-                        <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
-                            <Clock className="mr-2 h-4 w-4 opacity-50" />
-                            {field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}
-                        </Button></FormControl></PopoverTrigger>
+                    <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}</Button></FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
                         <Select value={openHour} onValueChange={setOpenHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
                         <Select value={openMinute} onValueChange={setOpenMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
@@ -620,11 +551,7 @@ export default function AdminEditDispensaryPage() {
                 <FormField control={form.control} name="closeTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
                     <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}>
-                    <PopoverTrigger asChild><FormControl>
-                        <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
-                            <Clock className="mr-2 h-4 w-4 opacity-50" />
-                            {field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}
-                        </Button></FormControl></PopoverTrigger>
+                    <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}</Button></FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
                         <Select value={closeHour} onValueChange={setCloseHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
                         <Select value={closeMinute} onValueChange={setCloseMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
@@ -635,75 +562,36 @@ export default function AdminEditDispensaryPage() {
             </div>
 
             <FormField control={form.control} name="operatingDays" render={() => (
-              <FormItem>
-                <FormLabel>Days of Operation</FormLabel>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {weekDays.map((day) => (
-                    <FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {
-                                return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day));
-                              }}/></FormControl>
-                          <FormLabel className="font-normal">{day}</FormLabel>
-                        </FormItem>
-                      )}/>
-                  ))}
-                </div>
-                <FormMessage />
-              </FormItem>
+              <FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}
+              </div><FormMessage /></FormItem>
             )}/>
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6">Operations & Delivery</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
-                <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl>
-                    <SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="bulkDeliveryRadius" render={({ field }) => (
-                <FormItem><FormLabel>Bulk Order Delivery Radius</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl>
-                    <SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormItem><FormLabel>Bulk Order Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
 
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if dispensary only offers order collection.</FormDescription></div>
-                <FormMessage />
-              </FormItem>
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if dispensary only offers order collection.</FormDescription></div><FormMessage /></FormItem>
             )} />
-
             <FormField control={form.control} name="orderType" render={({ field }) => (
-              <FormItem><FormLabel>Order Types Fulfilled</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-
+              <FormItem><FormLabel>Order Types Fulfilled</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
-                <FormDescription>Allows sharing products with same-type dispensaries.</FormDescription><FormMessage /></FormItem>)} />
-
+              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with same-type dispensaries.</FormDescription><FormMessage /></FormItem>)} />
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
-                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl>
-                    <SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                  <FormDescription>Time needed to get products to other dispensaries.</FormDescription><FormMessage /></FormItem>)} />)}
-
+                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other dispensaries.</FormDescription><FormMessage /></FormItem>)} />)}
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
-
              <div className="flex gap-4 pt-4">
-                <Button type="submit" size="lg" className="flex-1 text-lg"
-                  disabled={isSubmitting || isFetching || (form.formState.isSubmitted && !form.formState.isValid)}
-                >
-                  {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                  Save Changes
+                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData || (form.formState.isSubmitted && !form.formState.isValid)}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
                 </Button>
-                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior>
-                  <Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetching}>Cancel</Button>
-                </Link>
+                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData}>Cancel</Button></Link>
               </div>
           </form>
         </Form>
