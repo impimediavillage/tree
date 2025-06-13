@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, getDocs } from 'firebase/firestore'; // Added where, getDocs
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryType as AppDispensaryType, ProductCategory } from '@/types';
@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'; // Added Select components
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
@@ -55,7 +55,7 @@ export default function AddProductPage() {
       name: '',
       description: '',
       category: '',
-      subcategory: null, // Initialize subcategory
+      subcategory: null,
       strain: '',
       thcContent: undefined,
       cbdContent: undefined,
@@ -211,7 +211,7 @@ export default function AddProductPage() {
         imageUrl: uploadedImageUrl,
         thcContent: data.thcContent === undefined ? null : data.thcContent,
         cbdContent: data.cbdContent === undefined ? null : data.cbdContent,
-        subcategory: data.subcategory || null, // Ensure subcategory is saved
+        subcategory: data.subcategory || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -287,9 +287,9 @@ export default function AddProductPage() {
                       onValueChange={(value) => {
                         field.onChange(value);
                         setSelectedMainCategory(value);
-                        form.setValue('subcategory', null); // Reset subcategory
+                        form.setValue('subcategory', null); 
                       }}
-                      value={field.value || ''} // Ensure value is not null for Select
+                      value={field.value || ''} 
                       disabled={isLoadingInitialData || definedProductCategories.length === 0}
                     >
                       <FormControl>
