@@ -70,8 +70,8 @@ export function DispensaryTypeDialog({
     defaultValues: {
       name: '',
       description: '',
-      iconPath: '',
-      image: '',
+      iconPath: null, // Changed from ''
+      image: null,    // Changed from ''
       advisorFocusPrompt: '',
     },
   });
@@ -82,15 +82,15 @@ export function DispensaryTypeDialog({
         form.reset({
           name: dispensaryType.name || '',
           description: dispensaryType.description || '',
-          iconPath: dispensaryType.iconPath || '',
-          image: dispensaryType.image || '',
+          iconPath: dispensaryType.iconPath || null, // Changed from || ''
+          image: dispensaryType.image || null,       // Changed from || ''
           advisorFocusPrompt: dispensaryType.advisorFocusPrompt || '',
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
       } else { // Adding new or dialog closed then reopened for add
         form.reset({
-          name: '', description: '', iconPath: '', image: '', advisorFocusPrompt: '',
+          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', // Ensure null here too
         });
         setIconPreview(null);
         setImagePreview(null);
@@ -101,7 +101,7 @@ export function DispensaryTypeDialog({
       setImageUploadProgress(null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispensaryType, isOpen, isEditing, form.reset]);
+  }, [dispensaryType, isOpen, isEditing]); // Removed form.reset from dependencies as per react-hook-form guidance
 
 
   const handleDialogTriggerClick = (e: React.MouseEvent) => {
@@ -178,35 +178,40 @@ export function DispensaryTypeDialog({
     }
     setIsSubmitting(true);
 
-    let finalIconPath = data.iconPath;
-    let finalImagePath = data.image;
+    let finalIconPath = data.iconPath; // This will be the existing URL or null if a new file was selected/removed
+    let finalImagePath = data.image;   // This will be the existing URL or null if a new file was selected/removed
+
 
     try {
+      // Handle icon upload/deletion
       if (selectedIconFile) {
         toast({ title: "Uploading Icon...", description: "Please wait.", variant: "default" });
         finalIconPath = await handleFileUpload(selectedIconFile, 'dispensary-type-assets/icons', setIconUploadProgress);
         toast({ title: "Icon Uploaded!", description: selectedIconFile.name, variant: "default" });
-      } else if (data.iconPath === null && dispensaryType?.iconPath) { // Explicitly removed existing
-        if(dispensaryType.iconPath.startsWith('https://firebasestorage.googleapis.com')) { // Only delete if it's a firebase storage URL
-            try {
-                await deleteObject(storageRef(storage, dispensaryType.iconPath));
-            } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
+        // Delete old icon if a new one was successfully uploaded
+        if (dispensaryType?.iconPath && dispensaryType.iconPath.startsWith('https://firebasestorage.googleapis.com')) {
+            try { await deleteObject(storageRef(storage, dispensaryType.iconPath)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed during new upload:", e); }
         }
-        finalIconPath = null;
+      } else if (data.iconPath === null && dispensaryType?.iconPath && dispensaryType.iconPath.startsWith('https://firebasestorage.googleapis.com')) {
+        // Icon was explicitly removed by user, and there was an old one
+        try { await deleteObject(storageRef(storage, dispensaryType.iconPath)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed on removal:", e); }
+        finalIconPath = null; // Ensure it's set to null
       }
 
 
+      // Handle image upload/deletion
       if (selectedImageFile) {
         toast({ title: "Uploading Image...", description: "Please wait.", variant: "default" });
         finalImagePath = await handleFileUpload(selectedImageFile, 'dispensary-type-assets/images', setImageUploadProgress);
         toast({ title: "Image Uploaded!", description: selectedImageFile.name, variant: "default" });
-      } else if (data.image === null && dispensaryType?.image) { // Explicitly removed existing
-        if(dispensaryType.image.startsWith('https://firebasestorage.googleapis.com')) {
-            try {
-                await deleteObject(storageRef(storage, dispensaryType.image));
-            } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed:", e); }
+         // Delete old image if a new one was successfully uploaded
+        if (dispensaryType?.image && dispensaryType.image.startsWith('https://firebasestorage.googleapis.com')) {
+            try { await deleteObject(storageRef(storage, dispensaryType.image)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed during new upload:", e); }
         }
-        finalImagePath = null;
+      } else if (data.image === null && dispensaryType?.image && dispensaryType.image.startsWith('https://firebasestorage.googleapis.com')) {
+        // Image was explicitly removed by user, and there was an old one
+        try { await deleteObject(storageRef(storage, dispensaryType.image)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed on removal:", e); }
+        finalImagePath = null; // Ensure it's set to null
       }
 
 
@@ -341,7 +346,7 @@ export function DispensaryTypeDialog({
                 </div>
                 {iconUploadProgress !== null && <Progress value={iconUploadProgress} className="w-full h-2 mt-2" />}
                  <FormDescription>Recommended: Square SVG or PNG, transparent background, less than 1MB.</FormDescription>
-                 <FormField control={form.control} name="iconPath" render={({ field }) => <FormMessage>{form.formState.errors.iconPath?.message}</FormMessage>} />
+                 <FormField control={form.control} name="iconPath" render={() => <FormMessage>{form.formState.errors.iconPath?.message}</FormMessage>} />
 
               </FormItem>
 
@@ -366,7 +371,7 @@ export function DispensaryTypeDialog({
                 </div>
                 {imageUploadProgress !== null && <Progress value={imageUploadProgress} className="w-full h-2 mt-2" />}
                 <FormDescription>Recommended: Landscape orientation (e.g., 600x400px), less than 2MB.</FormDescription>
-                <FormField control={form.control} name="image" render={({ field }) => <FormMessage>{form.formState.errors.image?.message}</FormMessage>} />
+                <FormField control={form.control} name="image" render={() => <FormMessage>{form.formState.errors.image?.message}</FormMessage>} />
               </FormItem>
 
               {isSuperAdmin && (
@@ -389,3 +394,4 @@ export function DispensaryTypeDialog({
     </Dialog>
   );
 }
+
