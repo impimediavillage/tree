@@ -13,6 +13,7 @@ import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/fires
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Dispensary } from '@/types';
+import { cn } from '@/lib/utils'; // Added this import
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
-import { MultiInputTags } from '@/components/ui/multi-input-tags'; // New component
+import { MultiInputTags } from '@/components/ui/multi-input-tags'; 
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 
