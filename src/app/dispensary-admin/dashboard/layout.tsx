@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/s
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge'; // Added missing import
 
 
 interface NavItem {
@@ -323,3 +324,4 @@ export default function DispensaryAdminDashboardLayout({
     </div>
   );
 }
+
