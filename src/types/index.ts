@@ -45,6 +45,7 @@ export interface DispensaryType {
   iconPath?: string | null; 
   image?: string | null; 
   advisorFocusPrompt?: string | null; 
+  productCategories?: string[]; // Added field for product categories
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
