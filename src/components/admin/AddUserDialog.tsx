@@ -145,11 +145,11 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
                   <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select dispensary (if owner)" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="" disabled>Select a dispensary</SelectItem>
+                      {/* Removed: <SelectItem value="" disabled>Select a dispensary</SelectItem> */}
                       {dispensaries.filter(d => d.status === "Approved").map(d => (
                         <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
                       ))}
-                      {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="none" disabled>No approved dispensaries</SelectItem>}
+                      {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-dispensaries" disabled>No approved dispensaries</SelectItem>}
                     </SelectContent>
                   </Select>
                   <FormDescription>Required if role is Dispensary Owner.</FormDescription>
