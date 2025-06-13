@@ -36,11 +36,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = void 0;
+exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.notificationRecipientEmail = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
+const firestore_1 = require("firebase-functions/v2/firestore");
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
@@ -114,41 +115,48 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
  * Cloud Function triggered when a new dispensary document is created.
  * Sends an "Application Received" email to the owner.
  */
-exports.onDispensaryCreated = functions.firestore
-    .document("dispensaries/{dispensaryId}")
-    .onCreate(async (snapshot, context) => {
-    const dispensary = snapshot.data(); // Assuming DispensaryDocData has ownerEmail and dispensaryName potentially as optional
-    const dispensaryId = context.params.dispensaryId;
-    logger.log(`New dispensary application received: ${dispensaryId} - ${dispensary.dispensaryName || 'Unnamed Dispensary'}`);
-    if (!dispensary.ownerEmail) { // Guard clause
-        logger.error(`Dispensary ${dispensaryId} is missing ownerEmail. Cannot send application received email.`);
+exports.onDispensaryCreated = (0, firestore_1.onDocumentCreated)("dispensaries/{dispensaryId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+        logger.error("No data associated with the document creation event.");
         return null;
     }
-    const subject = "Your Dispensary Application to The Dispensary Tree is Received!";
-    const greeting = `Dear ${dispensary.fullName || dispensary.ownerEmail.split('@')[0]},`;
-    const content = [
-        `Thank you for applying to join The Dispensary Tree with your dispensary: "<strong>${dispensary.dispensaryName || 'Your Dispensary'}</strong>".`,
-        `We have received your application and our team will review it shortly. You will be notified of any status updates.`,
-        `We are excited about the possibility of partnering with you to bring quality organic, authentic, original wellness products to customers.`,
-    ];
-    const htmlBody = generateHtmlEmail("Application Received", content, greeting);
-    // Ensure dispensary.dispensaryName is passed as string | undefined
-    await sendDispensaryNotificationEmail(dispensary.ownerEmail, subject, htmlBody, dispensary.dispensaryName || undefined);
-    return null;
+    const dispensary = snapshot.data(); // Access data using .data() and cast
+    const dispensaryId = event.params.dispensaryId; // Access params from event
+    logger.log(`New dispensary application received: ${dispensaryId} - ${dispensary?.dispensaryName || 'Unnamed Dispensary'}`); // Use optional chaining
+    // Ensure dispensary and ownerEmail exist before proceeding
+    if (!dispensary || !dispensary.ownerEmail) {
+        const subject = "Your Dispensary Application to The Dispensary Tree is Received!";
+        const greeting = `Dear ${dispensary.fullName || dispensary.ownerEmail.split('@')[0]},`;
+        const content = [
+            `Thank you for applying to join The Dispensary Tree with your dispensary: "<strong>${dispensary.dispensaryName || 'Your Dispensary'}</strong>".`,
+            `We have received your application and our team will review it shortly. You will be notified of any status updates.`,
+            `We are excited about the possibility of partnering with you to bring quality organic, authentic, original wellness products to customers.`,
+        ];
+        const htmlBody = generateHtmlEmail("Application Received", content, greeting);
+        // Ensure dispensary.dispensaryName is passed as string | undefined
+        await sendDispensaryNotificationEmail(dispensary.ownerEmail, subject, htmlBody, dispensary.dispensaryName || undefined);
+        return null;
+    }
 });
 /**
  * Cloud Function triggered when a dispensary document is updated.
  * Handles setting custom claims for approved owners, and sending various notification emails.
  */
-exports.onDispensaryUpdate = functions.firestore
-    .document("dispensaries/{dispensaryId}")
-    .onUpdate(async (change, context) => {
+exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{dispensaryId}", async (event) => {
+    const change = event.data;
+    if (!change || !change.after) {
+        logger.error("No change or after data associated with the document update event.");
+        return null;
+    }
     const newValue = change.after.data();
-    const previousValue = change.before.data();
-    const dispensaryId = context.params.dispensaryId;
-    const ownerEmail = newValue.ownerEmail;
-    const ownerDisplayName = newValue.fullName || ownerEmail?.split('@')[0] || 'Dispensary Owner';
-    const dispensaryName = newValue.dispensaryName || 'Your Dispensary';
+    const previousValue = change.before?.data(); // before can be undefined on create
+    const dispensaryId = event.params.dispensaryId; // Access params from event
+    // Ensure newValue is defined before accessing properties
+    if (!newValue) {
+        logger.log(`Dispensary ${dispensaryId} was deleted or no data in 'after'. Exiting update trigger.`);
+        return null;
+    }
     if (!ownerEmail) {
         logger.error(`Dispensary ${dispensaryId} (update) is missing ownerEmail. Cannot proceed with notifications or user setup.`);
         return null;
@@ -159,7 +167,7 @@ exports.onDispensaryUpdate = functions.firestore
     let sendEmail = false;
     let actionButton;
     // Logic for when status changes to "Approved"
-    if (newValue.status === "Approved" && previousValue.status !== "Approved") {
+    if (newValue.status === "Approved" && previousValue?.status !== "Approved") {
         sendEmail = true;
         logger.log(`Dispensary ${dispensaryId} was approved.`);
         let defaultPasswordUsed = undefined;
@@ -214,7 +222,7 @@ exports.onDispensaryUpdate = functions.firestore
             await userDocRef.set(firestoreUserData, { merge: true });
             logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
             // Generate and store public store URL
-            const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
+            const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`; // Use dispensaryId from params
             await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
             logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
             subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
@@ -239,7 +247,7 @@ exports.onDispensaryUpdate = functions.firestore
         }
     }
     // Logic for other status changes (Suspended, Rejected, etc.)
-    else if (newValue.status !== previousValue.status) {
+    else if (newValue.status !== previousValue?.status) {
         sendEmail = true;
         subject = `Update on Your Dispensary: ${dispensaryName}`;
         contentLines = [
@@ -247,13 +255,13 @@ exports.onDispensaryUpdate = functions.firestore
             `New Status: <strong>${newValue.status}</strong>`,
         ];
         let userStatusToSet = 'PendingApproval'; // Default for most inactive states
-        if (newValue.status === 'Approved')
+        if (newValue?.status === 'Approved')
             userStatusToSet = 'Active';
-        if (newValue.status === 'Suspended')
+        if (newValue?.status === 'Suspended')
             userStatusToSet = 'Suspended';
-        if (newValue.status === 'Rejected')
+        if (newValue?.status === 'Rejected')
             userStatusToSet = 'Rejected';
-        if (newValue.status === "Rejected") {
+        if (newValue?.status === "Rejected") {
             subject = `Update on Your Dispensary Application: ${dispensaryName}`;
             contentLines.push(`We regret to inform you that after careful review, your application for "<strong>${dispensaryName}</strong>" has been rejected at this time. `);
             contentLines.push(`If you have questions or would like to discuss this further, please contact our support team.`);
@@ -263,12 +271,12 @@ exports.onDispensaryUpdate = functions.firestore
             contentLines.push(`Your dispensary account has been temporarily suspended. This may be due to a violation of our terms of service or other pending issues. `);
             contentLines.push(`Please contact our support team as soon as possible to address this matter.`);
         }
-        else if (newValue.status === "Pending Approval" && previousValue.status === "Suspended") {
+        else if (newValue?.status === "Pending Approval" && previousValue?.status === "Suspended") {
             subject = `Your Dispensary Account "${dispensaryName}" is Pending Re-Approval`;
             contentLines.push(`Your dispensary account status has been changed from Suspended to Pending Approval. Our team will review it shortly.`);
         }
         // Update Owner's User Document Status in Firestore AND other associated users
-        const usersToUpdateQuery = db.collection("users").where("dispensaryId", "==", dispensaryId);
+        const usersToUpdateQuery = db.collection("users").where("dispensaryId", "==", dispensaryId).where("role", "!=", "SuperAdmin"); // Exclude SuperAdmins
         try {
             const usersSnapshot = await usersToUpdateQuery.get();
             if (!usersSnapshot.empty) {
@@ -285,8 +293,8 @@ exports.onDispensaryUpdate = functions.firestore
         }
     }
     // Logic for generic detail updates if status did not change
-    else if (newValue.status === previousValue.status) {
-        const beforeDataForCompare = { ...previousValue };
+    else if (previousValue && newValue.status === previousValue.status) { // Ensure previousValue exists for comparison
+        const beforeDataForCompare = { ...previousValue }; // Use previousValue directly
         const afterDataForCompare = { ...newValue };
         const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount'];
         fieldsToIgnore.forEach(field => {
@@ -316,143 +324,161 @@ exports.onDispensaryUpdate = functions.firestore
 /**
  * Cloud Function to create a notification when a new product request is made.
  */
-exports.onProductRequestCreated = functions.firestore
-    .document("productRequests/{requestId}")
-    .onCreate(async (snapshot, context) => {
-    const request = snapshot.data();
-    const requestId = context.params.requestId;
-    logger.log(`New product request ${requestId} created by ${request.requesterDispensaryName} for product ${request.productName}`);
-    if (!request.productOwnerEmail) {
-        logger.error(`Product request ${requestId} is missing productOwnerEmail. Cannot send notification.`);
+exports.onProductRequestCreated = (0, firestore_1.onDocumentCreated)("productRequests/{requestId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+        logger.error("No data associated with the product request creation event.");
         return null;
     }
-    try {
-        const productOwnerUser = await admin
-            .auth()
-            .getUserByEmail(request.productOwnerEmail);
-        if (productOwnerUser) {
-            const notification = {
-                recipientUid: productOwnerUser.uid,
-                message: `You have a new product request for "${request.productName}" from ${request.requesterDispensaryName}.`,
-                link: `/dispensary-admin/pool?tab=incoming-requests&requestId=${requestId}`,
-                read: false,
-                createdAt: admin.firestore.Timestamp.now(),
-            };
-            await db.collection("notifications").add(notification);
-            logger.info(`Notification created for product owner ${productOwnerUser.uid} regarding request ${requestId}`);
-        }
-        else {
-            logger.warn(`Could not find user for product owner email: ${request.productOwnerEmail}`);
-        }
-    }
-    catch (error) {
-        if (error.code === "auth/user-not-found") {
-            logger.error(`User not found for productOwnerEmail: ${request.productOwnerEmail} in request ${requestId}.`);
-        }
-        else {
-            logger.error(`Error creating notification for new product request ${requestId}:`, error);
-        }
-    }
+    const request = snapshot.data(); // Access data using .data() and cast
+    `New product request ${requestId} created by ${request?.requesterDispensaryName} for product ${request?.productName}`;
+} // Use optional chaining
+);
+if (!request.productOwnerEmail) {
+    logger.error(`Product request ${requestId} is missing productOwnerEmail. Cannot send notification.`);
     return null;
-});
+}
+try {
+    const productOwnerUser = await admin
+        .auth()
+        .getUserByEmail(request.productOwnerEmail);
+    if (productOwnerUser) {
+        const notification = {
+            recipientUid: productOwnerUser.uid,
+            message: `You have a new product request for "${request.productName}" from ${request.requesterDispensaryName}.`,
+            link: `/dispensary-admin/pool?tab=incoming-requests&requestId=${requestId}`,
+            read: false,
+            createdAt: admin.firestore.Timestamp.now(),
+        };
+        await db.collection("notifications").add(notification);
+        logger.info(`Notification created for product owner ${productOwnerUser.uid} regarding request ${requestId}`);
+    }
+    else {
+        logger.warn(`Could not find user for product owner email: ${request.productOwnerEmail}`);
+    }
+}
+catch (error) {
+    if (error.code === "auth/user-not-found") {
+        logger.error(`User not found for productOwnerEmail: ${request.productOwnerEmail} in request ${requestId}.`);
+    }
+    else {
+        logger.error(`Error creating notification for new product request ${requestId}:`, error);
+    }
+}
+return null;
+;
 /**
  * Cloud Function to create a notification when a product request status is updated or a new note is added.
  */
-exports.onProductRequestUpdated = functions.firestore
-    .document("productRequests/{requestId}")
-    .onUpdate(async (change, context) => {
-    const before = change.before.data();
+exports.onProductRequestUpdated = (0, firestore_1.onDocumentUpdated)("productRequests/{requestId}", async (event) => {
+    const change = event.data;
+    if (!change || !change.after) {
+        logger.error("No change or after data associated with the product request update event.");
+        return null;
+    }
+    const before = change.before?.data();
     const after = change.after.data();
-    const requestId = context.params.requestId;
     let notificationRecipientEmail = null;
     let notificationMessage = null;
     let notificationLink = `/dispensary-admin/pool?requestId=${requestId}`;
-    if (before.requestStatus !== after.requestStatus) {
-        logger.log(`Product request ${requestId} status changed from ${before.requestStatus} to ${after.requestStatus}`);
-        notificationRecipientEmail = after.requesterEmail;
-        notificationMessage = `Your request for "${after.productName}" has been updated to: ${after.requestStatus
+    if (before?.requestStatus !== after?.requestStatus) {
+        logger.log(`Product request ${requestId} status changed from ${before?.requestStatus} to ${after?.requestStatus}`);
+        notificationRecipientEmail = after?.requesterEmail || null;
+        notificationMessage = `Your request for "${after?.productName || 'a product'}" has been updated to: ${after?.requestStatus
             .replace(/_/g, " ")
             .toUpperCase()}.`;
         notificationLink = `/dispensary-admin/pool?tab=outgoing-requests&requestId=${requestId}`;
-        if (after.requestStatus === "fulfilled_by_sender") {
-            notificationRecipientEmail = after.requesterEmail;
-            notificationMessage = `${after.productOwnerEmail.split("@")[0]} has marked your requested product "${after.productName}" as sent/fulfilled.`;
+        if (after?.requestStatus === "fulfilled_by_sender" && after?.requesterEmail) {
+            notificationRecipientEmail = after?.requesterEmail || null;
+            notificationMessage = `${after?.productOwnerEmail?.split("@")[0]} has marked your requested product "${after?.productName || 'a product'}" as sent/fulfilled.`;
         }
-        else if (after.requestStatus === "received_by_requester") {
-            notificationRecipientEmail = after.productOwnerEmail;
-            notificationMessage = `${after.requesterDispensaryName} has confirmed receipt of "${after.productName}".`;
+        else if (after?.requestStatus === "received_by_requester" && after?.productOwnerEmail) {
+            notificationRecipientEmail = after?.productOwnerEmail || null;
+            notificationMessage = `${after?.requesterDispensaryName || 'A requester'} has confirmed receipt of "${after?.productName || 'a product'}".`;
             notificationLink = `/dispensary-admin/pool?tab=incoming-requests&requestId=${requestId}`;
         }
-        else if (after.requestStatus === "accepted" ||
-            after.requestStatus === "rejected" ||
-            after.requestStatus === "cancelled") {
-            notificationRecipientEmail = after.requesterEmail;
-            notificationMessage = `Your request for "${after.productName}" has been ${after.requestStatus.replace(/_/g, " ")}.`;
+        else if ((after?.requestStatus === "accepted" ||
+            after?.requestStatus === "rejected" ||
+            after?.requestStatus === "cancelled") && after?.requesterEmail) {
+            notificationRecipientEmail = after?.requesterEmail || null;
+            notificationMessage = `Your request for "${after?.productName || 'a product'}" has been ${after?.requestStatus.replace(/_/g, " ")}.`;
         }
+        else if (after?.requestStatus === "accepted" && after?.productOwnerEmail) {
+            // Optional: Notify owner if request is accepted? Depends on workflow.
+        }
+        // Optional: Notify owner if request is accepted? Depends on workflow.
     }
-    const beforeNotesCount = before.notes?.length || 0;
-    const afterNotesCount = after.notes?.length || 0;
-    if (afterNotesCount > beforeNotesCount && after.notes) {
-        const newNote = after.notes[afterNotesCount - 1];
-        logger.log(`New note added to product request ${requestId} by ${newNote.byName} (Role: ${newNote.senderRole})`);
-        if (newNote.senderRole === "requester" && after.productOwnerEmail) {
-            notificationRecipientEmail = after.productOwnerEmail;
-            notificationMessage = `${newNote.byName} added a note to the request for "${after.productName}".`;
-            notificationLink = `/dispensary-admin/pool?tab=incoming-requests&requestId=${requestId}`;
-        }
-        else if (newNote.senderRole === "owner" && after.requesterEmail) {
-            notificationRecipientEmail = after.requesterEmail;
-            notificationMessage = `${newNote.byName} added a note to your request for "${after.productName}".`;
-            notificationLink = `/dispensary-admin/pool?tab=outgoing-requests&requestId=${requestId}`;
-        }
+    // Optional: Notify owner if request is accepted? Depends on workflow.
+}
+// Optional: Notify owner if request is accepted? Depends on workflow.
+);
+notificationMessage = `Your request for "${after?.productName}" has been ${after?.requestStatus.replace(/_/g, " ")}.`;
+const beforeNotesCount = before?.notes?.length || 0;
+const afterNotesCount = after?.notes?.length || 0;
+if (afterNotesCount > beforeNotesCount && after?.notes) {
+    const newNote = after.notes[afterNotesCount - 1];
+    logger.log(`New note added to product request ${requestId} by ${newNote.byName} (Role: ${newNote.senderRole})`);
+    if (newNote.senderRole === "requester" && after?.productOwnerEmail) {
+        exports.notificationRecipientEmail = after?.productOwnerEmail || null;
+        notificationMessage = `${newNote.byName} added a note to the request for "${after?.productName}".`;
+        notificationLink = `/dispensary-admin/pool?tab=incoming-requests&requestId=${requestId}`;
     }
-    if (!notificationRecipientEmail || !notificationMessage) {
-        logger.log(`Product request ${requestId} updated, but no specific condition for notification met or recipient/message is null.`);
-        return null;
+    else if (newNote.senderRole === "owner" && after?.requesterEmail) {
+        exports.notificationRecipientEmail = after?.requesterEmail || null;
+        notificationMessage = `${newNote.byName} added a note to your request for "${after?.productName}".`;
+        notificationLink = `/dispensary-admin/pool?tab=outgoing-requests&requestId=${requestId}`;
     }
-    if (typeof notificationRecipientEmail !== "string" ||
-        !notificationRecipientEmail.trim()) {
-        logger.error(`Invalid or missing notificationRecipientEmail for request ${requestId}. Cannot send notification. Email was: "${notificationRecipientEmail}"`);
-        return null;
-    }
-    try {
-        const recipientUser = await admin
-            .auth()
-            .getUserByEmail(notificationRecipientEmail);
-        if (recipientUser) {
-            const notification = {
-                recipientUid: recipientUser.uid,
-                message: notificationMessage,
-                link: notificationLink,
-                read: false,
-                createdAt: admin.firestore.Timestamp.now(),
-            };
-            await db.collection("notifications").add(notification);
-            logger.info(`Notification created for ${recipientUser.uid} for request ${requestId} update.`);
-        }
-        else {
-            logger.warn(`Could not find user for email: ${notificationRecipientEmail} during request ${requestId} update.`);
-        }
-    }
-    catch (error) {
-        if (error.code === "auth/user-not-found") {
-            logger.error(`User not found for notificationRecipientEmail: ${notificationRecipientEmail} in request ${requestId} update.`);
-        }
-        else {
-            logger.error(`Error creating notification for product request ${requestId} update:`, error);
-        }
-    }
+}
+if (!exports.notificationRecipientEmail || !notificationMessage) {
+    logger.log(`Product request ${requestId} updated, but no specific condition for notification met or recipient/message is null.`);
     return null;
-});
+}
+if (typeof exports.notificationRecipientEmail !== "string" ||
+    !exports.notificationRecipientEmail.trim()) {
+    logger.error(`Invalid or missing notificationRecipientEmail for request ${requestId}. Cannot send notification. Email was: "${exports.notificationRecipientEmail}"`);
+    return null;
+}
+try {
+    const recipientUser = await admin
+        .auth()
+        .getUserByEmail(exports.notificationRecipientEmail);
+    if (recipientUser) {
+        const notification = {
+            recipientUid: recipientUser.uid,
+            message: notificationMessage,
+            link: notificationLink,
+            read: false,
+            createdAt: admin.firestore.Timestamp.now(),
+        };
+        await db.collection("notifications").add(notification);
+        logger.info(`Notification created for ${recipientUser.uid} for request ${requestId} update.`);
+    }
+    else {
+        logger.warn(`Could not find user for email: ${exports.notificationRecipientEmail} during request ${requestId} update.`);
+    }
+}
+catch (error) {
+    if (error.code === "auth/user-not-found") {
+        logger.error(`User not found for notificationRecipientEmail: ${exports.notificationRecipientEmail} in request ${requestId} update.`);
+    }
+    else {
+        logger.error(`Error creating notification for product request ${requestId} update:`, error);
+    }
+}
+return null;
+;
 /**
  * Cloud Function to create a notification for Super Admin when a new PoolIssue is created.
  */
-exports.onPoolIssueCreated = functions.firestore
-    .document("poolIssues/{issueId}")
-    .onCreate(async (snapshot, context) => {
-    const issue = snapshot.data();
-    const issueId = context.params.issueId;
-    logger.log(`New pool issue ${issueId} reported by ${issue.reporterDispensaryName} against ${issue.reportedDispensaryName}.`);
+exports.onPoolIssueCreated = (0, firestore_1.onDocumentCreated)("poolIssues/{issueId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+        logger.error("No data associated with the pool issue creation event.");
+        return null;
+    }
+    const issue = snapshot.data(); // Access data using .data() and cast
+    logger.log(`New pool issue ${issueId} reported by ${issue?.reporterDispensaryName} against ${issue?.reportedDispensaryName}.` // Use optional chaining
+    );
     const superAdminEmail = "impimediavillage@gmail.com";
     if (!superAdminEmail) {
         logger.error("Super Admin email is not configured. Cannot send notification for pool issue.");
@@ -463,7 +489,7 @@ exports.onPoolIssueCreated = functions.firestore
         if (superAdminUser) {
             const notification = {
                 recipientUid: superAdminUser.uid,
-                message: `New pool issue reported by ${issue.reporterDispensaryName} for product "${issue.productName}".`,
+                message: `New pool issue reported by ${issue?.reporterDispensaryName} for product "${issue?.productName}".`,
                 link: `/admin/dashboard/pool-issues?issueId=${issueId}`,
                 read: false,
                 createdAt: admin.firestore.Timestamp.now(),
