@@ -90,8 +90,8 @@ export default function AdminDispensaryTypesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <ListChecks className="h-8 w-8 text-primary"/> Manage Dispensary Types
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+            <ListChecks className="h-8 w-8"/> Manage Dispensary Types
           </h1>
           <p className="text-muted-foreground">Create, view, edit, and delete dispensary types for the platform.</p>
         </div>
@@ -132,6 +132,7 @@ export default function AdminDispensaryTypesPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
+              <ListChecks className="mx-auto h-12 w-12 mb-3" />
               No dispensary types found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
