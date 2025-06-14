@@ -17,20 +17,20 @@ interface DispensaryTypeCardProps {
 }
 
 export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: DispensaryTypeCardProps) {
-  const defaultImageUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
-  const initialImageUrl = dispensaryType.image || defaultImageUrl;
-  
-  const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
+  const [defaultImageUrl, setDefaultImageUrl] = useState('');
+  const [currentImageUrl, setCurrentImageUrl] = useState('');
 
   useEffect(() => {
-    // This effect updates the image URL if the dispensaryType prop changes,
-    // ensuring the card reflects the most current data.
-    setCurrentImageUrl(dispensaryType.image || defaultImageUrl);
-  }, [dispensaryType.image, dispensaryType.name, defaultImageUrl]);
+    const newDefaultImageUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
+    setDefaultImageUrl(newDefaultImageUrl);
+
+    // Prioritize dispensaryType.image if it's a non-empty string, otherwise use the new default.
+    setCurrentImageUrl((dispensaryType.image && dispensaryType.image.trim() !== "") ? dispensaryType.image : newDefaultImageUrl);
+  }, [dispensaryType.name, dispensaryType.image]);
+
 
   const handleImageError = () => {
-    // If the currentImageUrl (which might be from dispensaryType.image) fails,
-    // and it's not already the default placeholder, switch to the default placeholder.
+    // Fallback only if the current URL is not already the default placeholder
     if (currentImageUrl !== defaultImageUrl) {
       setCurrentImageUrl(defaultImageUrl);
     }
@@ -39,7 +39,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
   const dataAiHint = `dispensary type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
 
   return (
-    <Card 
+    <Card
         className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card text-card-foreground border border-border hover:border-primary/50 relative animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
@@ -53,15 +53,17 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
       )}
       <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full">
         <div className="relative w-full h-48">
-          <Image
-            src={currentImageUrl}
-            alt={dispensaryType.name}
-            layout="fill"
-            objectFit="cover"
-            data-ai-hint={dataAiHint + " banner"}
-            onError={handleImageError}
-            priority={isPreferred} // Conditionally set priority
-          />
+          {currentImageUrl && ( // Ensure currentImageUrl is not empty before rendering Image
+            <Image
+              src={currentImageUrl}
+              alt={dispensaryType.name}
+              layout="fill"
+              objectFit="cover"
+              data-ai-hint={dataAiHint + " banner"}
+              onError={handleImageError}
+              priority={isPreferred} // Conditionally set priority
+            />
+          )}
         </div>
         <CardHeader className="pb-2">
           <CardTitle className="text-xl font-semibold text-primary truncate" title={dispensaryType.name}>
@@ -82,4 +84,3 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
-
