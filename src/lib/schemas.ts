@@ -158,13 +158,14 @@ export const productCategorySchema = z.object({
 export type ProductCategoryFormData = z.infer<typeof productCategorySchema>;
 
 // Schema for Dispensary Type (used in admin forms for adding new types)
+// productCategories field is REMOVED from here, as it's managed in a separate collection.
 export const dispensaryTypeSchema = z.object({
   name: z.string().min(2, { message: "Dispensary type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
-  productCategories: z.array(productCategorySchema).optional().default([]),
+  // productCategories: z.array(productCategorySchema).optional().default([]), // REMOVED
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 
@@ -396,7 +397,7 @@ export const dispensaryTypeDbSchema = z.object({
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
-  productCategories: z.array(productCategorySchema).optional().default([]),
+  // productCategories is REMOVED from here.
   createdAt: z.any().optional(),
   updatedAt: z.any().optional(),
 });
@@ -487,3 +488,5 @@ export const aiAdvisorConfigSchema = z.object({
   dataAiHint: z.string().optional().nullable(),
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
+
+    
