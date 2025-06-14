@@ -9,7 +9,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -255,7 +255,11 @@ export default function EditProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center"> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Products</Link> </Button>
+            <Button variant="outline" size="sm" asChild> 
+                <Link href="/dispensary-admin/products">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                </Link> 
+            </Button>
         </div>
         <CardDescription>Modify details for &quot;{existingProduct.name}&quot;.</CardDescription>
       </CardHeader>
