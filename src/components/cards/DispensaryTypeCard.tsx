@@ -24,14 +24,35 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     const newDefaultImageUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
     setDefaultImageUrl(newDefaultImageUrl);
 
-    // Prioritize dispensaryType.image if it's a non-empty string, otherwise use the new default.
-    setCurrentImageUrl((dispensaryType.image && dispensaryType.image.trim() !== "") ? dispensaryType.image : newDefaultImageUrl);
+    let imagePath = dispensaryType.image;
+    let finalPathToUse = newDefaultImageUrl; // Start with placeholder
+
+    if (imagePath && imagePath.trim() !== "") {
+      // If it's a local-like path (doesn't start with http) and missing a leading slash, add it.
+      if (!imagePath.startsWith('/') && !imagePath.toLowerCase().startsWith('http')) {
+        imagePath = '/' + imagePath;
+      }
+      finalPathToUse = imagePath;
+    }
+    
+    setCurrentImageUrl(finalPathToUse);
+    
+    console.log(
+      `DispensaryTypeCard for "${dispensaryType.name}":\n` +
+      `  Firestore 'image' field: "${dispensaryType.image}"\n` +
+      `  Normalized path used: "${imagePath}"\n` +
+      `  Effective URL for <Image> src: "${finalPathToUse}"\n` +
+      `  (Ensure this path corresponds to a file in 'public${imagePath}')`
+    );
+
   }, [dispensaryType.name, dispensaryType.image]);
 
 
   const handleImageError = () => {
     // Fallback only if the current URL is not already the default placeholder
+    // and the original dispensaryType.image was not also the default placeholder
     if (currentImageUrl !== defaultImageUrl) {
+      console.warn(`Image failed to load for type "${dispensaryType.name}" from: "${currentImageUrl}". Falling back to placeholder.`);
       setCurrentImageUrl(defaultImageUrl);
     }
   };
