@@ -62,95 +62,97 @@ export default function AddProductPage() {
     },
   });
 
-  useEffect(() => {
-    if (authLoading || !currentUser) {
-      if (!authLoading && !currentUser) router.push("/auth/signin");
-      return;
+  const fetchInitialData = useCallback(async () => {
+    if (!currentUser?.dispensaryId) {
+        setIsLoadingInitialData(false);
+        return;
     }
-    if (!currentUser.dispensaryId) {
-      toast({ title: "Error", description: "No dispensary associated with your account.", variant: "destructive" });
-      router.push("/dispensary-admin/dashboard");
-      return;
-    }
+    setIsLoadingInitialData(true);
+    try {
+      const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId);
+      const dispensarySnap = await getDoc(dispensaryDocRef);
 
-    const fetchInitialData = async () => {
-      setIsLoadingInitialData(true);
-      try {
-        const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId!);
-        const dispensarySnap = await getDoc(dispensaryDocRef);
+      if (dispensarySnap.exists()) {
+        const fetchedDispensary = dispensarySnap.data() as Dispensary;
+        setDispensaryData(fetchedDispensary);
+        form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
-        if (dispensarySnap.exists()) {
-          const fetchedDispensary = dispensarySnap.data() as Dispensary;
-          setDispensaryData(fetchedDispensary);
-          form.setValue('currency', fetchedDispensary.currency || 'ZAR');
+        if (fetchedDispensary.dispensaryType) {
+          const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
+          const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
+          const categoriesSnapshot = await getDocs(q);
 
-          if (fetchedDispensary.dispensaryType) {
-            const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
-            const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
-            const categoriesSnapshot = await getDocs(q);
-
-            if (!categoriesSnapshot.empty) {
-              const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-              if (categoriesDocData.categoriesData && categoriesDocData.categoriesData.length > 0) { // Changed from categoriesDataDoc.categories
-                setDefinedProductCategories(categoriesDocData.categoriesData); // Changed from categoriesDataDoc.categories
-              } else {
-                toast({ title: "Info", description: `No product categories defined for dispensary type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
-                setDefinedProductCategories([]);
-              }
+          if (!categoriesSnapshot.empty) {
+            const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+            if (categoriesDocData.categoriesData && categoriesDocData.categoriesData.length > 0) {
+              setDefinedProductCategories(categoriesDocData.categoriesData);
             } else {
-              toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Contact admin to set them up.`, variant: "default", duration: 10000 });
-               setDefinedProductCategories([]);
+              toast({ title: "Info", description: `No product categories defined for dispensary type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
+              setDefinedProductCategories([]);
             }
           } else {
-             toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'. This is needed for structured category selection. Please update your profile or contact admin.", variant: "destructive", duration: 10000 });
-             setDefinedProductCategories([]);
+            toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Contact admin to set them up.`, variant: "default", duration: 10000 });
+            setDefinedProductCategories([]);
           }
         } else {
-          toast({ title: "Error", description: "Dispensary data not found.", variant: "destructive" });
-          router.push("/dispensary-admin/dashboard");
+           toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'. This is needed for structured category selection. Please update your profile or contact admin.", variant: "destructive", duration: 10000 });
+           setDefinedProductCategories([]);
         }
-      } catch (error) {
-        console.error("Error fetching initial data for Add Product page:", error);
-        toast({ title: "Error", description: "Could not load necessary data.", variant: "destructive" });
-      } finally {
-        setIsLoadingInitialData(false);
+      } else {
+        toast({ title: "Error", description: "Dispensary data not found.", variant: "destructive" });
+        router.push("/dispensary-admin/dashboard");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching initial data for Add Product page:", error);
+      toast({ title: "Error", description: "Could not load necessary data.", variant: "destructive" });
+    } finally {
+      setIsLoadingInitialData(false);
+    }
+  }, [currentUser?.dispensaryId, form, router, toast]);
 
+
+  useEffect(() => {
+    if (authLoading || !currentUser) {
+      if (!authLoading && !currentUser) {
+          toast({title: "Authentication Error", description: "Please sign in.", variant: "destructive"});
+          router.push("/auth/signin");
+      }
+      return;
+    }
     fetchInitialData();
-  }, [currentUser, authLoading, router, toast, form]);
+  }, [currentUser, authLoading, router, toast, fetchInitialData]);
 
   // Effect for Main Category change
   useEffect(() => {
     const mainCatName = form.watch('category');
-    setSelectedMainCategoryName(mainCatName || null); // Update state for UI logic
+    setSelectedMainCategoryName(mainCatName || null);
     if (mainCatName && definedProductCategories.length > 0) {
       const selectedCategoryObject = definedProductCategories.find(cat => cat.name === mainCatName);
       setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
     } else {
       setAvailableSubcategoriesL1([]);
     }
-    // Always reset children when main category changes or clears
     form.setValue('subcategory', null, { shouldValidate: true });
     setSelectedSubcategoryL1Name(null);
     form.setValue('subSubcategory', null, { shouldValidate: true });
     setAvailableSubcategoriesL2([]);
-  }, [form.watch('category'), definedProductCategories, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch('category'), definedProductCategories]);
 
 
   // Effect for L1 Subcategory change
   useEffect(() => {
     const subCatL1Name = form.watch('subcategory');
-    setSelectedSubcategoryL1Name(subCatL1Name || null); // Update state for UI logic
+    setSelectedSubcategoryL1Name(subCatL1Name || null);
     if (subCatL1Name && availableSubcategoriesL1.length > 0) {
       const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === subCatL1Name);
       setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
     } else {
       setAvailableSubcategoriesL2([]);
     }
-    // Always reset L2 subcategory when L1 changes or clears
     form.setValue('subSubcategory', null, { shouldValidate: true });
-  }, [form.watch('subcategory'), availableSubcategoriesL1, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch('subcategory'), availableSubcategoriesL1]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,10 +174,10 @@ export default function AddProductPage() {
     if (!currentUser?.dispensaryId || !dispensaryData) {
       toast({ title: "Error", description: "User or dispensary data not found.", variant: "destructive" }); return;
     }
-    if (definedProductCategories.length > 0 && !data.category) { // If structured cats exist, main cat is mandatory
+    if (definedProductCategories.length > 0 && !data.category) { 
         toast({ title: "Category Required", description: "Please select a main product category from the list.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "A main category selection is required." }); return;
-    } else if (definedProductCategories.length === 0 && (!data.category || data.category.trim() === "")) { // Manual entry case
+    } else if (definedProductCategories.length === 0 && (!data.category || data.category.trim() === "")) { 
         toast({ title: "Category Required", description: "Please enter a main product category.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
@@ -215,7 +217,8 @@ export default function AddProductPage() {
       form.reset();
       setSelectedMainCategoryName(null);
       setSelectedSubcategoryL1Name(null);
-      // availableSubcategoriesL1/L2 will be reset by their respective useEffects
+      setAvailableSubcategoriesL1([]);
+      setAvailableSubcategoriesL2([]);
       setImageFile(null); setImagePreview(null); setUploadProgress(null);
       router.push('/dispensary-admin/products');
     } catch (error) {
@@ -226,7 +229,7 @@ export default function AddProductPage() {
     }
   };
 
-  if (isLoadingInitialData) {
+  if (isLoadingInitialData || authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
   }
 
