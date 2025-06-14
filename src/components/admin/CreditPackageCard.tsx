@@ -3,7 +3,7 @@
 
 import * as React from 'react'; 
 import type { CreditPackage } from '@/types';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription as CardDescriptionComponent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'; // Renamed CardDescription to avoid conflict
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'; 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription as DialogDescriptionComponent } from '@/components/ui/dialog'; // Added DialogDescription and aliased
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -107,9 +107,9 @@ function EditableCreditPackageDialog({ creditPackage, onSave, triggerButton }: C
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit' : 'Add New'} Credit Package</DialogTitle>
-          <DialogDescription>
+          <DialogDescriptionComponent>
             {isEditing ? `Modify details for ${creditPackage?.name}.` : 'Create a new credit package.'}
-          </DialogDescription>
+          </DialogDescriptionComponent>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -176,9 +176,9 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
                 {creditPackage.isActive ? 'Active' : 'Inactive'}
             </Badge>
         </div>
-        <CardDescription className="text-sm text-muted-foreground truncate h-10">
+        <CardDescriptionComponent className="text-sm text-muted-foreground truncate h-10">
             {creditPackage.description || 'No description provided.'}
-        </CardDescription>
+        </CardDescriptionComponent>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
         <div className="flex items-center justify-between text-lg">
