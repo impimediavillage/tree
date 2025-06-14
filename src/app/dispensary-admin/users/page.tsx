@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useForm } from 'react-hook-form'; // Added missing import
 
 // Schema for editing users managed by dispensary owner
 const dispensaryUserEditSchema = z.object({
@@ -64,11 +65,12 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
         displayName: data.displayName,
         role: data.role,
         status: data.status,
-        updatedAt: serverTimestamp(), // Add updatedAt timestamp
+        updatedAt: serverTimestamp() as any, // Add updatedAt timestamp
       };
 
       // Award welcome credits if activating a LeafUser for the first time
-      if (user.role === 'LeafUser' && data.status === 'Active' && user.status === 'PendingApproval' && !user.welcomeCreditsAwarded) {
+      // Check existing welcomeCreditsAwarded flag
+      if (data.role === 'LeafUser' && data.status === 'Active' && user.status !== 'Active' && !user.welcomeCreditsAwarded) {
         updateData.credits = (user.credits || 0) + 10;
         updateData.welcomeCreditsAwarded = true;
         toast({ title: "User Activated", description: `${data.displayName} activated and 10 welcome credits awarded.` });
@@ -78,7 +80,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
 
 
       await updateDoc(userDocRef, updateData);
-      if (!(user.role === 'LeafUser' && data.status === 'Active' && user.status === 'PendingApproval' && !user.welcomeCreditsAwarded)) {
+      if (!(data.role === 'LeafUser' && data.status === 'Active' && user.status !== 'Active' && !user.welcomeCreditsAwarded)) {
         toast({ title: "User Updated", description: `${data.displayName}'s profile has been updated.` });
       }
       onUserUpdate();
@@ -138,7 +140,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
                   <FormLabel>Credits</FormLabel>
                   <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                   <FormMessage />
-                  {user.role === 'LeafUser' && user.status === 'PendingApproval' && !user.welcomeCreditsAwarded && data.status === 'Active' &&
+                  {user.role === 'LeafUser' && user.status !== 'Active' && data.status === 'Active' && !user.welcomeCreditsAwarded &&
                     <FormDescription className="text-xs text-green-600">10 welcome credits will be added upon activation.</FormDescription>
                   }
                 </FormItem>
