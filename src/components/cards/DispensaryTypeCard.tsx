@@ -8,17 +8,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Store, Heart } from 'lucide-react';
-import { useState, useEffect } from 'react'; // Import useState and useEffect
+import { useState, useEffect } from 'react';
 
 interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
   isPreferred?: boolean;
-  basePath: string; // e.g., "/dashboard/leaf/dispensaries" or "/dispensaries/by-type"
+  basePath: string;
 }
 
 export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: DispensaryTypeCardProps) {
   const [defaultImageUrl, setDefaultImageUrl] = useState('');
   const [currentImageUrl, setCurrentImageUrl] = useState('');
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
   useEffect(() => {
     const newDefaultImageUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
@@ -28,7 +29,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     let finalPathToUse = newDefaultImageUrl; // Start with placeholder
 
     if (imagePath && imagePath.trim() !== "") {
-      // If it's a local-like path (doesn't start with http) and missing a leading slash, add it.
+      // Normalize local paths to ensure they start with a slash
       if (!imagePath.startsWith('/') && !imagePath.toLowerCase().startsWith('http')) {
         imagePath = '/' + imagePath;
       }
@@ -36,24 +37,22 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     }
     
     setCurrentImageUrl(finalPathToUse);
-    
+    setImageLoadFailed(false); // Reset error state on prop change
+
     console.log(
       `DispensaryTypeCard for "${dispensaryType.name}":\n` +
-      `  Firestore 'image' field: "${dispensaryType.image}"\n` +
-      `  Normalized path used: "${imagePath}"\n` +
-      `  Effective URL for <Image> src: "${finalPathToUse}"\n` +
-      `  (Ensure this path corresponds to a file in 'public${imagePath}')`
+      `  Firestore 'image' field: "${dispensaryType.image}" (type: ${typeof dispensaryType.image})\n` +
+      `  Effective URL for <Image> src: "${finalPathToUse}"`
     );
 
   }, [dispensaryType.name, dispensaryType.image]);
 
 
   const handleImageError = () => {
-    // Fallback only if the current URL is not already the default placeholder
-    // and the original dispensaryType.image was not also the default placeholder
     if (currentImageUrl !== defaultImageUrl) {
       console.warn(`Image failed to load for type "${dispensaryType.name}" from: "${currentImageUrl}". Falling back to placeholder.`);
       setCurrentImageUrl(defaultImageUrl);
+      setImageLoadFailed(true);
     }
   };
 
@@ -74,15 +73,16 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
       )}
       <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full">
         <div className="relative w-full h-48">
-          {currentImageUrl && ( // Ensure currentImageUrl is not empty before rendering Image
+          {currentImageUrl && (
             <Image
               src={currentImageUrl}
               alt={dispensaryType.name}
-              layout="fill"
-              objectFit="cover"
+              fill
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw" // Added sizes prop
+              style={{ objectFit: 'cover' }} // Modern way to specify objectFit with fill
               data-ai-hint={dataAiHint + " banner"}
               onError={handleImageError}
-              priority={isPreferred} // Conditionally set priority
+              priority={isPreferred}
             />
           )}
         </div>
