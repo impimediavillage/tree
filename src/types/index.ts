@@ -1,7 +1,7 @@
 
 import type { Timestamp } from 'firebase/firestore';
 
-// New interface for structured product categories
+// New interface for structured product categories (used within dispensaryTypeProductCategories documents)
 export interface ProductCategory {
   name: string;
   subcategories?: string[];
@@ -14,7 +14,7 @@ export interface Dispensary {
   phone: string;
   ownerEmail: string;
   dispensaryName: string;
-  dispensaryType: string; // This links to the 'name' field in DispensaryType
+  dispensaryType: string; // This links to the 'name' field in DispensaryType AND the document ID in dispensaryTypeProductCategories
   currency: string;
   openTime?: string | null;
   closeTime?: string | null;
@@ -43,18 +43,27 @@ export interface Dispensary {
   reviewCount?: number;
 }
 
-// Represents the structure for Dispensary Type documents
+// Represents the structure for Dispensary Type documents (basic info, categories are now separate)
 export interface DispensaryType {
   id?: string;
   name: string; // Unique name for the dispensary type
   description?: string | null;
-  iconPath?: string | null;
-  image?: string | null;
-  advisorFocusPrompt?: string | null;
-  productCategories?: ProductCategory[]; // Array of category objects
+  iconPath?: string | null; // URL or path to an icon
+  image?: string | null;    // URL or path to a banner/representative image
+  advisorFocusPrompt?: string | null; // Specific instructions for AI advisors for this type
+  // productCategories field is REMOVED here. It's now in a separate collection.
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
+
+// Represents a document in the 'dispensaryTypeProductCategories' collection
+export interface DispensaryTypeProductCategoriesDoc {
+  id?: string; // Document ID, should match a DispensaryType's name
+  name?: string; // Optional: Name of the dispensary type (can be redundant if ID is name)
+  categories: ProductCategory[]; // The actual list of product categories and their subcategories
+  updatedAt?: Timestamp | Date | string;
+}
+
 
 // Represents a Product document in Firestore
 export interface Product {
@@ -319,3 +328,5 @@ export interface ProductCategoryCount {
 export interface CartItem extends Product {
   quantity: number;
 }
+
+    

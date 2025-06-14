@@ -12,7 +12,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryType as AppDispensaryType, ProductCategory } from '@/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types'; // Updated import
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -96,16 +96,18 @@ export default function AddProductPage() {
           form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
           if (fetchedDispensary.dispensaryType) {
-            const typeQuery = firestoreQuery(collection(db, 'dispensaryTypes'), where('name', '==', fetchedDispensary.dispensaryType));
-            const typeSnapshot = await getDocs(typeQuery);
-            if (!typeSnapshot.empty) {
-              const typeData = typeSnapshot.docs[0].data() as AppDispensaryType;
-              setDefinedProductCategories(typeData.productCategories || []);
-              if (!typeData.productCategories || typeData.productCategories.length === 0) {
+            // Fetch categories from the dedicated 'dispensaryTypeProductCategories' collection
+            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', fetchedDispensary.dispensaryType);
+            const categoriesSnap = await getDoc(categoriesDocRef);
+            if (categoriesSnap.exists()) {
+              const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
+              setDefinedProductCategories(categoriesData.categories || []);
+              if (!categoriesData.categories || categoriesData.categories.length === 0) {
                  toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Contact admin to add categories.`, variant: "default" });
               }
             } else {
-              toast({ title: "Warning", description: `Details for dispensary type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "destructive" });
+              toast({ title: "Warning", description: `Product categories for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "destructive" });
+               setDefinedProductCategories([]); // Ensure it's empty
             }
           }
         } else {
@@ -199,7 +201,7 @@ export default function AddProductPage() {
         return;
       }
     }
-    setUploadProgress(100);
+    setUploadProgress(100); // If no file, or upload complete
 
     try {
       const productData = {
@@ -294,7 +296,7 @@ export default function AddProductPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={definedProductCategories.length === 0 ? "No categories defined" : "Select category"} />
+                          <SelectValue placeholder={definedProductCategories.length === 0 ? "No categories defined for this type" : "Select category"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -309,7 +311,7 @@ export default function AddProductPage() {
                       </SelectContent>
                     </Select>
                     {definedProductCategories.length === 0 && !isLoadingInitialData && (
-                      <FormDescription>No specific categories available. Contact admin.</FormDescription>
+                      <FormDescription>Contact admin to add product categories for your dispensary type.</FormDescription>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -330,7 +332,7 @@ export default function AddProductPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder={availableSubcategories.length === 0 ? "N/A (Select main category or no subcategories)" : "Select subcategory"} />
+                          <SelectValue placeholder={!selectedMainCategory ? "Select main category first" : (availableSubcategories.length === 0 ? "N/A (No subcategories defined)" : "Select subcategory")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -341,11 +343,11 @@ export default function AddProductPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {!selectedMainCategory && (
-                        <FormDescription>Select a main category to see subcategories.</FormDescription>
+                    {!selectedMainCategory && availableSubcategories.length === 0 && (
+                        <FormDescription>Select a main category to see available subcategories.</FormDescription>
                     )}
                     {selectedMainCategory && availableSubcategories.length === 0 && (
-                      <FormDescription>No subcategories available for {selectedMainCategory}.</FormDescription>
+                      <FormDescription>No subcategories defined for {selectedMainCategory}.</FormDescription>
                     )}
                     <FormMessage />
                   </FormItem>
@@ -427,7 +429,7 @@ export default function AddProductPage() {
                     </div>
                   ) : (
                     <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                      <ImageIconLucide className="w-12 h-12 text-muted-foreground" />
                     </div>
                   )}
                   <div className="flex flex-col gap-2">
@@ -496,3 +498,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    

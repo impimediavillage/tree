@@ -26,16 +26,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2, ListPlus } from 'lucide-react';
+import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2 } from 'lucide-react';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import type { DispensaryType } from '@/types';
-import { dispensaryTypeSchema, type DispensaryTypeFormData } from '@/lib/schemas';
+import type { DispensaryType } from '@/types'; // ProductCategories are now in a separate collection
+import { dispensaryTypeSchema, type DispensaryTypeFormData } from '@/lib/schemas'; // productCategories removed from this schema
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
-import { MultiInputTags } from '@/components/ui/multi-input-tags';
+// MultiInputTags for productCategories is REMOVED as this is now managed separately
 
 interface DispensaryTypeDialogProps {
   dispensaryType?: DispensaryType | null;
@@ -74,7 +74,7 @@ export function DispensaryTypeDialog({
       iconPath: null,
       image: null,
       advisorFocusPrompt: '',
-      productCategories: [],
+      // productCategories: [], // REMOVED from default values
     },
   });
 
@@ -87,13 +87,13 @@ export function DispensaryTypeDialog({
           iconPath: dispensaryType.iconPath === "" ? null : (dispensaryType.iconPath || null),
           image: dispensaryType.image === "" ? null : (dispensaryType.image || null),
           advisorFocusPrompt: dispensaryType.advisorFocusPrompt || '',
-          productCategories: dispensaryType.productCategories || [],
+          // productCategories: dispensaryType.productCategories || [], // REMOVED
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
-      } else { 
+      } else {
         form.reset({
-          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', productCategories: [],
+          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', // productCategories: [], // REMOVED
         });
         setIconPreview(null);
         setImagePreview(null);
@@ -108,7 +108,7 @@ export function DispensaryTypeDialog({
 
 
   const handleDialogTriggerClick = (e: React.MouseEvent) => {
-    if (!isSuperAdmin && !isEditing) { // Allow viewing if editing, but not adding new if not super admin
+    if (!isSuperAdmin && !isEditing) {
       e.preventDefault();
       const action = isEditing ? "edit" : "add new";
       toast({ title: "Permission Denied", description: `Only Super Admins can ${action} types.`, variant: "destructive" });
@@ -211,13 +211,13 @@ export function DispensaryTypeDialog({
         newImageUrl = null; 
       }
 
-      const dataToSave: Partial<DispensaryType> = {
+      // productCategories is no longer part of DispensaryType, so it's removed from dataToSave
+      const dataToSave: Omit<DispensaryType, 'id' | 'createdAt' | 'updatedAt'> & {updatedAt: any} = {
         name: formData.name,
         description: formData.description || null,
         iconPath: newIconUrl,
         image: newImageUrl,
         advisorFocusPrompt: formData.advisorFocusPrompt || null,
-        productCategories: formData.productCategories || [],
         updatedAt: serverTimestamp(),
       };
 
@@ -321,23 +321,14 @@ export function DispensaryTypeDialog({
                 )}
               />
 
-              <Controller
-                control={form.control}
-                name="productCategories"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product Categories</FormLabel>
-                    <MultiInputTags 
-                      value={field.value || []} 
-                      onChange={field.onChange} 
-                      placeholder="Add category (e.g., Flower, Edibles)" 
-                      disabled={!isSuperAdmin || isSubmitting} 
-                    />
-                    <FormDescription>Define product categories specific to this dispensary type.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Product Categories Management REMOVED from here */}
+              {/* It will be managed in a separate UI for the 'dispensaryTypeProductCategories' collection */}
+              {isSuperAdmin && (
+                <div className="p-3 border-t border-b border-dashed my-4 text-sm text-muted-foreground">
+                    <ListPlus className="inline h-4 w-4 mr-1.5" />
+                    Product categories and subcategories for this Dispensary Type are now managed in a dedicated section (coming soon) or directly in Firestore under the <code className="bg-muted px-1 py-0.5 rounded text-xs">dispensaryTypeProductCategories</code> collection with a document ID matching this type&apos;s name.
+                </div>
+              )}
 
 
               <FormItem>
@@ -406,3 +397,5 @@ export function DispensaryTypeDialog({
     </Dialog>
   );
 }
+
+    
