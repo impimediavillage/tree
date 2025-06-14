@@ -112,7 +112,7 @@ export default function AdminDashboardLayout({
 
   if (isLoadingUser || !currentUser) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
+      <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="ml-4 text-lg text-muted-foreground">Loading Admin Dashboard...</p>
       </div>
@@ -121,7 +121,7 @@ export default function AdminDashboardLayout({
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen"> {/* Removed bg-background */}
         <Sidebar collapsible="icon" className="border-r shadow-md">
           <SidebarHeader className="p-3 border-b">
              <Link href="/admin/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
@@ -229,13 +229,13 @@ export default function AdminDashboardLayout({
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden">
+           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden"> {/* bg-background/80 is semi-transparent, fine */}
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
               <h1 className="text-lg font-semibold text-primary">{mainSidebarNavItems.find(item => pathname.startsWith(item.href))?.title || 'Admin'}</h1>
             </div>
           </header>
-          <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto bg-muted/30">
+          <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> {/* Removed bg-muted/30 */}
             {children}
           </div>
         </main>
@@ -243,5 +243,4 @@ export default function AdminDashboardLayout({
     </SidebarProvider>
   );
 }
-
     
