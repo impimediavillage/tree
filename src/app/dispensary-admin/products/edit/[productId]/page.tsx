@@ -80,13 +80,14 @@ export default function EditProductPage() {
       const fetchedDispensary = dispensarySnap.data() as Dispensary;
       setDispensaryData(fetchedDispensary);
 
+      let categoriesDataFromType: DispensaryTypeProductCategoriesDoc | null = null;
       if (fetchedDispensary.dispensaryType) {
         const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
         const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
         const categoriesSnapshot = await getDocs(q);
         if (!categoriesSnapshot.empty) {
-          const categoriesData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-          setDefinedProductCategories(categoriesData.categories || []);
+          categoriesDataFromType = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+          setDefinedProductCategories(categoriesDataFromType.categories || []);
         } else { 
           setDefinedProductCategories([]); 
           toast({ title: "Warning", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Contact admin.`, variant: "default", duration: 8000 });
@@ -102,7 +103,7 @@ export default function EditProductPage() {
           router.push("/dispensary-admin/products"); return;
         }
         setExistingProduct(productData);
-        form.reset({
+        form.reset({ // Reset form with existing product data
           ...productData, 
           thcContent: productData.thcContent ?? undefined, 
           cbdContent: productData.cbdContent ?? undefined,
@@ -118,7 +119,23 @@ export default function EditProductPage() {
         setImagePreview(productData.imageUrl || null); 
         setOldImageUrl(productData.imageUrl); 
         
-        if(productData.category) setSelectedMainCategoryName(productData.category);
+        // Initialize category/subcategory states AFTER definedProductCategories is set
+        if (productData.category) {
+            setSelectedMainCategoryName(productData.category);
+            const mainCatObj = (categoriesDataFromType?.categories || []).find(c => c.name === productData.category);
+            if (mainCatObj) {
+                setAvailableSubcategoriesL1(mainCatObj.subcategories || []);
+                if (productData.subcategory) {
+                    setSelectedSubcategoryL1Name(productData.subcategory);
+                    const subCatL1Obj = (mainCatObj.subcategories || []).find(s => s.name === productData.subcategory);
+                    if (subCatL1Obj) {
+                         setAvailableSubcategoriesL2(subCatL1Obj.subcategories || []);
+                         // No need to set selected L2 state here, form value is enough
+                    }
+                }
+            }
+        }
+
       } else {
         toast({ title: "Error", description: "Product not found.", variant: "destructive" }); router.push("/dispensary-admin/products");
       }
@@ -136,41 +153,31 @@ export default function EditProductPage() {
     else if (!authLoading && !currentUser) { router.push("/auth/signin"); }
   }, [currentUser, authLoading, fetchDispensaryAndProductData, router]);
 
+ // Effect for Main Category change
   useEffect(() => {
-    if (definedProductCategories.length > 0 && selectedMainCategoryName) {
+    if (selectedMainCategoryName) {
       const selectedCategoryObject = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
       setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
-      const currentSubL1 = form.getValues('subcategory');
-      if (existingProduct?.category !== selectedMainCategoryName || 
-          (currentSubL1 && !selectedCategoryObject?.subcategories?.find(s => s.name === currentSubL1))) {
-        form.setValue('subcategory', null);
-        setSelectedSubcategoryL1Name(null);
-        form.setValue('subSubcategory', null);
-        setAvailableSubcategoriesL2([]);
-      } else if (currentSubL1) {
-         setSelectedSubcategoryL1Name(currentSubL1); 
-      }
-    } else if (!selectedMainCategoryName) { 
+    } else {
       setAvailableSubcategoriesL1([]);
-      form.setValue('subcategory', null);
-      setSelectedSubcategoryL1Name(null);
-      form.setValue('subSubcategory', null);
-      setAvailableSubcategoriesL2([]);
+    }
+    // Only reset if the change is initiated by user, not initial load
+    if (form.getValues('category') !== selectedMainCategoryName && existingProduct?.category !== selectedMainCategoryName) {
+        form.setValue('subcategory', null); 
+        setSelectedSubcategoryL1Name(null);
     }
   }, [selectedMainCategoryName, definedProductCategories, form, existingProduct]);
 
+  // Effect for L1 Subcategory change
   useEffect(() => {
-    if (availableSubcategoriesL1.length > 0 && selectedSubcategoryL1Name) {
+    if (selectedSubcategoryL1Name) {
       const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
       setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
-      const currentSubL2 = form.getValues('subSubcategory');
-      if (existingProduct?.subcategory !== selectedSubcategoryL1Name ||
-          (currentSubL2 && !selectedSubCategoryL1Object?.subcategories?.find(s => s.name === currentSubL2))) {
-        form.setValue('subSubcategory', null);
-      }
-    } else if (!selectedSubcategoryL1Name) { 
+    } else {
       setAvailableSubcategoriesL2([]);
-      form.setValue('subSubcategory', null);
+    }
+     if (form.getValues('subcategory') !== selectedSubcategoryL1Name && existingProduct?.subcategory !== selectedSubcategoryL1Name) {
+        form.setValue('subSubcategory', null);
     }
   }, [selectedSubcategoryL1Name, availableSubcategoriesL1, form, existingProduct]);
 
@@ -182,14 +189,14 @@ export default function EditProductPage() {
       const reader = new FileReader(); 
       reader.onloadend = () => setImagePreview(reader.result as string); 
       reader.readAsDataURL(file); 
-      form.setValue('imageUrl', ''); 
+      form.setValue('imageUrl', ''); // Clear existing imageUrl from form if new file selected
     }
   };
 
   const handleRemoveImage = async () => {
     setImageFile(null); 
     setImagePreview(null); 
-    form.setValue('imageUrl', null); 
+    form.setValue('imageUrl', null); // Set to null to indicate removal
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
@@ -197,14 +204,18 @@ export default function EditProductPage() {
     if (!currentUser?.dispensaryId || !dispensaryData || !existingProduct?.id) { 
       toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" }); return; 
     }
-    if (definedProductCategories.length > 0 && !data.category) {
-        toast({ title: "Category Required", description: "Please select a main product category.", variant: "destructive"});
+    if (definedProductCategories.length > 0 && !definedProductCategories.some(cat => cat.name === data.category)) {
+        toast({ title: "Category Required", description: "Please select a valid main product category from the list.", variant: "destructive"});
+        form.setError("category", { type: "manual", message: "Category from the list is required." }); return;
+    } else if (definedProductCategories.length === 0 && (!data.category || data.category.trim() === "")) {
+        toast({ title: "Category Required", description: "Please enter a main product category.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
-    setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); 
 
-    if (imageFile) { 
+    setIsLoading(true); setUploadProgress(null);
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Start with current form value (could be existing URL or null if removed)
+
+    if (imageFile) { // New image was selected
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -213,15 +224,22 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, 
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
+        // If upload successful and there was an old image different from new, delete old one from storage
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(finalImageUrl); 
+        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
+      // Image was explicitly removed (imageUrl became null) and there was an old image
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); } 
-      catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); else {finalImageUrl = null; setOldImageUrl(null);} }
+      catch (e: any) { 
+        if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed (on removal):", e); 
+        else {finalImageUrl = null; setOldImageUrl(null);} // If not found, it's fine, just ensure finalImageUrl is null
+      }
     }
+    // If no new image file and imageUrl form value is not null, it means user wants to keep the existing oldImageUrl or it was never changed.
+    // So, finalImageUrl is already correctly set by `form.getValues('imageUrl')` at the start.
     
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
@@ -266,20 +284,23 @@ export default function EditProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {definedProductCategories.length === 0 && !isLoadingInitialData && (
+            {definedProductCategories.length === 0 && !isLoadingInitialData && dispensaryData?.dispensaryType && (
                 <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
-                    <div><h4 className="font-semibold">No Product Categories Defined</h4>
-                        <p className="text-sm">Categories for your dispensary type ({dispensaryData?.dispensaryType}) are not set up. Defaulting to text input or contact admin.</p>
+                    <div><h4 className="font-semibold">No Product Categories Defined Yet for &quot;{dispensaryData.dispensaryType}&quot;</h4>
+                        <p className="text-sm">Please manually enter a main category name below. For a structured list, ask a Super Admin to define categories for your dispensary type.</p>
                     </div>
                 </div>
             )}
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="Premium OG Kush Flower" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
             
             <FormField control={form.control} name="category" render={({ field }) => (
-              <FormItem> <FormLabel>Main Category {definedProductCategories.length > 0 ? '*' : '(Manual Entry If Needed)'}</FormLabel>
+              <FormItem> <FormLabel>Main Category {definedProductCategories.length > 0 ? '*' : '(Manual Entry Required)'}</FormLabel>
                 {definedProductCategories.length > 0 ? (
-                  <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); }} value={field.value || ''} >
+                  <Select 
+                    onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); }} 
+                    value={field.value || ''} 
+                  >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
                     <SelectContent>
                         {definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> ))}
@@ -294,8 +315,11 @@ export default function EditProductPage() {
             {selectedMainCategoryName && availableSubcategoriesL1.length > 0 && (
               <FormField control={form.control} name="subcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
-                  <Select onValueChange={(value) => { field.onChange(value); setSelectedSubcategoryL1Name(value); }} value={field.value || ''}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select subcategory (optional)" /></SelectTrigger></FormControl>
+                  <Select 
+                    onValueChange={(value) => { field.onChange(value === "" ? null : value); setSelectedSubcategoryL1Name(value === "" ? null : value); }} 
+                    value={field.value || ''}
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select L1 subcategory (optional)" /></SelectTrigger></FormControl>
                     <SelectContent> 
                         <SelectItem value="">None</SelectItem>
                         {availableSubcategoriesL1.map((subCat) => ( <SelectItem key={subCat.name} value={subCat.name}>{subCat.name}</SelectItem> ))} 
@@ -307,8 +331,11 @@ export default function EditProductPage() {
             {selectedSubcategoryL1Name && availableSubcategoriesL2.length > 0 && (
               <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select sub-subcategory (optional)" /></SelectTrigger></FormControl>
+                  <Select 
+                    onValueChange={(value) => { field.onChange(value === "" ? null : value);}} 
+                    value={field.value || ''}
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select L2 subcategory (optional)" /></SelectTrigger></FormControl>
                     <SelectContent> 
                         <SelectItem value="">None</SelectItem>
                         {availableSubcategoriesL2.map((subSubCat) => ( <SelectItem key={subSubCat.name} value={subSubCat.name}>{subSubCat.name}</SelectItem> ))} 
@@ -352,4 +379,3 @@ export default function EditProductPage() {
     </Card>
   );
 }
-

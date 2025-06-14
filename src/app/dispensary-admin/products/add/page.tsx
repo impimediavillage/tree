@@ -91,9 +91,11 @@ export default function AddProductPage() {
 
             if (!categoriesSnapshot.empty) {
               const categoriesData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-              setDefinedProductCategories(categoriesData.categories || []);
-              if (!categoriesData.categories || categoriesData.categories.length === 0) {
-                 toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Add products by manually entering category, or request admin to set up categories.`, variant: "default", duration: 8000 });
+              if (categoriesData.categories && categoriesData.categories.length > 0) {
+                setDefinedProductCategories(categoriesData.categories);
+              } else {
+                toast({ title: "Info", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Please add products by manually entering category, or request admin to set up categories.`, variant: "default", duration: 8000 });
+                setDefinedProductCategories([]);
               }
             } else {
               toast({ title: "Warning", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Contact admin.`, variant: "default", duration: 8000 });
@@ -118,19 +120,27 @@ export default function AddProductPage() {
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, form]);
 
+  // Effect for Main Category change
   useEffect(() => {
-    const selectedCategoryObject = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
-    setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
-    form.setValue('subcategory', null); 
-    setSelectedSubcategoryL1Name(null); 
-    form.setValue('subSubcategory', null);
-    setAvailableSubcategoriesL2([]); 
+    if (selectedMainCategoryName) {
+      const selectedCategoryObject = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
+      setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
+    } else {
+      setAvailableSubcategoriesL1([]);
+    }
+    form.setValue('subcategory', null); // Reset L1 subcategory form value
+    setSelectedSubcategoryL1Name(null); // Reset L1 subcategory selection state, which will trigger next effect
   }, [selectedMainCategoryName, definedProductCategories, form]);
 
+  // Effect for L1 Subcategory change
   useEffect(() => {
-    const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
-    setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
-    form.setValue('subSubcategory', null);
+    if (selectedSubcategoryL1Name) {
+      const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
+      setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
+    } else {
+      setAvailableSubcategoriesL2([]);
+    }
+    form.setValue('subSubcategory', null); // Reset L2 subcategory form value
   }, [selectedSubcategoryL1Name, availableSubcategoriesL1, form]);
 
 
@@ -153,10 +163,16 @@ export default function AddProductPage() {
     if (!currentUser?.dispensaryId || !dispensaryData) {
       toast({ title: "Error", description: "User or dispensary data not found.", variant: "destructive" }); return;
     }
-    if (definedProductCategories.length > 0 && !data.category) {
-        toast({ title: "Category Required", description: "Please select a main product category.", variant: "destructive"});
+    // Category validation: if definedProductCategories exist, a main category must be chosen from the list.
+    // If no defined categories, manual input is allowed (and required).
+    if (definedProductCategories.length > 0 && !definedProductCategories.some(cat => cat.name === data.category)) {
+        toast({ title: "Category Required", description: "Please select a valid main product category from the list.", variant: "destructive"});
+        form.setError("category", { type: "manual", message: "Category from the list is required." }); return;
+    } else if (definedProductCategories.length === 0 && (!data.category || data.category.trim() === "")) {
+        toast({ title: "Category Required", description: "Please enter a main product category.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
+
     setIsLoading(true); setUploadProgress(null);
     let uploadedImageUrl: string | null = null;
 
@@ -192,8 +208,8 @@ export default function AddProductPage() {
       form.reset(); 
       setSelectedMainCategoryName(null); 
       setSelectedSubcategoryL1Name(null);
-      setAvailableSubcategoriesL1([]);
-      setAvailableSubcategoriesL2([]);
+      // availableSubcategoriesL1 will be reset by useEffect
+      // availableSubcategoriesL2 will be reset by useEffect
       setImageFile(null); setImagePreview(null); setUploadProgress(null);
       router.push('/dispensary-admin/products');
     } catch (error) {
@@ -215,44 +231,45 @@ export default function AddProductPage() {
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center"> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
             <Button variant="outline" size="sm" asChild>
-              
-                <Link href="/dispensary-admin/products">
-                    <span className="flex items-center">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
-                    </span>
-                </Link>
+              <Link href="/dispensary-admin/products">
+                <span className="flex items-center">
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                </span>
+              </Link>
             </Button>
         </div>
         <CardDescription>Fill in the product details. Fields marked with * are required.
-        {dispensaryData?.dispensaryType && ( <span className="block mt-1">Categories specific to: <span className="font-semibold text-primary">{dispensaryData.dispensaryType}</span></span> )}
+        {dispensaryData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{dispensaryData.dispensaryType}</span></span> )}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {definedProductCategories.length === 0 && !isLoadingInitialData && (
+             {definedProductCategories.length === 0 && !isLoadingInitialData && dispensaryData?.dispensaryType && (
                  <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
                     <div>
-                        <h4 className="font-semibold">No Product Categories Defined</h4>
-                        <p className="text-sm">No product categories have been set up for your dispensary type ({dispensaryData?.dispensaryType || 'Unknown Type'}). 
-                        You can manually enter a category, or contact an administrator to set up predefined categories for easier product management.</p>
+                        <h4 className="font-semibold">No Product Categories Defined Yet for &quot;{dispensaryData.dispensaryType}&quot;</h4>
+                        <p className="text-sm">Please manually enter a main category name below. For a structured list, ask a Super Admin to define categories for your dispensary type.</p>
                     </div>
                 </div>
             )}
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             
             <FormField control={form.control} name="category" render={({ field }) => (
-              <FormItem> <FormLabel>Main Category {definedProductCategories.length > 0 ? '*' : '(Manual Entry If Needed)'}</FormLabel>
+              <FormItem> <FormLabel>Main Category {definedProductCategories.length > 0 ? '*' : '(Manual Entry Required)'}</FormLabel>
                 {definedProductCategories.length > 0 ? (
-                    <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); }} value={field.value || ''} >
+                    <Select 
+                        onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); }} 
+                        value={field.value || ''} 
+                    >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
                     <SelectContent>
                         {definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> ))}
                     </SelectContent>
                     </Select>
                 ) : (
-                    <Input placeholder="Enter main category (e.g., Flower, Edible, Tincture)" {...field} value={field.value ?? ''} />
+                    <Input placeholder="Enter main category (e.g., Flower, Edible)" {...field} value={field.value ?? ''} />
                 )}
                 <FormMessage />
               </FormItem> )} />
@@ -260,8 +277,11 @@ export default function AddProductPage() {
             {selectedMainCategoryName && availableSubcategoriesL1.length > 0 && (
               <FormField control={form.control} name="subcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
-                  <Select onValueChange={(value) => { field.onChange(value); setSelectedSubcategoryL1Name(value); }} value={field.value || ''}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select subcategory (optional)" /></SelectTrigger></FormControl>
+                  <Select 
+                    onValueChange={(value) => { field.onChange(value === "" ? null : value); setSelectedSubcategoryL1Name(value === "" ? null : value); }} 
+                    value={field.value || ''}
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select L1 subcategory (optional)" /></SelectTrigger></FormControl>
                     <SelectContent> 
                         <SelectItem value="">None</SelectItem>
                         {availableSubcategoriesL1.map((subCat) => ( <SelectItem key={subCat.name} value={subCat.name}>{subCat.name}</SelectItem> ))} 
@@ -273,8 +293,11 @@ export default function AddProductPage() {
             {selectedSubcategoryL1Name && availableSubcategoriesL2.length > 0 && (
               <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select sub-subcategory (optional)" /></SelectTrigger></FormControl>
+                  <Select 
+                    onValueChange={(value) => { field.onChange(value === "" ? null : value);}} 
+                    value={field.value || ''}
+                  >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select L2 subcategory (optional)" /></SelectTrigger></FormControl>
                     <SelectContent> 
                         <SelectItem value="">None</SelectItem>
                         {availableSubcategoriesL2.map((subSubCat) => ( <SelectItem key={subSubCat.name} value={subSubCat.name}>{subSubCat.name}</SelectItem> ))} 
