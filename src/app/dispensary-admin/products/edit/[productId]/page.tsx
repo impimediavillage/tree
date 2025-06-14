@@ -12,7 +12,7 @@ import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc } from '@/types'; // ProductCategory removed
+import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,10 +42,13 @@ export default function EditProductPage() {
   const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
   const [existingProduct, setExistingProduct] = useState<ProductType | null>(null);
 
-  // State for dynamic category selects based on object structure
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
+  const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
+
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
+  const [selectedSubCategoryL1Name, setSelectedSubCategoryL1Name] = useState<string | null>(null);
+  
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -64,7 +67,7 @@ export default function EditProductPage() {
     if (!currentUser?.dispensaryId || !productId) { setIsLoadingInitialData(false); return; }
     setIsLoadingInitialData(true);
     let fetchedDispensary: Dispensary | null = null;
-    let fetchedCategoryStructure: Record<string, any> | null = null;
+    let fetchedCategoryStructureObject: Record<string, any> | null = null;
 
     try {
       const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId);
@@ -83,14 +86,14 @@ export default function EditProductPage() {
         if (!categoriesSnapshot.empty) {
           const categoriesDoc = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
            if (categoriesDoc.categoriesData && typeof categoriesDoc.categoriesData === 'object' && Object.keys(categoriesDoc.categoriesData).length > 0) {
-            fetchedCategoryStructure = categoriesDoc.categoriesData;
-            setCategoryStructureObject(fetchedCategoryStructure);
-            setMainCategoryOptions(Object.keys(fetchedCategoryStructure).sort());
+            fetchedCategoryStructureObject = categoriesDoc.categoriesData;
+            setCategoryStructureObject(fetchedCategoryStructureObject);
+            setMainCategoryOptions(Object.keys(fetchedCategoryStructureObject).filter(key => key.trim() !== '').sort());
           } else {
              toast({ title: "Info", description: `No product categories defined or structure is not an object for type "${fetchedDispensary.dispensaryType}". Manual category entry may be needed.`, variant: "default", duration: 8000 });
           }
         } else {
-          toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Contact admin.`, variant: "default", duration: 10000 });
+          toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Please ensure a Super Admin has set them up in 'Admin Dashboard > Dispensary Types > Manage Categories'.`, variant: "default", duration: 10000 });
         }
       } else {
         toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'. This is needed for structured category selection.", variant: "destructive", duration: 10000 });
@@ -122,16 +125,17 @@ export default function EditProductPage() {
         setOldImageUrl(productData.imageUrl);
 
         // Initialize dynamic selects based on fetched product data and category structure
-        if (productData.category && fetchedCategoryStructure) {
+        if (productData.category && fetchedCategoryStructureObject) {
+            setSelectedMainCategoryName(productData.category); // Trigger useEffect for L1
             const mainCatValue = productData.category;
-            if (fetchedCategoryStructure[mainCatValue] && typeof fetchedCategoryStructure[mainCatValue] === 'object') {
-                setSubCategoryL1Options(Object.keys(fetchedCategoryStructure[mainCatValue]).sort());
+            if (fetchedCategoryStructureObject[mainCatValue] && typeof fetchedCategoryStructureObject[mainCausetSubCategoryL1OptionstObject.keys(fetchedCategoryStructureObject[mainCatValue]).filter(key => key.trim() !== '').sort());
                 if (productData.subcategory) {
+                    setSelectedSubCategoryL1Name(productData.subcategory); // Trigger useEffect for L2
                     const subCatL1Value = productData.subcategory;
-                    if (fetchedCategoryStructure[mainCatValue][subCatL1Value] && typeof fetchedCategoryStructure[mainCatValue][subCatL1Value] === 'object') {
-                         const nextLevel = fetchedCategoryStructure[mainCatValue][subCatL1Value];
-                         if (typeof nextLevel === 'object' && !Array.isArray(nextLevel)) {
-                            setSubCategoryL2Options(Object.keys(nextLevel).sort());
+                    if (fetchedCategoryStructureObject[mainCatValue][subCatL1Value] && typeof fetchedCategoryStructureObject[mainCatValue][subCatL1Value] === 'object') {
+                         const nextLevel = fetchedCategoryStructureObject[mainCatValue][subCatL1Value];
+                         if (typeof nextLevel === 'object' && !Array.isArray(nextLevel) && Object.keys(nextLevel).length > 0) {
+                            setSubCategoryL2Options(Object.keys(nextLevel).filter(key => key.trim() !== '').sort());
                          }
                     }
                 }
@@ -157,60 +161,69 @@ export default function EditProductPage() {
   }, [currentUser, authLoading, fetchDispensaryAndProductData, router]);
 
   // Effect for Main Category change
-  const watchMainCategory = form.watch('category');
   useEffect(() => {
-    if (watchMainCategory && categoryStructureObject && categoryStructureObject[watchMainCategory] && typeof categoryStructureObject[watchMainCategory] === 'object') {
-      setSubCategoryL1Options(Object.keys(categoryStructureObject[watchMainCategory]).sort());
+    const mainCategoryValue = selectedMainCategoryName;
+    if (mainCategoryValue && categoryStructureObject && categoryStructureObject[mainCategoryValue] && typeof categoryStructureObject[mainCategoryValue] === 'object') {
+      setSubCategoryL1Options(Object.keys(categoryStructureObject[mainCategoryValue]).filter(key => key.trim() !== '').sort());
     } else {
       setSubCategoryL1Options([]);
     }
-    // Only reset if the main category change was triggered by user, not initial load
-    if (form.formState.dirtyFields.category) {
-        form.setValue('subcategory', null, { shouldValidate: true });
-        form.setValue('subSubcategory', null, { shouldValidate: true });
+    // Only reset subcategories if the change is from user interaction, not initial load
+    if (form.formState.dirtyFields.category || (existingProduct && selectedMainCategoryName !== existingProduct.category) ) {
+        form.setValue('subcategory', null);
+        setSelectedSubCategoryL1Name(null);
+        form.setValue('subSubcategory', null);
         setSubCategoryL2Options([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchMainCategory, categoryStructureObject]);
+  }, [selectedMainCategoryName, categoryStructureObject, form, existingProduct]);
 
   // Effect for L1 Subcategory change
-  const watchSubCategoryL1 = form.watch('subcategory');
   useEffect(() => {
-    if (watchMainCategory && watchSubCategoryL1 && categoryStructureObject &&
-        categoryStructureObject[watchMainCategory] &&
-        categoryStructureObject[watchMainCategory][watchSubCategoryL1] &&
-        typeof categoryStructureObject[watchMainCategory][watchSubCategoryL1] === 'object') {
-        const nextLevel = categoryStructureObject[watchMainCategory][watchSubCategoryL1];
-        if (typeof nextLevel === 'object' && !Array.isArray(nextLevel)) {
-            setSubCategoryL2Options(Object.keys(nextLevel).sort());
+    const mainCategoryValue = selectedMainCategoryName;
+    const subCategoryL1Value = selectedSubCategoryL1Name;
+
+    if (mainCategoryValue && subCategoryL1Value && categoryStructureObject &&
+        categoryStructureObject[mainCategoryValue] &&
+        categoryStructureObject[mainCategoryValue][subCategoryL1Value] &&
+        typeof categoryStructureObject[mainCategoryValue][subCategoryL1Value] === 'object') {
+        
+        const nextLevel = categoryStructureObject[mainCategoryValue][subCategoryL1Value];
+        if (typeof nextLevel === 'object' && !Array.isArray(nextLevel) && Object.keys(nextLevel).length > 0) {
+           setSubCategoryL2Options(Object.keys(nextLevel).filter(key => key.trim() !== '').sort());
         } else {
             setSubCategoryL2Options([]);
         }
     } else {
       setSubCategoryL2Options([]);
     }
-    if (form.formState.dirtyFields.subcategory) {
-        form.setValue('subSubcategory', null, { shouldValidate: true });
+     // Only reset subSubcategory if the change is from user interaction, not initial load
+    if (form.formState.dirtyFields.subcategory || (existingProduct && selectedSubCategoryL1Name !== existingProduct.subcategory)) {
+        form.setValue('subSubcategory', null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSubCategoryL1, watchMainCategory, categoryStructureObject]);
+  }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, existingProduct]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+       if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({ title: "Image Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
+        return;
+      }
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
-      form.setValue('imageUrl', ''); 
+      form.setValue('imageUrl', ''); // Clear existing URL if new file is chosen
     }
   };
 
   const handleRemoveImage = async () => {
     setImageFile(null);
     setImagePreview(null);
-    form.setValue('imageUrl', null); 
+    form.setValue('imageUrl', null); // Explicitly set to null to indicate removal
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
@@ -218,15 +231,15 @@ export default function EditProductPage() {
     if (!currentUser?.dispensaryId || !dispensaryData || !existingProduct?.id) {
       toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" }); return;
     }
-    if (!data.category || data.category.trim() === "") {
+     if (!data.category || data.category.trim() === "") {
         toast({ title: "Category Required", description: "Please select or enter a main product category.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
 
     setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); 
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Get current value from form (might be null if removed)
 
-    if (imageFile) { 
+    if (imageFile) { // A new file was selected for upload
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -235,18 +248,21 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
+        // If a new image was uploaded and there was an old one, delete the old one
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(finalImageUrl);
+        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
+      // Image was explicitly removed (imageUrl set to null) and there was an old image
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); }
       catch (e: any) {
         if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed (on removal):", e);
-        else {finalImageUrl = null; setOldImageUrl(null);}
+        else {finalImageUrl = null; setOldImageUrl(null);} // Assume deleted if not found
       }
     }
+    // If no new file and imageUrl wasn't set to null, finalImageUrl remains the existingProduct.imageUrl from form reset
 
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
@@ -295,7 +311,7 @@ export default function EditProductPage() {
                 <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
                     <div><h4 className="font-semibold">Category Structure Not Found for &quot;{dispensaryData.dispensaryType}&quot;</h4>
-                        <p className="text-sm">Please manually enter a main category name below. For a structured list, ask a Super Admin to define categories for your dispensary type.</p>
+                        <p className="text-sm">Please manually enter a main category name below. For a structured list, ask a Super Admin to define categories for your dispensary type in 'Admin Dashboard &gt; Dispensary Types &gt; Manage Categories'.</p>
                     </div>
                 </div>
             )}
@@ -304,9 +320,16 @@ export default function EditProductPage() {
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem> <FormLabel>Main Category *</FormLabel>
                 {mainCategoryOptions.length > 0 ? (
-                  <Select onValueChange={field.onChange} value={field.value || ''} >
+                  <Select 
+                    onValueChange={(value) => {
+                        field.onChange(value === "none" ? "" : value);
+                        setSelectedMainCategoryName(value === "none" ? null : value);
+                    }} 
+                    value={field.value ?? undefined} 
+                  >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
                     <SelectContent>
+                         <SelectItem value="none">None (or type custom)</SelectItem>
                         {mainCategoryOptions.map((catName) => ( <SelectItem key={catName} value={catName}>{catName}</SelectItem> ))}
                     </SelectContent>
                   </Select>
@@ -316,26 +339,35 @@ export default function EditProductPage() {
                 <FormMessage />
               </FormItem> )} />
 
-            {watchMainCategory && subCategoryL1Options.length > 0 && (
+            {selectedMainCategoryName && subCategoryL1Options.length > 0 && (
               <FormField control={form.control} name="subcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(value === "" ? null : value)} value={field.value || ''} >
+                  <Select 
+                    onValueChange={(value) => {
+                        field.onChange(value === "none" ? null : value);
+                        setSelectedSubCategoryL1Name(value === "none" ? null : value);
+                    }} 
+                    value={field.value ?? undefined}
+                  >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select L1 subcategory (optional)" /></SelectTrigger></FormControl>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {subCategoryL1Options.map((subCatName) => ( <SelectItem key={subCatName} value={subCatName}>{subCatName}</SelectItem> ))}
                     </SelectContent>
                   </Select> <FormMessage />
                 </FormItem> )} />
             )}
 
-            {watchSubCategoryL1 && subCategoryL2Options.length > 0 && (
+            {selectedSubCategoryL1Name && subCategoryL2Options.length > 0 && (
               <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(value === "" ? null : value)} value={field.value || ''} >
+                  <Select 
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)} 
+                    value={field.value ?? undefined}
+                  >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select L2 subcategory (optional)" /></SelectTrigger></FormControl>
                     <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {subCategoryL2Options.map((subSubCatName) => ( <SelectItem key={subSubCatName} value={subSubCatName}>{subSubCatName}</SelectItem> ))}
                     </SelectContent>
                   </Select> <FormMessage />
@@ -346,7 +378,7 @@ export default function EditProductPage() {
             <div className="grid md:grid-cols-3 gap-6">
               <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="unit" render={({ field }) => ( <FormItem><FormLabel>Unit *</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}> <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl> <SelectContent> {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)} </SelectContent> </Select> <FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="unit" render={({ field }) => ( <FormItem><FormLabel>Unit *</FormLabel> <Select onValueChange={field.onChange} value={field.value ?? undefined}> <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl> <SelectContent> {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)} </SelectContent> </Select> <FormMessage /></FormItem> )} />
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
@@ -364,7 +396,7 @@ export default function EditProductPage() {
               <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Organic, Indoor" disabled={isLoading} /><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Product Image</h3>
-            <FormField control={form.control} name="imageUrl" render={({ field }) => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile || imagePreview ? "Change Image" : "Upload Image"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {(imagePreview || field.value) && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove Image </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Save changes.</p>} <FormDescription>Recommended: Clear, well-lit photo. PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="imageUrl" render={() => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile || imagePreview ? "Change Image" : "Upload Image"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {(imagePreview || form.getValues('imageUrl')) && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove Image </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Save changes.</p>} <FormDescription>Recommended: Clear, well-lit photo. PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
             <Separator />
             <div className="space-y-4">
                 <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
