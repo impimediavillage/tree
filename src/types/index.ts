@@ -1,10 +1,10 @@
 
 import type { Timestamp } from 'firebase/firestore';
 
-// New interface for structured product categories (used within dispensaryTypeProductCategories documents)
+// Updated ProductCategory to support nesting
 export interface ProductCategory {
   name: string;
-  subcategories?: string[];
+  subcategories?: ProductCategory[]; // Recursive for nesting
 }
 
 // Represents the structure of a Dispensary document in Firestore
@@ -14,7 +14,7 @@ export interface Dispensary {
   phone: string;
   ownerEmail: string;
   dispensaryName: string;
-  dispensaryType: string; // This links to the 'name' field in DispensaryType AND the document ID in dispensaryTypeProductCategories
+  dispensaryType: string; 
   currency: string;
   openTime?: string | null;
   closeTime?: string | null;
@@ -43,24 +43,23 @@ export interface Dispensary {
   reviewCount?: number;
 }
 
-// Represents the structure for Dispensary Type documents (basic info, categories are now separate)
+// Represents the structure for Dispensary Type documents (basic info)
 export interface DispensaryType {
   id?: string;
   name: string; // Unique name for the dispensary type
   description?: string | null;
-  iconPath?: string | null; // URL or path to an icon
-  image?: string | null;    // URL or path to a banner/representative image
-  advisorFocusPrompt?: string | null; // Specific instructions for AI advisors for this type
-  // productCategories field is REMOVED here. It's now in a separate collection.
+  iconPath?: string | null; 
+  image?: string | null;    
+  advisorFocusPrompt?: string | null; 
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
 
 // Represents a document in the 'dispensaryTypeProductCategories' collection
 export interface DispensaryTypeProductCategoriesDoc {
-  id?: string; // Document ID, should match a DispensaryType's name
-  name?: string; // Optional: Name of the dispensary type (can be redundant if ID is name)
-  categories: ProductCategory[]; // The actual list of product categories and their subcategories
+  id?: string; 
+  name?: string; 
+  categories: ProductCategory[]; // Uses the recursive ProductCategory
   updatedAt?: Timestamp | Date | string;
 }
 
@@ -68,31 +67,32 @@ export interface DispensaryTypeProductCategoriesDoc {
 // Represents a Product document in Firestore
 export interface Product {
   id?: string;
-  dispensaryId: string; // Foreign key to Dispensaries collection
-  dispensaryName: string; // Denormalized for easier display
-  dispensaryType: string; // Denormalized from dispensary
-  productOwnerEmail: string; // Denormalized from dispensary owner
+  dispensaryId: string; 
+  dispensaryName: string; 
+  dispensaryType: string; 
+  productOwnerEmail: string; 
   name: string;
   description: string;
-  category: string; // Main category name
-  subcategory?: string | null; // Selected subcategory name
-  strain?: string | null; // e.g., Blue Dream, OG Kush. Optional.
-  thcContent?: number | null; // Percentage
-  cbdContent?: number | null; // Percentage
+  category: string; 
+  subcategory?: string | null; 
+  subSubcategory?: string | null; // New field for second level subcategory
+  strain?: string | null; 
+  thcContent?: number | null; 
+  cbdContent?: number | null; 
   price: number;
-  currency: string; // Should match dispensary's currency
-  unit: string; // e.g., gram, oz, ml, piece, pack of 5 seeds
+  currency: string; 
+  unit: string; 
   quantityInStock: number;
-  imageUrl?: string | null; // URL to product image
+  imageUrl?: string | null; 
   labTested?: boolean;
-  effects?: string[]; // e.g., Relaxed, Happy, Uplifted, Focused, Energetic
-  flavors?: string[]; // e.g., Earthy, Sweet, Citrus, Pine, Diesel
-  medicalUses?: string[]; // e.g., Pain Relief, Anxiety, Insomnia, Nausea
-  isAvailableForPool?: boolean; // If the product can be shared/requested by other dispensaries
-  tags?: string[]; // General tags for searching/filtering
+  effects?: string[]; 
+  flavors?: string[]; 
+  medicalUses?: string[]; 
+  isAvailableForPool?: boolean; 
+  tags?: string[]; 
   createdAt: Timestamp | Date | string;
   updatedAt: Timestamp | Date | string;
-  dispensaryLocation?: { // Denormalized for easier map display/filtering if products are shown on a general map
+  dispensaryLocation?: { 
     address: string;
     latitude?: number | null;
     longitude?: number | null;
@@ -110,10 +110,10 @@ export interface NoteData {
 export interface ProductRequest {
   id?: string;
   productId: string;
-  productName: string; // Denormalized from Product
+  productName: string; 
   productOwnerDispensaryId: string;
-  productOwnerEmail: string; // Denormalized from Product Owner
-  productImage?: string | null; // Denormalized from Product
+  productOwnerEmail: string; 
+  productImage?: string | null; 
 
   requesterDispensaryId: string;
   requesterDispensaryName: string;
