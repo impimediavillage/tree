@@ -26,16 +26,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2 } from 'lucide-react';
+import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2, ListPlus } from 'lucide-react'; // Added ListPlus
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import type { DispensaryType } from '@/types'; // ProductCategories are now in a separate collection
-import { dispensaryTypeSchema, type DispensaryTypeFormData } from '@/lib/schemas'; // productCategories removed from this schema
+import type { DispensaryType } from '@/types';
+import { dispensaryTypeSchema, type DispensaryTypeFormData } from '@/lib/schemas';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
-// MultiInputTags for productCategories is REMOVED as this is now managed separately
 
 interface DispensaryTypeDialogProps {
   dispensaryType?: DispensaryType | null;
@@ -74,7 +73,6 @@ export function DispensaryTypeDialog({
       iconPath: null,
       image: null,
       advisorFocusPrompt: '',
-      // productCategories: [], // REMOVED from default values
     },
   });
 
@@ -87,13 +85,12 @@ export function DispensaryTypeDialog({
           iconPath: dispensaryType.iconPath === "" ? null : (dispensaryType.iconPath || null),
           image: dispensaryType.image === "" ? null : (dispensaryType.image || null),
           advisorFocusPrompt: dispensaryType.advisorFocusPrompt || '',
-          // productCategories: dispensaryType.productCategories || [], // REMOVED
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
       } else {
         form.reset({
-          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', // productCategories: [], // REMOVED
+          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '',
         });
         setIconPreview(null);
         setImagePreview(null);
@@ -211,7 +208,6 @@ export function DispensaryTypeDialog({
         newImageUrl = null; 
       }
 
-      // productCategories is no longer part of DispensaryType, so it's removed from dataToSave
       const dataToSave: Omit<DispensaryType, 'id' | 'createdAt' | 'updatedAt'> & {updatedAt: any} = {
         name: formData.name,
         description: formData.description || null,
@@ -321,12 +317,10 @@ export function DispensaryTypeDialog({
                 )}
               />
 
-              {/* Product Categories Management REMOVED from here */}
-              {/* It will be managed in a separate UI for the 'dispensaryTypeProductCategories' collection */}
               {isSuperAdmin && (
                 <div className="p-3 border-t border-b border-dashed my-4 text-sm text-muted-foreground">
                     <ListPlus className="inline h-4 w-4 mr-1.5" />
-                    Product categories and subcategories for this Dispensary Type are now managed in a dedicated section (coming soon) or directly in Firestore under the <code className="bg-muted px-1 py-0.5 rounded text-xs">dispensaryTypeProductCategories</code> collection with a document ID matching this type&apos;s name.
+                    Product categories and subcategories for this Dispensary Type are now managed in a dedicated section (via &quot;Manage Categories&quot; button on the Dispensary Types page) or directly in Firestore under the <code className="bg-muted px-1 py-0.5 rounded text-xs">dispensaryTypeProductCategories</code> collection with a document ID matching this type&apos;s name.
                 </div>
               )}
 
@@ -397,5 +391,3 @@ export function DispensaryTypeDialog({
     </Dialog>
   );
 }
-
-    
