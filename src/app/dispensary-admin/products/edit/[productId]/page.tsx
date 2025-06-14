@@ -9,7 +9,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where } from 'firebase/firestore'; // Removed getDocs as it's not used here
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -81,10 +81,11 @@ export default function EditProductPage() {
       setDispensaryData(fetchedDispensary);
 
       if (fetchedDispensary.dispensaryType) {
-        const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', fetchedDispensary.dispensaryType);
-        const categoriesSnap = await getDoc(categoriesDocRef);
-        if (categoriesSnap.exists()) {
-          const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
+        const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
+        const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
+        const categoriesSnapshot = await getDocs(q);
+        if (!categoriesSnapshot.empty) {
+          const categoriesData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
           setDefinedProductCategories(categoriesData.categories || []);
         } else { 
           setDefinedProductCategories([]); 
@@ -115,11 +116,9 @@ export default function EditProductPage() {
           subSubcategory: productData.subSubcategory || null,
         });
         setImagePreview(productData.imageUrl || null); 
-        setOldImageUrl(productData.imageUrl); // Store the initial image URL
+        setOldImageUrl(productData.imageUrl); 
         
-        // Initialize category states based on fetched product data
         if(productData.category) setSelectedMainCategoryName(productData.category);
-        // Subcategory L1 and L2 states will be set by their respective useEffects once definedProductCategories is populated
       } else {
         toast({ title: "Error", description: "Product not found.", variant: "destructive" }); router.push("/dispensary-admin/products");
       }
@@ -137,12 +136,10 @@ export default function EditProductPage() {
     else if (!authLoading && !currentUser) { router.push("/auth/signin"); }
   }, [currentUser, authLoading, fetchDispensaryAndProductData, router]);
 
-  // Effect to update L1 subcategories when main category changes OR when definedProductCategories loads
   useEffect(() => {
     if (definedProductCategories.length > 0 && selectedMainCategoryName) {
       const selectedCategoryObject = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
       setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
-      // Only reset subcategory if the main category actually changed or if existing sub L1 is no longer valid
       const currentSubL1 = form.getValues('subcategory');
       if (existingProduct?.category !== selectedMainCategoryName || 
           (currentSubL1 && !selectedCategoryObject?.subcategories?.find(s => s.name === currentSubL1))) {
@@ -151,9 +148,9 @@ export default function EditProductPage() {
         form.setValue('subSubcategory', null);
         setAvailableSubcategoriesL2([]);
       } else if (currentSubL1) {
-         setSelectedSubcategoryL1Name(currentSubL1); // Preserve if valid
+         setSelectedSubcategoryL1Name(currentSubL1); 
       }
-    } else if (!selectedMainCategoryName) { // If main category is cleared
+    } else if (!selectedMainCategoryName) { 
       setAvailableSubcategoriesL1([]);
       form.setValue('subcategory', null);
       setSelectedSubcategoryL1Name(null);
@@ -162,18 +159,16 @@ export default function EditProductPage() {
     }
   }, [selectedMainCategoryName, definedProductCategories, form, existingProduct]);
 
-  // Effect to update L2 subcategories when L1 subcategory changes OR when availableSubcategoriesL1 loads
   useEffect(() => {
     if (availableSubcategoriesL1.length > 0 && selectedSubcategoryL1Name) {
       const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
       setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
-       // Only reset sub-subcategory if L1 changed or existing sub L2 is no longer valid
       const currentSubL2 = form.getValues('subSubcategory');
       if (existingProduct?.subcategory !== selectedSubcategoryL1Name ||
           (currentSubL2 && !selectedSubCategoryL1Object?.subcategories?.find(s => s.name === currentSubL2))) {
         form.setValue('subSubcategory', null);
       }
-    } else if (!selectedSubcategoryL1Name) { // If L1 subcategory is cleared
+    } else if (!selectedSubcategoryL1Name) { 
       setAvailableSubcategoriesL2([]);
       form.setValue('subSubcategory', null);
     }
@@ -187,14 +182,14 @@ export default function EditProductPage() {
       const reader = new FileReader(); 
       reader.onloadend = () => setImagePreview(reader.result as string); 
       reader.readAsDataURL(file); 
-      form.setValue('imageUrl', ''); // Clear existing URL from form if new file is chosen
+      form.setValue('imageUrl', ''); 
     }
   };
 
   const handleRemoveImage = async () => {
     setImageFile(null); 
     setImagePreview(null); 
-    form.setValue('imageUrl', null); // Explicitly set to null to indicate removal
+    form.setValue('imageUrl', null); 
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
@@ -207,9 +202,9 @@ export default function EditProductPage() {
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
     setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Current value (could be existing URL or null if removed)
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); 
 
-    if (imageFile) { // A new file was selected
+    if (imageFile) { 
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -218,19 +213,16 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, 
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
-        // If upload successful and there was an old image different from new, delete old one
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
+        setOldImageUrl(finalImageUrl); 
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
-      // Image was explicitly removed (imageUrl field set to null) and there was an old Firebase Storage image
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); } 
       catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); else {finalImageUrl = null; setOldImageUrl(null);} }
     }
-    // If no new image file and imageUrl field wasn't cleared, finalImageUrl retains the existing URL from form.getValues or the initial oldImageUrl
-
+    
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
       const productUpdateData = { ...data, imageUrl: finalImageUrl, 
@@ -356,3 +348,4 @@ export default function EditProductPage() {
     </Card>
   );
 }
+

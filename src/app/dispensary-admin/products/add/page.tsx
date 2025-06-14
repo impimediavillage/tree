@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -85,10 +85,13 @@ export default function AddProductPage() {
           form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
           if (fetchedDispensary.dispensaryType) {
-            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', fetchedDispensary.dispensaryType);
-            const categoriesSnap = await getDoc(categoriesDocRef);
-            if (categoriesSnap.exists()) {
-              const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
+            console.log(`Attempting to fetch categories for dispensary type: "${fetchedDispensary.dispensaryType}" by querying 'name' field in 'dispensaryTypeProductCategories'`);
+            const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
+            const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
+            const categoriesSnapshot = await getDocs(q);
+
+            if (!categoriesSnapshot.empty) {
+              const categoriesData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
               setDefinedProductCategories(categoriesData.categories || []);
               if (!categoriesData.categories || categoriesData.categories.length === 0) {
                  toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Add products by manually entering category, or request admin to set up categories.`, variant: "default", duration: 8000 });
@@ -116,7 +119,6 @@ export default function AddProductPage() {
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, form]);
 
-  // Effect to update L1 subcategories when main category changes
   useEffect(() => {
     const selectedCategoryObject = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
     setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
@@ -126,7 +128,6 @@ export default function AddProductPage() {
     setAvailableSubcategoriesL2([]); 
   }, [selectedMainCategoryName, definedProductCategories, form]);
 
-  // Effect to update L2 subcategories when L1 subcategory changes
   useEffect(() => {
     const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
     setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);

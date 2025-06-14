@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, query as firestoreQuery, collection, where, limit } from 'firebase/firestore';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory, User } from '@/types';
 import { dispensaryTypeProductCategoriesSchema, type DispensaryTypeProductCategoriesFormData } from '@/lib/schemas';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,13 +31,15 @@ const NestedSubcategoryManager: React.FC<{
   register: any;
   getValues: any;
   setValue: any;
-}> = ({ nestingLevel, control, pathPrefix, register, getValues, setValue }) => {
+  disabled?: boolean;
+}> = ({ nestingLevel, control, pathPrefix, register, getValues, setValue, disabled }) => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: `${pathPrefix}`,
   });
 
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  const [expanded, setExpanded] = React.useState(true); // Manage expansion state
 
   const handleAddSubcategory = () => {
     if (newSubcategoryName.trim() === '') return;
@@ -45,6 +47,7 @@ const NestedSubcategoryManager: React.FC<{
     setNewSubcategoryName('');
   };
 
+  const ChevronIcon = expanded ? ChevronDown : ChevronRight;
 
   if (nestingLevel >= 2) { // Limit UI nesting to 2 levels of subcategories (Main -> Sub -> SubSub)
     return (
@@ -60,29 +63,33 @@ const NestedSubcategoryManager: React.FC<{
                     render={({ field }) => (
                     <FormItem className="flex-grow">
                         <FormControl>
-                        <Input {...field} placeholder="Subcategory name" className="h-8 text-sm" />
+                        <Input {...field} placeholder="Subcategory name" className="h-8 text-sm" disabled={disabled} />
                         </FormControl>
                         <FormMessage className="text-xs" />
                     </FormItem>
                     )}
                 />
-                <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8">
-                    <Trash2 className="h-3.5 w-3.5" />
-                </Button>
+                {!disabled && (
+                  <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8">
+                      <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                )}
                 </div>
             ))}
-            <div className="flex items-center gap-2 mt-1">
-                <Input 
-                    value={newSubcategoryName}
-                    onChange={(e) => setNewSubcategoryName(e.target.value)}
-                    placeholder={`Add ${nestingLevel === 0 ? "Subcategory" : "Sub-Subcategory"}`}
-                    className="h-8 text-sm flex-grow"
-                    onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubcategory();}}}
-                />
-                <Button type="button" variant="outline" size="icon" onClick={handleAddSubcategory} className="h-8 w-8 shrink-0">
-                    <CornerDownLeft className="h-3.5 w-3.5" />
-                </Button>
-            </div>
+            {!disabled && (
+              <div className="flex items-center gap-2 mt-1">
+                  <Input 
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      placeholder={`Add ${nestingLevel === 0 ? "Subcategory" : "Sub-Subcategory"}`}
+                      className="h-8 text-sm flex-grow"
+                      onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubcategory();}}}
+                  />
+                  <Button type="button" variant="outline" size="icon" onClick={handleAddSubcategory} className="h-8 w-8 shrink-0">
+                      <CornerDownLeft className="h-3.5 w-3.5" />
+                  </Button>
+              </div>
+            )}
         </div>
     );
   }
@@ -90,27 +97,31 @@ const NestedSubcategoryManager: React.FC<{
 
   return (
     <div className={cn("ml-4 pl-4 border-l-2 border-dashed", nestingLevel === 0 ? "border-primary/30" : "border-accent/30")}>
-      <FormLabel className="text-xs text-muted-foreground block mb-1">
-        {nestingLevel === 0 ? "Subcategories (Level 1)" : "Subcategories (Level 2 - Sub-Subcategories)"}:
-      </FormLabel>
-      {fields.map((item: any, index) => (
+      <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center text-xs text-muted-foreground mb-1 hover:text-foreground">
+        <ChevronIcon className="h-4 w-4 mr-1" />
+        {expanded ? 'Hide' : 'Show'} {nestingLevel === 0 ? "Subcategories (L1)" : "Subcategories (L2)"}
+      </button>
+      {expanded && fields.map((item: any, index) => (
         <Card key={item.id} className="p-2.5 mb-2 bg-muted/30 border-border/50 shadow-sm animate-fade-in-scale-up" style={{ animationDuration: '0.2s', animationDelay: `${index * 30}ms`}}>
           <div className="flex items-center gap-2 mb-1.5">
+            <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab" />
             <FormField
               control={control}
               name={`${pathPrefix}.${index}.name`}
               render={({ field }) => (
                 <FormItem className="flex-grow">
                   <FormControl>
-                    <Input {...field} placeholder={`Name for Subcategory Level ${nestingLevel + 1}`} className="h-8 text-sm"/>
+                    <Input {...field} placeholder={`Name for Subcategory Level ${nestingLevel + 1}`} className="h-8 text-sm" disabled={disabled}/>
                   </FormControl>
                   <FormMessage className="text-xs"/>
                 </FormItem>
               )}
             />
-            <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8">
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {!disabled && (
+              <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8">
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
           {/* Recursively render for next level if nestingLevel < 1 (allows Main -> Sub -> SubSub) */}
           {nestingLevel < 1 && (
@@ -121,22 +132,25 @@ const NestedSubcategoryManager: React.FC<{
               register={register}
               getValues={getValues}
               setValue={setValue}
+              disabled={disabled}
             />
           )}
         </Card>
       ))}
-       <div className="flex items-center gap-2 mt-1">
-            <Input 
-                value={newSubcategoryName}
-                onChange={(e) => setNewSubcategoryName(e.target.value)}
-                placeholder={`Add ${nestingLevel === 0 ? "Subcategory (L1)" : "Subcategory (L2)"}`}
-                className="h-8 text-sm flex-grow"
-                onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubcategory();}}}
-            />
-            <Button type="button" variant="outline" size="icon" onClick={handleAddSubcategory} className="h-8 w-8 shrink-0">
-                <CornerDownLeft className="h-3.5 w-3.5" />
-            </Button>
-        </div>
+       {!disabled && expanded && (
+         <div className="flex items-center gap-2 mt-1">
+              <Input 
+                  value={newSubcategoryName}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  placeholder={`Add ${nestingLevel === 0 ? "Subcategory (L1)" : "Subcategory (L2)"}`}
+                  className="h-8 text-sm flex-grow"
+                  onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubcategory();}}}
+              />
+              <Button type="button" variant="outline" size="icon" onClick={handleAddSubcategory} className="h-8 w-8 shrink-0">
+                  <CornerDownLeft className="h-3.5 w-3.5" />
+              </Button>
+          </div>
+        )}
     </div>
   );
 };
@@ -152,6 +166,7 @@ export default function EditDispensaryTypeCategoriesPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
+  const [documentId, setDocumentId] = useState<string | null>(null);
 
   const form = useForm<DispensaryTypeProductCategoriesFormData>({
     resolver: zodResolver(dispensaryTypeProductCategoriesSchema),
@@ -173,20 +188,25 @@ export default function EditDispensaryTypeCategoriesPage() {
     }
     setIsFetchingData(true);
     try {
-      const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryTypeName);
-      const docSnap = await getDoc(categoriesDocRef);
-      if (docSnap.exists()) {
+      const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
+      const q = firestoreQuery(categoriesCollectionRef, where('name', '==', dispensaryTypeName), limit(1));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        setDocumentId(docSnap.id);
         const data = docSnap.data() as DispensaryTypeProductCategoriesDoc;
         const sanitizedCategories = (data.categories || []).map(cat => ({
           ...cat,
           subcategories: (cat.subcategories || []).map(subcat => ({
             ...subcat,
-            subcategories: subcat.subcategories || [] // Ensure deepest level is an array
+            subcategories: subcat.subcategories || [] 
           }))
         }));
         form.reset({ categories: sanitizedCategories });
       } else {
         form.reset({ categories: [] }); 
+        setDocumentId(null); // No existing document, will create on save
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -210,31 +230,36 @@ export default function EditDispensaryTypeCategoriesPage() {
   const onSubmit = async (data: DispensaryTypeProductCategoriesFormData) => {
     if (!dispensaryTypeName || !currentUser || currentUser.role !== 'Super Admin') return;
     setIsLoading(true);
+    
+    // Determine if creating new or updating existing document
+    const docRef = documentId 
+        ? doc(db, 'dispensaryTypeProductCategories', documentId) 
+        : doc(collection(db, 'dispensaryTypeProductCategories')); // Create new doc ref if no ID
+
     try {
-      const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryTypeName);
-      
-      // Function to clean empty subcategory arrays recursively
       const cleanCategories = (categories: ProductCategory[]): ProductCategory[] => {
-        return categories.map(cat => {
-          const cleanedSubcategories = cat.subcategories ? cleanCategories(cat.subcategories) : [];
-          const newCat: ProductCategory = { name: cat.name };
-          if (cleanedSubcategories.length > 0) {
-            newCat.subcategories = cleanedSubcategories;
-          }
-          return newCat;
-        }).filter(cat => cat.name.trim() !== ''); // Filter out categories with empty names
+        return categories
+          .filter(cat => cat.name && cat.name.trim() !== '') // Filter out categories with empty names
+          .map(cat => {
+            const cleanedSubcategories = cat.subcategories ? cleanCategories(cat.subcategories) : [];
+            const newCat: ProductCategory = { name: cat.name.trim() };
+            if (cleanedSubcategories.length > 0) {
+              newCat.subcategories = cleanedSubcategories;
+            }
+            return newCat;
+          });
       };
 
       const categoriesToSave = cleanCategories(data.categories);
 
-      await setDoc(categoriesDocRef, {
+      await setDoc(docRef, {
         name: dispensaryTypeName, 
         categories: categoriesToSave,
         updatedAt: serverTimestamp(),
       }, { merge: true }); 
 
       toast({ title: "Categories Saved", description: `Product categories for "${dispensaryTypeName}" have been updated.` });
-      // router.push('/admin/dashboard/dispensary-types'); // Optionally redirect
+      if (!documentId) setDocumentId(docRef.id); // Store new ID if created
       fetchCategories(); // Re-fetch to ensure form reflects saved state
     } catch (error) {
       console.error("Error saving categories:", error);
@@ -295,13 +320,14 @@ export default function EditDispensaryTypeCategoriesPage() {
             <CardHeader>
               <CardTitle>Category Structure Editor</CardTitle>
               <CardDescription>
-                Define main categories, subcategories, and sub-subcategories for products of type &quot;{dispensaryTypeName}&quot;.
+                Define main categories and up to two levels of subcategories for products of type &quot;{dispensaryTypeName}&quot;.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {categoryFields.map((categoryItem, categoryIndex) => (
                 <Card key={categoryItem.id} className="p-3 bg-card border shadow-md relative animate-fade-in-scale-up" style={{ animationDuration: '0.3s', animationDelay: `${categoryIndex * 50}ms`}}>
                   <div className="flex items-start justify-between mb-2">
+                     <GripVertical className="h-5 w-5 text-muted-foreground/50 cursor-grab mt-7 mr-1" />
                     <FormField
                       control={form.control}
                       name={`categories.${categoryIndex}.name`}
@@ -335,7 +361,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                   </div>
                   
                   <NestedSubcategoryManager
-                    nestingLevel={0} // Start at level 0 for first subcategories
+                    nestingLevel={0} 
                     control={form.control}
                     pathPrefix={`categories.${categoryIndex}.subcategories`}
                     register={form.register}
@@ -353,7 +379,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                 <PackagePlus className="mr-2 h-4 w-4" /> Add Main Category
               </Button>
             </CardContent>
-            <CardFooter className="border-t pt-6 bg-muted/30 -mx-6 px-6 pb-6">
+            <CardFooter className="border-t pt-6 bg-muted/30 -mx-0 sm:-mx-6 px-6 pb-6 rounded-b-lg">
                 <div className="flex gap-4 w-full">
                     <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
@@ -379,4 +405,3 @@ export default function EditDispensaryTypeCategoriesPage() {
     </div>
   );
 }
-
