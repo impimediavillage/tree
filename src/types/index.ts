@@ -4,7 +4,7 @@ import type { Timestamp } from 'firebase/firestore';
 // Updated ProductCategory to support nesting
 export interface ProductCategory {
   name: string;
-  subcategories?: ProductCategory[]; // Recursive for nesting
+  subcategories?: ProductCategory[]; // Recursive
 }
 
 // Represents the structure of a Dispensary document in Firestore
@@ -58,7 +58,7 @@ export interface DispensaryType {
 // Represents a document in the 'dispensaryTypeProductCategories' collection
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string; 
-  name?: string; 
+  name: string; // Name of the dispensary type this category structure belongs to
   categories: ProductCategory[]; // Uses the recursive ProductCategory
   updatedAt?: Timestamp | Date | string;
 }
@@ -328,5 +328,3 @@ export interface ProductCategoryCount {
 export interface CartItem extends Product {
   quantity: number;
 }
-
-    
