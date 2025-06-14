@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -85,7 +85,6 @@ export default function AddProductPage() {
           form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
           if (fetchedDispensary.dispensaryType) {
-            console.log(`Attempting to fetch categories for dispensary type: "${fetchedDispensary.dispensaryType}" by querying 'name' field in 'dispensaryTypeProductCategories'`);
             const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
             const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
             const categoriesSnapshot = await getDocs(q);
@@ -216,6 +215,7 @@ export default function AddProductPage() {
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center"> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
             <Button variant="outline" size="sm" asChild>
+              
                 <Link href="/dispensary-admin/products">
                     <span className="flex items-center">
                         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
