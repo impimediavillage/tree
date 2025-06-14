@@ -16,53 +16,130 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Trash2, ArrowLeft, PackagePlus, Save, ListFilter, AlertTriangle, GripVertical } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, ArrowLeft, PackagePlus, Save, ListFilter, AlertTriangle, GripVertical, CornerDownLeft, ChevronDown, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-// Component for managing a single category's subcategories
-function SubcategoryManager({ categoryIndex, control, register, getValues, setValue }: {
-  categoryIndex: number;
+// Recursive component to manage nested subcategories
+const NestedSubcategoryManager: React.FC<{
+  nestingLevel: number;
   control: any; // Control<DispensaryTypeProductCategoriesFormData>
-  register: any; // UseFormRegister<DispensaryTypeProductCategoriesFormData>
-  getValues: any; // UseFormGetValues<DispensaryTypeProductCategoriesFormData>
-  setValue: any; // UseFormSetValue<DispensaryTypeProductCategoriesFormData>
-}) {
-  const { fields: subcategoryFields, append: appendSubcategory, remove: removeSubcategory } = useFieldArray({
+  pathPrefix: string; // e.g., `categories.${categoryIndex}.subcategories` OR `categories.${catIdx}.subcategories.${subCatIdx}.subcategories`
+  register: any;
+  getValues: any;
+  setValue: any;
+}> = ({ nestingLevel, control, pathPrefix, register, getValues, setValue }) => {
+  const { fields, append, remove } = useFieldArray({
     control,
-    name: `categories.${categoryIndex}.subcategories`,
+    name: `${pathPrefix}`,
   });
 
-  return (
-    <div className="ml-4 pl-4 border-l-2 border-dashed border-muted-foreground/30 space-y-3 py-3">
-      <FormLabel className="text-sm text-muted-foreground block mb-2">Subcategories:</FormLabel>
-      {subcategoryFields.map((subItem, subIndex) => (
-        <div key={subItem.id} className="flex items-center gap-2 animate-fade-in-scale-up" style={{ animationDuration: '0.3s', animationDelay: `${subIndex * 50}ms`}}>
-          <FormField
-            control={control}
-            name={`categories.${categoryIndex}.subcategories.${subIndex}`}
-            render={({ field }) => (
-              <FormItem className="flex-grow">
-                <FormControl>
-                  <Input {...field} placeholder="Subcategory name (e.g., Indica)" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button variant="ghost" size="icon" type="button" onClick={() => removeSubcategory(subIndex)} className="text-destructive hover:bg-destructive/10 shrink-0">
-            <Trash2 className="h-4 w-4" />
-          </Button>
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
+
+  const handleAddSubcategory = () => {
+    if (newSubcategoryName.trim() === '') return;
+    append({ name: newSubcategoryName.trim(), subcategories: [] });
+    setNewSubcategoryName('');
+  };
+
+
+  if (nestingLevel >= 2) { // Limit UI nesting to 2 levels of subcategories (Main -> Sub -> SubSub)
+    return (
+         <div className={cn("ml-4 pl-4 border-l-2 border-dashed", nestingLevel === 0 ? "border-primary/30" : "border-accent/30")}>
+            <FormLabel className="text-xs text-muted-foreground block mb-1">
+                {nestingLevel === 0 ? "Subcategories" : "Sub-Subcategories"}:
+            </FormLabel>
+            {fields.map((item, index) => (
+                <div key={item.id} className="flex items-center gap-2 mb-2 animate-fade-in-scale-up" style={{ animationDuration: '0.2s', animationDelay: `${index * 30}ms`}}>
+                <FormField
+                    control={control}
+                    name={`${pathPrefix}.${index}.name`}
+                    render={({ field }) => (
+                    <FormItem className="flex-grow">
+                        <FormControl>
+                        <Input {...field} placeholder="Subcategory name" className="h-8 text-sm" />
+                        </FormControl>
+                        <FormMessage className="text-xs" />
+                    </FormItem>
+                    )}
+                />
+                <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8">
+                    <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+                </div>
+            ))}
+            <div className="flex items-center gap-2 mt-1">
+                <Input 
+                    value={newSubcategoryName}
+                    onChange={(e) => setNewSubcategoryName(e.target.value)}
+                    placeholder={`Add ${nestingLevel === 0 ? "Subcategory" : "Sub-Subcategory"}`}
+                    className="h-8 text-sm flex-grow"
+                    onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubcategory();}}}
+                />
+                <Button type="button" variant="outline" size="icon" onClick={handleAddSubcategory} className="h-8 w-8 shrink-0">
+                    <CornerDownLeft className="h-3.5 w-3.5" />
+                </Button>
+            </div>
         </div>
+    );
+  }
+
+
+  return (
+    <div className={cn("ml-4 pl-4 border-l-2 border-dashed", nestingLevel === 0 ? "border-primary/30" : "border-accent/30")}>
+      <FormLabel className="text-xs text-muted-foreground block mb-1">
+        {nestingLevel === 0 ? "Subcategories (Level 1)" : "Subcategories (Level 2 - Sub-Subcategories)"}:
+      </FormLabel>
+      {fields.map((item: any, index) => (
+        <Card key={item.id} className="p-2.5 mb-2 bg-muted/30 border-border/50 shadow-sm animate-fade-in-scale-up" style={{ animationDuration: '0.2s', animationDelay: `${index * 30}ms`}}>
+          <div className="flex items-center gap-2 mb-1.5">
+            <FormField
+              control={control}
+              name={`${pathPrefix}.${index}.name`}
+              render={({ field }) => (
+                <FormItem className="flex-grow">
+                  <FormControl>
+                    <Input {...field} placeholder={`Name for Subcategory Level ${nestingLevel + 1}`} className="h-8 text-sm"/>
+                  </FormControl>
+                  <FormMessage className="text-xs"/>
+                </FormItem>
+              )}
+            />
+            <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} className="text-destructive hover:bg-destructive/10 shrink-0 h-8 w-8">
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          {/* Recursively render for next level if nestingLevel < 1 (allows Main -> Sub -> SubSub) */}
+          {nestingLevel < 1 && (
+            <NestedSubcategoryManager
+              nestingLevel={nestingLevel + 1}
+              control={control}
+              pathPrefix={`${pathPrefix}.${index}.subcategories`}
+              register={register}
+              getValues={getValues}
+              setValue={setValue}
+            />
+          )}
+        </Card>
       ))}
-      <Button type="button" variant="outline" size="sm" onClick={() => appendSubcategory('')}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Add Subcategory
-      </Button>
+       <div className="flex items-center gap-2 mt-1">
+            <Input 
+                value={newSubcategoryName}
+                onChange={(e) => setNewSubcategoryName(e.target.value)}
+                placeholder={`Add ${nestingLevel === 0 ? "Subcategory (L1)" : "Subcategory (L2)"}`}
+                className="h-8 text-sm flex-grow"
+                onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubcategory();}}}
+            />
+            <Button type="button" variant="outline" size="icon" onClick={handleAddSubcategory} className="h-8 w-8 shrink-0">
+                <CornerDownLeft className="h-3.5 w-3.5" />
+            </Button>
+        </div>
     </div>
   );
-}
+};
 
 
 export default function EditDispensaryTypeCategoriesPage() {
@@ -100,10 +177,12 @@ export default function EditDispensaryTypeCategoriesPage() {
       const docSnap = await getDoc(categoriesDocRef);
       if (docSnap.exists()) {
         const data = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-        // Ensure subcategories is always an array, even if undefined in Firestore
         const sanitizedCategories = (data.categories || []).map(cat => ({
           ...cat,
-          subcategories: cat.subcategories || [] 
+          subcategories: (cat.subcategories || []).map(subcat => ({
+            ...subcat,
+            subcategories: subcat.subcategories || [] // Ensure deepest level is an array
+          }))
         }));
         form.reset({ categories: sanitizedCategories });
       } else {
@@ -133,11 +212,20 @@ export default function EditDispensaryTypeCategoriesPage() {
     setIsLoading(true);
     try {
       const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryTypeName);
-      // Filter out empty subcategory strings before saving
-      const categoriesToSave = data.categories.map(cat => ({
-        ...cat,
-        subcategories: cat.subcategories?.filter(sub => sub && sub.trim() !== '') || []
-      }));
+      
+      // Function to clean empty subcategory arrays recursively
+      const cleanCategories = (categories: ProductCategory[]): ProductCategory[] => {
+        return categories.map(cat => {
+          const cleanedSubcategories = cat.subcategories ? cleanCategories(cat.subcategories) : [];
+          const newCat: ProductCategory = { name: cat.name };
+          if (cleanedSubcategories.length > 0) {
+            newCat.subcategories = cleanedSubcategories;
+          }
+          return newCat;
+        }).filter(cat => cat.name.trim() !== ''); // Filter out categories with empty names
+      };
+
+      const categoriesToSave = cleanCategories(data.categories);
 
       await setDoc(categoriesDocRef, {
         name: dispensaryTypeName, 
@@ -146,7 +234,8 @@ export default function EditDispensaryTypeCategoriesPage() {
       }, { merge: true }); 
 
       toast({ title: "Categories Saved", description: `Product categories for "${dispensaryTypeName}" have been updated.` });
-      router.push('/admin/dashboard/dispensary-types');
+      // router.push('/admin/dashboard/dispensary-types'); // Optionally redirect
+      fetchCategories(); // Re-fetch to ensure form reflects saved state
     } catch (error) {
       console.error("Error saving categories:", error);
       toast({ title: "Save Failed", description: "Could not save product categories.", variant: "destructive" });
@@ -204,33 +293,32 @@ export default function EditDispensaryTypeCategoriesPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card className="shadow-xl border-primary/20">
             <CardHeader>
-              <CardTitle>Category Structure</CardTitle>
+              <CardTitle>Category Structure Editor</CardTitle>
               <CardDescription>
-                Define main product categories and their specific subcategories for dispensaries of type &quot;{dispensaryTypeName}&quot;.
+                Define main categories, subcategories, and sub-subcategories for products of type &quot;{dispensaryTypeName}&quot;.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {categoryFields.map((categoryItem, categoryIndex) => (
-                <Card key={categoryItem.id} className="p-4 bg-card border shadow-md relative animate-fade-in-scale-up" style={{ animationDuration: '0.4s', animationDelay: `${categoryIndex * 100}ms`}}>
-                  {/* <GripVertical className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-grab" /> */}
-                  <div className="flex items-start justify-between mb-3">
+                <Card key={categoryItem.id} className="p-3 bg-card border shadow-md relative animate-fade-in-scale-up" style={{ animationDuration: '0.3s', animationDelay: `${categoryIndex * 50}ms`}}>
+                  <div className="flex items-start justify-between mb-2">
                     <FormField
                       control={form.control}
                       name={`categories.${categoryIndex}.name`}
                       render={({ field }) => (
                         <FormItem className="flex-grow mr-2">
-                          <FormLabel className="text-base font-semibold">Main Category Name</FormLabel>
+                          <FormLabel className="text-md font-semibold text-foreground">Main Category</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Flowers, Edibles, Concentrates" className="text-base" />
+                            <Input {...field} placeholder="e.g., Flowers, Edibles" className="text-md h-9"/>
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" type="button" className="text-destructive hover:bg-destructive/10 mt-6 shrink-0">
-                                <Trash2 className="h-5 w-5" />
+                            <Button variant="ghost" size="icon" type="button" className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9">
+                                <Trash2 className="h-4 w-4" />
                             </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -246,10 +334,11 @@ export default function EditDispensaryTypeCategoriesPage() {
                     </AlertDialog>
                   </div>
                   
-                  <SubcategoryManager 
-                    categoryIndex={categoryIndex} 
-                    control={form.control} 
-                    register={form.register} 
+                  <NestedSubcategoryManager
+                    nestingLevel={0} // Start at level 0 for first subcategories
+                    control={form.control}
+                    pathPrefix={`categories.${categoryIndex}.subcategories`}
+                    register={form.register}
                     getValues={form.getValues}
                     setValue={form.setValue}
                   />
@@ -259,9 +348,9 @@ export default function EditDispensaryTypeCategoriesPage() {
                 type="button" 
                 variant="secondary" 
                 onClick={() => appendCategory({ name: '', subcategories: [] })}
-                className="text-base py-3"
+                className="text-md py-2.5"
               >
-                <PackagePlus className="mr-2 h-5 w-5" /> Add Main Category
+                <PackagePlus className="mr-2 h-4 w-4" /> Add Main Category
               </Button>
             </CardContent>
             <CardFooter className="border-t pt-6 bg-muted/30 -mx-6 px-6 pb-6">

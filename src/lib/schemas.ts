@@ -117,8 +117,6 @@ export const ownerEditDispensarySchema = baseDispensarySchema.omit({
   ownerEmail: true,
   fullName: true,
 }).extend({
-  // status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended']), // Status not editable by owner
-  // applicationDate: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
     ctx.addIssue({
@@ -150,10 +148,10 @@ export const userProfileSchema = z.object({
 });
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;
 
-// Schema for Product Category object (can include subcategories)
-export const productCategorySchema = z.object({
+// Updated to be recursive for nested subcategories
+export const productCategorySchema: z.ZodType<import('@/types').ProductCategory> = z.object({
   name: z.string().min(1, "Category name cannot be empty.").max(100, "Category name too long."),
-  subcategories: z.array(z.string().min(1, "Subcategory name cannot be empty.").max(100, "Subcategory name too long.")).optional().default([]),
+  subcategories: z.array(z.lazy(() => productCategorySchema)).optional().default([]),
 });
 export type ProductCategoryFormData = z.infer<typeof productCategorySchema>;
 
@@ -163,7 +161,7 @@ export const dispensaryTypeProductCategoriesSchema = z.object({
 });
 export type DispensaryTypeProductCategoriesFormData = z.infer<typeof dispensaryTypeProductCategoriesSchema>;
 
-// Schema for Dispensary Type
+// Schema for Dispensary Type (productCategories field removed as it's now in a separate collection)
 export const dispensaryTypeSchema = z.object({
   name: z.string().min(2, { message: "Dispensary type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
@@ -173,12 +171,13 @@ export const dispensaryTypeSchema = z.object({
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 
-// Schema for Product
+// Schema for Product (updated with subSubcategory)
 export const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
   subcategory: z.string().optional().nullable(),
+  subSubcategory: z.string().optional().nullable(), // New field
   strain: z.string().optional().nullable(),
   thcContent: z.coerce.number().min(0).max(100).optional().nullable(),
   cbdContent: z.coerce.number().min(0).max(100).optional().nullable(),
@@ -321,7 +320,7 @@ export const userSchema = z.object({
   lastLoginAt: z.any().optional().nullable(),
   status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('Active'),
   preferredDispensaryTypes: z.array(z.string()).optional().default([]),
-  welcomeCreditsAwarded: z.boolean().optional().default(false), // New field
+  welcomeCreditsAwarded: z.boolean().optional().default(false), 
 });
 export type User = z.infer<typeof userSchema>;
 
@@ -345,7 +344,7 @@ export const dispensaryOwnerAddStaffSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'), // Staff start as pending
+  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'), 
 });
 export type DispensaryOwnerAddStaffFormData = z.infer<typeof dispensaryOwnerAddStaffSchema>;
 
@@ -354,8 +353,8 @@ export const dispensaryOwnerAddLeafUserSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'), // Leaf users also start as pending
-  credits: z.coerce.number().int().min(0).default(0), // Start with 0, award on activation
+  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'), 
+  credits: z.coerce.number().int().min(0).default(0), 
 });
 export type DispensaryOwnerAddLeafUserFormData = z.infer<typeof dispensaryOwnerAddLeafUserSchema>;
 
