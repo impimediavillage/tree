@@ -7,7 +7,7 @@ import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc, query, orderBy,
 import type { CreditPackage } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -78,6 +78,9 @@ function AddCreditPackageDialog({ onSave }: AddCreditPackageDialogProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Credit Package</DialogTitle>
+           <DialogDescription>
+            Create a new package that users can purchase for credits.
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -204,7 +207,7 @@ export default function AdminCreditPackagesPage() {
             <p className="ml-2 text-muted-foreground">Loading packages...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
           {filteredPackages.length > 0 ? (
             filteredPackages.map((pkg) => (
               <CreditPackageCard 
