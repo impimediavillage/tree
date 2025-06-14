@@ -14,7 +14,7 @@ export interface Dispensary {
   phone: string;
   ownerEmail: string;
   dispensaryName: string;
-  dispensaryType: string;
+  dispensaryType: string; // This links to the 'name' field in DispensaryType
   currency: string;
   openTime?: string | null;
   closeTime?: string | null;
@@ -46,12 +46,12 @@ export interface Dispensary {
 // Represents the structure for Dispensary Type documents
 export interface DispensaryType {
   id?: string;
-  name: string;
+  name: string; // Unique name for the dispensary type
   description?: string | null;
   iconPath?: string | null;
   image?: string | null;
   advisorFocusPrompt?: string | null;
-  productCategories?: ProductCategory[]; // Updated from string[]
+  productCategories?: ProductCategory[]; // Array of category objects
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
@@ -66,7 +66,7 @@ export interface Product {
   name: string;
   description: string;
   category: string; // Main category name
-  subcategory?: string | null; // New field for subcategory
+  subcategory?: string | null; // Selected subcategory name
   strain?: string | null; // e.g., Blue Dream, OG Kush. Optional.
   thcContent?: number | null; // Percentage
   cbdContent?: number | null; // Percentage

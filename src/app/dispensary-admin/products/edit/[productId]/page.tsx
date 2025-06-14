@@ -116,7 +116,7 @@ export default function EditProductPage() {
         });
         setImagePreview(productData.imageUrl || null);
         setOldImageUrl(productData.imageUrl);
-        if(productData.category) setSelectedMainCategory(productData.category); // Initialize selected main category
+        if(productData.category) setSelectedMainCategory(productData.category); 
       } else {
         toast({ title: "Error", description: "Product not found.", variant: "destructive" });
         router.push("/dispensary-admin/products");
@@ -142,9 +142,12 @@ export default function EditProductPage() {
     if (selectedMainCategory && definedProductCategories.length > 0) {
       const categoryData = definedProductCategories.find(cat => cat.name === selectedMainCategory);
       setAvailableSubcategories(categoryData?.subcategories || []);
-      // Don't reset subcategory if it's already set and valid for the new main category during initial load
+      // Reset subcategory only if the current one is not valid for the new main category
+      // This prevents resetting when loading existing data where subcategory is already correct.
       const currentSubcategory = form.getValues('subcategory');
-      if (currentSubcategory && !categoryData?.subcategories?.includes(currentSubcategory)) {
+      if (currentSubcategory && categoryData && !categoryData.subcategories?.includes(currentSubcategory)) {
+        form.setValue('subcategory', null);
+      } else if (currentSubcategory && !categoryData) { // Main category selected doesn't exist in defined (edge case)
         form.setValue('subcategory', null);
       }
     } else {
@@ -184,9 +187,9 @@ export default function EditProductPage() {
     setIsLoading(true);
     setUploadProgress(null);
 
-    let newImageUrl: string | null | undefined = existingProduct.imageUrl; 
+    let newImageUrl: string | null | undefined = form.getValues('imageUrl'); // Get current form value (could be existing URL or null if removed)
 
-    if (imageFile) {
+    if (imageFile) { // A new file was selected
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -199,7 +202,8 @@ export default function EditProductPage() {
             async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
           );
         });
-        if (oldImageUrl && oldImageUrl !== newImageUrl) {
+        // If a new image was uploaded and there was an old one, delete the old one
+        if (oldImageUrl && oldImageUrl !== newImageUrl) { 
             try {
                 const oldImageStorageRef = storageRef(storage, oldImageUrl);
                 await deleteObject(oldImageStorageRef);
@@ -214,7 +218,8 @@ export default function EditProductPage() {
         setIsLoading(false);
         return;
       }
-    } else if (data.imageUrl === null && oldImageUrl) {
+    } else if (form.getValues('imageUrl') === null && oldImageUrl) { 
+      // Image was explicitly removed (imageUrl set to null by handleRemoveImage) and there was an old image
       try {
         const oldImageStorageRef = storageRef(storage, oldImageUrl);
         await deleteObject(oldImageStorageRef);
@@ -222,7 +227,7 @@ export default function EditProductPage() {
       } catch (deleteError: any) {
          if (deleteError.code !== 'storage/object-not-found') {
             console.warn("Could not delete product image from storage:", deleteError);
-         } else {
+         } else { // Object already gone, so it's effectively removed
             newImageUrl = null; 
          }
       }
@@ -305,7 +310,7 @@ export default function EditProductPage() {
                       onValueChange={(value) => {
                         field.onChange(value);
                         setSelectedMainCategory(value);
-                        form.setValue('subcategory', null);
+                        // form.setValue('subcategory', null); // Keep existing if valid
                       }}
                       value={field.value || ''}
                       disabled={isLoadingInitialData || definedProductCategories.length === 0}
