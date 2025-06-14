@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DollarSign, CheckCircle, Loader2 } from 'lucide-react';
 import type { User, CreditPackage } from '@/types';
@@ -168,6 +168,5 @@ export default function LeafCreditsPage() {
     </div>
   );
 }
-
-
     
+
