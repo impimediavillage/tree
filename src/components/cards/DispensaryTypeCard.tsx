@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Store, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react'; // Import useState and useEffect
 
 interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
@@ -16,7 +17,25 @@ interface DispensaryTypeCardProps {
 }
 
 export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: DispensaryTypeCardProps) {
-  const imageUrl = dispensaryType.image || `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
+  const defaultImageUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
+  const initialImageUrl = dispensaryType.image || defaultImageUrl;
+  
+  const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
+
+  useEffect(() => {
+    // This effect updates the image URL if the dispensaryType prop changes,
+    // ensuring the card reflects the most current data.
+    setCurrentImageUrl(dispensaryType.image || defaultImageUrl);
+  }, [dispensaryType.image, dispensaryType.name, defaultImageUrl]);
+
+  const handleImageError = () => {
+    // If the currentImageUrl (which might be from dispensaryType.image) fails,
+    // and it's not already the default placeholder, switch to the default placeholder.
+    if (currentImageUrl !== defaultImageUrl) {
+      setCurrentImageUrl(defaultImageUrl);
+    }
+  };
+
   const dataAiHint = `dispensary type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
 
   return (
@@ -35,11 +54,13 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
       <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full">
         <div className="relative w-full h-48">
           <Image
-            src={imageUrl}
+            src={currentImageUrl}
             alt={dispensaryType.name}
             layout="fill"
             objectFit="cover"
             data-ai-hint={dataAiHint + " banner"}
+            onError={handleImageError}
+            priority={isPreferred} // Conditionally set priority
           />
         </div>
         <CardHeader className="pb-2">
@@ -61,3 +82,4 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
+
