@@ -28,6 +28,7 @@ const RoleIcon = ({ role }: { role: User['role'] }) => {
     case 'Super Admin': return <Shield className="h-4 w-4 text-red-500" />;
     case 'DispensaryOwner': return <Briefcase className="h-4 w-4 text-blue-500" />;
     case 'LeafUser': return <Leaf className="h-4 w-4 text-green-500" />;
+    case 'DispensaryStaff': return <UserCircle className="h-4 w-4 text-purple-500" />; // Example for staff
     default: return <UserCircle className="h-4 w-4 text-gray-500" />;
   }
 };
@@ -44,14 +45,14 @@ const StatusIndicator = ({ status }: { status: User['status'] }) => {
 export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
   return (
     <Card 
-      className="shadow-lg hover:shadow-xl transition-shadow duration-200 flex flex-col animate-fade-in-scale-up"
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card text-card-foreground"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <Avatar className="h-16 w-16 border-2 border-primary/50">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email} />
-            <AvatarFallback className="bg-muted text-lg">
+            <AvatarFallback className="bg-muted text-lg text-muted-foreground">
               {getInitials(user.displayName)}
             </AvatarFallback>
           </Avatar>
@@ -60,30 +61,31 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
               user.role === 'Super Admin' ? 'destructive' :
               user.role === 'DispensaryOwner' ? 'default' :
               user.role === 'LeafUser' ? 'secondary' :
+              user.role === 'DispensaryStaff' ? 'outline' : // Example for staff
               'outline'
             }
-            className="capitalize"
+            className="capitalize py-1 px-2.5 text-xs"
           >
-            <RoleIcon role={user.role} /> <span className="ml-1">{user.role}</span>
+            <RoleIcon role={user.role} /> <span className="ml-1.5">{user.role}</span>
           </Badge>
         </div>
-        <CardTitle className="text-xl mt-3 truncate">{user.displayName || 'Unnamed User'}</CardTitle>
-        <CardDescription className="flex items-center gap-1 text-sm text-muted-foreground truncate">
+        <CardTitle className="text-xl mt-3 truncate font-semibold">{user.displayName || 'Unnamed User'}</CardTitle>
+        <CardDescription className="flex items-center gap-1.5 text-sm text-muted-foreground truncate">
           <Mail className="h-4 w-4 flex-shrink-0" />
           {user.email}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow space-y-2 text-sm">
+      <CardContent className="flex-grow space-y-2.5 text-sm">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Status:</span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <StatusIndicator status={user.status || 'Active'} />
             <span className="font-medium">{user.status || 'Active'}</span>
           </div>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Credits:</span>
-          <div className="flex items-center gap-1 text-green-600 font-semibold">
+          <div className="flex items-center gap-1.5 text-green-600 font-semibold">
             <DollarSign className="h-4 w-4" />
             <span>{user.credits?.toLocaleString() || '0'}</span>
           </div>
@@ -91,13 +93,13 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
         {user.role === 'DispensaryOwner' && user.dispensaryId && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Dispensary:</span>
-            <span className="font-medium truncate" title={dispensaryName || user.dispensaryId}>
+            <span className="font-medium truncate max-w-[150px]" title={dispensaryName || user.dispensaryId}>
               {dispensaryName || user.dispensaryId.substring(0, 10) + '...'}
             </span>
           </div>
         )}
         {user.createdAt && (
-           <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+           <div className="flex items-center justify-between text-xs text-muted-foreground pt-1.5">
             <span>Joined:</span>
             <span>
               {new Date(
@@ -108,7 +110,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="mt-auto border-t pt-4"> {/* Added mt-auto */}
         <Button variant="outline" className="w-full" onClick={() => onEdit(user)}>
           <Edit className="mr-2 h-4 w-4" /> Edit User
         </Button>

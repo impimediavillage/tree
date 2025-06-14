@@ -2,13 +2,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { db, auth } from '@/lib/firebase'; // Ensure auth is imported if createUserWithEmailAndPassword is used client-side by admin
+import { useAuth } from '@/contexts/AuthContext';
+import { db, auth } from '@/lib/firebase'; 
 import { collection, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import type { User, Dispensary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card'; // Added missing import
+import { Card } from '@/components/ui/card'; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,7 +26,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 const userEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email(), // Typically read-only for existing user email through this form
-  role: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin']),
+  role: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff']),
   status: z.enum(['Active', 'Suspended', 'PendingApproval']),
   credits: z.coerce.number().int().min(0, "Credits cannot be negative."),
   dispensaryId: z.string().optional().nullable(),
@@ -134,6 +135,7 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
                         <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="LeafUser">Leaf User</SelectItem>
+                            <SelectItem value="DispensaryStaff">Dispensary Staff</SelectItem>
                             <SelectItem value="DispensaryOwner">Dispensary Owner</SelectItem>
                             <SelectItem value="Super Admin">Super Admin</SelectItem>
                             <SelectItem value="User">User (Generic)</SelectItem>
@@ -252,8 +254,8 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <UsersIcon className="h-8 w-8 text-primary" /> Manage Users
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+            <UsersIcon className="h-8 w-8" /> Manage Users
           </h1>
           <p className="text-muted-foreground">View, edit, and add user accounts and roles.</p>
         </div>
@@ -275,6 +277,7 @@ export default function AdminUsersPage() {
                 <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="LeafUser">Leaf User</SelectItem>
+                    <SelectItem value="DispensaryStaff">Dispensary Staff</SelectItem>
                     <SelectItem value="DispensaryOwner">Dispensary Owner</SelectItem>
                     <SelectItem value="Super Admin">Super Admin</SelectItem>
                     <SelectItem value="User">User (Generic)</SelectItem>
@@ -295,23 +298,24 @@ export default function AdminUsersPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="shadow-lg p-6 space-y-3">
+            <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse bg-card">
               <div className="flex items-center gap-4">
-                <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                <div className="h-16 w-16 bg-muted rounded-full"></div>
                 <div>
-                  <div className="h-5 w-32 bg-muted rounded animate-pulse mb-1"></div>
-                  <div className="h-4 w-40 bg-muted rounded animate-pulse"></div>
+                  <div className="h-5 w-32 bg-muted rounded mb-1"></div>
+                  <div className="h-4 w-40 bg-muted rounded"></div>
                 </div>
               </div>
-              <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
-              <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+              <div className="h-4 w-20 bg-muted rounded"></div>
+              <div className="h-4 w-24 bg-muted rounded"></div>
+              <div className="h-10 w-full bg-muted rounded mt-3"></div>
             </Card>
           ))}
         </div>
       ) : filteredUsers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.uid}
@@ -330,7 +334,7 @@ export default function AdminUsersPage() {
           </p>
           {users.length > 0 && (
             <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setFilterRole('all'); setFilterStatus('all');}}>
-              Clear Filters
+              <Filter className="mr-2 h-4 w-4" /> Clear Filters
             </Button>
           )}
         </div>
@@ -346,4 +350,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-

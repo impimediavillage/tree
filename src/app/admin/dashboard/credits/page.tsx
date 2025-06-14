@@ -179,8 +179,8 @@ export default function AdminCreditPackagesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <PackagePlus className="h-7 w-7 text-primary"/>Credit System Management
+          <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+            <PackagePlus className="h-8 w-8"/>Credit System Management
           </h1>
           <p className="text-muted-foreground">Create, edit, and manage credit packages available for purchase.</p>
         </div>
@@ -216,6 +216,7 @@ export default function AdminCreditPackagesPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
+              <PackagePlus className="mx-auto h-12 w-12 mb-3" />
               No credit packages found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
