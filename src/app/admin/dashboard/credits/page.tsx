@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { CreditPackageCard } from '@/components/admin/CreditPackageCard'; // New Card component
+import { CreditPackageCard } from '@/components/admin/CreditPackageCard';
 
 const creditPackageFormSchema = z.object({
   name: z.string().min(3, "Package name is required."),
@@ -30,7 +30,7 @@ const creditPackageFormSchema = z.object({
 type CreditPackageFormData = z.infer<typeof creditPackageFormSchema>;
 
 interface AddCreditPackageDialogProps {
-  onSave: () => void; // Callback to refresh list
+  onSave: () => void;
 }
 
 function AddCreditPackageDialog({ onSave }: AddCreditPackageDialogProps) {
@@ -142,7 +142,7 @@ export default function AdminCreditPackagesPage() {
         fetchedPackages.push({ id: doc.id, ...doc.data() } as CreditPackage);
       });
       setAllPackages(fetchedPackages);
-      setFilteredPackages(fetchedPackages); // Initially, all packages are shown
+      setFilteredPackages(fetchedPackages);
     } catch (error) {
       console.error("Error fetching credit packages:", error);
       toast({ title: "Error", description: "Could not fetch credit packages.", variant: "destructive" });
@@ -159,7 +159,7 @@ export default function AdminCreditPackagesPage() {
     const lowercasedFilter = searchTerm.toLowerCase();
     const filteredData = allPackages.filter(item => 
         item.name.toLowerCase().includes(lowercasedFilter) ||
-        item.description?.toLowerCase().includes(lowercasedFilter)
+        (item.description && item.description.toLowerCase().includes(lowercasedFilter))
     );
     setFilteredPackages(filteredData);
   }, [searchTerm, allPackages]);
@@ -168,7 +168,7 @@ export default function AdminCreditPackagesPage() {
     try {
       await deleteDoc(doc(db, 'creditPackages', packageId));
       toast({ title: "Package Deleted", description: `${packageName} has been removed.` });
-      fetchPackages(); // Refresh the list
+      fetchPackages(); 
     } catch (error) {
       console.error("Error deleting package:", error);
       toast({ title: "Deletion Failed", description: "Could not delete package.", variant: "destructive" });
@@ -204,7 +204,7 @@ export default function AdminCreditPackagesPage() {
             <p className="ml-2 text-muted-foreground">Loading packages...</p>
         </div>
       ) : (
-        <div className="flex overflow-x-auto space-x-6 pb-4 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-muted">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {filteredPackages.length > 0 ? (
             filteredPackages.map((pkg) => (
               <CreditPackageCard 
@@ -215,8 +215,8 @@ export default function AdminCreditPackagesPage() {
               />
             ))
           ) : (
-            <div className="w-full text-center py-10 text-muted-foreground">
-              No credit packages found matching your criteria.
+            <div className="col-span-full text-center py-10 text-muted-foreground">
+              No credit packages found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>

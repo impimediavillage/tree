@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Search, Filter, Loader2, Building } from 'lucide-react';
-import { DispensaryCard } from '@/components/admin/DispensaryCard'; // New Card component
+import { DispensaryCard } from '@/components/admin/DispensaryCard';
 
 type DispensaryStatusFilter = Dispensary['status'] | 'all';
 
@@ -27,14 +27,11 @@ export default function AdminDispensariesPage() {
     setIsLoading(true);
     try {
       const dispensariesCollectionRef = collection(db, 'dispensaries');
-      // Initial query can be simple, filtering will happen client-side for this example
-      // For larger datasets, server-side filtering/pagination would be better.
       const q = query(dispensariesCollectionRef, orderBy('applicationDate', 'desc'));
       const querySnapshot = await getDocs(q);
       const fetchedDispensaries: Dispensary[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        // Ensure timestamps are correctly handled if they come as Firestore Timestamps
         const applicationDate = data.applicationDate instanceof Timestamp ? data.applicationDate.toDate() : new Date(data.applicationDate as string);
         const approvedDate = data.approvedDate instanceof Timestamp ? data.approvedDate.toDate() : (data.approvedDate ? new Date(data.approvedDate as string) : undefined);
         
@@ -80,9 +77,8 @@ export default function AdminDispensariesPage() {
     const newStatus = currentStatus === 'Approved' ? 'Suspended' : 'Approved';
     try {
       const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-      await updateDoc(dispensaryDocRef, { status: newStatus });
+      await updateDoc(dispensaryDocRef, { status: newStatus, lastActivityDate: serverTimestamp() });
       toast({ title: "Status Updated", description: `Dispensary status changed to ${newStatus}.` });
-      // Optimistically update UI or refetch
       setAllDispensaries(prev => prev.map(d => d.id === dispensaryId ? { ...d, status: newStatus } : d));
     } catch (error) {
       console.error("Error updating dispensary status:", error);
@@ -91,12 +87,10 @@ export default function AdminDispensariesPage() {
   };
 
   const handleDeleteDispensary = async (dispensaryId: string, dispensaryName: string) => {
-    // Consider implications: what happens to products, users associated with this dispensary?
-    // For now, just deletes the dispensary document.
     try {
       await deleteDoc(doc(db, 'dispensaries', dispensaryId));
       toast({ title: "Dispensary Deleted", description: `${dispensaryName} has been removed.` });
-      fetchDispensaries(); // Refresh list
+      fetchDispensaries();
     } catch (error) {
       console.error("Error deleting dispensary:", error);
       toast({ title: "Deletion Failed", description: "Could not delete dispensary.", variant: "destructive" });
@@ -153,7 +147,7 @@ export default function AdminDispensariesPage() {
           <p className="ml-2 text-muted-foreground">Loading dispensaries...</p>
         </div>
       ) : (
-        <div className="flex overflow-x-auto space-x-6 pb-6 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-muted">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {filteredDispensaries.length > 0 ? (
             filteredDispensaries.map((dispensary) => (
               <DispensaryCard
@@ -164,15 +158,12 @@ export default function AdminDispensariesPage() {
               />
             ))
           ) : (
-            <div className="w-full text-center py-10 text-muted-foreground">
-              No dispensaries found matching your criteria.
+            <div className="col-span-full text-center py-10 text-muted-foreground">
+              No dispensaries found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
       )}
-       {filteredDispensaries.length > 0 && (
-         <p className="text-xs text-center text-muted-foreground pt-2">Scroll horizontally to see all dispensaries.</p>
-       )}
     </div>
   );
 }
