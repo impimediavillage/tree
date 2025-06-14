@@ -110,13 +110,6 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "price", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "dispensaryTypes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "name", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
