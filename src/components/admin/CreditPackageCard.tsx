@@ -42,7 +42,7 @@ interface CreditPackageDialogProps {
 
 function EditableCreditPackageDialog({ creditPackage, onSave, triggerButton }: CreditPackageDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Corrected line
+  const [isSubmitting, setIsSubmitting] = useState(false); 
   const { toast } = useToast();
   const isEditing = !!creditPackage;
 
@@ -107,6 +107,9 @@ function EditableCreditPackageDialog({ creditPackage, onSave, triggerButton }: C
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit' : 'Add New'} Credit Package</DialogTitle>
+          <DialogDescription>
+            {isEditing ? `Modify details for ${creditPackage?.name}.` : 'Create a new credit package.'}
+          </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">

@@ -141,7 +141,7 @@ export default function DispensaryProductsPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and its associated image.
+                    This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and its associated image from storage.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -202,3 +202,4 @@ export default function DispensaryProductsPage() {
     </div>
   );
 }
+
