@@ -9,7 +9,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where } from 'firebase/firestore'; // Removed getDocs as it's not used here
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -86,7 +86,10 @@ export default function EditProductPage() {
         if (categoriesSnap.exists()) {
           const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
           setDefinedProductCategories(categoriesData.categories || []);
-        } else { setDefinedProductCategories([]); }
+        } else { 
+          setDefinedProductCategories([]); 
+          toast({ title: "Warning", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Contact admin.`, variant: "default", duration: 8000 });
+        }
       }
 
       const productDocRef = doc(db, "products", productId);
@@ -94,7 +97,8 @@ export default function EditProductPage() {
       if (productSnap.exists()) {
         const productData = productSnap.data() as ProductType;
         if (productData.dispensaryId !== currentUser.dispensaryId) {
-          toast({ title: "Access Denied", variant: "destructive" }); router.push("/dispensary-admin/products"); return;
+          toast({ title: "Access Denied", description: "You do not have permission to edit this product.", variant: "destructive" }); 
+          router.push("/dispensary-admin/products"); return;
         }
         setExistingProduct(productData);
         form.reset({
@@ -110,14 +114,17 @@ export default function EditProductPage() {
           subcategory: productData.subcategory || null, 
           subSubcategory: productData.subSubcategory || null,
         });
-        setImagePreview(productData.imageUrl || null); setOldImageUrl(productData.imageUrl);
+        setImagePreview(productData.imageUrl || null); 
+        setOldImageUrl(productData.imageUrl); // Store the initial image URL
+        
+        // Initialize category states based on fetched product data
         if(productData.category) setSelectedMainCategoryName(productData.category);
-        if(productData.subcategory) setSelectedSubcategoryL1Name(productData.subcategory);
-
+        // Subcategory L1 and L2 states will be set by their respective useEffects once definedProductCategories is populated
       } else {
         toast({ title: "Error", description: "Product not found.", variant: "destructive" }); router.push("/dispensary-admin/products");
       }
     } catch (error) {
+      console.error("Error fetching data for edit product:", error);
       toast({ title: "Error", description: "Failed to load product data.", variant: "destructive" });
     } finally {
       setIsLoadingInitialData(false);
@@ -130,94 +137,103 @@ export default function EditProductPage() {
     else if (!authLoading && !currentUser) { router.push("/auth/signin"); }
   }, [currentUser, authLoading, fetchDispensaryAndProductData, router]);
 
+  // Effect to update L1 subcategories when main category changes OR when definedProductCategories loads
   useEffect(() => {
-    if (selectedMainCategoryName && definedProductCategories.length > 0) {
-        const selectedCategory = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
-        setAvailableSubcategoriesL1(selectedCategory?.subcategories || []);
-        
-        if (existingProduct?.category !== selectedMainCategoryName || !form.getValues('subcategory')) {
-          form.setValue('subcategory', null);
-          setSelectedSubcategoryL1Name(null);
-          form.setValue('subSubcategory', null);
-        } else if (existingProduct?.category === selectedMainCategoryName && form.getValues('subcategory')) {
-          const currentSubL1 = form.getValues('subcategory');
-          if (!selectedCategory?.subcategories?.find(s => s.name === currentSubL1)) {
-            form.setValue('subcategory', null);
-            setSelectedSubcategoryL1Name(null);
-            form.setValue('subSubcategory', null);
-          } else {
-             setSelectedSubcategoryL1Name(currentSubL1); 
-          }
-        }
-
-    } else if (!selectedMainCategoryName) { 
-        setAvailableSubcategoriesL1([]);
+    if (definedProductCategories.length > 0 && selectedMainCategoryName) {
+      const selectedCategoryObject = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
+      setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
+      // Only reset subcategory if the main category actually changed or if existing sub L1 is no longer valid
+      const currentSubL1 = form.getValues('subcategory');
+      if (existingProduct?.category !== selectedMainCategoryName || 
+          (currentSubL1 && !selectedCategoryObject?.subcategories?.find(s => s.name === currentSubL1))) {
         form.setValue('subcategory', null);
         setSelectedSubcategoryL1Name(null);
         form.setValue('subSubcategory', null);
+        setAvailableSubcategoriesL2([]);
+      } else if (currentSubL1) {
+         setSelectedSubcategoryL1Name(currentSubL1); // Preserve if valid
+      }
+    } else if (!selectedMainCategoryName) { // If main category is cleared
+      setAvailableSubcategoriesL1([]);
+      form.setValue('subcategory', null);
+      setSelectedSubcategoryL1Name(null);
+      form.setValue('subSubcategory', null);
+      setAvailableSubcategoriesL2([]);
     }
   }, [selectedMainCategoryName, definedProductCategories, form, existingProduct]);
 
+  // Effect to update L2 subcategories when L1 subcategory changes OR when availableSubcategoriesL1 loads
   useEffect(() => {
-    if (selectedSubcategoryL1Name && availableSubcategoriesL1.length > 0) {
-        const selectedSubCategoryL1 = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
-        setAvailableSubcategoriesL2(selectedSubCategoryL1?.subcategories || []);
-        
-        if (existingProduct?.subcategory !== selectedSubcategoryL1Name || !form.getValues('subSubcategory')) {
-            form.setValue('subSubcategory', null);
-        } else if (existingProduct?.subcategory === selectedSubcategoryL1Name && form.getValues('subSubcategory')) {
-          const currentSubL2 = form.getValues('subSubcategory');
-           if (!selectedSubCategoryL1?.subcategories?.find(s => s.name === currentSubL2)) {
-            form.setValue('subSubcategory', null);
-          }
-        }
-    } else if (!selectedSubcategoryL1Name) { 
-        setAvailableSubcategoriesL2([]);
+    if (availableSubcategoriesL1.length > 0 && selectedSubcategoryL1Name) {
+      const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
+      setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
+       // Only reset sub-subcategory if L1 changed or existing sub L2 is no longer valid
+      const currentSubL2 = form.getValues('subSubcategory');
+      if (existingProduct?.subcategory !== selectedSubcategoryL1Name ||
+          (currentSubL2 && !selectedSubCategoryL1Object?.subcategories?.find(s => s.name === currentSubL2))) {
         form.setValue('subSubcategory', null);
+      }
+    } else if (!selectedSubcategoryL1Name) { // If L1 subcategory is cleared
+      setAvailableSubcategoriesL2([]);
+      form.setValue('subSubcategory', null);
     }
   }, [selectedSubcategoryL1Name, availableSubcategoriesL1, form, existingProduct]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) { setImageFile(file); const reader = new FileReader(); reader.onloadend = () => setImagePreview(reader.result as string); reader.readAsDataURL(file); form.setValue('imageUrl', ''); }
+    if (file) { 
+      setImageFile(file); 
+      const reader = new FileReader(); 
+      reader.onloadend = () => setImagePreview(reader.result as string); 
+      reader.readAsDataURL(file); 
+      form.setValue('imageUrl', ''); // Clear existing URL from form if new file is chosen
+    }
   };
 
   const handleRemoveImage = async () => {
-    setImageFile(null); setImagePreview(null); form.setValue('imageUrl', null); 
+    setImageFile(null); 
+    setImagePreview(null); 
+    form.setValue('imageUrl', null); // Explicitly set to null to indicate removal
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentUser?.dispensaryId || !dispensaryData || !existingProduct?.id) { toast({ title: "Error", variant: "destructive" }); return; }
+    if (!currentUser?.dispensaryId || !dispensaryData || !existingProduct?.id) { 
+      toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" }); return; 
+    }
+    if (definedProductCategories.length > 0 && !data.category) {
+        toast({ title: "Category Required", description: "Please select a main product category.", variant: "destructive"});
+        form.setError("category", { type: "manual", message: "Category is required." }); return;
+    }
     setIsLoading(true); setUploadProgress(null);
-    let newImageUrl: string | null | undefined = form.getValues('imageUrl'); // Retain existing URL if no new file
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Current value (could be existing URL or null if removed)
 
-    if (imageFile) { // If a new file is selected for upload
+    if (imageFile) { // A new file was selected
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
       try {
-        newImageUrl = await new Promise((resolve, reject) => {
+        finalImageUrl = await new Promise((resolve, reject) => {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, 
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
         // If upload successful and there was an old image different from new, delete old one
-        if (oldImageUrl && oldImageUrl !== newImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
+        if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(newImageUrl); // Update oldImageUrl to the new one
+        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
-      // Image was explicitly removed (imageUrl set to null) and there was an old image
-      try { await deleteObject(storageRef(storage, oldImageUrl)); newImageUrl = null; setOldImageUrl(null); } 
-      catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); else {newImageUrl = null; setOldImageUrl(null);} }
+      // Image was explicitly removed (imageUrl field set to null) and there was an old Firebase Storage image
+      try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); } 
+      catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); else {finalImageUrl = null; setOldImageUrl(null);} }
     }
-    // If no new image file and imageUrl field wasn't cleared, newImageUrl retains the existing URL from form.getValues
+    // If no new image file and imageUrl field wasn't cleared, finalImageUrl retains the existing URL from form.getValues or the initial oldImageUrl
 
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
-      const productUpdateData = { ...data, imageUrl: newImageUrl, 
+      const productUpdateData = { ...data, imageUrl: finalImageUrl, 
         thcContent: data.thcContent ?? null, 
         cbdContent: data.cbdContent ?? null,
         price: data.price ?? 0,
@@ -227,8 +243,11 @@ export default function EditProductPage() {
         updatedAt: serverTimestamp(),
       };
       await updateDoc(productDocRef, productUpdateData);
-      toast({ title: "Product Updated!", description: `${data.name} updated.` }); router.push('/dispensary-admin/products');
-    } catch (error) { toast({ title: "Update Failed", variant: "destructive" });
+      toast({ title: "Product Updated!", description: `${data.name} has been successfully updated.` }); 
+      router.push('/dispensary-admin/products');
+    } catch (error) { 
+      toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
+      console.error("Error updating product:", error);
     } finally { setIsLoading(false); setUploadProgress(null); }
   };
   
@@ -244,7 +263,7 @@ export default function EditProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center"> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Link> </Button>
+            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Products</Link> </Button>
         </div>
         <CardDescription>Modify details for &quot;{existingProduct.name}&quot;.</CardDescription>
       </CardHeader>
@@ -262,21 +281,29 @@ export default function EditProductPage() {
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="Premium OG Kush Flower" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
             
             <FormField control={form.control} name="category" render={({ field }) => (
-              <FormItem> <FormLabel>Main Category *</FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={definedProductCategories.length === 0}>
-                  <FormControl><SelectTrigger><SelectValue placeholder={definedProductCategories.length === 0 ? "No categories available" : "Select main category"} /></SelectTrigger></FormControl>
-                  <SelectContent>
-                    {definedProductCategories.length > 0 ? definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No categories available</SelectItem>}
-                  </SelectContent>
-                </Select> <FormMessage />
+              <FormItem> <FormLabel>Main Category {definedProductCategories.length > 0 ? '*' : '(Manual Entry If Needed)'}</FormLabel>
+                {definedProductCategories.length > 0 ? (
+                  <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); }} value={field.value || ''} >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                        {definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                    <Input placeholder="Enter main category (e.g., Flower, Edible)" {...field} value={field.value ?? ''} />
+                )}
+                <FormMessage />
               </FormItem> )} />
 
             {selectedMainCategoryName && availableSubcategoriesL1.length > 0 && (
               <FormField control={form.control} name="subcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
-                  <Select onValueChange={(value) => { field.onChange(value); setSelectedSubcategoryL1Name(value); form.setValue('subSubcategory', null); }} value={field.value || ''}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select subcategory (L1)" /></SelectTrigger></FormControl>
-                    <SelectContent> {availableSubcategoriesL1.map((subCat) => ( <SelectItem key={subCat.name} value={subCat.name}>{subCat.name}</SelectItem> ))} </SelectContent>
+                  <Select onValueChange={(value) => { field.onChange(value); setSelectedSubcategoryL1Name(value); }} value={field.value || ''}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select subcategory (optional)" /></SelectTrigger></FormControl>
+                    <SelectContent> 
+                        <SelectItem value="">None</SelectItem>
+                        {availableSubcategoriesL1.map((subCat) => ( <SelectItem key={subCat.name} value={subCat.name}>{subCat.name}</SelectItem> ))} 
+                    </SelectContent>
                   </Select> <FormMessage />
                 </FormItem> )} />
             )}
@@ -285,8 +312,11 @@ export default function EditProductPage() {
               <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ''}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select subcategory (L2)" /></SelectTrigger></FormControl>
-                    <SelectContent> {availableSubcategoriesL2.map((subSubCat) => ( <SelectItem key={subSubCat.name} value={subSubCat.name}>{subSubCat.name}</SelectItem> ))} </SelectContent>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select sub-subcategory (optional)" /></SelectTrigger></FormControl>
+                    <SelectContent> 
+                        <SelectItem value="">None</SelectItem>
+                        {availableSubcategoriesL2.map((subSubCat) => ( <SelectItem key={subSubCat.name} value={subSubCat.name}>{subSubCat.name}</SelectItem> ))} 
+                    </SelectContent>
                   </Select> <FormMessage />
                 </FormItem> )} />
             )}
@@ -301,7 +331,7 @@ export default function EditProductPage() {
               <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain</FormLabel><FormControl><Input placeholder="Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             </div>
-            <Separator /> <h3 className="text-lg font-medium">Product Details</h3>
+            <Separator /> <h3 className="text-lg font-medium">Additional Product Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
@@ -313,11 +343,11 @@ export default function EditProductPage() {
               <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Organic, Indoor" disabled={isLoading} /><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Product Image</h3>
-            <FormField control={form.control} name="imageUrl" render={({ field }) => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile || imagePreview ? "Change" : "Upload"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {(imagePreview || field.value) && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Save changes.</p>} <FormDescription>PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="imageUrl" render={({ field }) => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile || imagePreview ? "Change Image" : "Upload Image"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {(imagePreview || field.value) && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove Image </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Save changes.</p>} <FormDescription>Recommended: Clear, well-lit photo. PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
             <Separator />
             <div className="space-y-4">
-                <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Indicates lab testing for quality/potency.</FormDescription></div> </FormItem> )} />
-                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Pool</FormLabel><FormDescription>Allow other dispensaries to request this product.</FormDescription></div> </FormItem> )} />
+                <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
+                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other dispensaries of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
             </div>
             <CardFooter className="px-0 pt-8"> <div className="flex gap-4 w-full"> <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}> {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes </Button> <Link href="/dispensary-admin/products" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>Cancel</Button></Link> </div> </CardFooter>
           </form>
@@ -326,4 +356,3 @@ export default function EditProductPage() {
     </Card>
   );
 }
-
