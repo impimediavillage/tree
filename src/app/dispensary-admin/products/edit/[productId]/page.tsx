@@ -64,17 +64,22 @@ export default function EditProductPage() {
   });
 
   const fetchDispensaryAndProductData = useCallback(async () => {
-    if (!currentUser?.dispensaryId || !productId) { setIsLoadingInitialData(false); return; }
+    if (!currentUser?.dispensaryId || !productId) { 
+        setIsLoadingInitialData(false); 
+        return; 
+    }
     setIsLoadingInitialData(true);
     let fetchedDispensary: Dispensary | null = null;
-    let fetchedCategoryStructureObject: Record<string, any> | null = null;
+    let localCategoryStructureObject: Record<string, any> | null = null;
 
     try {
       const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId);
       const dispensarySnap = await getDoc(dispensaryDocRef);
       if (!dispensarySnap.exists()) {
         toast({ title: "Error", description: "Dispensary data not found.", variant: "destructive" });
-        router.push("/dispensary-admin/dashboard"); return;
+        router.push("/dispensary-admin/dashboard"); 
+        setIsLoadingInitialData(false);
+        return;
       }
       fetchedDispensary = dispensarySnap.data() as Dispensary;
       setDispensaryData(fetchedDispensary);
@@ -85,18 +90,24 @@ export default function EditProductPage() {
         const categoriesSnapshot = await getDocs(q);
         if (!categoriesSnapshot.empty) {
           const categoriesDoc = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-           if (categoriesDoc.categoriesData && typeof categoriesDoc.categoriesData === 'object' && Object.keys(categoriesDoc.categoriesData).length > 0) {
-            fetchedCategoryStructureObject = categoriesDoc.categoriesData;
-            setCategoryStructureObject(fetchedCategoryStructureObject);
-            setMainCategoryOptions(Object.keys(fetchedCategoryStructureObject).filter(key => key.trim() !== '').sort());
+          if (categoriesDoc.categoriesData && typeof categoriesDoc.categoriesData === 'object' && Object.keys(categoriesDoc.categoriesData).length > 0) {
+            localCategoryStructureObject = categoriesDoc.categoriesData;
+            setCategoryStructureObject(localCategoryStructureObject);
+            setMainCategoryOptions(Object.keys(localCategoryStructureObject).filter(key => key.trim() !== '').sort());
           } else {
              toast({ title: "Info", description: `No product categories defined or structure is not an object for type "${fetchedDispensary.dispensaryType}". Manual category entry may be needed.`, variant: "default", duration: 8000 });
+             setCategoryStructureObject(null);
+             setMainCategoryOptions([]);
           }
         } else {
-          toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited. Please ensure a Super Admin has set them up in 'Admin Dashboard > Dispensary Types > Manage Categories'.`, variant: "default", duration: 10000 });
+          toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found.`, variant: "default", duration: 10000 });
+          setCategoryStructureObject(null);
+          setMainCategoryOptions([]);
         }
       } else {
-        toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'. This is needed for structured category selection.", variant: "destructive", duration: 10000 });
+        toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'.", variant: "destructive", duration: 10000 });
+        setCategoryStructureObject(null);
+        setMainCategoryOptions([]);
       }
 
       const productDocRef = doc(db, "products", productId);
@@ -105,45 +116,57 @@ export default function EditProductPage() {
         const productData = productSnap.data() as ProductType;
         if (productData.dispensaryId !== currentUser.dispensaryId) {
           toast({ title: "Access Denied", description: "You do not have permission to edit this product.", variant: "destructive" });
-          router.push("/dispensary-admin/products"); return;
+          router.push("/dispensary-admin/products"); 
+          setIsLoadingInitialData(false); 
+          return;
         }
         setExistingProduct(productData);
         form.reset({
-          ...productData,
+          name: productData.name,
+          description: productData.description,
+          category: productData.category,
+          subcategory: productData.subcategory || null,
+          subSubcategory: productData.subSubcategory || null,
+          strain: productData.strain || '',
           thcContent: productData.thcContent ?? undefined,
           cbdContent: productData.cbdContent ?? undefined,
           price: productData.price ?? undefined,
+          currency: productData.currency || (fetchedDispensary ? fetchedDispensary.currency : 'ZAR'),
+          unit: productData.unit,
           quantityInStock: productData.quantityInStock ?? undefined,
+          imageUrl: productData.imageUrl || null,
+          labTested: productData.labTested || false,
           effects: productData.effects || [],
           flavors: productData.flavors || [],
           medicalUses: productData.medicalUses || [],
+          isAvailableForPool: productData.isAvailableForPool || false,
           tags: productData.tags || [],
-          subcategory: productData.subcategory || null,
-          subSubcategory: productData.subSubcategory || null,
         });
         setImagePreview(productData.imageUrl || null);
         setOldImageUrl(productData.imageUrl);
 
         // Initialize dynamic selects based on fetched product data and category structure
-        if (productData.category && fetchedCategoryStructureObject) {
-            setSelectedMainCategoryName(productData.category); // Trigger useEffect for L1
-            const mainCatValue = productData.category;
-            if (fetchedCategoryStructureObject[mainCatValue] && typeof fetchedCategoryStructureObject[mainCausetSubCategoryL1OptionstObject.keys(fetchedCategoryStructureObject[mainCatValue]).filter(key => key.trim() !== '').sort());
-                if (productData.subcategory) {
-                    setSelectedSubCategoryL1Name(productData.subcategory); // Trigger useEffect for L2
-                    const subCatL1Value = productData.subcategory;
-                    if (fetchedCategoryStructureObject[mainCatValue][subCatL1Value] && typeof fetchedCategoryStructureObject[mainCatValue][subCatL1Value] === 'object') {
-                         const nextLevel = fetchedCategoryStructureObject[mainCatValue][subCatL1Value];
-                         if (typeof nextLevel === 'object' && !Array.isArray(nextLevel) && Object.keys(nextLevel).length > 0) {
-                            setSubCategoryL2Options(Object.keys(nextLevel).filter(key => key.trim() !== '').sort());
-                         }
+        if (productData.category && localCategoryStructureObject) {
+            setSelectedMainCategoryName(productData.category);
+            const mainCatVal = productData.category;
+            if (localCategoryStructureObject[mainCatVal] && typeof localCategoryStructureObject[mainCatVal] === 'object') {
+                const l1Options = Object.keys(localCategoryStructureObject[mainCatVal]).filter(key => key.trim() !== '').sort();
+                setSubCategoryL1Options(l1Options); 
+
+                if (productData.subcategory && l1Options.includes(productData.subcategory)) {
+                    setSelectedSubCategoryL1Name(productData.subcategory); 
+                    const subCatL1Val = productData.subcategory;
+                    const subCatL1Data = localCategoryStructureObject[mainCatVal][subCatL1Val]; // Define subCatL1Data
+                    if (subCatL1Data && typeof subCatL1Data === 'object') { 
+                        const l2Options = Object.keys(subCatL1Data).filter(key => key.trim() !== '').sort();
+                        setSubCategoryL2Options(l2Options);
                     }
                 }
             }
         }
-
-      } else {
-        toast({ title: "Error", description: "Product not found.", variant: "destructive" }); router.push("/dispensary-admin/products");
+      } else { 
+        toast({ title: "Error", description: "Product not found.", variant: "destructive" }); 
+        router.push("/dispensary-admin/products");
       }
     } catch (error) {
       console.error("Error fetching data for edit product:", error);
@@ -157,8 +180,12 @@ export default function EditProductPage() {
 
   useEffect(() => {
     if (!authLoading && currentUser) { fetchDispensaryAndProductData(); }
-    else if (!authLoading && !currentUser) { router.push("/auth/signin"); }
-  }, [currentUser, authLoading, fetchDispensaryAndProductData, router]);
+    else if (!authLoading && !currentUser) { 
+      toast({title: "Not Authenticated", description: "Please log in to edit products.", variant: "destructive"});
+      router.push("/auth/signin"); 
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, authLoading, router, toast]); // Removed fetchDispensaryAndProductData from deps as it causes infinite loop with form
 
   // Effect for Main Category change
   useEffect(() => {
@@ -168,15 +195,14 @@ export default function EditProductPage() {
     } else {
       setSubCategoryL1Options([]);
     }
-    // Only reset subcategories if the change is from user interaction, not initial load
-    if (form.formState.dirtyFields.category || (existingProduct && selectedMainCategoryName !== existingProduct.category) ) {
+    if (form.formState.isSubmitted || (existingProduct && selectedMainCategoryName !== existingProduct.category) ) {
         form.setValue('subcategory', null);
-        setSelectedSubCategoryL1Name(null);
-        form.setValue('subSubcategory', null);
-        setSubCategoryL2Options([]);
+        setSelectedSubCategoryL1Name(null); 
+        form.setValue('subSubcategory', null); 
+        setSubCategoryL2Options([]); 
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMainCategoryName, categoryStructureObject, form, existingProduct]);
+  }, [selectedMainCategoryName, categoryStructureObject, form.setValue, form.formState.isSubmitted, existingProduct?.category]);
 
   // Effect for L1 Subcategory change
   useEffect(() => {
@@ -197,12 +223,11 @@ export default function EditProductPage() {
     } else {
       setSubCategoryL2Options([]);
     }
-     // Only reset subSubcategory if the change is from user interaction, not initial load
-    if (form.formState.dirtyFields.subcategory || (existingProduct && selectedSubCategoryL1Name !== existingProduct.subcategory)) {
+    if (form.formState.isSubmitted || (existingProduct && selectedSubCategoryL1Name !== existingProduct.subcategory)) {
         form.setValue('subSubcategory', null);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, existingProduct]);
+  }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form.setValue, form.formState.isSubmitted, existingProduct?.subcategory]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,7 +248,7 @@ export default function EditProductPage() {
   const handleRemoveImage = async () => {
     setImageFile(null);
     setImagePreview(null);
-    form.setValue('imageUrl', null); // Explicitly set to null to indicate removal
+    form.setValue('imageUrl', null); 
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
@@ -237,9 +262,9 @@ export default function EditProductPage() {
     }
 
     setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Get current value from form (might be null if removed)
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); 
 
-    if (imageFile) { // A new file was selected for upload
+    if (imageFile) { 
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -248,22 +273,19 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
-        // If a new image was uploaded and there was an old one, delete the old one
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
+        setOldImageUrl(finalImageUrl); 
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-      // Image was explicitly removed (imageUrl set to null) and there was an old image
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); }
       catch (e: any) {
         if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed (on removal):", e);
-        else {finalImageUrl = null; setOldImageUrl(null);} // Assume deleted if not found
+        else {finalImageUrl = null; setOldImageUrl(null);} 
       }
     }
-    // If no new file and imageUrl wasn't set to null, finalImageUrl remains the existingProduct.imageUrl from form reset
-
+    
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
       const productUpdateData = { ...data, imageUrl: finalImageUrl,
@@ -311,7 +333,7 @@ export default function EditProductPage() {
                 <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
                     <div><h4 className="font-semibold">Category Structure Not Found for &quot;{dispensaryData.dispensaryType}&quot;</h4>
-                        <p className="text-sm">Please manually enter a main category name below. For a structured list, ask a Super Admin to define categories for your dispensary type in 'Admin Dashboard &gt; Dispensary Types &gt; Manage Categories'.</p>
+                        <p className="text-sm">Please manually enter a main category name below. For a structured list, ask a Super Admin to define categories for your dispensary type.</p>
                     </div>
                 </div>
             )}
@@ -376,18 +398,18 @@ export default function EditProductPage() {
 
             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description..." {...field} rows={4} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
             <div className="grid md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="unit" render={({ field }) => ( <FormItem><FormLabel>Unit *</FormLabel> <Select onValueChange={field.onChange} value={field.value ?? undefined}> <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl> <SelectContent> {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)} </SelectContent> </Select> <FormMessage /></FormItem> )} />
             </div>
             <div className="grid md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain</FormLabel><FormControl><Input placeholder="Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Additional Product Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <div className="space-y-4">
               <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Relaxed, Happy" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -409,4 +431,3 @@ export default function EditProductPage() {
     </Card>
   );
 }
-    
