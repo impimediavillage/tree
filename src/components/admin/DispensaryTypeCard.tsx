@@ -5,9 +5,10 @@ import type { DispensaryType } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, ImageIcon as ImageIconLucide, Tag, Info, MessageSquareText } from 'lucide-react';
+import { Edit, Trash2, ImageIcon as ImageIconLucide, Tag, Info, MessageSquareText, ListPlus } from 'lucide-react';
 import Image from 'next/image';
 import { DispensaryTypeDialog } from './DispensaryTypeDialog';
+import Link from 'next/link';
 
 interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
@@ -98,36 +99,43 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
         )}
       </CardContent>
       {isSuperAdmin && (
-        <CardFooter className="flex gap-2 border-t pt-4 mt-auto">
+        <CardFooter className="flex flex-col gap-2 border-t pt-4 mt-auto">
+          <div className="flex gap-2 w-full">
             <DispensaryTypeDialog
                 dispensaryType={dispensaryType}
                 onSave={onSave}
                 isSuperAdmin={isSuperAdmin}
             >
-                <Button variant="outline" className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                <Button variant="outline" className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
             </DispensaryTypeDialog>
 
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full" disabled={!dispensaryType.id}>
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete Type
                 </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the dispensary type &quot;{dispensaryType.name}&quot;.
+                    This action cannot be undone. This will permanently delete the dispensary type &quot;{dispensaryType.name}&quot;. Product categories for this type must be managed separately.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={() => dispensaryType.id && onDelete(dispensaryType.id, dispensaryType.name)}>
-                    Yes, delete
+                    Yes, delete type
                     </AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+          </div>
+          <Button variant="secondary" className="w-full" asChild>
+            <Link href={`/admin/dashboard/dispensary-types/edit-categories/${encodeURIComponent(dispensaryType.name)}`}>
+              <ListPlus className="mr-2 h-4 w-4" /> Manage Categories
+            </Link>
+          </Button>
         </CardFooter>
       )}
     </Card>
