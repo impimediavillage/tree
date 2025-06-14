@@ -70,6 +70,9 @@ export default function EditProductPage() {
   const fetchDispensaryAndProductData = useCallback(async () => {
     if (!currentUser?.dispensaryId || !productId) { setIsLoadingInitialData(false); return; }
     setIsLoadingInitialData(true);
+    let fetchedCategoriesForType: ProductCategory[] = [];
+    let fetchedDispensary: Dispensary | null = null;
+
     try {
       const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId);
       const dispensarySnap = await getDoc(dispensaryDocRef);
@@ -77,18 +80,17 @@ export default function EditProductPage() {
         toast({ title: "Error", description: "Dispensary data not found.", variant: "destructive" });
         router.push("/dispensary-admin/dashboard"); return;
       }
-      const fetchedDispensary = dispensarySnap.data() as Dispensary;
+      fetchedDispensary = dispensarySnap.data() as Dispensary;
       setDispensaryData(fetchedDispensary);
 
-      let fetchedCategoriesForType: ProductCategory[] = [];
       if (fetchedDispensary.dispensaryType) {
         const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
         const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
         const categoriesSnapshot = await getDocs(q);
         if (!categoriesSnapshot.empty) {
           const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-          if (categoriesDocData.categoriesData && categoriesDocData.categoriesData.length > 0) { // Changed from categoriesDataDoc.categories
-            fetchedCategoriesForType = categoriesDocData.categoriesData; // Changed from categoriesDataDoc.categories
+          if (categoriesDocData.categoriesData && categoriesDocData.categoriesData.length > 0) {
+            fetchedCategoriesForType = categoriesDocData.categoriesData;
             setDefinedProductCategories(fetchedCategoriesForType);
           } else {
              toast({ title: "Info", description: `No product categories defined for dispensary type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
@@ -125,8 +127,8 @@ export default function EditProductPage() {
         setImagePreview(productData.imageUrl || null);
         setOldImageUrl(productData.imageUrl);
 
-        // Direct initialization of category states
-        if (productData.category) {
+        // Initialize category states based on productData and fetchedCategoriesForType
+        if (productData.category && fetchedCategoriesForType.length > 0) {
             const mainCat = fetchedCategoriesForType.find(c => c.name === productData.category);
             if (mainCat) {
                 setSelectedMainCategoryName(mainCat.name);
@@ -137,25 +139,23 @@ export default function EditProductPage() {
                         setSelectedSubcategoryL1Name(subCatL1.name);
                         setAvailableSubcategoriesL2(subCatL1.subcategories || []);
                     } else {
-                        setSelectedSubcategoryL1Name(null);
-                        setAvailableSubcategoriesL2([]);
+                        setSelectedSubcategoryL1Name(null); setAvailableSubcategoriesL2([]);
                     }
                 } else {
-                    setSelectedSubcategoryL1Name(null);
-                    setAvailableSubcategoriesL2([]);
+                    setSelectedSubcategoryL1Name(null); setAvailableSubcategoriesL2([]);
                 }
             } else {
-                setSelectedMainCategoryName(null);
-                setAvailableSubcategoriesL1([]);
-                setSelectedSubcategoryL1Name(null);
-                setAvailableSubcategoriesL2([]);
-                console.warn(`Product's saved main category "${productData.category}" not found in defined categories.`);
+                setSelectedMainCategoryName(null); setAvailableSubcategoriesL1([]);
+                setSelectedSubcategoryL1Name(null); setAvailableSubcategoriesL2([]);
+                 if (fetchedDispensary) { // Check if fetchedDispensary is not null
+                    console.warn(`Product's saved main category "${productData.category}" not found in defined categories for type "${fetchedDispensary.dispensaryType}".`);
+                } else {
+                    console.warn(`Product's saved main category "${productData.category}" not found, and dispensary data is unavailable.`);
+                }
             }
         } else {
-            setSelectedMainCategoryName(null);
-            setAvailableSubcategoriesL1([]);
-            setSelectedSubcategoryL1Name(null);
-            setAvailableSubcategoriesL2([]);
+            setSelectedMainCategoryName(null); setAvailableSubcategoriesL1([]);
+            setSelectedSubcategoryL1Name(null); setAvailableSubcategoriesL2([]);
         }
 
       } else {
@@ -179,39 +179,42 @@ export default function EditProductPage() {
  // Effect for Main Category change (driven by form value)
   useEffect(() => {
     const mainCatName = form.watch('category');
-    setSelectedMainCategoryName(mainCatName || null); // Update state for UI logic
+    // Only update states if the mainCatName has actually changed from what was last set,
+    // or if it's the initial load and existingProduct's category is being processed.
+    if (mainCatName !== selectedMainCategoryName || (existingProduct && mainCatName === existingProduct.category && selectedMainCategoryName === null)) {
+        setSelectedMainCategoryName(mainCatName || null);
 
-    if (mainCatName && definedProductCategories.length > 0) {
-      const selectedCategoryObject = definedProductCategories.find(cat => cat.name === mainCatName);
-      setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
-       // Only reset child form fields if the main category *actually* changed from what was loaded
-      if (existingProduct && mainCatName !== existingProduct.category) {
+        if (mainCatName && definedProductCategories.length > 0) {
+            const selectedCategoryObject = definedProductCategories.find(cat => cat.name === mainCatName);
+            setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
+        } else {
+            setAvailableSubcategoriesL1([]);
+        }
+        // Always reset children when main category changes or clears
         form.setValue('subcategory', null, { shouldValidate: true });
+        setSelectedSubcategoryL1Name(null);
         form.setValue('subSubcategory', null, { shouldValidate: true });
-      }
-    } else {
-      setAvailableSubcategoriesL1([]);
-      form.setValue('subcategory', null, { shouldValidate: true });
-      form.setValue('subSubcategory', null, { shouldValidate: true });
+        setAvailableSubcategoriesL2([]);
     }
-  }, [form.watch('category'), definedProductCategories, form, existingProduct]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch('category'), definedProductCategories, form, existingProduct, selectedMainCategoryName]);
 
   // Effect for L1 Subcategory change (driven by form value)
   useEffect(() => {
     const subCatL1Name = form.watch('subcategory');
-    setSelectedSubcategoryL1Name(subCatL1Name || null); // Update state for UI logic
+    if (subCatL1Name !== selectedSubcategoryL1Name || (existingProduct && subCatL1Name === existingProduct.subcategory && selectedSubcategoryL1Name === null)){
+        setSelectedSubcategoryL1Name(subCatL1Name || null);
 
-    if (subCatL1Name && availableSubcategoriesL1.length > 0) {
-      const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === subCatL1Name);
-      setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
-      if (existingProduct && subCatL1Name !== existingProduct.subcategory) { // If L1 changed from initial load
-         form.setValue('subSubcategory', null, { shouldValidate: true });
-      }
-    } else {
-      setAvailableSubcategoriesL2([]);
-      form.setValue('subSubcategory', null, { shouldValidate: true });
+        if (subCatL1Name && availableSubcategoriesL1.length > 0) {
+            const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === subCatL1Name);
+            setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
+        } else {
+            setAvailableSubcategoriesL2([]);
+        }
+        form.setValue('subSubcategory', null, { shouldValidate: true });
     }
-  }, [form.watch('subcategory'), availableSubcategoriesL1, form, existingProduct]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.watch('subcategory'), availableSubcategoriesL1, form, existingProduct, selectedSubcategoryL1Name]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,14 +224,14 @@ export default function EditProductPage() {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
-      form.setValue('imageUrl', ''); // Clear existing imageUrl from form if new file selected
+      form.setValue('imageUrl', ''); 
     }
   };
 
   const handleRemoveImage = async () => {
     setImageFile(null);
     setImagePreview(null);
-    form.setValue('imageUrl', null); // Set to null to indicate removal
+    form.setValue('imageUrl', null); 
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
@@ -245,9 +248,9 @@ export default function EditProductPage() {
     }
 
     setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl');
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Start with current form value (could be existing URL or null if user removed)
 
-    if (imageFile) {
+    if (imageFile) { // If a new file was selected
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -256,18 +259,21 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
+        // If a new image was uploaded successfully, delete the old one (if it exists and is different)
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(finalImageUrl);
+        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
+      // This means user explicitly removed the image without uploading a new one
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); }
       catch (e: any) {
         if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed (on removal):", e);
         else {finalImageUrl = null; setOldImageUrl(null);}
       }
     }
+    // If no new file and imageUrl wasn't set to null, finalImageUrl remains the existing URL from form.getValues('imageUrl')
 
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
