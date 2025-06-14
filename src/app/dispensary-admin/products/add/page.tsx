@@ -38,7 +38,7 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
-  
+
   const [definedProductCategories, setDefinedProductCategories] = useState<ProductCategory[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [availableSubcategoriesL1, setAvailableSubcategoriesL1] = useState<ProductCategory[]>([]);
@@ -90,9 +90,9 @@ export default function AddProductPage() {
             const categoriesSnapshot = await getDocs(q);
 
             if (!categoriesSnapshot.empty) {
-              const categoriesData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-              if (categoriesData.categories && categoriesData.categories.length > 0) {
-                setDefinedProductCategories(categoriesData.categories);
+              const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+              if (categoriesDocData.categoriesData && categoriesDocData.categoriesData.length > 0) { // Changed from categoriesDataDoc.categories
+                setDefinedProductCategories(categoriesDocData.categoriesData); // Changed from categoriesDataDoc.categories
               } else {
                 toast({ title: "Info", description: `No product categories defined for dispensary type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
                 setDefinedProductCategories([]);
@@ -122,7 +122,8 @@ export default function AddProductPage() {
 
   // Effect for Main Category change
   useEffect(() => {
-    const mainCatName = form.getValues('category'); // Get from form as it's the source of truth
+    const mainCatName = form.watch('category');
+    setSelectedMainCategoryName(mainCatName || null); // Update state for UI logic
     if (mainCatName && definedProductCategories.length > 0) {
       const selectedCategoryObject = definedProductCategories.find(cat => cat.name === mainCatName);
       setAvailableSubcategoriesL1(selectedCategoryObject?.subcategories || []);
@@ -130,7 +131,7 @@ export default function AddProductPage() {
       setAvailableSubcategoriesL1([]);
     }
     // Always reset children when main category changes or clears
-    form.setValue('subcategory', null, { shouldValidate: true }); 
+    form.setValue('subcategory', null, { shouldValidate: true });
     setSelectedSubcategoryL1Name(null);
     form.setValue('subSubcategory', null, { shouldValidate: true });
     setAvailableSubcategoriesL2([]);
@@ -139,7 +140,8 @@ export default function AddProductPage() {
 
   // Effect for L1 Subcategory change
   useEffect(() => {
-    const subCatL1Name = form.getValues('subcategory'); // Get from form
+    const subCatL1Name = form.watch('subcategory');
+    setSelectedSubcategoryL1Name(subCatL1Name || null); // Update state for UI logic
     if (subCatL1Name && availableSubcategoriesL1.length > 0) {
       const selectedSubCategoryL1Object = availableSubcategoriesL1.find(subCat => subCat.name === subCatL1Name);
       setAvailableSubcategoriesL2(selectedSubCategoryL1Object?.subcategories || []);
@@ -187,31 +189,31 @@ export default function AddProductPage() {
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
       try {
         uploadedImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, 
+          uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
       } catch (error) {
         toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return;
       }
     }
-    setUploadProgress(100); 
+    setUploadProgress(100);
 
     try {
       const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: dispensaryData.dispensaryName,
         dispensaryType: dispensaryData.dispensaryType, productOwnerEmail: dispensaryData.ownerEmail,
-        imageUrl: uploadedImageUrl, 
-        thcContent: data.thcContent ?? null, 
+        imageUrl: uploadedImageUrl,
+        thcContent: data.thcContent ?? null,
         cbdContent: data.cbdContent ?? null,
-        price: data.price ?? 0, 
+        price: data.price ?? 0,
         quantityInStock: data.quantityInStock ?? 0,
-        subcategory: data.subcategory || null, 
+        subcategory: data.subcategory || null,
         subSubcategory: data.subSubcategory || null,
         createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       };
       await addDoc(collection(db, 'products'), productData);
       toast({ title: "Product Added!", description: `${data.name} has been successfully added to your inventory.` });
-      form.reset(); 
-      setSelectedMainCategoryName(null); 
+      form.reset();
+      setSelectedMainCategoryName(null);
       setSelectedSubcategoryL1Name(null);
       // availableSubcategoriesL1/L2 will be reset by their respective useEffects
       setImageFile(null); setImagePreview(null); setUploadProgress(null);
@@ -259,13 +261,13 @@ export default function AddProductPage() {
                 </div>
             )}
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-            
+
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem> <FormLabel>Main Category {definedProductCategories.length > 0 ? '*' : '(Manual Entry Required)'}</FormLabel>
                 {definedProductCategories.length > 0 ? (
-                    <Select 
-                        onValueChange={(value) => { field.onChange(value); /* setSelectedMainCategoryName will be handled by form.watch */ }} 
-                        value={field.value || ''} 
+                    <Select
+                        onValueChange={(value) => { field.onChange(value); }}
+                        value={field.value || ''}
                     >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -278,38 +280,38 @@ export default function AddProductPage() {
                 <FormMessage />
               </FormItem> )} />
 
-            {form.getValues('category') && availableSubcategoriesL1.length > 0 && (
+            {selectedMainCategoryName && availableSubcategoriesL1.length > 0 && (
               <FormField control={form.control} name="subcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
-                  <Select 
-                    onValueChange={(value) => { field.onChange(value === "" ? null : value); /* setSelectedSubcategoryL1Name will be handled by form.watch */}} 
+                  <Select
+                    onValueChange={(value) => { field.onChange(value === "" ? null : value);}}
                     value={field.value || ''}
                   >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select L1 subcategory (optional)" /></SelectTrigger></FormControl>
-                    <SelectContent> 
+                    <SelectContent>
                         <SelectItem value="">None</SelectItem>
-                        {availableSubcategoriesL1.map((subCat) => ( <SelectItem key={subCat.name} value={subCat.name}>{subCat.name}</SelectItem> ))} 
+                        {availableSubcategoriesL1.map((subCat) => ( <SelectItem key={subCat.name} value={subCat.name}>{subCat.name}</SelectItem> ))}
                     </SelectContent>
                   </Select> <FormMessage />
                 </FormItem> )} />
             )}
 
-            {form.getValues('subcategory') && availableSubcategoriesL2.length > 0 && (
+            {selectedSubcategoryL1Name && availableSubcategoriesL2.length > 0 && (
               <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
-                  <Select 
-                    onValueChange={(value) => { field.onChange(value === "" ? null : value);}} 
+                  <Select
+                    onValueChange={(value) => { field.onChange(value === "" ? null : value);}}
                     value={field.value || ''}
                   >
                     <FormControl><SelectTrigger><SelectValue placeholder="Select L2 subcategory (optional)" /></SelectTrigger></FormControl>
-                    <SelectContent> 
+                    <SelectContent>
                         <SelectItem value="">None</SelectItem>
-                        {availableSubcategoriesL2.map((subSubCat) => ( <SelectItem key={subSubCat.name} value={subSubCat.name}>{subSubCat.name}</SelectItem> ))} 
+                        {availableSubcategoriesL2.map((subSubCat) => ( <SelectItem key={subSubCat.name} value={subSubCat.name}>{subSubCat.name}</SelectItem> ))}
                     </SelectContent>
                   </Select> <FormMessage />
                 </FormItem> )} />
             )}
-           
+
             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description of the product, its benefits, and usage instructions..." {...field} rows={4} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             <div className="grid md:grid-cols-3 gap-6">
               <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
@@ -340,7 +342,7 @@ export default function AddProductPage() {
             </div>
             <CardFooter className="px-0 pt-8">
                 <div className="flex gap-4 w-full">
-                    <Button type="submit" size="lg" className="flex-1 text-lg" 
+                    <Button type="submit" size="lg" className="flex-1 text-lg"
                       disabled={isLoading || isLoadingInitialData}
                     >
                         {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
@@ -357,4 +359,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-    

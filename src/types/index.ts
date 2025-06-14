@@ -14,7 +14,7 @@ export interface Dispensary {
   phone: string;
   ownerEmail: string;
   dispensaryName: string;
-  dispensaryType: string; 
+  dispensaryType: string;
   currency: string;
   openTime?: string | null;
   closeTime?: string | null;
@@ -48,18 +48,18 @@ export interface DispensaryType {
   id?: string;
   name: string; // Unique name for the dispensary type
   description?: string | null;
-  iconPath?: string | null; 
-  image?: string | null;    
-  advisorFocusPrompt?: string | null; 
+  iconPath?: string | null;
+  image?: string | null;
+  advisorFocusPrompt?: string | null;
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
 
 // Represents a document in the 'dispensaryTypeProductCategories' collection
 export interface DispensaryTypeProductCategoriesDoc {
-  id?: string; 
-  name: string; // Name of the dispensary type this category structure belongs to
-  categories: ProductCategory[]; // Uses the recursive ProductCategory
+  id?: string;
+  name?: string; // Name of the dispensary type this category structure belongs to
+  categoriesData: ProductCategory[]; // Changed from 'categories' to 'categoriesData'
   updatedAt?: Timestamp | Date | string;
 }
 
@@ -67,32 +67,32 @@ export interface DispensaryTypeProductCategoriesDoc {
 // Represents a Product document in Firestore
 export interface Product {
   id?: string;
-  dispensaryId: string; 
-  dispensaryName: string; 
-  dispensaryType: string; 
-  productOwnerEmail: string; 
+  dispensaryId: string;
+  dispensaryName: string;
+  dispensaryType: string;
+  productOwnerEmail: string;
   name: string;
   description: string;
-  category: string; 
-  subcategory?: string | null; 
+  category: string;
+  subcategory?: string | null;
   subSubcategory?: string | null; // New field for second level subcategory
-  strain?: string | null; 
-  thcContent?: number | null; 
-  cbdContent?: number | null; 
+  strain?: string | null;
+  thcContent?: number | null;
+  cbdContent?: number | null;
   price: number;
-  currency: string; 
-  unit: string; 
+  currency: string;
+  unit: string;
   quantityInStock: number;
-  imageUrl?: string | null; 
+  imageUrl?: string | null;
   labTested?: boolean;
-  effects?: string[]; 
-  flavors?: string[]; 
-  medicalUses?: string[]; 
-  isAvailableForPool?: boolean; 
-  tags?: string[]; 
+  effects?: string[];
+  flavors?: string[];
+  medicalUses?: string[];
+  isAvailableForPool?: boolean;
+  tags?: string[];
   createdAt: Timestamp | Date | string;
   updatedAt: Timestamp | Date | string;
-  dispensaryLocation?: { 
+  dispensaryLocation?: {
     address: string;
     latitude?: number | null;
     longitude?: number | null;
@@ -110,10 +110,10 @@ export interface NoteData {
 export interface ProductRequest {
   id?: string;
   productId: string;
-  productName: string; 
+  productName: string;
   productOwnerDispensaryId: string;
-  productOwnerEmail: string; 
-  productImage?: string | null; 
+  productOwnerEmail: string;
+  productImage?: string | null;
 
   requesterDispensaryId: string;
   requesterDispensaryName: string;

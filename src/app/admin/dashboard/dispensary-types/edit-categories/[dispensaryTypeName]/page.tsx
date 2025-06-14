@@ -78,7 +78,7 @@ const NestedSubcategoryManager: React.FC<{
             ))}
             {!disabled && (
               <div className="flex items-center gap-2 mt-1">
-                  <Input 
+                  <Input
                       value={newSubcategoryName}
                       onChange={(e) => setNewSubcategoryName(e.target.value)}
                       placeholder={`Add ${nestingLevel === 0 ? "Subcategory" : "Sub-Subcategory"}`}
@@ -139,7 +139,7 @@ const NestedSubcategoryManager: React.FC<{
       ))}
        {!disabled && expanded && (
          <div className="flex items-center gap-2 mt-1">
-              <Input 
+              <Input
                   value={newSubcategoryName}
                   onChange={(e) => setNewSubcategoryName(e.target.value)}
                   placeholder={`Add ${nestingLevel === 0 ? "Subcategory (L1)" : "Subcategory (L2)"}`}
@@ -171,13 +171,13 @@ export default function EditDispensaryTypeCategoriesPage() {
   const form = useForm<DispensaryTypeProductCategoriesFormData>({
     resolver: zodResolver(dispensaryTypeProductCategoriesSchema),
     defaultValues: {
-      categories: [],
+      categoriesData: [], // Field name changed to categoriesData
     },
   });
 
   const { fields: categoryFields, append: appendCategory, remove: removeCategory } = useFieldArray({
     control: form.control,
-    name: "categories",
+    name: "categoriesData", // Field name changed to categoriesData
   });
 
   const fetchCategories = useCallback(async () => {
@@ -196,16 +196,16 @@ export default function EditDispensaryTypeCategoriesPage() {
         const docSnap = querySnapshot.docs[0];
         setDocumentId(docSnap.id);
         const data = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-        const sanitizedCategories = (data.categories || []).map(cat => ({
+        const sanitizedCategories = (data.categoriesData || []).map(cat => ({ // Changed from data.categories
           ...cat,
           subcategories: (cat.subcategories || []).map(subcat => ({
             ...subcat,
-            subcategories: subcat.subcategories || [] 
+            subcategories: subcat.subcategories || []
           }))
         }));
-        form.reset({ categories: sanitizedCategories });
+        form.reset({ categoriesData: sanitizedCategories }); // Changed from categories
       } else {
-        form.reset({ categories: [] }); 
+        form.reset({ categoriesData: [] }); // Changed from categories
         setDocumentId(null); // No existing document, will create on save
       }
     } catch (error) {
@@ -230,16 +230,15 @@ export default function EditDispensaryTypeCategoriesPage() {
   const onSubmit = async (data: DispensaryTypeProductCategoriesFormData) => {
     if (!dispensaryTypeName || !currentUser || currentUser.role !== 'Super Admin') return;
     setIsLoading(true);
-    
-    // Determine if creating new or updating existing document
-    const docRef = documentId 
-        ? doc(db, 'dispensaryTypeProductCategories', documentId) 
-        : doc(collection(db, 'dispensaryTypeProductCategories')); // Create new doc ref if no ID
+
+    const docRef = documentId
+        ? doc(db, 'dispensaryTypeProductCategories', documentId)
+        : doc(collection(db, 'dispensaryTypeProductCategories'));
 
     try {
       const cleanCategories = (categories: ProductCategory[]): ProductCategory[] => {
         return categories
-          .filter(cat => cat.name && cat.name.trim() !== '') // Filter out categories with empty names
+          .filter(cat => cat.name && cat.name.trim() !== '')
           .map(cat => {
             const cleanedSubcategories = cat.subcategories ? cleanCategories(cat.subcategories) : [];
             const newCat: ProductCategory = { name: cat.name.trim() };
@@ -250,17 +249,17 @@ export default function EditDispensaryTypeCategoriesPage() {
           });
       };
 
-      const categoriesToSave = cleanCategories(data.categories);
+      const categoriesToSave = cleanCategories(data.categoriesData); // Changed from data.categories
 
       await setDoc(docRef, {
-        name: dispensaryTypeName, 
-        categories: categoriesToSave,
+        name: dispensaryTypeName,
+        categoriesData: categoriesToSave, // Changed from categories
         updatedAt: serverTimestamp(),
-      }, { merge: true }); 
+      }, { merge: true });
 
       toast({ title: "Categories Saved", description: `Product categories for "${dispensaryTypeName}" have been updated.` });
-      if (!documentId) setDocumentId(docRef.id); // Store new ID if created
-      fetchCategories(); // Re-fetch to ensure form reflects saved state
+      if (!documentId) setDocumentId(docRef.id);
+      fetchCategories();
     } catch (error) {
       console.error("Error saving categories:", error);
       toast({ title: "Save Failed", description: "Could not save product categories.", variant: "destructive" });
@@ -268,7 +267,7 @@ export default function EditDispensaryTypeCategoriesPage() {
       setIsLoading(false);
     }
   };
-  
+
 
   if (authLoading || isFetchingData) {
     return (
@@ -292,7 +291,7 @@ export default function EditDispensaryTypeCategoriesPage() {
       </div>
     );
   }
-  
+
   if (!currentUser || currentUser.role !== 'Super Admin') {
     return <div className="p-4 text-center text-destructive">Access Denied.</div>;
   }
@@ -330,7 +329,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                      <GripVertical className="h-5 w-5 text-muted-foreground/50 cursor-grab mt-7 mr-1" />
                     <FormField
                       control={form.control}
-                      name={`categories.${categoryIndex}.name`}
+                      name={`categoriesData.${categoryIndex}.name`} // Changed from categories
                       render={({ field }) => (
                         <FormItem className="flex-grow mr-2">
                           <FormLabel className="text-md font-semibold text-foreground">Main Category</FormLabel>
@@ -350,7 +349,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                         <AlertDialogContent>
                             <AlertDialogHeader><AlertDialogTitle>Delete Main Category?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Are you sure you want to delete the category &quot;{form.getValues(`categories.${categoryIndex}.name`)}&quot; and all its subcategories? This action cannot be undone.
+                                Are you sure you want to delete the category &quot;{form.getValues(`categoriesData.${categoryIndex}.name`)}&quot; and all its subcategories? This action cannot be undone.
                             </AlertDialogDescription></AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -359,20 +358,20 @@ export default function EditDispensaryTypeCategoriesPage() {
                         </AlertDialogContent>
                     </AlertDialog>
                   </div>
-                  
+
                   <NestedSubcategoryManager
-                    nestingLevel={0} 
+                    nestingLevel={0}
                     control={form.control}
-                    pathPrefix={`categories.${categoryIndex}.subcategories`}
+                    pathPrefix={`categoriesData.${categoryIndex}.subcategories`} // Changed from categories
                     register={form.register}
                     getValues={form.getValues}
                     setValue={form.setValue}
                   />
                 </Card>
               ))}
-              <Button 
-                type="button" 
-                variant="secondary" 
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => appendCategory({ name: '', subcategories: [] })}
                 className="text-md py-2.5"
               >

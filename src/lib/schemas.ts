@@ -157,7 +157,7 @@ export type ProductCategoryFormData = z.infer<typeof productCategorySchema>;
 
 // Schema for managing an array of ProductCategories (used for the new admin page)
 export const dispensaryTypeProductCategoriesSchema = z.object({
-  categories: z.array(productCategorySchema).optional().default([]),
+  categoriesData: z.array(productCategorySchema).optional().default([]), // Changed from 'categories'
 });
 export type DispensaryTypeProductCategoriesFormData = z.infer<typeof dispensaryTypeProductCategoriesSchema>;
 
@@ -320,7 +320,7 @@ export const userSchema = z.object({
   lastLoginAt: z.any().optional().nullable(),
   status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('Active'),
   preferredDispensaryTypes: z.array(z.string()).optional().default([]),
-  welcomeCreditsAwarded: z.boolean().optional().default(false), 
+  welcomeCreditsAwarded: z.boolean().optional().default(false),
 });
 export type User = z.infer<typeof userSchema>;
 
@@ -344,7 +344,7 @@ export const dispensaryOwnerAddStaffSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'), 
+  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'),
 });
 export type DispensaryOwnerAddStaffFormData = z.infer<typeof dispensaryOwnerAddStaffSchema>;
 
@@ -353,8 +353,8 @@ export const dispensaryOwnerAddLeafUserSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
   password: z.string().min(6, "Password must be at least 6 characters."),
-  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'), 
-  credits: z.coerce.number().int().min(0).default(0), 
+  status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('PendingApproval'),
+  credits: z.coerce.number().int().min(0).default(0),
 });
 export type DispensaryOwnerAddLeafUserFormData = z.infer<typeof dispensaryOwnerAddLeafUserSchema>;
 
@@ -490,5 +490,3 @@ export const aiAdvisorConfigSchema = z.object({
   dataAiHint: z.string().optional().nullable(),
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
-
-    
