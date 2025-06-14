@@ -106,13 +106,13 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 onSave={onSave}
                 isSuperAdmin={isSuperAdmin}
             >
-                <Button variant="outline" className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit Details</Button>
+                <Button variant="outline" className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
             </DispensaryTypeDialog>
 
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                 <Button variant="destructive" className="w-full" disabled={!dispensaryType.id}>
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete Type
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
                 </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -125,7 +125,7 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={() => dispensaryType.id && onDelete(dispensaryType.id, dispensaryType.name)}>
-                    Yes, delete type
+                    Yes, delete
                     </AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
@@ -143,3 +143,4 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
     </Card>
   );
 }
+
