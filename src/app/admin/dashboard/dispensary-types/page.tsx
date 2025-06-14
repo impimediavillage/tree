@@ -96,7 +96,7 @@ export default function AdminDispensaryTypesPage() {
           <p className="text-muted-foreground">Create, view, edit, and delete dispensary types for the platform.</p>
         </div>
         {isSuperAdmin && (
-          <DispensaryTypeDialog onSave={fetchDispensaryTypes}>
+          <DispensaryTypeDialog onSave={fetchDispensaryTypes} isSuperAdmin={isSuperAdmin}>
             <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Type</Button>
           </DispensaryTypeDialog>
         )}
@@ -119,11 +119,11 @@ export default function AdminDispensaryTypesPage() {
           <p className="ml-2 text-muted-foreground">Loading dispensary types...</p>
         </div>
       ) : (
-        <div className="flex overflow-x-auto space-x-6 pb-6 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-muted">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {filteredTypes.length > 0 ? (
-            filteredTypes.map((type) => (
+            filteredTypes.map((type, index) => (
               <DispensaryTypeCard
-                key={type.id}
+                key={type.id || index} 
                 dispensaryType={type}
                 onSave={fetchDispensaryTypes}
                 onDelete={handleDeleteType}
@@ -131,15 +131,12 @@ export default function AdminDispensaryTypesPage() {
               />
             ))
           ) : (
-            <div className="w-full text-center py-10 text-muted-foreground">
+            <div className="col-span-full text-center py-10 text-muted-foreground">
               No dispensary types found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
       )}
-      {filteredTypes.length > 0 && (
-         <p className="text-xs text-center text-muted-foreground pt-2">Scroll horizontally to see all dispensary types.</p>
-       )}
     </div>
   );
 }

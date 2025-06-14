@@ -50,7 +50,7 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
 
   return (
     <Card 
-      className="min-w-[300px] max-w-sm w-full flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card text-card-foreground animate-fade-in-scale-up"
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card text-card-foreground animate-fade-in-scale-up"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
@@ -119,7 +119,7 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the dispensary type &quot;{dispensaryType.name}&quot;. Product categories for this type must be managed separately using the 'Manage Categories' button.
+                    This action cannot be undone. This will permanently delete the dispensary type &quot;{dispensaryType.name}&quot;.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -131,14 +131,15 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 </AlertDialogContent>
             </AlertDialog>
           </div>
+          {/* Manage Categories button is now hidden as requested 
           <Button variant="secondary" className="w-full" asChild>
             <Link href={`/admin/dashboard/dispensary-types/edit-categories/${encodeURIComponent(dispensaryType.name)}`}>
               <ListPlus className="mr-2 h-4 w-4" /> Manage Categories
             </Link>
           </Button>
+          */}
         </CardFooter>
       )}
     </Card>
   );
 }
-
