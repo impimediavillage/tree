@@ -16,10 +16,54 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, Trash2, ArrowLeft, PackagePlus, Save, ListFilter, AlertTriangle } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, ArrowLeft, PackagePlus, Save, ListFilter, AlertTriangle, GripVertical } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
+
+// Component for managing a single category's subcategories
+function SubcategoryManager({ categoryIndex, control, register, getValues, setValue }: {
+  categoryIndex: number;
+  control: any; // Control<DispensaryTypeProductCategoriesFormData>
+  register: any; // UseFormRegister<DispensaryTypeProductCategoriesFormData>
+  getValues: any; // UseFormGetValues<DispensaryTypeProductCategoriesFormData>
+  setValue: any; // UseFormSetValue<DispensaryTypeProductCategoriesFormData>
+}) {
+  const { fields: subcategoryFields, append: appendSubcategory, remove: removeSubcategory } = useFieldArray({
+    control,
+    name: `categories.${categoryIndex}.subcategories`,
+  });
+
+  return (
+    <div className="ml-4 pl-4 border-l-2 border-dashed border-muted-foreground/30 space-y-3 py-3">
+      <FormLabel className="text-sm text-muted-foreground block mb-2">Subcategories:</FormLabel>
+      {subcategoryFields.map((subItem, subIndex) => (
+        <div key={subItem.id} className="flex items-center gap-2 animate-fade-in-scale-up" style={{ animationDuration: '0.3s', animationDelay: `${subIndex * 50}ms`}}>
+          <FormField
+            control={control}
+            name={`categories.${categoryIndex}.subcategories.${subIndex}`}
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormControl>
+                  <Input {...field} placeholder="Subcategory name (e.g., Indica)" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button variant="ghost" size="icon" type="button" onClick={() => removeSubcategory(subIndex)} className="text-destructive hover:bg-destructive/10 shrink-0">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      <Button type="button" variant="outline" size="sm" onClick={() => appendSubcategory('')}>
+        <PlusCircle className="mr-2 h-4 w-4" /> Add Subcategory
+      </Button>
+    </div>
+  );
+}
+
 
 export default function EditDispensaryTypeCategoriesPage() {
   const params = useParams();
@@ -31,7 +75,6 @@ export default function EditDispensaryTypeCategoriesPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
-  const [initialCategories, setInitialCategories] = useState<ProductCategory[]>([]);
 
   const form = useForm<DispensaryTypeProductCategoriesFormData>({
     resolver: zodResolver(dispensaryTypeProductCategoriesSchema),
@@ -40,7 +83,7 @@ export default function EditDispensaryTypeCategoriesPage() {
     },
   });
 
-  const { fields: categoryFields, append: appendCategory, remove: removeCategory, update: updateCategory } = useFieldArray({
+  const { fields: categoryFields, append: appendCategory, remove: removeCategory } = useFieldArray({
     control: form.control,
     name: "categories",
   });
@@ -57,11 +100,14 @@ export default function EditDispensaryTypeCategoriesPage() {
       const docSnap = await getDoc(categoriesDocRef);
       if (docSnap.exists()) {
         const data = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-        form.reset({ categories: data.categories || [] });
-        setInitialCategories(data.categories || []);
+        // Ensure subcategories is always an array, even if undefined in Firestore
+        const sanitizedCategories = (data.categories || []).map(cat => ({
+          ...cat,
+          subcategories: cat.subcategories || [] 
+        }));
+        form.reset({ categories: sanitizedCategories });
       } else {
-        form.reset({ categories: [] }); // No existing categories, start fresh
-        setInitialCategories([]);
+        form.reset({ categories: [] }); 
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -87,11 +133,17 @@ export default function EditDispensaryTypeCategoriesPage() {
     setIsLoading(true);
     try {
       const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryTypeName);
+      // Filter out empty subcategory strings before saving
+      const categoriesToSave = data.categories.map(cat => ({
+        ...cat,
+        subcategories: cat.subcategories?.filter(sub => sub && sub.trim() !== '') || []
+      }));
+
       await setDoc(categoriesDocRef, {
-        name: dispensaryTypeName, // Store the type name for reference
-        categories: data.categories,
+        name: dispensaryTypeName, 
+        categories: categoriesToSave,
         updatedAt: serverTimestamp(),
-      }, { merge: true }); // Use merge to create if not exists, or update if it does
+      }, { merge: true }); 
 
       toast({ title: "Categories Saved", description: `Product categories for "${dispensaryTypeName}" have been updated.` });
       router.push('/admin/dashboard/dispensary-types');
@@ -103,30 +155,25 @@ export default function EditDispensaryTypeCategoriesPage() {
     }
   };
   
-  const addSubcategory = (categoryIndex: number) => {
-    const currentCategory = form.getValues(`categories.${categoryIndex}`);
-    const newSubcategories = [...(currentCategory.subcategories || []), "New Subcategory"];
-    updateCategory(categoryIndex, { ...currentCategory, subcategories: newSubcategories });
-  };
-
-  const removeSubcategory = (categoryIndex: number, subcategoryIndex: number) => {
-    const currentCategory = form.getValues(`categories.${categoryIndex}`);
-    const updatedSubcategories = currentCategory.subcategories?.filter((_, index) => index !== subcategoryIndex);
-    updateCategory(categoryIndex, { ...currentCategory, subcategories: updatedSubcategories });
-  };
-
 
   if (authLoading || isFetchingData) {
     return (
       <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-        <Skeleton className="h-10 w-1/2 mb-2" />
+        <div className="flex items-center justify-between mb-6">
+            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-9 w-28" />
+        </div>
         <Skeleton className="h-8 w-3/4 mb-6" />
-        <Card className="shadow-xl">
-          <CardContent className="p-6 space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-10 w-full" />
+        <Card className="shadow-xl animate-pulse">
+          <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="p-4 border bg-muted rounded-md space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <div className="ml-4 pl-4 border-l space-y-3"><Skeleton className="h-10 w-3/4" /><Skeleton className="h-8 w-1/4" /></div>
+            </div>
+            <Skeleton className="h-10 w-1/3" />
           </CardContent>
+          <CardFooter><Skeleton className="h-12 w-full" /></CardFooter>
         </Card>
       </div>
     );
@@ -144,7 +191,7 @@ export default function EditDispensaryTypeCategoriesPage() {
             <h1 className="text-3xl font-bold text-primary flex items-center">
                 <ListFilter className="mr-3 h-8 w-8" /> Manage Product Categories
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-lg text-muted-foreground">
                 For Dispensary Type: <span className="font-semibold text-foreground">{dispensaryTypeName}</span>
             </p>
         </div>
@@ -155,26 +202,26 @@ export default function EditDispensaryTypeCategoriesPage() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <Card className="shadow-xl">
+          <Card className="shadow-xl border-primary/20">
             <CardHeader>
-              <CardTitle>Categories & Subcategories</CardTitle>
+              <CardTitle>Category Structure</CardTitle>
               <CardDescription>
-                Define the main product categories and their respective subcategories for this dispensary type.
-                This structure will guide product creation for dispensaries of this type.
+                Define main product categories and their specific subcategories for dispensaries of type &quot;{dispensaryTypeName}&quot;.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {categoryFields.map((categoryItem, categoryIndex) => (
-                <Card key={categoryItem.id} className="p-4 border bg-card shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
+                <Card key={categoryItem.id} className="p-4 bg-card border shadow-md relative animate-fade-in-scale-up" style={{ animationDuration: '0.4s', animationDelay: `${categoryIndex * 100}ms`}}>
+                  {/* <GripVertical className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-grab" /> */}
+                  <div className="flex items-start justify-between mb-3">
                     <FormField
                       control={form.control}
                       name={`categories.${categoryIndex}.name`}
                       render={({ field }) => (
                         <FormItem className="flex-grow mr-2">
-                          <FormLabel className="text-base">Main Category Name</FormLabel>
+                          <FormLabel className="text-base font-semibold">Main Category Name</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Flowers, Edibles, Concentrates" />
+                            <Input {...field} placeholder="e.g., Flowers, Edibles, Concentrates" className="text-base" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -182,7 +229,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                     />
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" type="button" className="text-destructive hover:bg-destructive/10 mt-6">
+                            <Button variant="ghost" size="icon" type="button" className="text-destructive hover:bg-destructive/10 mt-6 shrink-0">
                                 <Trash2 className="h-5 w-5" />
                             </Button>
                         </AlertDialogTrigger>
@@ -199,38 +246,25 @@ export default function EditDispensaryTypeCategoriesPage() {
                     </AlertDialog>
                   </div>
                   
-                  <div className="ml-4 pl-4 border-l space-y-3">
-                    <FormLabel className="text-sm text-muted-foreground">Subcategories:</FormLabel>
-                    {form.watch(`categories.${categoryIndex}.subcategories`)?.map((_, subcategoryIndex) => (
-                      <div key={`${categoryItem.id}-sub-${subcategoryIndex}`} className="flex items-center gap-2">
-                        <FormField
-                          control={form.control}
-                          name={`categories.${categoryIndex}.subcategories.${subcategoryIndex}`}
-                          render={({ field }) => (
-                            <FormItem className="flex-grow">
-                              <FormControl>
-                                <Input {...field} placeholder="Subcategory name (e.g., Indica, Gummies)" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <Button variant="ghost" size="icon" type="button" onClick={() => removeSubcategory(categoryIndex, subcategoryIndex)} className="text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => addSubcategory(categoryIndex)}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Subcategory
-                    </Button>
-                  </div>
+                  <SubcategoryManager 
+                    categoryIndex={categoryIndex} 
+                    control={form.control} 
+                    register={form.register} 
+                    getValues={form.getValues}
+                    setValue={form.setValue}
+                  />
                 </Card>
               ))}
-              <Button type="button" variant="secondary" onClick={() => appendCategory({ name: 'New Category', subcategories: [] })}>
-                <PackagePlus className="mr-2 h-4 w-4" /> Add Main Category
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={() => appendCategory({ name: '', subcategories: [] })}
+                className="text-base py-3"
+              >
+                <PackagePlus className="mr-2 h-5 w-5" /> Add Main Category
               </Button>
             </CardContent>
-            <CardFooter className="border-t pt-6">
+            <CardFooter className="border-t pt-6 bg-muted/30 -mx-6 px-6 pb-6">
                 <div className="flex gap-4 w-full">
                     <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
@@ -244,15 +278,16 @@ export default function EditDispensaryTypeCategoriesPage() {
           </Card>
         </form>
       </Form>
-       {initialCategories.length === 0 && !isFetchingData && categoryFields.length === 0 && (
-        <Card className="mt-6 border-dashed border-yellow-500 bg-yellow-50">
-            <CardContent className="pt-6 text-center text-yellow-700">
-                <AlertTriangle className="mx-auto h-8 w-8 mb-2"/>
-                <p className="font-semibold">No categories defined yet for &quot;{dispensaryTypeName}&quot;.</p>
-                <p className="text-sm">Click &quot;Add Main Category&quot; to start building the product structure.</p>
+       {categoryFields.length === 0 && !isFetchingData && (
+        <Card className="mt-6 border-dashed border-amber-500 bg-amber-50/50 shadow-none">
+            <CardContent className="pt-6 text-center text-amber-700">
+                <AlertTriangle className="mx-auto h-10 w-10 mb-3"/>
+                <p className="text-lg font-semibold">No Categories Defined Yet</p>
+                <p className="text-sm">Click &quot;Add Main Category&quot; to start building the product structure for &quot;{dispensaryTypeName}&quot;.</p>
             </CardContent>
         </Card>
        )}
     </div>
   );
 }
+
