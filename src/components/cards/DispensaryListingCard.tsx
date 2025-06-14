@@ -7,28 +7,50 @@ import type { Dispensary } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MapPin, Eye } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-// This could be fetched or passed as a prop if it needs to be dynamic
-// For now, it's a fallback if dispensary.dispensaryType.image is not available.
-const dispensaryTypeImages: Record<string, string> = {
+const hardcodedTypeImages: Record<string, string> = {
   "THC - CBD - Mushrooms dispensary": "/images/dispensary-types/thc-cbd-mushroom-banner.jpg",
   "Homeopathic dispensary": "/images/dispensary-types/homeopathy-banner.jpg",
   "African Traditional Medicine dispensary": "/images/dispensary-types/traditional-banner.jpg",
   "Permaculture & gardening store": "/images/dispensary-types/permaculture-banner.jpg",
   "Flower Store": "/images/dispensary-types/flower-store-banner.jpg",
-  // Add more as needed or fetch dynamically
 };
 
 interface DispensaryListingCardProps {
   dispensary: Dispensary;
+  typeBannerImageUrl?: string | null; // Optional prop for custom image URL from Firestore
 }
 
-export function DispensaryListingCard({ dispensary }: DispensaryListingCardProps) {
-  // Attempt to use a specific image for the dispensary type, otherwise use a placeholder.
-  // This assumes your DispensaryType objects might eventually have an 'image' field.
-  // For now, it uses the hardcoded map or a generic placeholder.
-  const typeImage = dispensary.dispensaryType ? dispensaryTypeImages[dispensary.dispensaryType] : null;
-  const displayImage = typeImage || `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensary.dispensaryName)}`;
+export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: DispensaryListingCardProps) {
+  const placeholderText = encodeURIComponent(dispensary.dispensaryName);
+  const defaultPlaceholderUrl = `https://placehold.co/600x400.png?text=${placeholderText}`;
+  
+  const [currentBannerUrl, setCurrentBannerUrl] = useState(defaultPlaceholderUrl);
+
+  useEffect(() => {
+    let bannerUrl = defaultPlaceholderUrl; // Start with the ultimate fallback
+
+    // 1. Prioritize typeBannerImageUrl (from Firestore) if it's a valid string
+    if (typeBannerImageUrl && typeof typeBannerImageUrl === 'string' && typeBannerImageUrl.trim() !== '') {
+      bannerUrl = typeBannerImageUrl;
+    } 
+    // 2. Else, try hardcoded map if typeBannerImageUrl wasn't usable
+    else if (dispensary.dispensaryType && hardcodedTypeImages[dispensary.dispensaryType]) {
+      bannerUrl = hardcodedTypeImages[dispensary.dispensaryType]!;
+    }
+    // If neither, it remains defaultPlaceholderUrl
+
+    setCurrentBannerUrl(bannerUrl);
+  }, [typeBannerImageUrl, dispensary.dispensaryType, dispensary.dispensaryName, defaultPlaceholderUrl]);
+
+  const handleImageError = () => {
+    // If the currentBannerUrl (custom or hardcoded) fails, and it's not already the default placeholder, switch to default.
+    if (currentBannerUrl !== defaultPlaceholderUrl) {
+      setCurrentBannerUrl(defaultPlaceholderUrl);
+    }
+  };
+  
   const dataAiHint = `store ${dispensary.dispensaryType} ${dispensary.dispensaryName.split(" ")[0] || ""}`;
 
   return (
@@ -39,11 +61,12 @@ export function DispensaryListingCard({ dispensary }: DispensaryListingCardProps
     >
       <div className="relative w-full h-48">
         <Image
-          src={displayImage}
+          src={currentBannerUrl}
           alt={dispensary.dispensaryName}
           layout="fill"
           objectFit="cover"
           data-ai-hint={`${dispensary.dispensaryName} storefront`}
+          onError={handleImageError}
         />
       </div>
       <CardHeader className="pb-2">
@@ -74,3 +97,4 @@ export function DispensaryListingCard({ dispensary }: DispensaryListingCardProps
     </Card>
   );
 }
+

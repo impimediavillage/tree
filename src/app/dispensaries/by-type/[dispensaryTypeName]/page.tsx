@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Store, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard'; // Import extracted component
+import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard';
 
 export default function PublicDispensariesByTypePage() {
   const params = useParams();
@@ -45,7 +45,7 @@ export default function PublicDispensariesByTypePage() {
           const docData = typeQuerySnapshot.docs[0];
           setDispensaryTypeDetails({ id: docData.id, ...docData.data() } as DispensaryType);
         } else {
-          toast({ title: "Type Info Missing", description: `Details for '${dispensaryTypeName}' type not found. Showing dispensaries without type banner.`, variant: "default"});
+          toast({ title: "Type Info Missing", description: `Details for '${dispensaryTypeName}' type not found. Showing dispensaries without specific type banner.`, variant: "default"});
         }
 
         // Fetch dispensaries of this type that are Approved
@@ -71,6 +71,7 @@ export default function PublicDispensariesByTypePage() {
     fetchData();
   }, [dispensaryTypeName, toast]);
 
+  // Use dispensaryTypeDetails.image for the main banner, fallback to placeholder
   const headerImageUrl = dispensaryTypeDetails?.image || `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
   const headerDataAiHint = `banner ${dispensaryTypeName ? dispensaryTypeName.toLowerCase().replace(/\s+/g, ' ') + " dispensaries" : "dispensaries"}`;
   
@@ -115,6 +116,11 @@ export default function PublicDispensariesByTypePage() {
               objectFit="cover" 
               data-ai-hint={headerDataAiHint}
               priority
+              onError={(e) => {
+                // Fallback if dispensaryTypeDetails.image fails
+                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
+                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
+              }}
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
                 <h1 className="text-4xl md:text-5xl font-extrabold text-white text-center shadow-md">
@@ -132,7 +138,11 @@ export default function PublicDispensariesByTypePage() {
       {dispensaries.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {dispensaries.map(dispensary => (
-            <DispensaryListingCard key={dispensary.id} dispensary={dispensary} />
+            <DispensaryListingCard 
+              key={dispensary.id} 
+              dispensary={dispensary} 
+              typeBannerImageUrl={dispensaryTypeDetails?.image} // Pass the custom image URL
+            />
           ))}
         </div>
       ) : (
@@ -147,3 +157,4 @@ export default function PublicDispensariesByTypePage() {
     </div>
   );
 }
+
