@@ -134,3 +134,4 @@ export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: Dispens
     </Card>
   );
 }
+

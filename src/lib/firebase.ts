@@ -16,7 +16,16 @@ const firebaseConfig = {
 };
 
 // --- Temporary Diagnostic Log ---
-console.log("Firebase Config being used by client:", firebaseConfig);
+if (typeof window !== 'undefined') { // Only log on client-side
+    console.log("Firebase Config from env:", {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? "Exists" : "MISSING",
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? "Exists" : "MISSING",
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? "Exists" : "MISSING",
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ? "Exists" : "MISSING",
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ? "Exists" : "MISSING",
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ? "Exists" : "MISSING",
+    });
+}
 // Check for any undefined essential variables
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error("CRITICAL: Firebase apiKey or projectId is missing from environment variables (NEXT_PUBLIC_FIREBASE_...). Please check your .env.local file and ensure the Next.js development server was restarted after changes.");
@@ -46,3 +55,4 @@ storage = getStorage(app);
 // }
 
 export { app, auth, db, storage /*, analytics */ };
+

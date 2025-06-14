@@ -93,7 +93,7 @@ function ManageIssueDialog({ issue, onIssueUpdate }: ManageIssueDialogProps) {
         <DialogHeader>
           <DialogTitle>Manage Pool Issue: {issue.productName}</DialogTitle>
           <DialogDescription>
-            Reported by: {issue.reporterDispensaryName} against {issue.reportedDispensaryName}
+            Reported by: {issue.reporterDispensaryName} against {issue.reportedDispensaryName}. Review details and update status.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-3 text-sm">
