@@ -12,7 +12,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types'; // Updated import
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,7 @@ export default function AddProductPage() {
       description: '',
       category: '',
       subcategory: null,
-      strain: '',
+      strain: '', // Changed from null to empty string for controlled input
       thcContent: undefined,
       cbdContent: undefined,
       price: undefined,
@@ -96,7 +96,6 @@ export default function AddProductPage() {
           form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
           if (fetchedDispensary.dispensaryType) {
-            // Fetch categories from the dedicated 'dispensaryTypeProductCategories' collection
             const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', fetchedDispensary.dispensaryType);
             const categoriesSnap = await getDoc(categoriesDocRef);
             if (categoriesSnap.exists()) {
@@ -106,8 +105,8 @@ export default function AddProductPage() {
                  toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Contact admin to add categories.`, variant: "default" });
               }
             } else {
-              toast({ title: "Warning", description: `Product categories for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "destructive" });
-               setDefinedProductCategories([]); // Ensure it's empty
+              toast({ title: "Warning", description: `Product categories for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "default" });
+               setDefinedProductCategories([]);
             }
           }
         } else {
@@ -129,7 +128,7 @@ export default function AddProductPage() {
     if (selectedMainCategory && definedProductCategories.length > 0) {
       const categoryData = definedProductCategories.find(cat => cat.name === selectedMainCategory);
       setAvailableSubcategories(categoryData?.subcategories || []);
-      form.setValue('subcategory', null); // Reset subcategory when main category changes
+      form.setValue('subcategory', null); 
     } else {
       setAvailableSubcategories([]);
       form.setValue('subcategory', null);
@@ -201,7 +200,7 @@ export default function AddProductPage() {
         return;
       }
     }
-    setUploadProgress(100); // If no file, or upload complete
+    setUploadProgress(100);
 
     try {
       const productData = {
@@ -361,7 +360,7 @@ export default function AddProductPage() {
 
             <div className="grid md:grid-cols-3 gap-6">
               <FormField control={form.control} name="price" render={({ field }) => (
-                <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
                <FormField control={form.control} name="currency" render={({ field }) => (
                 <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="e.g., ZAR" {...field} maxLength={3} readOnly disabled/></FormControl><FormMessage /></FormItem>
@@ -384,10 +383,10 @@ export default function AddProductPage() {
 
             <div className="grid md:grid-cols-3 gap-6">
               <FormField control={form.control} name="quantityInStock" render={({ field }) => (
-                <FormItem><FormLabel>Quantity in Stock *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Quantity in Stock *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="strain" render={({ field }) => (
-                <FormItem><FormLabel>Strain (Optional)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Strain (Optional)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
 
