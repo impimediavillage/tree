@@ -42,7 +42,7 @@ export default function EditProductPage() {
   const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
   const [existingProduct, setExistingProduct] = useState<ProductType | null>(null);
   
-  const [definedCategories, setDefinedCategories] = useState<ProductCategory[]>([]);
+  const [definedProductCategories, setDefinedProductCategories] = useState<ProductCategory[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [availableSubcategoriesL1, setAvailableSubcategoriesL1] = useState<ProductCategory[]>([]);
   const [selectedSubcategoryL1Name, setSelectedSubcategoryL1Name] = useState<string | null>(null);
@@ -85,8 +85,8 @@ export default function EditProductPage() {
         const categoriesSnap = await getDoc(categoriesDocRef);
         if (categoriesSnap.exists()) {
           const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
-          setDefinedCategories(categoriesData.categories || []);
-        } else { setDefinedCategories([]); }
+          setDefinedProductCategories(categoriesData.categories || []);
+        } else { setDefinedProductCategories([]); }
       }
 
       const productDocRef = doc(db, "products", productId);
@@ -98,9 +98,17 @@ export default function EditProductPage() {
         }
         setExistingProduct(productData);
         form.reset({
-          ...productData, thcContent: productData.thcContent ?? undefined, cbdContent: productData.cbdContent ?? undefined,
-          effects: productData.effects || [], flavors: productData.flavors || [], medicalUses: productData.medicalUses || [],
-          tags: productData.tags || [], subcategory: productData.subcategory || null, subSubcategory: productData.subSubcategory || null,
+          ...productData, 
+          thcContent: productData.thcContent ?? undefined, 
+          cbdContent: productData.cbdContent ?? undefined,
+          price: productData.price ?? undefined,
+          quantityInStock: productData.quantityInStock ?? undefined,
+          effects: productData.effects || [], 
+          flavors: productData.flavors || [], 
+          medicalUses: productData.medicalUses || [],
+          tags: productData.tags || [], 
+          subcategory: productData.subcategory || null, 
+          subSubcategory: productData.subSubcategory || null,
         });
         setImagePreview(productData.imageUrl || null); setOldImageUrl(productData.imageUrl);
         if(productData.category) setSelectedMainCategoryName(productData.category);
@@ -122,38 +130,34 @@ export default function EditProductPage() {
     else if (!authLoading && !currentUser) { router.push("/auth/signin"); }
   }, [currentUser, authLoading, fetchDispensaryAndProductData, router]);
 
-  // Update L1 Subcategories when Main Category changes OR when definedCategories load
   useEffect(() => {
-    if (selectedMainCategoryName && definedCategories.length > 0) {
-        const selectedCategory = definedCategories.find(cat => cat.name === selectedMainCategoryName);
+    if (selectedMainCategoryName && definedProductCategories.length > 0) {
+        const selectedCategory = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
         setAvailableSubcategoriesL1(selectedCategory?.subcategories || []);
         
-        // If not editing an existing product with this main category, reset subcategories
         if (existingProduct?.category !== selectedMainCategoryName || !form.getValues('subcategory')) {
           form.setValue('subcategory', null);
           setSelectedSubcategoryL1Name(null);
           form.setValue('subSubcategory', null);
         } else if (existingProduct?.category === selectedMainCategoryName && form.getValues('subcategory')) {
-          // If editing and main category matches, retain L1 selection if valid
           const currentSubL1 = form.getValues('subcategory');
           if (!selectedCategory?.subcategories?.find(s => s.name === currentSubL1)) {
             form.setValue('subcategory', null);
             setSelectedSubcategoryL1Name(null);
             form.setValue('subSubcategory', null);
           } else {
-             setSelectedSubcategoryL1Name(currentSubL1); // Ensure state is synced with form
+             setSelectedSubcategoryL1Name(currentSubL1); 
           }
         }
 
-    } else if (!selectedMainCategoryName) { // If main category is cleared
+    } else if (!selectedMainCategoryName) { 
         setAvailableSubcategoriesL1([]);
         form.setValue('subcategory', null);
         setSelectedSubcategoryL1Name(null);
         form.setValue('subSubcategory', null);
     }
-  }, [selectedMainCategoryName, definedCategories, form, existingProduct]);
+  }, [selectedMainCategoryName, definedProductCategories, form, existingProduct]);
 
-  // Update L2 Subcategories when L1 Subcategory changes OR when L1 subs become available
   useEffect(() => {
     if (selectedSubcategoryL1Name && availableSubcategoriesL1.length > 0) {
         const selectedSubCategoryL1 = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
@@ -162,13 +166,12 @@ export default function EditProductPage() {
         if (existingProduct?.subcategory !== selectedSubcategoryL1Name || !form.getValues('subSubcategory')) {
             form.setValue('subSubcategory', null);
         } else if (existingProduct?.subcategory === selectedSubcategoryL1Name && form.getValues('subSubcategory')) {
-          // Retain L2 selection if valid
           const currentSubL2 = form.getValues('subSubcategory');
            if (!selectedSubCategoryL1?.subcategories?.find(s => s.name === currentSubL2)) {
             form.setValue('subSubcategory', null);
           }
         }
-    } else if (!selectedSubcategoryL1Name) { // If L1 subcategory is cleared
+    } else if (!selectedSubcategoryL1Name) { 
         setAvailableSubcategoriesL2([]);
         form.setValue('subSubcategory', null);
     }
@@ -188,9 +191,9 @@ export default function EditProductPage() {
   const onSubmit = async (data: ProductFormData) => {
     if (!currentUser?.dispensaryId || !dispensaryData || !existingProduct?.id) { toast({ title: "Error", variant: "destructive" }); return; }
     setIsLoading(true); setUploadProgress(null);
-    let newImageUrl: string | null | undefined = form.getValues('imageUrl');
+    let newImageUrl: string | null | undefined = form.getValues('imageUrl'); // Retain existing URL if no new file
 
-    if (imageFile) {
+    if (imageFile) { // If a new file is selected for upload
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -199,19 +202,29 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject, 
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
-        if (oldImageUrl && oldImageUrl !== newImageUrl) { 
+        // If upload successful and there was an old image different from new, delete old one
+        if (oldImageUrl && oldImageUrl !== newImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
+        setOldImageUrl(newImageUrl); // Update oldImageUrl to the new one
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
-    } else if (form.getValues('imageUrl') === null && oldImageUrl) { 
-      try { await deleteObject(storageRef(storage, oldImageUrl)); newImageUrl = null; } 
-      catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); else newImageUrl = null; }
+    } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) { 
+      // Image was explicitly removed (imageUrl set to null) and there was an old image
+      try { await deleteObject(storageRef(storage, oldImageUrl)); newImageUrl = null; setOldImageUrl(null); } 
+      catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); else {newImageUrl = null; setOldImageUrl(null);} }
     }
+    // If no new image file and imageUrl field wasn't cleared, newImageUrl retains the existing URL from form.getValues
 
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
-      const productUpdateData = { ...data, imageUrl: newImageUrl, thcContent: data.thcContent ?? null, cbdContent: data.cbdContent ?? null,
-        subcategory: data.subcategory || null, subSubcategory: data.subSubcategory || null, updatedAt: serverTimestamp(),
+      const productUpdateData = { ...data, imageUrl: newImageUrl, 
+        thcContent: data.thcContent ?? null, 
+        cbdContent: data.cbdContent ?? null,
+        price: data.price ?? 0,
+        quantityInStock: data.quantityInStock ?? 0,
+        subcategory: data.subcategory || null, 
+        subSubcategory: data.subSubcategory || null, 
+        updatedAt: serverTimestamp(),
       };
       await updateDoc(productDocRef, productUpdateData);
       toast({ title: "Product Updated!", description: `${data.name} updated.` }); router.push('/dispensary-admin/products');
@@ -238,7 +251,7 @@ export default function EditProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {definedCategories.length === 0 && !isLoadingInitialData && (
+            {definedProductCategories.length === 0 && !isLoadingInitialData && (
                 <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
                     <div><h4 className="font-semibold">No Product Categories Defined</h4>
@@ -250,10 +263,10 @@ export default function EditProductPage() {
             
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem> <FormLabel>Main Category *</FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={definedCategories.length === 0}>
-                  <FormControl><SelectTrigger><SelectValue placeholder={definedCategories.length === 0 ? "No categories available" : "Select main category"} /></SelectTrigger></FormControl>
+                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={definedProductCategories.length === 0}>
+                  <FormControl><SelectTrigger><SelectValue placeholder={definedProductCategories.length === 0 ? "No categories available" : "Select main category"} /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {definedCategories.length > 0 ? definedCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No categories available</SelectItem>}
+                    {definedProductCategories.length > 0 ? definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No categories available</SelectItem>}
                   </SelectContent>
                 </Select> <FormMessage />
               </FormItem> )} />
@@ -280,18 +293,18 @@ export default function EditProductPage() {
 
             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description..." {...field} rows={4} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
             <div className="grid md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="unit" render={({ field }) => ( <FormItem><FormLabel>Unit *</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}> <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl> <SelectContent> {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)} </SelectContent> </Select> <FormMessage /></FormItem> )} />
             </div>
             <div className="grid md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain</FormLabel><FormControl><Input placeholder="Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Product Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <div className="space-y-4">
               <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Relaxed, Happy" disabled={isLoading} /><FormMessage /></FormItem> )} />

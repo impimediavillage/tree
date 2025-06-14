@@ -39,7 +39,7 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
   
-  const [definedCategories, setDefinedCategories] = useState<ProductCategory[]>([]);
+  const [definedProductCategories, setDefinedProductCategories] = useState<ProductCategory[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [availableSubcategoriesL1, setAvailableSubcategoriesL1] = useState<ProductCategory[]>([]);
   const [selectedSubcategoryL1Name, setSelectedSubcategoryL1Name] = useState<string | null>(null);
@@ -89,13 +89,13 @@ export default function AddProductPage() {
             const categoriesSnap = await getDoc(categoriesDocRef);
             if (categoriesSnap.exists()) {
               const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
-              setDefinedCategories(categoriesData.categories || []);
+              setDefinedProductCategories(categoriesData.categories || []);
               if (!categoriesData.categories || categoriesData.categories.length === 0) {
                  toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Add products under 'Uncategorized' or contact admin.`, variant: "default" });
               }
             } else {
               toast({ title: "Warning", description: `Product categories for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "default" });
-               setDefinedCategories([]);
+               setDefinedProductCategories([]);
             }
           }
         } else {
@@ -115,18 +115,18 @@ export default function AddProductPage() {
 
   // Update L1 Subcategories when Main Category changes
   useEffect(() => {
-    const selectedCategory = definedCategories.find(cat => cat.name === selectedMainCategoryName);
+    const selectedCategory = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
     setAvailableSubcategoriesL1(selectedCategory?.subcategories || []);
-    form.setValue('subcategory', null);
+    form.setValue('subcategory', null); // Reset L1 subcategory
     setSelectedSubcategoryL1Name(null); 
-    form.setValue('subSubcategory', null); 
-  }, [selectedMainCategoryName, definedCategories, form]);
+    form.setValue('subSubcategory', null); // Reset L2 subcategory
+  }, [selectedMainCategoryName, definedProductCategories, form]);
 
   // Update L2 Subcategories when L1 Subcategory changes
   useEffect(() => {
     const selectedSubCategoryL1 = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
     setAvailableSubcategoriesL2(selectedSubCategoryL1?.subcategories || []);
-    form.setValue('subSubcategory', null);
+    form.setValue('subSubcategory', null); // Reset L2 subcategory
   }, [selectedSubcategoryL1Name, availableSubcategoriesL1, form]);
 
 
@@ -149,7 +149,7 @@ export default function AddProductPage() {
     if (!currentUser?.dispensaryId || !dispensaryData) {
       toast({ title: "Error", description: "User or dispensary data not found.", variant: "destructive" }); return;
     }
-    if (definedCategories.length > 0 && !data.category) {
+    if (definedProductCategories.length > 0 && !data.category) {
         toast({ title: "Category Required", description: "Please select a product category.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
@@ -209,7 +209,7 @@ export default function AddProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {definedCategories.length === 0 && !isLoadingInitialData && (
+            {definedProductCategories.length === 0 && !isLoadingInitialData && (
                  <div className="p-4 bg-yellow-50 border border-yellow-300 rounded-md text-yellow-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
                     <div>
@@ -221,18 +221,16 @@ export default function AddProductPage() {
             )}
             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             
-            {/* Main Category Select */}
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem> <FormLabel>Main Category *</FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={definedCategories.length === 0}>
-                  <FormControl><SelectTrigger><SelectValue placeholder={definedCategories.length === 0 ? "No categories available" : "Select main category"} /></SelectTrigger></FormControl>
+                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={definedProductCategories.length === 0}>
+                  <FormControl><SelectTrigger><SelectValue placeholder={definedProductCategories.length === 0 ? "No categories available" : "Select main category"} /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {definedCategories.length > 0 ? definedCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No categories available</SelectItem>}
+                    {definedProductCategories.length > 0 ? definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No categories available</SelectItem>}
                   </SelectContent>
                 </Select> <FormMessage />
               </FormItem> )} />
 
-            {/* Subcategory Level 1 Select */}
             {selectedMainCategoryName && availableSubcategoriesL1.length > 0 && (
               <FormField control={form.control} name="subcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
@@ -243,7 +241,6 @@ export default function AddProductPage() {
                 </FormItem> )} />
             )}
 
-            {/* Subcategory Level 2 Select (Sub-Subcategory) */}
             {selectedSubcategoryL1Name && availableSubcategoriesL2.length > 0 && (
               <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                 <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
@@ -256,18 +253,18 @@ export default function AddProductPage() {
 
             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description..." {...field} rows={4} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             <div className="grid md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="unit" render={({ field }) => ( <FormItem><FormLabel>Unit *</FormLabel> <Select onValueChange={field.onChange} value={field.value || ''}> <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl> <SelectContent> {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)} </SelectContent> </Select> <FormMessage /></FormItem> )} />
             </div>
             <div className="grid md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain</FormLabel><FormControl><Input placeholder="Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Product Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <div className="space-y-4">
               <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Relaxed, Happy" disabled={isLoading} /><FormMessage /></FormItem> )} />
