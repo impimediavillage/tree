@@ -131,7 +131,7 @@ export default function LeafDashboardLayout({
         <SidebarContent />
       </aside>
       
-      <main className="flex-1 p-4 sm:p-6 bg-muted/30 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-6 overflow-y-auto"> {/* Removed bg-muted/30 */}
         {children}
       </main>
     </div>

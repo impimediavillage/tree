@@ -148,7 +148,7 @@ export default function DispensaryAdminDashboardLayout({
 
   if (authLoading || isLoadingDispensary) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
+      <div className="flex items-center justify-center h-screen"> {/* Removed bg-background for body bg to show */}
         <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
         <p className="text-lg text-muted-foreground">Loading Dispensary Dashboard...</p>
       </div>
@@ -157,7 +157,7 @@ export default function DispensaryAdminDashboardLayout({
 
   if (!currentUser || !canAccessDispensaryPanel || !dispensary) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-background p-4">
+      <div className="flex flex-col items-center justify-center h-screen p-4"> {/* Removed bg-background */}
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
         <p className="text-xl text-center text-destructive-foreground mb-2">Access Denied or Data Error.</p>
         <p className="text-md text-center text-muted-foreground mb-6">Please ensure you are logged in with an approved Dispensary Owner account.</p>
@@ -285,7 +285,7 @@ export default function DispensaryAdminDashboardLayout({
   );
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
+    <div className="flex min-h-screen"> {/* Removed bg-muted/40 */}
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm">
         <SidebarNavigation />
@@ -294,7 +294,7 @@ export default function DispensaryAdminDashboardLayout({
       {/* Sheet component now wraps the main content area AND the SheetContent */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
         <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden">
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> {/* bg-background/80 is semi-transparent, fine */}
               {/* SheetTrigger is now a child of the Sheet component */}
               <SheetTrigger asChild>
                   <Button size="icon" variant="outline" className="md:hidden">
