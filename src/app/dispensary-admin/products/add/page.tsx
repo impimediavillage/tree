@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 import { cn } from '@/lib/utils';
@@ -91,10 +91,10 @@ export default function AddProductPage() {
               const categoriesData = categoriesSnap.data() as DispensaryTypeProductCategoriesDoc;
               setDefinedProductCategories(categoriesData.categories || []);
               if (!categoriesData.categories || categoriesData.categories.length === 0) {
-                 toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Add products under 'Uncategorized' or contact admin.`, variant: "default" });
+                 toast({ title: "Notice", description: `No product categories defined for "${fetchedDispensary.dispensaryType}". Add products under 'Uncategorized' or contact admin.`, variant: "default", duration: 7000 });
               }
             } else {
-              toast({ title: "Warning", description: `Product categories for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "default" });
+              toast({ title: "Warning", description: `Product categories for type "${fetchedDispensary.dispensaryType}" not found. Categories may be limited.`, variant: "default", duration: 7000 });
                setDefinedProductCategories([]);
             }
           }
@@ -113,20 +113,18 @@ export default function AddProductPage() {
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, form]);
 
-  // Update L1 Subcategories when Main Category changes
   useEffect(() => {
     const selectedCategory = definedProductCategories.find(cat => cat.name === selectedMainCategoryName);
     setAvailableSubcategoriesL1(selectedCategory?.subcategories || []);
-    form.setValue('subcategory', null); // Reset L1 subcategory
+    form.setValue('subcategory', null);
     setSelectedSubcategoryL1Name(null); 
-    form.setValue('subSubcategory', null); // Reset L2 subcategory
+    form.setValue('subSubcategory', null);
   }, [selectedMainCategoryName, definedProductCategories, form]);
 
-  // Update L2 Subcategories when L1 Subcategory changes
   useEffect(() => {
     const selectedSubCategoryL1 = availableSubcategoriesL1.find(subCat => subCat.name === selectedSubcategoryL1Name);
     setAvailableSubcategoriesL2(selectedSubCategoryL1?.subcategories || []);
-    form.setValue('subSubcategory', null); // Reset L2 subcategory
+    form.setValue('subSubcategory', null);
   }, [selectedSubcategoryL1Name, availableSubcategoriesL1, form]);
 
 
@@ -175,6 +173,7 @@ export default function AddProductPage() {
       const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: dispensaryData.dispensaryName,
         dispensaryType: dispensaryData.dispensaryType, productOwnerEmail: dispensaryData.ownerEmail,
         imageUrl: uploadedImageUrl, thcContent: data.thcContent ?? null, cbdContent: data.cbdContent ?? null,
+        price: data.price ?? 0, quantityInStock: data.quantityInStock ?? 0,
         subcategory: data.subcategory || null, subSubcategory: data.subSubcategory || null,
         createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
       };
@@ -215,7 +214,7 @@ export default function AddProductPage() {
                     <div>
                         <h4 className="font-semibold">No Product Categories Defined</h4>
                         <p className="text-sm">No specific product categories have been set up for your dispensary type ({dispensaryData?.dispensaryType || 'Unknown Type'}). 
-                        You can still add products, but they won't be organized by specific categories/subcategories defined by an admin. Consider selecting 'Uncategorized' or contacting an administrator.</p>
+                        You can still add products by manually entering category, or contact an administrator to set up predefined categories.</p>
                     </div>
                 </div>
             )}
@@ -224,11 +223,13 @@ export default function AddProductPage() {
             <FormField control={form.control} name="category" render={({ field }) => (
               <FormItem> <FormLabel>Main Category *</FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={definedProductCategories.length === 0}>
-                  <FormControl><SelectTrigger><SelectValue placeholder={definedProductCategories.length === 0 ? "No categories available" : "Select main category"} /></SelectTrigger></FormControl>
+                  <FormControl><SelectTrigger><SelectValue placeholder={definedProductCategories.length === 0 ? "Enter category manually" : "Select main category"} /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {definedProductCategories.length > 0 ? definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No categories available</SelectItem>}
+                    {definedProductCategories.length > 0 ? definedProductCategories.map((cat) => ( <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem> )) : <SelectItem value="-" disabled>No predefined categories</SelectItem>}
                   </SelectContent>
-                </Select> <FormMessage />
+                </Select>
+                {definedProductCategories.length === 0 && <FormDescription>No predefined categories. Type freely or contact admin.</FormDescription>}
+                <FormMessage />
               </FormItem> )} />
 
             {selectedMainCategoryName && availableSubcategoriesL1.length > 0 && (
@@ -250,6 +251,34 @@ export default function AddProductPage() {
                   </Select> <FormMessage />
                 </FormItem> )} />
             )}
+            { (definedProductCategories.length === 0 || 
+              (selectedMainCategoryName && availableSubcategoriesL1.length === 0) || 
+              (selectedSubcategoryL1Name && availableSubcategoriesL2.length === 0) ) && definedProductCategories.length > 0 && ( 
+                <FormField control={form.control} name={selectedMainCategoryName && availableSubcategoriesL1.length === 0 ? 'subcategory' : (selectedSubcategoryL1Name && availableSubcategoriesL2.length === 0 ? 'subSubcategory' : 'category')}                  
+                  render={({ field }) => ( 
+                    <FormItem>
+                      <FormLabel>
+                        {selectedMainCategoryName && availableSubcategoriesL1.length === 0 ? 'Subcategory (L1 - Manual Entry)' : 
+                         (selectedSubcategoryL1Name && availableSubcategoriesL2.length === 0 ? 'Subcategory (L2 - Manual Entry)' :
+                         'Category (Manual Entry)*')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder={
+                            selectedMainCategoryName && availableSubcategoriesL1.length === 0 ? "e.g., Indica Hybrid" :
+                            (selectedSubcategoryL1Name && availableSubcategoriesL2.length === 0 ? "e.g., Specific Batch/Type" :
+                             "e.g., Flower, Edible, Tincture")
+                          } 
+                          {...field} 
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem> 
+                  )}
+                />
+            )}
+
 
             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description..." {...field} rows={4} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             <div className="grid md:grid-cols-3 gap-6">
@@ -259,7 +288,7 @@ export default function AddProductPage() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain</FormLabel><FormControl><Input placeholder="Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain</FormLabel><FormControl><Input placeholder="e.g., Blue Dream" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Product Details</h3>
             <div className="grid md:grid-cols-2 gap-6">
@@ -273,18 +302,30 @@ export default function AddProductPage() {
               <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Organic, Indoor" disabled={isLoading} /><FormMessage /></FormItem> )} />
             </div>
             <Separator /> <h3 className="text-lg font-medium">Product Image</h3>
-            <FormField control={form.control} name="imageUrl" render={({ field }) => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile ? "Change" : "Upload"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {imagePreview && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Click "Add Product" to save.</p>} <FormDescription>PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
+            <FormField control={form.control} name="imageUrl" render={({ field }) => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image"/> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile ? "Change" : "Upload"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {imagePreview && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Click "Add Product" to save.</p>} <FormDescription>PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
             <Separator />
             <div className="space-y-4">
                 <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Indicates lab testing for quality/potency.</FormDescription></div> </FormItem> )} />
                 <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Pool</FormLabel><FormDescription>Allow other dispensaries to request this product.</FormDescription></div> </FormItem> )} />
             </div>
-            <CardFooter className="px-0 pt-8"> <div className="flex gap-4 w-full"> <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}> {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />} Add Product </Button> <Link href="/dispensary-admin/products" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>Cancel</Button></Link> </div> </CardFooter>
+            {/* CardFooter for buttons */}
+            <CardFooter className="px-0 pt-8">
+                <div className="flex gap-4 w-full">
+                    <Button type="submit" size="lg" className="flex-1 text-lg" 
+                      disabled={isLoading || isLoadingInitialData}
+                    >
+                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                        Add Product
+                    </Button>
+                    <Button asChild type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>
+                        <Link href="/dispensary-admin/products">Cancel</Link>
+                    </Button>
+                </div>
+            </CardFooter>
           </form>
         </Form>
       </CardContent>
     </Card>
   );
 }
-
     
