@@ -48,6 +48,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
       }
     }
     setCurrentIconPath(iconPathToUse);
+    console.log(`DispensaryTypeCard for "${dispensaryType.name}": Attempting to load banner from ${finalBannerPathToUse}, icon from ${iconPathToUse || 'default Store icon'}`);
 
   }, [dispensaryType.name, dispensaryType.image, dispensaryType.iconPath]);
 
@@ -74,11 +75,9 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     } else if (currentIconPath.includes('<svg')) {
       iconElement = <span className="mb-2 h-20 w-20 inline-block [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: currentIconPath }} />;
     } else {
-      // Fallback if currentIconPath is set but not a URL, local path, or SVG string
       iconElement = <Store className="mb-2 h-20 w-20 text-muted-foreground" />;
     }
   } else {
-    // Default fallback when currentIconPath is null or undefined
     iconElement = <Store className="mb-2 h-20 w-20 text-muted-foreground" />;
   }
 
@@ -96,7 +95,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
           </Badge>
         </div>
       )}
-      <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full">
+      <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full group">
         <div className="relative w-full h-48">
           {currentBannerUrl && (
             <Image
@@ -116,14 +115,16 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
             {dispensaryType.name}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow">
-          {dispensaryType.description && dispensaryType.description.trim() !== "" && (
+        
+        {dispensaryType.description && dispensaryType.description.trim() !== "" && (
+          <CardContent> {/* Removed flex-grow from here */}
             <CardDescription className="text-sm text-muted-foreground line-clamp-3" title={dispensaryType.description}>
               {dispensaryType.description}
             </CardDescription>
-          )}
-        </CardContent>
-        <div className="p-4 pt-0 mt-auto">
+          </CardContent>
+        )}
+
+        <div className="p-4 pt-0 mt-auto"> {/* This div has mt-auto, will push to bottom */}
             <Button 
                 variant="ghost" 
                 className="w-full h-auto p-4 flex flex-col items-center justify-center text-foreground hover:bg-accent/10 focus-visible:ring-primary"
@@ -138,3 +139,4 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
+
