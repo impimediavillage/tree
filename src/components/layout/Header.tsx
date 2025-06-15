@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Trees, UserCircle, LogIn, LogOut, LayoutDashboard, Settings, ShoppingCart, Briefcase, Loader2 } from 'lucide-react'; 
+import { Trees, UserCircle, LogIn, LogOut, LayoutDashboard, Settings, ShoppingCart, Briefcase, Loader2, DollarSign } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -56,9 +56,11 @@ export function Header() {
         </Link>
         
         <nav className="flex items-center gap-1 sm:gap-2">
-          {/* Removed Pricing Plans Link as it's integrated differently now */}
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
-            <Link href="/dispensary-signup">For Dispensaries</Link>
+            <Link href="/dashboard/leaf/credits">
+                <DollarSign className="mr-1.5 h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
+                Pricing
+            </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
             <Link href="/browse-dispensary-types">Browse Stores</Link>
