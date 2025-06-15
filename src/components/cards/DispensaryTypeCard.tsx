@@ -7,7 +7,7 @@ import type { DispensaryType } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Store, Heart, Image as ImageIconPlaceholder } from 'lucide-react'; // Added ImageIconPlaceholder
+import { Store, Heart, Image as ImageIconPlaceholder } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface DispensaryTypeCardProps {
@@ -20,7 +20,6 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
   const [defaultBannerUrl, setDefaultBannerUrl] = useState('');
   const [currentBannerUrl, setCurrentBannerUrl] = useState('');
   
-  const [defaultIconUrl, setDefaultIconUrl] = useState<string | null>(null);
   const [currentIconPath, setCurrentIconPath] = useState<string | null | undefined>(null);
 
 
@@ -41,11 +40,11 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     setCurrentBannerUrl(finalBannerPathToUse);
 
     // Handle Icon Path
-    setCurrentIconPath(dispensaryType.iconPath); // Directly use iconPath from prop
-    if (dispensaryType.iconPath && dispensaryType.iconPath.trim() !== "" && !dispensaryType.iconPath.startsWith('http') && !dispensaryType.iconPath.startsWith('/')) {
-        // If it's a relative path not starting with /, prepend /
-        setCurrentIconPath('/' + dispensaryType.iconPath);
+    let iconPathToUse = dispensaryType.iconPath;
+    if (iconPathToUse && iconPathToUse.trim() !== "" && !iconPathToUse.startsWith('http') && !iconPathToUse.startsWith('/')) {
+        iconPathToUse = '/' + iconPathToUse;
     }
+    setCurrentIconPath(iconPathToUse);
 
 
     console.log(
@@ -53,7 +52,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
       `  Firestore 'image' field: "${dispensaryType.image}"\n` +
       `  Effective Banner URL: "${finalBannerPathToUse}"\n` +
       `  Firestore 'iconPath' field: "${dispensaryType.iconPath}"\n` +
-      `  Effective Icon Path: "${currentIconPath || 'None'}"`
+      `  Effective Icon Path: "${iconPathToUse || 'None'}"`
     );
 
   }, [dispensaryType.name, dispensaryType.image, dispensaryType.iconPath]);
@@ -67,9 +66,8 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
   };
 
   const handleIconImageError = () => {
-    // If custom icon fails, we will render the Store lucide icon instead
     console.warn(`Custom icon failed to load for type "${dispensaryType.name}" from: "${currentIconPath}". Will use default Store icon.`);
-    setCurrentIconPath(null); // Set to null to trigger fallback
+    setCurrentIconPath(null); 
   };
   
 
@@ -119,19 +117,19 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
                     <Image 
                         src={currentIconPath} 
                         alt="" 
-                        width={16} 
-                        height={16} 
-                        className="mr-2 h-4 w-4" 
+                        width={80} // 5 * 16px (original h-4 = 16px)
+                        height={80} // 5 * 16px
+                        className="mr-3" // Adjusted margin for larger icon
                         onError={handleIconImageError}
                         data-ai-hint={`${dispensaryType.name} icon`}
                     />
                 ) : currentIconPath && currentIconPath.includes('<svg') ? (
                     <span
-                        className="mr-2 h-4 w-4 inline-block"
+                        className="mr-3 h-20 w-20 inline-block" // 5 * h-4 w-4
                         dangerouslySetInnerHTML={{ __html: currentIconPath }}
                     />
                 ) : (
-                    <Store className="mr-2 h-4 w-4" />
+                    <Store className="mr-3 h-20 w-20" /> // 5 * h-4 w-4
                 )}
                 View Dispensaries
             </Button>
@@ -140,3 +138,4 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
+
