@@ -74,16 +74,18 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     } else if (currentIconPath.includes('<svg')) {
       iconElement = <span className="mb-2 h-20 w-20 inline-block [&>svg]:w-full [&>svg]:h-full" dangerouslySetInnerHTML={{ __html: currentIconPath }} />;
     } else {
+      // Fallback if currentIconPath is set but not a URL, local path, or SVG string
       iconElement = <Store className="mb-2 h-20 w-20 text-muted-foreground" />;
     }
   } else {
+    // Default fallback when currentIconPath is null or undefined
     iconElement = <Store className="mb-2 h-20 w-20 text-muted-foreground" />;
   }
 
 
   return (
     <Card
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card text-card-foreground border border-border hover:border-primary/50 relative animate-fade-in-scale-up"
+        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card/60 dark:bg-card/70 backdrop-blur-md text-card-foreground border border-border/30 hover:border-primary/50 relative animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
     >
@@ -115,9 +117,11 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow">
-          <CardDescription className="text-sm text-muted-foreground line-clamp-3" title={dispensaryType.description}>
-            {dispensaryType.description || "Explore products and services from this type of dispensary."}
-          </CardDescription>
+          {dispensaryType.description && dispensaryType.description.trim() !== "" && (
+            <CardDescription className="text-sm text-muted-foreground line-clamp-3" title={dispensaryType.description}>
+              {dispensaryType.description}
+            </CardDescription>
+          )}
         </CardContent>
         <div className="p-4 pt-0 mt-auto">
             <Button 
@@ -134,4 +138,3 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
-
