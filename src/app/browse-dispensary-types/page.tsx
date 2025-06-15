@@ -22,7 +22,7 @@ export default function BrowseDispensaryTypesPage() {
       setIsLoadingTypes(true);
       try {
         const typesCollectionRef = collection(db, 'dispensaryTypes');
-        const q = firestoreQuery(typesCollectionRef, orderBy('name'));
+        const q = firestoreQuery(typesCollectionRef, orderBy('name', 'desc')); // Changed to 'desc'
         const querySnapshot = await getDocs(q);
         const fetchedTypes: DispensaryType[] = [];
         querySnapshot.forEach((docSnap) => {
@@ -86,3 +86,4 @@ export default function BrowseDispensaryTypesPage() {
     </div>
   );
 }
+
