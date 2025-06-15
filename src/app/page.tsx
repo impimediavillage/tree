@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Trees, Loader2, Store, Users, Zap, Eye, Gift, Truck, Globe, ShieldQuestion } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Trees, Loader2, Store, Users, Zap, Eye, Gift, Truck, Globe, ShieldQuestion, Bitcoin } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
@@ -140,16 +140,18 @@ export default function HolisticAiHubPage() {
   }, []);
 
   const dispensaryBenefits = [
+    { text: "Engage in private, inter-dispensary trading and bulk product transactions", icon: Truck },
     { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
-    { text: "Provide your connected Leaf Users with 50 free credits monthly, on us!", icon: Gift },
-    { text: "Receive 100 free credits to use AI advisors relevant to your dispensary type.", icon: Zap },
-    { text: "Engage in private, inter-dispensary trading for stock balancing.", icon: Truck },
     { text: "Unlimited access to the Product Sharing Pool with other dispensaries.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
+    { text: "FREE Onboarding assistance with Payfast merchant split payment set up.  Payouts go directly to your  own Payfast account connected to our set up.", icon: Gift },
+    { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
+    { text: "Paid Stripe onboarding assistance", icon: DollarSign },
+    { text: "Paid Bitcoin payment provider option", icon: Bitcoin },
   ];
 
   const leafUserBenefits = [
-    { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
+    { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for free to browse and shop our hosted stores.", icon: Gift },
     { text: "10 FREE CREDITS on sign up.", icon: Gift },
   ];
