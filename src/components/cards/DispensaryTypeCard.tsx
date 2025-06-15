@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Store, Heart, Image as ImageIconPlaceholder } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
@@ -32,28 +33,31 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
 
     if (bannerPath && typeof bannerPath === 'string' && bannerPath.trim() !== "") {
       if (!bannerPath.startsWith('/') && !bannerPath.toLowerCase().startsWith('http')) {
-        bannerPath = '/' + bannerPath;
+        // Assuming it's a path relative to public that needs a leading slash
+        finalBannerPathToUse = '/' + bannerPath.replace(/^\/+/, '');
+      } else {
+        finalBannerPathToUse = bannerPath;
       }
-      finalBannerPathToUse = bannerPath;
     }
     
     setCurrentBannerUrl(finalBannerPathToUse);
 
     // Handle Icon Path
     let iconPathToUse = dispensaryType.iconPath;
-    if (iconPathToUse && iconPathToUse.trim() !== "" && !iconPathToUse.startsWith('http') && !iconPathToUse.startsWith('/')) {
-        iconPathToUse = '/' + iconPathToUse;
+    if (iconPathToUse && iconPathToUse.trim() !== "" ) {
+      if (!iconPathToUse.startsWith('http') && !iconPathToUse.startsWith('/') && !iconPathToUse.includes('<svg')) {
+         iconPathToUse = '/' + iconPathToUse.replace(/^\/+/, '');
+      }
     }
     setCurrentIconPath(iconPathToUse);
 
-
-    console.log(
-      `DispensaryTypeCard for "${dispensaryType.name}":\n` +
-      `  Firestore 'image' field: "${dispensaryType.image}"\n` +
-      `  Effective Banner URL: "${finalBannerPathToUse}"\n` +
-      `  Firestore 'iconPath' field: "${dispensaryType.iconPath}"\n` +
-      `  Effective Icon Path: "${iconPathToUse || 'None'}"`
-    );
+    // console.log(
+    //   `DispensaryTypeCard for "${dispensaryType.name}":\n` +
+    //   `  Firestore 'image' field: "${dispensaryType.image}"\n` +
+    //   `  Effective Banner URL: "${finalBannerPathToUse}"\n` +
+    //   `  Firestore 'iconPath' field: "${dispensaryType.iconPath}"\n` +
+    //   `  Effective Icon Path: "${iconPathToUse || 'None'}"`
+    // );
 
   }, [dispensaryType.name, dispensaryType.image, dispensaryType.iconPath]);
 
@@ -112,26 +116,38 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
           </CardDescription>
         </CardContent>
         <div className="p-4 pt-0 mt-auto">
-            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button 
+                variant="ghost" 
+                className={cn(
+                    "w-full h-auto p-2 flex items-center justify-center text-foreground hover:bg-accent/10 focus-visible:ring-primary",
+                    !currentIconPath && "justify-center" // Center text if no icon
+                )}
+            >
                 {currentIconPath && (currentIconPath.startsWith('http') || currentIconPath.startsWith('/')) ? (
                     <Image 
                         src={currentIconPath} 
                         alt="" 
-                        width={80} // 5 * 16px (original h-4 = 16px)
-                        height={80} // 5 * 16px
-                        className="mr-3" // Adjusted margin for larger icon
+                        width={40} 
+                        height={40}
+                        className="mr-2"
                         onError={handleIconImageError}
                         data-ai-hint={`${dispensaryType.name} icon`}
                     />
                 ) : currentIconPath && currentIconPath.includes('<svg') ? (
                     <span
-                        className="mr-3 h-20 w-20 inline-block" // 5 * h-4 w-4
+                        className="mr-2 h-10 w-10 inline-block" // Adjusted size
                         dangerouslySetInnerHTML={{ __html: currentIconPath }}
                     />
-                ) : (
-                    <Store className="mr-3 h-20 w-20" /> // 5 * h-4 w-4
-                )}
-                View Dispensaries
+                ) : currentIconPath ? ( // Fallback for non-URL/non-SVG strings, perhaps just text
+                    <Store className="mr-2 h-10 w-10" /> // Default icon if path is invalid but not empty
+                ) : null } {/* No icon at all if currentIconPath is explicitly null/undefined */}
+                
+                <span className={cn(
+                    "bg-primary text-primary-foreground font-semibold px-3 py-1.5 rounded-md",
+                    currentIconPath && "ml-2" // Add margin only if icon is present
+                )}>
+                    Browse stores
+                </span>
             </Button>
         </div>
       </Link>
