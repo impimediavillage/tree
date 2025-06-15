@@ -27,7 +27,8 @@ export default function AdminDispensariesPage() {
     setIsLoading(true);
     try {
       const dispensariesCollectionRef = collection(db, 'dispensaries');
-      const q = query(dispensariesCollectionRef, orderBy('applicationDate', 'desc'));
+      // Changed orderBy to sort by dispensaryName descending (Z-A)
+      const q = query(dispensariesCollectionRef, orderBy('dispensaryName', 'desc'));
       const querySnapshot = await getDocs(q);
       const fetchedDispensaries: Dispensary[] = [];
       querySnapshot.forEach((docSnap) => {
