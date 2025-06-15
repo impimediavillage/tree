@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription as CardDescriptionComponent, CardFoo
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, CheckCircle, XCircle, DollarSign, PlusCircleIcon, Gift } from 'lucide-react';
+import { Edit, Trash2, CheckCircle, XCircle, PlusCircleIcon, Gift } from 'lucide-react'; // DollarSign removed
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -183,7 +183,7 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
       <CardContent className="flex-grow space-y-3">
         <div className="flex items-center justify-between text-lg">
             <span className="flex items-center text-foreground">
-                <DollarSign className="mr-2 h-5 w-5 text-accent" /> Price:
+                 {/* DollarSign icon removed here */} Price:
             </span>
             <span className="font-semibold text-accent">
                 {creditPackage.price.toFixed(2)} {creditPackage.currency}
@@ -193,7 +193,7 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
              <span className="flex items-center text-foreground">
                 <PlusCircleIcon className="mr-2 h-5 w-5 text-blue-500" /> Credits:
             </span>
-            <span className="font-semibold text-blue-600">{creditPackage.credits}</span>
+            <span className="text-2xl font-bold text-primary">{creditPackage.credits}</span>
         </div>
         {typeof creditPackage.bonusCredits === 'number' && creditPackage.bonusCredits > 0 && (
             <div className="flex items-center justify-between text-lg">
@@ -235,5 +235,3 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
     </Card>
   );
 }
-
-    
