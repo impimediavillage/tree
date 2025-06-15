@@ -146,10 +146,10 @@ export default function HolisticAiHubPage() {
   ];
 
   const leafUserBenefits = [
+    { text: "Access a wide range of specialized AI advisors for holistic wellness.", icon: Brain },
+    { text: "Public sign-up options: Free tier (buy credits as you go) or premium packages for full advisor access.", icon: DollarSign },
     { text: "Connect to your preferred dispensary for easy ordering & receive 10 free welcome credits.", icon: Store },
     { text: "Get 10 free credits when signed up directly by a dispensary owner.", icon: Gift },
-    { text: "Public sign-up options: Free tier (buy credits as you go) or premium packages for full advisor access.", icon: DollarSign },
-    { text: "Access a wide range of specialized AI advisors for holistic wellness.", icon: Brain },
     { text: "Credit usage: 3 for a question, 3 for an answer, 10 for PDF/image downloads.", icon: CheckCircle },
   ];
 
@@ -157,7 +157,7 @@ export default function HolisticAiHubPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
       
-      <div className="p-6 bg-card/70 dark:bg-card/80 backdrop-blur-md border border-border/50 rounded-lg shadow-xl animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
+      <div className="p-6 bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-xl animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
           <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
           <h1 className="text-5xl font-extrabold tracking-tight text-primary">
@@ -273,3 +273,6 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
+
+
+    
