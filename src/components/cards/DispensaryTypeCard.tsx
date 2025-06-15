@@ -50,7 +50,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
 
   return (
     <Card
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card/50 dark:bg-card/60 backdrop-blur-md text-card-foreground border border-border/50 relative animate-fade-in-scale-up"
+        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card/70 dark:bg-card/80 backdrop-blur-md text-card-foreground border border-border/50 relative animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
     >
@@ -96,6 +96,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
                 variant="ghost" 
                 className="w-full h-auto p-4 flex flex-col items-center justify-center text-foreground hover:bg-transparent focus-visible:ring-primary"
             >
+                
                 <span className="bg-primary text-primary-foreground font-semibold text-lg px-4 py-2 rounded-md text-center">
                     Browse stores
                 </span>
