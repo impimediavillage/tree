@@ -21,7 +21,7 @@ interface AdvisorCardProps {
 
 const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, icon: Icon, link, dataAiHint, delay = 0 }) => (
   <Card 
-    className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up" 
+    className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50" 
     style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
     data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
   >
@@ -93,7 +93,7 @@ interface SignupBenefitCardProps {
 
 const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText, buttonLink, buttonIcon: ButtonIcon, benefits, delay = 0, dataAiHint }) => (
   <Card 
-    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up" 
+    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md" 
     style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
     data-ai-hint={dataAiHint || title.toLowerCase().replace(/\s+/g, '-')}
   >
@@ -109,7 +109,10 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
       <h3 className="text-lg font-semibold text-foreground mb-4">{title}</h3>
       <ul className="space-y-3">
         {benefits.map((benefit, index) => (
-          <li key={index} className="flex items-start gap-3">
+          <li 
+            key={index} 
+            className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm"
+          >
             <benefit.icon className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
             <span className="text-sm text-muted-foreground">{benefit.text}</span>
           </li>
@@ -146,11 +149,9 @@ export default function HolisticAiHubPage() {
   ];
 
   const leafUserBenefits = [
-    { text: "Access a wide range of specialized AI advisors for holistic wellness.", icon: Brain },
-    { text: "Public sign-up options: Free tier (buy credits as you go) or premium packages for full advisor access.", icon: DollarSign },
-    { text: "Connect to your preferred dispensary for easy ordering & receive 10 free welcome credits.", icon: Store },
-    { text: "Get 10 free credits when signed up directly by a dispensary owner.", icon: Gift },
-    { text: "Credit usage: 3 for a question, 3 for an answer, 10 for PDF/image downloads.", icon: CheckCircle },
+    { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
+    { text: "Sign up for free to browse and shop our hosted stores.", icon: Gift },
+    { text: "10 FREE CREDITS on sign up.", icon: Gift },
   ];
 
 
@@ -273,6 +274,3 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
-
-
-    
