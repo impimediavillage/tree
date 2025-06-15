@@ -19,6 +19,15 @@
       ]
     },
     {
+      "collectionGroup": "dispensaries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dispensaryType", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "dispensaryName", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [

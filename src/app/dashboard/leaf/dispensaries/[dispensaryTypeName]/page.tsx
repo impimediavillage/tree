@@ -53,7 +53,7 @@ export default function DispensariesByTypePage() {
           collection(db, 'dispensaries'),
           where('dispensaryType', '==', dispensaryTypeName),
           where('status', '==', 'Approved'), // Only show approved dispensaries
-          orderBy('dispensaryName')
+          orderBy('dispensaryName', 'desc') // Changed to descending order
         );
         const dispensariesSnapshot = await getDocs(dispensariesQuery);
         const fetchedDispensaries = dispensariesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary));
