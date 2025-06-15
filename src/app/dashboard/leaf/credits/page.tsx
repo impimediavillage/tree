@@ -124,8 +124,9 @@ export default function LeafCreditsPage() {
                 <p className="text-3xl font-extrabold text-center text-accent my-2">
                   {pkg.price.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">{pkg.currency}</span>
                 </p>
-                <p className="text-lg text-muted-foreground text-center">
-                    {pkg.credits} Credits
+                <p className="text-lg text-center">
+                    <span className="text-2xl font-bold text-primary">{pkg.credits}</span>
+                    <span className="text-muted-foreground"> Credits</span>
                     {pkg.bonusCredits && pkg.bonusCredits > 0 && (
                         <span className="text-sm text-green-600 font-medium"> + {pkg.bonusCredits} Bonus!</span>
                     )}
@@ -169,4 +170,3 @@ export default function LeafCreditsPage() {
   );
 }
     
-
