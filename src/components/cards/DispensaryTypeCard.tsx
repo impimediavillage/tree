@@ -7,7 +7,7 @@ import type { DispensaryType } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Store, Heart } from 'lucide-react';
+import { Store, Heart, Image as ImageIconPlaceholder } from 'lucide-react'; // Added ImageIconPlaceholder
 import { useState, useEffect } from 'react';
 
 interface DispensaryTypeCardProps {
@@ -17,44 +17,61 @@ interface DispensaryTypeCardProps {
 }
 
 export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: DispensaryTypeCardProps) {
-  const [defaultImageUrl, setDefaultImageUrl] = useState('');
-  const [currentImageUrl, setCurrentImageUrl] = useState('');
-  const [imageLoadFailed, setImageLoadFailed] = useState(false);
+  const [defaultBannerUrl, setDefaultBannerUrl] = useState('');
+  const [currentBannerUrl, setCurrentBannerUrl] = useState('');
+  
+  const [defaultIconUrl, setDefaultIconUrl] = useState<string | null>(null);
+  const [currentIconPath, setCurrentIconPath] = useState<string | null | undefined>(null);
+
 
   useEffect(() => {
-    const newDefaultImageUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
-    setDefaultImageUrl(newDefaultImageUrl);
+    const newDefaultBannerUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
+    setDefaultBannerUrl(newDefaultBannerUrl);
 
-    let imagePath = dispensaryType.image;
-    let finalPathToUse = newDefaultImageUrl; // Start with placeholder
+    let bannerPath = dispensaryType.image;
+    let finalBannerPathToUse = newDefaultBannerUrl; 
 
-    if (imagePath && imagePath.trim() !== "") {
-      // Normalize local paths to ensure they start with a slash
-      if (!imagePath.startsWith('/') && !imagePath.toLowerCase().startsWith('http')) {
-        imagePath = '/' + imagePath;
+    if (bannerPath && typeof bannerPath === 'string' && bannerPath.trim() !== "") {
+      if (!bannerPath.startsWith('/') && !bannerPath.toLowerCase().startsWith('http')) {
+        bannerPath = '/' + bannerPath;
       }
-      finalPathToUse = imagePath;
+      finalBannerPathToUse = bannerPath;
     }
     
-    setCurrentImageUrl(finalPathToUse);
-    setImageLoadFailed(false); // Reset error state on prop change
+    setCurrentBannerUrl(finalBannerPathToUse);
+
+    // Handle Icon Path
+    setCurrentIconPath(dispensaryType.iconPath); // Directly use iconPath from prop
+    if (dispensaryType.iconPath && dispensaryType.iconPath.trim() !== "" && !dispensaryType.iconPath.startsWith('http') && !dispensaryType.iconPath.startsWith('/')) {
+        // If it's a relative path not starting with /, prepend /
+        setCurrentIconPath('/' + dispensaryType.iconPath);
+    }
+
 
     console.log(
       `DispensaryTypeCard for "${dispensaryType.name}":\n` +
-      `  Firestore 'image' field: "${dispensaryType.image}" (type: ${typeof dispensaryType.image})\n` +
-      `  Effective URL for <Image> src: "${finalPathToUse}"`
+      `  Firestore 'image' field: "${dispensaryType.image}"\n` +
+      `  Effective Banner URL: "${finalBannerPathToUse}"\n` +
+      `  Firestore 'iconPath' field: "${dispensaryType.iconPath}"\n` +
+      `  Effective Icon Path: "${currentIconPath || 'None'}"`
     );
 
-  }, [dispensaryType.name, dispensaryType.image]);
+  }, [dispensaryType.name, dispensaryType.image, dispensaryType.iconPath]);
 
 
-  const handleImageError = () => {
-    if (currentImageUrl !== defaultImageUrl) {
-      console.warn(`Image failed to load for type "${dispensaryType.name}" from: "${currentImageUrl}". Falling back to placeholder.`);
-      setCurrentImageUrl(defaultImageUrl);
-      setImageLoadFailed(true);
+  const handleBannerImageError = () => {
+    if (currentBannerUrl !== defaultBannerUrl) {
+      console.warn(`Banner image failed to load for type "${dispensaryType.name}" from: "${currentBannerUrl}". Falling back to placeholder.`);
+      setCurrentBannerUrl(defaultBannerUrl);
     }
   };
+
+  const handleIconImageError = () => {
+    // If custom icon fails, we will render the Store lucide icon instead
+    console.warn(`Custom icon failed to load for type "${dispensaryType.name}" from: "${currentIconPath}". Will use default Store icon.`);
+    setCurrentIconPath(null); // Set to null to trigger fallback
+  };
+  
 
   const dataAiHint = `dispensary type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
 
@@ -73,15 +90,15 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
       )}
       <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full">
         <div className="relative w-full h-48">
-          {currentImageUrl && (
+          {currentBannerUrl && (
             <Image
-              src={currentImageUrl}
+              src={currentBannerUrl}
               alt={dispensaryType.name}
               fill
-              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw" // Added sizes prop
-              style={{ objectFit: 'cover' }} // Modern way to specify objectFit with fill
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
+              style={{ objectFit: 'cover' }}
               data-ai-hint={dataAiHint + " banner"}
-              onError={handleImageError}
+              onError={handleBannerImageError}
               priority={isPreferred}
             />
           )}
@@ -97,8 +114,26 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
           </CardDescription>
         </CardContent>
         <div className="p-4 pt-0 mt-auto">
-            <Button variant="outline" className="w-full text-accent border-accent hover:bg-accent/10">
-                View Dispensaries <Store className="ml-2 h-4 w-4" />
+            <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                {currentIconPath && (currentIconPath.startsWith('http') || currentIconPath.startsWith('/')) ? (
+                    <Image 
+                        src={currentIconPath} 
+                        alt="" 
+                        width={16} 
+                        height={16} 
+                        className="mr-2 h-4 w-4" 
+                        onError={handleIconImageError}
+                        data-ai-hint={`${dispensaryType.name} icon`}
+                    />
+                ) : currentIconPath && currentIconPath.includes('<svg') ? (
+                    <span
+                        className="mr-2 h-4 w-4 inline-block"
+                        dangerouslySetInnerHTML={{ __html: currentIconPath }}
+                    />
+                ) : (
+                    <Store className="mr-2 h-4 w-4" />
+                )}
+                View Dispensaries
             </Button>
         </div>
       </Link>
