@@ -50,7 +50,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
 
   return (
     <Card
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card/30 dark:bg-card/40 backdrop-blur-md text-card-foreground border border-border/50 relative animate-fade-in-scale-up"
+        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card/50 dark:bg-card/60 backdrop-blur-md text-card-foreground border border-border/50 relative animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
     >
@@ -84,19 +84,18 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
         </CardHeader>
         
         {dispensaryType.description && dispensaryType.description.trim() !== "" && (
-          <CardContent className="pb-2 pt-0"> {/* Adjusted padding */}
+          <CardContent className="pb-2 pt-0">
             <CardDescription className="text-sm text-muted-foreground line-clamp-3" title={dispensaryType.description}>
               {dispensaryType.description}
             </CardDescription>
           </CardContent>
         )}
 
-        <div className="p-4 pt-2 mt-auto"> {/* Adjusted padding and mt-auto */}
+        <div className="p-4 pt-2 mt-auto">
             <Button 
                 variant="ghost" 
-                className="w-full h-auto p-0 flex flex-col items-center justify-center text-foreground hover:bg-transparent focus-visible:ring-primary"
+                className="w-full h-auto p-4 flex flex-col items-center justify-center text-foreground hover:bg-transparent focus-visible:ring-primary"
             >
-                {/* Icon removed from here */}
                 <span className="bg-primary text-primary-foreground font-semibold text-lg px-4 py-2 rounded-md text-center">
                     Browse stores
                 </span>
