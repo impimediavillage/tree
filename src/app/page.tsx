@@ -113,7 +113,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
             key={index} 
             className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm"
           >
-            <benefit.icon className="h-5 w-5 text-accent mt-0.5 flex-shrink-0" />
+            <benefit.icon className="h-10 w-10 text-accent mt-0.5 flex-shrink-0" /> {/* Updated size and color */}
             <span className="text-sm text-muted-foreground">{benefit.text}</span>
           </li>
         ))}
@@ -144,7 +144,7 @@ export default function HolisticAiHubPage() {
     { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
     { text: "Unlimited access to the Product Sharing Pool with other dispensaries.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
-    { text: "FREE Onboarding assistance with Payfast merchant split payment set up.  Payouts go directly to your  own Payfast account connected to our set up.", icon: Gift },
+    { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
     { text: "Paid Stripe onboarding assistance", icon: DollarSign },
     { text: "Paid Bitcoin payment provider option", icon: Bitcoin },
@@ -276,3 +276,4 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
+
