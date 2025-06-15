@@ -93,11 +93,11 @@ interface SignupBenefitCardProps {
 
 const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText, buttonLink, buttonIcon: ButtonIcon, benefits, delay = 0, dataAiHint }) => (
   <Card 
-    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up" // Base card gets frosted, border adjusted
+    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up" // Base card gets frosted via global style
     style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
     data-ai-hint={dataAiHint || title.toLowerCase().replace(/\s+/g, '-')}
   >
-    <CardHeader className="bg-muted/30 p-4 border-b border-primary/20"> {/* Slightly less opaque header */}
+    <CardHeader className="bg-muted/30 p-4 border-b border-primary/20"> 
       <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md">
         <Link href={buttonLink}>
           <ButtonIcon className="mr-2 h-5 w-5" />
@@ -157,7 +157,7 @@ export default function HolisticAiHubPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
       
-      <div className="p-6 bg-card/30 dark:bg-card/40 backdrop-blur-md border border-border/50 rounded-lg shadow-xl animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
+      <div className="p-6 bg-card/50 dark:bg-card/60 backdrop-blur-md border border-border/50 rounded-lg shadow-xl animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
           <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
           <h1 className="text-5xl font-extrabold tracking-tight text-primary">
@@ -205,7 +205,7 @@ export default function HolisticAiHubPage() {
       )}
       
       {currentUser && currentUser.role === 'Super Admin' && (
-        <Card className="shadow-lg animate-fade-in-scale-up"> {/* Base card gets frosted */}
+        <Card className="shadow-lg animate-fade-in-scale-up bg-card/50 dark:bg-card/60 backdrop-blur-md border-border/50"> 
           <CardHeader>
             <CardTitle className="text-2xl text-secondary-foreground flex items-center gap-2">
               <Settings className="h-7 w-7 text-primary" /> Welcome, Super Admin!
@@ -220,7 +220,7 @@ export default function HolisticAiHubPage() {
       )}
 
       {currentUser && currentUser.role === 'DispensaryOwner' && (
-         <Card className="shadow-lg animate-fade-in-scale-up"> {/* Base card gets frosted */}
+         <Card className="shadow-lg animate-fade-in-scale-up bg-card/50 dark:bg-card/60 backdrop-blur-md border-border/50"> 
           <CardHeader>
             <CardTitle className="text-2xl text-secondary-foreground flex items-center gap-2">
               <Briefcase className="h-7 w-7 text-primary" /> Welcome, Dispensary Owner!
@@ -235,7 +235,7 @@ export default function HolisticAiHubPage() {
       )}
       
       {currentUser && (currentUser.role === 'User' || currentUser.role === 'LeafUser') && (
-         <Card className="shadow-xl animate-fade-in-scale-up">  {/* Base card gets frosted, removed border-primary/50 to use default frosted border */}
+         <Card className="shadow-xl animate-fade-in-scale-up bg-card/50 dark:bg-card/60 backdrop-blur-md border-border/50">  
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-semibold text-primary">Welcome Back, {currentUser.displayName || currentUser.email?.split('@')[0]}!</CardTitle>
              <CardDescription className="text-muted-foreground">
