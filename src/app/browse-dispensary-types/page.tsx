@@ -42,7 +42,7 @@ export default function BrowseDispensaryTypesPage() {
   return (
     <div className="container mx-auto py-12 px-4 md:px-6 lg:px-8">
       <div className="mb-12">
-        <div className="bg-card/50 dark:bg-card/60 backdrop-blur-md rounded-xl shadow-lg p-6 md:p-8 text-center max-w-3xl mx-auto border border-border/50">
+        <div className="bg-card/70 dark:bg-card/80 backdrop-blur-md rounded-xl shadow-lg p-6 md:p-8 text-center max-w-3xl mx-auto border border-border/50">
           <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
           <h1 className="text-5xl font-extrabold tracking-tight text-primary">
             Explore Dispensary Types
