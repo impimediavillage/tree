@@ -22,7 +22,7 @@ export default function BrowseDispensaryTypesPage() {
       setIsLoadingTypes(true);
       try {
         const typesCollectionRef = collection(db, 'dispensaryTypes');
-        const q = firestoreQuery(typesCollectionRef, orderBy('name', 'desc')); // Changed to 'desc'
+        const q = firestoreQuery(typesCollectionRef, orderBy('name', 'desc'));
         const querySnapshot = await getDocs(q);
         const fetchedTypes: DispensaryType[] = [];
         querySnapshot.forEach((docSnap) => {
@@ -41,14 +41,16 @@ export default function BrowseDispensaryTypesPage() {
 
   return (
     <div className="container mx-auto py-12 px-4 md:px-6 lg:px-8">
-      <div className="text-center mb-12">
-        <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-5xl font-extrabold tracking-tight text-primary">
-          Explore Dispensary Types
-        </h1>
-        <p className="text-xl text-muted-foreground mt-3 max-w-2xl mx-auto">
-          Discover a variety of dispensaries offering unique products and services. Click on a type to see available stores.
-        </p>
+      <div className="mb-12">
+        <div className="bg-card/60 dark:bg-card/70 backdrop-blur-md rounded-xl shadow-lg p-6 md:p-8 text-center max-w-3xl mx-auto">
+          <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
+          <h1 className="text-5xl font-extrabold tracking-tight text-primary">
+            Explore Dispensary Types
+          </h1>
+          <p className="text-xl text-card-foreground/90 dark:text-card-foreground/80 mt-3 max-w-2xl mx-auto">
+            Discover a variety of dispensaries offering unique products and services. Click on a type to see available stores.
+          </p>
+        </div>
       </div>
 
       {isLoadingTypes ? (
@@ -86,4 +88,3 @@ export default function BrowseDispensaryTypesPage() {
     </div>
   );
 }
-
