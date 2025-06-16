@@ -151,7 +151,10 @@ export default function DispensaryAnalyticsPage() {
     <div className="space-y-8">
       <Card className="shadow-lg bg-card border-primary/30">
         <CardHeader>
-          <CardTitle className="text-3xl font-bold text-primary flex items-center">
+          <CardTitle 
+            className="text-3xl font-bold text-foreground flex items-center"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             <BarChart3 className="mr-3 h-8 w-8" /> Dispensary Analytics
           </CardTitle>
           <CardDescription className="text-md text-muted-foreground">

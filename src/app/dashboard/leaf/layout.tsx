@@ -108,7 +108,13 @@ export default function LeafDashboardLayout({
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-theme(space.16))] md:min-h-[calc(100vh-theme(space.20))]">
       {/* Mobile Header with Hamburger */}
       <header className="md:hidden sticky top-0 z-40 flex items-center justify-between p-3 border-b bg-card text-card-foreground shadow-sm">
-        <Link href="/dashboard/leaf" className="text-lg font-semibold text-primary">Leaf Dashboard</Link>
+        <Link 
+          href="/dashboard/leaf" 
+          className="text-lg font-semibold text-foreground"
+          style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+        >
+          Leaf Dashboard
+        </Link>
         <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">

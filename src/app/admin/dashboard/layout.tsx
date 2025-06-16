@@ -232,7 +232,12 @@ export default function AdminDashboardLayout({
            <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden"> {/* bg-background/80 is semi-transparent, fine */}
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
-              <h1 className="text-lg font-semibold text-primary">{mainSidebarNavItems.find(item => pathname.startsWith(item.href))?.title || 'Admin'}</h1>
+              <h1 
+                className="text-lg font-semibold text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+              >
+                {mainSidebarNavItems.find(item => pathname.startsWith(item.href))?.title || 'Admin'}
+              </h1>
             </div>
           </header>
           <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> {/* Removed bg-muted/30 */}

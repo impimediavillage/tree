@@ -233,7 +233,12 @@ export default function DispensaryStorePage() {
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
       <Card className="mb-8 shadow-xl bg-card text-card-foreground border-primary/20">
         <CardHeader className="pb-4">
-          <CardTitle className="text-4xl font-extrabold text-primary tracking-tight">{dispensary.dispensaryName}</CardTitle>
+          <CardTitle 
+            className="text-4xl font-extrabold text-foreground tracking-tight"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            {dispensary.dispensaryName}
+          </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">{dispensary.dispensaryType}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">

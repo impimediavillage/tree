@@ -90,10 +90,18 @@ export default function AdminDispensaryTypesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+          <h1 
+            className="text-3xl font-bold flex items-center gap-2 text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             <ListChecks className="h-8 w-8"/> Manage Dispensary Types
           </h1>
-          <p className="text-muted-foreground">Create, view, edit, and delete dispensary types for the platform.</p>
+          <p 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            Create, view, edit, and delete dispensary types for the platform.
+          </p>
         </div>
         {isSuperAdmin && (
           <DispensaryTypeDialog onSave={fetchDispensaryTypes} isSuperAdmin={isSuperAdmin}>

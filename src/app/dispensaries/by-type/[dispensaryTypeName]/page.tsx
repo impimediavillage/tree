@@ -79,10 +79,15 @@ export default function PublicDispensariesByTypePage() {
     return (
       <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
         <div className="flex items-center mb-6">
-            <Button variant="outline" size="icon" onClick={() => router.push('/browse-dispensary-types')} className="mr-4">
+            <Button variant="outline" size="icon" onClick={() => router.back()} className="mr-4">
                 <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold text-primary animate-pulse">Loading {dispensaryTypeName || 'Dispensaries'}...</h1>
+            <h1 
+                className="text-3xl font-bold text-foreground animate-pulse"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
+                Loading {dispensaryTypeName || 'Dispensaries'}...
+            </h1>
         </div>
         <div className="w-full h-48 md:h-64 rounded-lg bg-muted animate-pulse mb-6"></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
