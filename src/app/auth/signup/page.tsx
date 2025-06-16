@@ -80,11 +80,13 @@ export default function SignUpPage() {
         credits: 10, 
         createdAt: serverTimestamp(),
         lastLoginAt: serverTimestamp(),
-        status: 'Active',
+        status: 'Active', // Automatically 'Active'
         preferredDispensaryTypes: data.preferredDispensaryTypes || [],
+        welcomeCreditsAwarded: true, // Award welcome credits on public signup
       };
       await setDoc(userDocRef, newUser);
       
+      // Simplified object for localStorage, AuthContext will fetch full data
       const currentUserForStorage = {
         uid: newUser.uid,
         email: newUser.email,
@@ -92,14 +94,15 @@ export default function SignUpPage() {
         role: newUser.role,
         credits: newUser.credits,
         preferredDispensaryTypes: newUser.preferredDispensaryTypes,
+        status: newUser.status,
       };
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(currentUserForStorage));
 
       toast({
         title: 'Account Created!',
-        description: "You've been successfully signed up. Welcome!",
+        description: "You've been successfully signed up and logged in. Welcome!",
       });
-      router.push('/'); 
+      router.push('/dashboard/leaf'); // Redirect to Leaf User dashboard
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "Failed to create account.";
@@ -138,8 +141,14 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
-          <CardTitle className="text-3xl font-bold">Create Your Leaf User Account</CardTitle>
-          <CardDescription>Join The Dispensary Tree community and explore wellness.</CardDescription>
+          <CardTitle 
+            className="text-3xl font-bold text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >Create Your Leaf User Account</CardTitle>
+          <CardDescription 
+            className="text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >Join The Dispensary Tree community and explore wellness.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -288,7 +297,10 @@ export default function SignUpPage() {
                         </ScrollArea>
                       </PopoverContent>
                     </Popover>
-                    <FormDescription>
+                    <FormDescription 
+                        className="text-foreground"
+                        style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+                    >
                       Select types of dispensaries you're interested in to personalize your experience.
                     </FormDescription>
                     <FormMessage />
@@ -317,3 +329,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+
