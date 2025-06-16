@@ -126,13 +126,13 @@ export default function DispensaryAdminOverviewPage() {
         <CardHeader>
           <CardTitle 
             className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             <Store className="mr-3 h-8 w-8 text-primary" /> {dispensary?.dispensaryName || "Your Dispensary"}
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Welcome to your control panel. Manage products, pool interactions, and settings.
           </CardDescription>

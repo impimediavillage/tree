@@ -244,13 +244,13 @@ export default function DispensaryManageUsersPage() {
         <div>
           <h1 
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             <UserCog className="h-8 w-8 text-primary" /> Manage Your Users
           </h1>
           <p 
             className="text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Add, view, and manage staff and linked Leaf Users for your dispensary.
           </p>

@@ -235,13 +235,13 @@ export default function DispensaryStorePage() {
         <CardHeader className="pb-4">
           <CardTitle 
             className="text-4xl font-extrabold text-foreground tracking-tight"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             {dispensary.dispensaryName}
           </CardTitle>
           <CardDescription 
             className="text-lg text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             {dispensary.dispensaryType}
           </CardDescription>
@@ -250,19 +250,19 @@ export default function DispensaryStorePage() {
           {dispensary.message && (
             <p 
                 className="italic text-foreground/90"
-                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
             >&quot;{dispensary.message}&quot;</p>
           )}
           <div 
             className="flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             <MapPin className="h-4 w-4" /> <span>{dispensary.location}</span>
           </div>
           {(dispensary.openTime || dispensary.closeTime) && (
             <div 
                 className="flex items-center gap-2 text-foreground"
-                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
             >
               <Clock className="h-4 w-4" />
               <span>Hours: {dispensary.openTime || 'N/A'} - {dispensary.closeTime || 'N/A'}</span>
@@ -271,7 +271,7 @@ export default function DispensaryStorePage() {
           {dispensary.operatingDays && dispensary.operatingDays.length > 0 && (
             <div 
                 className="flex items-center gap-2 text-foreground"
-                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
             >
                <Tag className="h-4 w-4" />
                <span>Open: {dispensary.operatingDays.join(', ')}</span>
@@ -318,7 +318,7 @@ export default function DispensaryStorePage() {
           <h3 className="text-xl font-semibold text-foreground">No Products Found</h3>
           <p 
             className="text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             {products.length === 0 ? "This dispensary hasn't listed any products yet." : "No products match your current filters."}
           </p>
@@ -332,5 +332,4 @@ export default function DispensaryStorePage() {
     </div>
   );
 }
-
 

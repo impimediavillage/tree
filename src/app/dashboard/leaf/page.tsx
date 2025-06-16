@@ -76,13 +76,13 @@ export default function LeafDashboardOverviewPage() {
         <CardHeader>
           <CardTitle 
             className="text-3xl font-semibold text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
           </CardTitle>
           <CardDescription 
             className="text-lg text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Manage your AI interactions, credits, and explore dispensaries. Current Credits: 
             <span className="font-bold text-green-600 ml-1">{currentUser?.credits ?? 0}</span>
@@ -101,7 +101,7 @@ export default function LeafDashboardOverviewPage() {
               <div className="flex justify-between items-center mb-6">
                   <h2 
                     className="text-2xl font-bold text-foreground flex items-center"
-                    style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                    style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
                   >
                       <Heart className="mr-3 h-8 w-8 text-primary" />
                       Your Preferred Dispensary Types
@@ -127,7 +127,7 @@ export default function LeafDashboardOverviewPage() {
               <div className="flex justify-between items-center mb-6">
                   <h2 
                     className="text-2xl font-bold text-foreground flex items-center"
-                    style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                    style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
                   >
                       <Store className="mr-3 h-8 w-8 text-primary" />
                       Browse Other Dispensary Types
@@ -166,7 +166,7 @@ export default function LeafDashboardOverviewPage() {
       <section>
         <h2 
             className="text-2xl font-bold text-foreground mb-4 flex items-center"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
         >
             <Lightbulb className="mr-3 h-8 w-8 text-primary" /> Quick Actions
         </h2>
