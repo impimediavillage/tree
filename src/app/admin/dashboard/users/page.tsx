@@ -254,10 +254,18 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2 text-primary">
+          <h1 
+            className="text-3xl font-bold flex items-center gap-2 text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             <UsersIcon className="h-8 w-8" /> Manage Users
           </h1>
-          <p className="text-muted-foreground">View, edit, and add user accounts and roles.</p>
+          <p 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            View, edit, and add user accounts and roles.
+          </p>
         </div>
         <AddUserDialog onUserAdded={fetchUsersAndDispensaries} dispensaries={dispensaries} />
       </div>

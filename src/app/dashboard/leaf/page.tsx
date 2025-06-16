@@ -74,7 +74,10 @@ export default function LeafDashboardOverviewPage() {
     <div className="space-y-8">
       <Card className="shadow-md bg-card border-primary/20">
         <CardHeader>
-          <CardTitle className="text-3xl font-semibold text-primary">
+          <CardTitle 
+            className="text-3xl font-semibold text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
           </CardTitle>
           <CardDescription className="text-lg text-muted-foreground">

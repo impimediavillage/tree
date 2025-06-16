@@ -303,7 +303,12 @@ export default function DispensaryAdminDashboardLayout({
                   </Button>
               </SheetTrigger>
               <div className="flex-1">
-                  <h1 className="text-lg font-semibold text-primary truncate">{dispensary.dispensaryName}</h1>
+                  <h1 
+                    className="text-lg font-semibold text-foreground truncate"
+                    style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                  >
+                    {dispensary.dispensaryName}
+                  </h1>
               </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">

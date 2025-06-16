@@ -183,8 +183,18 @@ export default function DispensaryProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-primary">My Products</h1>
-          <p className="text-muted-foreground">Manage all products for your dispensary.</p>
+          <h1 
+            className="text-3xl font-bold text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            My Products
+          </h1>
+          <p 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            Manage all products for your dispensary.
+          </p>
         </div>
         <Button asChild>
           <Link href="/dispensary-admin/products/add">

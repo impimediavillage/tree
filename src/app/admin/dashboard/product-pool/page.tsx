@@ -117,8 +117,13 @@ export default function AdminProductPoolPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Product Pool Administration</h1>
-        <p className="text-muted-foreground">Oversee all products and manage their availability in the sharing pool.</p>
+        <h1 className="text-2xl font-semibold text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Product Pool Administration</h1>
+        <p 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            Oversee all products and manage their availability in the sharing pool.
+        </p>
       </div>
       <DataTable
         columns={columns}
@@ -130,5 +135,4 @@ export default function AdminProductPoolPage() {
     </div>
   );
 }
-
     

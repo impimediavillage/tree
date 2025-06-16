@@ -301,11 +301,17 @@ export default function EditDispensaryTypeCategoriesPage() {
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-            <h1 className="text-3xl font-bold text-primary flex items-center">
+            <h1 
+              className="text-3xl font-bold text-foreground flex items-center"
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
                 <ListFilter className="mr-3 h-8 w-8" /> Manage Product Categories
             </h1>
-            <p className="text-lg text-muted-foreground">
-                For Dispensary Type: <span className="font-semibold text-foreground">{dispensaryTypeName}</span>
+            <p 
+              className="text-lg text-foreground"
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
+                For Dispensary Type: <span className="font-semibold text-primary">{dispensaryTypeName}</span>
             </p>
         </div>
         <Button variant="outline" size="sm" asChild>
