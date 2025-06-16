@@ -67,8 +67,14 @@ export default function LeafHistoryPage() {
     <div className="space-y-6">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl">AI Interaction History</CardTitle>
-          <CardDescription>
+          <CardTitle 
+            className="text-2xl text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >AI Interaction History</CardTitle>
+          <CardDescription 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Review your past interactions with our AI advisors and the credits used for each.
           </CardDescription>
         </CardHeader>
@@ -110,3 +116,4 @@ export default function LeafHistoryPage() {
     </div>
   );
 }
+

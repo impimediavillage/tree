@@ -80,7 +80,10 @@ export default function LeafDashboardOverviewPage() {
           >
             Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
           </CardTitle>
-          <CardDescription className="text-lg text-muted-foreground">
+          <CardDescription 
+            className="text-lg text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Manage your AI interactions, credits, and explore dispensaries. Current Credits: 
             <span className="font-bold text-green-600 ml-1">{currentUser?.credits ?? 0}</span>
           </CardDescription>
@@ -96,8 +99,11 @@ export default function LeafDashboardOverviewPage() {
           {preferredDispensaryTypes.length > 0 && (
             <section>
               <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-foreground flex items-center">
-                      <Heart className="mr-3 h-7 w-7 text-pink-500" />
+                  <h2 
+                    className="text-2xl font-bold text-foreground flex items-center"
+                    style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                  >
+                      <Heart className="mr-3 h-8 w-8 text-primary" />
                       Your Preferred Dispensary Types
                   </h2>
               </div>
@@ -119,8 +125,11 @@ export default function LeafDashboardOverviewPage() {
           {otherDispensaryTypes.length > 0 && (
             <section>
               <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-foreground flex items-center">
-                      <Store className="mr-3 h-7 w-7 text-accent" />
+                  <h2 
+                    className="text-2xl font-bold text-foreground flex items-center"
+                    style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                  >
+                      <Store className="mr-3 h-8 w-8 text-primary" />
                       Browse Other Dispensary Types
                   </h2>
                   {(preferredDispensaryTypes.length === 0) && (
@@ -155,12 +164,15 @@ export default function LeafDashboardOverviewPage() {
       )}
 
       <section>
-        <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
-            <Lightbulb className="mr-3 h-7 w-7 text-accent" /> Quick Actions
+        <h2 
+            className="text-2xl font-bold text-foreground mb-4 flex items-center"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+        >
+            <Lightbulb className="mr-3 h-8 w-8 text-primary" /> Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader><CardTitle className="flex items-center gap-2"><History className="text-accent" />Interaction History</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><History className="text-accent h-6 w-6" />Interaction History</CardTitle></CardHeader>
             <CardContent>
                 <p className="text-muted-foreground mb-4">Review your past interactions with our AI advisors.</p>
                 <Button asChild className="w-full bg-primary text-primary-foreground"><Link href="/dashboard/leaf/history">View History</Link></Button>
@@ -168,7 +180,7 @@ export default function LeafDashboardOverviewPage() {
             </Card>
             
             <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Tag className="text-accent" />AI Advisors</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Tag className="text-accent h-6 w-6" />AI Advisors</CardTitle></CardHeader>
             <CardContent>
                 <p className="text-muted-foreground mb-4">Discover insights by consulting our specialized AI advisors.</p>
                 <Button asChild className="w-full bg-primary text-primary-foreground"><Link href="/">See All Advisors</Link></Button>
@@ -179,3 +191,4 @@ export default function LeafDashboardOverviewPage() {
     </div>
   );
 }
+

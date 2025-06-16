@@ -117,7 +117,12 @@ export default function AdminProductPoolPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Product Pool Administration</h1>
+        <h1 
+            className="text-2xl font-semibold text-foreground" 
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+        >
+            Product Pool Administration
+        </h1>
         <p 
             className="text-foreground"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
@@ -136,3 +141,4 @@ export default function AdminProductPoolPage() {
   );
 }
     
+

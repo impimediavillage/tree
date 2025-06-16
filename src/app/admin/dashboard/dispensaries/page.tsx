@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, where, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, orderBy, where, Timestamp, serverTimestamp } from 'firebase/firestore';
 import type { Dispensary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -104,7 +104,10 @@ export default function AdminDispensariesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 
+            className="text-3xl font-bold flex items-center gap-2 text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             <Building className="h-8 w-8 text-primary" /> Manage Dispensaries
           </h1>
           <p className="text-muted-foreground">View, edit, approve, or suspend dispensary applications and profiles.</p>
@@ -168,3 +171,4 @@ export default function AdminDispensariesPage() {
     </div>
   );
 }
+

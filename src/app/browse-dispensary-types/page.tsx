@@ -44,10 +44,16 @@ export default function BrowseDispensaryTypesPage() {
       <div className="mb-12">
         <div className="bg-card/70 dark:bg-card/80 backdrop-blur-md rounded-xl shadow-lg p-6 md:p-8 text-center max-w-3xl mx-auto border border-border/50">
           <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-5xl font-extrabold tracking-tight text-primary">
+          <h1 
+            className="text-5xl font-extrabold tracking-tight text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Explore Dispensary Types
           </h1>
-          <p className="text-xl text-card-foreground/90 dark:text-card-foreground/80 mt-3 max-w-2xl mx-auto">
+          <p 
+            className="text-xl text-foreground/90 dark:text-foreground/80 mt-3 max-w-2xl mx-auto"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Discover a variety of dispensaries offering unique products and services. Click on a type to see available stores.
           </p>
         </div>
@@ -88,3 +94,4 @@ export default function BrowseDispensaryTypesPage() {
     </div>
   );
 }
+

@@ -258,7 +258,7 @@ export default function AdminUsersPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
           >
-            <UsersIcon className="h-8 w-8" /> Manage Users
+            <UsersIcon className="h-8 w-8 text-primary" /> Manage Users
           </h1>
           <p 
             className="text-foreground"
@@ -358,3 +358,4 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+

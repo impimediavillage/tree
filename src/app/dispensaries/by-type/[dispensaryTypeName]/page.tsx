@@ -128,11 +128,17 @@ export default function PublicDispensariesByTypePage() {
               }}
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white text-center shadow-md">
+                <h1 
+                  className="text-4xl md:text-5xl font-extrabold text-white text-center"
+                  style={{ textShadow: '0 0 8px rgba(0,0,0,0.7), 0 0 15px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.7)' }} // Darker glow for contrast on image
+                >
                     {dispensaryTypeName}
                 </h1>
                 {dispensaryTypeDetails?.description && (
-                    <p className="text-lg text-gray-200 mt-2 text-center max-w-2xl">
+                    <p 
+                      className="text-lg text-gray-200 mt-2 text-center max-w-2xl"
+                      style={{ textShadow: '0 0 5px rgba(0,0,0,0.7), 0 0 10px rgba(0,0,0,0.7)' }} // Darker glow for contrast
+                    >
                         {dispensaryTypeDetails.description}
                     </p>
                 )}
@@ -162,4 +168,5 @@ export default function PublicDispensariesByTypePage() {
     </div>
   );
 }
+
 

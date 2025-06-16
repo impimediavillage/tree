@@ -382,19 +382,27 @@ export default function AdminCreateDispensaryPage() {
     <Card className="max-w-3xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-3xl flex items-center">
+          <CardTitle 
+            className="text-3xl flex items-center text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             <Building className="mr-3 h-8 w-8 text-primary" /> Create New Dispensary
           </CardTitle>
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/dashboard/dispensaries"><ArrowLeft className="mr-2 h-4 w-4" /> Back to List</Link>
           </Button>
         </div>
-        <CardDescription>Fill in the details to create a new dispensary profile.</CardDescription>
+        <CardDescription 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+        >
+            Fill in the details to create a new dispensary profile.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-2">Owner Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Owner Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem><FormLabel>Owner's Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -431,7 +439,7 @@ export default function AdminCreateDispensaryPage() {
               <FormItem><FormLabel>Owner's Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6">Dispensary Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Dispensary Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
                 <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -491,7 +499,7 @@ export default function AdminCreateDispensaryPage() {
               )} />
             </div>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6">Location & Hours</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Location & Hours</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
               <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
                 <FormControl><Input {...field} ref={locationInputRef} /></FormControl>
@@ -554,7 +562,7 @@ export default function AdminCreateDispensaryPage() {
               </FormItem>
             )}/>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6">Operations & Delivery</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Operations & Delivery</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
                 <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
@@ -612,3 +620,4 @@ export default function AdminCreateDispensaryPage() {
     </Card>
   );
 }
+

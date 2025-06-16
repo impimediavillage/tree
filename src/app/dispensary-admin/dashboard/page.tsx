@@ -128,9 +128,12 @@ export default function DispensaryAdminOverviewPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
           >
-            <Store className="mr-3 h-8 w-8" /> {dispensary?.dispensaryName || "Your Dispensary"}
+            <Store className="mr-3 h-8 w-8 text-primary" /> {dispensary?.dispensaryName || "Your Dispensary"}
           </CardTitle>
-          <CardDescription className="text-md text-muted-foreground">
+          <CardDescription 
+            className="text-md text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Welcome to your control panel. Manage products, pool interactions, and settings.
           </CardDescription>
         </CardHeader>
@@ -225,3 +228,4 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, i
       </CardContent>
     </Card>
 );
+

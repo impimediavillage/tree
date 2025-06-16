@@ -186,7 +186,7 @@ export default function AdminCreditPackagesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
           >
-            <PackagePlus className="h-8 w-8"/>Credit System Management
+            <PackagePlus className="h-8 w-8 text-primary"/>Credit System Management
           </h1>
           <p 
             className="text-foreground"
@@ -236,3 +236,4 @@ export default function AdminCreditPackagesPage() {
     </div>
   );
 }
+
