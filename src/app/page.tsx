@@ -2,9 +2,10 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image'; // Added Next.js Image component
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Trees, Loader2, Store, Users, Zap, Eye, Gift, Truck, Globe, ShieldQuestion, Bitcoin } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Loader2 } from 'lucide-react'; // Added Loader2
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
@@ -124,7 +125,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
             key={index}
             className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm hover:bg-card/60 dark:hover:bg-card/70 transition-colors duration-200"
           >
-            <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" /> {/* Changed to text-primary from text-accent */}
+            <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" />
             <span className="text-sm text-muted-foreground">{benefit.text}</span>
           </li>
         ))}
@@ -163,7 +164,7 @@ export default function HolisticAiHubPage() {
 
   const leafUserBenefits = [
     { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
-    { text: "Sign up for FREE to browse and shop our hosted stores, practices, and dispensaries.", icon: Gift },
+    { text: "Sign up for FREE to browse and shop our hosted stores.", icon: Gift },
     { text: "10 FREE CREDITS on sign up. Show the plans in the card as cool sub cards", icon: Gift },
   ];
 
@@ -171,10 +172,22 @@ export default function HolisticAiHubPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
 
-      <div className="p-6 bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-xl animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
+      <div className="p-6 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
-          <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-5xl font-extrabold tracking-tight text-primary">
+          <div className="relative mx-auto mb-4 w-full max-w-[300px] aspect-square">
+            <Image
+              src="/images/tree.png"
+              alt="The Dispensary Tree Logo"
+              layout="fill"
+              objectFit="contain"
+              data-ai-hint="logo tree"
+              priority
+            />
+          </div>
+          <h1
+            className="text-5xl font-extrabold tracking-tight text-primary"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
+          >
             The Dispensary Tree
           </h1>
           <p className="text-xl text-muted-foreground mt-3 max-w-2xl mx-auto">
