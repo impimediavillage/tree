@@ -1,3 +1,4 @@
+
 import * as logger from "firebase-functions/logger";
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
@@ -49,7 +50,7 @@ async function sendDispensaryNotificationEmail(
     logger.info(`Simulating Sending Email (HTML) to: ${toEmail}`);
     logger.info(`Subject: ${subject}`);
     logger.info(`HTML Body:\n${htmlBody}`);
-    logger.info(`(Related Dispensary: ${dispensaryName || 'N/A'})`);
+    logger.info(`(Related Entity: ${dispensaryName || 'The Dispensary Tree Platform'})`); // Generic log message
     return;
   }
 
@@ -65,9 +66,9 @@ async function sendDispensaryNotificationEmail(
 
   try {
     await sgMail.send(msg);
-    logger.info(`Email successfully sent to ${toEmail} for dispensary ${dispensaryName || 'N/A'} via SendGrid.`);
+    logger.info(`Email successfully sent to ${toEmail} (Subject: ${subject}) via SendGrid.`);
   } catch (error: any) {
-    logger.error(`Error sending email to ${toEmail} for ${dispensaryName || 'N/A'} via SendGrid:`, error);
+    logger.error(`Error sending email to ${toEmail} (Subject: ${subject}) via SendGrid:`, error);
     if (error.response) {
       logger.error("SendGrid Response Error Body:", error.response.body);
     }
@@ -102,6 +103,45 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
     </div>
   `;
 }
+
+
+/**
+ * Cloud Function triggered when a new Leaf User document is created.
+ * Sends a "Welcome" email to the new Leaf User.
+ */
+export const onLeafUserCreated = onDocumentCreated(
+  "users/{userId}",
+  async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      logger.error("No data associated with the user creation event.");
+      return null;
+    }
+    const userData = snapshot.data() as UserDocData;
+    const userId = event.params.userId;
+
+    if (userData.role === 'LeafUser' && userData.email) {
+      logger.log(`New Leaf User created: ${userId} - ${userData.email}`);
+
+      const userDisplayName = userData.displayName || userData.email.split('@')[0];
+      const subject = "Welcome to The Dispensary Tree!";
+      const greeting = `Dear ${userDisplayName},`;
+      const content = [
+        `Thank you for joining The Dispensary Tree! We're excited to have you as part of our community.`,
+        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+        `You've received 10 free credits to get started with our AI advisors.`,
+        `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
+      ];
+      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+      const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
+      
+      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
+    } else {
+      logger.log(`New user created (ID: ${userId}), but not a LeafUser or missing email. Role: ${userData.role || 'N/A'}`);
+    }
+    return null;
+  }
+);
 
 
 /**
@@ -233,7 +273,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
             (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp() as FirebaseFirestore.Timestamp;
-            (firestoreUserDataUpdate as UserDocData).credits = 100;
+            (firestoreUserDataUpdate as UserDocData).credits = 100; // Default credits for new owner
         }
         
         await userDocRef.set(firestoreUserDataUpdate, { merge: true });
@@ -867,11 +907,12 @@ export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
         displayName: user.displayName,
         photoURL: null,
         role: 'LeafUser',
-        credits: 100,
+        credits: 100, // Sample users get more credits for testing
         createdAt: admin.firestore.Timestamp.now() as any,
         lastLoginAt: admin.firestore.Timestamp.now() as any,
         status: 'Active',
         dispensaryId: null,
+        welcomeCreditsAwarded: true, // Assume sample users have received this
       };
       await userDocRef.set(firestoreUserData, { merge: true });
       logger.info(`Successfully created/updated Firestore document for user: ${userRecord.uid}`);
@@ -884,7 +925,8 @@ export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
 
   const allSuccessful = results.every(r => r.success);
   res.status(allSuccessful ? 200 : 207).json({
-    message: allSuccessful ? "All users seeded successfully." : "Some users may not have been seeded correctly. Check logs.",
+    message: allSuccessful ? "All sample users seeded successfully." : "Some sample users may not have been seeded correctly. Check logs.",
     results,
   });
 });
+
