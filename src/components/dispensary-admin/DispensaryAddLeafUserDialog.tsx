@@ -33,8 +33,8 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
       displayName: '',
       email: '',
       password: '',
-      status: 'PendingApproval', // Default to PendingApproval
-      credits: 0, // Start with 0 credits, awarded on activation
+      status: 'Active', // Changed default to Active
+      credits: 10,     // Default welcome credits
     },
   });
 
@@ -51,16 +51,16 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
         photoURL: null,
         role: 'LeafUser', 
         dispensaryId: dispensaryId, 
-        credits: 0, // Initial credits are 0
-        status: 'PendingApproval', // Initial status
+        credits: 10, // Award 10 credits on creation
+        status: 'Active', // Set status to Active
         createdAt: serverTimestamp() as any,
         lastLoginAt: null,
-        welcomeCreditsAwarded: false, // Initialize as false
+        welcomeCreditsAwarded: true, // Mark as awarded
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newLeafUserData);
 
-      toast({ title: "Leaf User Added", description: `${data.displayName} has been added and is pending your approval.` });
+      toast({ title: "Leaf User Added", description: `${data.displayName} has been added and activated.` });
       onUserAdded();
       setIsOpen(false);
       form.reset();
@@ -79,14 +79,14 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) form.reset({ displayName: '', email: '', password: '', status: 'PendingApproval', credits: 0 }); }}>
+    <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) form.reset({ displayName: '', email: '', password: '', status: 'Active', credits: 10 }); }}>
       <DialogTrigger asChild>
         <Button variant="default"><Leaf className="mr-2 h-4 w-4" /> Add Leaf User</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Leaf User (Linked)</DialogTitle>
-          <DialogDescription>Create an account for a Leaf User who will be associated with your dispensary. They will start as 'Pending Approval'.</DialogDescription>
+          <DialogDescription>Create an account for a Leaf User associated with your dispensary. They will be activated immediately and receive welcome credits.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -100,7 +100,7 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
               <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={form.control} name="credits" render={({ field }) => (
-              <FormItem><FormLabel>Initial Credits (Awarded on Activation)</FormLabel><FormControl><Input type="number" {...field} readOnly disabled /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Initial Credits (Welcome Bonus)</FormLabel><FormControl><Input type="number" {...field} readOnly disabled /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="status" render={({ field }) => (
               <FormItem>
@@ -108,8 +108,8 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="PendingApproval">Pending Approval</SelectItem>
                     <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="PendingApproval">Pending Approval</SelectItem>
                     <SelectItem value="Suspended">Suspended</SelectItem>
                   </SelectContent>
                 </Select><FormMessage />
@@ -118,7 +118,7 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Leaf User
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add and Activate Leaf User
               </Button>
             </DialogFooter>
           </form>
