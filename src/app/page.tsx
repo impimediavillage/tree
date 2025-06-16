@@ -2,10 +2,10 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image'; // Added Next.js Image component
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Loader2, Store } from 'lucide-react'; // Added Store and Loader2
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Loader2, Store } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
@@ -103,7 +103,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
     {cornerBadgeText && CornerBadgeIcon && (
       <Badge
         variant="default"
-        className="absolute top-3 right-3 z-10 bg-green-500 text-white px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
+        className="absolute top-3 right-3 z-10 bg-accent text-accent-foreground px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
       >
         <CornerBadgeIcon className="h-3.5 w-3.5" />
         {cornerBadgeText}
@@ -174,6 +174,7 @@ export default function HolisticAiHubPage() {
 
       <div className="p-6 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
+          {/* Removed Image component for tree.png */}
           <h1
             className="text-5xl font-extrabold tracking-tight text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
@@ -203,7 +204,7 @@ export default function HolisticAiHubPage() {
               Join Our Growing Ecosystem
             </h2>
             <p
-              className="text-lg text-foreground max-w-xl mx-auto mt-2 font-semibold"
+              className="text-lg text-foreground max-w-xl mx-auto mt-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
