@@ -239,23 +239,40 @@ export default function DispensaryStorePage() {
           >
             {dispensary.dispensaryName}
           </CardTitle>
-          <CardDescription className="text-lg text-muted-foreground">{dispensary.dispensaryType}</CardDescription>
+          <CardDescription 
+            className="text-lg text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            {dispensary.dispensaryType}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           {dispensary.message && (
-            <p className="italic text-foreground/90">&quot;{dispensary.message}&quot;</p>
+            <p 
+                className="italic text-foreground/90"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >&quot;{dispensary.message}&quot;</p>
           )}
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div 
+            className="flex items-center gap-2 text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             <MapPin className="h-4 w-4" /> <span>{dispensary.location}</span>
           </div>
           {(dispensary.openTime || dispensary.closeTime) && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div 
+                className="flex items-center gap-2 text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
               <Clock className="h-4 w-4" />
               <span>Hours: {dispensary.openTime || 'N/A'} - {dispensary.closeTime || 'N/A'}</span>
             </div>
           )}
           {dispensary.operatingDays && dispensary.operatingDays.length > 0 && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div 
+                className="flex items-center gap-2 text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >
                <Tag className="h-4 w-4" />
                <span>Open: {dispensary.operatingDays.join(', ')}</span>
             </div>
@@ -299,7 +316,10 @@ export default function DispensaryStorePage() {
         <div className="text-center py-12">
           <Info className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold text-foreground">No Products Found</h3>
-          <p className="text-muted-foreground">
+          <p 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             {products.length === 0 ? "This dispensary hasn't listed any products yet." : "No products match your current filters."}
           </p>
           {(searchTerm || selectedCategory !== 'all') && (
@@ -312,4 +332,5 @@ export default function DispensaryStorePage() {
     </div>
   );
 }
+
 

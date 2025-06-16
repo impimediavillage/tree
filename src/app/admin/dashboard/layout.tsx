@@ -236,7 +236,9 @@ export default function AdminDashboardLayout({
                 className="text-lg font-semibold text-foreground"
                 style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
               >
-                {mainSidebarNavItems.find(item => pathname.startsWith(item.href))?.title || 'Admin'}
+                {mainSidebarNavItems.find(item => pathname.startsWith(item.href))?.title || 
+                 managementSidebarNavItems.find(item => pathname.startsWith(item.href))?.title ||
+                 'Admin'}
               </h1>
             </div>
           </header>
@@ -249,3 +251,4 @@ export default function AdminDashboardLayout({
   );
 }
     
+

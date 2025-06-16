@@ -82,8 +82,14 @@ export default function LeafCreditsPage() {
     <div className="space-y-6">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Manage Your Credits</CardTitle>
-          <CardDescription>
+          <CardTitle 
+            className="text-2xl text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >Manage Your Credits</CardTitle>
+          <CardDescription 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Your current balance is: 
             <span className="font-bold text-primary ml-1">
               {currentUser?.credits ?? 'Loading...'}
@@ -163,10 +169,14 @@ export default function LeafCreditsPage() {
           ))}
         </div>
       )}
-      <p className="text-xs text-muted-foreground text-center mt-4">
+      <p 
+        className="text-xs text-foreground text-center mt-4"
+        style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+      >
         Payments are processed securely. Credit purchases are non-refundable. This is a simulated purchase environment.
       </p>
     </div>
   );
 }
     
+

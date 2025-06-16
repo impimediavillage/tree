@@ -94,7 +94,7 @@ export default function AdminDispensaryTypesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
           >
-            <ListChecks className="h-8 w-8"/> Manage Dispensary Types
+            <ListChecks className="h-8 w-8 text-primary"/> Manage Dispensary Types
           </h1>
           <p 
             className="text-foreground"
@@ -149,3 +149,4 @@ export default function AdminDispensaryTypesPage() {
     </div>
   );
 }
+

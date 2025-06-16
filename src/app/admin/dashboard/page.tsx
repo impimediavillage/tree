@@ -99,9 +99,12 @@ export default function AdminDashboardOverviewPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
           >
-            <Settings className="mr-3 h-8 w-8" /> Super Admin Dashboard
+            <Settings className="mr-3 h-8 w-8 text-primary" /> Super Admin Dashboard
           </CardTitle>
-          <CardDescription className="text-md text-muted-foreground">
+          <CardDescription 
+            className="text-md text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Welcome to the control center. Oversee and manage all aspects of The Dispensary Tree platform.
           </CardDescription>
         </CardHeader>
@@ -151,7 +154,7 @@ export default function AdminDashboardOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Building className="text-accent" /> Manage Dispensaries</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Building className="text-accent h-6 w-6" /> Manage Dispensaries</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Approve, view, edit, or suspend dispensary accounts.</p>
@@ -162,7 +165,7 @@ export default function AdminDashboardOverviewPage() {
         </Card>
          <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Users className="text-accent" /> Manage Users</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Users className="text-accent h-6 w-6" /> Manage Users</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">View user details, manage roles, and oversee user activity.</p>
@@ -173,7 +176,7 @@ export default function AdminDashboardOverviewPage() {
         </Card>
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ListChecks className="text-accent" /> Dispensary Types</CardTitle>
+            <CardTitle className="flex items-center gap-2"><ListChecks className="text-accent h-6 w-6" /> Dispensary Types</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Create and manage the types of dispensaries available.</p>
@@ -184,7 +187,7 @@ export default function AdminDashboardOverviewPage() {
         </Card>
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CreditCard className="text-accent" /> Credit System</CardTitle>
+            <CardTitle className="flex items-center gap-2"><CreditCard className="text-accent h-6 w-6" /> Credit System</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Configure credit packages and monitor transactions.</p>
@@ -195,7 +198,7 @@ export default function AdminDashboardOverviewPage() {
         </Card>
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldAlert className="text-accent" /> Pool Issues</CardTitle>
+            <CardTitle className="flex items-center gap-2"><ShieldAlert className="text-accent h-6 w-6" /> Pool Issues</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Review and resolve reported issues in the product sharing pool.</p>
@@ -206,7 +209,7 @@ export default function AdminDashboardOverviewPage() {
         </Card>
          <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Bell className="text-accent" /> Notifications</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Bell className="text-accent h-6 w-6" /> Notifications</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Manage and send platform-wide notifications.</p>
@@ -221,3 +224,4 @@ export default function AdminDashboardOverviewPage() {
 }
 
     
+

@@ -166,8 +166,14 @@ export default function LeafProfilePage() {
     <div className="space-y-6">
       <Card className="shadow-md">
         <CardHeader>
-          <CardTitle className="text-2xl">My Profile</CardTitle>
-          <CardDescription>
+          <CardTitle 
+            className="text-2xl text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >My Profile</CardTitle>
+          <CardDescription 
+            className="text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Update your personal information and manage your account settings.
           </CardDescription>
         </CardHeader>
@@ -184,8 +190,14 @@ export default function LeafProfilePage() {
               {form.formState.errors.email && <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>}
             </div>
             
-            <CardTitle className="text-lg pt-4 border-t mt-4">Change Password</CardTitle>
-            <CardDescription className="text-xs">Leave password fields blank if you do not want to change your password.</CardDescription>
+            <CardTitle 
+              className="text-lg pt-4 border-t mt-4 text-foreground"
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >Change Password</CardTitle>
+            <CardDescription 
+                className="text-xs text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            >Leave password fields blank if you do not want to change your password.</CardDescription>
             
             <div>
               <Label htmlFor="currentPassword">Current Password (required to change email or password)</Label>
@@ -212,4 +224,5 @@ export default function LeafProfilePage() {
     </div>
   );
 }
+
 

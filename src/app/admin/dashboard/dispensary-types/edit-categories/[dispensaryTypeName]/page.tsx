@@ -305,7 +305,7 @@ export default function EditDispensaryTypeCategoriesPage() {
               className="text-3xl font-bold text-foreground flex items-center"
               style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
             >
-                <ListFilter className="mr-3 h-8 w-8" /> Manage Product Categories
+                <ListFilter className="mr-3 h-8 w-8 text-primary" /> Manage Product Categories
             </h1>
             <p 
               className="text-lg text-foreground"
@@ -323,8 +323,14 @@ export default function EditDispensaryTypeCategoriesPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card className="shadow-xl border-primary/20">
             <CardHeader>
-              <CardTitle>Category Structure Editor</CardTitle>
-              <CardDescription>
+              <CardTitle 
+                className="text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+              >Category Structure Editor</CardTitle>
+              <CardDescription 
+                className="text-foreground"
+                style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+              >
                 Define main categories and up to two levels of subcategories for products of type &quot;{dispensaryTypeName}&quot;.
               </CardDescription>
             </CardHeader>
@@ -410,3 +416,4 @@ export default function EditDispensaryTypeCategoriesPage() {
     </div>
   );
 }
+
