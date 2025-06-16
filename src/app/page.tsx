@@ -181,13 +181,13 @@ export default function HolisticAiHubPage() {
           <div className="text-center mb-8">
             <h2 
               className="text-3xl font-bold text-foreground tracking-tight"
-              style={{ textShadow: '0 0 3px #fff, 0 0 6px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
             >
               Join Our Growing Ecosystem
             </h2>
             <p 
               className="text-lg text-muted-foreground max-w-xl mx-auto mt-2 font-semibold"
-              style={{ textShadow: '0 0 3px #fff, 0 0 6px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
             >
               Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
             </p>
