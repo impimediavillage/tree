@@ -44,7 +44,7 @@ body::before {
     --secondary-foreground: 100 30% 20%; /* Darker green for text on secondary */
     
     --muted: 40 35% 92%; /* Light, muted beige/tan */
-    --muted-foreground: 35 25% 55%; /* Medium earthy brown */
+    --muted-foreground: 30 30% 35%; /* Darker Brown */
     
     --accent: 30 65% 55%; /* Warm Terracotta/Earthy Orange */
     --accent-foreground: 30 25% 97%; /* Off-white for text on accent */
@@ -97,7 +97,7 @@ body::before {
     --secondary-foreground: 90 30% 85%; /* Light green for text on secondary */
     
     --muted: 30 15% 25%; /* Darker muted brown */
-    --muted-foreground: 40 25% 70%; /* Lighter muted brown */
+    --muted-foreground: 35 25% 60%; /* Darker muted brown for dark theme text */
     
     --accent: 25 55% 50%; /* Darker Terracotta */
     --accent-foreground: 25 20% 92%; /* Off-white for text on accent */
@@ -138,3 +138,4 @@ body::before {
   }
   /* body already styled with background image and base text color */
 }
+
