@@ -139,7 +139,7 @@ export default function HolisticAiHubPage() {
     setIsLoadingUser(false);
   }, []);
 
-  const dispensaryBenefits = [
+ const dispensaryBenefits = [
     { text: "Engage in private, inter-dispensary trading and bulk product transactions", icon: Truck },
     { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
     { text: "Unlimited access to the Product Sharing Pool with other dispensaries.", icon: Users },
@@ -181,13 +181,13 @@ export default function HolisticAiHubPage() {
           <div className="text-center mb-8">
             <h2 
               className="text-3xl font-bold text-foreground tracking-tight"
-              style={{ WebkitTextStroke: '0.7px white', textStroke: '0.7px white' } as React.CSSProperties}
+              style={{ textShadow: '0 0 3px #fff, 0 0 6px #fff' }}
             >
               Join Our Growing Ecosystem
             </h2>
             <p 
               className="text-lg text-muted-foreground max-w-xl mx-auto mt-2 font-semibold"
-              style={{ WebkitTextStroke: '0.7px white', textStroke: '0.7px white' } as React.CSSProperties}
+              style={{ textShadow: '0 0 3px #fff, 0 0 6px #fff' }}
             >
               Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
             </p>
