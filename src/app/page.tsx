@@ -113,7 +113,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
             key={index} 
             className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm"
           >
-            <benefit.icon className="h-10 w-10 text-accent mt-0.5 flex-shrink-0" /> {/* Updated size and color */}
+            <benefit.icon className="h-10 w-10 text-accent mt-0.5 flex-shrink-0" />
             <span className="text-sm text-muted-foreground">{benefit.text}</span>
           </li>
         ))}
@@ -151,7 +151,7 @@ export default function HolisticAiHubPage() {
   ];
 
   const leafUserBenefits = [
-    { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
+    { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for free to browse and shop our hosted stores.", icon: Gift },
     { text: "10 FREE CREDITS on sign up.", icon: Gift },
   ];
@@ -179,9 +179,17 @@ export default function HolisticAiHubPage() {
       ) : !currentUser && (
         <div className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-foreground tracking-tight">Join Our Growing Ecosystem</h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto mt-2">
-              Whether you're a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
+            <h2 
+              className="text-3xl font-bold text-foreground tracking-tight"
+              style={{ WebkitTextStroke: '0.7px white', textStroke: '0.7px white' } as React.CSSProperties}
+            >
+              Join Our Growing Ecosystem
+            </h2>
+            <p 
+              className="text-lg text-muted-foreground max-w-xl mx-auto mt-2 font-semibold"
+              style={{ WebkitTextStroke: '0.7px white', textStroke: '0.7px white' } as React.CSSProperties}
+            >
+              Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
