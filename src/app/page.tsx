@@ -156,14 +156,14 @@ export default function HolisticAiHubPage() {
     { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
     { text: "Unlimited access to the Product Sharing Pool with other dispensaries.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
-    { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
+    { text: "FREE Onboarding assistance with Payfast merchant split payment set up.  Payouts go directly to your  own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
     { text: "Paid Stripe onboarding assistance", icon: DollarSign },
     { text: "Paid Bitcoin payment provider option", icon: Bitcoin },
   ];
 
   const leafUserBenefits = [
-    { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
+    { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted stores.", icon: Gift },
     { text: "10 FREE CREDITS on sign up. Show the plans in the card as cool sub cards", icon: Gift },
   ];
@@ -185,12 +185,15 @@ export default function HolisticAiHubPage() {
             />
           </div>
           <h1
-            className="text-5xl font-extrabold tracking-tight text-primary"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
+            className="text-5xl font-extrabold tracking-tight text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
           >
             The Dispensary Tree
           </h1>
-          <p className="text-xl text-muted-foreground mt-3 max-w-2xl mx-auto">
+          <p 
+            className="text-xl text-muted-foreground mt-3 max-w-2xl mx-auto"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
             Your AI-powered holistic wellness hub. Explore cannabis, natural remedies, and ancient wisdom with our specialized AI advisors.
           </p>
         </div>
@@ -205,13 +208,13 @@ export default function HolisticAiHubPage() {
           <div className="text-center mb-8">
             <h2
               className="text-3xl font-bold text-foreground tracking-tight"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
             >
               Join Our Growing Ecosystem
             </h2>
             <p
               className="text-lg text-muted-foreground max-w-xl mx-auto mt-2 font-semibold"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
+              style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
             >
               Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
             </p>
