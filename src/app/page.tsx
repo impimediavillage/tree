@@ -103,7 +103,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
     {cornerBadgeText && CornerBadgeIcon && (
       <Badge
         variant="default"
-        className="absolute top-2 right-2 z-10 bg-accent text-accent-foreground px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
+        className="absolute top-1 right-1 z-10 bg-accent text-accent-foreground px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
       >
         <CornerBadgeIcon className="h-3.5 w-3.5" />
         {cornerBadgeText}
@@ -176,7 +176,7 @@ export default function HolisticAiHubPage() {
 
       <div className="p-6 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
-          {/* Tree.png image and its container div removed */}
+          
           <h1
             className="text-5xl font-extrabold tracking-tight text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
@@ -281,7 +281,7 @@ export default function HolisticAiHubPage() {
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Welcome Back, {currentUser.displayName || currentUser.email?.split('@')[0]}!</CardTitle>
              <CardDescription 
-              className="text-muted-foreground"
+              className="text-foreground"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               Your current balance: <Badge variant="secondary" className="text-md px-2 py-0.5">{currentUser.credits ?? 0} Credits</Badge>
