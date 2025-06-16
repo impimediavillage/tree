@@ -88,10 +88,12 @@ export default function AdminDispensariesPage() {
   };
 
   const handleDeleteDispensary = async (dispensaryId: string, dispensaryName: string) => {
+    // Note: In a real app, consider a soft delete or additional confirmation.
+    // Also, handle deletion of associated data (e.g., products, auth user if they are sole owner and no other link) if necessary.
     try {
       await deleteDoc(doc(db, 'dispensaries', dispensaryId));
       toast({ title: "Dispensary Deleted", description: `${dispensaryName} has been removed.` });
-      fetchDispensaries();
+      fetchDispensaries(); // Refresh list
     } catch (error) {
       console.error("Error deleting dispensary:", error);
       toast({ title: "Deletion Failed", description: "Could not delete dispensary.", variant: "destructive" });
@@ -110,7 +112,12 @@ export default function AdminDispensariesPage() {
           >
             <Building className="h-8 w-8 text-primary" /> Manage Dispensaries
           </h1>
-          <p className="text-muted-foreground">View, edit, approve, or suspend dispensary applications and profiles.</p>
+          <p 
+            className="text-foreground" 
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            View, edit, approve, or suspend dispensary applications and profiles.
+          </p>
         </div>
         <Button asChild>
           <Link href="/admin/dashboard/dispensaries/create">
