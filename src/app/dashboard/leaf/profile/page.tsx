@@ -168,11 +168,11 @@ export default function LeafProfilePage() {
         <CardHeader>
           <CardTitle 
             className="text-2xl text-foreground"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >My Profile</CardTitle>
           <CardDescription 
             className="text-foreground"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Update your personal information and manage your account settings.
           </CardDescription>
@@ -192,11 +192,11 @@ export default function LeafProfilePage() {
             
             <CardTitle 
               className="text-lg pt-4 border-t mt-4 text-foreground"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Change Password</CardTitle>
             <CardDescription 
                 className="text-xs text-foreground"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Leave password fields blank if you do not want to change your password.</CardDescription>
             
             <div>

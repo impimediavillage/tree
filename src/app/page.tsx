@@ -176,13 +176,13 @@ export default function HolisticAiHubPage() {
         <div className="text-center">
           <h1
             className="text-5xl font-extrabold tracking-tight text-foreground"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             The Dispensary Tree
           </h1>
           <p 
             className="text-xl text-foreground mt-3 max-w-2xl mx-auto"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Your AI-powered holistic wellness hub. Explore cannabis, natural remedies, and ancient wisdom with our specialized AI advisors.
           </p>
@@ -198,13 +198,13 @@ export default function HolisticAiHubPage() {
           <div className="text-center mb-8">
             <h2
               className="text-3xl font-bold text-foreground tracking-tight"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               Join Our Growing Ecosystem
             </h2>
             <p
               className="text-lg text-foreground max-w-xl mx-auto mt-2 font-semibold"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
             </p>
@@ -239,7 +239,7 @@ export default function HolisticAiHubPage() {
           <CardHeader>
             <CardTitle 
               className="text-2xl text-foreground flex items-center gap-2"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               <Settings className="h-7 w-7 text-primary" /> Welcome, Super Admin!
             </CardTitle>
@@ -257,7 +257,7 @@ export default function HolisticAiHubPage() {
           <CardHeader>
             <CardTitle 
               className="text-2xl text-foreground flex items-center gap-2"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               <Briefcase className="h-7 w-7 text-primary" /> Welcome, Dispensary Owner!
             </CardTitle>
@@ -275,11 +275,11 @@ export default function HolisticAiHubPage() {
           <CardHeader className="text-center">
             <CardTitle 
               className="text-2xl font-semibold text-foreground"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Welcome Back, {currentUser.displayName || currentUser.email?.split('@')[0]}!</CardTitle>
              <CardDescription 
               className="text-muted-foreground"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               Your current balance: <Badge variant="secondary" className="text-md px-2 py-0.5">{currentUser.credits ?? 0} Credits</Badge>
             </CardDescription>
@@ -301,13 +301,13 @@ export default function HolisticAiHubPage() {
         <div className="text-center mb-10">
           <h2 
             className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             <Brain className="h-10 w-10 text-primary"/> Explore Our AI Advisors
           </h2>
           <p 
             className="text-lg text-foreground max-w-2xl mx-auto mt-3"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Get specialized insights and recommendations across various domains of holistic wellness and knowledge.
           </p>

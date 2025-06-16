@@ -384,7 +384,7 @@ export default function AdminCreateDispensaryPage() {
         <div className="flex items-center justify-between">
           <CardTitle 
             className="text-3xl flex items-center text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             <Building className="mr-3 h-8 w-8 text-primary" /> Create New Dispensary
           </CardTitle>
@@ -394,7 +394,7 @@ export default function AdminCreateDispensaryPage() {
         </div>
         <CardDescription 
             className="text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
             Fill in the details to create a new dispensary profile.
         </CardDescription>
@@ -402,7 +402,7 @@ export default function AdminCreateDispensaryPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Owner Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Owner Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem><FormLabel>Owner's Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -439,7 +439,7 @@ export default function AdminCreateDispensaryPage() {
               <FormItem><FormLabel>Owner's Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Dispensary Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Dispensary Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
                 <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -499,7 +499,7 @@ export default function AdminCreateDispensaryPage() {
               )} />
             </div>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Location & Hours</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Hours</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
               <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
                 <FormControl><Input {...field} ref={locationInputRef} /></FormControl>
@@ -562,7 +562,7 @@ export default function AdminCreateDispensaryPage() {
               </FormItem>
             )}/>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}>Operations & Delivery</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
                 <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>

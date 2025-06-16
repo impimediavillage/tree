@@ -84,7 +84,7 @@ export default function PublicDispensariesByTypePage() {
             </Button>
             <h1 
                 className="text-3xl font-bold text-foreground animate-pulse"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
                 Loading {dispensaryTypeName || 'Dispensaries'}...
             </h1>
@@ -130,14 +130,14 @@ export default function PublicDispensariesByTypePage() {
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
                 <h1 
                   className="text-4xl md:text-5xl font-extrabold text-white text-center"
-                  style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                  style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                 >
                     {dispensaryTypeName}
                 </h1>
                 {dispensaryTypeDetails?.description && (
                     <p 
                       className="text-lg text-gray-200 mt-2 text-center max-w-2xl"
-                      style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                      style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                     >
                         {dispensaryTypeDetails.description}
                     </p>

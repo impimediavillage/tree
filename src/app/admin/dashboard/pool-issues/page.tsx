@@ -237,13 +237,13 @@ export default function AdminPoolIssuesPage() {
       <div>
         <h1 
             className="text-2xl font-semibold text-foreground" 
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
             Product Pool Issues
         </h1>
         <p 
             className="text-foreground"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Review and manage reported issues between dispensaries in the product pool.
         </p>
