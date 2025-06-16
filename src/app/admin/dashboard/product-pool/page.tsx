@@ -119,13 +119,13 @@ export default function AdminProductPoolPage() {
       <div>
         <h1 
             className="text-2xl font-semibold text-foreground" 
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
         >
             Product Pool Administration
         </h1>
         <p 
             className="text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Oversee all products and manage their availability in the sharing pool.
         </p>
@@ -141,4 +141,3 @@ export default function AdminProductPoolPage() {
   );
 }
     
-

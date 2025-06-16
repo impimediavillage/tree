@@ -185,13 +185,13 @@ export default function DispensaryProductsPage() {
         <div>
           <h1 
             className="text-3xl font-bold text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             My Products
           </h1>
           <p 
             className="text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Manage all products for your dispensary.
           </p>

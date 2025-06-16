@@ -81,7 +81,10 @@ export default function DispensariesByTypePage() {
             <Button variant="outline" size="icon" onClick={() => router.back()} className="mr-4">
                 <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold text-primary animate-pulse">Loading Dispensaries...</h1>
+            <h1 
+                className="text-3xl font-bold text-foreground animate-pulse"
+                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            >Loading Dispensaries...</h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1,2,3,4,5,6].map(i => <Card key={i} className="h-[380px]"><CardContent className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></CardContent></Card>)}
@@ -113,13 +116,25 @@ export default function DispensariesByTypePage() {
               layout="fill" 
               objectFit="cover" 
               data-ai-hint={headerDataAiHint}
+              priority
+              onError={(e) => {
+                // Fallback if dispensaryTypeDetails.image fails
+                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
+                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
+              }}
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-white text-center shadow-md">
+                <h1 
+                  className="text-4xl md:text-5xl font-extrabold text-white text-center"
+                  style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                >
                     {dispensaryTypeName}
                 </h1>
                 {dispensaryTypeDetails?.description && (
-                    <p className="text-lg text-gray-200 mt-2 text-center max-w-2xl">
+                    <p 
+                      className="text-lg text-gray-200 mt-2 text-center max-w-2xl"
+                      style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                    >
                         {dispensaryTypeDetails.description}
                     </p>
                 )}

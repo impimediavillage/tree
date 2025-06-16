@@ -97,13 +97,13 @@ export default function AdminDashboardOverviewPage() {
         <CardHeader>
           <CardTitle 
             className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             <Settings className="mr-3 h-8 w-8 text-primary" /> Super Admin Dashboard
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
-            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
           >
             Welcome to the control center. Oversee and manage all aspects of The Dispensary Tree platform.
           </CardDescription>
@@ -224,4 +224,3 @@ export default function AdminDashboardOverviewPage() {
 }
 
     
-
