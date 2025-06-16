@@ -153,13 +153,13 @@ export default function DispensaryAnalyticsPage() {
         <CardHeader>
           <CardTitle 
             className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             <BarChart3 className="mr-3 h-8 w-8 text-primary" /> Dispensary Analytics
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Track your sales, product performance, and customer engagement.
           </CardDescription>
@@ -223,11 +223,11 @@ export default function DispensaryAnalyticsPage() {
             <CardHeader>
             <CardTitle 
                 className="text-foreground" 
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Product Categories</CardTitle>
             <CardDescription 
                 className="text-foreground"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Overview of products by category in your dispensary.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -265,11 +265,11 @@ export default function DispensaryAnalyticsPage() {
             <CardHeader>
             <CardTitle 
                 className="text-foreground"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Sales Trends (Demo)</CardTitle>
             <CardDescription 
                 className="text-foreground"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Visualize your sales performance over time. (Placeholder Chart)</CardDescription>
             </CardHeader>
             <CardContent>
@@ -284,7 +284,7 @@ export default function DispensaryAnalyticsPage() {
       
       <p 
         className="text-sm text-foreground text-center"
-        style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+        style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
       >
         Note: Some analytics (Total Sales, Orders, Avg. Order Value) use demo data. Full analytics requires an orders system.
       </p>

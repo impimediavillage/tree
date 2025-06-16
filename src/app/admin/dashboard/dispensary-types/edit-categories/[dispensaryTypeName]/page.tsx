@@ -303,13 +303,13 @@ export default function EditDispensaryTypeCategoriesPage() {
         <div>
             <h1 
               className="text-3xl font-bold text-foreground flex items-center"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
                 <ListFilter className="mr-3 h-8 w-8 text-primary" /> Manage Product Categories
             </h1>
             <p 
               className="text-lg text-foreground"
-              style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
                 For Dispensary Type: <span className="font-semibold text-primary">{dispensaryTypeName}</span>
             </p>
@@ -325,11 +325,11 @@ export default function EditDispensaryTypeCategoriesPage() {
             <CardHeader>
               <CardTitle 
                 className="text-foreground"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
               >Category Structure Editor</CardTitle>
               <CardDescription 
                 className="text-foreground"
-                style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
               >
                 Define main categories and up to two levels of subcategories for products of type &quot;{dispensaryTypeName}&quot;.
               </CardDescription>

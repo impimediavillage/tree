@@ -108,13 +108,13 @@ export default function AdminDispensariesPage() {
         <div>
           <h1 
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             <Building className="h-8 w-8 text-primary" /> Manage Dispensaries
           </h1>
           <p 
             className="text-foreground" 
-            style={{ textShadow: '0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff' }}
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             View, edit, approve, or suspend dispensary applications and profiles.
           </p>
