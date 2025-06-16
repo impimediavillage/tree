@@ -89,14 +89,25 @@ interface SignupBenefitCardProps {
   benefits: { text: string; icon: React.ElementType }[];
   delay?: number;
   dataAiHint?: string;
+  cornerBadgeText?: string;
+  cornerBadgeIcon?: React.ElementType;
 }
 
-const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText, buttonLink, buttonIcon: ButtonIcon, benefits, delay = 0, dataAiHint }) => (
+const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText, buttonLink, buttonIcon: ButtonIcon, benefits, delay = 0, dataAiHint, cornerBadgeText, cornerBadgeIcon: CornerBadgeIcon }) => (
   <Card 
-    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md" 
+    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md relative" 
     style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
     data-ai-hint={dataAiHint || title.toLowerCase().replace(/\s+/g, '-')}
   >
+    {cornerBadgeText && CornerBadgeIcon && (
+      <Badge
+        variant="default"
+        className="absolute top-3 right-3 z-10 bg-green-500 text-white px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
+      >
+        <CornerBadgeIcon className="h-3.5 w-3.5" />
+        {cornerBadgeText}
+      </Badge>
+    )}
     <CardHeader className="bg-muted/30 p-4 border-b border-primary/20"> 
       <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md">
         <Link href={buttonLink}>
@@ -113,7 +124,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
             key={index} 
             className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm"
           >
-            <benefit.icon className="h-10 w-10 text-accent mt-0.5 flex-shrink-0" />
+            <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" /> {/* Changed text-accent to text-primary */}
             <span className="text-sm text-muted-foreground">{benefit.text}</span>
           </li>
         ))}
@@ -204,12 +215,14 @@ export default function HolisticAiHubPage() {
             />
             <SignupBenefitCard
               title="Benefits of signing up as a Leaf on our Tree:"
-              buttonText="Sign up as a Leaf user on our Tree" 
+              buttonText="Become a Leaf on our Tree" 
               buttonLink="/auth/signup"
               buttonIcon={Leaf}
               benefits={leafUserBenefits}
               delay={200}
               dataAiHint="leaf user signup benefits"
+              cornerBadgeText="FREE"
+              cornerBadgeIcon={Gift}
             />
           </div>
         </div>
