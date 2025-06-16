@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Loader2, Store } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
@@ -103,7 +103,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
     {cornerBadgeText && CornerBadgeIcon && (
       <Badge
         variant="default"
-        className="absolute top-3 right-3 z-10 bg-accent text-accent-foreground px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
+        className="absolute top-2 right-2 z-10 bg-accent text-accent-foreground px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
       >
         <CornerBadgeIcon className="h-3.5 w-3.5" />
         {cornerBadgeText}
@@ -163,9 +163,11 @@ export default function HolisticAiHubPage() {
   ];
 
   const leafUserBenefits = [
+    { text: "Cant afford wellness advice? Now You can with The Dispensary tree FREE Leaf package.", icon: Gift },
+    { text: "10 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
     { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted stores.", icon: Gift },
-    { text: "10 FREE CREDITS on sign up. Show the plans in the card as cool sub cards", icon: Gift },
+    { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
   ];
 
 
@@ -174,7 +176,7 @@ export default function HolisticAiHubPage() {
 
       <div className="p-6 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
-          {/* Removed Image component for tree.png */}
+          {/* Tree.png image and its container div removed */}
           <h1
             className="text-5xl font-extrabold tracking-tight text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
