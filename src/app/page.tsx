@@ -20,8 +20,8 @@ interface AdvisorCardProps {
 }
 
 const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, icon: Icon, link, dataAiHint, delay = 0 }) => (
-  <Card 
-    className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50" 
+  <Card
+    className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"
     style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
     data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
   >
@@ -94,8 +94,8 @@ interface SignupBenefitCardProps {
 }
 
 const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText, buttonLink, buttonIcon: ButtonIcon, benefits, delay = 0, dataAiHint, cornerBadgeText, cornerBadgeIcon: CornerBadgeIcon }) => (
-  <Card 
-    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md relative" 
+  <Card
+    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md relative"
     style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
     data-ai-hint={dataAiHint || title.toLowerCase().replace(/\s+/g, '-')}
   >
@@ -108,7 +108,7 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
         {cornerBadgeText}
       </Badge>
     )}
-    <CardHeader className="bg-muted/30 p-4 border-b border-primary/20"> 
+    <CardHeader className="bg-muted/30 p-4 border-b border-primary/20">
       <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md">
         <Link href={buttonLink}>
           <ButtonIcon className="mr-2 h-5 w-5" />
@@ -120,11 +120,11 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
       <h3 className="text-lg font-semibold text-foreground mb-4">{title}</h3>
       <ul className="space-y-3">
         {benefits.map((benefit, index) => (
-          <li 
-            key={index} 
-            className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm"
+          <li
+            key={index}
+            className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm hover:bg-card/60 dark:hover:bg-card/70 transition-colors duration-200"
           >
-            <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" /> {/* Changed text-accent to text-primary */}
+            <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" /> {/* Changed to text-primary from text-accent */}
             <span className="text-sm text-muted-foreground">{benefit.text}</span>
           </li>
         ))}
@@ -163,14 +163,14 @@ export default function HolisticAiHubPage() {
 
   const leafUserBenefits = [
     { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
-    { text: "Sign up for free to browse and shop our hosted stores.", icon: Gift },
-    { text: "10 FREE CREDITS on sign up.", icon: Gift },
+    { text: "Sign up for FREE to browse and shop our hosted stores, practices, and dispensaries.", icon: Gift },
+    { text: "10 FREE CREDITS on sign up. Show the plans in the card as cool sub cards", icon: Gift },
   ];
 
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
-      
+
       <div className="p-6 bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-xl animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
         <div className="text-center">
           <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
@@ -190,13 +190,13 @@ export default function HolisticAiHubPage() {
       ) : !currentUser && (
         <div className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
           <div className="text-center mb-8">
-            <h2 
+            <h2
               className="text-3xl font-bold text-foreground tracking-tight"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
             >
               Join Our Growing Ecosystem
             </h2>
-            <p 
+            <p
               className="text-lg text-muted-foreground max-w-xl mx-auto mt-2 font-semibold"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff' }}
             >
@@ -215,7 +215,7 @@ export default function HolisticAiHubPage() {
             />
             <SignupBenefitCard
               title="Benefits of signing up as a Leaf on our Tree:"
-              buttonText="Become a Leaf on our Tree" 
+              buttonText="Become a Leaf on our Tree"
               buttonLink="/auth/signup"
               buttonIcon={Leaf}
               benefits={leafUserBenefits}
@@ -227,9 +227,9 @@ export default function HolisticAiHubPage() {
           </div>
         </div>
       )}
-      
+
       {currentUser && currentUser.role === 'Super Admin' && (
-        <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"> 
+        <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl text-secondary-foreground flex items-center gap-2">
               <Settings className="h-7 w-7 text-primary" /> Welcome, Super Admin!
@@ -244,7 +244,7 @@ export default function HolisticAiHubPage() {
       )}
 
       {currentUser && currentUser.role === 'DispensaryOwner' && (
-         <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"> 
+         <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl text-secondary-foreground flex items-center gap-2">
               <Briefcase className="h-7 w-7 text-primary" /> Welcome, Dispensary Owner!
@@ -257,9 +257,9 @@ export default function HolisticAiHubPage() {
           </CardContent>
         </Card>
       )}
-      
+
       {currentUser && (currentUser.role === 'User' || currentUser.role === 'LeafUser') && (
-         <Card className="shadow-xl animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">  
+         <Card className="shadow-xl animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-semibold text-primary">Welcome Back, {currentUser.displayName || currentUser.email?.split('@')[0]}!</CardTitle>
              <CardDescription className="text-muted-foreground">
