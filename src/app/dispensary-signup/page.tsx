@@ -53,25 +53,26 @@ const minuteOptions = [
 ];
 const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
 
-// This hardcoded map serves as a fallback if Firestore data for iconPath is missing
 const dispensaryTypeIcons: Record<string, string> = {
   "THC - CBD - Mushrooms dispensary": "/icons/thc-cbd-mushroom.png",
   "Homeopathic dispensary": "/icons/homeopathy.png",
   "African Traditional Medicine dispensary": "/icons/traditional-medicine.png",
-  "Flower Store": "/icons/default-pin.png", 
+  "Flower Store": "/icons/default-pin.png",
   "Permaculture & gardening store": "/icons/permaculture.png",
-  "Traditional Medicine": "/icons/traditional-medicine.png", // Fallback for older name
-  "Homeopathy": "/icons/homeopathy.png", // Fallback for older name
-  "THC / CBD / Mushroom Products": "/icons/thc-cbd-mushroom.png", // Fallback for older name
-  "Permaculture Products": "/icons/permaculture.png", // Fallback for older name
+  "Traditional Medicine": "/icons/traditional-medicine.png",
+  "Homeopathy": "/icons/homeopathy.png",
+  "THC / CBD / Mushroom Products": "/icons/thc-cbd-mushroom.png",
+  "Permaculture Products": "/icons/permaculture.png",
   "default": "/icons/default-pin.png"
 };
 
 const countryCodes = [
-  { value: "+27", label: "🇿🇦 +27", flag: "🇿🇦", code: "+27" },
-  { value: "+1", label: "🇺🇸 +1", flag: "🇺🇸", code: "+1" },
-  { value: "+44", label: "🇬🇧 +44", flag: "🇬🇧", code: "+44" },
-  // Add more countries as needed
+  { value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" },
+  { value: "+1",  flag: "🇺🇸", shortName: "US", code: "+1" },
+  { value: "+44", flag: "🇬🇧", shortName: "GB", code: "+44" },
+  { value: "+61", flag: "🇦🇺", shortName: "AU", code: "+61" },
+  { value: "+49", flag: "🇩🇪", shortName: "DE", code: "+49" },
+  { value: "+33", flag: "🇫🇷", shortName: "FR", code: "+33" },
 ];
 
 export default function DispensarySignupPage() {
@@ -100,7 +101,7 @@ export default function DispensarySignupPage() {
 
   const form = useForm<DispensarySignupFormData>({
     resolver: zodResolver(dispensarySignupSchema),
-    mode: "onChange", // Validate on change for better UX with button disabling
+    mode: "onChange",
     defaultValues: {
       fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
       dispensaryType: undefined, currency: undefined, openTime: '', closeTime: '',
@@ -123,15 +124,14 @@ export default function DispensarySignupPage() {
       const querySnapshot = await getDocs(q);
       const fetchedTypes: DispensaryType[] = [];
       querySnapshot.forEach((docSnap) => {
-        fetchedTypes.push({ 
-            id: docSnap.id, 
+        fetchedTypes.push({
+            id: docSnap.id,
             name: docSnap.data().name,
             iconPath: docSnap.data().iconPath,
-            image: docSnap.data().image 
+            image: docSnap.data().image
         } as DispensaryType);
       });
       setDispensaryTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
-      console.log("Fetched dispensary types for signup:", fetchedTypes);
     } catch (error) {
       console.error("Error fetching dispensary types for signup:", error);
       toast({ title: "Error", description: "Could not load dispensary types. Please try again.", variant: "destructive" });
@@ -161,7 +161,7 @@ export default function DispensarySignupPage() {
     if (!autocompleteRef.current) {
       const autocomplete = new window.google.maps.places.Autocomplete(
         locationInputRef.current,
-        { fields: ["formatted_address", "geometry", "name"], types: ["address"], componentRestrictions: { country: "za" } }
+        { fields: ["formatted_address", "geometry", "name", "address_components"], types: ["address"], componentRestrictions: { country: "za" } }
       );
       autocompleteRef.current = autocomplete;
       autocomplete.addListener("place_changed", () => {
@@ -177,21 +177,33 @@ export default function DispensarySignupPage() {
             markerInstanceRef.current.setPosition(loc);
           }
         }
+        if (place.address_components) {
+          const countryComponent = place.address_components.find(component =>
+            component.types.includes("country")
+          );
+          if (countryComponent) {
+            const countryShortName = countryComponent.short_name;
+            const matchedCountry = countryCodes.find(cc => cc.shortName === countryShortName);
+            if (matchedCountry) {
+              setSelectedCountryCode(matchedCountry.value);
+            }
+          }
+        }
       });
     }
 
     if (!mapInstanceRef.current) {
-      const initialLat = form.getValues('latitude') ?? -29.8587; // Default to Durban if undefined
-      const initialLng = form.getValues('longitude') ?? 31.0218; // Default to Durban if undefined
+      const initialLat = form.getValues('latitude') ?? -29.8587;
+      const initialLng = form.getValues('longitude') ?? 31.0218;
       const initialZoom = (form.getValues('latitude') && form.getValues('longitude')) ? 17 : 6;
-      
+
       const currentTypeName = form.getValues('dispensaryType');
-      let initialIconUrl = dispensaryTypeIcons.default; // Fallback to hardcoded default
+      let initialIconUrl = dispensaryTypeIcons.default;
       if (currentTypeName) {
           const selectedTypeObject = dispensaryTypes.find(dt => dt.name === currentTypeName);
           if (selectedTypeObject?.iconPath) {
               initialIconUrl = selectedTypeObject.iconPath;
-          } else if (dispensaryTypeIcons[currentTypeName]) { // Fallback to hardcoded map
+          } else if (dispensaryTypeIcons[currentTypeName]) {
               initialIconUrl = dispensaryTypeIcons[currentTypeName];
           }
       }
@@ -207,7 +219,7 @@ export default function DispensarySignupPage() {
         icon: { url: initialIconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
       });
       markerInstanceRef.current = marker;
-      
+
       if (form.getValues('latitude') && form.getValues('longitude')) {
           marker.setPosition({lat: initialLat, lng: initialLng});
           map.setCenter({lat: initialLat, lng: initialLng});
@@ -223,6 +235,18 @@ export default function DispensarySignupPage() {
             geocoder.geocode({ location: pos }, (results, status) => {
                 if (status === 'OK' && results && results[0]) {
                     form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+                    if (results[0].address_components) {
+                      const countryComponent = results[0].address_components.find(component =>
+                        component.types.includes("country")
+                      );
+                      if (countryComponent) {
+                        const countryShortName = countryComponent.short_name;
+                        const matchedCountry = countryCodes.find(cc => cc.shortName === countryShortName);
+                        if (matchedCountry) {
+                          setSelectedCountryCode(matchedCountry.value);
+                        }
+                      }
+                    }
                 } else {
                     console.warn('Reverse geocoder failed or returned no results on signup:', status);
                 }
@@ -237,12 +261,12 @@ export default function DispensarySignupPage() {
 
   useEffect(() => {
     if (markerInstanceRef.current && window.google && window.google.maps) {
-      let iconUrl = dispensaryTypeIcons.default; // Fallback to hardcoded default
+      let iconUrl = dispensaryTypeIcons.default;
       if (watchDispensaryType) {
           const selectedTypeObject = dispensaryTypes.find(dt => dt.name === watchDispensaryType);
           if (selectedTypeObject?.iconPath) {
               iconUrl = selectedTypeObject.iconPath;
-          } else if (dispensaryTypeIcons[watchDispensaryType]) { // Fallback to hardcoded map
+          } else if (dispensaryTypeIcons[watchDispensaryType]) {
               iconUrl = dispensaryTypeIcons[watchDispensaryType];
           }
       }
@@ -277,7 +301,7 @@ export default function DispensarySignupPage() {
     else if (amPmStr === 'AM' && hour === 12) hour = 0;
     return `${hour.toString().padStart(2, '0')}:${minuteStr}`;
   };
-  
+
   const formatTo12HourDisplay = (time24?: string): string => {
     if (!time24 || !time24.match(/^([01]\d|2[0-3]):([0-5]\d)$/)) return "Select Time";
     const [hour24Str, minuteStr] = time24.split(':');
@@ -339,54 +363,36 @@ export default function DispensarySignupPage() {
       setIsLoading(false);
     }
   }
+  
+  const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
 
   return (
     <Card className="max-w-3xl mx-auto my-8 shadow-xl">
       <CardHeader className="text-center">
-        <CardTitle className="text-3xl">Virtual Dispensary Sign-Up</CardTitle>
-        <CardDescription>Join our platform and reach more customers.</CardDescription>
+        <CardTitle 
+            className="text-3xl text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+        >Virtual Dispensary Sign-Up</CardTitle>
+        <CardDescription 
+            className="text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+        >Join our platform and reach more customers.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-2">Owner Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Owner Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your Full Name" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <div className="flex items-center gap-2">
-                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                    <SelectTrigger className="w-[120px] shrink-0">
-                      <SelectValue placeholder="Code" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countryCodes.map(cc => (
-                        <SelectItem key={cc.value} value={cc.value}>
-                          {cc.flag} {cc.code}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input 
-                    type="tel" 
-                    placeholder="National number" 
-                    value={nationalPhoneNumber}
-                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} 
-                  />
-                </div>
-                 <FormField control={form.control} name="phone" render={() => (
-                    // This hidden input receives the combined phone number for validation by Zod and for RHF state
-                    <FormItem className="mt-0 pt-0"><FormMessage /></FormItem>
-                 )} />
-              </FormItem>
+               <FormField control={form.control} name="ownerEmail" render={({ field }) => (
+                <FormItem><FormLabel>Owner's Email Address</FormLabel><FormControl><Input type="email" placeholder="owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
             </div>
-            <FormField control={form.control} name="ownerEmail" render={({ field }) => (
-              <FormItem><FormLabel>Owner's Email Address</FormLabel><FormControl><Input type="email" placeholder="owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
+            
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6">Dispensary Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Dispensary Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
                 <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input placeholder="Your Dispensary's Name" {...field} /></FormControl><FormMessage /></FormItem>
@@ -396,7 +402,6 @@ export default function DispensarySignupPage() {
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {/* Removed the SelectItem with value="" */}
                       {dispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
                     </SelectContent>
                   </Select><FormMessage />
@@ -412,7 +417,7 @@ export default function DispensarySignupPage() {
               </FormItem>
             )} />
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6">Location & Hours</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
               <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
                 <FormControl><Input placeholder="e.g. 123 Main St, Anytown" {...field} ref={locationInputRef} /></FormControl>
@@ -424,6 +429,45 @@ export default function DispensarySignupPage() {
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             
+            <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
+                    <SelectTrigger className="w-[120px] shrink-0">
+                      {selectedCountryDisplay ? (
+                        <div className="flex items-center gap-1.5">
+                          <span>{selectedCountryDisplay.flag}</span>
+                          <span>{selectedCountryDisplay.code}</span>
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Code" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countryCodes.map(cc => (
+                        <SelectItem key={cc.value} value={cc.value}>
+                          <div className="flex items-center gap-2">
+                            <span>{cc.flag}</span>
+                            <span>{cc.shortName}</span>
+                            <span>({cc.code})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="tel"
+                    placeholder="National number"
+                    value={nationalPhoneNumber}
+                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                  />
+                </div>
+                 <FormField control={form.control} name="phone" render={() => (
+                    <FormItem className="mt-0 pt-0"><FormMessage /></FormItem>
+                 )} />
+              </FormItem>
+
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operating Hours</h2>
             <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="openTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
@@ -467,7 +511,7 @@ export default function DispensarySignupPage() {
                 <FormMessage />
             </FormItem>)}/>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6">Operations & Delivery</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
                 <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
@@ -486,13 +530,13 @@ export default function DispensarySignupPage() {
               <FormItem><FormLabel>What type of orders will you fulfill?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            
+
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
               <FormItem><FormLabel>Participate in product sharing with other dispensaries?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
                 <FormDescription>Allows sharing products with dispensaries of the same type.</FormDescription><FormMessage /></FormItem>)} />
-            
+
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
                 <FormItem><FormLabel>Lead time to transfer products</FormLabel>
@@ -502,7 +546,7 @@ export default function DispensarySignupPage() {
 
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your dispensary..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
-            
+
             <FormField control={form.control} name="acceptTerms" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
@@ -511,8 +555,8 @@ export default function DispensarySignupPage() {
                 <FormMessage className="ml-0 pl-0 -mt-1 text-xs"/>
                 </FormItem>
             )}/>
-             
-            <Button type="submit" className="w-full text-lg py-6" 
+
+            <Button type="submit" className="w-full text-lg py-6"
               disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}
             >
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />} Submit Application

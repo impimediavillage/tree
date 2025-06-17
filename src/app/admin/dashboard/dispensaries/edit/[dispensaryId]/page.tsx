@@ -67,9 +67,12 @@ const dispensaryTypeIcons: Record<string, string> = {
 const dispensaryStatusOptions: EditDispensaryFormData['status'][] = ['Pending Approval', 'Approved', 'Rejected', 'Suspended'];
 
 const countryCodes = [
-  { value: "+27", label: "🇿🇦 +27", flag: "🇿🇦", code: "+27" },
-  { value: "+1", label: "🇺🇸 +1", flag: "🇺🇸", code: "+1" },
-  { value: "+44", label: "🇬🇧 +44", flag: "🇬🇧", code: "+44" },
+  { value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" },
+  { value: "+1",  flag: "🇺🇸", shortName: "US", code: "+1" },
+  { value: "+44", flag: "🇬🇧", shortName: "GB", code: "+44" },
+  { value: "+61", flag: "🇦🇺", shortName: "AU", code: "+61" },
+  { value: "+49", flag: "🇩🇪", shortName: "DE", code: "+49" },
+  { value: "+33", flag: "🇫🇷", shortName: "FR", code: "+33" },
 ];
 
 function parseTimeToComponents(time24?: string): { hour?: string, minute?: string, amPm?: string } {
@@ -89,7 +92,7 @@ export default function AdminEditDispensaryPage() {
   const dispensaryId = params.dispensaryId as string;
   const { currentUser, loading: authLoading } = useAuth();
 
-  const [isFetchingData, setIsFetchingData] = useState(true); // Combined fetching state
+  const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [dispensary, setDispensary] = useState<Dispensary | null>(null);
 
@@ -125,7 +128,6 @@ export default function AdminEditDispensaryPage() {
   const form = useForm<EditDispensaryFormData>({
     resolver: zodResolver(editDispensarySchema),
     mode: "onChange",
-    defaultValues: { /* Defaults will be set from fetched data */ },
   });
 
   useEffect(() => {
@@ -148,7 +150,6 @@ export default function AdminEditDispensaryPage() {
     }
   }, [toast]);
 
-  // Main useEffect for auth check and data fetching
   useEffect(() => {
     if (authLoading) {
       setIsFetchingData(true);
@@ -169,8 +170,7 @@ export default function AdminEditDispensaryPage() {
       return;
     }
 
-    // At this point, user is authenticated and is Super Admin
-    fetchDispensaryTypes(); // Fetch types needed for the form
+    fetchDispensaryTypes();
 
     if (dispensaryId) {
       const fetchDispensary = async () => {
@@ -210,7 +210,7 @@ export default function AdminEditDispensaryPage() {
                     setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
                 } else {
                     setNationalPhoneNumber(data.phone);
-                    setSelectedCountryCode(countryCodes[0].value); // Default if no match
+                    // setSelectedCountryCode(countryCodes[0].value); // Default if no match
                 }
             }
 
@@ -239,7 +239,6 @@ export default function AdminEditDispensaryPage() {
         toast({ title: "Permission Denied", description: "Only Super Admins can add new dispensary types.", variant: "destructive"});
         return;
     }
-    // (Rest of the add new type logic - unchanged)
     if (!newDispensaryTypeName.trim()) {
       toast({ title: "Validation Error", description: "New dispensary type name cannot be empty.", variant: "destructive" });
       return;
@@ -313,6 +312,18 @@ export default function AdminEditDispensaryPage() {
             geocoder.geocode({ location: pos }, (results, status) => {
                 if (status === 'OK' && results && results[0]) {
                     form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+                    if (results[0].address_components) {
+                      const countryComponent = results[0].address_components.find(component =>
+                        component.types.includes("country")
+                      );
+                      if (countryComponent) {
+                        const countryShortName = countryComponent.short_name;
+                        const matchedCountry = countryCodes.find(cc => cc.shortName === countryShortName);
+                        if (matchedCountry) {
+                          setSelectedCountryCode(matchedCountry.value);
+                        }
+                      }
+                    }
                 } else { console.warn('Reverse geocoder failed:', status); }
             });
         }
@@ -324,7 +335,7 @@ export default function AdminEditDispensaryPage() {
     if (!autocompleteRef.current && locationInputRef.current) {
       const autocomplete = new window.google.maps.places.Autocomplete(
         locationInputRef.current,
-        { fields: ["formatted_address", "geometry", "name"], types: ["address"], componentRestrictions: { country: "za" } }
+        { fields: ["formatted_address", "geometry", "name", "address_components"], types: ["address"], componentRestrictions: { country: "za" } }
       );
       autocompleteRef.current = autocomplete;
       autocomplete.addListener("place_changed", () => {
@@ -337,6 +348,18 @@ export default function AdminEditDispensaryPage() {
           setCurrentLat(loc.lat()); setCurrentLng(loc.lng());
           if (mapInstanceRef.current && markerInstanceRef.current) {
             mapInstanceRef.current.setCenter(loc); mapInstanceRef.current.setZoom(17); markerInstanceRef.current.setPosition(loc);
+          }
+        }
+        if (place.address_components) {
+          const countryComponent = place.address_components.find(component =>
+            component.types.includes("country")
+          );
+          if (countryComponent) {
+            const countryShortName = countryComponent.short_name;
+            const matchedCountry = countryCodes.find(cc => cc.shortName === countryShortName);
+            if (matchedCountry) {
+              setSelectedCountryCode(matchedCountry.value);
+            }
           }
         }
       });
@@ -436,11 +459,13 @@ export default function AdminEditDispensaryPage() {
     return <div className="text-center py-10">Dispensary not found, failed to load, or access denied.</div>;
   }
 
+  const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
+
   return (
     <Card className="max-w-3xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle 
+          <CardTitle
             className="text-3xl flex items-center text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
@@ -450,7 +475,7 @@ export default function AdminEditDispensaryPage() {
             <Link href="/admin/dashboard/dispensaries"><ArrowLeft className="mr-2 h-4 w-4" /> Back to List</Link>
           </Button>
         </div>
-        <CardDescription 
+        <CardDescription
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
@@ -465,21 +490,10 @@ export default function AdminEditDispensaryPage() {
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem><FormLabel>Owner's Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
-              <FormItem>
-                <FormLabel>Owner's Phone</FormLabel>
-                <div className="flex items-center gap-2">
-                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                    <SelectTrigger className="w-[120px] shrink-0"><SelectValue placeholder="Code" /></SelectTrigger>
-                    <SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}>{cc.flag} {cc.code}</SelectItem>))}</SelectContent>
-                  </Select>
-                  <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
-                </div>
-                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="mt-0 pt-0"><FormControl><input type="hidden" {...field} /></FormControl><FormMessage /></FormItem>)} />
-              </FormItem>
+              <FormField control={form.control} name="ownerEmail" render={({ field }) => (
+                <FormItem><FormLabel>Owner's Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
             </div>
-            <FormField control={form.control} name="ownerEmail" render={({ field }) => (
-              <FormItem><FormLabel>Owner's Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Dispensary Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
@@ -533,7 +547,7 @@ export default function AdminEditDispensaryPage() {
               )} />
             </div>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Hours</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
               <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
                 <FormControl><Input {...field} ref={locationInputRef} /></FormControl>
@@ -544,6 +558,38 @@ export default function AdminEditDispensaryPage() {
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
 
+            <FormItem>
+                <FormLabel>Owner's Phone</FormLabel>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
+                    <SelectTrigger className="w-[120px] shrink-0">
+                        {selectedCountryDisplay ? (
+                            <div className="flex items-center gap-1.5">
+                                <span>{selectedCountryDisplay.flag}</span>
+                                <span>{selectedCountryDisplay.code}</span>
+                            </div>
+                        ) : (
+                            <SelectValue placeholder="Code" />
+                        )}
+                    </SelectTrigger>
+                    <SelectContent>
+                        {countryCodes.map(cc => (
+                            <SelectItem key={cc.value} value={cc.value}>
+                                <div className="flex items-center gap-2">
+                                <span>{cc.flag}</span>
+                                <span>{cc.shortName}</span>
+                                <span>({cc.code})</span>
+                                </div>
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
+                </div>
+                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="mt-0 pt-0"><FormControl><input type="hidden" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </FormItem>
+
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operating Hours</h2>
             <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="openTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
@@ -607,4 +653,4 @@ export default function AdminEditDispensaryPage() {
     </Card>
   );
 }
-    
+
