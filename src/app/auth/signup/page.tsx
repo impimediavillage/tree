@@ -78,11 +78,12 @@ export default function SignUpPage() {
         photoURL: firebaseUser.photoURL || null,
         role: 'LeafUser', // Default role for public sign-ups
         credits: 10, 
-        createdAt: serverTimestamp(),
-        lastLoginAt: serverTimestamp(),
+        createdAt: serverTimestamp() as any,
+        lastLoginAt: serverTimestamp() as any,
         status: 'Active', // Automatically 'Active'
         preferredDispensaryTypes: data.preferredDispensaryTypes || [],
         welcomeCreditsAwarded: true, // Award welcome credits on public signup
+        signupSource: 'public', // Add signup source flag
       };
       await setDoc(userDocRef, newUser);
       
@@ -95,6 +96,7 @@ export default function SignUpPage() {
         credits: newUser.credits,
         preferredDispensaryTypes: newUser.preferredDispensaryTypes,
         status: newUser.status,
+        signupSource: newUser.signupSource,
       };
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(currentUserForStorage));
 
@@ -330,3 +332,5 @@ export default function SignUpPage() {
   );
 }
 
+
+    

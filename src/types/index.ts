@@ -201,6 +201,7 @@ export interface User {
   status?: 'Active' | 'Suspended' | 'PendingApproval';
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
+  signupSource?: string; // e.g., 'public', 'dispensary_invite'
 }
 
 // Represents a Credit Package document in Firestore
@@ -285,7 +286,7 @@ export type PoolIssueDocData = Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'>
   updatedAt: Timestamp;
 };
 
-export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded'> & {
+export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> & {
   uid: string;
   email: string;
   createdAt?: Timestamp;
@@ -293,6 +294,7 @@ export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispe
   dispensaryStatus?: Dispensary['status'] | null;
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
+  signupSource?: string;
 };
 
 export type DeductCreditsRequestBody = {
@@ -328,3 +330,5 @@ export interface ProductCategoryCount {
 export interface CartItem extends Product {
   quantity: number;
 }
+
+    

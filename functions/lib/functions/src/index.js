@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = void 0;
+exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
@@ -63,7 +63,7 @@ async function sendDispensaryNotificationEmail(toEmail, subject, htmlBody, dispe
         logger.info(`Simulating Sending Email (HTML) to: ${toEmail}`);
         logger.info(`Subject: ${subject}`);
         logger.info(`HTML Body:\n${htmlBody}`);
-        logger.info(`(Related Dispensary: ${dispensaryName || 'N/A'})`);
+        logger.info(`(Related Entity: ${dispensaryName || 'The Dispensary Tree Platform'})`); // Generic log message
         return;
     }
     const msg = {
@@ -77,10 +77,10 @@ async function sendDispensaryNotificationEmail(toEmail, subject, htmlBody, dispe
     };
     try {
         await mail_1.default.send(msg);
-        logger.info(`Email successfully sent to ${toEmail} for dispensary ${dispensaryName || 'N/A'} via SendGrid.`);
+        logger.info(`Email successfully sent to ${toEmail} (Subject: ${subject}) via SendGrid.`);
     }
     catch (error) {
-        logger.error(`Error sending email to ${toEmail} for ${dispensaryName || 'N/A'} via SendGrid:`, error);
+        logger.error(`Error sending email to ${toEmail} (Subject: ${subject}) via SendGrid:`, error);
         if (error.response) {
             logger.error("SendGrid Response Error Body:", error.response.body);
         }
@@ -113,6 +113,38 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
     </div>
   `;
 }
+/**
+ * Cloud Function triggered when a new Leaf User document is created.
+ * Sends a "Welcome" email to the new Leaf User.
+ */
+exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+        logger.error("No data associated with the user creation event.");
+        return null;
+    }
+    const userData = snapshot.data();
+    const userId = event.params.userId;
+    if (userData.role === 'LeafUser' && userData.email) {
+        logger.log(`New Leaf User created: ${userId} - ${userData.email}`);
+        const userDisplayName = userData.displayName || userData.email.split('@')[0];
+        const subject = "Welcome to The Dispensary Tree!";
+        const greeting = `Dear ${userDisplayName},`;
+        const content = [
+            `Thank you for joining The Dispensary Tree! We're excited to have you as part of our community.`,
+            `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+            `You've received 10 free credits to get started with our AI advisors.`,
+            `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
+        ];
+        const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+        const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
+        await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
+    }
+    else {
+        logger.log(`New user created (ID: ${userId}), but not a LeafUser or missing email. Role: ${userData.role || 'N/A'}`);
+    }
+    return null;
+});
 /**
  * Cloud Function triggered when a new dispensary document is created.
  * Sends an "Application Received" email to the owner.
@@ -222,7 +254,7 @@ exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{d
             const userDocSnap = await userDocRef.get();
             if (!userDocSnap.exists) {
                 firestoreUserDataUpdate.createdAt = admin.firestore.FieldValue.serverTimestamp();
-                firestoreUserDataUpdate.credits = 100;
+                firestoreUserDataUpdate.credits = 100; // Default credits for new owner
             }
             await userDocRef.set(firestoreUserDataUpdate, { merge: true });
             logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
@@ -780,11 +812,12 @@ exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
                 displayName: user.displayName,
                 photoURL: null,
                 role: 'LeafUser',
-                credits: 100,
+                credits: 100, // Sample users get more credits for testing
                 createdAt: admin.firestore.Timestamp.now(),
                 lastLoginAt: admin.firestore.Timestamp.now(),
                 status: 'Active',
                 dispensaryId: null,
+                welcomeCreditsAwarded: true, // Assume sample users have received this
             };
             await userDocRef.set(firestoreUserData, { merge: true });
             logger.info(`Successfully created/updated Firestore document for user: ${userRecord.uid}`);
@@ -797,7 +830,7 @@ exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
     }
     const allSuccessful = results.every(r => r.success);
     res.status(allSuccessful ? 200 : 207).json({
-        message: allSuccessful ? "All users seeded successfully." : "Some users may not have been seeded correctly. Check logs.",
+        message: allSuccessful ? "All sample users seeded successfully." : "Some sample users may not have been seeded correctly. Check logs.",
         results,
     });
 });
