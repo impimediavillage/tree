@@ -76,6 +76,7 @@ export interface UserDocData {
   status?: string;
   createdAt?: FirebaseFirestore.Timestamp | Date;
   lastLoginAt?: FirebaseFirestore.Timestamp | Date | null;
+  signupSource?: string; // Added to match User type
   // Add other fields if accessed by functions
 }
 
@@ -95,3 +96,5 @@ export interface NotificationData {
   // Consider adding type and severity if needed by functions
 }
 
+
+    
