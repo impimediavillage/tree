@@ -108,16 +108,34 @@ export default function AddProductPage() {
             if (isSpecialType) {
                 if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && ('THC' in parsedCategoriesData || 'CBD' in parsedCategoriesData)) {
                     setCategoryStructureObject(parsedCategoriesData as Record<string, any>);
-                    setMainCategoryOptions([]); // No general main categories for this type
+                    setMainCategoryOptions([]); 
                 } else {
-                    toast({ title: "Data Structure Error", description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD object format. Please contact admin.`, variant: "destructive", duration: 8000 });
+                    toast({ 
+                        title: "Data Structure Error", 
+                        description: `For dispensary type "${fetchedDispensary.dispensaryType}", the category data in Firestore (dispensaryTypeProductCategories collection) must be an object with 'THC' and 'CBD' as top-level keys, not an array. The generic category editor might save it as an array. Please ensure this type's data is correctly structured as an object.`, 
+                        variant: "destructive", 
+                        duration: 15000 
+                    });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
-            } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && Object.keys(parsedCategoriesData).length > 0) {
-              setCategoryStructureObject(parsedCategoriesData);
-              setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
+            } else if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
+                // For general types, categoriesData is an array of ProductCategory
+                // Convert it to a Record<string, any> for consistency in the component,
+                // where keys are main category names and values are their subcategory arrays.
+                const generalCategoryStructure: Record<string, any> = {};
+                parsedCategoriesData.forEach((cat: ProductCategory) => {
+                    if (cat.name) {
+                        generalCategoryStructure[cat.name] = cat.subcategories || []; // Store subcategories array
+                    }
+                });
+                setCategoryStructureObject(generalCategoryStructure);
+                setMainCategoryOptions(Object.keys(generalCategoryStructure).filter(key => key.trim() !== '').sort());
+            } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && Object.keys(parsedCategoriesData).length > 0) {
+                // This handles a direct object structure for general types if it ever occurs
+                setCategoryStructureObject(parsedCategoriesData);
+                setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
             } else {
-              toast({ title: "Info", description: `No product categories defined or structure is not an object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
+              toast({ title: "Info", description: `No product categories defined or structure is not an array/object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
               setCategoryStructureObject(null); setMainCategoryOptions([]);
             }
           } else {
@@ -154,11 +172,22 @@ export default function AddProductPage() {
 
   // Effect for GENERAL category selection (Main Category -> Sub L1)
   useEffect(() => {
-    if (isThcCbdSpecialType) return; // Skip if special type
-    const mainCategoryValue = selectedMainCategoryName;
-    if (mainCategoryValue && categoryStructureObject && categoryStructureObject[mainCategoryValue] && typeof categoryStructureObject[mainCategoryValue] === 'object') {
-      setSubCategoryL1Options(Object.keys(categoryStructureObject[mainCategoryValue]).filter(key => key.trim() !== '').sort());
-    } else { setSubCategoryL1Options([]); }
+    if (isThcCbdSpecialType || !selectedMainCategoryName || !categoryStructureObject) {
+      setSubCategoryL1Options([]);
+      if (!isThcCbdSpecialType) { // Only reset if not special type and main cat changed
+        form.setValue('subcategory', null);
+        setSelectedSubCategoryL1Name(null);
+        form.setValue('subSubcategory', null);
+        setSubCategoryL2Options([]);
+      }
+      return;
+    }
+    const mainCatData = categoryStructureObject[selectedMainCategoryName];
+    if (Array.isArray(mainCatData)) { // If mainCatData is an array of subcategories
+      setSubCategoryL1Options(mainCatData.map((sub: ProductCategory) => sub.name).filter(name => name && name.trim() !== '').sort());
+    } else {
+      setSubCategoryL1Options([]);
+    }
     form.setValue('subcategory', null); setSelectedSubCategoryL1Name(null);
     form.setValue('subSubcategory', null); setSubCategoryL2Options([]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,18 +195,24 @@ export default function AddProductPage() {
 
   // Effect for GENERAL category selection (Sub L1 -> Sub L2)
   useEffect(() => {
-    if (isThcCbdSpecialType) return; // Skip if special type
-    const mainCategoryValue = selectedMainCategoryName;
-    const subCategoryL1Value = selectedSubCategoryL1Name;
-    if (mainCategoryValue && subCategoryL1Value && categoryStructureObject &&
-        categoryStructureObject[mainCategoryValue] &&
-        categoryStructureObject[mainCategoryValue][subCategoryL1Value] &&
-        typeof categoryStructureObject[mainCategoryValue][subCategoryL1Value] === 'object') {
-      const nextLevel = categoryStructureObject[mainCategoryValue][subCategoryL1Value];
-      if (typeof nextLevel === 'object' && !Array.isArray(nextLevel) && Object.keys(nextLevel).length > 0) {
-         setSubCategoryL2Options(Object.keys(nextLevel).filter(key => key.trim() !== '').sort());
-      } else { setSubCategoryL2Options([]); }
-    } else { setSubCategoryL2Options([]); }
+    if (isThcCbdSpecialType || !selectedMainCategoryName || !selectedSubCategoryL1Name || !categoryStructureObject) {
+      setSubCategoryL2Options([]);
+      if (!isThcCbdSpecialType) {
+        form.setValue('subSubcategory', null);
+      }
+      return;
+    }
+    const mainCatData = categoryStructureObject[selectedMainCategoryName];
+    if (Array.isArray(mainCatData)) {
+      const subCatL1Object = mainCatData.find((sub: ProductCategory) => sub.name === selectedSubCategoryL1Name);
+      if (subCatL1Object && Array.isArray(subCatL1Object.subcategories)) {
+        setSubCategoryL2Options(subCatL1Object.subcategories.map((subSub: ProductCategory) => subSub.name).filter(name => name && name.trim() !== '').sort());
+      } else {
+        setSubCategoryL2Options([]);
+      }
+    } else {
+      setSubCategoryL2Options([]);
+    }
     form.setValue('subSubcategory', null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
@@ -198,7 +233,6 @@ export default function AddProductPage() {
     } else {
       setDeliveryMethodOptions([]);
     }
-    // Reset subsequent fields when primary compound changes
     form.setValue('subcategory', null); 
     setSelectedDeliveryMethod(null);
     setSpecificProductTypeOptions([]);
@@ -224,7 +258,6 @@ export default function AddProductPage() {
     } else { 
       setSpecificProductTypeOptions([]); 
     }
-    // Reset subSubcategory when delivery method changes
     form.setValue('subSubcategory', null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDeliveryMethod, selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form.setValue]);
@@ -252,7 +285,6 @@ export default function AddProductPage() {
   const handlePrimaryCompoundSelect = (compound: 'THC' | 'CBD') => {
     setSelectedPrimaryCompound(compound);
     form.setValue('category', compound, { shouldValidate: true });
-    // Reset subsequent selections for the special flow
     setSelectedDeliveryMethod(null);
     form.setValue('subcategory', null);
     setSpecificProductTypeOptions([]);
@@ -421,20 +453,18 @@ export default function AddProductPage() {
                       </Select> <FormMessage />
                     </FormItem> )} />
                 )}
-                {/* Hidden category field for validation, value set by THC/CBD buttons */}
                 <FormField control={form.control} name="category" render={({ field }) => ( <FormItem className="hidden"><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )} />
               </>
             ) : (
-              // General Category Selection
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem> <FormLabel>Main Category *</FormLabel>
                   {mainCategoryOptions.length > 0 ? (
                       <Select 
                           onValueChange={(value) => {
-                              field.onChange(value === "none" ? "" : value); // Ensure empty string if "None", not null
+                              field.onChange(value === "none" ? "" : value); 
                               setSelectedMainCategoryName(value === "none" ? null : value);
                           }} 
-                          value={field.value || undefined} // Use empty string for 'None' to match field type
+                          value={field.value || undefined} 
                       >
                           <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
                           <SelectContent>
@@ -449,10 +479,8 @@ export default function AddProductPage() {
                 </FormItem> )} />
             )}
             
-            {/* Common fields visible after primary category/compound selection or always if not special type */}
             {(selectedPrimaryCompound || !isThcCbdSpecialType) && (
               <>
-                {/* Conditional Subcategory L1 for general flow */}
                 {!isThcCbdSpecialType && selectedMainCategoryName && subCategoryL1Options.length > 0 && (
                   <FormField control={form.control} name="subcategory" render={({ field }) => (
                     <FormItem> <FormLabel>Subcategory (Level 1)</FormLabel>
@@ -472,7 +500,6 @@ export default function AddProductPage() {
                     </FormItem> )} />
                 )}
 
-                {/* Conditional Subcategory L2 for general flow */}
                 {!isThcCbdSpecialType && selectedSubCategoryL1Name && subCategoryL2Options.length > 0 && (
                   <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                     <FormItem> <FormLabel>Subcategory (Level 2)</FormLabel>
@@ -541,4 +568,3 @@ export default function AddProductPage() {
   );
 }
 
-    
