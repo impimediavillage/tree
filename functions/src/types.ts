@@ -77,6 +77,7 @@ export interface UserDocData {
   createdAt?: FirebaseFirestore.Timestamp | Date;
   lastLoginAt?: FirebaseFirestore.Timestamp | Date | null;
   signupSource?: string; // Added to match User type
+  welcomeCreditsAwarded?: boolean; // Added to fix the deployment error
   // Add other fields if accessed by functions
 }
 
