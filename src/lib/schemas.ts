@@ -209,7 +209,7 @@ export const productSchema = z.object({
   effects: z.array(z.string()).optional().nullable().default([]),
   flavors: z.array(z.string()).optional().nullable().default([]),
   medicalUses: z.array(z.string()).optional().nullable().default([]),
-  stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), // New field
+  stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(),
 
   // Apparel Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
@@ -523,3 +523,4 @@ export const aiAdvisorConfigSchema = z.object({
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
 
+    

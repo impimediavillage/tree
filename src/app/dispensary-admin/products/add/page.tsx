@@ -39,7 +39,7 @@ const sampleUnits = [
   // Ounces grouped and ordered
   "0.25 oz", "0.5 oz", "oz",
   // Milliliters & Litres grouped and ordered
-  "3ml", "5ml", "10ml", "50ml", "100ml", "ml",
+  "3ml", "5ml", "10ml", "50ml", "100ml", "ml", 
   "1 litre", "2 litres", "5 litres", "10 litres",
   // Other discrete units (sorted alphabetically)
   "clone", "joint", "mg", "pack", "piece", "seed", "unit"
@@ -591,7 +591,7 @@ export default function AddProductPage() {
                     <CardContent className="p-0 text-sm text-amber-600 space-y-2">
                         <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" sticker designs and cap designs.</p>
                         <p>Our beautiful sticker and cap range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker/cap sold through the platform.</p>
-                        <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers/caps themselves.</p>
+                        <p className="mt-2 font-semibold">Please remember: Any THC info is purely for recreational knowledge building for Cannibinoid enthusiasts, and is not relevant for Sticker sales.</p>
                     </CardContent>
                         <FormField
                         control={form.control}
@@ -725,7 +725,21 @@ export default function AddProductPage() {
                     {priceTierFields.map((tierField, index) => (
                         <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end p-4 border rounded-md shadow-sm bg-muted/30">
                             <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl><SelectContent>{sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="text" placeholder="0.00" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( 
+                                <FormItem>
+                                    <FormLabel>Price</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            type="text"
+                                            placeholder="0.00" 
+                                            {...field} 
+                                            value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : (field.value === null || field.value === undefined ? '' : String(field.value))}
+                                            onChange={e => field.onChange(e.target.value)} // Pass string directly, Zod will coerce
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem> 
+                            )} />
                             {priceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 self-center md:self-end mt-2 md:mt-0 md:mb-1.5"><Trash2 className="h-5 w-5" /></Button> )}
                         </div>
                     ))}
