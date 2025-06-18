@@ -32,28 +32,28 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const sampleUnits = [
-  // Grams & Kilograms
+  // Grams & Kilograms grouped and ordered
   "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
   "1kg", "2kg", "5kg", "10kg", "10kg+",
-  // Ounces
-  "0.25 oz", "0.5 oz", "oz", 
-  // Milliliters & Litres
-  "ml", "3ml", "5ml", "10ml", "50ml", "100ml", 
+  // Ounces grouped and ordered
+  "0.25 oz", "0.5 oz", "oz",
+  // Milliliters & Litres grouped and ordered
+  "3ml", "5ml", "10ml", "50ml", "100ml", "ml", 
   "1 litre", "2 litres", "5 litres", "10 litres",
   // Other discrete units (sorted alphabetically)
   "clone", "joint", "mg", "pack", "piece", "seed", "unit"
 ];
 
+
 const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
 
-const apparelTypes = [ // Renamed from clothingTypes
+const apparelTypes = [ 
   "Head Gear / Neck Wear", "Hoodies / Jackets / Sweaters", "Long Sleeve / Short Sleeve Shirts",
   "Streetwear Trousers / Shorts / Track Pants", "Socks", "Footwear", "Jewelry & Accessories"
 ];
-const apparelGenders = ['Mens', 'Womens', 'Unisex']; // Renamed from clothingGenders
+const apparelGenders = ['Mens', 'Womens', 'Unisex']; 
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 
-// Standard sizes data (example, should be comprehensive)
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': {
     'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'],
@@ -69,7 +69,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   },
   'Unisex': {
     'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
-    // Add other common unisex systems if needed
   }
 };
 
@@ -88,7 +87,7 @@ export default function EditProductPage() {
 
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
-  const [selectedProductStream, setSelectedProductStream] = useState<'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null>(null); // Updated
+  const [selectedProductStream, setSelectedProductStream] = useState<'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null>(null); 
   
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
@@ -124,10 +123,10 @@ export default function EditProductPage() {
   });
 
 
-  const determineProductStream = (product: ProductType | null): 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null => { // Updated
+  const determineProductStream = (product: ProductType | null): 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null => { 
     if (!product || !product.category) return null;
     if (product.category === 'THC' || product.category === 'CBD') return product.category;
-    if (apparelTypes.includes(product.category)) return 'Apparel'; // Updated
+    if (apparelTypes.includes(product.category)) return 'Apparel'; 
     if (product.category === 'Smoking Gear') return 'Smoking Gear';
     return null; 
   };
@@ -177,7 +176,7 @@ export default function EditProductPage() {
              } else if (specialTypeDataSource && typeof specialTypeDataSource === 'object' && (specialTypeDataSource.THC || specialTypeDataSource.CBD)) { 
                  localCategoryStructureObject = specialTypeDataSource;
              }
-          } else if (!isSpecialType) { // General type logic
+          } else if (!isSpecialType) { 
              let parsedCategoriesData = rawCategoriesData;
              if (typeof rawCategoriesData === 'string') {
                  try { parsedCategoriesData = JSON.parse(rawCategoriesData); } 
@@ -250,7 +249,6 @@ export default function EditProductPage() {
         setImagePreview(productData.imageUrl || null);
         setOldImageUrl(productData.imageUrl);
 
-        // Initialize dependent dropdowns based on loaded product data
         if (isSpecialType && initialStream && localCategoryStructureObject) {
           if (initialStream === 'THC' || initialStream === 'CBD') {
             const compoundDetails = localCategoryStructureObject[initialStream];
@@ -277,7 +275,6 @@ export default function EditProductPage() {
                 }
             }
         }
-        // Initialize availableStandardSizes based on loaded product data for Apparel
         if (initialStream === 'Apparel' && productData.gender && productData.sizingSystem) {
           const sizes = standardSizesData[productData.gender]?.[productData.sizingSystem] || [];
           setAvailableStandardSizes(sizes);
@@ -401,7 +398,6 @@ export default function EditProductPage() {
     }
   }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType, existingProduct]);
   
-  // Effect for Apparel Standard Sizes (Edit Page)
   const watchedGender = form.watch('gender');
   const watchedSizingSystem = form.watch('sizingSystem');
 
@@ -437,11 +433,7 @@ export default function EditProductPage() {
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
   
-  const handleProductStreamSelect = (stream: 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear') => { // Updated
-    // This function is primarily for the 'Add Product' page.
-    // For 'Edit Product', the stream is determined from existing product data and should not be changeable.
-    // If we were to allow changing stream type on edit, it would require more complex data migration logic.
-    // For now, this remains for consistency but won't be actively used to change stream type on edit page.
+  const handleProductStreamSelect = (stream: 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear') => { 
     const currentValues = form.getValues();
     form.reset({
       ...currentValues,
@@ -460,7 +452,7 @@ export default function EditProductPage() {
         setDeliveryMethodOptions([]);
         setSpecificProductTypeOptions([]);
     }
-    if (stream !== 'Apparel' && !isThcCbdSpecialType) { // Updated
+    if (stream !== 'Apparel' && !isThcCbdSpecialType) { 
         setSelectedMainCategoryName(null);
         setSubCategoryL1Options([]);
         setSelectedSubCategoryL1Name(null);
@@ -541,17 +533,14 @@ export default function EditProductPage() {
         productUpdateData.effects = data.effects || [];
         productUpdateData.flavors = data.flavors || [];
         productUpdateData.medicalUses = data.medicalUses || [];
-        // Nullify apparel specific
         productUpdateData.gender = null; productUpdateData.sizingSystem = null; productUpdateData.sizes = [];
-      } else if (selectedProductStream === 'Apparel') { // Updated
+      } else if (selectedProductStream === 'Apparel') { 
         productUpdateData.gender = data.gender || null;
         productUpdateData.sizingSystem = data.sizingSystem || null;
         productUpdateData.sizes = data.sizes || [];
-        // Nullify THC/CBD specific
         productUpdateData.strain = null; productUpdateData.thcContent = null; productUpdateData.cbdContent = null;
         productUpdateData.effects = []; productUpdateData.flavors = []; productUpdateData.medicalUses = [];
       } else if (selectedProductStream === 'Smoking Gear') {
-        // Nullify THC/CBD and Apparel specific
         productUpdateData.strain = null; productUpdateData.thcContent = null; productUpdateData.cbdContent = null;
         productUpdateData.effects = []; productUpdateData.flavors = []; productUpdateData.medicalUses = [];
         productUpdateData.gender = null; productUpdateData.sizingSystem = null; productUpdateData.sizes = [];
@@ -606,12 +595,12 @@ export default function EditProductPage() {
                         Product Stream
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {(['THC', 'CBD', 'Apparel', 'Smoking Gear'] as const).map((stream) => { // Updated
+                        {(['THC', 'CBD', 'Apparel', 'Smoking Gear'] as const).map((stream) => { 
                             let IconComponent = PackagePlus;
                             let iconColor = "text-gray-500";
                             if (stream === 'THC') { IconComponent = Flame; iconColor = "text-red-500"; }
                             else if (stream === 'CBD') { IconComponent = LeafIconLucide; iconColor = "text-green-500"; }
-                            else if (stream === 'Apparel') { IconComponent = Shirt; iconColor = "text-blue-500"; } // Updated
+                            else if (stream === 'Apparel') { IconComponent = Shirt; iconColor = "text-blue-500"; } 
                             else if (stream === 'Smoking Gear') { IconComponent = Cigarette; iconColor = "text-orange-500"; }
 
                             return (
@@ -621,7 +610,7 @@ export default function EditProductPage() {
                                     variant={selectedProductStream === stream ? 'default' : 'outline'}
                                     className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')}
                                     onClick={() => handleProductStreamSelect(stream)}
-                                    disabled // Stream selection is disabled for edit
+                                    disabled 
                                 >
                                     <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", iconColor)} />
                                     <span className="text-lg sm:text-xl font-semibold">{stream}</span>
@@ -675,8 +664,8 @@ export default function EditProductPage() {
                         )}
                          <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="number" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -684,10 +673,10 @@ export default function EditProductPage() {
                          <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
                     </>
                 )}
-                {selectedProductStream === 'Apparel' && ( // Updated
+                {selectedProductStream === 'Apparel' && ( 
                     <>
                         <FormField control={form.control} name="category" render={({ field }) => (
-                            <FormItem> <FormLabel>Apparel Type *</FormLabel> {/* Updated */}
+                            <FormItem> <FormLabel>Apparel Type *</FormLabel> 
                             <Select onValueChange={field.onChange} value={field.value || undefined}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select apparel type" /></SelectTrigger></FormControl>
                                 <SelectContent>{apparelTypes.map((type) => ( <SelectItem key={type} value={type}>{type}</SelectItem> ))}</SelectContent>
@@ -740,7 +729,7 @@ export default function EditProductPage() {
                     {priceTierFields.map((tierField, index) => (
                         <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end p-4 border rounded-md shadow-sm bg-muted/30">
                             <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl><SelectContent>{sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="text" placeholder="0.00" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
                             {priceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 self-center md:self-end mt-2 md:mt-0 md:mb-1.5"><Trash2 className="h-5 w-5" /></Button> )}
                         </div>
                     ))}
