@@ -30,9 +30,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const sampleUnits = [
-  "gram", "10 grams", "100 grams", "200 grams", "500 grams",
+  "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
   "1kg", "2kg", "5kg", "10kg", "10kg+",
-  "oz", "0.5 oz", "0.25 oz",
+  "0.25 oz", "0.5 oz", "oz", 
   "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"
 ].sort();
 
@@ -71,7 +71,7 @@ export default function AddProductPage() {
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       strain: '', thcContent: undefined, cbdContent: undefined, 
-      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], // Initialize with one tier
+      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], 
       quantityInStock: undefined, imageUrl: null,
       labTested: false, effects: [], flavors: [], medicalUses: [],
       isAvailableForPool: false, tags: [],
@@ -111,21 +111,22 @@ export default function AddProductPage() {
             let dataToProcess = categoriesDocData.categoriesData;
 
             if (isSpecialType) {
+                let specialTypeBase = dataToProcess;
                 if (dataToProcess && typeof dataToProcess === 'object' && dataToProcess.hasOwnProperty('thcCbdProductCategories')) {
-                    dataToProcess = (dataToProcess as any).thcCbdProductCategories;
+                    specialTypeBase = (dataToProcess as any).thcCbdProductCategories;
                 }
                 
                 let structuredDataForSpecialType: Record<string, any> | null = null;
-                if (Array.isArray(dataToProcess)) { // Handles array of {name: "THC", ...}, {name: "CBD", ...}
-                    const thcData = dataToProcess.find((item: any) => item.name === 'THC');
-                    const cbdData = dataToProcess.find((item: any) => item.name === 'CBD');
+                if (Array.isArray(specialTypeBase)) { 
+                    const thcData = specialTypeBase.find((item: any) => item.name === 'THC');
+                    const cbdData = specialTypeBase.find((item: any) => item.name === 'CBD');
                     if (thcData || cbdData) {
                         structuredDataForSpecialType = {};
                         if (thcData) structuredDataForSpecialType.THC = thcData;
                         if (cbdData) structuredDataForSpecialType.CBD = cbdData;
                     }
-                } else if (dataToProcess && typeof dataToProcess === 'object' && (dataToProcess.THC || dataToProcess.CBD)) { // Handles direct object {THC: ..., CBD: ...}
-                    structuredDataForSpecialType = dataToProcess;
+                } else if (specialTypeBase && typeof specialTypeBase === 'object' && (specialTypeBase.THC || specialTypeBase.CBD)) { 
+                    structuredDataForSpecialType = specialTypeBase;
                 }
                 
                 if (structuredDataForSpecialType) {
@@ -134,13 +135,13 @@ export default function AddProductPage() {
                 } else {
                     toast({ 
                         title: "Data Structure Error", 
-                        description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD object format or array. Path checked: categoriesData.thcCbdProductCategories. Please contact admin.`, 
+                        description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD format. Path checked: categoriesData.thcCbdProductCategories (should be object or array of THC/CBD objects). Please contact admin.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
-            } else { // Logic for general dispensary types
+            } else { 
                  let parsedCategoriesData = dataToProcess;
                 if (typeof dataToProcess === 'string') {
                     try { parsedCategoriesData = JSON.parse(dataToProcess); } 
@@ -281,7 +282,7 @@ export default function AddProductPage() {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) { 
         toast({ title: "Image Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
         return;
       }
@@ -340,7 +341,7 @@ export default function AddProductPage() {
         imageUrl: uploadedImageUrl,
         thcContent: data.thcContent ?? null,
         cbdContent: data.cbdContent ?? null,
-        priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), // Ensure valid tiers
+        priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
         quantityInStock: data.quantityInStock ?? 0,
         subcategory: data.subcategory || null,
         subSubcategory: data.subSubcategory || null,
@@ -534,7 +535,6 @@ export default function AddProductPage() {
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description of the product, its benefits, and usage instructions..." {...field} rows={4} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                 
-                {/* Pricing Tiers Section */}
                 <div className="space-y-3 pt-2">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
                     {priceTierFields.map((tierField, index) => (
@@ -559,7 +559,14 @@ export default function AddProductPage() {
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Price</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                                    <FormControl><Input 
+                                        type="number" 
+                                        step="0.01" 
+                                        placeholder="0.00" 
+                                        {...field} 
+                                        value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} 
+                                        onChange={e => field.onChange(e.target.value)} 
+                                    /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -579,13 +586,45 @@ export default function AddProductPage() {
                 <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
                 
                 <div className="grid md:grid-cols-3 gap-6">
-                  <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} onChange={e => field.onChange(parseInt(e.target.value,10))} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="quantityInStock" render={({ field }) => ( 
+                    <FormItem><FormLabel>Stock Qty *</FormLabel>
+                        <FormControl><Input 
+                            type="number" 
+                            placeholder="0" 
+                            {...field} 
+                            value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} 
+                            onChange={e => field.onChange(e.target.value)} 
+                        /></FormControl>
+                        <FormMessage />
+                    </FormItem> )} />
                   <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                 </div>
                 <Separator /> <h3 className="text-lg font-medium text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Additional Product Details</h3>
                 <div className="grid md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="thcContent" render={({ field }) => ( 
+                        <FormItem><FormLabel>THC Content (%)</FormLabel>
+                            <FormControl><Input 
+                                type="number" 
+                                step="0.1" 
+                                placeholder="e.g., 22.5" 
+                                {...field} 
+                                value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} 
+                                onChange={e => field.onChange(e.target.value)} 
+                            /></FormControl>
+                            <FormMessage />
+                        </FormItem> )} />
+                    <FormField control={form.control} name="cbdContent" render={({ field }) => ( 
+                        <FormItem><FormLabel>CBD Content (%)</FormLabel>
+                            <FormControl><Input 
+                                type="number" 
+                                step="0.1" 
+                                placeholder="e.g., 0.8" 
+                                {...field} 
+                                value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} 
+                                onChange={e => field.onChange(e.target.value)} 
+                            /></FormControl>
+                            <FormMessage />
+                        </FormItem> )} />
                 </div>
                 <div className="space-y-4">
                   <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
