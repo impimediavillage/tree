@@ -197,6 +197,7 @@ export const productSchema = z.object({
 
   // Clothing Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
+  sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Universal', 'Other']).optional().nullable(),
   sizes: z.array(z.string()).optional().nullable().default([]),
   
   // General

@@ -93,6 +93,7 @@ export interface Product {
 
   // Clothing Specific
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;
+  sizingSystem?: 'UK/SA' | 'US' | 'EURO' | 'Universal' | 'Other' | null;
   sizes?: string[] | null;
   
   // General
