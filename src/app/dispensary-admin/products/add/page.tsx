@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -43,7 +43,7 @@ export default function AddProductPage() {
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   
-  // States for general category selection
+  // States for general category selection (used if not special THC/CBD type)
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
@@ -100,18 +100,22 @@ export default function AddProductPage() {
             const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
             let parsedCategoriesData = categoriesDocData.categoriesData;
 
-            if (typeof parsedCategoriesData === 'string') { // Handle if data is stored as JSON string
+            if (typeof parsedCategoriesData === 'string') {
                 try { parsedCategoriesData = JSON.parse(parsedCategoriesData); } 
                 catch (jsonError) { console.error("Failed to parse categoriesData JSON:", jsonError); parsedCategoriesData = {}; }
             }
             
-            if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && Object.keys(parsedCategoriesData).length > 0) {
+            if (isSpecialType) {
+                if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && ('THC' in parsedCategoriesData || 'CBD' in parsedCategoriesData)) {
+                    setCategoryStructureObject(parsedCategoriesData as Record<string, any>);
+                    setMainCategoryOptions([]); // No general main categories for this type
+                } else {
+                    toast({ title: "Data Structure Error", description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD object format. Please contact admin.`, variant: "destructive", duration: 8000 });
+                    setCategoryStructureObject(null); setMainCategoryOptions([]);
+                }
+            } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && Object.keys(parsedCategoriesData).length > 0) {
               setCategoryStructureObject(parsedCategoriesData);
-              if (!isSpecialType) {
-                setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
-              } else {
-                setMainCategoryOptions([]); // For THC/CBD, options are handled by buttons
-              }
+              setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
             } else {
               toast({ title: "Info", description: `No product categories defined or structure is not an object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
               setCategoryStructureObject(null); setMainCategoryOptions([]);
@@ -148,9 +152,9 @@ export default function AddProductPage() {
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, fetchInitialData]);
 
-  // Effects for GENERAL category selection
+  // Effect for GENERAL category selection (Main Category -> Sub L1)
   useEffect(() => {
-    if (isThcCbdSpecialType) return;
+    if (isThcCbdSpecialType) return; // Skip if special type
     const mainCategoryValue = selectedMainCategoryName;
     if (mainCategoryValue && categoryStructureObject && categoryStructureObject[mainCategoryValue] && typeof categoryStructureObject[mainCategoryValue] === 'object') {
       setSubCategoryL1Options(Object.keys(categoryStructureObject[mainCategoryValue]).filter(key => key.trim() !== '').sort());
@@ -160,8 +164,9 @@ export default function AddProductPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
+  // Effect for GENERAL category selection (Sub L1 -> Sub L2)
   useEffect(() => {
-    if (isThcCbdSpecialType) return;
+    if (isThcCbdSpecialType) return; // Skip if special type
     const mainCategoryValue = selectedMainCategoryName;
     const subCategoryL1Value = selectedSubCategoryL1Name;
     if (mainCategoryValue && subCategoryL1Value && categoryStructureObject &&
@@ -177,7 +182,7 @@ export default function AddProductPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
-  // Effects for THC/CBD SPECIAL dispensary type
+  // Effect for THC/CBD SPECIAL dispensary type - Populate Delivery Methods
   useEffect(() => {
     if (!isThcCbdSpecialType || !selectedPrimaryCompound || !categoryStructureObject) {
       setDeliveryMethodOptions([]);
@@ -193,13 +198,15 @@ export default function AddProductPage() {
     } else {
       setDeliveryMethodOptions([]);
     }
+    // Reset subsequent fields when primary compound changes
     form.setValue('subcategory', null); 
     setSelectedDeliveryMethod(null);
     setSpecificProductTypeOptions([]);
     form.setValue('subSubcategory', null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form]);
+  }, [selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form.setValue]);
 
+  // Effect for THC/CBD SPECIAL dispensary type - Populate Specific Product Types
   useEffect(() => {
     if (!isThcCbdSpecialType || !selectedPrimaryCompound || !selectedDeliveryMethod || !categoryStructureObject) {
       setSpecificProductTypeOptions([]);
@@ -211,11 +218,16 @@ export default function AddProductPage() {
       const types = compoundData['Delivery Methods'][selectedDeliveryMethod];
       if (Array.isArray(types)) {
         setSpecificProductTypeOptions(types.sort());
-      } else { setSpecificProductTypeOptions([]); }
-    } else { setSpecificProductTypeOptions([]); }
+      } else { 
+        setSpecificProductTypeOptions([]); 
+      }
+    } else { 
+      setSpecificProductTypeOptions([]); 
+    }
+    // Reset subSubcategory when delivery method changes
     form.setValue('subSubcategory', null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDeliveryMethod, selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form]);
+  }, [selectedDeliveryMethod, selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form.setValue]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -367,7 +379,7 @@ export default function AddProductPage() {
                       className={cn("h-auto p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedPrimaryCompound === 'CBD' && 'ring-2 ring-primary ring-offset-2')}
                       onClick={() => handlePrimaryCompoundSelect('CBD')}
                     >
-                      <LeafIcon className="h-12 w-12 mb-2 text-green-500" />
+                      <LeafIconLucide className="h-12 w-12 mb-2 text-green-500" />
                       <span className="text-2xl font-semibold">CBD</span>
                       <p className="text-sm text-muted-foreground text-center">Cannabidiol based products</p>
                     </Button>
@@ -419,10 +431,10 @@ export default function AddProductPage() {
                   {mainCategoryOptions.length > 0 ? (
                       <Select 
                           onValueChange={(value) => {
-                              field.onChange(value === "none" ? "" : value);
+                              field.onChange(value === "none" ? "" : value); // Ensure empty string if "None", not null
                               setSelectedMainCategoryName(value === "none" ? null : value);
                           }} 
-                          value={field.value ?? undefined}
+                          value={field.value || undefined} // Use empty string for 'None' to match field type
                       >
                           <FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl>
                           <SelectContent>
