@@ -174,7 +174,22 @@ export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 // Schema for individual price tier
 export const priceTierSchema = z.object({
   unit: z.string().min(1, "Unit is required."),
-  price: z.coerce.number({ invalid_type_error: "Price must be a number."}).positive("Price must be a positive number."),
+  price: z.coerce.number({ 
+      required_error: "Price is required.",
+      invalid_type_error: "Price must be a valid number (e.g., 10.99)." 
+    })
+    .positive({ message: "Price must be a positive number." })
+    .refine(val => {
+        // Check if the number has at most two decimal places
+        const valueTimes100 = val * 100;
+        // Using a small epsilon for floating point comparisons
+        return Math.abs(valueTimes100 - Math.round(valueTimes100)) < 0.00001;
+    }, {
+      message: "Price can have at most two decimal places.",
+    })
+    .refine(val => val <= 9999999.99, { 
+        message: "Price amount is too high (max 9,999,999.99)."
+    }),
 });
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
