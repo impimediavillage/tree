@@ -157,7 +157,7 @@ export type ProductCategoryFormData = z.infer<typeof productCategorySchema>;
 
 // Schema for managing an array of ProductCategories (used for the new admin page)
 export const dispensaryTypeProductCategoriesSchema = z.object({
-  categoriesData: z.array(productCategorySchema).optional().default([]), // Changed from 'categories'
+  categoriesData: z.array(productCategorySchema).optional().default([]), 
 });
 export type DispensaryTypeProductCategoriesFormData = z.infer<typeof dispensaryTypeProductCategoriesSchema>;
 
@@ -179,26 +179,34 @@ export const priceTierSchema = z.object({
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
 
-// Schema for Product (updated with subSubcategory and priceTiers)
+// Schema for Product
 export const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
   subcategory: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
+  
+  // THC/CBD Specific
   strain: z.string().optional().nullable(),
   thcContent: z.coerce.number().min(0).max(100).optional().nullable(),
   cbdContent: z.coerce.number().min(0).max(100).optional().nullable(),
+  effects: z.array(z.string()).optional().nullable().default([]),
+  flavors: z.array(z.string()).optional().nullable().default([]),
+  medicalUses: z.array(z.string()).optional().nullable().default([]),
+
+  // Clothing Specific
+  gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
+  sizes: z.array(z.string()).optional().nullable().default([]),
+  
+  // General
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative."),
   imageUrl: z.string().url("Invalid image URL.").or(z.literal(null)).optional().nullable(),
   labTested: z.boolean().default(false).optional(),
-  effects: z.array(z.string()).optional().default([]),
-  flavors: z.array(z.string()).optional().default([]),
-  medicalUses: z.array(z.string()).optional().default([]),
   isAvailableForPool: z.boolean().default(false).optional(),
-  tags: z.array(z.string()).optional().default([]),
+  tags: z.array(z.string()).optional().nullable().default([]),
 });
 export type ProductFormData = z.infer<typeof productSchema>;
 
@@ -328,7 +336,7 @@ export const userSchema = z.object({
   status: z.enum(['Active', 'Suspended', 'PendingApproval']).default('Active'),
   preferredDispensaryTypes: z.array(z.string()).optional().default([]),
   welcomeCreditsAwarded: z.boolean().optional().default(false),
-  signupSource: z.string().optional(), // Added for tracking signup source
+  signupSource: z.string().optional(), 
 });
 export type User = z.infer<typeof userSchema>;
 
@@ -434,15 +442,12 @@ export type Dispensary = z.infer<typeof dispensaryDbSchema>;
 
 
 // Schema for Product (as stored in Firestore, includes ID and denormalized fields)
-// Note: `price` and `unit` are now part of `priceTiers` in the Product interface
-export const productDbSchema = productSchema.omit({ priceTiers: true /* Will be handled by the Product interface directly if needed */ }).extend({
+export const productDbSchema = productSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),
   dispensaryType: z.string(),
   productOwnerEmail: z.string().email(),
-  currency: z.string(), // Top-level currency
-  priceTiers: z.array(priceTierSchema), // Array of price tiers
   createdAt: z.any(),
   updatedAt: z.any(),
   dispensaryLocation: z.object({
@@ -450,20 +455,19 @@ export const productDbSchema = productSchema.omit({ priceTiers: true /* Will be 
     latitude: z.number().optional().nullable(),
     longitude: z.number().optional().nullable(),
   }).optional().nullable(),
-  // Omitting single price/unit as they are replaced by priceTiers
 });
-export type Product = z.infer<typeof productDbSchema>; // This form data is for schema validation, direct Product type is in types/index.ts
+export type Product = z.infer<typeof productDbSchema>; 
 
 // Schema for ProductRequest (as stored in Firestore, includes ID)
 export const productRequestDbSchema = productRequestSchema.extend({
   id: z.string().optional(),
   createdAt: z.any(),
   updatedAt: z.any(),
-  productDetails: z.object({ // This structure should align with how product info is denormalized
+  productDetails: z.object({ 
     name: z.string(),
     category: z.string(),
     currency: z.string(),
-    priceTiers: z.array(priceTierSchema), // Reflect new price tier structure
+    priceTiers: z.array(priceTierSchema), 
     imageUrl: z.string().url().optional().nullable(),
   }).optional().nullable(),
 });
