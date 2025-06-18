@@ -195,9 +195,9 @@ export const productSchema = z.object({
   flavors: z.array(z.string()).optional().nullable().default([]),
   medicalUses: z.array(z.string()).optional().nullable().default([]),
 
-  // Clothing Specific
+  // Apparel Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
-  sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Universal', 'Other']).optional().nullable(),
+  sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other']).optional().nullable(),
   sizes: z.array(z.string()).optional().nullable().default([]),
   
   // General

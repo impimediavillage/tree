@@ -79,7 +79,7 @@ export interface Product {
   productOwnerEmail: string;
   name: string;
   description: string;
-  category: string; // Main category: e.g., "THC", "CBD", "Clothing Type", "Smoking Gear"
+  category: string; // Main category: e.g., "THC", "CBD", "Apparel Type", "Smoking Gear"
   subcategory?: string | null; // e.g., Delivery Method for THC/CBD, or null for others
   subSubcategory?: string | null; // e.g., Specific Product Type for THC/CBD, or null for others
   
@@ -91,9 +91,9 @@ export interface Product {
   flavors?: string[] | null;
   medicalUses?: string[] | null;
 
-  // Clothing Specific
+  // Apparel Specific
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;
-  sizingSystem?: 'UK/SA' | 'US' | 'EURO' | 'Universal' | 'Other' | null;
+  sizingSystem?: 'UK/SA' | 'US' | 'EURO' | 'Alpha (XS-XXXL)' | 'Other' | null;
   sizes?: string[] | null;
   
   // General

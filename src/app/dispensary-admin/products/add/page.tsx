@@ -22,12 +22,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Cigarette } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Cigarette, Palette, Ruler, Sparkles, Brush, Delete } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 const sampleUnits = [
   // Grams & Kilograms
@@ -44,12 +47,32 @@ const sampleUnits = [
 
 const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
 
-const clothingTypes = [
+const apparelTypes = [ // Renamed from clothingTypes
   "Head Gear / Neck Wear", "Hoodies / Jackets / Sweaters", "Long Sleeve / Short Sleeve Shirts",
   "Streetwear Trousers / Shorts / Track Pants", "Socks", "Footwear", "Jewelry & Accessories"
 ];
-const clothingGenders = ['Mens', 'Womens', 'Unisex'];
-const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Universal', 'Other'];
+const apparelGenders = ['Mens', 'Womens', 'Unisex']; // Renamed from clothingGenders
+const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
+
+// Standard sizes data (example, should be comprehensive)
+const standardSizesData: Record<string, Record<string, string[]>> = {
+  'Mens': {
+    'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'],
+    'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'],
+    'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'],
+    'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL']
+  },
+  'Womens': {
+    'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'],
+    'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'],
+    'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'],
+    'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
+  },
+  'Unisex': {
+    'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
+    // Add other common unisex systems if needed
+  }
+};
 
 
 export default function AddProductPage() {
@@ -63,7 +86,7 @@ export default function AddProductPage() {
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   
-  const [selectedProductStream, setSelectedProductStream] = useState<'THC' | 'CBD' | 'Clothing' | 'Smoking Gear' | null>(null);
+  const [selectedProductStream, setSelectedProductStream] = useState<'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null>(null); // Updated
   
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
@@ -74,6 +97,8 @@ export default function AddProductPage() {
   const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string | null>(null);
   const [specificProductTypeOptions, setSpecificProductTypeOptions] = useState<string[]>([]);
+
+  const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -101,8 +126,7 @@ export default function AddProductPage() {
   const resetProductStreamSpecificFields = () => {
     form.reset({
       ...form.getValues(), // Keep general fields
-      // THC/CBD specific
-      category: '', // Will be set by stream selection
+      category: '', 
       subcategory: null,
       subSubcategory: null,
       strain: null,
@@ -111,7 +135,6 @@ export default function AddProductPage() {
       effects: [],
       flavors: [],
       medicalUses: [],
-      // Clothing specific
       gender: null,
       sizingSystem: null,
       sizes: [],
@@ -123,6 +146,7 @@ export default function AddProductPage() {
     setSubCategoryL1Options([]);
     setSelectedSubCategoryL1Name(null);
     setSubCategoryL2Options([]);
+    setAvailableStandardSizes([]);
   };
 
 
@@ -178,13 +202,13 @@ export default function AddProductPage() {
                 } else {
                      toast({ 
                         title: "Data Structure Error (THC/CBD Type)", 
-                        description: `For "${fetchedDispensary.dispensaryType}", 'categoriesData.thcCbdProductCategories' must be an object with 'THC'/'CBD' keys, or an array of objects with name "THC"/"CBD". Please check Firestore.`, 
+                        description: `For "${fetchedDispensary.dispensaryType}", 'categoriesData.thcCbdProductCategories' must be an object with 'THC'/'CBD' keys (or an array of objects with name "THC"/"CBD"). Please check Firestore.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
-            } else { // General dispensary type logic
+            } else { 
                 let parsedCategoriesData = rawCategoriesData;
                 if (typeof rawCategoriesData === 'string') {
                     try { parsedCategoriesData = JSON.parse(rawCategoriesData); } 
@@ -330,6 +354,18 @@ export default function AddProductPage() {
     form.setValue('subSubcategory', null);
   }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
+  // Effect for Apparel Standard Sizes
+  const watchedGender = form.watch('gender');
+  const watchedSizingSystem = form.watch('sizingSystem');
+
+  useEffect(() => {
+    if (selectedProductStream === 'Apparel' && watchedGender && watchedSizingSystem) {
+      const sizes = standardSizesData[watchedGender]?.[watchedSizingSystem] || [];
+      setAvailableStandardSizes(sizes);
+    } else {
+      setAvailableStandardSizes([]);
+    }
+  }, [selectedProductStream, watchedGender, watchedSizingSystem]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -350,14 +386,26 @@ export default function AddProductPage() {
     if (imageInputRef.current) imageInputRef.current.value = "";
   };
   
-  const handleProductStreamSelect = (stream: 'THC' | 'CBD' | 'Clothing' | 'Smoking Gear') => {
+  const handleProductStreamSelect = (stream: 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear') => { // Updated
     resetProductStreamSpecificFields(); 
     setSelectedProductStream(stream);
     if (stream === 'THC' || stream === 'CBD') {
       form.setValue('category', stream, { shouldValidate: true });
     } else if (stream === 'Smoking Gear') {
       form.setValue('category', 'Smoking Gear', { shouldValidate: true });
-    }
+    } // For Apparel, category is set by Apparel Type dropdown
+  };
+
+  const toggleStandardSize = (size: string) => {
+    const currentSizes = form.getValues('sizes') || [];
+    const newSizes = currentSizes.includes(size)
+      ? currentSizes.filter(s => s !== size)
+      : [...currentSizes, size];
+    form.setValue('sizes', newSizes, { shouldValidate: true });
+  };
+
+  const clearSelectedSizes = () => {
+    form.setValue('sizes', [], { shouldValidate: true });
   };
 
 
@@ -366,7 +414,7 @@ export default function AddProductPage() {
       toast({ title: "Error", description: "User or dispensary data not found.", variant: "destructive" }); return;
     }
      if (!data.category || data.category.trim() === "") {
-        toast({ title: "Category Required", description: "Please select a product stream and category.", variant: "destructive"});
+        toast({ title: "Category Required", description: "Please select a product stream and category/type.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
 
@@ -389,7 +437,7 @@ export default function AddProductPage() {
     setUploadProgress(100); 
 
     try {
-      const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation'> = { // Ensure correct type for Firestore
+      const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation'> = {
         ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: dispensaryData.dispensaryName,
         dispensaryType: dispensaryData.dispensaryType, productOwnerEmail: dispensaryData.ownerEmail,
         imageUrl: uploadedImageUrl,
@@ -401,10 +449,10 @@ export default function AddProductPage() {
         productData.strain = null; productData.thcContent = null; productData.cbdContent = null;
         productData.effects = []; productData.flavors = []; productData.medicalUses = [];
       }
-      if (selectedProductStream !== 'Clothing') {
+      if (selectedProductStream !== 'Apparel') { // Updated
         productData.gender = null; productData.sizingSystem = null; productData.sizes = [];
       }
-      if (selectedProductStream === 'Clothing' || selectedProductStream === 'Smoking Gear') {
+      if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') { // Updated
         productData.subcategory = null; productData.subSubcategory = null;
       }
 
@@ -425,6 +473,7 @@ export default function AddProductPage() {
       setSelectedProductStream(null);
       setSelectedDeliveryMethod(null);
       setSelectedMainCategoryName(null); setSelectedSubCategoryL1Name(null);
+      setAvailableStandardSizes([]);
       
       setImageFile(null); setImagePreview(null); setUploadProgress(null);
       router.push('/dispensary-admin/products');
@@ -475,12 +524,12 @@ export default function AddProductPage() {
                         Select Product Stream *
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {(['THC', 'CBD', 'Clothing', 'Smoking Gear'] as const).map((stream) => {
+                        {(['THC', 'CBD', 'Apparel', 'Smoking Gear'] as const).map((stream) => { // Updated
                             let IconComponent = PackagePlus;
                             let iconColor = "text-gray-500";
                             if (stream === 'THC') { IconComponent = Flame; iconColor = "text-red-500"; }
                             else if (stream === 'CBD') { IconComponent = LeafIconLucide; iconColor = "text-green-500"; }
-                            else if (stream === 'Clothing') { IconComponent = Shirt; iconColor = "text-blue-500"; }
+                            else if (stream === 'Apparel') { IconComponent = Shirt; iconColor = "text-blue-500"; } // Updated
                             else if (stream === 'Smoking Gear') { IconComponent = Cigarette; iconColor = "text-orange-500"; }
 
                             return (
@@ -497,7 +546,7 @@ export default function AddProductPage() {
                             );
                         })}
                     </div>
-                    {form.formState.errors.category && selectedProductStream !== 'Clothing' && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
+                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
 
@@ -553,20 +602,20 @@ export default function AddProductPage() {
                     </>
                 )}
 
-                {selectedProductStream === 'Clothing' && (
+                {selectedProductStream === 'Apparel' && ( // Updated
                     <>
                         <FormField control={form.control} name="category" render={({ field }) => (
-                            <FormItem> <FormLabel>Clothing Type *</FormLabel>
+                            <FormItem> <FormLabel>Apparel Type *</FormLabel> {/* Updated */}
                             <Select onValueChange={field.onChange} value={field.value || undefined}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select clothing type" /></SelectTrigger></FormControl>
-                                <SelectContent>{clothingTypes.map((type) => ( <SelectItem key={type} value={type}>{type}</SelectItem> ))}</SelectContent>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select apparel type" /></SelectTrigger></FormControl>
+                                <SelectContent>{apparelTypes.map((type) => ( <SelectItem key={type} value={type}>{type}</SelectItem> ))}</SelectContent>
                             </Select> <FormMessage />
                             </FormItem> )} />
                         <FormField control={form.control} name="gender" render={({ field }) => (
                             <FormItem> <FormLabel>Gender *</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || undefined}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl>
-                                <SelectContent>{clothingGenders.map((gender) => ( <SelectItem key={gender} value={gender}>{gender}</SelectItem> ))}</SelectContent>
+                                <SelectContent>{apparelGenders.map((gender) => ( <SelectItem key={gender} value={gender}>{gender}</SelectItem> ))}</SelectContent>
                             </Select> <FormMessage />
                             </FormItem> )} />
                          <FormField control={form.control} name="sizingSystem" render={({ field }) => (
@@ -576,7 +625,30 @@ export default function AddProductPage() {
                                 <SelectContent>{sizingSystemOptions.map((system) => ( <SelectItem key={system} value={system}>{system}</SelectItem> ))}</SelectContent>
                             </Select> <FormMessage />
                             </FormItem> )} />
-                        <Controller control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Sizes (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add size (e.g., S, M, UK 10, EU 42)" disabled={isLoading} /><FormDescription>Enter available sizes (e.g., S, M, L, UK 10, US 8, EU 42). Context provided by Sizing System selection.</FormDescription><FormMessage /></FormItem> )} />
+                        
+                        {availableStandardSizes.length > 0 && (
+                            <FormItem>
+                                <FormLabel>Select Standard Sizes</FormLabel>
+                                <ScrollArea className="h-40 w-full rounded-md border p-2 bg-muted/20">
+                                    <div className="flex flex-wrap gap-2">
+                                        {availableStandardSizes.map(size => (
+                                            <Badge
+                                                key={size}
+                                                variant={form.getValues('sizes')?.includes(size) ? 'default' : 'outline'}
+                                                onClick={() => toggleStandardSize(size)}
+                                                className="cursor-pointer px-3 py-1.5 text-sm hover:bg-accent/80"
+                                            >
+                                                {size}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
+                                <Button type="button" variant="ghost" size="sm" onClick={clearSelectedSizes} className="mt-1 text-xs text-muted-foreground hover:text-destructive">
+                                    <Delete className="mr-1 h-3 w-3" /> Clear Selected Sizes
+                                </Button>
+                            </FormItem>
+                        )}
+                        <Controller control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Selected/Custom Sizes (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add custom size or confirm selection" disabled={isLoading} /><FormDescription>Standard sizes selected above will appear here. You can also add custom sizes.</FormDescription><FormMessage /></FormItem> )} />
                     </>
                 )}
                 
@@ -612,7 +684,7 @@ export default function AddProductPage() {
                     <AlertTriangle className="h-6 w-6" />
                     <div>
                         <h4 className="font-semibold">Select a Product Stream</h4>
-                        <p className="text-sm">Please choose a primary product stream (THC, CBD, Clothing, or Smoking Gear) to see relevant fields.</p>
+                        <p className="text-sm">Please choose a primary product stream (THC, CBD, Apparel, or Smoking Gear) to see relevant fields.</p> {/* Updated */}
                     </div>
                 </div>
             )}
