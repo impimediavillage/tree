@@ -79,22 +79,31 @@ export interface Product {
   productOwnerEmail: string;
   name: string;
   description: string;
-  category: string;
-  subcategory?: string | null;
-  subSubcategory?: string | null; // New field for second level subcategory
+  category: string; // Main category: e.g., "THC", "CBD", "Clothing Type", "Smoking Gear"
+  subcategory?: string | null; // e.g., Delivery Method for THC/CBD, or null for others
+  subSubcategory?: string | null; // e.g., Specific Product Type for THC/CBD, or null for others
+  
+  // THC/CBD Specific
   strain?: string | null;
   thcContent?: number | null;
   cbdContent?: number | null;
-  currency: string; // Currency is product-level
-  priceTiers: PriceTier[]; // Replaces single price and unit
+  effects?: string[] | null;
+  flavors?: string[] | null;
+  medicalUses?: string[] | null;
+
+  // Clothing Specific
+  gender?: 'Mens' | 'Womens' | 'Unisex' | null;
+  sizes?: string[] | null;
+  
+  // General
+  currency: string; 
+  priceTiers: PriceTier[]; 
   quantityInStock: number;
   imageUrl?: string | null;
   labTested?: boolean;
-  effects?: string[];
-  flavors?: string[];
-  medicalUses?: string[];
   isAvailableForPool?: boolean;
-  tags?: string[];
+  tags?: string[] | null;
+  
   createdAt: Timestamp | Date | string;
   updatedAt: Timestamp | Date | string;
   dispensaryLocation?: {
@@ -102,9 +111,6 @@ export interface Product {
     latitude?: number | null;
     longitude?: number | null;
   } | null;
-  // Deprecated fields, keep for potential data migration if needed, but new logic uses priceTiers
-  price?: number; // Keep for backward compatibility if needed for old data
-  unit?: string; // Keep for backward compatibility if needed for old data
 }
 
 export interface NoteData {
@@ -150,10 +156,8 @@ export interface ProductRequest {
   productDetails?: {
     name: string;
     category: string;
-    // unit: string; // Unit is now part of priceTiers
-    // price: number; // Price is now part of priceTiers
     currency: string;
-    priceTiers: PriceTier[]; // Reflect new structure
+    priceTiers: PriceTier[]; 
     imageUrl?: string | null;
   } | null;
 }
@@ -336,8 +340,8 @@ export interface ProductCategoryCount {
 }
 
 // Cart Item type
-export interface CartItem extends Omit<Product, 'price' | 'unit'> { // Omit single price/unit
-  id: string; // Ensure id is always present
+export interface CartItem extends Omit<Product, 'priceTiers'> { 
+  id: string; 
   name: string;
   price: number; // Price for the specific unit chosen in the cart
   unit: string; // Unit for the specific tier chosen in the cart
@@ -346,8 +350,7 @@ export interface CartItem extends Omit<Product, 'price' | 'unit'> { // Omit sing
   currency: string;
   dispensaryId: string;
   dispensaryName: string;
-  // Other relevant product fields like category can be included if needed by the cart
   category: string; 
-  quantityInStock: number; // Important for cart validation
+  quantityInStock: number;
 }
     
