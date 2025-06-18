@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,14 +22,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-const sampleUnits = ["gram", "oz", "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"];
+const sampleUnits = [
+  "gram", "10 grams", "100 grams", "200 grams", "500 grams",
+  "1kg", "2kg", "5kg", "10kg", "10kg+",
+  "oz", "0.5 oz", "0.25 oz",
+  "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"
+].sort();
+
 const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
 
 export default function AddProductPage() {
@@ -64,11 +70,17 @@ export default function AddProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      strain: '', thcContent: undefined, cbdContent: undefined, price: undefined,
-      currency: 'ZAR', unit: '', quantityInStock: undefined, imageUrl: null,
+      strain: '', thcContent: undefined, cbdContent: undefined, 
+      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], // Initialize with one tier
+      quantityInStock: undefined, imageUrl: null,
       labTested: false, effects: [], flavors: [], medicalUses: [],
       isAvailableForPool: false, tags: [],
     },
+  });
+
+  const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({
+    control: form.control,
+    name: "priceTiers",
   });
 
   const fetchInitialData = useCallback(async () => {
@@ -96,52 +108,44 @@ export default function AddProductPage() {
 
           if (!categoriesSnapshot.empty) {
             const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            let rawCategoriesField = categoriesDocData.categoriesData;
+            let dataToProcess = categoriesDocData.categoriesData;
 
             if (isSpecialType) {
-                let actualThcCbdData: any = null; // This will hold the THC/CBD definitions
-                
-                if (rawCategoriesField && typeof rawCategoriesField === 'object' && !Array.isArray(rawCategoriesField) && rawCategoriesField.hasOwnProperty('thcCbdProductCategories')) {
-                    actualThcCbdData = rawCategoriesField.thcCbdProductCategories;
-                } else {
-                    // This case handles if categoriesData *itself* is the THC/CBD object or array, or if thcCbdProductCategories key is missing
-                    // This part remains for broader compatibility if the structure is directly under categoriesData
-                    actualThcCbdData = rawCategoriesField; 
+                if (dataToProcess && typeof dataToProcess === 'object' && dataToProcess.hasOwnProperty('thcCbdProductCategories')) {
+                    dataToProcess = (dataToProcess as any).thcCbdProductCategories;
                 }
-
+                
                 let structuredDataForSpecialType: Record<string, any> | null = null;
-
-                if (actualThcCbdData && Array.isArray(actualThcCbdData)) {
-                    const thcData = actualThcCbdData.find((item: any) => item.name === 'THC');
-                    const cbdData = actualThcCbdData.find((item: any) => item.name === 'CBD');
+                if (Array.isArray(dataToProcess)) { // Handles array of {name: "THC", ...}, {name: "CBD", ...}
+                    const thcData = dataToProcess.find((item: any) => item.name === 'THC');
+                    const cbdData = dataToProcess.find((item: any) => item.name === 'CBD');
                     if (thcData || cbdData) {
                         structuredDataForSpecialType = {};
                         if (thcData) structuredDataForSpecialType.THC = thcData;
                         if (cbdData) structuredDataForSpecialType.CBD = cbdData;
                     }
-                } else if (actualThcCbdData && typeof actualThcCbdData === 'object' && !Array.isArray(actualThcCbdData) && (actualThcCbdData.THC || actualThcCbdData.CBD)) {
-                    structuredDataForSpecialType = actualThcCbdData;
+                } else if (dataToProcess && typeof dataToProcess === 'object' && (dataToProcess.THC || dataToProcess.CBD)) { // Handles direct object {THC: ..., CBD: ...}
+                    structuredDataForSpecialType = dataToProcess;
                 }
                 
-                if (structuredDataForSpecialType && (structuredDataForSpecialType.THC || structuredDataForSpecialType.CBD)) {
+                if (structuredDataForSpecialType) {
                     setCategoryStructureObject(structuredDataForSpecialType);
-                    setMainCategoryOptions([]); // No generic main categories for this type
+                    setMainCategoryOptions([]);
                 } else {
                     toast({ 
                         title: "Data Structure Error", 
-                        description: `For dispensary type "${fetchedDispensary.dispensaryType}", the 'categoriesData' (or its 'thcCbdProductCategories' field) in Firestore must be an object with 'THC' and/or 'CBD' keys, or an array containing objects named 'THC'/'CBD', each holding the detailed structure. Please contact admin to fix the data. Path checked: categoriesData.thcCbdProductCategories.`, 
+                        description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD object format or array. Path checked: categoriesData.thcCbdProductCategories. Please contact admin.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
             } else { // Logic for general dispensary types
-                let parsedCategoriesData = rawCategoriesField;
-                if (typeof rawCategoriesField === 'string') {
-                    try { parsedCategoriesData = JSON.parse(rawCategoriesField); } 
+                 let parsedCategoriesData = dataToProcess;
+                if (typeof dataToProcess === 'string') {
+                    try { parsedCategoriesData = JSON.parse(dataToProcess); } 
                     catch (jsonError) { console.error("Failed to parse general categoriesData JSON string:", jsonError); parsedCategoriesData = null; }
                 }
-
                 if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
                     const generalCategoryStructure: Record<string, any> = {};
                     parsedCategoriesData.forEach((cat: ProductCategory) => {
@@ -336,7 +340,7 @@ export default function AddProductPage() {
         imageUrl: uploadedImageUrl,
         thcContent: data.thcContent ?? null,
         cbdContent: data.cbdContent ?? null,
-        price: data.price ?? 0,
+        priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), // Ensure valid tiers
         quantityInStock: data.quantityInStock ?? 0,
         subcategory: data.subcategory || null,
         subSubcategory: data.subSubcategory || null,
@@ -529,19 +533,59 @@ export default function AddProductPage() {
 
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Premium OG Kush Flower" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description of the product, its benefits, and usage instructions..." {...field} rows={4} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                <div className="grid md:grid-cols-3 gap-6">
-                  <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="unit" render={({ field }) => ( <FormItem><FormLabel>Unit *</FormLabel> <Select onValueChange={field.onChange} value={field.value ?? undefined}> <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl> <SelectContent> {sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)} </SelectContent> </Select> <FormMessage /></FormItem> )} />
+                
+                {/* Pricing Tiers Section */}
+                <div className="space-y-3 pt-2">
+                    <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
+                    {priceTierFields.map((tierField, index) => (
+                        <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end p-4 border rounded-md shadow-sm bg-muted/30">
+                            <FormField
+                                control={form.control}
+                                name={`priceTiers.${index}.unit`}
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Unit</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl>
+                                    <SelectContent>{sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name={`priceTiers.${index}.price`}
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Price</FormLabel>
+                                    <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            {priceTierFields.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 self-center md:self-end mt-2 md:mt-0 md:mb-1.5">
+                                    <Trash2 className="h-5 w-5" />
+                                </Button>
+                            )}
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => appendPriceTier({ unit: '', price: undefined as any })} className="mt-2">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Price Tier
+                    </Button>
+                    <FormMessage>{form.formState.errors.priceTiers?.root?.message || form.formState.errors.priceTiers?.message}</FormMessage>
                 </div>
+                <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
+                
                 <div className="grid md:grid-cols-3 gap-6">
-                  <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} onChange={e => field.onChange(parseInt(e.target.value,10))} /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                 </div>
                 <Separator /> <h3 className="text-lg font-medium text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Additional Product Details</h3>
                 <div className="grid md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 22.5" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="number" step="0.1" placeholder="e.g., 0.8" {...field} value={typeof field.value === 'number' && isNaN(field.value) ? '' : (field.value ?? '')} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="space-y-4">
                   <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -578,7 +622,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
-
     
