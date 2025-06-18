@@ -96,54 +96,66 @@ export default function AddProductPage() {
 
           if (!categoriesSnapshot.empty) {
             const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            let parsedCategoriesData = categoriesDocData.categoriesData;
+            let rawCategoriesField = categoriesDocData.categoriesData;
 
-            if (typeof parsedCategoriesData === 'string') {
-                try { parsedCategoriesData = JSON.parse(parsedCategoriesData); } 
-                catch (jsonError) { console.error("Failed to parse categoriesData JSON string:", jsonError); parsedCategoriesData = null; }
-            }
-            
             if (isSpecialType) {
-                let structuredDataForSpecialType: Record<string, any> | null = null;
-                if (parsedCategoriesData && Array.isArray(parsedCategoriesData)) {
-                    const thcData = parsedCategoriesData.find((item: any) => item.name === 'THC');
-                    const cbdData = parsedCategoriesData.find((item: any) => item.name === 'CBD');
-                    if (thcData || cbdData) { // Check if at least one is found
-                        structuredDataForSpecialType = {};
-                        if (thcData) structuredDataForSpecialType.THC = thcData; // thcData itself is { name: "THC", "Delivery Methods": ... }
-                        if (cbdData) structuredDataForSpecialType.CBD = cbdData;
-                    }
-                } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && ('THC' in parsedCategoriesData || 'CBD' in parsedCategoriesData)) {
-                    // This is the case where categoriesData is already the object { THC: {...}, CBD: {...} }
-                    structuredDataForSpecialType = parsedCategoriesData as Record<string, any>;
+                let actualThcCbdData: any = null; // This will hold the THC/CBD definitions
+                
+                if (rawCategoriesField && typeof rawCategoriesField === 'object' && !Array.isArray(rawCategoriesField) && rawCategoriesField.hasOwnProperty('thcCbdProductCategories')) {
+                    actualThcCbdData = rawCategoriesField.thcCbdProductCategories;
+                } else {
+                    // This case handles if categoriesData *itself* is the THC/CBD object or array, or if thcCbdProductCategories key is missing
+                    // This part remains for broader compatibility if the structure is directly under categoriesData
+                    actualThcCbdData = rawCategoriesField; 
                 }
 
+                let structuredDataForSpecialType: Record<string, any> | null = null;
+
+                if (actualThcCbdData && Array.isArray(actualThcCbdData)) {
+                    const thcData = actualThcCbdData.find((item: any) => item.name === 'THC');
+                    const cbdData = actualThcCbdData.find((item: any) => item.name === 'CBD');
+                    if (thcData || cbdData) {
+                        structuredDataForSpecialType = {};
+                        if (thcData) structuredDataForSpecialType.THC = thcData;
+                        if (cbdData) structuredDataForSpecialType.CBD = cbdData;
+                    }
+                } else if (actualThcCbdData && typeof actualThcCbdData === 'object' && !Array.isArray(actualThcCbdData) && (actualThcCbdData.THC || actualThcCbdData.CBD)) {
+                    structuredDataForSpecialType = actualThcCbdData;
+                }
+                
                 if (structuredDataForSpecialType && (structuredDataForSpecialType.THC || structuredDataForSpecialType.CBD)) {
                     setCategoryStructureObject(structuredDataForSpecialType);
-                    setMainCategoryOptions([]); 
+                    setMainCategoryOptions([]); // No generic main categories for this type
                 } else {
                     toast({ 
                         title: "Data Structure Error", 
-                        description: `For dispensary type "${fetchedDispensary.dispensaryType}", category data in Firestore (field 'categoriesData') is not in the expected format. It should be an array containing objects with name "THC" and "CBD", or an object with direct "THC" and "CBD" keys. Please contact admin.`, 
+                        description: `For dispensary type "${fetchedDispensary.dispensaryType}", the 'categoriesData' (or its 'thcCbdProductCategories' field) in Firestore must be an object with 'THC' and/or 'CBD' keys, or an array containing objects named 'THC'/'CBD', each holding the detailed structure. Please contact admin to fix the data. Path checked: categoriesData.thcCbdProductCategories.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
+            } else { // Logic for general dispensary types
+                let parsedCategoriesData = rawCategoriesField;
+                if (typeof rawCategoriesField === 'string') {
+                    try { parsedCategoriesData = JSON.parse(rawCategoriesField); } 
+                    catch (jsonError) { console.error("Failed to parse general categoriesData JSON string:", jsonError); parsedCategoriesData = null; }
+                }
 
-            } else if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
-                const generalCategoryStructure: Record<string, any> = {};
-                parsedCategoriesData.forEach((cat: ProductCategory) => {
-                    if (cat.name) generalCategoryStructure[cat.name] = cat.subcategories || [];
-                });
-                setCategoryStructureObject(generalCategoryStructure);
-                setMainCategoryOptions(Object.keys(generalCategoryStructure).filter(key => key.trim() !== '').sort());
-            } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && Object.keys(parsedCategoriesData).length > 0) {
-                setCategoryStructureObject(parsedCategoriesData);
-                setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
-            } else {
-              toast({ title: "Info", description: `No product categories defined or structure is not an array/object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
-              setCategoryStructureObject(null); setMainCategoryOptions([]);
+                if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
+                    const generalCategoryStructure: Record<string, any> = {};
+                    parsedCategoriesData.forEach((cat: ProductCategory) => {
+                        if (cat.name) generalCategoryStructure[cat.name] = cat.subcategories || [];
+                    });
+                    setCategoryStructureObject(generalCategoryStructure);
+                    setMainCategoryOptions(Object.keys(generalCategoryStructure).filter(key => key.trim() !== '').sort());
+                } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && Object.keys(parsedCategoriesData).length > 0) {
+                    setCategoryStructureObject(parsedCategoriesData);
+                    setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
+                } else {
+                  toast({ title: "Info", description: `No product categories defined or structure is not an array/object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
+                  setCategoryStructureObject(null); setMainCategoryOptions([]);
+                }
             }
           } else {
              toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Please ensure Super Admin has set them up.`, variant: "default", duration: 10000 });
@@ -229,14 +241,11 @@ export default function AddProductPage() {
       form.setValue('subSubcategory', null);
       return;
     }
-    // Accessing THC/CBD data which is the *value* part of categoryStructureObject.THC or categoryStructureObject.CBD
-    // If categoryStructureObject.THC is { name: "THC", "Delivery Methods": {...} }, then compoundData is this object.
-    const compoundData = categoryStructureObject[selectedPrimaryCompound];
-    
-    if (compoundData && compoundData['Delivery Methods'] && typeof compoundData['Delivery Methods'] === 'object') {
-      setDeliveryMethodOptions(Object.keys(compoundData['Delivery Methods']).sort());
+    const compoundDetails = categoryStructureObject[selectedPrimaryCompound];
+    if (compoundDetails && compoundDetails['Delivery Methods'] && typeof compoundDetails['Delivery Methods'] === 'object') {
+        setDeliveryMethodOptions(Object.keys(compoundDetails['Delivery Methods']).sort());
     } else {
-      setDeliveryMethodOptions([]);
+        setDeliveryMethodOptions([]);
     }
     form.setValue('subcategory', null); 
     setSelectedDeliveryMethod(null);
@@ -250,9 +259,9 @@ export default function AddProductPage() {
       form.setValue('subSubcategory', null);
       return;
     }
-    const compoundData = categoryStructureObject[selectedPrimaryCompound];
-    if (compoundData && compoundData['Delivery Methods'] && compoundData['Delivery Methods'][selectedDeliveryMethod]) {
-      const types = compoundData['Delivery Methods'][selectedDeliveryMethod];
+    const compoundDetails = categoryStructureObject[selectedPrimaryCompound];
+    if (compoundDetails && compoundDetails['Delivery Methods'] && compoundDetails['Delivery Methods'][selectedDeliveryMethod]) {
+      const types = compoundDetails['Delivery Methods'][selectedDeliveryMethod];
       if (Array.isArray(types)) {
         setSpecificProductTypeOptions(types.sort());
       } else { 
@@ -287,7 +296,6 @@ export default function AddProductPage() {
   const handlePrimaryCompoundSelect = (compound: 'THC' | 'CBD') => {
     setSelectedPrimaryCompound(compound);
     form.setValue('category', compound, { shouldValidate: true });
-    // Reset subsequent selections
     setSelectedDeliveryMethod(null);
     form.setValue('subcategory', null);
     setSpecificProductTypeOptions([]);
@@ -570,5 +578,7 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
 
     
