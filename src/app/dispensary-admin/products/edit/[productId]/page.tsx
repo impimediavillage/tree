@@ -29,13 +29,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 
 const sampleUnits = [
+  // Grams & Kilograms
   "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
   "1kg", "2kg", "5kg", "10kg", "10kg+",
-  "0.25 oz", "0.5 oz", "oz",
+  // Ounces
+  "0.25 oz", "0.5 oz", "oz", 
+  // Milliliters & Litres
   "ml", "3ml", "5ml", "10ml", "50ml", "100ml", 
   "1 litre", "2 litres", "5 litres", "10 litres",
-  "mg", "piece", "unit", "pack", "joint", "seed", "clone"
-].sort();
+  // Other discrete units (sorted alphabetically)
+  "clone", "joint", "mg", "pack", "piece", "seed", "unit"
+];
 
 
 export default function EditProductPage() {
@@ -641,5 +645,6 @@ export default function EditProductPage() {
     </Card>
   );
 }
+
 
 
