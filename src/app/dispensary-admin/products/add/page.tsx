@@ -126,7 +126,7 @@ export default function AddProductPage() {
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
   useEffect(() => {
-    setShowProductDetailsForm(!isThcCbdSpecialType); // Default for general types or if not special type yet
+    setShowProductDetailsForm(!isThcCbdSpecialType); 
   }, [isThcCbdSpecialType]);
 
   useEffect(() => {
@@ -134,15 +134,15 @@ export default function AddProductPage() {
       if (selectedProductStream === 'THC') {
         if (watchedStickerProgramOptIn === 'no') {
           setShowProductDetailsForm(false);
-        } else { // 'yes' or null/undefined (not yet selected)
+        } else { 
           setShowProductDetailsForm(true);
         }
       } else if (selectedProductStream === 'CBD' || selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') {
         setShowProductDetailsForm(true);
-      } else { // No stream selected yet for special type
+      } else { 
         setShowProductDetailsForm(false);
       }
-    } else { // General dispensary type
+    } else { 
       setShowProductDetailsForm(true);
     }
   }, [selectedProductStream, watchedStickerProgramOptIn, isThcCbdSpecialType]);
@@ -193,7 +193,7 @@ export default function AddProductPage() {
 
         const isSpecial = fetchedDispensary.dispensaryType === THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME;
         setIsThcCbdSpecialType(isSpecial);
-        setShowProductDetailsForm(!isSpecial); // Initialize based on whether it's special type
+        setShowProductDetailsForm(!isSpecial); 
 
         if (fetchedDispensary.dispensaryType) {
           const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
@@ -441,7 +441,7 @@ export default function AddProductPage() {
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
     if (selectedProductStream === 'THC' && !data.stickerProgramOptIn) {
-        toast({ title: "Opt-In Required", description: "Please select your choice for the Sticker Program participation.", variant: "destructive"});
+        toast({ title: "Opt-In Required", description: "Please select your choice for the Sticker and Cap Program participation.", variant: "destructive"});
         form.setError("stickerProgramOptIn", {type: "manual", message: "Participation choice is required for THC products."});
         return;
     }
@@ -589,16 +589,16 @@ export default function AddProductPage() {
                         <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice for THC Products</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 text-sm text-amber-600 space-y-2">
-                        <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" stickers.</p>
-                        <p>Our beautiful sticker range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker sold through the platform.</p>
-                        <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers themselves.</p>
+                        <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" sticker designs and cap designs.</p>
+                        <p>Our beautiful sticker and cap range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker/cap sold through the platform.</p>
+                        <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers/caps themselves.</p>
                     </CardContent>
                         <FormField
                         control={form.control}
                         name="stickerProgramOptIn"
                         render={({ field }) => (
                             <FormItem className="mt-4">
-                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker Program & THC Gifting? *</FormLabel>
+                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                 <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                 <SelectContent>

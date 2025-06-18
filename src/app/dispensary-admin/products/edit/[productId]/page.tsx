@@ -67,7 +67,7 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
     'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'],
     'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   },
-  'Unisex': { // Unisex often defaults to Men's alpha sizing or has its own scale
+  'Unisex': { 
     'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
   }
 };
@@ -427,21 +427,20 @@ export default function EditProductPage() {
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
-      form.setValue('imageUrl', ''); // Clear existing URL if new file selected for upload
+      form.setValue('imageUrl', ''); 
     }
   };
 
   const handleRemoveImage = async () => {
     setImageFile(null);
     setImagePreview(null);
-    form.setValue('imageUrl', null); // Explicitly set to null to indicate removal
+    form.setValue('imageUrl', null); 
     if (imageInputRef.current) imageInputRef.current.value = "";
-    // Note: actual deletion from storage happens on submit if oldImageUrl existed and imageUrl is now null
+    
   };
   
   const handleProductStreamSelect = (stream: 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear') => { 
-    // On edit page, changing stream is disabled to prevent data integrity issues
-    // This function is mainly for consistency with add page, but has no effect here
+    
     console.warn("Product stream cannot be changed after creation.");
   };
 
@@ -468,9 +467,9 @@ export default function EditProductPage() {
     }
 
     setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); // Start with current form value (might be existing URL or null if removed)
+    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); 
 
-    if (imageFile) { // If a new file was selected, upload it
+    if (imageFile) { 
       const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
       const fileStorageRef = storageRef(storage, filePath);
       const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
@@ -479,21 +478,21 @@ export default function EditProductPage() {
           uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
           async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
         });
-        // If upload successful and there was an old image, delete old image from storage
+        
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
         }
-        setOldImageUrl(finalImageUrl); // Update oldImageUrl to the new one
+        setOldImageUrl(finalImageUrl); 
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
     } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-      // Image was explicitly removed (imageUrl set to null) and an old image existed
+      
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); }
       catch (e: any) {
         if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed (on removal):", e);
-        else {finalImageUrl = null; setOldImageUrl(null);} // If not found, still nullify
+        else {finalImageUrl = null; setOldImageUrl(null);} 
       }
     }
-    // If no new file and imageUrl was not set to null, finalImageUrl remains the existingProduct.imageUrl or the value from form.
+    
     
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
@@ -521,24 +520,24 @@ export default function EditProductPage() {
         productUpdateData.effects = data.effects || [];
         productUpdateData.flavors = data.flavors || [];
         productUpdateData.medicalUses = data.medicalUses || [];
-        // Nullify apparel fields if it's THC/CBD
+        
         productUpdateData.gender = null; productUpdateData.sizingSystem = null; productUpdateData.sizes = [];
       } else if (selectedProductStream === 'Apparel') { 
         productUpdateData.gender = data.gender || null;
         productUpdateData.sizingSystem = data.sizingSystem || null;
         productUpdateData.sizes = data.sizes || [];
-        // Nullify THC/CBD fields if it's Apparel
+        
         productUpdateData.strain = null; productUpdateData.thcContent = null; productUpdateData.cbdContent = null;
         productUpdateData.effects = []; productUpdateData.flavors = []; productUpdateData.medicalUses = [];
         productUpdateData.stickerProgramOptIn = null;
       } else if (selectedProductStream === 'Smoking Gear') {
-        // Nullify both THC/CBD and Apparel specific fields
+        
         productUpdateData.strain = null; productUpdateData.thcContent = null; productUpdateData.cbdContent = null;
         productUpdateData.effects = []; productUpdateData.flavors = []; productUpdateData.medicalUses = [];
         productUpdateData.gender = null; productUpdateData.sizingSystem = null; productUpdateData.sizes = [];
         productUpdateData.stickerProgramOptIn = null;
       }
-       // Ensure subcategory and subSubcategory are nullified if not THC/CBD, or if they become empty
+       
       if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') { 
         productUpdateData.subcategory = null; productUpdateData.subSubcategory = null;
       }
@@ -610,7 +609,7 @@ export default function EditProductPage() {
                                     variant={selectedProductStream === stream ? 'default' : 'outline'}
                                     className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')}
                                     onClick={() => handleProductStreamSelect(stream)}
-                                    disabled // Stream selection disabled on edit page
+                                    disabled 
                                 >
                                     <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", iconColor)} />
                                     <span className="text-lg sm:text-xl font-semibold">{stream}</span>
@@ -632,16 +631,16 @@ export default function EditProductPage() {
                                     <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice for THC Products</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0 text-sm text-amber-600 space-y-2">
-                                    <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" stickers.</p>
-                                    <p>Our beautiful sticker range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker sold through the platform.</p>
-                                    <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers themselves.</p>
+                                    <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" sticker designs and cap designs.</p>
+                                    <p>Our beautiful sticker and cap range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker/cap sold through the platform.</p>
+                                    <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers/caps themselves.</p>
                                 </CardContent>
                                  <FormField
                                     control={form.control}
                                     name="stickerProgramOptIn"
                                     render={({ field }) => (
                                         <FormItem className="mt-4">
-                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker Program & THC Gifting? *</FormLabel>
+                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                             <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                             <SelectContent>
@@ -807,4 +806,5 @@ export default function EditProductPage() {
     </Card>
   );
 }
+
 
