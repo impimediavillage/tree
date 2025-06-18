@@ -30,7 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const sampleUnits = ["gram", "oz", "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"];
-const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary"; // Define the specific type name
+const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
 
 export default function AddProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -88,38 +88,40 @@ export default function AddProductPage() {
         setDispensaryData(fetchedDispensary);
         form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
-        // Check if this is the special THC/CBD dispensary type
         const isSpecialType = fetchedDispensary.dispensaryType === THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME;
         setIsThcCbdSpecialType(isSpecialType);
 
         if (fetchedDispensary.dispensaryType) {
           const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
-          // For special type, we might fetch a specific doc, or rely on 'name' field.
-          // Assuming the 'name' field in 'dispensaryTypeProductCategories' matches 'dispensaryType'.
           const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
           const categoriesSnapshot = await getDocs(q);
 
           if (!categoriesSnapshot.empty) {
-            const categoriesDoc = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-             if (categoriesDoc.categoriesData && typeof categoriesDoc.categoriesData === 'object' && Object.keys(categoriesDoc.categoriesData).length > 0) {
-              setCategoryStructureObject(categoriesDoc.categoriesData);
-              if (!isSpecialType) { // Only set general main category options if not special type
-                setMainCategoryOptions(Object.keys(categoriesDoc.categoriesData).filter(key => key.trim() !== '').sort());
+            const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+            let parsedCategoriesData = categoriesDocData.categoriesData;
+
+            if (typeof parsedCategoriesData === 'string') { // Handle if data is stored as JSON string
+                try { parsedCategoriesData = JSON.parse(parsedCategoriesData); } 
+                catch (jsonError) { console.error("Failed to parse categoriesData JSON:", jsonError); parsedCategoriesData = {}; }
+            }
+            
+            if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && Object.keys(parsedCategoriesData).length > 0) {
+              setCategoryStructureObject(parsedCategoriesData);
+              if (!isSpecialType) {
+                setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
               } else {
-                 // For special type, THC/CBD are primary compounds, not general categories
-                 // Initial delivery method options would be empty until THC/CBD is selected
-                 setMainCategoryOptions([]); // Clear generic options
+                setMainCategoryOptions([]); // For THC/CBD, options are handled by buttons
               }
             } else {
-              toast({ title: "Info", description: `No product categories defined or structure is not an object for dispensary type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
+              toast({ title: "Info", description: `No product categories defined or structure is not an object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
               setCategoryStructureObject(null); setMainCategoryOptions([]);
             }
           } else {
-             toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Product categories may be limited. Please ensure a Super Admin has set them up in 'Admin Dashboard > Dispensary Types > Manage Categories'.`, variant: "default", duration: 10000 });
+             toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Please ensure Super Admin has set them up.`, variant: "default", duration: 10000 });
             setCategoryStructureObject(null); setMainCategoryOptions([]);
           }
         } else {
-           toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'. This is needed for structured category selection. Please update your profile or contact admin.", variant: "destructive", duration: 10000 });
+           toast({ title: "Dispensary Type Missing", description: "Your dispensary profile is missing a 'type'. This is needed for structured category selection.", variant: "destructive", duration: 10000 });
            setCategoryStructureObject(null); setMainCategoryOptions([]);
         }
       } else {
@@ -146,9 +148,9 @@ export default function AddProductPage() {
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, fetchInitialData]);
 
-  // --- Effects for GENERAL category selection ---
+  // Effects for GENERAL category selection
   useEffect(() => {
-    if (isThcCbdSpecialType) return; // Skip if special type
+    if (isThcCbdSpecialType) return;
     const mainCategoryValue = selectedMainCategoryName;
     if (mainCategoryValue && categoryStructureObject && categoryStructureObject[mainCategoryValue] && typeof categoryStructureObject[mainCategoryValue] === 'object') {
       setSubCategoryL1Options(Object.keys(categoryStructureObject[mainCategoryValue]).filter(key => key.trim() !== '').sort());
@@ -159,7 +161,7 @@ export default function AddProductPage() {
   }, [selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
   useEffect(() => {
-    if (isThcCbdSpecialType) return; // Skip if special type
+    if (isThcCbdSpecialType) return;
     const mainCategoryValue = selectedMainCategoryName;
     const subCategoryL1Value = selectedSubCategoryL1Name;
     if (mainCategoryValue && subCategoryL1Value && categoryStructureObject &&
@@ -175,10 +177,14 @@ export default function AddProductPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
-  // --- Effects for THC/CBD SPECIAL dispensary type ---
+  // Effects for THC/CBD SPECIAL dispensary type
   useEffect(() => {
     if (!isThcCbdSpecialType || !selectedPrimaryCompound || !categoryStructureObject) {
       setDeliveryMethodOptions([]);
+      form.setValue('subcategory', null); 
+      setSelectedDeliveryMethod(null);
+      setSpecificProductTypeOptions([]);
+      form.setValue('subSubcategory', null);
       return;
     }
     const compoundData = categoryStructureObject[selectedPrimaryCompound];
@@ -187,14 +193,17 @@ export default function AddProductPage() {
     } else {
       setDeliveryMethodOptions([]);
     }
-    form.setValue('subcategory', null); setSelectedDeliveryMethod(null);
-    form.setValue('subSubcategory', null); setSpecificProductTypeOptions([]);
+    form.setValue('subcategory', null); 
+    setSelectedDeliveryMethod(null);
+    setSpecificProductTypeOptions([]);
+    form.setValue('subSubcategory', null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form]);
 
   useEffect(() => {
     if (!isThcCbdSpecialType || !selectedPrimaryCompound || !selectedDeliveryMethod || !categoryStructureObject) {
       setSpecificProductTypeOptions([]);
+      form.setValue('subSubcategory', null);
       return;
     }
     const compoundData = categoryStructureObject[selectedPrimaryCompound];
@@ -231,7 +240,7 @@ export default function AddProductPage() {
   const handlePrimaryCompoundSelect = (compound: 'THC' | 'CBD') => {
     setSelectedPrimaryCompound(compound);
     form.setValue('category', compound, { shouldValidate: true });
-    // Reset subsequent selections
+    // Reset subsequent selections for the special flow
     setSelectedDeliveryMethod(null);
     form.setValue('subcategory', null);
     setSpecificProductTypeOptions([]);
@@ -519,3 +528,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    

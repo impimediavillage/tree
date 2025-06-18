@@ -59,7 +59,7 @@ export interface DispensaryType {
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
   name?: string; // Name of the dispensary type this category structure belongs to
-  categoriesData: ProductCategory[]; // Changed from 'categories' to 'categoriesData'
+  categoriesData: ProductCategory[] | Record<string, any>; // Can be an array for general types or an object for special types (e.g., THC/CBD)
   updatedAt?: Timestamp | Date | string;
 }
 
