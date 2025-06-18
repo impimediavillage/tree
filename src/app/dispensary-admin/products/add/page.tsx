@@ -33,7 +33,9 @@ const sampleUnits = [
   "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
   "1kg", "2kg", "5kg", "10kg", "10kg+",
   "0.25 oz", "0.5 oz", "oz", 
-  "ml", "mg", "piece", "unit", "pack", "joint", "seed", "clone"
+  "ml", "3ml", "5ml", "10ml", "50ml", "100ml", 
+  "1 litre", "2 litres", "5 litres", "10 litres",
+  "mg", "piece", "unit", "pack", "joint", "seed", "clone"
 ].sort();
 
 const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
@@ -108,25 +110,26 @@ export default function AddProductPage() {
 
           if (!categoriesSnapshot.empty) {
             const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            let dataToProcess = categoriesDocData.categoriesData;
+            let dataToProcess: any = categoriesDocData.categoriesData; // Use 'any' temporarily for broader structure check
+
+            // Check if dataToProcess itself is the thcCbdProductCategories or if it's nested
+            if (dataToProcess && dataToProcess.hasOwnProperty('thcCbdProductCategories')) {
+                dataToProcess = dataToProcess.thcCbdProductCategories;
+            }
+
 
             if (isSpecialType) {
-                let specialTypeBase = dataToProcess;
-                if (dataToProcess && typeof dataToProcess === 'object' && dataToProcess.hasOwnProperty('thcCbdProductCategories')) {
-                    specialTypeBase = (dataToProcess as any).thcCbdProductCategories;
-                }
-                
                 let structuredDataForSpecialType: Record<string, any> | null = null;
-                if (Array.isArray(specialTypeBase)) { 
-                    const thcData = specialTypeBase.find((item: any) => item.name === 'THC');
-                    const cbdData = specialTypeBase.find((item: any) => item.name === 'CBD');
+                if (Array.isArray(dataToProcess)) { 
+                    const thcData = dataToProcess.find((item: any) => item.name === 'THC');
+                    const cbdData = dataToProcess.find((item: any) => item.name === 'CBD');
                     if (thcData || cbdData) {
                         structuredDataForSpecialType = {};
                         if (thcData) structuredDataForSpecialType.THC = thcData;
                         if (cbdData) structuredDataForSpecialType.CBD = cbdData;
                     }
-                } else if (specialTypeBase && typeof specialTypeBase === 'object' && (specialTypeBase.THC || specialTypeBase.CBD)) { 
-                    structuredDataForSpecialType = specialTypeBase;
+                } else if (dataToProcess && typeof dataToProcess === 'object' && (dataToProcess.THC || dataToProcess.CBD)) { 
+                    structuredDataForSpecialType = dataToProcess;
                 }
                 
                 if (structuredDataForSpecialType) {
@@ -135,13 +138,13 @@ export default function AddProductPage() {
                 } else {
                     toast({ 
                         title: "Data Structure Error", 
-                        description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD format. Path checked: categoriesData.thcCbdProductCategories (should be object or array of THC/CBD objects). Please contact admin.`, 
+                        description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD format. Expected an object with 'THC' and/or 'CBD' keys, or an array containing objects with name: "THC" or "CBD". Path checked: categoriesData or categoriesData.thcCbdProductCategories. Please contact admin.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
-            } else { 
+            } else { // General dispensary type logic
                  let parsedCategoriesData = dataToProcess;
                 if (typeof dataToProcess === 'string') {
                     try { parsedCategoriesData = JSON.parse(dataToProcess); } 
