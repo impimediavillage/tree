@@ -43,14 +43,12 @@ export default function AddProductPage() {
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   
-  // States for general category selection (used if not special THC/CBD type)
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
   const [selectedSubCategoryL1Name, setSelectedSubCategoryL1Name] = useState<string | null>(null);
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
 
-  // States specific to THC/CBD flow
   const [selectedPrimaryCompound, setSelectedPrimaryCompound] = useState<'THC' | 'CBD' | null>(null);
   const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState<string | null>(null);
@@ -102,36 +100,45 @@ export default function AddProductPage() {
 
             if (typeof parsedCategoriesData === 'string') {
                 try { parsedCategoriesData = JSON.parse(parsedCategoriesData); } 
-                catch (jsonError) { console.error("Failed to parse categoriesData JSON:", jsonError); parsedCategoriesData = {}; }
+                catch (jsonError) { console.error("Failed to parse categoriesData JSON string:", jsonError); parsedCategoriesData = null; }
             }
             
             if (isSpecialType) {
-                if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && ('THC' in parsedCategoriesData || 'CBD' in parsedCategoriesData)) {
-                    setCategoryStructureObject(parsedCategoriesData as Record<string, any>);
+                let structuredDataForSpecialType: Record<string, any> | null = null;
+                if (parsedCategoriesData && Array.isArray(parsedCategoriesData)) {
+                    const thcData = parsedCategoriesData.find((item: any) => item.name === 'THC');
+                    const cbdData = parsedCategoriesData.find((item: any) => item.name === 'CBD');
+                    if (thcData || cbdData) { // Check if at least one is found
+                        structuredDataForSpecialType = {};
+                        if (thcData) structuredDataForSpecialType.THC = thcData; // thcData itself is { name: "THC", "Delivery Methods": ... }
+                        if (cbdData) structuredDataForSpecialType.CBD = cbdData;
+                    }
+                } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && ('THC' in parsedCategoriesData || 'CBD' in parsedCategoriesData)) {
+                    // This is the case where categoriesData is already the object { THC: {...}, CBD: {...} }
+                    structuredDataForSpecialType = parsedCategoriesData as Record<string, any>;
+                }
+
+                if (structuredDataForSpecialType && (structuredDataForSpecialType.THC || structuredDataForSpecialType.CBD)) {
+                    setCategoryStructureObject(structuredDataForSpecialType);
                     setMainCategoryOptions([]); 
                 } else {
                     toast({ 
                         title: "Data Structure Error", 
-                        description: `For dispensary type "${fetchedDispensary.dispensaryType}", the category data in Firestore (dispensaryTypeProductCategories collection) must be an object with 'THC' and 'CBD' as top-level keys, not an array. The generic category editor might save it as an array. Please ensure this type's data is correctly structured as an object.`, 
+                        description: `For dispensary type "${fetchedDispensary.dispensaryType}", category data in Firestore (field 'categoriesData') is not in the expected format. It should be an array containing objects with name "THC" and "CBD", or an object with direct "THC" and "CBD" keys. Please contact admin.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
+
             } else if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
-                // For general types, categoriesData is an array of ProductCategory
-                // Convert it to a Record<string, any> for consistency in the component,
-                // where keys are main category names and values are their subcategory arrays.
                 const generalCategoryStructure: Record<string, any> = {};
                 parsedCategoriesData.forEach((cat: ProductCategory) => {
-                    if (cat.name) {
-                        generalCategoryStructure[cat.name] = cat.subcategories || []; // Store subcategories array
-                    }
+                    if (cat.name) generalCategoryStructure[cat.name] = cat.subcategories || [];
                 });
                 setCategoryStructureObject(generalCategoryStructure);
                 setMainCategoryOptions(Object.keys(generalCategoryStructure).filter(key => key.trim() !== '').sort());
             } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && Object.keys(parsedCategoriesData).length > 0) {
-                // This handles a direct object structure for general types if it ever occurs
                 setCategoryStructureObject(parsedCategoriesData);
                 setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
             } else {
@@ -170,11 +177,10 @@ export default function AddProductPage() {
     fetchInitialData();
   }, [currentUser, authLoading, router, toast, fetchInitialData]);
 
-  // Effect for GENERAL category selection (Main Category -> Sub L1)
   useEffect(() => {
     if (isThcCbdSpecialType || !selectedMainCategoryName || !categoryStructureObject) {
       setSubCategoryL1Options([]);
-      if (!isThcCbdSpecialType) { // Only reset if not special type and main cat changed
+      if (!isThcCbdSpecialType) {
         form.setValue('subcategory', null);
         setSelectedSubCategoryL1Name(null);
         form.setValue('subSubcategory', null);
@@ -183,17 +189,15 @@ export default function AddProductPage() {
       return;
     }
     const mainCatData = categoryStructureObject[selectedMainCategoryName];
-    if (Array.isArray(mainCatData)) { // If mainCatData is an array of subcategories
+    if (Array.isArray(mainCatData)) {
       setSubCategoryL1Options(mainCatData.map((sub: ProductCategory) => sub.name).filter(name => name && name.trim() !== '').sort());
     } else {
       setSubCategoryL1Options([]);
     }
     form.setValue('subcategory', null); setSelectedSubCategoryL1Name(null);
     form.setValue('subSubcategory', null); setSubCategoryL2Options([]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
-  // Effect for GENERAL category selection (Sub L1 -> Sub L2)
   useEffect(() => {
     if (isThcCbdSpecialType || !selectedMainCategoryName || !selectedSubCategoryL1Name || !categoryStructureObject) {
       setSubCategoryL2Options([]);
@@ -214,10 +218,8 @@ export default function AddProductPage() {
       setSubCategoryL2Options([]);
     }
     form.setValue('subSubcategory', null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form, isThcCbdSpecialType]);
 
-  // Effect for THC/CBD SPECIAL dispensary type - Populate Delivery Methods
   useEffect(() => {
     if (!isThcCbdSpecialType || !selectedPrimaryCompound || !categoryStructureObject) {
       setDeliveryMethodOptions([]);
@@ -227,7 +229,10 @@ export default function AddProductPage() {
       form.setValue('subSubcategory', null);
       return;
     }
+    // Accessing THC/CBD data which is the *value* part of categoryStructureObject.THC or categoryStructureObject.CBD
+    // If categoryStructureObject.THC is { name: "THC", "Delivery Methods": {...} }, then compoundData is this object.
     const compoundData = categoryStructureObject[selectedPrimaryCompound];
+    
     if (compoundData && compoundData['Delivery Methods'] && typeof compoundData['Delivery Methods'] === 'object') {
       setDeliveryMethodOptions(Object.keys(compoundData['Delivery Methods']).sort());
     } else {
@@ -237,10 +242,8 @@ export default function AddProductPage() {
     setSelectedDeliveryMethod(null);
     setSpecificProductTypeOptions([]);
     form.setValue('subSubcategory', null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form.setValue]);
+  }, [selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form]);
 
-  // Effect for THC/CBD SPECIAL dispensary type - Populate Specific Product Types
   useEffect(() => {
     if (!isThcCbdSpecialType || !selectedPrimaryCompound || !selectedDeliveryMethod || !categoryStructureObject) {
       setSpecificProductTypeOptions([]);
@@ -259,8 +262,7 @@ export default function AddProductPage() {
       setSpecificProductTypeOptions([]); 
     }
     form.setValue('subSubcategory', null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDeliveryMethod, selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form.setValue]);
+  }, [selectedDeliveryMethod, selectedPrimaryCompound, categoryStructureObject, isThcCbdSpecialType, form]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,6 +287,7 @@ export default function AddProductPage() {
   const handlePrimaryCompoundSelect = (compound: 'THC' | 'CBD') => {
     setSelectedPrimaryCompound(compound);
     form.setValue('category', compound, { shouldValidate: true });
+    // Reset subsequent selections
     setSelectedDeliveryMethod(null);
     form.setValue('subcategory', null);
     setSpecificProductTypeOptions([]);
@@ -568,3 +571,4 @@ export default function AddProductPage() {
   );
 }
 
+    
