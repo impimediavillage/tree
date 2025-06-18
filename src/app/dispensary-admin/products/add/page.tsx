@@ -30,13 +30,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const sampleUnits = [
+  // Grams & Kilograms
   "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
   "1kg", "2kg", "5kg", "10kg", "10kg+",
+  // Ounces
   "0.25 oz", "0.5 oz", "oz", 
+  // Milliliters & Litres
   "ml", "3ml", "5ml", "10ml", "50ml", "100ml", 
   "1 litre", "2 litres", "5 litres", "10 litres",
-  "mg", "piece", "unit", "pack", "joint", "seed", "clone"
-].sort();
+  // Other discrete units (sorted alphabetically)
+  "clone", "joint", "mg", "pack", "piece", "seed", "unit"
+];
 
 const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
 
@@ -110,46 +114,50 @@ export default function AddProductPage() {
 
           if (!categoriesSnapshot.empty) {
             const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            let dataToProcess: any = categoriesDocData.categoriesData; // Use 'any' temporarily for broader structure check
-
-            // Check if dataToProcess itself is the thcCbdProductCategories or if it's nested
-            if (dataToProcess && dataToProcess.hasOwnProperty('thcCbdProductCategories')) {
-                dataToProcess = dataToProcess.thcCbdProductCategories;
-            }
-
-
+            let dataToProcess = categoriesDocData.categoriesData; 
+            
             if (isSpecialType) {
+                let specialTypeDataSource = null;
+                if (dataToProcess && typeof dataToProcess === 'object' && dataToProcess.hasOwnProperty('thcCbdProductCategories')) {
+                    specialTypeDataSource = (dataToProcess as any).thcCbdProductCategories;
+                } else if (dataToProcess && typeof dataToProcess === 'object' && (dataToProcess.hasOwnProperty('THC') || dataToProcess.hasOwnProperty('CBD'))) {
+                    specialTypeDataSource = dataToProcess; // Assume direct structure if thcCbdProductCategories key is not present but THC/CBD are
+                }
+
+
                 let structuredDataForSpecialType: Record<string, any> | null = null;
-                if (Array.isArray(dataToProcess)) { 
-                    const thcData = dataToProcess.find((item: any) => item.name === 'THC');
-                    const cbdData = dataToProcess.find((item: any) => item.name === 'CBD');
+                if (Array.isArray(specialTypeDataSource)) { 
+                    const thcData = specialTypeDataSource.find((item: any) => item.name === 'THC');
+                    const cbdData = specialTypeDataSource.find((item: any) => item.name === 'CBD');
                     if (thcData || cbdData) {
                         structuredDataForSpecialType = {};
                         if (thcData) structuredDataForSpecialType.THC = thcData;
                         if (cbdData) structuredDataForSpecialType.CBD = cbdData;
                     }
-                } else if (dataToProcess && typeof dataToProcess === 'object' && (dataToProcess.THC || dataToProcess.CBD)) { 
-                    structuredDataForSpecialType = dataToProcess;
+                } else if (specialTypeDataSource && typeof specialTypeDataSource === 'object' && (specialTypeDataSource.THC || specialTypeDataSource.CBD)) { 
+                    structuredDataForSpecialType = specialTypeDataSource;
                 }
                 
                 if (structuredDataForSpecialType) {
                     setCategoryStructureObject(structuredDataForSpecialType);
-                    setMainCategoryOptions([]);
+                    setMainCategoryOptions([]); 
                 } else {
-                    toast({ 
-                        title: "Data Structure Error", 
-                        description: `Category data for "${fetchedDispensary.dispensaryType}" is not in the expected THC/CBD format. Expected an object with 'THC' and/or 'CBD' keys, or an array containing objects with name: "THC" or "CBD". Path checked: categoriesData or categoriesData.thcCbdProductCategories. Please contact admin.`, 
+                     toast({ 
+                        title: "Data Structure Error (Special Type)", 
+                        description: `For "${fetchedDispensary.dispensaryType}", expected 'categoriesData' to contain 'thcCbdProductCategories' which is an object with 'THC'/'CBD' keys, OR an array of objects with name "THC"/"CBD". Please contact admin.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
             } else { // General dispensary type logic
-                 let parsedCategoriesData = dataToProcess;
+                let parsedCategoriesData = dataToProcess;
+                // If dataToProcess is a string, try to parse it as JSON (fallback for older data)
                 if (typeof dataToProcess === 'string') {
                     try { parsedCategoriesData = JSON.parse(dataToProcess); } 
                     catch (jsonError) { console.error("Failed to parse general categoriesData JSON string:", jsonError); parsedCategoriesData = null; }
                 }
+
                 if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
                     const generalCategoryStructure: Record<string, any> = {};
                     parsedCategoriesData.forEach((cat: ProductCategory) => {
@@ -158,9 +166,11 @@ export default function AddProductPage() {
                     setCategoryStructureObject(generalCategoryStructure);
                     setMainCategoryOptions(Object.keys(generalCategoryStructure).filter(key => key.trim() !== '').sort());
                 } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && Object.keys(parsedCategoriesData).length > 0) {
+                    // If it's already an object (for simpler, non-array based structures)
                     setCategoryStructureObject(parsedCategoriesData);
                     setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
-                } else {
+                }
+                else {
                   toast({ title: "Info", description: `No product categories defined or structure is not an array/object for type "${fetchedDispensary.dispensaryType}". Please enter category manually or contact admin.`, variant: "default", duration: 8000 });
                   setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
