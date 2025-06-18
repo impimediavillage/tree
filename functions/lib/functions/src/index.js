@@ -115,7 +115,7 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
 }
 /**
  * Cloud Function triggered when a new Leaf User document is created.
- * Sends a "Welcome" email to the new Leaf User.
+ * Sends a "Welcome" email to the new Leaf User, unless they signed up publicly.
  */
 exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", async (event) => {
     const snapshot = event.data;
@@ -125,8 +125,9 @@ exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}",
     }
     const userData = snapshot.data();
     const userId = event.params.userId;
-    if (userData.role === 'LeafUser' && userData.email) {
-        logger.log(`New Leaf User created: ${userId} - ${userData.email}`);
+    // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
+    if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
+        logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
         const userDisplayName = userData.displayName || userData.email.split('@')[0];
         const subject = "Welcome to The Dispensary Tree!";
         const greeting = `Dear ${userDisplayName},`;
@@ -140,8 +141,11 @@ exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}",
         const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
         await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
     }
+    else if (userData.role === 'LeafUser' && userData.signupSource === 'public') {
+        logger.log(`New Leaf User created via public signup (ID: ${userId}). Welcome email skipped.`);
+    }
     else {
-        logger.log(`New user created (ID: ${userId}), but not a LeafUser or missing email. Role: ${userData.role || 'N/A'}`);
+        logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
     return null;
 });
@@ -748,6 +752,7 @@ exports.seedSampleDispensary = functions.https.onRequest(async (req, res) => {
             lastLoginAt: admin.firestore.Timestamp.now(),
             status: 'Active',
             dispensaryId: dispensaryRef.id,
+            signupSource: 'seeded_sample', // Indicate source
         };
         await ownerUserDocRef.set(ownerFirestoreUserData, { merge: true });
         logger.info(`Successfully created/updated Firestore document for dispensary owner: ${ownerUserRecord.uid}`);
@@ -818,6 +823,7 @@ exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
                 status: 'Active',
                 dispensaryId: null,
                 welcomeCreditsAwarded: true, // Assume sample users have received this
+                signupSource: 'seeded_sample', // Indicate source
             };
             await userDocRef.set(firestoreUserData, { merge: true });
             logger.info(`Successfully created/updated Firestore document for user: ${userRecord.uid}`);
