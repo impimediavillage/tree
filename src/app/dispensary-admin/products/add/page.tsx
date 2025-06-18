@@ -39,7 +39,7 @@ const sampleUnits = [
   // Ounces grouped and ordered
   "0.25 oz", "0.5 oz", "oz",
   // Milliliters & Litres grouped and ordered
-  "3ml", "5ml", "10ml", "50ml", "100ml", "ml", // 'ml' can be a generic option
+  "3ml", "5ml", "10ml", "50ml", "100ml", "ml",
   "1 litre", "2 litres", "5 litres", "10 litres",
   // Other discrete units (sorted alphabetically)
   "clone", "joint", "mg", "pack", "piece", "seed", "unit"
@@ -68,9 +68,8 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
     'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'],
     'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   },
-  'Unisex': { // Unisex often defaults to Men's alpha sizing or has its own scale
+  'Unisex': { 
     'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
-    // Could add specific Unisex UK/US/EURO if needed, but Alpha is common
   }
 };
 
@@ -122,6 +121,32 @@ export default function AddProductPage() {
     control: form.control,
     name: "priceTiers",
   });
+  
+  const [showProductDetailsForm, setShowProductDetailsForm] = useState(false);
+  const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
+
+  useEffect(() => {
+    setShowProductDetailsForm(!isThcCbdSpecialType); // Default for general types or if not special type yet
+  }, [isThcCbdSpecialType]);
+
+  useEffect(() => {
+    if (isThcCbdSpecialType) {
+      if (selectedProductStream === 'THC') {
+        if (watchedStickerProgramOptIn === 'no') {
+          setShowProductDetailsForm(false);
+        } else { // 'yes' or null/undefined (not yet selected)
+          setShowProductDetailsForm(true);
+        }
+      } else if (selectedProductStream === 'CBD' || selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') {
+        setShowProductDetailsForm(true);
+      } else { // No stream selected yet for special type
+        setShowProductDetailsForm(false);
+      }
+    } else { // General dispensary type
+      setShowProductDetailsForm(true);
+    }
+  }, [selectedProductStream, watchedStickerProgramOptIn, isThcCbdSpecialType]);
+
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -166,8 +191,9 @@ export default function AddProductPage() {
         setDispensaryData(fetchedDispensary);
         form.setValue('currency', fetchedDispensary.currency || 'ZAR');
 
-        const isSpecialType = fetchedDispensary.dispensaryType === THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME;
-        setIsThcCbdSpecialType(isSpecialType);
+        const isSpecial = fetchedDispensary.dispensaryType === THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME;
+        setIsThcCbdSpecialType(isSpecial);
+        setShowProductDetailsForm(!isSpecial); // Initialize based on whether it's special type
 
         if (fetchedDispensary.dispensaryType) {
           const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
@@ -176,45 +202,43 @@ export default function AddProductPage() {
 
           if (!categoriesSnapshot.empty) {
             const categoriesDocData = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            let categoriesDataSource = categoriesDocData.categoriesData;
+            let rawCategoriesData = categoriesDocData.categoriesData;
             
-            if (isSpecialType && categoriesDataSource && typeof categoriesDataSource === 'object' && categoriesDataSource.hasOwnProperty('thcCbdProductCategories')) {
-                const thcCbdSource = (categoriesDataSource as any).thcCbdProductCategories;
+            if (isSpecial && rawCategoriesData && typeof rawCategoriesData === 'object' && rawCategoriesData.hasOwnProperty('thcCbdProductCategories')) {
+                let specialTypeDataSource = (rawCategoriesData as any).thcCbdProductCategories;
                 let specialTypeStructure: Record<string, any> | null = null;
 
-                if (Array.isArray(thcCbdSource)) {
-                    const thcData = thcCbdSource.find((item: any) => item.name === 'THC');
-                    const cbdData = thcCbdSource.find((item: any) => item.name === 'CBD');
+                if (Array.isArray(specialTypeDataSource)) { 
+                    const thcData = specialTypeDataSource.find((item: any) => item.name === 'THC');
+                    const cbdData = specialTypeDataSource.find((item: any) => item.name === 'CBD');
                     if (thcData || cbdData) {
                         specialTypeStructure = {};
                         if (thcData) specialTypeStructure.THC = thcData;
                         if (cbdData) specialTypeStructure.CBD = cbdData;
                     }
-                } else if (thcCbdSource && typeof thcCbdSource === 'object' && (thcCbdSource.THC || thcCbdSource.CBD)) {
-                    specialTypeStructure = thcCbdSource;
+                } else if (specialTypeDataSource && typeof specialTypeDataSource === 'object' && (specialTypeDataSource.THC || specialTypeDataSource.CBD)) { 
+                    specialTypeStructure = specialTypeDataSource;
                 }
                 
                 if (specialTypeStructure) {
                     setCategoryStructureObject(specialTypeStructure);
-                    setMainCategoryOptions([]); // No general main categories for this special type
+                    setMainCategoryOptions([]); 
                 } else {
                      toast({ 
                         title: "Data Structure Error (THC/CBD Type)", 
-                        description: `For "${fetchedDispensary.dispensaryType}", 'categoriesData.thcCbdProductCategories' must be an object with 'THC'/'CBD' keys, or an array of objects named "THC"/"CBD". Please check Firestore.`, 
+                        description: `For "${fetchedDispensary.dispensaryType}", expected "thcCbdProductCategories" to be an object with 'THC'/'CBD' keys, or an array of objects named "THC"/"CBD" within categoriesData. Please check Firestore.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
                     setCategoryStructureObject(null); setMainCategoryOptions([]);
                 }
-            } else if (!isSpecialType) { // General dispensary types
-                let parsedCategoriesData = categoriesDataSource;
-                // Handle if categoriesDataSource is a JSON string (legacy or manual entry)
-                if (typeof categoriesDataSource === 'string') {
-                    try { parsedCategoriesData = JSON.parse(categoriesDataSource); } 
+            } else if (!isSpecial) { 
+                let parsedCategoriesData = rawCategoriesData;
+                if (typeof rawCategoriesData === 'string') {
+                    try { parsedCategoriesData = JSON.parse(rawCategoriesData); } 
                     catch (jsonError) { console.error("Failed to parse general categoriesData JSON string:", jsonError); parsedCategoriesData = null; }
                 }
 
-                // Check if parsedCategoriesData is an array (expected for general types)
                 if (parsedCategoriesData && Array.isArray(parsedCategoriesData) && parsedCategoriesData.length > 0) {
                     const generalCategoryStructure: Record<string, any> = {};
                     parsedCategoriesData.forEach((cat: ProductCategory) => {
@@ -223,7 +247,6 @@ export default function AddProductPage() {
                     setCategoryStructureObject(generalCategoryStructure);
                     setMainCategoryOptions(Object.keys(generalCategoryStructure).filter(key => key.trim() !== '').sort());
                 } else if (parsedCategoriesData && typeof parsedCategoriesData === 'object' && !Array.isArray(parsedCategoriesData) && Object.keys(parsedCategoriesData).length > 0) {
-                    // Also support object structure if it's not array but has keys
                     setCategoryStructureObject(parsedCategoriesData);
                     setMainCategoryOptions(Object.keys(parsedCategoriesData).filter(key => key.trim() !== '').sort());
                 }
@@ -233,7 +256,7 @@ export default function AddProductPage() {
                 }
             }
           } else {
-             toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Please ensure Super Admin has set them up.`, variant: "default", duration: 10000 });
+             toast({ title: "Category Setup Missing", description: `Product category structure for type "${fetchedDispensary.dispensaryType}" not found. Ensure Super Admin has set them up.`, variant: "default", duration: 10000 });
             setCategoryStructureObject(null); setMainCategoryOptions([]);
           }
         } else {
@@ -266,7 +289,7 @@ export default function AddProductPage() {
 
   useEffect(() => {
     if (!isThcCbdSpecialType || (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') || !categoryStructureObject) {
-      if (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') { // Only reset if not THC/CBD or if structure is missing
+      if (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') { 
         setDeliveryMethodOptions([]);
         setSelectedDeliveryMethod(null);
         setSpecificProductTypeOptions([]);
@@ -281,11 +304,10 @@ export default function AddProductPage() {
     } else {
         setDeliveryMethodOptions([]);
     }
-    // Reset dependent fields when primary compound changes
     setSelectedDeliveryMethod(null);
-    form.setValue('subcategory', null); // Corresponds to Delivery Method
+    form.setValue('subcategory', null); 
     setSpecificProductTypeOptions([]);
-    form.setValue('subSubcategory', null); // Corresponds to Specific Product Type
+    form.setValue('subSubcategory', null);
   }, [selectedProductStream, categoryStructureObject, isThcCbdSpecialType, form]);
 
   useEffect(() => {
@@ -296,26 +318,25 @@ export default function AddProductPage() {
       }
       return;
     }
-    const compoundDetails = categoryStructureObject[selectedProductStream!]; // Assert selectedProductStream is not null here
+    const compoundDetails = categoryStructureObject[selectedProductStream!]; 
     if (compoundDetails && compoundDetails['Delivery Methods'] && compoundDetails['Delivery Methods'][selectedDeliveryMethod]) {
       const types = compoundDetails['Delivery Methods'][selectedDeliveryMethod];
       if (Array.isArray(types)) {
         setSpecificProductTypeOptions(types.sort());
       } else { 
-        // Handle if types is not an array, e.g. it's an object or undefined
         console.warn(`Specific product types for ${selectedDeliveryMethod} are not in an array format.`);
         setSpecificProductTypeOptions([]); 
       }
     } else { 
       setSpecificProductTypeOptions([]); 
     }
-    form.setValue('subSubcategory', null); // Reset subSubcategory when delivery method changes
+    form.setValue('subSubcategory', null); 
   }, [selectedDeliveryMethod, selectedProductStream, categoryStructureObject, isThcCbdSpecialType, form]);
 
 
   useEffect(() => {
     if (isThcCbdSpecialType || !selectedMainCategoryName || !categoryStructureObject) {
-      if (!isThcCbdSpecialType) { // Only reset for general types
+      if (!isThcCbdSpecialType) { 
         setSubCategoryL1Options([]);
         form.setValue('subcategory', null);
         setSelectedSubCategoryL1Name(null);
@@ -366,14 +387,13 @@ export default function AddProductPage() {
     } else {
       setAvailableStandardSizes([]);
     }
-    // Reset selected sizes if gender or sizing system changes to avoid mismatches
     form.setValue('sizes', [], { shouldValidate: true });
   }, [selectedProductStream, watchedGender, watchedSizingSystem, form]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) { 
         toast({ title: "Image Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
         return;
       }
@@ -397,7 +417,6 @@ export default function AddProductPage() {
     } else if (stream === 'Smoking Gear') {
       form.setValue('category', 'Smoking Gear', { shouldValidate: true });
     } 
-    // For Apparel, category is set by apparel type selection
   };
 
   const toggleStandardSize = (size: string) => {
@@ -421,6 +440,12 @@ export default function AddProductPage() {
         toast({ title: "Category Required", description: "Please select a product stream and category/type.", variant: "destructive"});
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
+    if (selectedProductStream === 'THC' && !data.stickerProgramOptIn) {
+        toast({ title: "Opt-In Required", description: "Please select your choice for the Sticker Program participation.", variant: "destructive"});
+        form.setError("stickerProgramOptIn", {type: "manual", message: "Participation choice is required for THC products."});
+        return;
+    }
+
 
     setIsLoading(true); setUploadProgress(null);
     let uploadedImageUrl: string | null = null;
@@ -457,7 +482,6 @@ export default function AddProductPage() {
       if (selectedProductStream !== 'Apparel') { 
         productData.gender = null; productData.sizingSystem = null; productData.sizes = [];
       }
-       // Ensure subcategory and subSubcategory are nullified if not THC/CBD, or if they become empty
       if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') { 
         productData.subcategory = null; productData.subSubcategory = null;
       }
@@ -558,40 +582,43 @@ export default function AddProductPage() {
                     {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
+            
+            {selectedProductStream === 'THC' && (
+                <Card className="mb-6 p-4 border-amber-500 bg-amber-50/50 shadow-sm">
+                    <CardHeader className="p-0 pb-2">
+                        <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice for THC Products</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 text-sm text-amber-600 space-y-2">
+                        <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" stickers.</p>
+                        <p>Our beautiful sticker range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker sold through the platform.</p>
+                        <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers themselves.</p>
+                    </CardContent>
+                        <FormField
+                        control={form.control}
+                        name="stickerProgramOptIn"
+                        render={({ field }) => (
+                            <FormItem className="mt-4">
+                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker Program & THC Gifting? *</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    <SelectItem value="yes">Yes, I want to participate</SelectItem>
+                                    <SelectItem value="no">No, not at this time</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </Card>
+            )}
 
-            {selectedProductStream && (
+
+            {showProductDetailsForm && (
             <div className="mt-6 pt-6 border-t">
                 {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                     <>
-                        {selectedProductStream === 'THC' && (
-                            <Card className="mb-6 p-4 border-amber-500 bg-amber-50/50 shadow-sm">
-                                <CardHeader className="p-0 pb-2">
-                                    <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice for THC Products</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-0 text-sm text-amber-600 space-y-2">
-                                    <p>The Dispensary Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Dispensary Tree" stickers.</p>
-                                    <p>Our beautiful sticker range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker sold through the platform.</p>
-                                    <p className="mt-2 font-semibold">Please remember: Any THC product information displayed (effects, flavors, medical uses) is purely for recreational knowledge building for cannabinoid enthusiasts and is not directly relevant to the sale of the stickers themselves.</p>
-                                </CardContent>
-                                 <FormField
-                                    control={form.control}
-                                    name="stickerProgramOptIn"
-                                    render={({ field }) => (
-                                        <FormItem className="mt-4">
-                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker Program & THC Gifting? *</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                            <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="yes">Yes, I want to participate</SelectItem>
-                                                <SelectItem value="no">No, not at this time</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </Card>
-                        )}
+                        
                         <FormField control={form.control} name="category" render={({ field }) => ( <FormItem className="hidden"><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )} />
                         
                         {deliveryMethodOptions.length > 0 && (
@@ -717,7 +744,7 @@ export default function AddProductPage() {
             </div>
             )}
 
-            {!selectedProductStream && isThcCbdSpecialType && (
+            {isThcCbdSpecialType && !selectedProductStream && !showProductDetailsForm && (
                 <div className="p-4 bg-blue-50 border border-blue-300 rounded-md text-blue-700 flex items-center gap-3">
                     <AlertTriangle className="h-6 w-6" />
                     <div>
@@ -727,7 +754,7 @@ export default function AddProductPage() {
                 </div>
             )}
             
-            {!isThcCbdSpecialType && (
+            {!isThcCbdSpecialType && showProductDetailsForm && (
                  <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem> <FormLabel>Main Category *</FormLabel>
                   {mainCategoryOptions.length > 0 ? (
@@ -754,12 +781,14 @@ export default function AddProductPage() {
 
             <CardFooter className="px-0 pt-8">
                 <div className="flex gap-4 w-full">
-                    <Button type="submit" size="lg" className="flex-1 text-lg"
-                      disabled={isLoading || isLoadingInitialData || (isThcCbdSpecialType && !selectedProductStream)}
-                    >
-                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                        Add Product
-                    </Button>
+                    {showProductDetailsForm && (
+                        <Button type="submit" size="lg" className="flex-1 text-lg"
+                        disabled={isLoading || isLoadingInitialData || (isThcCbdSpecialType && !selectedProductStream) || (selectedProductStream === 'THC' && !watchedStickerProgramOptIn)}
+                        >
+                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                            Add Product
+                        </Button>
+                    )}
                     <Button asChild type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>
                         <Link href="/dispensary-admin/products">Cancel</Link>
                     </Button>
