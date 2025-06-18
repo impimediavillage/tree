@@ -90,6 +90,7 @@ export interface Product {
   effects?: string[] | null;
   flavors?: string[] | null;
   medicalUses?: string[] | null;
+  stickerProgramOptIn?: 'yes' | 'no' | null; // New field for THC products
 
   // Apparel Specific
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;

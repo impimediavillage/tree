@@ -209,6 +209,7 @@ export const productSchema = z.object({
   effects: z.array(z.string()).optional().nullable().default([]),
   flavors: z.array(z.string()).optional().nullable().default([]),
   medicalUses: z.array(z.string()).optional().nullable().default([]),
+  stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), // New field
 
   // Apparel Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
