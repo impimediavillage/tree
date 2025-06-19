@@ -51,31 +51,28 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
   const onSubmit = async (data: AdminAddUserFormData) => {
     setIsSubmitting(true);
     try {
-      // Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const firebaseUser = userCredential.user;
 
-      // Prepare user data for Firestore
       const newUserFirestoreData: Omit<User, 'id'> = {
         uid: firebaseUser.uid,
         email: data.email,
         displayName: data.displayName,
-        photoURL: null, // Can be updated later by user
+        photoURL: null, 
         role: data.role,
         status: data.status,
         credits: data.credits,
         dispensaryId: data.role === 'DispensaryOwner' ? data.dispensaryId : null,
-        createdAt: serverTimestamp() as any, // Cast to any for serverTimestamp
+        createdAt: serverTimestamp() as any, 
         lastLoginAt: null,
       };
 
-      // Create user document in Firestore
       await setDoc(doc(db, 'users', firebaseUser.uid), newUserFirestoreData);
 
       toast({ title: "User Created", description: `${data.displayName} has been successfully added.` });
-      onUserAdded(); // Refresh the user list
+      onUserAdded(); 
       setIsOpen(false);
-      form.reset(); // Reset form for next use
+      form.reset(); 
     } catch (error: any) {
       console.error("Error creating user:", error);
       let errorMessage = "Could not create user.";
@@ -130,7 +127,7 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
                   <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="LeafUser">Leaf User</SelectItem>
-                    <SelectItem value="DispensaryOwner">Wellness Store Owner</SelectItem>
+                    <SelectItem value="DispensaryOwner">Wellness Owner</SelectItem>
                     <SelectItem value="Super Admin">Super Admin</SelectItem>
                     <SelectItem value="User">User (Generic)</SelectItem>
                   </SelectContent>
@@ -141,18 +138,17 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
             {watchedRole === 'DispensaryOwner' && (
               <FormField control={form.control} name="dispensaryId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Associated Wellness Store</FormLabel>
+                  <FormLabel>Associated Wellness Profile</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select wellness store (if owner)" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select wellness (if owner)" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {/* Removed: <SelectItem value="" disabled>Select a wellness store</SelectItem> */}
                       {dispensaries.filter(d => d.status === "Approved").map(d => (
                         <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
                       ))}
-                      {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-stores" disabled>No approved wellness stores</SelectItem>}
+                      {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-wellness" disabled>No approved wellness profiles</SelectItem>}
                     </SelectContent>
                   </Select>
-                  <FormDescription>Required if role is Wellness Store Owner.</FormDescription>
+                  <FormDescription>Required if role is Wellness Owner.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -191,3 +187,4 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
     </Dialog>
   );
 }
+

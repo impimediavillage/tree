@@ -4,15 +4,14 @@ import { z } from 'zod';
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const timeErrorMessage = "Invalid time format (HH:MM). Leave empty if not applicable.";
 
-// Base schema for common wellness store fields
-const baseDispensarySchema = z.object({
+const baseWellnessSchema = z.object({
   fullName: z.string().min(2, { message: "Owner's full name must be at least 2 characters." }),
   phone: z.string()
     .min(10, { message: "Phone number seems too short." })
     .regex(/^\+\d{1,3}\d{6,14}$/, { message: "Invalid phone number format. Include country code (e.g., +27821234567)." }),
   ownerEmail: z.string().email({ message: "Invalid email address." }),
-  dispensaryName: z.string().min(2, { message: "Wellness store name must be at least 2 characters." }),
-  dispensaryType: z.string({ required_error: "Please select a wellness store type." }).min(1, { message: "Please select a wellness store type." }),
+  dispensaryName: z.string().min(2, { message: "Wellness name must be at least 2 characters." }),
+  dispensaryType: z.string({ required_error: "Please select a wellness type." }).min(1, { message: "Please select a wellness type." }),
   currency: z.string({ required_error: "Please select a currency." }).min(1, { message: "Please select a currency." }),
   openTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   closeTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
@@ -29,8 +28,7 @@ const baseDispensarySchema = z.object({
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
 });
 
-// Schema for Wellness Store Signup
-export const dispensarySignupSchema = baseDispensarySchema.extend({
+export const dispensarySignupSchema = baseWellnessSchema.extend({
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions.",
   }),
@@ -58,8 +56,7 @@ export const dispensarySignupSchema = baseDispensarySchema.extend({
 export type DispensarySignupFormData = z.infer<typeof dispensarySignupSchema>;
 
 
-// Schema for Admin Creating Wellness Store
-export const adminCreateDispensarySchema = baseDispensarySchema.extend({
+export const adminCreateDispensarySchema = baseWellnessSchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
 }).superRefine((data, ctx) => {
   if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
@@ -85,8 +82,7 @@ export const adminCreateDispensarySchema = baseDispensarySchema.extend({
 export type AdminCreateDispensaryFormData = z.infer<typeof adminCreateDispensarySchema>;
 
 
-// Schema for Admin Editing Wellness Store
-export const editDispensarySchema = baseDispensarySchema.extend({
+export const editDispensarySchema = baseWellnessSchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
   applicationDate: z.string().optional(),
 }).superRefine((data, ctx) => {
@@ -112,8 +108,7 @@ export const editDispensarySchema = baseDispensarySchema.extend({
 });
 export type EditDispensaryFormData = z.infer<typeof editDispensarySchema>;
 
-// Schema for Wellness Store Owner Editing their Wellness Store Profile
-export const ownerEditDispensarySchema = baseDispensarySchema.omit({
+export const ownerEditDispensarySchema = baseWellnessSchema.omit({
   ownerEmail: true,
   fullName: true,
 }).extend({
@@ -141,29 +136,25 @@ export const ownerEditDispensarySchema = baseDispensarySchema.omit({
 export type OwnerEditDispensaryFormData = z.infer<typeof ownerEditDispensarySchema>;
 
 
-// Schema for User Profile (Example, if needed later)
 export const userProfileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters."),
   email: z.string().email("Invalid email address."),
 });
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;
 
-// Updated to be recursive for nested subcategories
 export const productCategorySchema: z.ZodType<import('@/types').ProductCategory> = z.object({
   name: z.string().min(1, "Category name cannot be empty.").max(100, "Category name too long."),
   subcategories: z.array(z.lazy(() => productCategorySchema)).optional().default([]),
 });
 export type ProductCategoryFormData = z.infer<typeof productCategorySchema>;
 
-// Schema for managing an array of ProductCategories (used for the new admin page)
 export const dispensaryTypeProductCategoriesSchema = z.object({
   categoriesData: z.array(productCategorySchema).optional().default([]), 
 });
 export type DispensaryTypeProductCategoriesFormData = z.infer<typeof dispensaryTypeProductCategoriesSchema>;
 
-// Schema for Wellness Store Type (productCategories field removed as it's now in a separate collection)
 export const dispensaryTypeSchema = z.object({
-  name: z.string().min(2, { message: "Wellness store type name must be at least 2 characters." }),
+  name: z.string().min(2, { message: "Wellness type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
@@ -171,7 +162,6 @@ export const dispensaryTypeSchema = z.object({
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 
-// Schema for individual price tier
 export const priceTierSchema = z.object({
   unit: z.string().min(1, "Unit is required."),
   price: z.coerce.number({ 
@@ -180,9 +170,7 @@ export const priceTierSchema = z.object({
     })
     .positive({ message: "Price must be a positive number." })
     .refine(val => {
-        // Check if the number has at most two decimal places
         const valueTimes100 = val * 100;
-        // Using a small epsilon for floating point comparisons
         return Math.abs(valueTimes100 - Math.round(valueTimes100)) < 0.00001;
     }, {
       message: "Price can have at most two decimal places.",
@@ -194,7 +182,6 @@ export const priceTierSchema = z.object({
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
 
-// Schema for Product
 export const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
@@ -202,7 +189,6 @@ export const productSchema = z.object({
   subcategory: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
   
-  // THC/CBD Specific
   strain: z.string().optional().nullable(),
   thcContent: z.coerce.number().min(0).max(100).optional().nullable(),
   cbdContent: z.coerce.number().min(0).max(100).optional().nullable(),
@@ -211,12 +197,10 @@ export const productSchema = z.object({
   medicalUses: z.array(z.string()).optional().nullable().default([]),
   stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(),
 
-  // Apparel Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
   sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other']).optional().nullable(),
   sizes: z.array(z.string()).optional().nullable().default([]),
   
-  // General
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative."),
@@ -227,7 +211,6 @@ export const productSchema = z.object({
 });
 export type ProductFormData = z.infer<typeof productSchema>;
 
-// Schema for creating a Product Request
 export const productRequestSchema = z.object({
   productId: z.string(),
   productName: z.string(),
@@ -265,7 +248,6 @@ export const productRequestSchema = z.object({
 export type ProductRequestFormData = z.infer<typeof productRequestSchema>;
 
 
-// Schema for adding a note to a Product Request
 export const addProductRequestNoteSchema = z.object({
   note: z.string().min(1, "Note cannot be empty.").max(500, "Note is too long."),
   byName: z.string(),
@@ -273,7 +255,6 @@ export const addProductRequestNoteSchema = z.object({
 });
 export type AddProductRequestNoteFormData = z.infer<typeof addProductRequestNoteSchema>;
 
-// Schema for reporting an issue with a product pool transaction
 export const poolIssueSchema = z.object({
   productRequestId: z.string(),
   productName: z.string(),
@@ -308,7 +289,6 @@ export const poolIssueSchema = z.object({
 });
 export type PoolIssueFormData = z.infer<typeof poolIssueSchema>;
 
-// Schema for Credit Package (Admin CRUD)
 export const creditPackageSchema = z.object({
   name: z.string().min(3, "Package name must be at least 3 characters."),
   credits: z.number().int().positive("Credits must be a positive integer."),
@@ -320,7 +300,6 @@ export const creditPackageSchema = z.object({
 });
 export type CreditPackageFormData = z.infer<typeof creditPackageSchema>;
 
-// Schema for user signup
 export const userSignupSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
@@ -332,14 +311,12 @@ export const userSignupSchema = z.object({
 });
 export type UserSignupFormData = z.infer<typeof userSignupSchema>;
 
-// Schema for user signin
 export const userSigninSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(1, { message: "Password is required." }),
 });
 export type UserSigninFormData = z.infer<typeof userSigninSchema>;
 
-// Schema for User (Firestore document, used for role management etc.)
 export const userSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
@@ -357,7 +334,6 @@ export const userSchema = z.object({
 });
 export type User = z.infer<typeof userSchema>;
 
-// Schema for Super Admin Adding a New User
 export const adminAddUserSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
@@ -367,12 +343,11 @@ export const adminAddUserSchema = z.object({
   credits: z.coerce.number().int().min(0, "Credits cannot be negative.").default(10),
   dispensaryId: z.string().optional().nullable(),
 }).refine(data => data.role !== 'DispensaryOwner' || (data.role === 'DispensaryOwner' && data.dispensaryId && data.dispensaryId.trim() !== ''), {
-  message: "Wellness store ID is required for Wellness Store Owners.",
+  message: "Wellness ID is required for Wellness Owners.",
   path: ["dispensaryId"],
 });
 export type AdminAddUserFormData = z.infer<typeof adminAddUserSchema>;
 
-// Schema for Wellness Store Owner Adding Staff
 export const dispensaryOwnerAddStaffSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
@@ -381,7 +356,6 @@ export const dispensaryOwnerAddStaffSchema = z.object({
 });
 export type DispensaryOwnerAddStaffFormData = z.infer<typeof dispensaryOwnerAddStaffSchema>;
 
-// Schema for Wellness Store Owner Adding Leaf User
 export const dispensaryOwnerAddLeafUserSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
@@ -391,7 +365,6 @@ export const dispensaryOwnerAddLeafUserSchema = z.object({
 });
 export type DispensaryOwnerAddLeafUserFormData = z.infer<typeof dispensaryOwnerAddLeafUserSchema>;
 
-// Schema for Notifications
 export const notificationSchema = z.object({
   recipientUid: z.string(),
   message: z.string().min(1, "Message cannot be empty."),
@@ -413,7 +386,6 @@ export const notificationSchema = z.object({
 export type Notification = z.infer<typeof notificationSchema>;
 
 
-// Schema for logging AI interactions
 export const aiInteractionLogSchema = z.object({
   userId: z.string(),
   advisorSlug: z.string(),
@@ -425,10 +397,9 @@ export const aiInteractionLogSchema = z.object({
 });
 export type AIInteractionLog = z.infer<typeof aiInteractionLogSchema>;
 
-// Schema for DispensaryType (used in various places)
 export const dispensaryTypeDbSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(2, { message: "Wellness store type name must be at least 2 characters." }),
+  name: z.string().min(2, { message: "Wellness type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
@@ -439,8 +410,7 @@ export const dispensaryTypeDbSchema = z.object({
 export type DispensaryType = z.infer<typeof dispensaryTypeDbSchema>;
 
 
-// Schema for the main Dispensary document in Firestore
-export const dispensaryDbSchema = baseDispensarySchema.extend({
+export const dispensaryDbSchema = baseWellnessSchema.extend({
   id: z.string().optional(),
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended']),
   applicationDate: z.any(),
@@ -458,12 +428,11 @@ export const dispensaryDbSchema = baseDispensarySchema.extend({
 export type Dispensary = z.infer<typeof dispensaryDbSchema>;
 
 
-// Schema for Product (as stored in Firestore, includes ID and denormalized fields)
 export const productDbSchema = productSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),
-  dispensaryType: z.string(), // Wellness store type
+  dispensaryType: z.string(), 
   productOwnerEmail: z.string().email(),
   createdAt: z.any(),
   updatedAt: z.any(),
@@ -475,7 +444,6 @@ export const productDbSchema = productSchema.extend({
 });
 export type Product = z.infer<typeof productDbSchema>; 
 
-// Schema for ProductRequest (as stored in Firestore, includes ID)
 export const productRequestDbSchema = productRequestSchema.extend({
   id: z.string().optional(),
   createdAt: z.any(),
@@ -491,7 +459,6 @@ export const productRequestDbSchema = productRequestSchema.extend({
 export type ProductRequest = z.infer<typeof productRequestDbSchema>;
 
 
-// Schema for PoolIssue (as stored in Firestore, includes ID)
 export const poolIssueDbSchema = poolIssueSchema.extend({
   id: z.string().optional(),
   createdAt: z.any(),
@@ -499,7 +466,6 @@ export const poolIssueDbSchema = poolIssueSchema.extend({
 });
 export type PoolIssue = z.infer<typeof poolIssueDbSchema>;
 
-// Schema for CreditPackage (as stored in Firestore, includes ID)
 export const creditPackageDbSchema = creditPackageSchema.extend({
   id: z.string().optional(),
   createdAt: z.any().optional(),
@@ -507,7 +473,6 @@ export const creditPackageDbSchema = creditPackageSchema.extend({
 });
 export type CreditPackage = z.infer<typeof creditPackageDbSchema>;
 
-// Schema for AI Advisor content/configuration (if you plan to store this in Firestore)
 export const aiAdvisorConfigSchema = z.object({
   id: z.string().optional(),
   slug: z.string(),
@@ -522,3 +487,4 @@ export const aiAdvisorConfigSchema = z.object({
   dataAiHint: z.string().optional().nullable(),
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
+

@@ -25,23 +25,23 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 
 const userEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
-  email: z.string().email(), // Typically read-only for existing user email through this form
+  email: z.string().email(), 
   role: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff']),
   status: z.enum(['Active', 'Suspended', 'PendingApproval']),
   credits: z.coerce.number().int().min(0, "Credits cannot be negative."),
   dispensaryId: z.string().optional().nullable(),
 }).refine(data => data.role !== 'DispensaryOwner' || (data.role === 'DispensaryOwner' && data.dispensaryId && data.dispensaryId.trim() !== ''), {
-  message: "Wellness store ID is required for Wellness Store Owners.",
+  message: "Wellness ID is required for Wellness Owners.",
   path: ["dispensaryId"],
 });
 
 type UserEditFormData = z.infer<typeof userEditSchema>;
 
 interface EditUserDialogProps {
-  user: User | null; // Can be null when dialog is closed
+  user: User | null; 
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onUserUpdate: () => void; // Callback to refresh user list
+  onUserUpdate: () => void; 
   dispensaries: Dispensary[];
 }
 
@@ -51,7 +51,6 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
 
   const form = useForm<UserEditFormData>({
     resolver: zodResolver(userEditSchema),
-    // Default values will be set when user prop changes
   });
 
   useEffect(() => {
@@ -65,11 +64,11 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
         dispensaryId: user.dispensaryId || null,
       });
     } else {
-      form.reset({ // Reset to defaults if no user (dialog closed or new state)
+      form.reset({ 
         displayName: '', email: '', role: 'LeafUser', status: 'Active', credits: 0, dispensaryId: null,
       });
     }
-  }, [user, form, isOpen]); // Rerun effect when user or isOpen changes
+  }, [user, form, isOpen]); 
 
   const watchedRole = form.watch('role');
 
@@ -90,14 +89,12 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
         status: data.status,
         credits: data.credits,
         dispensaryId: data.role === 'DispensaryOwner' ? data.dispensaryId : null,
-        // Email cannot be changed this way directly; Firebase Auth requires re-authentication.
-        // Password changes also require re-authentication.
       };
       await updateDoc(userDocRef, updateData);
       
       toast({ title: "User Updated", description: `${data.displayName}'s profile has been updated.` });
       onUserUpdate();
-      onOpenChange(false); // Close dialog
+      onOpenChange(false); 
     } catch (error) {
       console.error("Error updating user:", error);
       toast({ title: "Update Failed", description: "Could not update user.", variant: "destructive" });
@@ -106,7 +103,7 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
     }
   };
 
-  if (!user) return null; // Don't render if no user is selected for editing
+  if (!user) return null; 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -135,8 +132,8 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
                         <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="LeafUser">Leaf User</SelectItem>
-                            <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
-                            <SelectItem value="DispensaryOwner">Wellness Store Owner</SelectItem>
+                            <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
+                            <SelectItem value="DispensaryOwner">Wellness Owner</SelectItem>
                             <SelectItem value="Super Admin">Super Admin</SelectItem>
                             <SelectItem value="User">User (Generic)</SelectItem>
                         </SelectContent>
@@ -147,18 +144,17 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
             {watchedRole === 'DispensaryOwner' && (
                  <FormField control={form.control} name="dispensaryId" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Associated Wellness Store</FormLabel>
+                        <FormLabel>Associated Wellness Profile</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select wellness store" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select wellness profile" /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {/* Removed: <SelectItem value="" disabled>Select a wellness store</SelectItem> */}
                                 {dispensaries.filter(d => d.status === "Approved").map(d => (
                                     <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
                                 ))}
-                                {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-stores" disabled>No approved wellness stores</SelectItem>}
+                                {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-wellness" disabled>No approved wellness profiles</SelectItem>}
                             </SelectContent>
                         </Select>
-                        <FormDescription>Required if role is Wellness Store Owner.</FormDescription>
+                        <FormDescription>Required if role is Wellness Owner.</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -203,14 +199,14 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [dispensaries, setDispensaries] = useState<Dispensary[]>([]);
+  const [wellnessProfiles, setWellnessProfiles] = useState<Dispensary[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<User['role'] | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<User['status'] | 'all'>('all');
 
-  const fetchUsersAndDispensaries = useCallback(async () => {
+  const fetchUsersAndWellnessProfiles = useCallback(async () => {
     setIsLoading(true);
     try {
       const usersCollectionRef = collection(db, 'users');
@@ -219,23 +215,23 @@ export default function AdminUsersPage() {
       const fetchedUsers: User[] = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
       setUsers(fetchedUsers);
 
-      const dispensariesCollectionRef = collection(db, 'dispensaries');
-      const dispensariesQuery = query(dispensariesCollectionRef, orderBy('dispensaryName'));
-      const dispensariesSnapshot = await getDocs(dispensariesQuery);
-      const fetchedDispensaries: Dispensary[] = dispensariesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Dispensary));
-      setDispensaries(fetchedDispensaries);
+      const wellnessCollectionRef = collection(db, 'dispensaries');
+      const wellnessQuery = query(wellnessCollectionRef, orderBy('dispensaryName'));
+      const wellnessSnapshot = await getDocs(wellnessQuery);
+      const fetchedWellnessProfiles: Dispensary[] = wellnessSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Dispensary));
+      setWellnessProfiles(fetchedWellnessProfiles);
 
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast({ title: "Error", description: "Could not fetch users or wellness stores.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch users or wellness profiles.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchUsersAndDispensaries();
-  }, [fetchUsersAndDispensaries]);
+    fetchUsersAndWellnessProfiles();
+  }, [fetchUsersAndWellnessProfiles]);
 
   const handleEditUser = (user: User) => {
     setEditingUser(user);
@@ -267,7 +263,7 @@ export default function AdminUsersPage() {
             View, edit, and add user accounts and roles.
           </p>
         </div>
-        <AddUserDialog onUserAdded={fetchUsersAndDispensaries} dispensaries={dispensaries} />
+        <AddUserDialog onUserAdded={fetchUsersAndWellnessProfiles} dispensaries={wellnessProfiles} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card">
@@ -285,8 +281,8 @@ export default function AdminUsersPage() {
                 <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="LeafUser">Leaf User</SelectItem>
-                    <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
-                    <SelectItem value="DispensaryOwner">Wellness Store Owner</SelectItem>
+                    <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
+                    <SelectItem value="DispensaryOwner">Wellness Owner</SelectItem>
                     <SelectItem value="Super Admin">Super Admin</SelectItem>
                     <SelectItem value="User">User (Generic)</SelectItem>
                 </SelectContent>
@@ -328,7 +324,7 @@ export default function AdminUsersPage() {
             <UserCard
               key={user.uid}
               user={user}
-              dispensaryName={user.role === 'DispensaryOwner' && user.dispensaryId ? dispensaries.find(d => d.id === user.dispensaryId)?.dispensaryName : undefined}
+              dispensaryName={user.role === 'DispensaryOwner' && user.dispensaryId ? wellnessProfiles.find(d => d.id === user.dispensaryId)?.dispensaryName : undefined}
               onEdit={handleEditUser}
             />
           ))}
@@ -352,9 +348,10 @@ export default function AdminUsersPage() {
         user={editingUser}
         isOpen={isEditUserDialogOpen}
         onOpenChange={setIsEditUserDialogOpen}
-        onUserUpdate={fetchUsersAndDispensaries}
-        dispensaries={dispensaries}
+        onUserUpdate={fetchUsersAndWellnessProfiles}
+        dispensaries={wellnessProfiles}
       />
     </div>
   );
 }
+

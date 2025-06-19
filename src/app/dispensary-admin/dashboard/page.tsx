@@ -44,42 +44,39 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
   </Card>
 );
 
-export default function DispensaryAdminOverviewPage() {
+export default function WellnessAdminOverviewPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  const [dispensary, setDispensary] = useState<Dispensary | null>(null);
+  const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
   const [stats, setStats] = useState({
     totalProducts: 0,
-    pendingRequests: 0, // Incoming requests needing approval
-    activePoolItems: 0, // Products currently shared in the pool
+    pendingRequests: 0, 
+    activePoolItems: 0, 
   });
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     if (authLoading || !currentUser || !currentUser.dispensaryId) {
-      if (!authLoading && !currentUser) setIsLoadingData(false); // Not logged in, stop loading
+      if (!authLoading && !currentUser) setIsLoadingData(false); 
       return;
     }
 
     const fetchData = async () => {
       setIsLoadingData(true);
       try {
-        // Fetch wellness store details
-        const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
-        const dispensarySnap = await getDoc(dispensaryDocRef);
-        if (dispensarySnap.exists()) {
-          setDispensary({ id: dispensarySnap.id, ...dispensarySnap.data() } as Dispensary);
+        const wellnessDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
+        const wellnessSnap = await getDoc(wellnessDocRef);
+        if (wellnessSnap.exists()) {
+          setWellnessProfile({ id: wellnessSnap.id, ...wellnessSnap.data() } as Dispensary);
         } else {
-          console.error("Wellness store data not found for current user.");
+          console.error("Wellness profile data not found for current user.");
           setIsLoadingData(false);
           return;
         }
 
-        // Fetch product count
         const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentUser.dispensaryId));
         const productsSnapshot = await getDocs(productsQuery);
         const activePoolItemsCount = productsSnapshot.docs.filter(doc => (doc.data() as Product).isAvailableForPool).length;
         
-        // Fetch pending product requests (incoming)
         const requestsQuery = query(
           collection(db, "productRequests"),
           where("productOwnerDispensaryId", "==", currentUser.dispensaryId),
@@ -93,7 +90,7 @@ export default function DispensaryAdminOverviewPage() {
           activePoolItems: activePoolItemsCount,
         });
       } catch (error) {
-        console.error("Error fetching wellness store dashboard data:", error);
+        console.error("Error fetching wellness dashboard data:", error);
       } finally {
         setIsLoadingData(false);
       }
@@ -110,13 +107,13 @@ export default function DispensaryAdminOverviewPage() {
     return <div className="p-4 text-center text-destructive">You are not logged in. Please log in to access your dashboard.</div>;
   }
   if (currentUser.role !== 'DispensaryOwner') {
-      return <div className="p-4 text-center text-destructive">Access Denied. This dashboard is for Wellness Store Owners only.</div>;
+      return <div className="p-4 text-center text-destructive">Access Denied. This dashboard is for Wellness Owners only.</div>;
   }
-  if (isLoadingData && !dispensary) { // Show loading if wellness store data isn't available yet, but user is owner
+  if (isLoadingData && !wellnessProfile) { 
      return <div className="p-4"><Skeleton className="h-12 w-1/2 mb-4" /><Skeleton className="h-64 w-full" /></div>;
   }
-   if (!dispensary && !isLoadingData) { // Finished loading but no wellness store data
-    return <div className="p-4 text-center text-destructive">Could not load wellness store data. Please contact support.</div>;
+   if (!wellnessProfile && !isLoadingData) { 
+    return <div className="p-4 text-center text-destructive">Could not load wellness profile data. Please contact support.</div>;
   }
 
 
@@ -128,7 +125,7 @@ export default function DispensaryAdminOverviewPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Store className="mr-3 h-8 w-8 text-primary" /> {dispensary?.dispensaryName || "Your Wellness Store"}
+            <Store className="mr-3 h-8 w-8 text-primary" /> {wellnessProfile?.dispensaryName || "Your Wellness Profile"}
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
@@ -144,7 +141,7 @@ export default function DispensaryAdminOverviewPage() {
           title="Total Products" 
           value={stats.totalProducts} 
           icon={Package} 
-          description="Products currently listed by your wellness store."
+          description="Products currently listed by your wellness profile."
           link="/dispensary-admin/products"
           linkText="Manage Products"
           isLoading={isLoadingData}
@@ -163,7 +160,7 @@ export default function DispensaryAdminOverviewPage() {
           value={stats.activePoolItems}
           icon={ShoppingBasket}
           description="Products you've made available to the sharing pool."
-          link="/dispensary-admin/products?filter=pool" // Example filter
+          link="/dispensary-admin/products?filter=pool" 
           linkText="Manage Pool Items"
           isLoading={isLoadingData}
         />
@@ -185,8 +182,8 @@ export default function DispensaryAdminOverviewPage() {
             buttonText="Go to Pool"
         />
         <QuickActionCard
-            title="Wellness Store Profile"
-            description="Update your wellness store's details, operating hours, and contact information."
+            title="Wellness Profile"
+            description="Update your wellness details, operating hours, and contact information."
             icon={Store}
             link="/dispensary-admin/profile"
             buttonText="Edit Profile"
@@ -228,3 +225,4 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, i
       </CardContent>
     </Card>
 );
+

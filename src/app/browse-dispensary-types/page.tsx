@@ -12,8 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard';
 import Link from 'next/link';
 
-export default function BrowseDispensaryTypesPage() {
-  const [allDispensaryTypes, setAllDispensaryTypes] = useState<DispensaryType[]>([]);
+export default function BrowseWellnessTypesPage() {
+  const [allWellnessTypes, setAllWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { toast } = useToast();
 
@@ -28,10 +28,10 @@ export default function BrowseDispensaryTypesPage() {
         querySnapshot.forEach((docSnap) => {
           fetchedTypes.push({ id: docSnap.id, ...docSnap.data() } as DispensaryType);
         });
-        setAllDispensaryTypes(fetchedTypes);
+        setAllWellnessTypes(fetchedTypes);
       } catch (error) {
-        console.error("Error fetching wellness store types:", error);
-        toast({ title: "Error", description: "Could not load wellness store types.", variant: "destructive" });
+        console.error("Error fetching wellness types:", error);
+        toast({ title: "Error", description: "Could not load wellness types.", variant: "destructive" });
       } finally {
         setIsLoadingTypes(false);
       }
@@ -48,13 +48,13 @@ export default function BrowseDispensaryTypesPage() {
             className="text-5xl font-extrabold tracking-tight text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Explore Wellness Store Types
+            Explore Wellness Types
           </h1>
           <p 
             className="text-xl text-foreground/90 dark:text-foreground/80 mt-3 max-w-2xl mx-auto"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Discover a variety of wellness stores offering unique products and services. Click on a type to see available stores.
+            Discover a variety of wellness entities offering unique products and services. Click on a type to see available options.
           </p>
         </div>
       </div>
@@ -62,16 +62,16 @@ export default function BrowseDispensaryTypesPage() {
       {isLoadingTypes ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {[1,2,3,4].map(i => 
-            <Card key={i} className="h-[380px] animate-pulse"> {/* Base card will get frosted from ui/card.tsx */}
+            <Card key={i} className="h-[380px] animate-pulse"> 
               <CardContent className="flex items-center justify-center h-full">
                 <Loader2 className="h-10 w-10 animate-spin text-primary/50"/>
               </CardContent>
             </Card>
           )}
         </div>
-      ) : allDispensaryTypes.length > 0 ? (
+      ) : allWellnessTypes.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {allDispensaryTypes.map((type) => (
+          {allWellnessTypes.map((type) => (
             <DispensaryTypeCard 
               key={type.id} 
               dispensaryType={type} 
@@ -80,11 +80,11 @@ export default function BrowseDispensaryTypesPage() {
           ))}
         </div>
       ) : (
-        <Card className="col-span-full"> {/* Base card will get frosted from ui/card.tsx */}
+        <Card className="col-span-full"> 
           <CardContent className="pt-10 pb-10 text-center text-muted-foreground">
             <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-destructive" />
-            <h3 className="text-2xl font-semibold mb-2">No Wellness Store Types Found</h3>
-            <p className="mb-6">It looks like no wellness store types have been set up yet. Please check back later.</p>
+            <h3 className="text-2xl font-semibold mb-2">No Wellness Types Found</h3>
+            <p className="mb-6">It looks like no wellness types have been set up yet. Please check back later.</p>
             <Button asChild variant="outline">
               <Link href="/">Back to Home</Link>
             </Button>
@@ -94,3 +94,4 @@ export default function BrowseDispensaryTypesPage() {
     </div>
   );
 }
+

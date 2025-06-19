@@ -5,7 +5,7 @@ import type { DispensaryType } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, ImageIcon as ImageIconLucide, Tag, Info, MessageSquareText, ListPlus } from 'lucide-react';
+import { Edit, Trash2, ImageIcon as ImageIconLucideSvg, Tag, Info, MessageSquareText, ListPlus } from 'lucide-react';
 import Image from 'next/image';
 import { DispensaryTypeDialog } from './DispensaryTypeDialog';
 import Link from 'next/link';
@@ -21,7 +21,7 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
   
   const renderImagePreview = (pathOrUrl: string | null | undefined, altText: string, hint: string) => {
     if (!pathOrUrl) {
-      return <ImageIconLucide className="h-10 w-10 text-muted-foreground flex-shrink-0" />;
+      return <ImageIconLucideSvg className="h-10 w-10 text-muted-foreground flex-shrink-0" />;
     }
     const isRenderable = pathOrUrl.startsWith('http') || pathOrUrl.startsWith('/');
     
@@ -119,7 +119,7 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the wellness store type &quot;{dispensaryType.name}&quot;.
+                    This action cannot be undone. This will permanently delete the wellness type &quot;{dispensaryType.name}&quot;.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -131,15 +131,9 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 </AlertDialogContent>
             </AlertDialog>
           </div>
-          {/* Manage Categories button is now hidden as requested 
-          <Button variant="secondary" className="w-full" asChild>
-            <Link href={`/admin/dashboard/dispensary-types/edit-categories/${encodeURIComponent(dispensaryType.name)}`}>
-              <ListPlus className="mr-2 h-4 w-4" /> Manage Categories
-            </Link>
-          </Button>
-          */}
         </CardFooter>
       )}
     </Card>
   );
 }
+

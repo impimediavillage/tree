@@ -19,7 +19,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
 import type { DispensaryType } from '@/types';
 
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; // Abbreviated
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; 
 
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" },
@@ -53,10 +53,10 @@ const minuteOptions = [
 ];
 const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
 
-const dispensaryTypeIcons: Record<string, string> = {
-  "THC - CBD - Mushrooms dispensary": "/icons/thc-cbd-mushroom.png",
-  "Homeopathic dispensary": "/icons/homeopathy.png",
-  "African Traditional Medicine dispensary": "/icons/traditional-medicine.png",
+const wellnessTypeIcons: Record<string, string> = {
+  "THC - CBD - Mushrooms wellness": "/icons/thc-cbd-mushroom.png",
+  "Homeopathic wellness": "/icons/homeopathy.png",
+  "African Traditional Medicine wellness": "/icons/traditional-medicine.png",
   "Flower Store": "/icons/default-pin.png",
   "Permaculture & gardening store": "/icons/permaculture.png",
   "Traditional Medicine": "/icons/traditional-medicine.png",
@@ -75,10 +75,10 @@ const countryCodes = [
   { value: "+33", flag: "🇫🇷", shortName: "FR", code: "+33" },
 ];
 
-export default function DispensarySignupPage() {
+export default function WellnessSignupPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [dispensaryTypes, setDispensaryTypes] = useState<DispensaryType[]>([]);
+  const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
 
   const [openHour, setOpenHour] = useState<string | undefined>();
   const [openMinute, setOpenMinute] = useState<string | undefined>();
@@ -117,7 +117,7 @@ export default function DispensarySignupPage() {
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
-  const fetchDispensaryTypes = useCallback(async () => {
+  const fetchWellnessTypes = useCallback(async () => {
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
       const q = firestoreQuery(typesCollectionRef);
@@ -131,16 +131,16 @@ export default function DispensarySignupPage() {
             image: docSnap.data().image
         } as DispensaryType);
       });
-      setDispensaryTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
+      setWellnessTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
-      console.error("Error fetching wellness store types for signup:", error);
-      toast({ title: "Error", description: "Could not load wellness store types. Please try again.", variant: "destructive" });
+      console.error("Error fetching wellness types for signup:", error);
+      toast({ title: "Error", description: "Could not load wellness types. Please try again.", variant: "destructive" });
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchDispensaryTypes();
-  }, [fetchDispensaryTypes]);
+    fetchWellnessTypes();
+  }, [fetchWellnessTypes]);
 
   const watchDispensaryType = form.watch("dispensaryType");
 
@@ -198,13 +198,13 @@ export default function DispensarySignupPage() {
       const initialZoom = (form.getValues('latitude') && form.getValues('longitude')) ? 17 : 6;
 
       const currentTypeName = form.getValues('dispensaryType');
-      let initialIconUrl = dispensaryTypeIcons.default;
+      let initialIconUrl = wellnessTypeIcons.default;
       if (currentTypeName) {
-          const selectedTypeObject = dispensaryTypes.find(dt => dt.name === currentTypeName);
+          const selectedTypeObject = wellnessTypes.find(dt => dt.name === currentTypeName);
           if (selectedTypeObject?.iconPath) {
               initialIconUrl = selectedTypeObject.iconPath;
-          } else if (dispensaryTypeIcons[currentTypeName]) {
-              initialIconUrl = dispensaryTypeIcons[currentTypeName];
+          } else if (wellnessTypeIcons[currentTypeName]) {
+              initialIconUrl = wellnessTypeIcons[currentTypeName];
           }
       }
 
@@ -257,22 +257,22 @@ export default function DispensarySignupPage() {
       map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
       marker.addListener('dragend', () => markerInstanceRef.current?.getPosition() && handleMapInteraction(markerInstanceRef.current.getPosition()!));
     }
-  }, [form, dispensaryTypes]);
+  }, [form, wellnessTypes]);
 
   useEffect(() => {
     if (markerInstanceRef.current && window.google && window.google.maps) {
-      let iconUrl = dispensaryTypeIcons.default;
+      let iconUrl = wellnessTypeIcons.default;
       if (watchDispensaryType) {
-          const selectedTypeObject = dispensaryTypes.find(dt => dt.name === watchDispensaryType);
+          const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
           if (selectedTypeObject?.iconPath) {
               iconUrl = selectedTypeObject.iconPath;
-          } else if (dispensaryTypeIcons[watchDispensaryType]) {
-              iconUrl = dispensaryTypeIcons[watchDispensaryType];
+          } else if (wellnessTypeIcons[watchDispensaryType]) {
+              iconUrl = wellnessTypeIcons[watchDispensaryType];
           }
       }
       markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
     }
-  }, [watchDispensaryType, dispensaryTypes]);
+  }, [watchDispensaryType, wellnessTypes]);
 
   useEffect(() => {
     let checkGoogleInterval: NodeJS.Timeout;
@@ -327,17 +327,17 @@ export default function DispensarySignupPage() {
   async function onSubmit(data: DispensarySignupFormData) {
     setIsLoading(true);
     try {
-      const dispensaryData = {
+      const wellnessData = {
         ...data,
         applicationDate: Timestamp.fromDate(new Date()),
         status: 'Pending Approval',
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
       };
-      await addDoc(collection(db, 'dispensaries'), dispensaryData);
+      await addDoc(collection(db, 'dispensaries'), wellnessData);
       toast({
         title: "Application Submitted!",
-        description: "Your wellness store application has been received and is pending review.",
+        description: "Your wellness application has been received and is pending review.",
       });
       form.reset();
       setOpenHour(undefined); setOpenMinute(undefined); setOpenAmPm(undefined);
@@ -349,11 +349,11 @@ export default function DispensarySignupPage() {
         mapInstanceRef.current.setCenter(defaultPos);
         mapInstanceRef.current.setZoom(6);
         markerInstanceRef.current.setPosition(defaultPos);
-        const defaultIcon = dispensaryTypeIcons.default || '/icons/default-pin.png';
+        const defaultIcon = wellnessTypeIcons.default || '/icons/default-pin.png';
         markerInstanceRef.current.setIcon({ url: defaultIcon, scaledSize: new window.google.maps.Size(40,40), anchor: new window.google.maps.Point(20,40)});
       }
     } catch (error) {
-      console.error("Error submitting wellness store application:", error);
+      console.error("Error submitting wellness application:", error);
       toast({
         title: "Submission Failed",
         description: "An error occurred. Please try again later.",
@@ -372,7 +372,7 @@ export default function DispensarySignupPage() {
         <CardTitle 
             className="text-3xl text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >Virtual Wellness Store Sign-Up</CardTitle>
+        >Virtual Wellness Sign-Up</CardTitle>
         <CardDescription 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
@@ -392,17 +392,17 @@ export default function DispensarySignupPage() {
             </div>
             
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Store Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Wellness Store Name</FormLabel><FormControl><Input placeholder="Your Wellness Store's Name" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Wellness Name</FormLabel><FormControl><Input placeholder="Your Wellness Name" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
-                <FormItem><FormLabel>Wellness Store Type</FormLabel>
+                <FormItem><FormLabel>Wellness Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {dispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
+                      {wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
                     </SelectContent>
                   </Select><FormMessage />
                 </FormItem>
@@ -419,13 +419,13 @@ export default function DispensarySignupPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Wellness Store Location / Address</FormLabel>
+              <FormItem><FormLabel>Wellness Location / Address</FormLabel>
                 <FormControl><Input placeholder="e.g. 123 Main St, Anytown" {...field} ref={locationInputRef} /></FormControl>
                 <FormDescription>Start typing your address. Select from suggestions to pinpoint on map.</FormDescription><FormMessage />
               </FormItem>
             )} />
             <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm" />
-            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with wellness store type.</FormDescription>
+            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with wellness type.</FormDescription>
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             
@@ -525,27 +525,27 @@ export default function DispensarySignupPage() {
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your wellness store only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
+                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>What type of orders will you fulfill?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
 
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in product sharing with other wellness stores?</FormLabel>
+              <FormItem><FormLabel>Participate in product sharing with other wellness entities?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
-                <FormDescription>Allows sharing products with wellness stores of the same type.</FormDescription><FormMessage /></FormItem>)} />
+                <FormDescription>Allows sharing products with wellness entities of the same type.</FormDescription><FormMessage /></FormItem>)} />
 
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
                 <FormItem><FormLabel>Lead time to transfer products</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl>
                     <SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                  <FormDescription>Time needed to get products to other wellness stores in your country.</FormDescription><FormMessage /></FormItem>)} />)}
+                  <FormDescription>Time needed to get products to other wellness entities in your country.</FormDescription><FormMessage /></FormItem>)} />)}
 
             <FormField control={form.control} name="message" render={({ field }) => (
-              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness store..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness entity..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
 
             <FormField control={form.control} name="acceptTerms" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -567,3 +567,4 @@ export default function DispensarySignupPage() {
     </Card>
   );
 }
+

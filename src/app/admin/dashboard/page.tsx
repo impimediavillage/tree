@@ -56,8 +56,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
 export default function AdminDashboardOverviewPage() {
   const [stats, setStats] = useState({
     totalUsers: 0,
-    totalDispensaries: 0,
-    pendingDispensaries: 0,
+    totalWellnessProfiles: 0,
+    pendingWellnessApplications: 0,
     activeProducts: 0, 
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
@@ -68,18 +68,18 @@ export default function AdminDashboardOverviewPage() {
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
         
-        const dispensariesCollection = collection(db, "dispensaries") as CollectionReference<Dispensary, DocumentData>;
-        const dispensariesSnapshot = await getDocs(dispensariesCollection);
+        const wellnessCollection = collection(db, "dispensaries") as CollectionReference<Dispensary, DocumentData>;
+        const wellnessSnapshot = await getDocs(wellnessCollection);
         
-        const pendingDispensariesQuery = query(dispensariesCollection, where("status", "==", "Pending Approval"));
-        const pendingDispensariesSnapshot = await getDocs(pendingDispensariesQuery);
+        const pendingWellnessQuery = query(wellnessCollection, where("status", "==", "Pending Approval"));
+        const pendingWellnessSnapshot = await getDocs(pendingWellnessQuery);
         
         const productsSnapshot = await getDocs(collection(db, "products")); 
 
         setStats({
           totalUsers: usersSnapshot.size,
-          totalDispensaries: dispensariesSnapshot.size,
-          pendingDispensaries: pendingDispensariesSnapshot.size,
+          totalWellnessProfiles: wellnessSnapshot.size,
+          pendingWellnessApplications: pendingWellnessSnapshot.size,
           activeProducts: productsSnapshot.size,
         });
       } catch (error) {
@@ -121,22 +121,22 @@ export default function AdminDashboardOverviewPage() {
           isLoading={isLoadingStats}
         />
         <StatCard 
-          title="Total Wellness Stores" 
-          value={stats.totalDispensaries} 
+          title="Total Wellness Profiles" 
+          value={stats.totalWellnessProfiles} 
           icon={Building} 
-          description="All registered wellness stores."
+          description="All registered wellness profiles."
           link="/admin/dashboard/dispensaries"
-          linkText="Manage Wellness Stores"
+          linkText="Manage Wellness Profiles"
           isLoading={isLoadingStats}
-          badgeCount={stats.pendingDispensaries}
+          badgeCount={stats.pendingWellnessApplications}
           badgeColor="bg-yellow-500"
         />
          <StatCard 
           title="Pending Applications" 
-          value={stats.pendingDispensaries} 
+          value={stats.pendingWellnessApplications} 
           icon={Hourglass} 
-          description="New wellness stores awaiting review."
-          link="/admin/dashboard/dispensaries?status=Pending+Approval" // URL encode space
+          description="New wellness profiles awaiting review."
+          link="/admin/dashboard/dispensaries?status=Pending+Approval" 
           linkText="Review Applications"
           isLoading={isLoadingStats}
         />
@@ -144,7 +144,7 @@ export default function AdminDashboardOverviewPage() {
           title="Listed Products" 
           value={stats.activeProducts}
           icon={Package}
-          description="Total products across all wellness stores."
+          description="Total products across all wellness entities."
           link="/admin/dashboard/product-pool"
           linkText="View Product Pool"
           isLoading={isLoadingStats}
@@ -154,12 +154,12 @@ export default function AdminDashboardOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Building className="text-accent h-6 w-6" /> Manage Wellness Stores</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Building className="text-accent h-6 w-6" /> Manage Wellness Profiles</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">Approve, view, edit, or suspend wellness store accounts.</p>
+            <p className="text-muted-foreground mb-4">Approve, view, edit, or suspend wellness applications.</p>
             <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/dispensaries">Go to Wellness Stores</Link>
+              <Link href="/admin/dashboard/dispensaries">Go to Wellness Profiles</Link>
             </Button>
           </CardContent>
         </Card>
@@ -176,10 +176,10 @@ export default function AdminDashboardOverviewPage() {
         </Card>
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ListChecks className="text-accent h-6 w-6" /> Wellness Store Types</CardTitle>
+            <CardTitle className="flex items-center gap-2"><ListChecks className="text-accent h-6 w-6" /> Wellness Types</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">Create and manage the types of wellness stores available.</p>
+            <p className="text-muted-foreground mb-4">Create and manage the types of wellness entities available.</p>
             <Button asChild className="w-full bg-primary text-primary-foreground">
               <Link href="/admin/dashboard/dispensary-types">Manage Types</Link>
             </Button>
@@ -222,3 +222,4 @@ export default function AdminDashboardOverviewPage() {
     </div>
   );
 }
+

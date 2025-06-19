@@ -156,13 +156,13 @@ const NestedSubcategoryManager: React.FC<{
 };
 
 
-export default function EditDispensaryTypeCategoriesPage() {
+export default function EditWellnessTypeCategoriesPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
 
-  const dispensaryTypeName = params.dispensaryTypeName ? decodeURIComponent(params.dispensaryTypeName as string) : null;
+  const wellnessTypeName = params.dispensaryTypeName ? decodeURIComponent(params.dispensaryTypeName as string) : null;
 
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
@@ -171,42 +171,42 @@ export default function EditDispensaryTypeCategoriesPage() {
   const form = useForm<DispensaryTypeProductCategoriesFormData>({
     resolver: zodResolver(dispensaryTypeProductCategoriesSchema),
     defaultValues: {
-      categoriesData: [], // Field name changed to categoriesData
+      categoriesData: [], 
     },
   });
 
   const { fields: categoryFields, append: appendCategory, remove: removeCategory } = useFieldArray({
     control: form.control,
-    name: "categoriesData", // Field name changed to categoriesData
+    name: "categoriesData", 
   });
 
   const fetchCategories = useCallback(async () => {
-    if (!dispensaryTypeName) {
-      toast({ title: "Error", description: "Wellness store type name not provided.", variant: "destructive" });
+    if (!wellnessTypeName) {
+      toast({ title: "Error", description: "Wellness type name not provided.", variant: "destructive" });
       router.push('/admin/dashboard/dispensary-types');
       return;
     }
     setIsFetchingData(true);
     try {
       const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
-      const q = firestoreQuery(categoriesCollectionRef, where('name', '==', dispensaryTypeName), limit(1));
+      const q = firestoreQuery(categoriesCollectionRef, where('name', '==', wellnessTypeName), limit(1));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
         const docSnap = querySnapshot.docs[0];
         setDocumentId(docSnap.id);
         const data = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-        const sanitizedCategories = (data.categoriesData || []).map(cat => ({ // Changed from data.categories
+        const sanitizedCategories = (data.categoriesData || []).map(cat => ({ 
           ...cat,
           subcategories: (cat.subcategories || []).map(subcat => ({
             ...subcat,
             subcategories: subcat.subcategories || []
           }))
         }));
-        form.reset({ categoriesData: sanitizedCategories }); // Changed from categories
+        form.reset({ categoriesData: sanitizedCategories }); 
       } else {
-        form.reset({ categoriesData: [] }); // Changed from categories
-        setDocumentId(null); // No existing document, will create on save
+        form.reset({ categoriesData: [] }); 
+        setDocumentId(null); 
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -214,7 +214,7 @@ export default function EditDispensaryTypeCategoriesPage() {
     } finally {
       setIsFetchingData(false);
     }
-  }, [dispensaryTypeName, form, toast, router]);
+  }, [wellnessTypeName, form, toast, router]);
 
   useEffect(() => {
      if (authLoading) return;
@@ -228,7 +228,7 @@ export default function EditDispensaryTypeCategoriesPage() {
 
 
   const onSubmit = async (data: DispensaryTypeProductCategoriesFormData) => {
-    if (!dispensaryTypeName || !currentUser || currentUser.role !== 'Super Admin') return;
+    if (!wellnessTypeName || !currentUser || currentUser.role !== 'Super Admin') return;
     setIsLoading(true);
 
     const docRef = documentId
@@ -249,15 +249,15 @@ export default function EditDispensaryTypeCategoriesPage() {
           });
       };
 
-      const categoriesToSave = cleanCategories(data.categoriesData); // Changed from data.categories
+      const categoriesToSave = cleanCategories(data.categoriesData); 
 
       await setDoc(docRef, {
-        name: dispensaryTypeName,
-        categoriesData: categoriesToSave, // Changed from categories
+        name: wellnessTypeName,
+        categoriesData: categoriesToSave, 
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
-      toast({ title: "Categories Saved", description: `Product categories for "${dispensaryTypeName}" have been updated.` });
+      toast({ title: "Categories Saved", description: `Product categories for "${wellnessTypeName}" have been updated.` });
       if (!documentId) setDocumentId(docRef.id);
       fetchCategories();
     } catch (error) {
@@ -311,7 +311,7 @@ export default function EditDispensaryTypeCategoriesPage() {
               className="text-lg text-foreground"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-                For Wellness Store Type: <span className="font-semibold text-primary">{dispensaryTypeName}</span>
+                For Wellness Type: <span className="font-semibold text-primary">{wellnessTypeName}</span>
             </p>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -331,7 +331,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                 className="text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
               >
-                Define main categories and up to two levels of subcategories for products of type &quot;{dispensaryTypeName}&quot;.
+                Define main categories and up to two levels of subcategories for products of type &quot;{wellnessTypeName}&quot;.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -341,7 +341,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                      <GripVertical className="h-5 w-5 text-muted-foreground/50 cursor-grab mt-7 mr-1" />
                     <FormField
                       control={form.control}
-                      name={`categoriesData.${categoryIndex}.name`} // Changed from categories
+                      name={`categoriesData.${categoryIndex}.name`} 
                       render={({ field }) => (
                         <FormItem className="flex-grow mr-2">
                           <FormLabel className="text-md font-semibold text-foreground">Main Category</FormLabel>
@@ -374,7 +374,7 @@ export default function EditDispensaryTypeCategoriesPage() {
                   <NestedSubcategoryManager
                     nestingLevel={0}
                     control={form.control}
-                    pathPrefix={`categoriesData.${categoryIndex}.subcategories`} // Changed from categories
+                    pathPrefix={`categoriesData.${categoryIndex}.subcategories`} 
                     register={form.register}
                     getValues={form.getValues}
                     setValue={form.setValue}
@@ -409,10 +409,11 @@ export default function EditDispensaryTypeCategoriesPage() {
             <CardContent className="pt-6 text-center text-amber-700">
                 <AlertTriangle className="mx-auto h-10 w-10 mb-3"/>
                 <p className="text-lg font-semibold">No Categories Defined Yet</p>
-                <p className="text-sm">Click &quot;Add Main Category&quot; to start building the product structure for &quot;{dispensaryTypeName}&quot;.</p>
+                <p className="text-sm">Click &quot;Add Main Category&quot; to start building the product structure for &quot;{wellnessTypeName}&quot;.</p>
             </CardContent>
         </Card>
        )}
     </div>
   );
 }
+

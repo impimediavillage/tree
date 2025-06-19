@@ -12,7 +12,7 @@ import { PlusCircle, ListChecks, Loader2, Search } from 'lucide-react';
 import { DispensaryTypeDialog } from '@/components/admin/DispensaryTypeDialog';
 import { DispensaryTypeCard } from '@/components/admin/DispensaryTypeCard';
 
-export default function AdminDispensaryTypesPage() {
+export default function AdminWellnessTypesPage() {
   const [allTypes, setAllTypes] = React.useState<DispensaryType[]>([]);
   const [filteredTypes, setFilteredTypes] = React.useState<DispensaryType[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -33,7 +33,7 @@ export default function AdminDispensaryTypesPage() {
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
 
-  const fetchDispensaryTypes = React.useCallback(async () => {
+  const fetchWellnessTypes = React.useCallback(async () => {
     setIsLoading(true);
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
@@ -49,18 +49,18 @@ export default function AdminDispensaryTypesPage() {
         } as DispensaryType;
       });
       setAllTypes(fetchedTypes);
-      setFilteredTypes(fetchedTypes); // Initialize filtered list
+      setFilteredTypes(fetchedTypes); 
     } catch (error) {
-      console.error("Error fetching wellness store types:", error);
-      toast({ title: "Error", description: "Could not fetch wellness store types.", variant: "destructive" });
+      console.error("Error fetching wellness types:", error);
+      toast({ title: "Error", description: "Could not fetch wellness types.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   React.useEffect(() => {
-    fetchDispensaryTypes();
-  }, [fetchDispensaryTypes]);
+    fetchWellnessTypes();
+  }, [fetchWellnessTypes]);
 
   React.useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
@@ -78,11 +78,11 @@ export default function AdminDispensaryTypesPage() {
     }
     try {
       await deleteDoc(doc(db, 'dispensaryTypes', typeId));
-      toast({ title: "Wellness Store Type Deleted", description: `"${typeName}" has been removed.` });
-      fetchDispensaryTypes(); // Refresh list
+      toast({ title: "Wellness Type Deleted", description: `"${typeName}" has been removed.` });
+      fetchWellnessTypes(); 
     } catch (error) {
-      console.error("Error deleting wellness store type:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete wellness store type.", variant: "destructive" });
+      console.error("Error deleting wellness type:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete wellness type.", variant: "destructive" });
     }
   };
 
@@ -94,17 +94,17 @@ export default function AdminDispensaryTypesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <ListChecks className="h-8 w-8 text-primary"/> Manage Wellness Store Types
+            <ListChecks className="h-8 w-8 text-primary"/> Manage Wellness Types
           </h1>
           <p 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Create, view, edit, and delete wellness store types for the platform.
+            Create, view, edit, and delete wellness types for the platform.
           </p>
         </div>
         {isSuperAdmin && (
-          <DispensaryTypeDialog onSave={fetchDispensaryTypes} isSuperAdmin={isSuperAdmin}>
+          <DispensaryTypeDialog onSave={fetchWellnessTypes} isSuperAdmin={isSuperAdmin}>
             <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Type</Button>
           </DispensaryTypeDialog>
         )}
@@ -124,7 +124,7 @@ export default function AdminDispensaryTypesPage() {
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Loading wellness store types...</p>
+          <p className="ml-2 text-muted-foreground">Loading wellness types...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
@@ -133,7 +133,7 @@ export default function AdminDispensaryTypesPage() {
               <DispensaryTypeCard
                 key={type.id || index} 
                 dispensaryType={type}
-                onSave={fetchDispensaryTypes}
+                onSave={fetchWellnessTypes}
                 onDelete={handleDeleteType}
                 isSuperAdmin={isSuperAdmin}
               />
@@ -141,7 +141,7 @@ export default function AdminDispensaryTypesPage() {
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
               <ListChecks className="mx-auto h-12 w-12 mb-3" />
-              No wellness store types found {searchTerm ? 'matching your criteria' : ''}.
+              No wellness types found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
@@ -149,3 +149,4 @@ export default function AdminDispensaryTypesPage() {
     </div>
   );
 }
+

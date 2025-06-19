@@ -151,10 +151,10 @@ export default function HolisticAiHubPage() {
     setIsLoadingUser(false);
   }, []);
 
- const wellnessStoreBenefits = [
-    { text: "Engage in private, inter-wellness store trading and bulk product transactions", icon: Truck },
+ const wellnessBenefits = [
+    { text: "Engage in private, inter-wellness entity trading and bulk product transactions", icon: Truck },
     { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
-    { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
+    { text: "Unlimited access to the Product Sharing Pool with other wellness entities.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
     { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
@@ -166,7 +166,7 @@ export default function HolisticAiHubPage() {
     { text: "Cant afford wellness advice? Now You can with The Wellness Tree FREE Leaf package.", icon: Gift },
     { text: "10 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
     { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
-    { text: "Sign up for FREE to browse and shop our hosted stores.", icon: Gift },
+    { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
   ];
 
@@ -209,18 +209,18 @@ export default function HolisticAiHubPage() {
               className="text-lg text-foreground max-w-xl mx-auto mt-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              Whether you&apos;re a wellness store looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
+              Whether you&apos;re a wellness entity looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <SignupBenefitCard
-              title="Benefits of signing up as a virtual wellness store:"
-              buttonText="Become a Virtual Wellness Store"
+              title="Benefits of signing up as a virtual wellness entity:"
+              buttonText="Become a Virtual Wellness Entity"
               buttonLink="/dispensary-signup"
               buttonIcon={Store}
-              benefits={wellnessStoreBenefits}
+              benefits={wellnessBenefits}
               delay={100}
-              dataAiHint="wellness store signup benefits"
+              dataAiHint="wellness entity signup benefits"
             />
             <SignupBenefitCard
               title="Benefits of signing up as a Leaf on our Tree:"
@@ -262,12 +262,12 @@ export default function HolisticAiHubPage() {
               className="text-2xl text-foreground flex items-center gap-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Store Owner!
+              <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Owner!
             </CardTitle>
           </CardHeader>
           <CardContent>
              <Button asChild className="w-full md:w-auto text-lg py-3 bg-primary text-primary-foreground">
-                <Link href="/dispensary-admin/dashboard">Go to Wellness Store Panel</Link>
+                <Link href="/dispensary-admin/dashboard">Go to Wellness Panel</Link>
             </Button>
           </CardContent>
         </Card>
@@ -299,7 +299,6 @@ export default function HolisticAiHubPage() {
       )}
 
 
-      {/* AI Advisors Section */}
       <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
           <h2 
@@ -324,3 +323,4 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
+

@@ -32,20 +32,16 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const sampleUnits = [
-  // Grams & Kilograms grouped and ordered
   "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
   "1kg", "2kg", "5kg", "10kg", "10kg+",
-  // Ounces grouped and ordered
   "0.25 oz", "0.5 oz", "oz",
-  // Milliliters & Litres grouped and ordered
   "3ml", "5ml", "10ml", "50ml", "100ml", "ml", 
   "1 litre", "2 litres", "5 litres", "10 litres",
-  // Other discrete units (sorted alphabetically)
   "clone", "joint", "mg", "pack", "piece", "seed", "unit"
 ];
 
 
-const THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME = "THC - CBD - Mushrooms dispensary";
+const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "THC - CBD - Mushrooms wellness";
 
 const apparelTypes = [ 
   "Head Gear / Neck Wear", "Hoodies / Jackets / Sweaters", "Long Sleeve / Short Sleeve Shirts",
@@ -82,7 +78,7 @@ export default function EditProductPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
-  const [dispensaryData, setDispensaryData] = useState<Dispensary | null>(null);
+  const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
   const [existingProduct, setExistingProduct] = useState<ProductType | null>(null);
 
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
@@ -132,33 +128,33 @@ export default function EditProductPage() {
     return null; 
   };
 
-  const fetchDispensaryAndProductData = useCallback(async () => {
+  const fetchWellnessAndProductData = useCallback(async () => {
     if (!currentUser?.dispensaryId || !productId) { 
         setIsLoadingInitialData(false); 
         return; 
     }
     setIsLoadingInitialData(true);
-    let fetchedDispensary: Dispensary | null = null;
+    let fetchedWellness: Dispensary | null = null;
     let localCategoryStructureObject: Record<string, any> | null = null;
 
     try {
-      const dispensaryDocRef = doc(db, "dispensaries", currentUser.dispensaryId);
-      const dispensarySnap = await getDoc(dispensaryDocRef);
-      if (!dispensarySnap.exists()) {
-        toast({ title: "Error", description: "Dispensary data not found.", variant: "destructive" });
+      const wellnessDocRef = doc(db, "dispensaries", currentUser.dispensaryId);
+      const wellnessSnap = await getDoc(wellnessDocRef);
+      if (!wellnessSnap.exists()) {
+        toast({ title: "Error", description: "Wellness data not found.", variant: "destructive" });
         router.push("/dispensary-admin/dashboard"); 
         setIsLoadingInitialData(false);
         return;
       }
-      fetchedDispensary = dispensarySnap.data() as Dispensary;
-      setDispensaryData(fetchedDispensary);
-      const isSpecialType = fetchedDispensary.dispensaryType === THC_CBD_MUSHROOM_DISPENSARY_TYPE_NAME;
+      fetchedWellness = wellnessSnap.data() as Dispensary;
+      setWellnessData(fetchedWellness);
+      const isSpecialType = fetchedWellness.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
       setIsThcCbdSpecialType(isSpecialType);
 
 
-      if (fetchedDispensary.dispensaryType) {
+      if (fetchedWellness.dispensaryType) {
         const categoriesCollectionRef = collection(db, 'dispensaryTypeProductCategories');
-        const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedDispensary.dispensaryType), limit(1));
+        const q = firestoreQuery(categoriesCollectionRef, where('name', '==', fetchedWellness.dispensaryType), limit(1));
         const categoriesSnapshot = await getDocs(q);
         if (!categoriesSnapshot.empty) {
           const categoriesDoc = categoriesSnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
@@ -198,10 +194,10 @@ export default function EditProductPage() {
              setMainCategoryOptions(Object.keys(localCategoryStructureObject).filter(key => key.trim() !== '').sort());
           }
         } else {
-          toast({ title: "Category Setup Missing", description: `Category structure for "${fetchedDispensary.dispensaryType}" not found.`, variant: "default", duration: 10000 });
+          toast({ title: "Category Setup Missing", description: `Category structure for "${fetchedWellness.dispensaryType}" not found.`, variant: "default", duration: 10000 });
         }
       } else {
-        toast({ title: "Dispensary Type Missing", description: "Dispensary profile missing 'type'.", variant: "destructive", duration: 10000 });
+        toast({ title: "Wellness Type Missing", description: "Wellness profile missing 'type'.", variant: "destructive", duration: 10000 });
       }
 
       const productDocRef = doc(db, "products", productId);
@@ -230,7 +226,7 @@ export default function EditProductPage() {
           gender: productData.gender || null,
           sizingSystem: productData.sizingSystem || null,
           sizes: productData.sizes || [],
-          currency: productData.currency || (fetchedDispensary ? fetchedDispensary.currency : 'ZAR'),
+          currency: productData.currency || (fetchedWellness ? fetchedWellness.currency : 'ZAR'),
           priceTiers: productData.priceTiers && productData.priceTiers.length > 0 ? productData.priceTiers : [{ unit: '', price: undefined as any }],
           quantityInStock: productData.quantityInStock ?? undefined,
           imageUrl: productData.imageUrl || null,
@@ -297,12 +293,12 @@ export default function EditProductPage() {
 
 
   useEffect(() => {
-    if (!authLoading && currentUser) { fetchDispensaryAndProductData(); }
+    if (!authLoading && currentUser) { fetchWellnessAndProductData(); }
     else if (!authLoading && !currentUser) { 
       toast({title: "Not Authenticated", description: "Please log in to edit products.", variant: "destructive"});
       router.push("/auth/signin"); 
     }
-  }, [currentUser, authLoading, router, toast, fetchDispensaryAndProductData]);
+  }, [currentUser, authLoading, router, toast, fetchWellnessAndProductData]);
 
   useEffect(() => {
     if (!isThcCbdSpecialType || (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') || !categoryStructureObject) {
@@ -410,16 +406,13 @@ export default function EditProductPage() {
     } else {
       setAvailableStandardSizes([]);
     }
-    // When gender or sizing system changes, we don't automatically clear selected sizes here
-    // as the user might be correcting a mistake, or the sizes might still be valid.
-    // Manual clearing is provided via the 'Clear All' button.
   }, [selectedProductStream, watchedGender, watchedSizingSystem]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-       if (file.size > 5 * 1024 * 1024) { // 5MB limit
+       if (file.size > 5 * 1024 * 1024) { 
         toast({ title: "Image Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
         return;
       }
@@ -458,7 +451,7 @@ export default function EditProductPage() {
 
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentUser?.dispensaryId || !dispensaryData || !existingProduct?.id) {
+    if (!currentUser?.dispensaryId || !wellnessData || !existingProduct?.id) {
       toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" }); return;
     }
      if (!data.category || data.category.trim() === "") {
@@ -557,7 +550,7 @@ export default function EditProductPage() {
   if (authLoading || isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
   }
-  if (!dispensaryData || !existingProduct) {
+  if (!wellnessData || !existingProduct) {
     return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /> <p className="ml-2">Loading product data...</p></div>;
   }
 
@@ -582,7 +575,7 @@ export default function EditProductPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
-            Modify details for &quot;{existingProduct.name}&quot;. Current type: <span className="font-semibold text-primary">{dispensaryData.dispensaryType || 'Not Set'}</span>
+            Modify details for &quot;{existingProduct.name}&quot;. Current type: <span className="font-semibold text-primary">{wellnessData.dispensaryType || 'Not Set'}</span>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -617,7 +610,7 @@ export default function EditProductPage() {
                             );
                         })}
                     </div>
-                    <FormDescription>Product stream cannot be changed after creation for this dispensary type.</FormDescription>
+                    <FormDescription>Product stream cannot be changed after creation for this wellness type.</FormDescription>
                 </FormItem>
             )}
 
@@ -631,8 +624,8 @@ export default function EditProductPage() {
                                     <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice for THC Products</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0 text-sm text-amber-600 space-y-2">
-                                    <p>The Wellness Tree complies with South African Law regarding the trade of THC products. We invite Dispensary Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Wellness Tree" sticker designs and cap designs.</p>
-                                    <p>Our beautiful sticker and cap range, designed by leading artist Mary Janes Van Vuuren, can be offered through your dispensary. By opting in, you agree to provide a FREE THC sample with each sticker/cap sold through the platform.</p>
+                                    <p>The Wellness Tree complies with South African Law regarding the trade of THC products. We invite Wellness Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Wellness Tree" sticker designs and cap designs.</p>
+                                    <p>Our beautiful sticker and cap range, designed by leading artist Mary Janes Van Vuuren, can be offered through your wellness profile. By opting in, you agree to provide a FREE THC sample with each sticker/cap sold through the platform.</p>
                                     <p className="mt-2 font-semibold">Please remember: Any THC info is purely for recreational knowledge building for Cannibinoid enthusiasts, and is not relevant for Sticker sales.</p>
                                 </CardContent>
                                  <FormField
@@ -692,8 +685,8 @@ export default function EditProductPage() {
                         )}
                          <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -779,14 +772,14 @@ export default function EditProductPage() {
                     <FormMessage>{form.formState.errors.priceTiers?.root?.message || form.formState.errors.priceTiers?.message}</FormMessage>
                 </div>
                 <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="text" placeholder="0" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="text" placeholder="0" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
                 <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add tag (e.g., Organic, Indoor, Popular)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                 <Separator /> <h3 className="text-lg font-medium text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Image</h3>
                 <FormField control={form.control} name="imageUrl" render={() => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile || imagePreview ? "Change Image" : "Upload Image"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {(imagePreview || form.getValues('imageUrl')) && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove Image </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Save changes.</p>} <FormDescription>Recommended: Clear, well-lit photo. PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
                 <Separator />
                 <div className="space-y-4">
                 <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
-                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other dispensaries of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
+                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other wellness entities of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
                 </div>
             </div>
             )}

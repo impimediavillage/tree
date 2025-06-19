@@ -13,94 +13,91 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Search, Filter, Loader2, Building } from 'lucide-react';
 import { DispensaryCard } from '@/components/admin/DispensaryCard';
 
-type DispensaryStatusFilter = Dispensary['status'] | 'all';
+type WellnessStatusFilter = Dispensary['status'] | 'all';
 
-export default function AdminDispensariesPage() {
-  const [allDispensaries, setAllDispensaries] = useState<Dispensary[]>([]);
-  const [filteredDispensaries, setFilteredDispensaries] = useState<Dispensary[]>([]);
+export default function AdminWellnessPage() {
+  const [allWellnessEntities, setAllWellnessEntities] = useState<Dispensary[]>([]);
+  const [filteredWellnessEntities, setFilteredWellnessEntities] = useState<Dispensary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<DispensaryStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<WellnessStatusFilter>('all');
   const { toast } = useToast();
 
-  const fetchDispensaries = useCallback(async () => {
+  const fetchWellnessEntities = useCallback(async () => {
     setIsLoading(true);
     try {
-      const dispensariesCollectionRef = collection(db, 'dispensaries');
-      // Changed orderBy to sort by dispensaryName descending (Z-A)
-      const q = query(dispensariesCollectionRef, orderBy('dispensaryName', 'desc'));
+      const wellnessCollectionRef = collection(db, 'dispensaries');
+      const q = query(wellnessCollectionRef, orderBy('dispensaryName', 'desc'));
       const querySnapshot = await getDocs(q);
-      const fetchedDispensaries: Dispensary[] = [];
+      const fetchedWellness: Dispensary[] = [];
       querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
         const applicationDate = data.applicationDate instanceof Timestamp ? data.applicationDate.toDate() : new Date(data.applicationDate as string);
         const approvedDate = data.approvedDate instanceof Timestamp ? data.approvedDate.toDate() : (data.approvedDate ? new Date(data.approvedDate as string) : undefined);
         
-        fetchedDispensaries.push({ 
+        fetchedWellness.push({ 
             id: docSnap.id, 
             ...data,
             applicationDate,
             approvedDate,
         } as Dispensary);
       });
-      setAllDispensaries(fetchedDispensaries);
+      setAllWellnessEntities(fetchedWellness);
     } catch (error) {
-      console.error("Error fetching wellness stores:", error);
-      toast({ title: "Error", description: "Could not fetch wellness stores.", variant: "destructive" });
+      console.error("Error fetching wellness profiles:", error);
+      toast({ title: "Error", description: "Could not fetch wellness profiles.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchDispensaries();
-  }, [fetchDispensaries]);
+    fetchWellnessEntities();
+  }, [fetchWellnessEntities]);
 
   useEffect(() => {
-    let dispensariesToFilter = allDispensaries;
+    let entitiesToFilter = allWellnessEntities;
 
     if (statusFilter !== 'all') {
-      dispensariesToFilter = dispensariesToFilter.filter(d => d.status === statusFilter);
+      entitiesToFilter = entitiesToFilter.filter(d => d.status === statusFilter);
     }
 
     if (searchTerm) {
       const lowercasedFilter = searchTerm.toLowerCase();
-      dispensariesToFilter = dispensariesToFilter.filter(d =>
+      entitiesToFilter = entitiesToFilter.filter(d =>
         d.dispensaryName.toLowerCase().includes(lowercasedFilter) ||
         d.ownerEmail.toLowerCase().includes(lowercasedFilter) ||
         (d.location && d.location.toLowerCase().includes(lowercasedFilter))
       );
     }
-    setFilteredDispensaries(dispensariesToFilter);
-  }, [searchTerm, statusFilter, allDispensaries]);
+    setFilteredWellnessEntities(entitiesToFilter);
+  }, [searchTerm, statusFilter, allWellnessEntities]);
 
-  const handleStatusToggle = async (dispensaryId: string, currentStatus: Dispensary['status']) => {
+  const handleStatusToggle = async (wellnessId: string, currentStatus: Dispensary['status']) => {
     const newStatus = currentStatus === 'Approved' ? 'Suspended' : 'Approved';
     try {
-      const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-      await updateDoc(dispensaryDocRef, { status: newStatus, lastActivityDate: serverTimestamp() });
-      toast({ title: "Status Updated", description: `Wellness store status changed to ${newStatus}.` });
-      setAllDispensaries(prev => prev.map(d => d.id === dispensaryId ? { ...d, status: newStatus } : d));
+      const wellnessDocRef = doc(db, 'dispensaries', wellnessId);
+      await updateDoc(wellnessDocRef, { status: newStatus, lastActivityDate: serverTimestamp() });
+      toast({ title: "Status Updated", description: `Wellness profile status changed to ${newStatus}.` });
+      setAllWellnessEntities(prev => prev.map(d => d.id === wellnessId ? { ...d, status: newStatus } : d));
     } catch (error) {
-      console.error("Error updating wellness store status:", error);
-      toast({ title: "Update Failed", description: "Could not update wellness store status.", variant: "destructive" });
+      console.error("Error updating wellness status:", error);
+      toast({ title: "Update Failed", description: "Could not update wellness status.", variant: "destructive" });
     }
   };
 
-  const handleDeleteDispensary = async (dispensaryId: string, dispensaryName: string) => {
-    // Note: In a real app, consider a soft delete or additional confirmation.
-    // Also, handle deletion of associated data (e.g., products, auth user if they are sole owner and no other link) if necessary.
+  const handleDeleteWellness = async (wellnessId: string, wellnessName: string) => {
     try {
-      await deleteDoc(doc(db, 'dispensaries', dispensaryId));
-      toast({ title: "Wellness Store Deleted", description: `${dispensaryName} has been removed.` });
-      fetchDispensaries(); // Refresh list
+      await deleteDoc(doc(db, 'dispensaries', wellnessId));
+      toast({ title: "Wellness Profile Deleted", description: `${wellnessName} has been removed.` });
+      fetchWellnessEntities(); 
     } catch (error) {
-      console.error("Error deleting wellness store:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete wellness store.", variant: "destructive" });
+      console.error("Error deleting wellness profile:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete wellness profile.", variant: "destructive" });
     }
   };
 
-  const statusOptions: DispensaryStatusFilter[] = ['all', 'Pending Approval', 'Approved', 'Rejected', 'Suspended'];
+  const statusOptions: WellnessStatusFilter[] = ['all', 'Pending Approval', 'Approved', 'Rejected', 'Suspended'];
 
   return (
     <div className="space-y-6">
@@ -110,13 +107,13 @@ export default function AdminDispensariesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Building className="h-8 w-8 text-primary" /> Manage Wellness Stores
+            <Building className="h-8 w-8 text-primary" /> Manage Wellness Profiles
           </h1>
           <p 
             className="text-foreground" 
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            View, edit, approve, or suspend wellness store applications and profiles.
+            View, edit, approve, or suspend wellness applications and profiles.
           </p>
         </div>
         <Button asChild>
@@ -139,7 +136,7 @@ export default function AdminDispensariesPage() {
         </div>
         <div className="relative flex-grow sm:flex-grow-0 sm:w-auto">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as DispensaryStatusFilter)}>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WellnessStatusFilter)}>
               <SelectTrigger className="pl-10 w-full sm:w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -155,22 +152,22 @@ export default function AdminDispensariesPage() {
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Loading wellness stores...</p>
+          <p className="ml-2 text-muted-foreground">Loading wellness profiles...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
-          {filteredDispensaries.length > 0 ? (
-            filteredDispensaries.map((dispensary) => (
+          {filteredWellnessEntities.length > 0 ? (
+            filteredWellnessEntities.map((wellness) => (
               <DispensaryCard
-                key={dispensary.id}
-                dispensary={dispensary}
+                key={wellness.id}
+                dispensary={wellness} 
                 onStatusToggle={handleStatusToggle}
-                onDelete={handleDeleteDispensary}
+                onDelete={handleDeleteWellness}
               />
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
-              No wellness stores found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
+              No wellness profiles found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
@@ -178,3 +175,4 @@ export default function AdminDispensariesPage() {
     </div>
   );
 }
+

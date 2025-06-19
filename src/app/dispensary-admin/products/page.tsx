@@ -3,9 +3,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { db, storage } from '@/lib/firebase'; // Added storage
+import { db, storage } from '@/lib/firebase'; 
 import { collection, query, where, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { ref as storageRef, deleteObject } from 'firebase/storage'; // Added for image deletion
+import { ref as storageRef, deleteObject } from 'firebase/storage'; 
 import type { Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,9 +14,9 @@ import { DataTable, type ColumnDef } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PlusCircle, Edit, Trash2, PackageSearch, Loader2, Image as ImageIconLucide, CheckCircle, XCircle } from 'lucide-react';
-import Image from 'next/image'; // Next.js Image component
+import Image from 'next/image'; 
 
-export default function DispensaryProductsPage() {
+export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,7 +54,6 @@ export default function DispensaryProductsPage() {
 
   const handleDeleteProduct = async (productId: string, productName: string, imageUrl?: string | null) => {
     try {
-      // Delete image from Firebase Storage if it exists
       if (imageUrl) {
         try {
             const imageStorageRef = storageRef(storage, imageUrl);
@@ -66,15 +65,13 @@ export default function DispensaryProductsPage() {
             } else {
                 console.error("Error deleting product image from storage:", error);
                 toast({ title: "Image Deletion Failed", description: `Could not delete image for "${productName}". Product document deletion will still proceed.`, variant: "destructive" });
-                // Optionally, decide if you want to proceed with Firestore deletion if image deletion fails
             }
         }
       }
 
-      // Delete product document from Firestore
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.`, variant: "default" });
-      fetchProducts(); // Refresh list
+      fetchProducts(); 
     } catch (error) {
       console.error("Error deleting product:", error);
       toast({ title: "Deletion Failed", description: "Could not delete product document.", variant: "destructive" });
@@ -171,9 +168,9 @@ export default function DispensaryProductsPage() {
      return (
       <div className="text-center py-10">
         <PackageSearch className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-2 text-xl font-semibold">No Wellness Store Linked</h3>
+        <h3 className="mt-2 text-xl font-semibold">No Wellness Profile Linked</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your account is not linked to a wellness store. Please contact support.
+          Your account is not linked to a wellness profile. Please contact support.
         </p>
       </div>
     );
@@ -193,7 +190,7 @@ export default function DispensaryProductsPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Manage all products for your wellness store.
+            Manage all products for your wellness profile.
           </p>
         </div>
         <Button asChild>
@@ -212,3 +209,4 @@ export default function DispensaryProductsPage() {
     </div>
   );
 }
+

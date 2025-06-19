@@ -33,8 +33,8 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
       displayName: '',
       email: '',
       password: '',
-      status: 'Active', // Changed default to Active
-      credits: 10,     // Default welcome credits
+      status: 'Active', 
+      credits: 10,     
     },
   });
 
@@ -51,11 +51,11 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
         photoURL: null,
         role: 'LeafUser', 
         dispensaryId: dispensaryId, 
-        credits: 10, // Award 10 credits on creation
-        status: 'Active', // Set status to Active
+        credits: 10, 
+        status: 'Active', 
         createdAt: serverTimestamp() as any,
         lastLoginAt: null,
-        welcomeCreditsAwarded: true, // Mark as awarded
+        welcomeCreditsAwarded: true, 
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newLeafUserData);
@@ -86,7 +86,7 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Leaf User (Linked)</DialogTitle>
-          <DialogDescription>Create an account for a Leaf User associated with your wellness store. They will be activated immediately and receive welcome credits.</DialogDescription>
+          <DialogDescription>Create an account for a Leaf User associated with your wellness profile. They will be activated immediately and receive welcome credits.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -127,3 +127,4 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
     </Dialog>
   );
 }
+

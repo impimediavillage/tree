@@ -11,24 +11,24 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Store, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard'; // Import extracted component
+import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard'; 
 
-export default function DispensariesByTypePage() {
+export default function WellnessProfilesByTypePage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
   
-  const dispensaryTypeNameParam = params.dispensaryTypeName;
-  const dispensaryTypeName = dispensaryTypeNameParam ? decodeURIComponent(dispensaryTypeNameParam as string) : null;
+  const wellnessTypeNameParam = params.dispensaryTypeName;
+  const wellnessTypeName = wellnessTypeNameParam ? decodeURIComponent(wellnessTypeNameParam as string) : null;
 
-  const [dispensaries, setDispensaries] = useState<Dispensary[]>([]);
-  const [dispensaryTypeDetails, setDispensaryTypeDetails] = useState<DispensaryType | null>(null);
+  const [wellnessProfiles, setWellnessProfiles] = useState<Dispensary[]>([]);
+  const [wellnessTypeDetails, setWellnessTypeDetails] = useState<DispensaryType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!dispensaryTypeName) {
-      setError("Wellness store type not specified.");
+    if (!wellnessTypeName) {
+      setError("Wellness type not specified.");
       setIsLoading(false);
       return;
     }
@@ -37,42 +37,42 @@ export default function DispensariesByTypePage() {
       setIsLoading(true);
       setError(null);
       try {
-        // Fetch Dispensary Type details
-        const typeQuery = query(collection(db, 'dispensaryTypes'), where('name', '==', dispensaryTypeName), limit(1));
+        // Fetch Wellness Type details
+        const typeQuery = query(collection(db, 'dispensaryTypes'), where('name', '==', wellnessTypeName), limit(1));
         const typeQuerySnapshot = await getDocs(typeQuery);
         
         if (!typeQuerySnapshot.empty) {
           const docData = typeQuerySnapshot.docs[0];
-          setDispensaryTypeDetails({ id: docData.id, ...docData.data() } as DispensaryType);
+          setWellnessTypeDetails({ id: docData.id, ...docData.data() } as DispensaryType);
         } else {
-          toast({ title: "Type Info Missing", description: `Details for '${dispensaryTypeName}' type not found.`, variant: "default"});
+          toast({ title: "Type Info Missing", description: `Details for '${wellnessTypeName}' type not found.`, variant: "default"});
         }
 
-        // Fetch dispensaries of this type that are Approved
-        const dispensariesQuery = query(
+        // Fetch wellness profiles of this type that are Approved
+        const wellnessQuery = query(
           collection(db, 'dispensaries'),
-          where('dispensaryType', '==', dispensaryTypeName),
-          where('status', '==', 'Approved'), // Only show approved wellness stores
-          orderBy('dispensaryName', 'desc') // Changed to descending order
+          where('dispensaryType', '==', wellnessTypeName),
+          where('status', '==', 'Approved'), 
+          orderBy('dispensaryName', 'desc') 
         );
-        const dispensariesSnapshot = await getDocs(dispensariesQuery);
-        const fetchedDispensaries = dispensariesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary));
-        setDispensaries(fetchedDispensaries);
+        const wellnessSnapshot = await getDocs(wellnessQuery);
+        const fetchedWellnessProfiles = wellnessSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary));
+        setWellnessProfiles(fetchedWellnessProfiles);
 
       } catch (err) {
-        console.error("Error fetching wellness stores by type:", err);
-        setError('Failed to load wellness stores for this type.');
-        toast({ title: "Loading Error", description: "Could not load wellness stores.", variant: "destructive" });
+        console.error("Error fetching wellness profiles by type:", err);
+        setError('Failed to load wellness profiles for this type.');
+        toast({ title: "Loading Error", description: "Could not load wellness profiles.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [dispensaryTypeName, toast]);
+  }, [wellnessTypeName, toast]);
 
-  const headerImageUrl = dispensaryTypeDetails?.image || `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Wellness Stores")}`;
-  const headerDataAiHint = `banner ${dispensaryTypeName ? dispensaryTypeName.toLowerCase() + " wellness stores" : "wellness stores"}`;
+  const headerImageUrl = wellnessTypeDetails?.image || `https://placehold.co/1200x300.png?text=${encodeURIComponent(wellnessTypeName || "Wellness Profiles")}`;
+  const headerDataAiHint = `banner ${wellnessTypeName ? wellnessTypeName.toLowerCase() + " wellness" : "wellness"}`;
 
   if (isLoading) {
     return (
@@ -84,7 +84,7 @@ export default function DispensariesByTypePage() {
             <h1 
                 className="text-3xl font-bold text-foreground animate-pulse"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Loading Wellness Stores...</h1>
+            >Loading Wellness Profiles...</h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1,2,3,4,5,6].map(i => <Card key={i} className="h-[380px]"><CardContent className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></CardContent></Card>)}
@@ -107,20 +107,19 @@ export default function DispensariesByTypePage() {
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
       <div className="mb-8">
         <Button variant="outline" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Wellness Store Types
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Wellness Types
         </Button>
         <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden shadow-lg mb-6 bg-muted">
             <Image 
               src={headerImageUrl} 
-              alt={dispensaryTypeName || "Wellness Store Type"} 
+              alt={wellnessTypeName || "Wellness Type"} 
               layout="fill" 
               objectFit="cover" 
               data-ai-hint={headerDataAiHint}
               priority
               onError={(e) => {
-                // Fallback if dispensaryTypeDetails.image fails
-                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Wellness Stores")}`;
-                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Wellness Stores")}`;
+                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(wellnessTypeName || "Wellness Profiles")}`;
+                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(wellnessTypeName || "Wellness Profiles")}`;
               }}
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
@@ -128,35 +127,36 @@ export default function DispensariesByTypePage() {
                   className="text-4xl md:text-5xl font-extrabold text-white text-center"
                   style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                 >
-                    {dispensaryTypeName}
+                    {wellnessTypeName}
                 </h1>
-                {dispensaryTypeDetails?.description && (
+                {wellnessTypeDetails?.description && (
                     <p 
                       className="text-lg text-gray-200 mt-2 text-center max-w-2xl"
                       style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                     >
-                        {dispensaryTypeDetails.description}
+                        {wellnessTypeDetails.description}
                     </p>
                 )}
             </div>
         </div>
       </div>
 
-      {dispensaries.length > 0 ? (
+      {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {dispensaries.map(dispensary => (
-            <DispensaryListingCard key={dispensary.id} dispensary={dispensary} />
+          {wellnessProfiles.map(profile => (
+            <DispensaryListingCard key={profile.id} dispensary={profile} />
           ))}
         </div>
       ) : (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
             <Store className="mx-auto h-12 w-12 mb-3" />
-            <h3 className="text-xl font-semibold">No Wellness Stores Found</h3>
-            <p>There are currently no approved wellness stores listed for the &quot;{dispensaryTypeName}&quot; type.</p>
+            <h3 className="text-xl font-semibold">No Wellness Profiles Found</h3>
+            <p>There are currently no approved wellness profiles listed for the &quot;{wellnessTypeName}&quot; type.</p>
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
+

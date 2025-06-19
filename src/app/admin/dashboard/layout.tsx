@@ -42,9 +42,9 @@ interface NavItem {
 
 const mainSidebarNavItems: NavItem[] = [
   { title: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
-  { title: 'Dispensaries', href: '/admin/dashboard/dispensaries', icon: Building },
+  { title: 'Wellness Profiles', href: '/admin/dashboard/dispensaries', icon: Building },
   { title: 'Users', href: '/admin/dashboard/users', icon: Users },
-  { title: 'Dispensary Types', href: '/admin/dashboard/dispensary-types', icon: ListChecks },
+  { title: 'Wellness Types', href: '/admin/dashboard/dispensary-types', icon: ListChecks },
 ];
 
 const managementSidebarNavItems: NavItem[] = [
@@ -121,7 +121,7 @@ export default function AdminDashboardLayout({
 
   return (
     <SidebarProvider defaultOpen>
-      <div className="flex min-h-screen"> {/* Removed bg-background */}
+      <div className="flex min-h-screen"> 
         <Sidebar collapsible="icon" className="border-r shadow-md">
           <SidebarHeader className="p-3 border-b">
              <Link href="/admin/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
@@ -229,7 +229,7 @@ export default function AdminDashboardLayout({
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden"> {/* bg-background/80 is semi-transparent, fine */}
+           <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6 md:hidden"> 
             <SidebarTrigger className="md:hidden" />
             <div className="flex-1">
               <h1 
@@ -242,7 +242,7 @@ export default function AdminDashboardLayout({
               </h1>
             </div>
           </header>
-          <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> {/* Removed bg-muted/30 */}
+          <div className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto"> 
             {children}
           </div>
         </main>
@@ -251,4 +251,3 @@ export default function AdminDashboardLayout({
   );
 }
     
-

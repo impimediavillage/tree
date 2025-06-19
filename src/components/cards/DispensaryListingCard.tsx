@@ -10,16 +10,16 @@ import { MapPin, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const hardcodedTypeImages: Record<string, string> = {
-  "THC - CBD - Mushrooms dispensary": "/images/dispensary-types/thc-cbd-mushroom-banner.jpg",
-  "Homeopathic dispensary": "/images/dispensary-types/homeopathy-banner.jpg",
-  "African Traditional Medicine dispensary": "/images/dispensary-types/traditional-banner.jpg",
+  "THC - CBD - Mushrooms wellness": "/images/dispensary-types/thc-cbd-mushroom-banner.jpg",
+  "Homeopathic wellness": "/images/dispensary-types/homeopathy-banner.jpg",
+  "African Traditional Medicine wellness": "/images/dispensary-types/traditional-banner.jpg",
   "Permaculture & gardening store": "/images/dispensary-types/permaculture-banner.jpg",
   "Flower Store": "/images/dispensary-types/flower-store-banner.jpg",
 };
 
 interface DispensaryListingCardProps {
   dispensary: Dispensary;
-  typeBannerImageUrl?: string | null; // Optional prop for custom image URL from Firestore
+  typeBannerImageUrl?: string | null; 
 }
 
 export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: DispensaryListingCardProps) {
@@ -29,33 +29,29 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: Dispen
   const [currentBannerUrl, setCurrentBannerUrl] = useState(defaultPlaceholderUrl);
 
   useEffect(() => {
-    let bannerUrl = defaultPlaceholderUrl; // Start with the ultimate fallback
+    let bannerUrl = defaultPlaceholderUrl; 
 
-    // 1. Prioritize typeBannerImageUrl (from Firestore) if it's a valid string
     if (typeBannerImageUrl && typeof typeBannerImageUrl === 'string' && typeBannerImageUrl.trim() !== '') {
       bannerUrl = typeBannerImageUrl;
     } 
-    // 2. Else, try hardcoded map if typeBannerImageUrl wasn't usable
     else if (dispensary.dispensaryType && hardcodedTypeImages[dispensary.dispensaryType]) {
       bannerUrl = hardcodedTypeImages[dispensary.dispensaryType]!;
     }
-    // If neither, it remains defaultPlaceholderUrl
-
+    
     setCurrentBannerUrl(bannerUrl);
   }, [typeBannerImageUrl, dispensary.dispensaryType, dispensary.dispensaryName, defaultPlaceholderUrl]);
 
   const handleImageError = () => {
-    // If the currentBannerUrl (custom or hardcoded) fails, and it's not already the default placeholder, switch to default.
     if (currentBannerUrl !== defaultPlaceholderUrl) {
       setCurrentBannerUrl(defaultPlaceholderUrl);
     }
   };
   
-  const dataAiHint = `store ${dispensary.dispensaryType} ${dispensary.dispensaryName.split(" ")[0] || ""}`;
+  const dataAiHint = `wellness ${dispensary.dispensaryType} ${dispensary.dispensaryName.split(" ")[0] || ""}`;
 
   return (
     <Card 
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card text-card-foreground border border-border hover:border-primary/50 animate-fade-in-scale-up"
+        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card text-card-foreground group border border-border hover:border-primary/50 animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
     >
@@ -90,10 +86,11 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: Dispen
       <CardFooter>
         <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
           <Link href={`/store/${dispensary.id}`}>
-            <Eye className="mr-2 h-4 w-4" /> Visit Wellness Store
+            <Eye className="mr-2 h-4 w-4" /> Visit Wellness Profile
           </Link>
         </Button>
       </CardFooter>
     </Card>
   );
 }
+
