@@ -42,7 +42,7 @@ const sampleUnits = [
 ];
 
 
-const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "THC - CBD - Mushroom wellness";
+const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid Store";
 
 const apparelTypes = [ 
   "Head Gear / Neck Wear", "Hoodies / Jackets / Sweaters", "Long Sleeve / Short Sleeve Shirts",

@@ -17,7 +17,7 @@ import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PRODUCTS_PER_PAGE = 24;
-const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "THC - CBD - Mushrooms wellness";
+const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid Store";
 
 export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
