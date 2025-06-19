@@ -12,8 +12,8 @@ import { CartProvider } from '@/contexts/CartContext'; // Import CartProvider
 import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
 
 export const metadata: Metadata = {
-  title: 'The Dispensary Tree - AI-Powered Wellness & Cannabis Hub',
-  description: 'Explore cannabis products and get AI-powered advice on cannabinoids, gardening, homeopathy, mushrooms, and traditional medicine at The Dispensary Tree.',
+  title: 'The Wellness Tree - AI-Powered Wellness & Cannabis Hub',
+  description: 'Explore cannabis products and get AI-powered advice on cannabinoids, gardening, homeopathy, mushrooms, and traditional medicine at The Wellness Tree.',
 };
 
 export default function RootLayout({

@@ -163,7 +163,7 @@ export default function HolisticAiHubPage() {
   ];
 
   const leafUserBenefits = [
-    { text: "Cant afford wellness advice? Now You can with The Dispensary tree FREE Leaf package.", icon: Gift },
+    { text: "Cant afford wellness advice? Now You can with The Wellness Tree FREE Leaf package.", icon: Gift },
     { text: "10 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
     { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted stores.", icon: Gift },
@@ -181,7 +181,7 @@ export default function HolisticAiHubPage() {
             className="text-5xl font-extrabold tracking-tight text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            The Dispensary Tree
+            The Wellness Tree
           </h1>
           <p 
             className="text-xl text-foreground mt-3 max-w-2xl mx-auto"
@@ -209,7 +209,7 @@ export default function HolisticAiHubPage() {
               className="text-lg text-foreground max-w-xl mx-auto mt-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Dispensary Tree has a place for you.
+              Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
