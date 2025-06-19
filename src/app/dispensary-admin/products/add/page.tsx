@@ -202,27 +202,31 @@ export default function AddProductPage() {
             
             if (isSpecial && rawCategoriesData && typeof rawCategoriesData === 'object' && rawCategoriesData.hasOwnProperty('thcCbdProductCategories')) {
                 let specialTypeDataSource = (rawCategoriesData as any).thcCbdProductCategories;
-                let specialTypeStructure: Record<string, any> | null = null;
+                let parsedStructure: Record<string, any> | null = null;
 
-                if (Array.isArray(specialTypeDataSource)) { 
-                    const thcData = specialTypeDataSource.find((item: any) => item.name === 'THC');
-                    const cbdData = specialTypeDataSource.find((item: any) => item.name === 'CBD');
-                    if (thcData || cbdData) {
-                        specialTypeStructure = {};
-                        if (thcData) specialTypeStructure.THC = thcData;
-                        if (cbdData) specialTypeStructure.CBD = cbdData;
+                if (typeof specialTypeDataSource === 'object' && specialTypeDataSource !== null) {
+                    if (Array.isArray(specialTypeDataSource)) { 
+                        const tempStructure: Record<string, any> = {};
+                        const streamsToParse = ['THC', 'CBD', 'Apparel', 'Smoking Gear'];
+                        streamsToParse.forEach(streamName => {
+                            const streamData = specialTypeDataSource.find((item: any) => item.name === streamName);
+                            if (streamData) {
+                                tempStructure[streamName] = streamData;
+                            }
+                        });
+                        if (Object.keys(tempStructure).length > 0) parsedStructure = tempStructure;
+                    } else { 
+                        parsedStructure = specialTypeDataSource;
                     }
-                } else if (specialTypeDataSource && typeof specialTypeDataSource === 'object' && (specialTypeDataSource.THC || specialTypeDataSource.CBD)) { 
-                    specialTypeStructure = specialTypeDataSource;
                 }
                 
-                if (specialTypeStructure) {
-                    setCategoryStructureObject(specialTypeStructure);
+                if (parsedStructure) {
+                    setCategoryStructureObject(parsedStructure);
                     setMainCategoryOptions([]); 
                 } else {
                      toast({ 
-                        title: "Data Structure Error (THC/CBD Type)", 
-                        description: `For "${fetchedWellness.dispensaryType}", expected "thcCbdProductCategories" to be an object with 'THC'/'CBD' keys, or an array of objects named "THC"/"CBD" within categoriesData. Please check Firestore.`, 
+                        title: "Category Data Structure Error", 
+                        description: `For "${fetchedWellness.dispensaryType}", expected 'thcCbdProductCategories' in the categories document to be a valid object or array. Please check Firestore.`, 
                         variant: "destructive", 
                         duration: 15000 
                     });
@@ -412,7 +416,9 @@ export default function AddProductPage() {
       form.setValue('category', stream, { shouldValidate: true });
     } else if (stream === 'Smoking Gear') {
       form.setValue('category', 'Smoking Gear', { shouldValidate: true });
-    } 
+    } else if (stream === 'Apparel') {
+        form.setValue('category', '', { shouldValidate: true }); // Category for Apparel will be the apparel type
+    }
   };
 
   const toggleStandardSize = (size: string) => {

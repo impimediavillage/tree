@@ -162,17 +162,21 @@ export default function EditProductPage() {
           
           if (isSpecialType && rawCategoriesData && typeof rawCategoriesData === 'object' && rawCategoriesData.hasOwnProperty('thcCbdProductCategories')) {
              let specialTypeDataSource = (rawCategoriesData as any).thcCbdProductCategories;
-             if (Array.isArray(specialTypeDataSource)) { 
-                 const thcData = specialTypeDataSource.find((item: any) => item.name === 'THC');
-                 const cbdData = specialTypeDataSource.find((item: any) => item.name === 'CBD');
-                 if (thcData || cbdData) {
-                     localCategoryStructureObject = {};
-                     if (thcData) localCategoryStructureObject.THC = thcData;
-                     if (cbdData) localCategoryStructureObject.CBD = cbdData;
-                 }
-             } else if (specialTypeDataSource && typeof specialTypeDataSource === 'object' && (specialTypeDataSource.THC || specialTypeDataSource.CBD)) { 
-                 localCategoryStructureObject = specialTypeDataSource;
-             }
+             if (typeof specialTypeDataSource === 'object' && specialTypeDataSource !== null) {
+                if (Array.isArray(specialTypeDataSource)) {
+                  const tempStructure: Record<string, any> = {};
+                  const streamsToParse = ['THC', 'CBD', 'Apparel', 'Smoking Gear'];
+                  streamsToParse.forEach(streamName => {
+                      const streamData = specialTypeDataSource.find((item: any) => item.name === streamName);
+                      if (streamData) {
+                          tempStructure[streamName] = streamData;
+                      }
+                  });
+                  if (Object.keys(tempStructure).length > 0) localCategoryStructureObject = tempStructure;
+                } else {
+                  localCategoryStructureObject = specialTypeDataSource;
+                }
+            }
           } else if (!isSpecialType) { 
              let parsedCategoriesData = rawCategoriesData;
              if (typeof rawCategoriesData === 'string') {
