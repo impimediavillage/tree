@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
@@ -839,5 +839,52 @@ exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
         message: allSuccessful ? "All sample users seeded successfully." : "Some sample users may not have been seeded correctly. Check logs.",
         results,
     });
+});
+/**
+ * HTTP-callable Firebase Function to copy data from one dispensaryTypeProductCategories document to another.
+ */
+exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*"); // Allow CORS for direct invocation if needed
+    const sourceDocId = "THC - CBD - Mushrooms dispensary";
+    const targetDocId = "Cannibinoid store";
+    const collectionName = "dispensaryTypeProductCategories";
+    try {
+        logger.info(`Starting copy from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
+        const sourceDocRef = db.collection(collectionName).doc(sourceDocId);
+        const targetDocRef = db.collection(collectionName).doc(targetDocId);
+        const sourceDoc = await sourceDocRef.get();
+        if (!sourceDoc.exists) {
+            logger.error(`Source document '${collectionName}/${sourceDocId}' does not exist.`);
+            res.status(404).json({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'.` });
+            return;
+        }
+        const sourceData = sourceDoc.data();
+        if (!sourceData) {
+            logger.error(`Source document '${collectionName}/${sourceDocId}' has no data.`);
+            res.status(404).json({ success: false, message: `Source document '${sourceDocId}' has no data.` });
+            return;
+        }
+        // Add/update a timestamp to the copied data
+        const dataToCopy = {
+            ...sourceData,
+            copiedAt: admin.firestore.FieldValue.serverTimestamp(),
+            originalSourceId: sourceDocId,
+        };
+        await targetDocRef.set(dataToCopy, { merge: true }); // Using merge:true to be safe if target partially exists
+        logger.info(`Successfully copied data from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
+        res.status(200).json({
+            success: true,
+            message: `Data successfully copied from '${sourceDocId}' to '${targetDocId}' in '${collectionName}'. Target document now contains the source data and a 'copiedAt' timestamp.`,
+            sourceDataCopied: sourceData // Optionally return the copied data for verification
+        });
+    }
+    catch (error) {
+        logger.error("Error copying dispensary type categories data:", error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred while copying the document.",
+            errorDetails: (error instanceof Error) ? error.message : "Unknown error"
+        });
+    }
 });
 //# sourceMappingURL=index.js.map
