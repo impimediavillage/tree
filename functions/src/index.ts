@@ -1,6 +1,7 @@
 
 import * as logger from "firebase-functions/logger";
 import * as functions from "firebase-functions";
+import type { Response as FirebaseFunctionsResponse } from "firebase-functions"; // Added explicit import
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
 import {
@@ -941,7 +942,7 @@ export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
  */
 async function copyDocumentContent(
     req: functions.https.Request, 
-    res: functions.Response,
+    res: FirebaseFunctionsResponse, // Changed from functions.Response
     collectionName: string,
     sourceDocId: string,
     targetDocId: string
@@ -997,8 +998,6 @@ async function copyDocumentContent(
 
 /**
  * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
- * Note: The source document ID here assumes the original name before it was potentially changed via frontend constants.
- * If "THC - CBD - Mushrooms dispensary" is no longer the correct source ID, this function's sourceDocId parameter needs an update.
  */
 export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
@@ -1007,7 +1006,6 @@ export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async 
 
 /**
  * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
- * Corrected sourceDocId to "Mushroom dispensary" (lowercase 'd').
  */
 export const copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
@@ -1021,4 +1019,6 @@ export const copyHomeopathicDispensaryCategoriesData = functions.https.onRequest
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
 });
     
+    
+
     
