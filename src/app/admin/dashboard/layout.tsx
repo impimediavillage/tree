@@ -42,9 +42,9 @@ interface NavItem {
 
 const mainSidebarNavItems: NavItem[] = [
   { title: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
-  { title: 'Wellness Profiles', href: '/admin/dashboard/dispensaries', icon: Building },
+  { title: 'View all stores', href: '/admin/dashboard/dispensaries', icon: Building },
   { title: 'Users', href: '/admin/dashboard/users', icon: Users },
-  { title: 'Wellness Types', href: '/admin/dashboard/dispensary-types', icon: ListChecks },
+  { title: 'Store types', href: '/admin/dashboard/dispensary-types', icon: ListChecks },
 ];
 
 const managementSidebarNavItems: NavItem[] = [
