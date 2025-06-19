@@ -1,26 +1,33 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { db, storage } from '@/lib/firebase'; 
+import { db, storage } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import { ref as storageRef, deleteObject } from 'firebase/storage'; 
+import { ref as storageRef, deleteObject } from 'firebase/storage';
 import type { Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { DataTable, type ColumnDef } from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { PlusCircle, Edit, Trash2, PackageSearch, Loader2, Image as ImageIconLucide, CheckCircle, XCircle } from 'lucide-react';
-import Image from 'next/image'; 
+import { PlusCircle, PackageSearch, Loader2, Search, FilterX } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ProductCard } from '@/components/dispensary-admin/ProductCard';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const PRODUCTS_PER_PAGE = 24;
 
 export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categories, setCategories] = useState<string[]>(['all']);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetchProducts = useCallback(async () => {
     if (!currentUser?.dispensaryId) {
@@ -33,11 +40,15 @@ export default function WellnessProductsPage() {
       const q = query(
         productsCollectionRef,
         where('dispensaryId', '==', currentUser.dispensaryId),
-        orderBy('name')
+        orderBy('name') // Default sort
       );
       const querySnapshot = await getDocs(q);
       const fetchedProducts: Product[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      setProducts(fetchedProducts);
+      setAllProducts(fetchedProducts);
+
+      const uniqueCategories = Array.from(new Set(fetchedProducts.map(p => p.category).filter(Boolean)));
+      setCategories(['all', ...uniqueCategories.sort()]);
+
     } catch (error) {
       console.error("Error fetching products:", error);
       toast({ title: "Error", description: "Could not fetch your products.", variant: "destructive" });
@@ -52,125 +63,86 @@ export default function WellnessProductsPage() {
     }
   }, [authLoading, currentUser, fetchProducts]);
 
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = [...allProducts];
+
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(lowerSearchTerm) ||
+        product.description.toLowerCase().includes(lowerSearchTerm) ||
+        product.category.toLowerCase().includes(lowerSearchTerm) ||
+        (product.tags && product.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
+      );
+    }
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+    // Default sort by name if no other sort is applied. Can be extended.
+    return filtered.sort((a, b) => a.name.localeCompare(b.name));
+  }, [allProducts, searchTerm, selectedCategory]);
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    return filteredAndSortedProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
+  }, [filteredAndSortedProducts, currentPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / PRODUCTS_PER_PAGE);
+
   const handleDeleteProduct = async (productId: string, productName: string, imageUrl?: string | null) => {
     try {
-      if (imageUrl) {
+      if (imageUrl && imageUrl.startsWith('https://firebasestorage.googleapis.com')) { // Check if it's a Firebase Storage URL
         try {
-            const imageStorageRef = storageRef(storage, imageUrl);
-            await deleteObject(imageStorageRef);
-            toast({ title: "Image Deleted", description: `Image for "${productName}" removed from storage.`, variant: "default" });
-        } catch (error: any) {
-            if (error.code === 'storage/object-not-found') {
-                console.warn(`Image not found in storage for product "${productName}": ${imageUrl}. It might have been already deleted or path is incorrect.`);
-            } else {
-                console.error("Error deleting product image from storage:", error);
-                toast({ title: "Image Deletion Failed", description: `Could not delete image for "${productName}". Product document deletion will still proceed.`, variant: "destructive" });
-            }
+          const imageStorageRef = storageRef(storage, imageUrl);
+          await deleteObject(imageStorageRef);
+        } catch (storageError: any) {
+          if (storageError.code !== 'storage/object-not-found') {
+            console.error("Error deleting product image from storage:", storageError);
+            toast({ title: "Image Deletion Failed", description: `Could not delete image for "${productName}". Product document deletion will proceed.`, variant: "destructive" });
+          } else {
+            console.warn(`Image not found in storage for product "${productName}": ${imageUrl}`);
+          }
         }
       }
-
       await deleteDoc(doc(db, 'products', productId));
-      toast({ title: "Product Deleted", description: `"${productName}" has been removed.`, variant: "default" });
-      fetchProducts(); 
+      toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
+      setAllProducts(prev => prev.filter(p => p.id !== productId)); // Optimistically update client-side list
+      if (currentPage > 1 && paginatedProducts.length === 1 && filteredAndSortedProducts.length > PRODUCTS_PER_PAGE) {
+        setCurrentPage(prev => Math.max(1, prev -1));
+      } else if (currentPage > totalPages && totalPages > 0) {
+        setCurrentPage(totalPages);
+      } else if (filteredAndSortedProducts.length <= (currentPage - 1) * PRODUCTS_PER_PAGE && currentPage > 1) {
+         setCurrentPage(prev => Math.max(1, prev -1));
+      }
+
     } catch (error) {
-      console.error("Error deleting product:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete product document.", variant: "destructive" });
+      console.error("Error deleting product document:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete product.", variant: "destructive" });
     }
   };
+  
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setCurrentPage(1);
+  };
 
-  const columns: ColumnDef<Product>[] = [
-    {
-      accessorKey: "imageUrl",
-      header: "Image",
-      cell: ({ row }) => {
-        const product = row.original;
-        return product.imageUrl ? (
-          <Image src={product.imageUrl} alt={product.name} width={40} height={40} className="rounded object-cover h-10 w-10" data-ai-hint={`product ${product.name.split(" ")[0] || ""}`} />
-        ) : (
-          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs"><ImageIconLucide className="h-5 w-5" /></div>
-        );
-      },
-    },
-    {
-      accessorKey: "name",
-      header: "Name",
-    },
-    {
-      accessorKey: "category",
-      header: "Category",
-    },
-    {
-      accessorKey: "price",
-      header: "Price",
-      cell: ({ row }) => `${row.original.price.toFixed(2)} ${row.original.currency}`,
-    },
-    {
-      accessorKey: "quantityInStock",
-      header: "Stock",
-    },
-    {
-        accessorKey: "isAvailableForPool",
-        header: "In Pool",
-        cell: ({ row }) => (
-            row.original.isAvailableForPool ? 
-            <Badge variant="default" className="bg-green-500 hover:bg-green-600"><CheckCircle className="mr-1 h-4 w-4"/> Yes</Badge> :
-            <Badge variant="secondary"><XCircle className="mr-1 h-4 w-4"/> No</Badge>
-        ),
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => {
-        const product = row.original;
-        return (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/dispensary-admin/products/edit/${product.id}`}>
-                <Edit className="mr-1 h-4 w-4" /> Edit
-              </Link>
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  <Trash2 className="mr-1 h-4 w-4" /> Delete
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and its associated image from storage.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDeleteProduct(product.id!, product.name, product.imageUrl)}>
-                    Yes, delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        );
-      },
-    },
-  ];
-
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-3 text-muted-foreground">Loading your products...</p>
       </div>
     );
   }
 
-  if (!currentUser?.dispensaryId) {
+  if (!currentUser?.dispensaryId && !isLoading) {
      return (
       <div className="text-center py-10">
         <PackageSearch className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-2 text-xl font-semibold">No Wellness Profile Linked</h3>
+        <h3 className="mt-2 text-xl font-semibold">No Wellness Store Linked</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your account is not linked to a wellness profile. Please contact support.
+          Your account is not linked to a wellness store. Please contact support.
         </p>
       </div>
     );
@@ -190,7 +162,7 @@ export default function WellnessProductsPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Manage all products for your wellness profile.
+            Manage all products for your wellness store.
           </p>
         </div>
         <Button asChild>
@@ -199,14 +171,82 @@ export default function WellnessProductsPage() {
           </Link>
         </Button>
       </div>
-      <DataTable
-        columns={columns}
-        data={products}
-        isLoading={isLoading}
-        searchColumn="name"
-        searchPlaceholder="Filter by product name..."
-      />
+
+      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card shadow-sm">
+        <div className="relative flex-grow">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                type="text"
+                placeholder="Search by name, description, category, tag..."
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1);}}
+                className="pl-10 w-full"
+            />
+        </div>
+        <Select value={selectedCategory} onValueChange={(value) => {setSelectedCategory(value); setCurrentPage(1);}}>
+            <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+                {categories.map(category => (
+                    <SelectItem key={category} value={category}>
+                        {category === 'all' ? 'All Categories' : category}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+        {(searchTerm || selectedCategory !== 'all') && (
+             <Button variant="ghost" onClick={handleClearFilters} className="text-muted-foreground hover:text-destructive">
+                <FilterX className="mr-2 h-4 w-4"/> Clear Filters
+            </Button>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+          {Array.from({ length: PRODUCTS_PER_PAGE / 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
+          ))}
+        </div>
+      ) : paginatedProducts.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+          {paginatedProducts.map((product) => (
+            <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 col-span-full">
+          <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground" />
+          <h3 className="mt-4 text-xl font-semibold text-foreground">No Products Found</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {allProducts.length === 0 ? "You haven't added any products yet." : "No products match your current filters."}
+          </p>
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
-
