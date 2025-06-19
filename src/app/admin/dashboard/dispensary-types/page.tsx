@@ -140,7 +140,7 @@ export default function AdminWellnessTypesPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
-              <ListChecks className="mx-auto h-12 w-12 mb-3" />
+              <ListChecks className="mx-auto h-12 w-12 mb-3 text-orange-500" />
               No wellness types found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}

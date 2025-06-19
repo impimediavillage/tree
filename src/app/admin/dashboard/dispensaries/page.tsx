@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, query, orderBy, where, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, query, orderBy, where, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import type { Dispensary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -167,6 +167,7 @@ export default function AdminWellnessPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
+              <Building className="mx-auto h-12 w-12 mb-3 text-orange-500" />
               No wellness profiles found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
             </div>
           )}

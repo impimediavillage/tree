@@ -219,7 +219,7 @@ export default function WellnessStorePage() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <AlertTriangle className="h-16 w-16 text-orange-500 mb-4" />
         <h2 className="text-2xl font-semibold text-destructive-foreground mb-2">{error}</h2>
         <p className="text-muted-foreground mb-6">This e-store might be temporarily unavailable or no longer exists.</p>
         <Button onClick={() => router.push('/')}>Back to Home</Button>
@@ -314,13 +314,13 @@ export default function WellnessStorePage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Info className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <Info className="mx-auto h-12 w-12 text-orange-500 mb-4" />
           <h3 className="text-xl font-semibold text-foreground">No Products Found</h3>
           <p 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            {products.length === 0 ? "This wellness profile hasn't listed any products yet." : "No products match your current filters."}
+            {products.length === 0 ? "This wellness store hasn't listed any products yet." : "No products match your current filters."}
           </p>
           {(searchTerm || selectedCategory !== 'all') && (
             <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setSelectedCategory('all');}}>

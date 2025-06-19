@@ -96,7 +96,7 @@ export default function WellnessProfilesByTypePage() {
   if (error) {
     return (
       <div className="container mx-auto py-8 px-4 text-center">
-        <AlertTriangle className="mx-auto h-12 w-12 text-destructive mb-4" />
+        <AlertTriangle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
         <h2 className="text-2xl font-semibold text-destructive-foreground mb-2">{error}</h2>
         <Button onClick={() => router.push('/dashboard/leaf')}>Back to Dashboard</Button>
       </div>
@@ -150,7 +150,7 @@ export default function WellnessProfilesByTypePage() {
       ) : (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
-            <Store className="mx-auto h-12 w-12 mb-3" />
+            <Store className="mx-auto h-12 w-12 mb-3 text-orange-500" />
             <h3 className="text-xl font-semibold">No Wellness Profiles Found</h3>
             <p>There are currently no approved wellness profiles listed for the &quot;{wellnessTypeName}&quot; type.</p>
           </CardContent>

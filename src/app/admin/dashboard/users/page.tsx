@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
         </div>
       ) : (
         <div className="text-center py-10 col-span-full">
-          <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+          <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
           <h3 className="mt-2 text-xl font-semibold">No Users Found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {users.length === 0 ? "There are no users in the system yet." : "No users match your current filters."}

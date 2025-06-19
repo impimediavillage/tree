@@ -112,7 +112,7 @@ export default function LeafCreditsPage() {
       ) : creditPackages.length === 0 ? (
         <Card>
             <CardContent className="pt-6 text-center text-muted-foreground">
-                <DollarSign className="mx-auto h-12 w-12 mb-3" />
+                <DollarSign className="mx-auto h-12 w-12 mb-3 text-orange-500" />
                 <h3 className="text-xl font-semibold">No Credit Packages Available</h3>
                 <p>There are currently no credit packages available for purchase. Please check back later.</p>
             </CardContent>
@@ -154,7 +154,7 @@ export default function LeafCreditsPage() {
                   )}
                    <li className="flex items-center gap-2 text-card-foreground">
                         <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span>Support The Dispensary Tree</span>
+                        <span>Support The Wellness Tree</span>
                     </li>
                 </ul>
                 <Button 
