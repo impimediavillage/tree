@@ -15,12 +15,12 @@ export interface ProductCategory {
 
 // Represents the structure of a Dispensary document in Firestore
 export interface Dispensary {
-  id?: string; // Firestore document ID
+  id?: string; 
   fullName: string;
   phone: string;
   ownerEmail: string;
   dispensaryName: string;
-  dispensaryType: string; // This is the field to be updated
+  dispensaryType: string; 
   currency: string;
   openTime?: string | null;
   closeTime?: string | null;
@@ -49,10 +49,10 @@ export interface Dispensary {
   reviewCount?: number;
 }
 
-// Represents the structure for Dispensary Type documents (basic info)
+// Represents the structure for Wellness Type documents (basic info)
 export interface DispensaryType {
   id?: string;
-  name: string; // Unique name for the wellness store type
+  name: string; 
   description?: string | null;
   iconPath?: string | null;
   image?: string | null;
@@ -64,8 +64,8 @@ export interface DispensaryType {
 // Represents a document in the 'dispensaryTypeProductCategories' collection
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
-  name?: string; // Name of the wellness store type this category structure belongs to
-  categoriesData: ProductCategory[] | Record<string, any>; // Can be an array for general types or an object for special types (e.g., THC/CBD)
+  name?: string; 
+  categoriesData: ProductCategory[] | Record<string, any>; 
   updatedAt?: Timestamp | Date | string;
 }
 
@@ -75,32 +75,29 @@ export interface Product {
   id?: string;
   dispensaryId: string;
   dispensaryName: string;
-  dispensaryType: string; // This is the field to be updated
+  dispensaryType: string; 
   productOwnerEmail: string;
   name: string;
   description: string;
-  category: string; // Main category: e.g., "THC", "CBD", "Apparel Type", "Smoking Gear"
-  subcategory?: string | null; // e.g., Delivery Method for THC/CBD, or null for others
-  subSubcategory?: string | null; // e.g., Specific Product Type for THC/CBD, or null for others
+  category: string; 
+  subcategory?: string | null; 
+  subSubcategory?: string | null; 
   
-  // THC/CBD Specific
   strain?: string | null;
   thcContent?: number | null;
   cbdContent?: number | null;
   effects?: string[] | null;
   flavors?: string[] | null;
   medicalUses?: string[] | null;
-  stickerProgramOptIn?: 'yes' | 'no' | null; // New field for THC products
+  stickerProgramOptIn?: 'yes' | 'no' | null; 
 
-  // Apparel Specific
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;
   sizingSystem?: 'UK/SA' | 'US' | 'EURO' | 'Alpha (XS-XXXL)' | 'Other' | null;
   sizes?: string[] | null;
   
-  // General
   currency: string; 
-  price: number; // For single-price products (ensure this is consistent or deprecated if priceTiers is primary)
-  unit: string; // For single-price products
+  price: number; 
+  unit: string; 
   priceTiers: PriceTier[]; 
   quantityInStock: number;
   imageUrl?: string | null;
@@ -218,7 +215,7 @@ export interface User {
   status?: 'Active' | 'Suspended' | 'PendingApproval';
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
-  signupSource?: string; // e.g., 'public', 'dispensary_invite'
+  signupSource?: string; 
 }
 
 // Represents a Credit Package document in Firestore
@@ -285,7 +282,7 @@ export interface AIAdvisorConfig {
 // For Cloud Functions that might deal with raw document data before type casting
 export type DispensaryDocData = Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> & {
   fullName?: string;
-  dispensaryName?: string; // Name of the wellness store
+  dispensaryName?: string; 
   applicationDate: Timestamp;
   approvedDate?: Timestamp;
   lastActivityDate?: Timestamp;
@@ -338,17 +335,17 @@ export interface FirestoreDocument {
 
 // Specific types for Analytics
 export interface ProductCategoryCount {
-  name: string; // Category name
-  count: number; // Number of products in this category
-  fill: string; // Color for the chart
+  name: string; 
+  count: number; 
+  fill: string; 
 }
 
 // Cart Item type
 export interface CartItem extends Omit<Product, 'priceTiers' | 'price' | 'unit'> { 
   id: string; 
   name: string;
-  price: number; // Price for the specific unit chosen in the cart
-  unit: string; // Unit for the specific tier chosen in the cart
+  price: number; 
+  unit: string; 
   quantity: number;
   imageUrl?: string | null;
   currency: string;
@@ -357,3 +354,4 @@ export interface CartItem extends Omit<Product, 'priceTiers' | 'price' | 'unit'>
   category: string; 
   quantityInStock: number;
 }
+

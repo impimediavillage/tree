@@ -14,8 +14,8 @@ import { format } from 'date-fns';
 
 interface DispensaryCardProps {
   dispensary: Dispensary;
-  onStatusToggle: (dispensaryId: string, currentStatus: Dispensary['status']) => Promise<void>;
-  onDelete: (dispensaryId: string, dispensaryName: string) => Promise<void>;
+  onStatusToggle: (wellnessId: string, currentStatus: Dispensary['status']) => Promise<void>;
+  onDelete: (wellnessId: string, wellnessName: string) => Promise<void>;
 }
 
 const getStatusProps = (status: Dispensary['status']) => {
@@ -33,12 +33,12 @@ const getStatusProps = (status: Dispensary['status']) => {
   }
 };
 
-export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: DispensaryCardProps) {
-  const StatusIcon = getStatusProps(dispensary.status).VFC;
-  const statusBadgeClass = getStatusProps(dispensary.status).badgeClass;
+export function DispensaryCard({ dispensary: wellness, onStatusToggle, onDelete }: DispensaryCardProps) {
+  const StatusIcon = getStatusProps(wellness.status).VFC;
+  const statusBadgeClass = getStatusProps(wellness.status).badgeClass;
 
-  const canToggleStatus = dispensary.status === 'Approved' || dispensary.status === 'Suspended';
-  const isToggleChecked = dispensary.status === 'Approved';
+  const canToggleStatus = wellness.status === 'Approved' || wellness.status === 'Suspended';
+  const isToggleChecked = wellness.status === 'Approved';
 
   const formatDate = (dateInput: any): string => {
     if (!dateInput) return 'N/A';
@@ -59,52 +59,52 @@ export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: Dispens
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold text-primary flex items-center gap-2">
             <Building className="h-6 w-6" />
-            {dispensary.dispensaryName}
+            {wellness.dispensaryName}
           </CardTitle>
           <Badge className={statusBadgeClass}>
             <StatusIcon className="mr-1.5 h-4 w-4" />
-            {dispensary.status}
+            {wellness.status}
           </Badge>
         </div>
         <CardDescription className="text-xs text-muted-foreground">
-          ID: {dispensary.id?.substring(0, 10)}...
+          ID: {wellness.id?.substring(0, 10)}...
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-2.5 text-sm">
         <div className="flex items-center gap-2">
           <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="truncate" title={dispensary.ownerEmail}>{dispensary.ownerEmail}</span>
+          <span className="truncate" title={wellness.ownerEmail}>{wellness.ownerEmail}</span>
         </div>
         <div className="flex items-center gap-2">
           <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="truncate" title={dispensary.dispensaryType}>{dispensary.dispensaryType}</span>
+          <span className="truncate" title={wellness.dispensaryType}>{wellness.dispensaryType}</span>
         </div>
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="truncate" title={dispensary.location}>{dispensary.location}</span>
+          <span className="truncate" title={wellness.location}>{wellness.location}</span>
         </div>
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span>Applied: {formatDate(dispensary.applicationDate)}</span>
+          <span>Applied: {formatDate(wellness.applicationDate)}</span>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-3 border-t pt-4 mt-auto">
         {canToggleStatus && (
           <div className="flex items-center justify-between w-full">
-            <Label htmlFor={`status-toggle-${dispensary.id}`} className="text-sm font-medium">
+            <Label htmlFor={`status-toggle-${wellness.id}`} className="text-sm font-medium">
               {isToggleChecked ? 'Approved' : 'Suspended'}
             </Label>
             <Switch
-              id={`status-toggle-${dispensary.id}`}
+              id={`status-toggle-${wellness.id}`}
               checked={isToggleChecked}
-              onCheckedChange={() => onStatusToggle(dispensary.id!, dispensary.status)}
+              onCheckedChange={() => onStatusToggle(wellness.id!, wellness.status)}
               aria-label={`Toggle status to ${isToggleChecked ? 'Suspended' : 'Approved'}`}
             />
           </div>
         )}
         <div className="flex gap-2 w-full">
           <Button variant="outline" className="w-full" asChild>
-            <Link href={`/admin/dashboard/dispensaries/edit/${dispensary.id}`}>
+            <Link href={`/admin/dashboard/dispensaries/edit/${wellness.id}`}>
               <Edit className="mr-2 h-4 w-4" /> Edit
             </Link>
           </Button>
@@ -118,13 +118,13 @@ export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: Dispens
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the wellness store &quot;{dispensary.dispensaryName}&quot; and all its associated data.
+                  This action cannot be undone. This will permanently delete the wellness profile &quot;{wellness.dispensaryName}&quot; and all its associated data.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(dispensary.id!, dispensary.dispensaryName)}>
-                  Yes, delete wellness store
+                <AlertDialogAction onClick={() => onDelete(wellness.id!, wellness.dispensaryName)}>
+                  Yes, delete wellness profile
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -134,3 +134,4 @@ export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: Dispens
     </Card>
   );
 }
+

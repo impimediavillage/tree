@@ -27,7 +27,7 @@ export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [dispensaryTypes, setDispensaryTypes] = useState<DispensaryType[]>([]);
+  const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
 
   const form = useForm<UserSignupFormData>({
@@ -40,7 +40,7 @@ export default function SignUpPage() {
     },
   });
 
-  const fetchDispensaryTypes = useCallback(async () => {
+  const fetchWellnessTypes = useCallback(async () => {
     setIsLoadingTypes(true);
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
@@ -50,18 +50,18 @@ export default function SignUpPage() {
         id: docSnap.id,
         ...docSnap.data(),
       } as DispensaryType));
-      setDispensaryTypes(fetchedTypes);
+      setWellnessTypes(fetchedTypes);
     } catch (error) {
-      console.error("Error fetching dispensary types for signup:", error);
-      toast({ title: "Error", description: "Could not load dispensary types. Please try again.", variant: "destructive" });
+      console.error("Error fetching wellness types for signup:", error);
+      toast({ title: "Error", description: "Could not load wellness types. Please try again.", variant: "destructive" });
     } finally {
       setIsLoadingTypes(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchDispensaryTypes();
-  }, [fetchDispensaryTypes]);
+    fetchWellnessTypes();
+  }, [fetchWellnessTypes]);
 
 
   const onSubmit = async (data: UserSignupFormData) => {
@@ -76,18 +76,17 @@ export default function SignUpPage() {
         email: firebaseUser.email || '',
         displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
         photoURL: firebaseUser.photoURL || null,
-        role: 'LeafUser', // Default role for public sign-ups
+        role: 'LeafUser', 
         credits: 10, 
         createdAt: serverTimestamp() as any,
         lastLoginAt: serverTimestamp() as any,
-        status: 'Active', // Automatically 'Active'
+        status: 'Active', 
         preferredDispensaryTypes: data.preferredDispensaryTypes || [],
-        welcomeCreditsAwarded: true, // Award welcome credits on public signup
-        signupSource: 'public', // Add signup source flag
+        welcomeCreditsAwarded: true, 
+        signupSource: 'public', 
       };
       await setDoc(userDocRef, newUser);
       
-      // Simplified object for localStorage, AuthContext will fetch full data
       const currentUserForStorage = {
         uid: newUser.uid,
         email: newUser.email,
@@ -104,7 +103,7 @@ export default function SignUpPage() {
         title: 'Account Created!',
         description: "You've been successfully signed up and logged in. Welcome!",
       });
-      router.push('/dashboard/leaf'); // Redirect to Leaf User dashboard
+      router.push('/dashboard/leaf'); 
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "Failed to create account.";
@@ -227,7 +226,7 @@ export default function SignUpPage() {
                 name="preferredDispensaryTypes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Dispensary Type Preferences (Optional)</FormLabel>
+                    <FormLabel className="text-base">Wellness Type Preferences (Optional)</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -246,10 +245,10 @@ export default function SignUpPage() {
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                         <ScrollArea className="max-h-60">
                           <div className="p-2 space-y-1">
-                            {dispensaryTypes.length === 0 && !isLoadingTypes && (
-                                <p className="p-2 text-sm text-muted-foreground">No dispensary types available.</p>
+                            {wellnessTypes.length === 0 && !isLoadingTypes && (
+                                <p className="p-2 text-sm text-muted-foreground">No wellness types available.</p>
                             )}
-                            {dispensaryTypes.map((type) => (
+                            {wellnessTypes.map((type) => (
                               <Button
                                 key={type.id}
                                 variant="ghost"
@@ -279,8 +278,7 @@ export default function SignUpPage() {
                                 variant="ghost"
                                 className="w-full justify-start h-auto py-2 px-3 font-semibold"
                                 onClick={() => {
-                                  const allTypeNames = dispensaryTypes.map(dt => dt.name);
-                                  // If all are already selected, deselect all. Otherwise, select all.
+                                  const allTypeNames = wellnessTypes.map(dt => dt.name);
                                   const newSelection = selectedTypes.length === allTypeNames.length 
                                     ? [] 
                                     : allTypeNames;
@@ -288,12 +286,12 @@ export default function SignUpPage() {
                                 }}
                                 disabled={isLoading}
                               >
-                                 {selectedTypes.length === dispensaryTypes.length && dispensaryTypes.length > 0 ? (
+                                 {selectedTypes.length === wellnessTypes.length && wellnessTypes.length > 0 ? (
                                   <CheckSquare className="mr-2 h-5 w-5 text-primary" />
                                 ) : (
                                   <Square className="mr-2 h-5 w-5 text-muted-foreground" />
                                 )}
-                                All Dispensary Types (Recommended)
+                                All Wellness Types (Recommended)
                               </Button>
                           </div>
                         </ScrollArea>
@@ -303,7 +301,7 @@ export default function SignUpPage() {
                         className="text-foreground"
                         style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                     >
-                      Select types of dispensaries you're interested in to personalize your experience.
+                      Select types of wellness entities you're interested in to personalize your experience.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

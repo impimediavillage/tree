@@ -46,7 +46,7 @@ const managementSidebarNavItems: NavItem[] = [
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
-  { title: 'Wellness Store Profile', href: '/dispensary-admin/profile', icon: Store },
+  { title: 'Wellness Profile', href: '/dispensary-admin/profile', icon: Store },
   { title: 'Notifications', href: '/dispensary-admin/notifications', icon: Bell, disabled: true, badge: 'Soon' },
   { title: 'Account Settings', href: '/dispensary-admin/account', icon: UserCircle, disabled: true, badge: 'Soon' },
 ];
@@ -62,7 +62,7 @@ const getInitials = (name?: string | null, fallback = 'DO') => {
 };
 
 
-export default function DispensaryAdminDashboardLayout({
+export default function WellnessAdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -71,8 +71,8 @@ export default function DispensaryAdminDashboardLayout({
   const router = useRouter();
   const { toast } = useToast();
   const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensaryStatus } = useAuth();
-  const [dispensary, setDispensary] = useState<Dispensary | null>(null);
-  const [isLoadingDispensary, setIsLoadingDispensary] = useState(true);
+  const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
+  const [isLoadingWellness, setIsLoadingWellness] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -85,53 +85,53 @@ export default function DispensaryAdminDashboardLayout({
     }
     
     if (currentUser.role !== 'DispensaryOwner') {
-      toast({ title: "Access Denied", description: "This area is for Wellness Store Owners.", variant: "destructive" });
+      toast({ title: "Access Denied", description: "This area is for Wellness Owners.", variant: "destructive" });
       router.push('/');
       return;
     }
 
     if (!canAccessDispensaryPanel) {
         if (currentDispensaryStatus === 'Pending Approval') {
-            toast({ title: "Account Pending", description: "Your wellness store application is still pending approval.", variant: "default" });
+            toast({ title: "Account Pending", description: "Your wellness application is still pending approval.", variant: "default" });
         } else if (currentDispensaryStatus === 'Suspended') {
-            toast({ title: "Account Suspended", description: "Your wellness store account is suspended. Please contact support.", variant: "destructive" });
+            toast({ title: "Account Suspended", description: "Your wellness account is suspended. Please contact support.", variant: "destructive" });
         } else if (currentDispensaryStatus === 'Rejected') {
-             toast({ title: "Application Rejected", description: "Your wellness store application was not approved. Please contact support for details.", variant: "destructive" });
+             toast({ title: "Application Rejected", description: "Your wellness application was not approved. Please contact support for details.", variant: "destructive" });
         } else if (!currentUser.dispensaryId) {
-             toast({ title: "No Wellness Store Linked", description: "Your account is not linked to a wellness store.", variant: "destructive" });
+             toast({ title: "No Wellness Linked", description: "Your account is not linked to a wellness profile.", variant: "destructive" });
         } else {
-            toast({ title: "Access Issue", description: "You do not have permission to access the wellness store panel at this time.", variant: "destructive" });
+            toast({ title: "Access Issue", description: "You do not have permission to access the wellness panel at this time.", variant: "destructive" });
         }
-      router.push('/'); // Redirect to home or a specific info page
+      router.push('/'); 
       return;
     }
 
     if (currentUser.dispensaryId) {
-      setIsLoadingDispensary(true);
-      const fetchDispensaryData = async () => {
-        const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
+      setIsLoadingWellness(true);
+      const fetchWellnessData = async () => {
+        const wellnessDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
         try {
-          const docSnap = await getDoc(dispensaryDocRef);
+          const docSnap = await getDoc(wellnessDocRef);
           if (docSnap.exists()) {
-            setDispensary({ id: docSnap.id, ...docSnap.data() } as Dispensary);
+            setWellnessProfile({ id: docSnap.id, ...docSnap.data() } as Dispensary);
           } else {
-            toast({ title: "Wellness Store Not Found", description: "Your associated wellness store data could not be found.", variant: "destructive" });
-            firebaseAuthInstance.signOut(); // Log out user if their wellness store data is missing
+            toast({ title: "Wellness Profile Not Found", description: "Your associated wellness data could not be found.", variant: "destructive" });
+            firebaseAuthInstance.signOut(); 
             router.push('/auth/signin');
           }
         } catch (error) {
-          console.error("Error fetching wellness store data:", error);
-          toast({ title: "Error", description: "Could not load wellness store data.", variant: "destructive" });
+          console.error("Error fetching wellness data:", error);
+          toast({ title: "Error", description: "Could not load wellness data.", variant: "destructive" });
         } finally {
-          setIsLoadingDispensary(false);
+          setIsLoadingWellness(false);
         }
       };
-      fetchDispensaryData();
+      fetchWellnessData();
     } else {
-       toast({ title: "Configuration Error", description: "No wellness store associated with your account.", variant: "destructive" });
+       toast({ title: "Configuration Error", description: "No wellness profile associated with your account.", variant: "destructive" });
        firebaseAuthInstance.signOut();
        router.push('/auth/signin');
-       setIsLoadingDispensary(false);
+       setIsLoadingWellness(false);
     }
   }, [currentUser, authLoading, canAccessDispensaryPanel, currentDispensaryStatus, router, toast]);
 
@@ -146,21 +146,21 @@ export default function DispensaryAdminDashboardLayout({
     }
   };
 
-  if (authLoading || isLoadingDispensary) {
+  if (authLoading || isLoadingWellness) {
     return (
-      <div className="flex items-center justify-center h-screen"> {/* Removed bg-background for body bg to show */}
+      <div className="flex items-center justify-center h-screen"> 
         <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
-        <p className="text-lg text-muted-foreground">Loading Wellness Store Dashboard...</p>
+        <p className="text-lg text-muted-foreground">Loading Wellness Panel...</p>
       </div>
     );
   }
 
-  if (!currentUser || !canAccessDispensaryPanel || !dispensary) {
+  if (!currentUser || !canAccessDispensaryPanel || !wellnessProfile) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen p-4"> {/* Removed bg-background */}
+      <div className="flex flex-col items-center justify-center h-screen p-4"> 
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
         <p className="text-xl text-center text-destructive-foreground mb-2">Access Denied or Data Error.</p>
-        <p className="text-md text-center text-muted-foreground mb-6">Please ensure you are logged in with an approved Wellness Store Owner account.</p>
+        <p className="text-md text-center text-muted-foreground mb-6">Please ensure you are logged in with an approved Wellness Owner account.</p>
         <Button onClick={() => router.push('/auth/signin')}>Go to Login</Button>
       </div>
     );
@@ -171,10 +171,10 @@ export default function DispensaryAdminDashboardLayout({
        <div className="flex items-center gap-2 p-3 border-b border-border">
           <Store className="h-7 w-7 text-primary" />
           <div className="overflow-hidden">
-            <p className="text-lg font-semibold text-foreground truncate" title={dispensary.dispensaryName}>
-              {dispensary.dispensaryName}
+            <p className="text-lg font-semibold text-foreground truncate" title={wellnessProfile.dispensaryName}>
+              {wellnessProfile.dispensaryName}
             </p>
-            <p className="text-xs text-muted-foreground">Wellness Store Panel</p>
+            <p className="text-xs text-muted-foreground">Wellness Panel</p>
           </div>
         </div>
         <nav className="flex flex-col space-y-1 p-2">
@@ -254,7 +254,7 @@ export default function DispensaryAdminDashboardLayout({
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || 'Owner'} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials(currentUser.displayName, dispensary.dispensaryName?.[0])}
+                      {getInitials(currentUser.displayName, wellnessProfile.dispensaryName?.[0])}
                     </AvatarFallback>
                   </Avatar>
                   <div className="ml-2 text-left overflow-hidden">
@@ -285,17 +285,14 @@ export default function DispensaryAdminDashboardLayout({
   );
 
   return (
-    <div className="flex min-h-screen"> {/* Removed bg-muted/40 */}
-      {/* Desktop Sidebar */}
+    <div className="flex min-h-screen"> 
       <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm">
         <SidebarNavigation />
       </aside>
       
-      {/* Sheet component now wraps the main content area AND the SheetContent */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
         <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> {/* bg-background/80 is semi-transparent, fine */}
-              {/* SheetTrigger is now a child of the Sheet component */}
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> 
               <SheetTrigger asChild>
                   <Button size="icon" variant="outline" className="md:hidden">
                       <Menu className="h-5 w-5" />
@@ -307,7 +304,7 @@ export default function DispensaryAdminDashboardLayout({
                     className="text-lg font-semibold text-foreground truncate"
                     style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
                   >
-                    {dispensary.dispensaryName}
+                    {wellnessProfile.dispensaryName}
                   </h1>
               </div>
           </header>
@@ -316,7 +313,6 @@ export default function DispensaryAdminDashboardLayout({
           </main>
         </div>
 
-        {/* SheetContent is also a child of the same Sheet component */}
         <SheetContent side="left" className="p-0 w-72 flex flex-col bg-background">
             <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
                 <X className="h-4 w-4" />
@@ -328,3 +324,4 @@ export default function DispensaryAdminDashboardLayout({
     </div>
   );
 }
+

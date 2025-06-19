@@ -7,7 +7,7 @@ import type { DispensaryType } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Store } from 'lucide-react'; // Store icon might still be needed as fallback
+import { Heart, Store } from 'lucide-react'; 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -46,7 +46,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     }
   };
   
-  const dataAiHint = `wellness store type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
+  const dataAiHint = `wellness type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
 
   return (
     <Card
@@ -98,7 +98,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
             >
                 
                 <span className="bg-primary text-primary-foreground font-semibold text-lg px-4 py-2 rounded-md text-center">
-                    Browse stores
+                    Browse Wellness Profiles
                 </span>
             </Button>
         </div>
@@ -106,3 +106,4 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
+

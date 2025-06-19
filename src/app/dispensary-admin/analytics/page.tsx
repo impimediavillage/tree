@@ -36,7 +36,6 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
   </Card>
 );
 
-// Define a consistent color palette for charts
 const CHART_COLORS = [
   'hsl(var(--chart-1))', 
   'hsl(var(--chart-2))',
@@ -47,7 +46,7 @@ const CHART_COLORS = [
 ];
 
 
-export default function DispensaryAnalyticsPage() {
+export default function WellnessAnalyticsPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -57,12 +56,10 @@ export default function DispensaryAnalyticsPage() {
     totalProducts: 0,
     activePoolItems: 0,
     pendingRequests: 0,
-    // --- Placeholders for sales data ---
-    totalSales: 0, // Example: 12345.67,
-    totalOrders: 0, // Example: 150,
-    averageOrderValue: 0, // Example: (12345.67 / 150),
-    topSellingProduct: 'N/A', // Example: "Best Bud OG",
-    // --- End Placeholders ---
+    totalSales: 0, 
+    totalOrders: 0, 
+    averageOrderValue: 0, 
+    topSellingProduct: 'N/A', 
   });
 
   useEffect(() => {
@@ -74,7 +71,6 @@ export default function DispensaryAnalyticsPage() {
     const fetchAnalyticsData = async () => {
       setIsLoadingStats(true);
       try {
-        // Fetch products for the current dispensary
         const productsQuery = query(
           collection(db, "products"),
           where("dispensaryId", "==", currentUser.dispensaryId)
@@ -84,7 +80,6 @@ export default function DispensaryAnalyticsPage() {
         setAllProducts(fetchedProducts);
         const activePoolCount = fetchedProducts.filter(p => p.isAvailableForPool).length;
 
-        // Fetch pending incoming product requests
         const requestsQuery = query(
           collection(db, "productRequests"),
           where("productOwnerDispensaryId", "==", currentUser.dispensaryId),
@@ -93,10 +88,8 @@ export default function DispensaryAnalyticsPage() {
         const requestsSnapshot = await getDocs(requestsQuery);
         setIncomingRequests(requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
         
-        // Simulate fetching actual sales analytics data.
-        // For now, these remain placeholders.
-        const placeholderTotalSales = Math.floor(Math.random() * 20000) + 5000; // Random sales between 5k-25k
-        const placeholderTotalOrders = Math.floor(Math.random() * 300) + 50;   // Random orders between 50-350
+        const placeholderTotalSales = Math.floor(Math.random() * 20000) + 5000; 
+        const placeholderTotalOrders = Math.floor(Math.random() * 300) + 50;   
         const placeholderAvgOrderValue = placeholderTotalOrders > 0 ? placeholderTotalSales / placeholderTotalOrders : 0;
 
         setStats({
@@ -106,12 +99,11 @@ export default function DispensaryAnalyticsPage() {
           totalSales: placeholderTotalSales,
           totalOrders: placeholderTotalOrders,
           averageOrderValue: placeholderAvgOrderValue,
-          topSellingProduct: fetchedProducts.length > 0 ? fetchedProducts[0].name : 'N/A', // Simplistic top product
+          topSellingProduct: fetchedProducts.length > 0 ? fetchedProducts[0].name : 'N/A', 
         });
 
       } catch (error) {
-        console.error("Error fetching dispensary analytics data:", error);
-        // Handle error (e.g., show toast)
+        console.error("Error fetching wellness analytics data:", error);
       } finally {
         setIsLoadingStats(false);
       }
@@ -130,7 +122,7 @@ export default function DispensaryAnalyticsPage() {
       name,
       count,
       fill: CHART_COLORS[index % CHART_COLORS.length],
-    })).sort((a,b) => b.count - a.count); // Sort for better chart readability
+    })).sort((a,b) => b.count - a.count); 
   }, [allProducts]);
 
 
@@ -142,7 +134,7 @@ export default function DispensaryAnalyticsPage() {
       <div className="p-4 text-center text-destructive flex flex-col items-center justify-center h-full">
         <AlertTriangle className="h-12 w-12 mb-4" />
         <p className="text-xl">Access Denied.</p>
-        <p>This section is for Dispensary Owners only.</p>
+        <p>This section is for Wellness Owners only.</p>
       </div>
     );
   }
@@ -155,7 +147,7 @@ export default function DispensaryAnalyticsPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <BarChart3 className="mr-3 h-8 w-8 text-primary" /> Dispensary Analytics
+            <BarChart3 className="mr-3 h-8 w-8 text-primary" /> Wellness Analytics
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
@@ -171,7 +163,7 @@ export default function DispensaryAnalyticsPage() {
           title="Total Products"
           value={stats.totalProducts}
           icon={Package}
-          description="Products listed by your dispensary."
+          description="Products listed by your wellness profile."
           isLoading={isLoadingStats}
         />
         <StatCard
@@ -228,7 +220,7 @@ export default function DispensaryAnalyticsPage() {
             <CardDescription 
                 className="text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Overview of products by category in your dispensary.</CardDescription>
+            >Overview of products by category in your wellness profile.</CardDescription>
             </CardHeader>
             <CardContent>
             {isLoadingStats ? (

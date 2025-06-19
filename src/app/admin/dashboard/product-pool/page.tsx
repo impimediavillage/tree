@@ -21,7 +21,6 @@ export default function AdminProductPoolPage() {
     setIsLoading(true);
     try {
       const productsCollectionRef = collection(db, 'products');
-      // Consider adding filters or pagination for large datasets
       const q = query(productsCollectionRef, orderBy('dispensaryName'), orderBy('name'));
       const querySnapshot = await getDocs(q);
       const fetchedProducts: Product[] = [];
@@ -81,7 +80,7 @@ export default function AdminProductPoolPage() {
     },
     {
       accessorKey: "dispensaryName",
-      header: "Wellness Store",
+      header: "Wellness Name",
     },
     {
       accessorKey: "category",
@@ -111,7 +110,6 @@ export default function AdminProductPoolPage() {
         </div>
       ),
     },
-    // Add more columns as needed, e.g., actions like 'View Details'
   ];
 
   return (

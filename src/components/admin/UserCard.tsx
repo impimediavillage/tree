@@ -10,7 +10,7 @@ import { Mail, UserCircle, CheckCircle, XCircle, AlertTriangle, Edit, Briefcase,
 
 interface UserCardProps {
   user: User;
-  dispensaryName?: string; // Optional: pass if user is DispensaryOwner and name is available
+  dispensaryName?: string; 
   onEdit: (user: User) => void;
 }
 
@@ -28,7 +28,7 @@ const RoleIcon = ({ role }: { role: User['role'] }) => {
     case 'Super Admin': return <Shield className="h-4 w-4 text-red-500" />;
     case 'DispensaryOwner': return <Briefcase className="h-4 w-4 text-blue-500" />;
     case 'LeafUser': return <Leaf className="h-4 w-4 text-green-500" />;
-    case 'DispensaryStaff': return <UserCircle className="h-4 w-4 text-purple-500" />; // Example for staff
+    case 'DispensaryStaff': return <UserCircle className="h-4 w-4 text-purple-500" />; 
     default: return <UserCircle className="h-4 w-4 text-gray-500" />;
   }
 };
@@ -61,12 +61,12 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
               user.role === 'Super Admin' ? 'destructive' :
               user.role === 'DispensaryOwner' ? 'default' :
               user.role === 'LeafUser' ? 'secondary' :
-              user.role === 'DispensaryStaff' ? 'outline' : // Example for staff
+              user.role === 'DispensaryStaff' ? 'outline' : 
               'outline'
             }
             className="capitalize py-1 px-2.5 text-xs"
           >
-            <RoleIcon role={user.role} /> <span className="ml-1.5">{user.role === 'DispensaryStaff' ? 'Wellness Store Staff' : user.role === 'DispensaryOwner' ? 'Wellness Store Owner' : user.role}</span>
+            <RoleIcon role={user.role} /> <span className="ml-1.5">{user.role === 'DispensaryStaff' ? 'Wellness Staff' : user.role === 'DispensaryOwner' ? 'Wellness Owner' : user.role}</span>
           </Badge>
         </div>
         <CardTitle className="text-xl mt-3 truncate font-semibold">{user.displayName || 'Unnamed User'}</CardTitle>
@@ -92,7 +92,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
         </div>
         {user.role === 'DispensaryOwner' && user.dispensaryId && (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Wellness Store:</span>
+            <span className="text-muted-foreground">Wellness:</span>
             <span className="font-medium truncate max-w-[150px]" title={dispensaryName || user.dispensaryId}>
               {dispensaryName || user.dispensaryId.substring(0, 10) + '...'}
             </span>
@@ -110,7 +110,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="mt-auto border-t pt-4"> {/* Added mt-auto */}
+      <CardFooter className="mt-auto border-t pt-4"> 
         <Button variant="outline" className="w-full" onClick={() => onEdit(user)}>
           <Edit className="mr-2 h-4 w-4" /> Edit User
         </Button>
@@ -118,3 +118,4 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
     </Card>
   );
 }
+

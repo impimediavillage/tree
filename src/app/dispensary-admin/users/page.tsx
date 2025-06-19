@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase'; // Removed firebaseAuth import, not needed here
+import { db } from '@/lib/firebase'; 
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { Loader2, Users as UsersIcon, UserPlus, UserCog, Filter, Edit } from 'lucide-react'; // Added Edit
+import { Loader2, Users as UsersIcon, UserPlus, UserCog, Filter, Edit } from 'lucide-react'; 
 import { UserCard } from '@/components/admin/UserCard'; 
 import { DispensaryAddStaffDialog } from '@/components/dispensary-admin/DispensaryAddStaffDialog';
 import { DispensaryAddLeafUserDialog } from '@/components/dispensary-admin/DispensaryAddLeafUserDialog';
@@ -19,30 +19,29 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form'; // Added missing import
+import { useForm } from 'react-hook-form'; 
 
-// Schema for editing users managed by wellness store owner
-const dispensaryUserEditSchema = z.object({
+const wellnessUserEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
-  role: z.enum(['DispensaryStaff', 'LeafUser', 'User']), // Added 'User' as a possible role for completeness
+  role: z.enum(['DispensaryStaff', 'LeafUser', 'User']), 
   status: z.enum(['Active', 'Suspended', 'PendingApproval']),
   credits: z.coerce.number().int().min(0, "Credits cannot be negative.").optional(),
 });
-type DispensaryUserEditFormData = z.infer<typeof dispensaryUserEditSchema>;
+type WellnessUserEditFormData = z.infer<typeof wellnessUserEditSchema>;
 
-interface EditDispensaryUserDialogProps {
+interface EditWellnessUserDialogProps {
   user: User | null;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onUserUpdate: () => void;
 }
 
-function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: EditDispensaryUserDialogProps) {
+function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: EditWellnessUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<DispensaryUserEditFormData>({
-    resolver: zodResolver(dispensaryUserEditSchema),
+  const form = useForm<WellnessUserEditFormData>({
+    resolver: zodResolver(wellnessUserEditSchema),
   });
 
   useEffect(() => {
@@ -56,7 +55,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
     }
   }, [user, isOpen, form]);
 
-  const onSubmit = async (data: DispensaryUserEditFormData) => {
+  const onSubmit = async (data: WellnessUserEditFormData) => {
     if (!user || !user.uid) return;
     setIsSubmitting(true);
     try {
@@ -65,11 +64,9 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
         displayName: data.displayName,
         role: data.role,
         status: data.status,
-        updatedAt: serverTimestamp() as any, // Add updatedAt timestamp
+        updatedAt: serverTimestamp() as any, 
       };
 
-      // Award welcome credits if activating a LeafUser for the first time
-      // Check existing welcomeCreditsAwarded flag
       if (data.role === 'LeafUser' && data.status === 'Active' && user.status !== 'Active' && !user.welcomeCreditsAwarded) {
         updateData.credits = (user.credits || 0) + 10;
         updateData.welcomeCreditsAwarded = true;
@@ -100,7 +97,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit User: {user.displayName || user.email}</DialogTitle>
-          <DialogDescription>Modify details for this user associated with your wellness store.</DialogDescription>
+          <DialogDescription>Modify details for this user associated with your wellness profile.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -114,9 +111,8 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
+                    <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
                     <SelectItem value="LeafUser">Leaf User (Linked)</SelectItem>
-                    {/* <SelectItem value="User">User (Generic - if applicable)</SelectItem> */}
                   </SelectContent>
                 </Select><FormMessage />
               </FormItem>
@@ -160,7 +156,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
 }
 
 
-export default function DispensaryManageUsersPage() {
+export default function WellnessManageUsersPage() {
   const { currentUser, loading: authLoading, currentDispensaryStatus } = useAuth();
   const [managedUsers, setManagedUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -177,7 +173,7 @@ export default function DispensaryManageUsersPage() {
     if (!currentUser?.dispensaryId || currentDispensaryStatus !== 'Approved') {
       setIsLoading(false);
       if (currentDispensaryStatus !== 'Approved' && currentUser?.dispensaryId) {
-         toast({ title: "Access Restricted", description: "User management is available for approved wellness stores only.", variant: "destructive"});
+         toast({ title: "Access Restricted", description: "User management is available for approved wellness profiles only.", variant: "destructive"});
       }
       setManagedUsers([]);
       return;
@@ -197,7 +193,7 @@ export default function DispensaryManageUsersPage() {
       setManagedUsers(fetchedUsers);
     } catch (error) {
       console.error("Error fetching managed users:", error);
-      toast({ title: "Error", description: "Could not fetch users for your wellness store.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch users for your wellness profile.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +228,7 @@ export default function DispensaryManageUsersPage() {
         <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-2 text-xl font-semibold">Access Restricted</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          User management is only available for approved wellness stores. Your current wellness store status is: {currentDispensaryStatus || 'Not set'}.
+          User management is only available for approved wellness profiles. Your current wellness profile status is: {currentDispensaryStatus || 'Not set'}.
         </p>
       </Card>
     );
@@ -252,7 +248,7 @@ export default function DispensaryManageUsersPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Add, view, and manage staff and linked Leaf Users for your wellness store.
+            Add, view, and manage staff and linked Leaf Users for your wellness profile.
           </p>
         </div>
         <div className="flex gap-2">
@@ -275,7 +271,7 @@ export default function DispensaryManageUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
+                    <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
                     <SelectItem value="LeafUser">Leaf Users (Linked)</SelectItem>
                 </SelectContent>
             </Select>
@@ -333,7 +329,7 @@ export default function DispensaryManageUsersPage() {
           )}
         </Card>
       )}
-      <EditDispensaryUserDialog
+      <EditWellnessUserDialog
         user={editingUser}
         isOpen={isEditUserDialogOpen}
         onOpenChange={setIsEditUserDialogOpen}
@@ -342,3 +338,4 @@ export default function DispensaryManageUsersPage() {
     </div>
   );
 }
+

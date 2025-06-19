@@ -51,10 +51,10 @@ const hourOptions = Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toStr
 const minuteOptions = [ { value: "00", label: "00" }, { value: "15", label: "15" }, { value: "30", label: "30" }, { value: "45", label: "45" }];
 const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
 
-const dispensaryTypeIcons: Record<string, string> = {
-  "THC - CBD - Mushrooms dispensary": "/icons/thc-cbd-mushroom.png",
-  "Homeopathic dispensary": "/icons/homeopathy.png",
-  "African Traditional Medicine dispensary": "/icons/traditional-medicine.png",
+const wellnessTypeIcons: Record<string, string> = {
+  "THC - CBD - Mushrooms wellness": "/icons/thc-cbd-mushroom.png",
+  "Homeopathic wellness": "/icons/homeopathy.png",
+  "African Traditional Medicine wellness": "/icons/traditional-medicine.png",
   "Flower Store": "/icons/default-pin.png",
   "Permaculture & gardening store": "/icons/permaculture.png",
   "Traditional Medicine": "/icons/traditional-medicine.png",
@@ -64,7 +64,7 @@ const dispensaryTypeIcons: Record<string, string> = {
   "default": "/icons/default-pin.png"
 };
 
-const dispensaryStatusOptions: EditDispensaryFormData['status'][] = ['Pending Approval', 'Approved', 'Rejected', 'Suspended'];
+const wellnessStatusOptions: EditDispensaryFormData['status'][] = ['Pending Approval', 'Approved', 'Rejected', 'Suspended'];
 
 const countryCodes = [
   { value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" },
@@ -85,7 +85,7 @@ function parseTimeToComponents(time24?: string): { hour?: string, minute?: strin
   return { hour: hour.toString(), minute: minuteStr, amPm };
 }
 
-export default function AdminEditDispensaryPage() {
+export default function AdminEditWellnessPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
@@ -94,7 +94,7 @@ export default function AdminEditDispensaryPage() {
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dispensary, setDispensary] = useState<Dispensary | null>(null);
+  const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
 
   const [openHour, setOpenHour] = useState<string | undefined>();
   const [openMinute, setOpenMinute] = useState<string | undefined>();
@@ -106,10 +106,10 @@ export default function AdminEditDispensaryPage() {
   const [closeAmPm, setCloseAmPm] = useState<string | undefined>();
   const [isCloseTimePopoverOpen, setIsCloseTimePopoverOpen] = useState(false);
 
-  const [dispensaryTypes, setDispensaryTypes] = useState<DispensaryType[]>([]);
-  const [newDispensaryTypeName, setNewDispensaryTypeName] = useState('');
-  const [newDispensaryTypeIconPath, setNewDispensaryTypeIconPath] = useState('');
-  const [newDispensaryTypeImage, setNewDispensaryTypeImage] = useState('');
+  const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
+  const [newWellnessTypeName, setNewWellnessTypeName] = useState('');
+  const [newWellnessTypeIconPath, setNewWellnessTypeIconPath] = useState('');
+  const [newWellnessTypeImage, setNewWellnessTypeImage] = useState('');
   const [isAddTypeDialogOpen, setIsAddTypeDialogOpen] = useState(false);
 
   const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
@@ -135,7 +135,7 @@ export default function AdminEditDispensaryPage() {
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
-  const fetchDispensaryTypes = useCallback(async () => {
+  const fetchWellnessTypes = useCallback(async () => {
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
       const q = firestoreQuery(typesCollectionRef);
@@ -143,10 +143,10 @@ export default function AdminEditDispensaryPage() {
       const fetchedTypes: DispensaryType[] = querySnapshot.docs.map(docSnap => ({
         id: docSnap.id, ...docSnap.data()
       } as DispensaryType)).sort((a, b) => a.name.localeCompare(b.name));
-      setDispensaryTypes(fetchedTypes);
+      setWellnessTypes(fetchedTypes);
     } catch (error) {
-      console.error("Error fetching wellness store types for admin edit:", error);
-      toast({ title: "Error", description: "Failed to fetch wellness store types.", variant: "destructive" });
+      console.error("Error fetching wellness types for admin edit:", error);
+      toast({ title: "Error", description: "Failed to fetch wellness types.", variant: "destructive" });
     }
   }, [toast]);
 
@@ -164,23 +164,23 @@ export default function AdminEditDispensaryPage() {
     }
 
     if (currentUser.role !== 'Super Admin') {
-      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness stores.", variant: "destructive" });
+      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
       setIsFetchingData(false);
       return;
     }
 
-    fetchDispensaryTypes();
+    fetchWellnessTypes();
 
     if (dispensaryId) {
-      const fetchDispensary = async () => {
+      const fetchWellnessProfile = async () => {
         setIsFetchingData(true);
         try {
-          const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-          const docSnap = await getDoc(dispensaryDocRef);
+          const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+          const docSnap = await getDoc(wellnessDocRef);
           if (docSnap.exists()) {
             const data = docSnap.data() as Dispensary;
-            setDispensary(data);
+            setWellnessProfile(data);
 
             let appDateString = '';
             if (data.applicationDate) {
@@ -210,84 +210,83 @@ export default function AdminEditDispensaryPage() {
                     setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
                 } else {
                     setNationalPhoneNumber(data.phone);
-                    // setSelectedCountryCode(countryCodes[0].value); // Default if no match
                 }
             }
 
           } else {
-            toast({ title: "Not Found", description: "Wellness store not found.", variant: "destructive" });
+            toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
             router.push('/admin/dashboard/dispensaries');
           }
         } catch (error) {
-          console.error("Error fetching wellness store:", error);
-          toast({ title: "Error", description: "Failed to fetch wellness store details.", variant: "destructive" });
+          console.error("Error fetching wellness profile:", error);
+          toast({ title: "Error", description: "Failed to fetch wellness profile details.", variant: "destructive" });
         } finally {
           setIsFetchingData(false);
         }
       };
-      fetchDispensary();
+      fetchWellnessProfile();
     } else {
-      toast({ title: "Error", description: "No wellness store ID provided.", variant: "destructive" });
+      toast({ title: "Error", description: "No wellness ID provided.", variant: "destructive" });
       router.push('/admin/dashboard/dispensaries');
       setIsFetchingData(false);
     }
-  }, [authLoading, currentUser, dispensaryId, router, toast, form, fetchDispensaryTypes]);
+  }, [authLoading, currentUser, dispensaryId, router, toast, form, fetchWellnessTypes]);
 
 
-  const handleAddNewDispensaryType = async () => {
+  const handleAddNewWellnessType = async () => {
      if (!currentUser || currentUser.role !== 'Super Admin') {
-        toast({ title: "Permission Denied", description: "Only Super Admins can add new wellness store types.", variant: "destructive"});
+        toast({ title: "Permission Denied", description: "Only Super Admins can add new wellness types.", variant: "destructive"});
         return;
     }
-    if (!newDispensaryTypeName.trim()) {
-      toast({ title: "Validation Error", description: "New wellness store type name cannot be empty.", variant: "destructive" });
+    if (!newWellnessTypeName.trim()) {
+      toast({ title: "Validation Error", description: "New wellness type name cannot be empty.", variant: "destructive" });
       return;
     }
-    if (dispensaryTypes.some(type => type.name.toLowerCase() === newDispensaryTypeName.trim().toLowerCase())) {
-      toast({ title: "Duplicate Error", description: "This wellness store type already exists.", variant: "destructive" });
+    if (wellnessTypes.some(type => type.name.toLowerCase() === newWellnessTypeName.trim().toLowerCase())) {
+      toast({ title: "Duplicate Error", description: "This wellness type already exists.", variant: "destructive" });
       return;
     }
-    const defaultIcon = `/icons/${newDispensaryTypeName.trim().toLowerCase().replace(/\s+/g, '-')}.png`;
-    const defaultImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(newDispensaryTypeName.trim())}`;
+    const defaultIcon = `/icons/${newWellnessTypeName.trim().toLowerCase().replace(/\s+/g, '-')}.png`;
+    const defaultImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(newWellnessTypeName.trim())}`;
     const newTypeData = {
-      name: newDispensaryTypeName.trim(),
-      iconPath: newDispensaryTypeIconPath.trim() || defaultIcon,
-      image: newDispensaryTypeImage.trim() || defaultImage
+      name: newWellnessTypeName.trim(),
+      iconPath: newWellnessTypeIconPath.trim() || defaultIcon,
+      image: newWellnessTypeImage.trim() || defaultImage
     };
     try {
       const newTypeRef = await addDoc(collection(db, 'dispensaryTypes'), newTypeData);
-      toast({ title: "Success", description: `Wellness store type "${newDispensaryTypeName.trim()}" added.` });
+      toast({ title: "Success", description: `Wellness type "${newWellnessTypeName.trim()}" added.` });
       const newType = { id: newTypeRef.id, ...newTypeData };
-      const updatedTypes = [...dispensaryTypes, newType].sort((a,b) => a.name.localeCompare(b.name));
-      setDispensaryTypes(updatedTypes);
+      const updatedTypes = [...wellnessTypes, newType].sort((a,b) => a.name.localeCompare(b.name));
+      setWellnessTypes(updatedTypes);
       form.setValue('dispensaryType', newType.name, {shouldValidate: true});
-      setNewDispensaryTypeName('');
-      setNewDispensaryTypeIconPath('');
-      setNewDispensaryTypeImage('');
+      setNewWellnessTypeName('');
+      setNewWellnessTypeIconPath('');
+      setNewWellnessTypeImage('');
       setIsAddTypeDialogOpen(false);
     } catch (error) {
-      console.error("Error adding new wellness store type:", error);
-      toast({ title: "Error", description: "Failed to add new wellness store type.", variant: "destructive" });
+      console.error("Error adding new wellness type:", error);
+      toast({ title: "Error", description: "Failed to add new wellness type.", variant: "destructive" });
     }
   };
 
   const watchDispensaryType = form.watch("dispensaryType");
 
   const initializeMapAndAutocomplete = useCallback(() => {
-    if (!window.google || !window.google.maps || !window.google.maps.places || !dispensary) {
-      console.warn("Google Maps API, wellness store data, or refs not ready for edit page map initialization.");
+    if (!window.google || !window.google.maps || !window.google.maps.places || !wellnessProfile) {
+      console.warn("Google Maps API, wellness profile data, or refs not ready for edit page map initialization.");
       return;
     }
-    const lat = currentLat ?? dispensary.latitude ?? -29.8587;
-    const lng = currentLng ?? dispensary.longitude ?? 31.0218;
-    const zoom = (currentLat && currentLng) || (dispensary.latitude && dispensary.longitude) ? 17 : 6;
+    const lat = currentLat ?? wellnessProfile.latitude ?? -29.8587;
+    const lng = currentLng ?? wellnessProfile.longitude ?? 31.0218;
+    const zoom = (currentLat && currentLng) || (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
 
     const currentTypeNameVal = form.getValues('dispensaryType');
-    let initialIconUrl = dispensaryTypeIcons.default;
+    let initialIconUrl = wellnessTypeIcons.default;
     if (currentTypeNameVal) {
-        const selectedTypeObject = dispensaryTypes.find(dt => dt.name === currentTypeNameVal);
+        const selectedTypeObject = wellnessTypes.find(dt => dt.name === currentTypeNameVal);
         if (selectedTypeObject?.iconPath) initialIconUrl = selectedTypeObject.iconPath;
-        else if (dispensaryTypeIcons[currentTypeNameVal]) initialIconUrl = dispensaryTypeIcons[currentTypeNameVal];
+        else if (wellnessTypeIcons[currentTypeNameVal]) initialIconUrl = wellnessTypeIcons[currentTypeNameVal];
     }
 
     if (!mapInstanceRef.current && mapContainerRef.current) {
@@ -364,10 +363,10 @@ export default function AdminEditDispensaryPage() {
         }
       });
     }
-  }, [dispensary, form, currentLat, currentLng, dispensaryTypes]);
+  }, [wellnessProfile, form, currentLat, currentLng, wellnessTypes]);
 
   useEffect(() => {
-    if (isFetchingData || !dispensary || (currentUser && currentUser.role !== 'Super Admin')) return;
+    if (isFetchingData || !wellnessProfile || (currentUser && currentUser.role !== 'Super Admin')) return;
     let checkGoogleInterval: NodeJS.Timeout;
     if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
         checkGoogleInterval = setInterval(() => {
@@ -377,19 +376,19 @@ export default function AdminEditDispensaryPage() {
         }, 500);
         return () => clearInterval(checkGoogleInterval);
     } else { initializeMapAndAutocomplete(); }
-  }, [isFetchingData, dispensary, initializeMapAndAutocomplete, currentUser]);
+  }, [isFetchingData, wellnessProfile, initializeMapAndAutocomplete, currentUser]);
 
   useEffect(() => {
     if (markerInstanceRef.current && window.google && window.google.maps) {
-      let iconUrl = dispensaryTypeIcons.default;
+      let iconUrl = wellnessTypeIcons.default;
       if (watchDispensaryType) {
-          const selectedTypeObject = dispensaryTypes.find(dt => dt.name === watchDispensaryType);
+          const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
           if (selectedTypeObject?.iconPath) iconUrl = selectedTypeObject.iconPath;
-          else if (dispensaryTypeIcons[watchDispensaryType]) iconUrl = dispensaryTypeIcons[watchDispensaryType];
+          else if (wellnessTypeIcons[watchDispensaryType]) iconUrl = wellnessTypeIcons[watchDispensaryType];
       }
       markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
     }
-  }, [watchDispensaryType, dispensaryTypes]);
+  }, [watchDispensaryType, wellnessTypes]);
 
   const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
     if (!hourStr || !minuteStr || !amPmStr) return '';
@@ -415,7 +414,7 @@ export default function AdminEditDispensaryPage() {
     if (!dispensaryId || !currentUser || currentUser.role !== 'Super Admin') return;
     setIsSubmitting(true);
     try {
-      const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
+      const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
       const updateData = {
         ...data,
         latitude: data.latitude === undefined ? null : data.latitude,
@@ -423,12 +422,12 @@ export default function AdminEditDispensaryPage() {
         lastActivityDate: serverTimestamp(),
       };
       delete (updateData as any).applicationDate;
-      await updateDoc(dispensaryDocRef, updateData);
-      toast({ title: "Wellness Store Updated", description: `${data.dispensaryName} has been successfully updated.` });
+      await updateDoc(wellnessDocRef, updateData);
+      toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
-      console.error("Error updating wellness store:", error);
-      toast({ title: "Update Failed", description: "Could not update wellness store details.", variant: "destructive" });
+      console.error("Error updating wellness profile:", error);
+      toast({ title: "Update Failed", description: "Could not update wellness profile details.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -455,8 +454,8 @@ export default function AdminEditDispensaryPage() {
     );
   }
 
-  if (!dispensary || (currentUser && currentUser.role !== 'Super Admin')) {
-    return <div className="text-center py-10">Wellness store not found, failed to load, or access denied.</div>;
+  if (!wellnessProfile || (currentUser && currentUser.role !== 'Super Admin')) {
+    return <div className="text-center py-10">Wellness profile not found, failed to load, or access denied.</div>;
   }
 
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
@@ -469,7 +468,7 @@ export default function AdminEditDispensaryPage() {
             className="text-3xl flex items-center text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Building className="mr-3 h-8 w-8 text-primary" /> Edit Wellness Store
+            <Building className="mr-3 h-8 w-8 text-primary" /> Edit Wellness Profile
           </CardTitle>
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/dashboard/dispensaries"><ArrowLeft className="mr-2 h-4 w-4" /> Back to List</Link>
@@ -479,7 +478,7 @@ export default function AdminEditDispensaryPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
-            Modify the details for &quot;{dispensary?.dispensaryName}&quot;.
+            Modify the details for &quot;{wellnessProfile?.dispensaryName}&quot;.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -495,31 +494,31 @@ export default function AdminEditDispensaryPage() {
               )} />
             </div>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Store Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Wellness Store Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Wellness Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
                  <FormItem>
-                    <FormLabel>Wellness Store Type</FormLabel>
+                    <FormLabel>Wellness Type</FormLabel>
                     <div className="flex items-center gap-2">
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                        <SelectContent>{dispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent>
+                        <SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent>
                         </Select>
                         {currentUser && currentUser.role === 'Super Admin' && (
                             <Dialog open={isAddTypeDialogOpen} onOpenChange={setIsAddTypeDialogOpen}>
                                 <DialogTrigger asChild><Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button></DialogTrigger>
                                 <DialogContent>
-                                    <DialogHeader><DialogTitle>Add New Wellness Store Type</DialogTitle><DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
+                                    <DialogHeader><DialogTitle>Add New Wellness Type</DialogTitle><DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
                                     <div className="space-y-3 py-2">
-                                        <Input value={newDispensaryTypeName} onChange={(e) => setNewDispensaryTypeName(e.target.value)} placeholder="New type name (e.g., Wellness Center)" />
-                                        <Input value={newDispensaryTypeIconPath} onChange={(e) => setNewDispensaryTypeIconPath(e.target.value)} placeholder="Icon path (e.g., /icons/wellness.png)" />
-                                        <Input value={newDispensaryTypeImage} onChange={(e) => setNewDispensaryTypeImage(e.target.value)} placeholder="Image URL (e.g., https://.../wellness-banner.jpg)" />
+                                        <Input value={newWellnessTypeName} onChange={(e) => setNewWellnessTypeName(e.target.value)} placeholder="New type name (e.g., Wellness Center)" />
+                                        <Input value={newWellnessTypeIconPath} onChange={(e) => setNewWellnessTypeIconPath(e.target.value)} placeholder="Icon path (e.g., /icons/wellness.png)" />
+                                        <Input value={newWellnessTypeImage} onChange={(e) => setNewWellnessTypeImage(e.target.value)} placeholder="Image URL (e.g., https://.../wellness-banner.jpg)" />
                                         <p className="text-xs text-muted-foreground">If icon/image paths are left blank, defaults will be generated.</p>
                                     </div>
-                                    <DialogFooter><Button type="button" onClick={handleAddNewDispensaryType}>Save Type</Button></DialogFooter>
+                                    <DialogFooter><Button type="button" onClick={handleAddNewWellnessType}>Save Type</Button></DialogFooter>
                                 </DialogContent>
                             </Dialog>
                         )}
@@ -533,7 +532,7 @@ export default function AdminEditDispensaryPage() {
                 <FormItem><FormLabel>Status</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
-                    <SelectContent>{dispensaryStatusOptions.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent>
+                    <SelectContent>{wellnessStatusOptions.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
                 </FormItem>
               )} />
@@ -549,7 +548,7 @@ export default function AdminEditDispensaryPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Wellness Store Location / Address</FormLabel>
+              <FormItem><FormLabel>Wellness Location / Address</FormLabel>
                 <FormControl><Input {...field} ref={locationInputRef} /></FormControl>
                 <FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage />
               </FormItem>
@@ -630,15 +629,15 @@ export default function AdminEditDispensaryPage() {
             </div>
 
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness store only offers order collection.</FormDescription></div><FormMessage /></FormItem>
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>Order Types Fulfilled</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with wellness stores of the same type.</FormDescription><FormMessage /></FormItem>)} />
+              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with wellness entities of the same type.</FormDescription><FormMessage /></FormItem>)} />
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
-                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness stores.</FormDescription><FormMessage /></FormItem>)} />)}
+                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
              <div className="flex gap-4 pt-4">
@@ -653,3 +652,4 @@ export default function AdminEditDispensaryPage() {
     </Card>
   );
 }
+

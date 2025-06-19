@@ -33,7 +33,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       displayName: '',
       email: '',
       password: '',
-      status: 'PendingApproval', // Default to PendingApproval for staff as well
+      status: 'PendingApproval', 
     },
   });
 
@@ -51,10 +51,10 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         role: 'DispensaryStaff', 
         dispensaryId: dispensaryId, 
         credits: 0, 
-        status: 'PendingApproval', // Staff also start as pending owner approval
+        status: 'PendingApproval', 
         createdAt: serverTimestamp() as any,
         lastLoginAt: null,
-        welcomeCreditsAwarded: false, // Staff don't get welcome credits this way
+        welcomeCreditsAwarded: false, 
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newStaffUserData);
@@ -85,7 +85,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Staff Member</DialogTitle>
-          <DialogDescription>Create an account for a new staff member for your wellness store. They will start as 'Pending Approval'.</DialogDescription>
+          <DialogDescription>Create an account for a new staff member for your wellness profile. They will start as 'Pending Approval'.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -123,3 +123,4 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
     </Dialog>
   );
 }
+

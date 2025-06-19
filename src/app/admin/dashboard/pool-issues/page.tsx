@@ -56,7 +56,7 @@ function ManageIssueDialog({ issue, onIssueUpdate }: ManageIssueDialogProps) {
       const updateData: Partial<PoolIssue> = {
         issueStatus: data.issueStatus,
         resolutionDetails: data.resolutionDetails,
-        updatedAt: new Date(), // Or serverTimestamp()
+        updatedAt: new Date(), 
       };
       await updateDoc(issueDocRef, updateData);
       
@@ -157,7 +157,6 @@ export default function AdminPoolIssuesPage() {
         fetchedIssues.push({ 
           id: doc.id, 
           ...data,
-          // Ensure timestamps are JS Date objects
           createdAt: (data.createdAt as any)?.toDate ? (data.createdAt as any).toDate() : new Date(data.createdAt as string),
           updatedAt: (data.updatedAt as any)?.toDate ? (data.updatedAt as any).toDate() : new Date(data.updatedAt as string),
         } as PoolIssue);
@@ -199,11 +198,11 @@ export default function AdminPoolIssuesPage() {
     },
     {
       accessorKey: "reporterDispensaryName",
-      header: "Reported By (Wellness Store)",
+      header: "Reported By (Wellness)",
     },
     {
       accessorKey: "reportedDispensaryName",
-      header: "Reported Against (Wellness Store)",
+      header: "Reported Against (Wellness)",
     },
     {
       accessorKey: "issueType",
@@ -245,7 +244,7 @@ export default function AdminPoolIssuesPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Review and manage reported issues between wellness stores in the product pool.
+            Review and manage reported issues between wellness entities in the product pool.
         </p>
       </div>
       <DataTable
@@ -258,3 +257,4 @@ export default function AdminPoolIssuesPage() {
     </div>
   );
 }
+

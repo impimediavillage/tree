@@ -21,7 +21,7 @@ interface PublicProductCardProps {
 }
 
 function PublicProductCard({ product }: PublicProductCardProps) {
-  const { addToCart, cartItems } = useCart(); // Get cartItems to check current quantity in cart
+  const { addToCart, cartItems } = useCart(); 
   const { toast } = useToast();
   const dataAiHintProduct = `${product.category} ${product.name.split(" ")[0] || ""}`;
 
@@ -38,7 +38,7 @@ function PublicProductCard({ product }: PublicProductCardProps) {
       });
       return;
     }
-    addToCart(product, 1); // Add one quantity
+    addToCart(product, 1); 
     toast({
       title: `Added to Cart!`,
       description: `${product.name} has been added to your cart.`,
@@ -133,12 +133,12 @@ function PublicProductCard({ product }: PublicProductCardProps) {
 }
 
 
-export default function DispensaryStorePage() {
+export default function WellnessStorePage() {
   const params = useParams();
-  const dispensaryId = params.dispensaryId as string;
+  const wellnessId = params.dispensaryId as string;
   const router = useRouter();
 
-  const [dispensary, setDispensary] = useState<Dispensary | null>(null);
+  const [wellness, setWellness] = useState<Dispensary | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -149,28 +149,28 @@ export default function DispensaryStorePage() {
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!dispensaryId) {
-      setError("Wellness store ID is missing.");
+    if (!wellnessId) {
+      setError("Wellness ID is missing.");
       setIsLoading(false);
       return;
     }
 
-    const fetchDispensaryData = async () => {
+    const fetchWellnessData = async () => {
       setIsLoading(true);
       try {
-        const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-        const dispensarySnap = await getDoc(dispensaryDocRef);
+        const wellnessDocRef = doc(db, 'dispensaries', wellnessId);
+        const wellnessSnap = await getDoc(wellnessDocRef);
 
-        if (!dispensarySnap.exists() || dispensarySnap.data()?.status !== 'Approved') {
-          setError('Wellness store not found or not available.');
+        if (!wellnessSnap.exists() || wellnessSnap.data()?.status !== 'Approved') {
+          setError('Wellness profile not found or not available.');
           setIsLoading(false);
           return;
         }
-        setDispensary(dispensarySnap.data() as Dispensary);
+        setWellness(wellnessSnap.data() as Dispensary);
 
         const productsQuery = query(
           collection(db, 'products'),
-          where('dispensaryId', '==', dispensaryId),
+          where('dispensaryId', '==', wellnessId),
           orderBy('name')
         );
         const productsSnapshot = await getDocs(productsQuery);
@@ -182,15 +182,15 @@ export default function DispensaryStorePage() {
         setCategories(['all', ...uniqueCategories.sort()]);
 
       } catch (err) {
-        console.error("Error fetching wellness store data:", err);
-        setError('Failed to load wellness store information.');
+        console.error("Error fetching wellness data:", err);
+        setError('Failed to load wellness information.');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchDispensaryData();
-  }, [dispensaryId]);
+    fetchWellnessData();
+  }, [wellnessId]);
 
   useEffect(() => {
     let tempProducts = products;
@@ -211,7 +211,7 @@ export default function DispensaryStorePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
-        <p className="text-xl text-muted-foreground">Loading Wellness Store...</p>
+        <p className="text-xl text-muted-foreground">Loading Wellness Profile...</p>
       </div>
     );
   }
@@ -227,7 +227,7 @@ export default function DispensaryStorePage() {
     );
   }
 
-  if (!dispensary) return null; 
+  if (!wellness) return null; 
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
@@ -237,44 +237,44 @@ export default function DispensaryStorePage() {
             className="text-4xl font-extrabold text-foreground tracking-tight"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            {dispensary.dispensaryName}
+            {wellness.dispensaryName}
           </CardTitle>
           <CardDescription 
             className="text-lg text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            {dispensary.dispensaryType}
+            {wellness.dispensaryType}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
-          {dispensary.message && (
+          {wellness.message && (
             <p 
                 className="italic text-foreground/90"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >&quot;{dispensary.message}&quot;</p>
+            >&quot;{wellness.message}&quot;</p>
           )}
           <div 
             className="flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <MapPin className="h-4 w-4" /> <span>{dispensary.location}</span>
+            <MapPin className="h-4 w-4" /> <span>{wellness.location}</span>
           </div>
-          {(dispensary.openTime || dispensary.closeTime) && (
+          {(wellness.openTime || wellness.closeTime) && (
             <div 
                 className="flex items-center gap-2 text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
               <Clock className="h-4 w-4" />
-              <span>Hours: {dispensary.openTime || 'N/A'} - {dispensary.closeTime || 'N/A'}</span>
+              <span>Hours: {wellness.openTime || 'N/A'} - {wellness.closeTime || 'N/A'}</span>
             </div>
           )}
-          {dispensary.operatingDays && dispensary.operatingDays.length > 0 && (
+          {wellness.operatingDays && wellness.operatingDays.length > 0 && (
             <div 
                 className="flex items-center gap-2 text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
                <Tag className="h-4 w-4" />
-               <span>Open: {dispensary.operatingDays.join(', ')}</span>
+               <span>Open: {wellness.operatingDays.join(', ')}</span>
             </div>
           )}
         </CardContent>
@@ -320,7 +320,7 @@ export default function DispensaryStorePage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            {products.length === 0 ? "This wellness store hasn't listed any products yet." : "No products match your current filters."}
+            {products.length === 0 ? "This wellness profile hasn't listed any products yet." : "No products match your current filters."}
           </p>
           {(searchTerm || selectedCategory !== 'all') && (
             <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setSelectedCategory('all');}}>
@@ -332,3 +332,4 @@ export default function DispensaryStorePage() {
     </div>
   );
 }
+

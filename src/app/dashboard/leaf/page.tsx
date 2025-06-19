@@ -11,12 +11,12 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query as firestoreQuery } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard'; // Import extracted component
+import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard'; 
 
 export default function LeafDashboardOverviewPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-  const [allDispensaryTypes, setAllDispensaryTypes] = useState<DispensaryType[]>([]);
+  const [allWellnessTypes, setAllWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { toast } = useToast();
 
@@ -44,10 +44,10 @@ export default function LeafDashboardOverviewPage() {
         querySnapshot.forEach((docSnap) => {
           fetchedTypes.push({ id: docSnap.id, ...docSnap.data() } as DispensaryType);
         });
-        setAllDispensaryTypes(fetchedTypes);
+        setAllWellnessTypes(fetchedTypes);
       } catch (error) {
-        console.error("Error fetching wellness store types:", error);
-        toast({ title: "Error", description: "Could not load wellness store types.", variant: "destructive" });
+        console.error("Error fetching wellness types:", error);
+        toast({ title: "Error", description: "Could not load wellness types.", variant: "destructive" });
       } finally {
         setIsLoadingTypes(false);
       }
@@ -57,11 +57,11 @@ export default function LeafDashboardOverviewPage() {
 
   const userPreferredTypeNames = currentUser?.preferredDispensaryTypes || [];
   
-  const preferredDispensaryTypes = allDispensaryTypes.filter(type => 
+  const preferredWellnessTypes = allWellnessTypes.filter(type => 
     userPreferredTypeNames.includes(type.name)
   ).sort((a,b) => a.name.localeCompare(b.name));
 
-  const otherDispensaryTypes = allDispensaryTypes.filter(type => 
+  const otherWellnessTypes = allWellnessTypes.filter(type => 
     !userPreferredTypeNames.includes(type.name)
   ).sort((a,b) => a.name.localeCompare(b.name));
 
@@ -84,7 +84,7 @@ export default function LeafDashboardOverviewPage() {
             className="text-lg text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Manage your AI interactions, credits, and explore wellness stores. Current Credits: 
+            Manage your AI interactions, credits, and explore wellness entities. Current Credits: 
             <span className="font-bold text-green-600 ml-1">{currentUser?.credits ?? 0}</span>
           </CardDescription>
         </CardHeader>
@@ -96,7 +96,7 @@ export default function LeafDashboardOverviewPage() {
         </div>
       ) : (
         <>
-          {preferredDispensaryTypes.length > 0 && (
+          {preferredWellnessTypes.length > 0 && (
             <section>
               <div className="flex justify-between items-center mb-6">
                   <h2 
@@ -104,11 +104,11 @@ export default function LeafDashboardOverviewPage() {
                     style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                   >
                       <Heart className="mr-3 h-8 w-8 text-primary" />
-                      Your Preferred Wellness Store Types
+                      Your Preferred Wellness Types
                   </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {preferredDispensaryTypes.map((type) => (
+                {preferredWellnessTypes.map((type) => (
                   <DispensaryTypeCard 
                     key={type.id} 
                     dispensaryType={type} 
@@ -120,9 +120,9 @@ export default function LeafDashboardOverviewPage() {
             </section>
           )}
 
-          {(preferredDispensaryTypes.length > 0 && otherDispensaryTypes.length > 0) && <Separator className="my-10" />}
+          {(preferredWellnessTypes.length > 0 && otherWellnessTypes.length > 0) && <Separator className="my-10" />}
 
-          {otherDispensaryTypes.length > 0 && (
+          {otherWellnessTypes.length > 0 && (
             <section>
               <div className="flex justify-between items-center mb-6">
                   <h2 
@@ -130,9 +130,9 @@ export default function LeafDashboardOverviewPage() {
                     style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                   >
                       <Store className="mr-3 h-8 w-8 text-primary" />
-                      Browse Other Wellness Store Types
+                      Browse Other Wellness Types
                   </h2>
-                  {(preferredDispensaryTypes.length === 0) && (
+                  {(preferredWellnessTypes.length === 0) && (
                      <Button variant="outline" asChild>
                         <Link href="/dashboard/leaf/credits">
                             <DollarSign className="mr-2 h-4 w-4"/> Buy Credits
@@ -141,7 +141,7 @@ export default function LeafDashboardOverviewPage() {
                   )}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {otherDispensaryTypes.map((type) => (
+                {otherWellnessTypes.map((type) => (
                   <DispensaryTypeCard 
                     key={type.id} 
                     dispensaryType={type} 
@@ -152,11 +152,11 @@ export default function LeafDashboardOverviewPage() {
             </section>
           )}
           
-          {allDispensaryTypes.length === 0 && !isLoadingTypes && (
+          {allWellnessTypes.length === 0 && !isLoadingTypes && (
              <Card>
               <CardContent className="pt-6 text-center text-muted-foreground">
                 <AlertTriangle className="mx-auto h-10 w-10 mb-2" />
-                No wellness store types available at the moment. Please check back later.
+                No wellness types available at the moment. Please check back later.
               </CardContent>
             </Card>
           )}
@@ -191,3 +191,4 @@ export default function LeafDashboardOverviewPage() {
     </div>
   );
 }
+
