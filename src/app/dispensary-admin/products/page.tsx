@@ -234,8 +234,16 @@ export default function WellnessProductsPage() {
       ) : (
         <div className="text-center py-12 col-span-full">
           <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground" />
-          <h3 className="mt-4 text-xl font-semibold text-foreground">No Products Found</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h3 
+            className="mt-4 text-xl font-semibold text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >
+            No Products Found
+          </h3>
+          <p 
+            className="mt-2 text-sm text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >
             {allProducts.length === 0 ? "You haven't added any products yet." : "No products match your current filters."}
           </p>
         </div>
