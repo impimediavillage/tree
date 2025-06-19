@@ -147,7 +147,7 @@ export default function WellnessAnalyticsPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <BarChart3 className="mr-3 h-8 w-8 text-primary" /> Wellness Analytics
+            <BarChart3 className="mr-3 h-8 w-8 text-primary" /> My Store Analytics
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
@@ -283,4 +283,3 @@ export default function WellnessAnalyticsPage() {
     </div>
   );
 }
-
