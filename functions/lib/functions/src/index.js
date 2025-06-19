@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.copyHomeopathicDispensaryCategoriesData = exports.copyMushroomDispensaryCategoriesData = exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
@@ -841,13 +841,10 @@ exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
     });
 });
 /**
- * HTTP-callable Firebase Function to copy data from one dispensaryTypeProductCategories document to another.
+ * Generic HTTP-callable Firebase Function to copy data from one document to another within the same collection.
  */
-exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
+async function copyDocumentContent(req, res, collectionName, sourceDocId, targetDocId) {
     res.set("Access-Control-Allow-Origin", "*"); // Allow CORS for direct invocation if needed
-    const sourceDocId = "THC - CBD - Mushrooms dispensary";
-    const targetDocId = "Cannibinoid store";
-    const collectionName = "dispensaryTypeProductCategories";
     try {
         logger.info(`Starting copy from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
         const sourceDocRef = db.collection(collectionName).doc(sourceDocId);
@@ -855,7 +852,7 @@ exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req,
         const sourceDoc = await sourceDocRef.get();
         if (!sourceDoc.exists) {
             logger.error(`Source document '${collectionName}/${sourceDocId}' does not exist.`);
-            res.status(404).json({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'.` });
+            res.status(404).json({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'. Ensure the source document ID is correct and case-sensitive.` });
             return;
         }
         const sourceData = sourceDoc.data();
@@ -864,27 +861,47 @@ exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req,
             res.status(404).json({ success: false, message: `Source document '${sourceDocId}' has no data.` });
             return;
         }
-        // Add/update a timestamp to the copied data
         const dataToCopy = {
             ...sourceData,
             copiedAt: admin.firestore.FieldValue.serverTimestamp(),
-            originalSourceId: sourceDocId,
+            originalSourceId: sourceDocId, // Keep track of the original source
         };
-        await targetDocRef.set(dataToCopy, { merge: true }); // Using merge:true to be safe if target partially exists
+        await targetDocRef.set(dataToCopy, { merge: true });
         logger.info(`Successfully copied data from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
         res.status(200).json({
             success: true,
             message: `Data successfully copied from '${sourceDocId}' to '${targetDocId}' in '${collectionName}'. Target document now contains the source data and a 'copiedAt' timestamp.`,
-            sourceDataCopied: sourceData // Optionally return the copied data for verification
+            sourceDataCopied: sourceData
         });
     }
     catch (error) {
-        logger.error("Error copying dispensary type categories data:", error);
+        logger.error(`Error copying document in ${collectionName} from ${sourceDocId} to ${targetDocId}:`, error);
         res.status(500).json({
             success: false,
             message: "An error occurred while copying the document.",
             errorDetails: (error instanceof Error) ? error.message : "Unknown error"
         });
     }
+}
+/**
+ * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
+ * Note: The source document ID here assumes the original name before it was potentially changed via frontend constants.
+ * If "THC - CBD - Mushrooms dispensary" is no longer the correct source ID, this function's sourceDocId parameter needs an update.
+ */
+exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
+});
+/**
+ * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
+ * Corrected sourceDocId to "Mushroom dispensary" (lowercase 'd').
+ */
+exports.copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
+});
+/**
+ * HTTP-callable Firebase Function to copy data from 'Homeopathic dispensary' to 'Homeopathic store'.
+ */
+exports.copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
 });
 //# sourceMappingURL=index.js.map
