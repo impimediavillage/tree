@@ -174,7 +174,7 @@ export default function WellnessAdminDashboardLayout({
             <p className="text-lg font-semibold text-foreground truncate" title={wellnessProfile.dispensaryName}>
               {wellnessProfile.dispensaryName}
             </p>
-            <p className="text-xs text-muted-foreground">Wellness Panel</p>
+            <p className="text-xs text-muted-foreground">Wellness Store Panel</p>
           </div>
         </div>
         <nav className="flex flex-col space-y-1 p-2">
