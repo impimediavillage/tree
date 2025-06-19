@@ -958,7 +958,7 @@ async function copyDocumentContent(
 
       if (!sourceDoc.exists) {
         logger.error(`Source document '${collectionName}/${sourceDocId}' does not exist.`);
-        res.status(404).json({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'.` });
+        res.status(404).json({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'. Ensure the source document ID is correct and case-sensitive.` });
         return;
       }
 
@@ -996,7 +996,9 @@ async function copyDocumentContent(
 
 
 /**
- * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid store'.
+ * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
+ * Note: The source document ID here assumes the original name before it was potentially changed via frontend constants.
+ * If "THC - CBD - Mushrooms dispensary" is no longer the correct source ID, this function's sourceDocId parameter needs an update.
  */
 export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
@@ -1004,10 +1006,11 @@ export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async 
 
 
 /**
- * HTTP-callable Firebase Function to copy data from 'Mushroom Dispensary' to 'Mushroom store'.
+ * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
+ * Corrected sourceDocId to "Mushroom dispensary" (lowercase 'd').
  */
 export const copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
-    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom Dispensary", "Mushroom store");
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
 });
 
 
@@ -1017,4 +1020,5 @@ export const copyMushroomDispensaryCategoriesData = functions.https.onRequest(as
 export const copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
 });
+    
     
