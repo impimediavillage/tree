@@ -1,4 +1,5 @@
 
+
 // This file can be used to share type definitions between your main app and Cloud Functions
 
 // Re-export comprehensive types from the main application for use in seed functions, etc.
@@ -19,6 +20,9 @@ export interface NoteData {
   timestamp: FirebaseFirestore.Timestamp;
 }
 
+// Export NoteDataCloud as an alias for NoteData (or define separately if intended to be different)
+export type NoteDataCloud = NoteData;
+
 export interface ProductRequestDocData {
   productId: string;
   productName: string;
@@ -37,7 +41,7 @@ export interface ProductRequestDocData {
   contactPhone: string;
   
   requestStatus: string; // Consider using a specific enum/union type if statuses are fixed
-  notes?: NoteData[];
+  notes?: NoteData[]; // Uses the NoteData defined above
   
   createdAt?: FirebaseFirestore.Timestamp;
   updatedAt?: FirebaseFirestore.Timestamp;
@@ -99,3 +103,4 @@ export interface NotificationData {
 
 
     
+
