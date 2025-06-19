@@ -1,7 +1,7 @@
 
 import * as logger from "firebase-functions/logger";
 import * as functions from "firebase-functions";
-import type { Response as FirebaseFunctionsResponse } from "firebase-functions"; // Added explicit import
+// Removed incorrect import: import type { Response as FirebaseFunctionsResponse } from "firebase-functions";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
 import {
@@ -942,7 +942,7 @@ export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
  */
 async function copyDocumentContent(
     req: functions.https.Request, 
-    res: FirebaseFunctionsResponse, // Changed from functions.Response
+    res: functions.https.Response, // Corrected type
     collectionName: string,
     sourceDocId: string,
     targetDocId: string

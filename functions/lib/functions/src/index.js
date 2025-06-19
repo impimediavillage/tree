@@ -843,7 +843,8 @@ exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
 /**
  * Generic HTTP-callable Firebase Function to copy data from one document to another within the same collection.
  */
-async function copyDocumentContent(req, res, collectionName, sourceDocId, targetDocId) {
+async function copyDocumentContent(req, res, // Changed from functions.Response
+collectionName, sourceDocId, targetDocId) {
     res.set("Access-Control-Allow-Origin", "*"); // Allow CORS for direct invocation if needed
     try {
         logger.info(`Starting copy from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
@@ -885,15 +886,12 @@ async function copyDocumentContent(req, res, collectionName, sourceDocId, target
 }
 /**
  * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
- * Note: The source document ID here assumes the original name before it was potentially changed via frontend constants.
- * If "THC - CBD - Mushrooms dispensary" is no longer the correct source ID, this function's sourceDocId parameter needs an update.
  */
 exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
 });
 /**
  * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
- * Corrected sourceDocId to "Mushroom dispensary" (lowercase 'd').
  */
 exports.copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
