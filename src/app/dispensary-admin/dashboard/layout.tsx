@@ -46,7 +46,7 @@ const managementSidebarNavItems: NavItem[] = [
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
-  { title: 'Wellness Profile', href: '/dispensary-admin/profile', icon: Store },
+  { title: 'My Profile', href: '/dispensary-admin/profile', icon: Store }, // Changed from Wellness Profile
   { title: 'Notifications', href: '/dispensary-admin/notifications', icon: Bell, disabled: true, badge: 'Soon' },
   { title: 'Account Settings', href: '/dispensary-admin/account', icon: UserCircle, disabled: true, badge: 'Soon' },
 ];
@@ -174,7 +174,7 @@ export default function WellnessAdminDashboardLayout({
             <p className="text-lg font-semibold text-foreground truncate" title={wellnessProfile.dispensaryName}>
               {wellnessProfile.dispensaryName}
             </p>
-            <p className="text-xs text-muted-foreground">Wellness Store Panel</p>
+            <p className="text-xs text-muted-foreground">My Store Panel</p> 
           </div>
         </div>
         <nav className="flex flex-col space-y-1 p-2">
