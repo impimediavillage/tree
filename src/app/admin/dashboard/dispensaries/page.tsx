@@ -45,8 +45,8 @@ export default function AdminDispensariesPage() {
       });
       setAllDispensaries(fetchedDispensaries);
     } catch (error) {
-      console.error("Error fetching dispensaries:", error);
-      toast({ title: "Error", description: "Could not fetch dispensaries.", variant: "destructive" });
+      console.error("Error fetching wellness stores:", error);
+      toast({ title: "Error", description: "Could not fetch wellness stores.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -79,11 +79,11 @@ export default function AdminDispensariesPage() {
     try {
       const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
       await updateDoc(dispensaryDocRef, { status: newStatus, lastActivityDate: serverTimestamp() });
-      toast({ title: "Status Updated", description: `Dispensary status changed to ${newStatus}.` });
+      toast({ title: "Status Updated", description: `Wellness store status changed to ${newStatus}.` });
       setAllDispensaries(prev => prev.map(d => d.id === dispensaryId ? { ...d, status: newStatus } : d));
     } catch (error) {
-      console.error("Error updating dispensary status:", error);
-      toast({ title: "Update Failed", description: "Could not update dispensary status.", variant: "destructive" });
+      console.error("Error updating wellness store status:", error);
+      toast({ title: "Update Failed", description: "Could not update wellness store status.", variant: "destructive" });
     }
   };
 
@@ -92,11 +92,11 @@ export default function AdminDispensariesPage() {
     // Also, handle deletion of associated data (e.g., products, auth user if they are sole owner and no other link) if necessary.
     try {
       await deleteDoc(doc(db, 'dispensaries', dispensaryId));
-      toast({ title: "Dispensary Deleted", description: `${dispensaryName} has been removed.` });
+      toast({ title: "Wellness Store Deleted", description: `${dispensaryName} has been removed.` });
       fetchDispensaries(); // Refresh list
     } catch (error) {
-      console.error("Error deleting dispensary:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete dispensary.", variant: "destructive" });
+      console.error("Error deleting wellness store:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete wellness store.", variant: "destructive" });
     }
   };
 
@@ -110,13 +110,13 @@ export default function AdminDispensariesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Building className="h-8 w-8 text-primary" /> Manage Dispensaries
+            <Building className="h-8 w-8 text-primary" /> Manage Wellness Stores
           </h1>
           <p 
             className="text-foreground" 
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            View, edit, approve, or suspend dispensary applications and profiles.
+            View, edit, approve, or suspend wellness store applications and profiles.
           </p>
         </div>
         <Button asChild>
@@ -155,7 +155,7 @@ export default function AdminDispensariesPage() {
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Loading dispensaries...</p>
+          <p className="ml-2 text-muted-foreground">Loading wellness stores...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
@@ -170,7 +170,7 @@ export default function AdminDispensariesPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
-              No dispensaries found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
+              No wellness stores found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
@@ -178,4 +178,3 @@ export default function AdminDispensariesPage() {
     </div>
   );
 }
-

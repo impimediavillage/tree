@@ -150,7 +150,7 @@ export default function DispensaryStorePage() {
 
   useEffect(() => {
     if (!dispensaryId) {
-      setError("Dispensary ID is missing.");
+      setError("Wellness store ID is missing.");
       setIsLoading(false);
       return;
     }
@@ -162,7 +162,7 @@ export default function DispensaryStorePage() {
         const dispensarySnap = await getDoc(dispensaryDocRef);
 
         if (!dispensarySnap.exists() || dispensarySnap.data()?.status !== 'Approved') {
-          setError('Dispensary not found or not available.');
+          setError('Wellness store not found or not available.');
           setIsLoading(false);
           return;
         }
@@ -182,8 +182,8 @@ export default function DispensaryStorePage() {
         setCategories(['all', ...uniqueCategories.sort()]);
 
       } catch (err) {
-        console.error("Error fetching dispensary data:", err);
-        setError('Failed to load dispensary information.');
+        console.error("Error fetching wellness store data:", err);
+        setError('Failed to load wellness store information.');
       } finally {
         setIsLoading(false);
       }
@@ -211,7 +211,7 @@ export default function DispensaryStorePage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
-        <p className="text-xl text-muted-foreground">Loading Dispensary Store...</p>
+        <p className="text-xl text-muted-foreground">Loading Wellness Store...</p>
       </div>
     );
   }
@@ -320,7 +320,7 @@ export default function DispensaryStorePage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            {products.length === 0 ? "This dispensary hasn't listed any products yet." : "No products match your current filters."}
+            {products.length === 0 ? "This wellness store hasn't listed any products yet." : "No products match your current filters."}
           </p>
           {(searchTerm || selectedCategory !== 'all') && (
             <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setSelectedCategory('all');}}>
@@ -332,4 +332,3 @@ export default function DispensaryStorePage() {
     </div>
   );
 }
-

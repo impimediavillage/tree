@@ -4,15 +4,15 @@ import { z } from 'zod';
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const timeErrorMessage = "Invalid time format (HH:MM). Leave empty if not applicable.";
 
-// Base schema for common dispensary fields
+// Base schema for common wellness store fields
 const baseDispensarySchema = z.object({
   fullName: z.string().min(2, { message: "Owner's full name must be at least 2 characters." }),
   phone: z.string()
     .min(10, { message: "Phone number seems too short." })
     .regex(/^\+\d{1,3}\d{6,14}$/, { message: "Invalid phone number format. Include country code (e.g., +27821234567)." }),
   ownerEmail: z.string().email({ message: "Invalid email address." }),
-  dispensaryName: z.string().min(2, { message: "Dispensary name must be at least 2 characters." }),
-  dispensaryType: z.string({ required_error: "Please select a dispensary type." }).min(1, { message: "Please select a dispensary type." }),
+  dispensaryName: z.string().min(2, { message: "Wellness store name must be at least 2 characters." }),
+  dispensaryType: z.string({ required_error: "Please select a wellness store type." }).min(1, { message: "Please select a wellness store type." }),
   currency: z.string({ required_error: "Please select a currency." }).min(1, { message: "Please select a currency." }),
   openTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   closeTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
@@ -29,7 +29,7 @@ const baseDispensarySchema = z.object({
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
 });
 
-// Schema for Dispensary Signup
+// Schema for Wellness Store Signup
 export const dispensarySignupSchema = baseDispensarySchema.extend({
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions.",
@@ -58,7 +58,7 @@ export const dispensarySignupSchema = baseDispensarySchema.extend({
 export type DispensarySignupFormData = z.infer<typeof dispensarySignupSchema>;
 
 
-// Schema for Admin Creating Dispensary
+// Schema for Admin Creating Wellness Store
 export const adminCreateDispensarySchema = baseDispensarySchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
 }).superRefine((data, ctx) => {
@@ -85,7 +85,7 @@ export const adminCreateDispensarySchema = baseDispensarySchema.extend({
 export type AdminCreateDispensaryFormData = z.infer<typeof adminCreateDispensarySchema>;
 
 
-// Schema for Admin Editing Dispensary
+// Schema for Admin Editing Wellness Store
 export const editDispensarySchema = baseDispensarySchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
   applicationDate: z.string().optional(),
@@ -112,7 +112,7 @@ export const editDispensarySchema = baseDispensarySchema.extend({
 });
 export type EditDispensaryFormData = z.infer<typeof editDispensarySchema>;
 
-// Schema for Dispensary Owner Editing their Dispensary Profile
+// Schema for Wellness Store Owner Editing their Wellness Store Profile
 export const ownerEditDispensarySchema = baseDispensarySchema.omit({
   ownerEmail: true,
   fullName: true,
@@ -161,9 +161,9 @@ export const dispensaryTypeProductCategoriesSchema = z.object({
 });
 export type DispensaryTypeProductCategoriesFormData = z.infer<typeof dispensaryTypeProductCategoriesSchema>;
 
-// Schema for Dispensary Type (productCategories field removed as it's now in a separate collection)
+// Schema for Wellness Store Type (productCategories field removed as it's now in a separate collection)
 export const dispensaryTypeSchema = z.object({
-  name: z.string().min(2, { message: "Dispensary type name must be at least 2 characters." }),
+  name: z.string().min(2, { message: "Wellness store type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
@@ -367,12 +367,12 @@ export const adminAddUserSchema = z.object({
   credits: z.coerce.number().int().min(0, "Credits cannot be negative.").default(10),
   dispensaryId: z.string().optional().nullable(),
 }).refine(data => data.role !== 'DispensaryOwner' || (data.role === 'DispensaryOwner' && data.dispensaryId && data.dispensaryId.trim() !== ''), {
-  message: "Dispensary ID is required for Dispensary Owners.",
+  message: "Wellness store ID is required for Wellness Store Owners.",
   path: ["dispensaryId"],
 });
 export type AdminAddUserFormData = z.infer<typeof adminAddUserSchema>;
 
-// Schema for Dispensary Owner Adding Staff
+// Schema for Wellness Store Owner Adding Staff
 export const dispensaryOwnerAddStaffSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
@@ -381,7 +381,7 @@ export const dispensaryOwnerAddStaffSchema = z.object({
 });
 export type DispensaryOwnerAddStaffFormData = z.infer<typeof dispensaryOwnerAddStaffSchema>;
 
-// Schema for Dispensary Owner Adding Leaf User
+// Schema for Wellness Store Owner Adding Leaf User
 export const dispensaryOwnerAddLeafUserSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   email: z.string().email("Invalid email address."),
@@ -428,7 +428,7 @@ export type AIInteractionLog = z.infer<typeof aiInteractionLogSchema>;
 // Schema for DispensaryType (used in various places)
 export const dispensaryTypeDbSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(2, { message: "Dispensary type name must be at least 2 characters." }),
+  name: z.string().min(2, { message: "Wellness store type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
   iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
   image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
@@ -463,7 +463,7 @@ export const productDbSchema = productSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),
-  dispensaryType: z.string(),
+  dispensaryType: z.string(), // Wellness store type
   productOwnerEmail: z.string().email(),
   createdAt: z.any(),
   updatedAt: z.any(),
@@ -522,5 +522,3 @@ export const aiAdvisorConfigSchema = z.object({
   dataAiHint: z.string().optional().nullable(),
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
-
-    

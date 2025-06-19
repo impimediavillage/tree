@@ -81,7 +81,7 @@ export default function AdminProductPoolPage() {
     },
     {
       accessorKey: "dispensaryName",
-      header: "Dispensary",
+      header: "Wellness Store",
     },
     {
       accessorKey: "category",

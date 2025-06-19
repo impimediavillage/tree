@@ -63,13 +63,13 @@ export default function DispensaryAdminOverviewPage() {
     const fetchData = async () => {
       setIsLoadingData(true);
       try {
-        // Fetch dispensary details
+        // Fetch wellness store details
         const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
         const dispensarySnap = await getDoc(dispensaryDocRef);
         if (dispensarySnap.exists()) {
           setDispensary({ id: dispensarySnap.id, ...dispensarySnap.data() } as Dispensary);
         } else {
-          console.error("Dispensary data not found for current user.");
+          console.error("Wellness store data not found for current user.");
           setIsLoadingData(false);
           return;
         }
@@ -93,7 +93,7 @@ export default function DispensaryAdminOverviewPage() {
           activePoolItems: activePoolItemsCount,
         });
       } catch (error) {
-        console.error("Error fetching dispensary dashboard data:", error);
+        console.error("Error fetching wellness store dashboard data:", error);
       } finally {
         setIsLoadingData(false);
       }
@@ -110,13 +110,13 @@ export default function DispensaryAdminOverviewPage() {
     return <div className="p-4 text-center text-destructive">You are not logged in. Please log in to access your dashboard.</div>;
   }
   if (currentUser.role !== 'DispensaryOwner') {
-      return <div className="p-4 text-center text-destructive">Access Denied. This dashboard is for Dispensary Owners only.</div>;
+      return <div className="p-4 text-center text-destructive">Access Denied. This dashboard is for Wellness Store Owners only.</div>;
   }
-  if (isLoadingData && !dispensary) { // Show loading if dispensary data isn't available yet, but user is owner
+  if (isLoadingData && !dispensary) { // Show loading if wellness store data isn't available yet, but user is owner
      return <div className="p-4"><Skeleton className="h-12 w-1/2 mb-4" /><Skeleton className="h-64 w-full" /></div>;
   }
-   if (!dispensary && !isLoadingData) { // Finished loading but no dispensary data
-    return <div className="p-4 text-center text-destructive">Could not load dispensary data. Please contact support.</div>;
+   if (!dispensary && !isLoadingData) { // Finished loading but no wellness store data
+    return <div className="p-4 text-center text-destructive">Could not load wellness store data. Please contact support.</div>;
   }
 
 
@@ -128,7 +128,7 @@ export default function DispensaryAdminOverviewPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Store className="mr-3 h-8 w-8 text-primary" /> {dispensary?.dispensaryName || "Your Dispensary"}
+            <Store className="mr-3 h-8 w-8 text-primary" /> {dispensary?.dispensaryName || "Your Wellness Store"}
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
@@ -144,7 +144,7 @@ export default function DispensaryAdminOverviewPage() {
           title="Total Products" 
           value={stats.totalProducts} 
           icon={Package} 
-          description="Products currently listed by your dispensary."
+          description="Products currently listed by your wellness store."
           link="/dispensary-admin/products"
           linkText="Manage Products"
           isLoading={isLoadingData}
@@ -185,8 +185,8 @@ export default function DispensaryAdminOverviewPage() {
             buttonText="Go to Pool"
         />
         <QuickActionCard
-            title="Dispensary Profile"
-            description="Update your dispensary's details, operating hours, and contact information."
+            title="Wellness Store Profile"
+            description="Update your wellness store's details, operating hours, and contact information."
             icon={Store}
             link="/dispensary-admin/profile"
             buttonText="Edit Profile"
@@ -228,4 +228,3 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, i
       </CardContent>
     </Card>
 );
-

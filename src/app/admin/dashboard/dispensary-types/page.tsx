@@ -51,8 +51,8 @@ export default function AdminDispensaryTypesPage() {
       setAllTypes(fetchedTypes);
       setFilteredTypes(fetchedTypes); // Initialize filtered list
     } catch (error) {
-      console.error("Error fetching dispensary types:", error);
-      toast({ title: "Error", description: "Could not fetch dispensary types.", variant: "destructive" });
+      console.error("Error fetching wellness store types:", error);
+      toast({ title: "Error", description: "Could not fetch wellness store types.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -78,11 +78,11 @@ export default function AdminDispensaryTypesPage() {
     }
     try {
       await deleteDoc(doc(db, 'dispensaryTypes', typeId));
-      toast({ title: "Dispensary Type Deleted", description: `"${typeName}" has been removed.` });
+      toast({ title: "Wellness Store Type Deleted", description: `"${typeName}" has been removed.` });
       fetchDispensaryTypes(); // Refresh list
     } catch (error) {
-      console.error("Error deleting dispensary type:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete dispensary type.", variant: "destructive" });
+      console.error("Error deleting wellness store type:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete wellness store type.", variant: "destructive" });
     }
   };
 
@@ -94,13 +94,13 @@ export default function AdminDispensaryTypesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <ListChecks className="h-8 w-8 text-primary"/> Manage Dispensary Types
+            <ListChecks className="h-8 w-8 text-primary"/> Manage Wellness Store Types
           </h1>
           <p 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Create, view, edit, and delete dispensary types for the platform.
+            Create, view, edit, and delete wellness store types for the platform.
           </p>
         </div>
         {isSuperAdmin && (
@@ -124,7 +124,7 @@ export default function AdminDispensaryTypesPage() {
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Loading dispensary types...</p>
+          <p className="ml-2 text-muted-foreground">Loading wellness store types...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
@@ -141,7 +141,7 @@ export default function AdminDispensaryTypesPage() {
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
               <ListChecks className="mx-auto h-12 w-12 mb-3" />
-              No dispensary types found {searchTerm ? 'matching your criteria' : ''}.
+              No wellness store types found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
@@ -149,4 +149,3 @@ export default function AdminDispensaryTypesPage() {
     </div>
   );
 }
-

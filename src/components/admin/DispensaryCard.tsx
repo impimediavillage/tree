@@ -118,13 +118,13 @@ export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: Dispens
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the dispensary &quot;{dispensary.dispensaryName}&quot; and all its associated data.
+                  This action cannot be undone. This will permanently delete the wellness store &quot;{dispensary.dispensaryName}&quot; and all its associated data.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => onDelete(dispensary.id!, dispensary.dispensaryName)}>
-                  Yes, delete dispensary
+                  Yes, delete wellness store
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -134,4 +134,3 @@ export function DispensaryCard({ dispensary, onStatusToggle, onDelete }: Dispens
     </Card>
   );
 }
-

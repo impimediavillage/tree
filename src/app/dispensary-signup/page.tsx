@@ -133,8 +133,8 @@ export default function DispensarySignupPage() {
       });
       setDispensaryTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
-      console.error("Error fetching dispensary types for signup:", error);
-      toast({ title: "Error", description: "Could not load dispensary types. Please try again.", variant: "destructive" });
+      console.error("Error fetching wellness store types for signup:", error);
+      toast({ title: "Error", description: "Could not load wellness store types. Please try again.", variant: "destructive" });
     }
   }, [toast]);
 
@@ -337,7 +337,7 @@ export default function DispensarySignupPage() {
       await addDoc(collection(db, 'dispensaries'), dispensaryData);
       toast({
         title: "Application Submitted!",
-        description: "Your dispensary application has been received and is pending review.",
+        description: "Your wellness store application has been received and is pending review.",
       });
       form.reset();
       setOpenHour(undefined); setOpenMinute(undefined); setOpenAmPm(undefined);
@@ -353,7 +353,7 @@ export default function DispensarySignupPage() {
         markerInstanceRef.current.setIcon({ url: defaultIcon, scaledSize: new window.google.maps.Size(40,40), anchor: new window.google.maps.Point(20,40)});
       }
     } catch (error) {
-      console.error("Error submitting dispensary application:", error);
+      console.error("Error submitting wellness store application:", error);
       toast({
         title: "Submission Failed",
         description: "An error occurred. Please try again later.",
@@ -372,7 +372,7 @@ export default function DispensarySignupPage() {
         <CardTitle 
             className="text-3xl text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >Virtual Dispensary Sign-Up</CardTitle>
+        >Virtual Wellness Store Sign-Up</CardTitle>
         <CardDescription 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
@@ -392,13 +392,13 @@ export default function DispensarySignupPage() {
             </div>
             
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Dispensary Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Store Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input placeholder="Your Dispensary's Name" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Wellness Store Name</FormLabel><FormControl><Input placeholder="Your Wellness Store's Name" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
-                <FormItem><FormLabel>Dispensary Type</FormLabel>
+                <FormItem><FormLabel>Wellness Store Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -419,13 +419,13 @@ export default function DispensarySignupPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
+              <FormItem><FormLabel>Wellness Store Location / Address</FormLabel>
                 <FormControl><Input placeholder="e.g. 123 Main St, Anytown" {...field} ref={locationInputRef} /></FormControl>
                 <FormDescription>Start typing your address. Select from suggestions to pinpoint on map.</FormDescription><FormMessage />
               </FormItem>
             )} />
             <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm" />
-            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with dispensary type.</FormDescription>
+            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with wellness store type.</FormDescription>
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             
@@ -525,27 +525,27 @@ export default function DispensarySignupPage() {
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your dispensary only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
+                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your wellness store only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>What type of orders will you fulfill?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
 
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in product sharing with other dispensaries?</FormLabel>
+              <FormItem><FormLabel>Participate in product sharing with other wellness stores?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
-                <FormDescription>Allows sharing products with dispensaries of the same type.</FormDescription><FormMessage /></FormItem>)} />
+                <FormDescription>Allows sharing products with wellness stores of the same type.</FormDescription><FormMessage /></FormItem>)} />
 
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
                 <FormItem><FormLabel>Lead time to transfer products</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl>
                     <SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                  <FormDescription>Time needed to get products to other dispensaries in your country.</FormDescription><FormMessage /></FormItem>)} />)}
+                  <FormDescription>Time needed to get products to other wellness stores in your country.</FormDescription><FormMessage /></FormItem>)} />)}
 
             <FormField control={form.control} name="message" render={({ field }) => (
-              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your dispensary..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness store..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
 
             <FormField control={form.control} name="acceptTerms" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -567,5 +567,3 @@ export default function DispensarySignupPage() {
     </Card>
   );
 }
-
-    

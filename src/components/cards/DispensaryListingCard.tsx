@@ -90,11 +90,10 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: Dispen
       <CardFooter>
         <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
           <Link href={`/store/${dispensary.id}`}>
-            <Eye className="mr-2 h-4 w-4" /> Visit Store
+            <Eye className="mr-2 h-4 w-4" /> Visit Wellness Store
           </Link>
         </Button>
       </CardFooter>
     </Card>
   );
 }
-

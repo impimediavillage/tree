@@ -28,7 +28,7 @@ export default function DispensariesByTypePage() {
 
   useEffect(() => {
     if (!dispensaryTypeName) {
-      setError("Dispensary type not specified.");
+      setError("Wellness store type not specified.");
       setIsLoading(false);
       return;
     }
@@ -52,7 +52,7 @@ export default function DispensariesByTypePage() {
         const dispensariesQuery = query(
           collection(db, 'dispensaries'),
           where('dispensaryType', '==', dispensaryTypeName),
-          where('status', '==', 'Approved'), // Only show approved dispensaries
+          where('status', '==', 'Approved'), // Only show approved wellness stores
           orderBy('dispensaryName', 'desc') // Changed to descending order
         );
         const dispensariesSnapshot = await getDocs(dispensariesQuery);
@@ -60,9 +60,9 @@ export default function DispensariesByTypePage() {
         setDispensaries(fetchedDispensaries);
 
       } catch (err) {
-        console.error("Error fetching dispensaries by type:", err);
-        setError('Failed to load dispensaries for this type.');
-        toast({ title: "Loading Error", description: "Could not load dispensaries.", variant: "destructive" });
+        console.error("Error fetching wellness stores by type:", err);
+        setError('Failed to load wellness stores for this type.');
+        toast({ title: "Loading Error", description: "Could not load wellness stores.", variant: "destructive" });
       } finally {
         setIsLoading(false);
       }
@@ -71,8 +71,8 @@ export default function DispensariesByTypePage() {
     fetchData();
   }, [dispensaryTypeName, toast]);
 
-  const headerImageUrl = dispensaryTypeDetails?.image || `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
-  const headerDataAiHint = `banner ${dispensaryTypeName ? dispensaryTypeName.toLowerCase() + " dispensaries" : "dispensaries"}`;
+  const headerImageUrl = dispensaryTypeDetails?.image || `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Wellness Stores")}`;
+  const headerDataAiHint = `banner ${dispensaryTypeName ? dispensaryTypeName.toLowerCase() + " wellness stores" : "wellness stores"}`;
 
   if (isLoading) {
     return (
@@ -84,7 +84,7 @@ export default function DispensariesByTypePage() {
             <h1 
                 className="text-3xl font-bold text-foreground animate-pulse"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Loading Dispensaries...</h1>
+            >Loading Wellness Stores...</h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1,2,3,4,5,6].map(i => <Card key={i} className="h-[380px]"><CardContent className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></CardContent></Card>)}
@@ -107,20 +107,20 @@ export default function DispensariesByTypePage() {
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
       <div className="mb-8">
         <Button variant="outline" onClick={() => router.back()} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dispensary Types
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Wellness Store Types
         </Button>
         <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden shadow-lg mb-6 bg-muted">
             <Image 
               src={headerImageUrl} 
-              alt={dispensaryTypeName || "Dispensary Type"} 
+              alt={dispensaryTypeName || "Wellness Store Type"} 
               layout="fill" 
               objectFit="cover" 
               data-ai-hint={headerDataAiHint}
               priority
               onError={(e) => {
                 // Fallback if dispensaryTypeDetails.image fails
-                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
-                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Dispensaries")}`;
+                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Wellness Stores")}`;
+                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(dispensaryTypeName || "Wellness Stores")}`;
               }}
             />
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
@@ -152,8 +152,8 @@ export default function DispensariesByTypePage() {
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
             <Store className="mx-auto h-12 w-12 mb-3" />
-            <h3 className="text-xl font-semibold">No Dispensaries Found</h3>
-            <p>There are currently no approved dispensaries listed for the &quot;{dispensaryTypeName}&quot; type.</p>
+            <h3 className="text-xl font-semibold">No Wellness Stores Found</h3>
+            <p>There are currently no approved wellness stores listed for the &quot;{dispensaryTypeName}&quot; type.</p>
           </CardContent>
         </Card>
       )}

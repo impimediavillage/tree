@@ -128,7 +128,7 @@ export default function AdminCreateDispensaryPage() {
             if (storedUser.role === 'Super Admin') {
                 setIsSuperAdmin(true);
             } else {
-                toast({ title: "Access Denied", description: "Only Super Admins can create dispensaries.", variant: "destructive"});
+                toast({ title: "Access Denied", description: "Only Super Admins can create wellness stores.", variant: "destructive"});
                 router.push('/admin/dashboard');
             }
         } catch (e) {
@@ -157,8 +157,8 @@ export default function AdminCreateDispensaryPage() {
       });
       setDispensaryTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
-      console.error("Error fetching dispensary types:", error);
-      toast({ title: "Error", description: "Failed to fetch dispensary types.", variant: "destructive" });
+      console.error("Error fetching wellness store types:", error);
+      toast({ title: "Error", description: "Failed to fetch wellness store types.", variant: "destructive" });
     }
   }, [toast]);
 
@@ -168,15 +168,15 @@ export default function AdminCreateDispensaryPage() {
 
   const handleAddNewDispensaryType = async () => {
     if (!isSuperAdmin) {
-        toast({ title: "Permission Denied", description: "Only Super Admins can add new dispensary types.", variant: "destructive"});
+        toast({ title: "Permission Denied", description: "Only Super Admins can add new wellness store types.", variant: "destructive"});
         return;
     }
     if (!newDispensaryTypeName.trim()) {
-      toast({ title: "Validation Error", description: "New dispensary type name cannot be empty.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "New wellness store type name cannot be empty.", variant: "destructive" });
       return;
     }
     if (dispensaryTypes.some(type => type.name.toLowerCase() === newDispensaryTypeName.trim().toLowerCase())) {
-      toast({ title: "Duplicate Error", description: "This dispensary type already exists.", variant: "destructive" });
+      toast({ title: "Duplicate Error", description: "This wellness store type already exists.", variant: "destructive" });
       return;
     }
 
@@ -191,7 +191,7 @@ export default function AdminCreateDispensaryPage() {
 
     try {
       const newTypeRef = await addDoc(collection(db, 'dispensaryTypes'), newTypeData);
-      toast({ title: "Success", description: `Dispensary type "${newDispensaryTypeName.trim()}" added.` });
+      toast({ title: "Success", description: `Wellness store type "${newDispensaryTypeName.trim()}" added.` });
 
       const newType = { id: newTypeRef.id, ...newTypeData };
       const updatedTypes = [...dispensaryTypes, newType].sort((a,b) => a.name.localeCompare(b.name));
@@ -202,8 +202,8 @@ export default function AdminCreateDispensaryPage() {
       setNewDispensaryTypeImage('');
       setIsAddTypeDialogOpen(false);
     } catch (error) {
-      console.error("Error adding new dispensary type:", error);
-      toast({ title: "Error", description: "Failed to add new dispensary type.", variant: "destructive" });
+      console.error("Error adding new wellness store type:", error);
+      toast({ title: "Error", description: "Failed to add new wellness store type.", variant: "destructive" });
     }
   };
 
@@ -368,7 +368,7 @@ export default function AdminCreateDispensaryPage() {
       };
       await addDoc(collection(db, 'dispensaries'), dispensaryData);
       toast({
-        title: "Dispensary Created!",
+        title: "Wellness Store Created!",
         description: `${data.dispensaryName} has been successfully created. If 'Approved', the owner role process will initiate.`,
       });
       form.reset();
@@ -378,8 +378,8 @@ export default function AdminCreateDispensaryPage() {
       setNationalPhoneNumber('');
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
-      console.error("Error creating dispensary:", error);
-      toast({ title: "Creation Failed", description: "Could not create dispensary.", variant: "destructive" });
+      console.error("Error creating wellness store:", error);
+      toast({ title: "Creation Failed", description: "Could not create wellness store.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -399,7 +399,7 @@ export default function AdminCreateDispensaryPage() {
     return <div className="flex items-center justify-center h-screen"><p>Loading permissions...</p></div>;
   }
   if (!isSuperAdmin && isSuperAdmin !== undefined) {
-     return <div className="flex items-center justify-center h-screen"><p>Access Denied. Only Super Admins can create dispensaries.</p></div>;
+     return <div className="flex items-center justify-center h-screen"><p>Access Denied. Only Super Admins can create wellness stores.</p></div>;
   }
 
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
@@ -412,7 +412,7 @@ export default function AdminCreateDispensaryPage() {
             className="text-3xl flex items-center text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Building className="mr-3 h-8 w-8 text-primary" /> Create New Dispensary
+            <Building className="mr-3 h-8 w-8 text-primary" /> Create New Wellness Store
           </CardTitle>
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/dashboard/dispensaries"><ArrowLeft className="mr-2 h-4 w-4" /> Back to List</Link>
@@ -422,7 +422,7 @@ export default function AdminCreateDispensaryPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
-            Fill in the details to create a new dispensary profile.
+            Fill in the details to create a new wellness store profile.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -438,14 +438,14 @@ export default function AdminCreateDispensaryPage() {
               )} />
             </div>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Dispensary Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Store Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Wellness Store Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
                  <FormItem>
-                    <FormLabel>Dispensary Type</FormLabel>
+                    <FormLabel>Wellness Store Type</FormLabel>
                     <div className="flex items-center gap-2">
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
@@ -459,7 +459,7 @@ export default function AdminCreateDispensaryPage() {
                                     <Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button>
                                 </DialogTrigger>
                                 <DialogContent>
-                                    <DialogHeader><DialogTitle>Add New Dispensary Type</DialogTitle>
+                                    <DialogHeader><DialogTitle>Add New Wellness Store Type</DialogTitle>
                                     <DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
                                     <div className="space-y-3 py-2">
                                         <Input value={newDispensaryTypeName} onChange={(e) => setNewDispensaryTypeName(e.target.value)} placeholder="New type name (e.g., Wellness Center)" />
@@ -500,7 +500,7 @@ export default function AdminCreateDispensaryPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
+              <FormItem><FormLabel>Wellness Store Location / Address</FormLabel>
                 <FormControl><Input {...field} ref={locationInputRef} /></FormControl>
                 <FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage />
               </FormItem>
@@ -615,7 +615,7 @@ export default function AdminCreateDispensaryPage() {
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if dispensary only offers order collection.</FormDescription></div>
+                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness store only offers order collection.</FormDescription></div>
                 <FormMessage />
               </FormItem>
             )} />
@@ -629,14 +629,14 @@ export default function AdminCreateDispensaryPage() {
               <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
-                <FormDescription>Allows sharing products with same-type dispensaries.</FormDescription><FormMessage /></FormItem>)} />
+                <FormDescription>Allows sharing products with wellness stores of the same type.</FormDescription><FormMessage /></FormItem>)} />
 
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
                 <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl>
                     <SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                  <FormDescription>Time needed to get products to other dispensaries.</FormDescription><FormMessage /></FormItem>)} />)}
+                  <FormDescription>Time needed to get products to other wellness stores.</FormDescription><FormMessage /></FormItem>)} />)}
 
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
@@ -646,7 +646,7 @@ export default function AdminCreateDispensaryPage() {
                   disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}
                 >
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                  Create Dispensary
+                  Create Wellness Store
                 </Button>
                 <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior>
                   <Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading}>Cancel</Button>
@@ -658,4 +658,3 @@ export default function AdminCreateDispensaryPage() {
     </Card>
   );
 }
-
