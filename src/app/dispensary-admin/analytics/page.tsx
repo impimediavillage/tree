@@ -2,7 +2,8 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, DollarSign, Package, Users, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BarChart3, DollarSign, Package, Users, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered, ArrowLeft } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
@@ -10,6 +11,7 @@ import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'fi
 import type { Product, ProductRequest, ProductCategoryCount } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Link from 'next/link';
 
 interface StatCardProps {
   title: string;
@@ -143,18 +145,27 @@ export default function WellnessAnalyticsPage() {
     <div className="space-y-8">
       <Card className="shadow-lg bg-card border-primary/30">
         <CardHeader>
-          <CardTitle 
-            className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <BarChart3 className="mr-3 h-8 w-8 text-primary" /> My Store Analytics
-          </CardTitle>
-          <CardDescription 
-            className="text-md text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Track your sales, product performance, and customer engagement.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-grow">
+              <CardTitle 
+                className="text-3xl font-bold text-foreground flex items-center"
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+              >
+                <BarChart3 className="mr-3 h-8 w-8 text-primary" /> My Store Analytics
+              </CardTitle>
+              <CardDescription 
+                className="text-md text-foreground"
+                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+              >
+                Track your sales, product performance, and customer engagement.
+              </CardDescription>
+            </div>
+            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0">
+              <Link href="/dispensary-admin/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
@@ -163,7 +174,7 @@ export default function WellnessAnalyticsPage() {
           title="Total Products"
           value={stats.totalProducts}
           icon={Package}
-          description="Products listed by your wellness profile."
+          description="Products listed by your wellness store."
           isLoading={isLoadingStats}
         />
         <StatCard
@@ -220,7 +231,7 @@ export default function WellnessAnalyticsPage() {
             <CardDescription 
                 className="text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Overview of products by category in your wellness profile.</CardDescription>
+            >Overview of products by category in your wellness store.</CardDescription>
             </CardHeader>
             <CardContent>
             {isLoadingStats ? (
@@ -283,3 +294,4 @@ export default function WellnessAnalyticsPage() {
     </div>
   );
 }
+
