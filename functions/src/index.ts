@@ -1,9 +1,9 @@
 
 import * as logger from "firebase-functions/logger";
 import * as functions from "firebase-functions";
-// Removed incorrect import: import type { Response as FirebaseFunctionsResponse } from "firebase-functions";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
+import type { Response as ExpressResponse } from 'express'; // For V1 HTTP function response type
 import {
   onDocumentCreated,
   onDocumentUpdated,
@@ -19,6 +19,8 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   Dispensary,
+  User,
+  NoteDataCloud,
 } from "./types";
 
 // Initialize Firebase Admin SDK
@@ -503,7 +505,7 @@ export const onProductRequestUpdated = onDocumentUpdated(
     const beforeNotesCount = before?.notes?.length || 0;
     const afterNotesCount = after?.notes?.length || 0;
     if (afterNotesCount > beforeNotesCount && after?.notes && after.notes.length > 0) {
-      const newNote = after.notes[afterNotesCount - 1];
+      const newNote = after.notes[afterNotesCount - 1] as NoteDataCloud;
       logger.log(
         `New note added to product request ${requestId} by ${newNote.byName} (Role: ${newNote.senderRole})`
       );
@@ -832,7 +834,7 @@ export const seedSampleDispensary = functions.https.onRequest(async (req, res) =
     }
     
     const ownerUserDocRef = db.collection('users').doc(ownerUserRecord.uid);
-    const ownerFirestoreUserData: UserDocData = {
+    const ownerFirestoreUserData: User = {
       uid: ownerUserRecord.uid,
       email: ownerUserEmail,
       displayName: sampleDispensaryData.fullName,
@@ -906,7 +908,7 @@ export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
       }
       
       const userDocRef = db.collection('users').doc(userRecord.uid);
-      const firestoreUserData: UserDocData = {
+      const firestoreUserData: User = {
         uid: userRecord.uid,
         email: user.email,
         displayName: user.displayName,
@@ -941,13 +943,13 @@ export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
  * Generic HTTP-callable Firebase Function to copy data from one document to another within the same collection.
  */
 async function copyDocumentContent(
-    req: functions.https.Request, 
-    res: functions.https.Response, // Corrected type
+    req: functions.https.Request,
+    res: ExpressResponse, 
     collectionName: string,
     sourceDocId: string,
     targetDocId: string
 ) {
-    res.set("Access-Control-Allow-Origin", "*"); // Allow CORS for direct invocation if needed
+    res.set("Access-Control-Allow-Origin", "*"); 
     
     try {
       logger.info(`Starting copy from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
@@ -973,7 +975,7 @@ async function copyDocumentContent(
       const dataToCopy = {
         ...sourceData,
         copiedAt: admin.firestore.FieldValue.serverTimestamp(),
-        originalSourceId: sourceDocId, // Keep track of the original source
+        originalSourceId: sourceDocId, 
       };
 
       await targetDocRef.set(dataToCopy, { merge: true }); 
@@ -1022,3 +1024,4 @@ export const copyHomeopathicDispensaryCategoriesData = functions.https.onRequest
     
 
     
+
