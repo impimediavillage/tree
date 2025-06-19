@@ -225,7 +225,7 @@ export default function WellnessManageUsersPage() {
   if (!currentUser || currentUser.role !== 'DispensaryOwner' || currentDispensaryStatus !== 'Approved') {
     return (
       <Card className="p-6 text-center">
-        <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+        <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
         <h3 className="mt-2 text-xl font-semibold">Access Restricted</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           User management is only available for approved wellness profiles. Your current wellness profile status is: {currentDispensaryStatus || 'Not set'}.
@@ -317,7 +317,7 @@ export default function WellnessManageUsersPage() {
         </div>
       ) : (
         <Card className="p-6 text-center">
-          <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+          <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
           <h3 className="mt-2 text-xl font-semibold">No Users Found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {managedUsers.length === 0 ? "You haven't added any staff or Leaf Users yet." : "No users match your current filters."}

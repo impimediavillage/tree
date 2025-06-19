@@ -405,9 +405,9 @@ export default function EditWellnessTypeCategoriesPage() {
         </form>
       </Form>
        {categoryFields.length === 0 && !isFetchingData && (
-        <Card className="mt-6 border-dashed border-amber-500 bg-amber-50/50 shadow-none">
-            <CardContent className="pt-6 text-center text-amber-700">
-                <AlertTriangle className="mx-auto h-10 w-10 mb-3"/>
+        <Card className="mt-6 border-dashed border-orange-500 bg-orange-50/50 shadow-none">
+            <CardContent className="pt-6 text-center text-orange-600">
+                <AlertTriangle className="mx-auto h-10 w-10 mb-3 text-orange-500"/>
                 <p className="text-lg font-semibold">No Categories Defined Yet</p>
                 <p className="text-sm">Click &quot;Add Main Category&quot; to start building the product structure for &quot;{wellnessTypeName}&quot;.</p>
             </CardContent>

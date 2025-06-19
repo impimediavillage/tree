@@ -82,7 +82,7 @@ export default function BrowseWellnessTypesPage() {
       ) : (
         <Card className="col-span-full"> 
           <CardContent className="pt-10 pb-10 text-center text-muted-foreground">
-            <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-destructive" />
+            <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-orange-500" />
             <h3 className="text-2xl font-semibold mb-2">No Wellness Types Found</h3>
             <p className="mb-6">It looks like no wellness types have been set up yet. Please check back later.</p>
             <Button asChild variant="outline">
