@@ -176,8 +176,11 @@ export function DispensaryTypeDialog({
     }
     setIsSubmitting(true);
 
-    let newIconUrl: string | null = form.getValues('iconPath');
-    let newImageUrl: string | null = form.getValues('image');
+    // formData.iconPath and formData.image will be string (URL), null, or undefined after Zod processing
+    // Normalize undefined to null for Firestore and deletion logic
+    let currentIconPath: string | null = formData.iconPath === undefined ? null : formData.iconPath;
+    let currentImagePath: string | null = formData.image === undefined ? null : formData.image;
+    
     const oldIconUrl = dispensaryType?.iconPath;
     const oldImageUrl = dispensaryType?.image;
 
@@ -188,12 +191,13 @@ export function DispensaryTypeDialog({
         if (oldIconUrl && oldIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, oldIconUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
         }
-        newIconUrl = uploadedUrl;
+        currentIconPath = uploadedUrl; // This is now the URL to save
         toast({ title: "Icon Uploaded!", description: selectedIconFile.name, variant: "default" });
-      } else if (formData.iconPath === null && oldIconUrl && oldIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
+      } else if (currentIconPath === null && oldIconUrl && oldIconUrl.startsWith('https://firebasestorage.googleapis.com')) {
+        // User explicitly removed the icon (currentIconPath is null) and there was an old one
         try { await deleteObject(storageRef(storage, oldIconUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
-        newIconUrl = null; 
       }
+      // If currentIconPath is neither a new upload nor null (meaning it's an existing URL that wasn't cleared), it's kept as is.
 
       if (selectedImageFile) {
         toast({ title: "Uploading Image...", description: selectedImageFile.name, variant: "default" });
@@ -201,18 +205,19 @@ export function DispensaryTypeDialog({
         if (oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
             try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed:", e); }
         }
-        newImageUrl = uploadedUrl;
+        currentImagePath = uploadedUrl; // This is now the URL to save
         toast({ title: "Image Uploaded!", description: selectedImageFile.name, variant: "default" });
-      } else if (formData.image === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
+      } else if (currentImagePath === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
+        // User explicitly removed the image (currentImagePath is null) and there was an old one
         try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed:", e); }
-        newImageUrl = null; 
       }
+      // If currentImagePath is neither a new upload nor null, it's kept.
 
       const dataToSave: Omit<DispensaryType, 'id' | 'createdAt' | 'updatedAt'> & {updatedAt: any} = {
         name: formData.name,
         description: formData.description || null,
-        iconPath: newIconUrl,
-        image: newImageUrl,
+        iconPath: currentIconPath, // Use the determined icon path
+        image: currentImagePath,   // Use the determined image path
         advisorFocusPrompt: formData.advisorFocusPrompt || null,
         updatedAt: serverTimestamp(),
       };

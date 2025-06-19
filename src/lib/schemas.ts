@@ -156,8 +156,14 @@ export type DispensaryTypeProductCategoriesFormData = z.infer<typeof dispensaryT
 export const dispensaryTypeSchema = z.object({
   name: z.string().min(2, { message: "Wellness type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
-  iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
-  image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
+  iconPath: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().url({ message: "Invalid URL for icon path." }).optional().nullable()
+  ),
+  image: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().url({ message: "Please enter a valid URL for the image." }).optional().nullable()
+  ),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
@@ -195,7 +201,7 @@ export const productSchema = z.object({
   effects: z.array(z.string()).optional().nullable().default([]),
   flavors: z.array(z.string()).optional().nullable().default([]),
   medicalUses: z.array(z.string()).optional().nullable().default([]),
-  stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(),
+  stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), 
 
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
   sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other']).optional().nullable(),
@@ -401,8 +407,14 @@ export const dispensaryTypeDbSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, { message: "Wellness type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
-  iconPath: z.string().url({ message: "Invalid URL for icon path."}).or(z.literal(null)).optional().nullable(),
-  image: z.string().url({ message: "Please enter a valid URL for the image." }).or(z.literal(null)).optional().nullable(),
+  iconPath: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().url({ message: "Invalid URL for icon path." }).optional().nullable()
+  ),
+  image: z.preprocess(
+    (val) => (val === "" ? undefined : val),
+    z.string().url({ message: "Please enter a valid URL for the image." }).optional().nullable()
+  ),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
   createdAt: z.any().optional(),
   updatedAt: z.any().optional(),
@@ -487,4 +499,3 @@ export const aiAdvisorConfigSchema = z.object({
   dataAiHint: z.string().optional().nullable(),
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
-
