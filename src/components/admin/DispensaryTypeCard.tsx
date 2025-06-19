@@ -119,7 +119,7 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the dispensary type &quot;{dispensaryType.name}&quot;.
+                    This action cannot be undone. This will permanently delete the wellness store type &quot;{dispensaryType.name}&quot;.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -143,4 +143,3 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
     </Card>
   );
 }
-

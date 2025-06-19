@@ -46,7 +46,7 @@ const managementSidebarNavItems: NavItem[] = [
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
-  { title: 'Dispensary Profile', href: '/dispensary-admin/profile', icon: Store },
+  { title: 'Wellness Store Profile', href: '/dispensary-admin/profile', icon: Store },
   { title: 'Notifications', href: '/dispensary-admin/notifications', icon: Bell, disabled: true, badge: 'Soon' },
   { title: 'Account Settings', href: '/dispensary-admin/account', icon: UserCircle, disabled: true, badge: 'Soon' },
 ];
@@ -85,22 +85,22 @@ export default function DispensaryAdminDashboardLayout({
     }
     
     if (currentUser.role !== 'DispensaryOwner') {
-      toast({ title: "Access Denied", description: "This area is for Dispensary Owners.", variant: "destructive" });
+      toast({ title: "Access Denied", description: "This area is for Wellness Store Owners.", variant: "destructive" });
       router.push('/');
       return;
     }
 
     if (!canAccessDispensaryPanel) {
         if (currentDispensaryStatus === 'Pending Approval') {
-            toast({ title: "Account Pending", description: "Your dispensary application is still pending approval.", variant: "default" });
+            toast({ title: "Account Pending", description: "Your wellness store application is still pending approval.", variant: "default" });
         } else if (currentDispensaryStatus === 'Suspended') {
-            toast({ title: "Account Suspended", description: "Your dispensary account is suspended. Please contact support.", variant: "destructive" });
+            toast({ title: "Account Suspended", description: "Your wellness store account is suspended. Please contact support.", variant: "destructive" });
         } else if (currentDispensaryStatus === 'Rejected') {
-             toast({ title: "Application Rejected", description: "Your dispensary application was not approved. Please contact support for details.", variant: "destructive" });
+             toast({ title: "Application Rejected", description: "Your wellness store application was not approved. Please contact support for details.", variant: "destructive" });
         } else if (!currentUser.dispensaryId) {
-             toast({ title: "No Dispensary Linked", description: "Your account is not linked to a dispensary.", variant: "destructive" });
+             toast({ title: "No Wellness Store Linked", description: "Your account is not linked to a wellness store.", variant: "destructive" });
         } else {
-            toast({ title: "Access Issue", description: "You do not have permission to access the dispensary panel at this time.", variant: "destructive" });
+            toast({ title: "Access Issue", description: "You do not have permission to access the wellness store panel at this time.", variant: "destructive" });
         }
       router.push('/'); // Redirect to home or a specific info page
       return;
@@ -115,20 +115,20 @@ export default function DispensaryAdminDashboardLayout({
           if (docSnap.exists()) {
             setDispensary({ id: docSnap.id, ...docSnap.data() } as Dispensary);
           } else {
-            toast({ title: "Dispensary Not Found", description: "Your associated dispensary data could not be found.", variant: "destructive" });
-            firebaseAuthInstance.signOut(); // Log out user if their dispensary data is missing
+            toast({ title: "Wellness Store Not Found", description: "Your associated wellness store data could not be found.", variant: "destructive" });
+            firebaseAuthInstance.signOut(); // Log out user if their wellness store data is missing
             router.push('/auth/signin');
           }
         } catch (error) {
-          console.error("Error fetching dispensary data:", error);
-          toast({ title: "Error", description: "Could not load dispensary data.", variant: "destructive" });
+          console.error("Error fetching wellness store data:", error);
+          toast({ title: "Error", description: "Could not load wellness store data.", variant: "destructive" });
         } finally {
           setIsLoadingDispensary(false);
         }
       };
       fetchDispensaryData();
     } else {
-       toast({ title: "Configuration Error", description: "No dispensary associated with your account.", variant: "destructive" });
+       toast({ title: "Configuration Error", description: "No wellness store associated with your account.", variant: "destructive" });
        firebaseAuthInstance.signOut();
        router.push('/auth/signin');
        setIsLoadingDispensary(false);
@@ -150,7 +150,7 @@ export default function DispensaryAdminDashboardLayout({
     return (
       <div className="flex items-center justify-center h-screen"> {/* Removed bg-background for body bg to show */}
         <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
-        <p className="text-lg text-muted-foreground">Loading Dispensary Dashboard...</p>
+        <p className="text-lg text-muted-foreground">Loading Wellness Store Dashboard...</p>
       </div>
     );
   }
@@ -160,7 +160,7 @@ export default function DispensaryAdminDashboardLayout({
       <div className="flex flex-col items-center justify-center h-screen p-4"> {/* Removed bg-background */}
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
         <p className="text-xl text-center text-destructive-foreground mb-2">Access Denied or Data Error.</p>
-        <p className="text-md text-center text-muted-foreground mb-6">Please ensure you are logged in with an approved Dispensary Owner account.</p>
+        <p className="text-md text-center text-muted-foreground mb-6">Please ensure you are logged in with an approved Wellness Store Owner account.</p>
         <Button onClick={() => router.push('/auth/signin')}>Go to Login</Button>
       </div>
     );
@@ -174,7 +174,7 @@ export default function DispensaryAdminDashboardLayout({
             <p className="text-lg font-semibold text-foreground truncate" title={dispensary.dispensaryName}>
               {dispensary.dispensaryName}
             </p>
-            <p className="text-xs text-muted-foreground">Dispensary Panel</p>
+            <p className="text-xs text-muted-foreground">Wellness Store Panel</p>
           </div>
         </div>
         <nav className="flex flex-col space-y-1 p-2">

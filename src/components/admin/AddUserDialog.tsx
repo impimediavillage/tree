@@ -130,7 +130,7 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
                   <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="LeafUser">Leaf User</SelectItem>
-                    <SelectItem value="DispensaryOwner">Dispensary Owner</SelectItem>
+                    <SelectItem value="DispensaryOwner">Wellness Store Owner</SelectItem>
                     <SelectItem value="Super Admin">Super Admin</SelectItem>
                     <SelectItem value="User">User (Generic)</SelectItem>
                   </SelectContent>
@@ -141,18 +141,18 @@ export function AddUserDialog({ onUserAdded, dispensaries }: AddUserDialogProps)
             {watchedRole === 'DispensaryOwner' && (
               <FormField control={form.control} name="dispensaryId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Associated Dispensary</FormLabel>
+                  <FormLabel>Associated Wellness Store</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || ""}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select dispensary (if owner)" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select wellness store (if owner)" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {/* Removed: <SelectItem value="" disabled>Select a dispensary</SelectItem> */}
+                      {/* Removed: <SelectItem value="" disabled>Select a wellness store</SelectItem> */}
                       {dispensaries.filter(d => d.status === "Approved").map(d => (
                         <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
                       ))}
-                      {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-dispensaries" disabled>No approved dispensaries</SelectItem>}
+                      {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-stores" disabled>No approved wellness stores</SelectItem>}
                     </SelectContent>
                   </Select>
-                  <FormDescription>Required if role is Dispensary Owner.</FormDescription>
+                  <FormDescription>Required if role is Wellness Store Owner.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )} />

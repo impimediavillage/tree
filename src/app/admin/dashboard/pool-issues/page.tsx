@@ -199,11 +199,11 @@ export default function AdminPoolIssuesPage() {
     },
     {
       accessorKey: "reporterDispensaryName",
-      header: "Reported By",
+      header: "Reported By (Wellness Store)",
     },
     {
       accessorKey: "reportedDispensaryName",
-      header: "Reported Against",
+      header: "Reported Against (Wellness Store)",
     },
     {
       accessorKey: "issueType",
@@ -245,7 +245,7 @@ export default function AdminPoolIssuesPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Review and manage reported issues between dispensaries in the product pool.
+            Review and manage reported issues between wellness stores in the product pool.
         </p>
       </div>
       <DataTable
@@ -258,5 +258,3 @@ export default function AdminPoolIssuesPage() {
     </div>
   );
 }
-
-    

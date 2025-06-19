@@ -151,10 +151,10 @@ export default function HolisticAiHubPage() {
     setIsLoadingUser(false);
   }, []);
 
- const dispensaryBenefits = [
-    { text: "Engage in private, inter-dispensary trading and bulk product transactions", icon: Truck },
+ const wellnessStoreBenefits = [
+    { text: "Engage in private, inter-wellness store trading and bulk product transactions", icon: Truck },
     { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
-    { text: "Unlimited access to the Product Sharing Pool with other dispensaries.", icon: Users },
+    { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
     { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
@@ -209,18 +209,18 @@ export default function HolisticAiHubPage() {
               className="text-lg text-foreground max-w-xl mx-auto mt-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              Whether you&apos;re a dispensary looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
+              Whether you&apos;re a wellness store looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <SignupBenefitCard
-              title="Benefits of signing up as a virtual dispensary:"
-              buttonText="Become a Virtual Dispensary"
+              title="Benefits of signing up as a virtual wellness store:"
+              buttonText="Become a Virtual Wellness Store"
               buttonLink="/dispensary-signup"
               buttonIcon={Store}
-              benefits={dispensaryBenefits}
+              benefits={wellnessStoreBenefits}
               delay={100}
-              dataAiHint="dispensary signup benefits"
+              dataAiHint="wellness store signup benefits"
             />
             <SignupBenefitCard
               title="Benefits of signing up as a Leaf on our Tree:"
@@ -262,12 +262,12 @@ export default function HolisticAiHubPage() {
               className="text-2xl text-foreground flex items-center gap-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              <Briefcase className="h-7 w-7 text-primary" /> Welcome, Dispensary Owner!
+              <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Store Owner!
             </CardTitle>
           </CardHeader>
           <CardContent>
              <Button asChild className="w-full md:w-auto text-lg py-3 bg-primary text-primary-foreground">
-                <Link href="/dispensary-admin/dashboard">Go to Dispensary Panel</Link>
+                <Link href="/dispensary-admin/dashboard">Go to Wellness Store Panel</Link>
             </Button>
           </CardContent>
         </Card>
@@ -324,4 +324,3 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
-

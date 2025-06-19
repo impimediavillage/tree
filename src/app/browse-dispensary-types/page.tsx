@@ -30,8 +30,8 @@ export default function BrowseDispensaryTypesPage() {
         });
         setAllDispensaryTypes(fetchedTypes);
       } catch (error) {
-        console.error("Error fetching dispensary types:", error);
-        toast({ title: "Error", description: "Could not load dispensary types.", variant: "destructive" });
+        console.error("Error fetching wellness store types:", error);
+        toast({ title: "Error", description: "Could not load wellness store types.", variant: "destructive" });
       } finally {
         setIsLoadingTypes(false);
       }
@@ -48,13 +48,13 @@ export default function BrowseDispensaryTypesPage() {
             className="text-5xl font-extrabold tracking-tight text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Explore Dispensary Types
+            Explore Wellness Store Types
           </h1>
           <p 
             className="text-xl text-foreground/90 dark:text-foreground/80 mt-3 max-w-2xl mx-auto"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Discover a variety of dispensaries offering unique products and services. Click on a type to see available stores.
+            Discover a variety of wellness stores offering unique products and services. Click on a type to see available stores.
           </p>
         </div>
       </div>
@@ -83,8 +83,8 @@ export default function BrowseDispensaryTypesPage() {
         <Card className="col-span-full"> {/* Base card will get frosted from ui/card.tsx */}
           <CardContent className="pt-10 pb-10 text-center text-muted-foreground">
             <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-destructive" />
-            <h3 className="text-2xl font-semibold mb-2">No Dispensary Types Found</h3>
-            <p className="mb-6">It looks like no dispensary types have been set up yet. Please check back later.</p>
+            <h3 className="text-2xl font-semibold mb-2">No Wellness Store Types Found</h3>
+            <p className="mb-6">It looks like no wellness store types have been set up yet. Please check back later.</p>
             <Button asChild variant="outline">
               <Link href="/">Back to Home</Link>
             </Button>
@@ -94,4 +94,3 @@ export default function BrowseDispensaryTypesPage() {
     </div>
   );
 }
-

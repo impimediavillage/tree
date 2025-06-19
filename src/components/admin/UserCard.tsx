@@ -66,7 +66,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
             }
             className="capitalize py-1 px-2.5 text-xs"
           >
-            <RoleIcon role={user.role} /> <span className="ml-1.5">{user.role}</span>
+            <RoleIcon role={user.role} /> <span className="ml-1.5">{user.role === 'DispensaryStaff' ? 'Wellness Store Staff' : user.role === 'DispensaryOwner' ? 'Wellness Store Owner' : user.role}</span>
           </Badge>
         </div>
         <CardTitle className="text-xl mt-3 truncate font-semibold">{user.displayName || 'Unnamed User'}</CardTitle>
@@ -92,7 +92,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
         </div>
         {user.role === 'DispensaryOwner' && user.dispensaryId && (
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Dispensary:</span>
+            <span className="text-muted-foreground">Wellness Store:</span>
             <span className="font-medium truncate max-w-[150px]" title={dispensaryName || user.dispensaryId}>
               {dispensaryName || user.dispensaryId.substring(0, 10) + '...'}
             </span>

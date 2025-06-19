@@ -31,7 +31,7 @@ const userEditSchema = z.object({
   credits: z.coerce.number().int().min(0, "Credits cannot be negative."),
   dispensaryId: z.string().optional().nullable(),
 }).refine(data => data.role !== 'DispensaryOwner' || (data.role === 'DispensaryOwner' && data.dispensaryId && data.dispensaryId.trim() !== ''), {
-  message: "Dispensary ID is required for Dispensary Owners.",
+  message: "Wellness store ID is required for Wellness Store Owners.",
   path: ["dispensaryId"],
 });
 
@@ -135,8 +135,8 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
                         <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="LeafUser">Leaf User</SelectItem>
-                            <SelectItem value="DispensaryStaff">Dispensary Staff</SelectItem>
-                            <SelectItem value="DispensaryOwner">Dispensary Owner</SelectItem>
+                            <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
+                            <SelectItem value="DispensaryOwner">Wellness Store Owner</SelectItem>
                             <SelectItem value="Super Admin">Super Admin</SelectItem>
                             <SelectItem value="User">User (Generic)</SelectItem>
                         </SelectContent>
@@ -147,18 +147,18 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
             {watchedRole === 'DispensaryOwner' && (
                  <FormField control={form.control} name="dispensaryId" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Associated Dispensary</FormLabel>
+                        <FormLabel>Associated Wellness Store</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select dispensary" /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select wellness store" /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {/* Removed: <SelectItem value="" disabled>Select a dispensary</SelectItem> */}
+                                {/* Removed: <SelectItem value="" disabled>Select a wellness store</SelectItem> */}
                                 {dispensaries.filter(d => d.status === "Approved").map(d => (
                                     <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
                                 ))}
-                                {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-dispensaries" disabled>No approved dispensaries</SelectItem>}
+                                {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-stores" disabled>No approved wellness stores</SelectItem>}
                             </SelectContent>
                         </Select>
-                        <FormDescription>Required if role is Dispensary Owner.</FormDescription>
+                        <FormDescription>Required if role is Wellness Store Owner.</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -227,7 +227,7 @@ export default function AdminUsersPage() {
 
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast({ title: "Error", description: "Could not fetch users or dispensaries.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch users or wellness stores.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -285,8 +285,8 @@ export default function AdminUsersPage() {
                 <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="LeafUser">Leaf User</SelectItem>
-                    <SelectItem value="DispensaryStaff">Dispensary Staff</SelectItem>
-                    <SelectItem value="DispensaryOwner">Dispensary Owner</SelectItem>
+                    <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
+                    <SelectItem value="DispensaryOwner">Wellness Store Owner</SelectItem>
                     <SelectItem value="Super Admin">Super Admin</SelectItem>
                     <SelectItem value="User">User (Generic)</SelectItem>
                 </SelectContent>
@@ -358,4 +358,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-

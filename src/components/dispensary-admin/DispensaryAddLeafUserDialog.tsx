@@ -86,7 +86,7 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Leaf User (Linked)</DialogTitle>
-          <DialogDescription>Create an account for a Leaf User associated with your dispensary. They will be activated immediately and receive welcome credits.</DialogDescription>
+          <DialogDescription>Create an account for a Leaf User associated with your wellness store. They will be activated immediately and receive welcome credits.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">

@@ -46,7 +46,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     }
   };
   
-  const dataAiHint = `dispensary type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
+  const dataAiHint = `wellness store type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
 
   return (
     <Card

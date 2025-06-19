@@ -220,19 +220,19 @@ export function DispensaryTypeDialog({
       if (isEditing && dispensaryType?.id) {
         const typeDocRef = doc(db, 'dispensaryTypes', dispensaryType.id);
         await updateDoc(typeDocRef, dataToSave);
-        toast({ title: 'Dispensary Type Updated', description: `"${formData.name}" has been updated.` });
+        toast({ title: 'Wellness Store Type Updated', description: `"${formData.name}" has been updated.` });
       } else {
         await addDoc(collection(db, 'dispensaryTypes'), {
           ...dataToSave,
           createdAt: serverTimestamp(),
         });
-        toast({ title: 'Dispensary Type Created', description: `"${formData.name}" has been added.` });
+        toast({ title: 'Wellness Store Type Created', description: `"${formData.name}" has been added.` });
       }
       onSave();
       setIsOpen(false);
     } catch (error: any) {
-      console.error('Error saving dispensary type:', error);
-      toast({ title: 'Save Failed', description: error.message || 'Could not save dispensary type.', variant: 'destructive' });
+      console.error('Error saving wellness store type:', error);
+      toast({ title: 'Save Failed', description: error.message || 'Could not save wellness store type.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
       setIconUploadProgress(null);
@@ -243,7 +243,7 @@ export function DispensaryTypeDialog({
   const renderAssetPreview = (previewUrl: string | null, assetType: 'icon' | 'image') => {
     const displayUrl = previewUrl;
     const altText = `${assetType} preview`;
-    const dataAiHint = `dispensary type ${assetType}`;
+    const dataAiHint = `wellness store type ${assetType}`;
 
     if (!displayUrl) {
       return <div className="w-20 h-20 rounded border bg-muted flex items-center justify-center"><ImageIconLucideSvg className="w-8 h-8 text-muted-foreground" /></div>;
@@ -260,9 +260,9 @@ export function DispensaryTypeDialog({
       <DialogTrigger asChild onClick={handleDialogTriggerClick}>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle>{isEditing ? 'Edit' : 'Add New'} Dispensary Type</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit' : 'Add New'} Wellness Store Type</DialogTitle>
           <DialogDescription>
-            {isEditing ? 'Update the details for this dispensary type.' : 'Enter the details for the new dispensary type.'}
+            {isEditing ? 'Update the details for this wellness store type.' : 'Enter the details for the new wellness store type.'}
             {!isSuperAdmin && isEditing ? ' (Viewing details)' : ''}
             {!isSuperAdmin && !isEditing ? ' (Requires Super Admin)' : ''}
           </DialogDescription>
@@ -290,7 +290,7 @@ export function DispensaryTypeDialog({
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Briefly describe this dispensary type" {...field} value={field.value ?? ''} disabled={!isSuperAdmin || isSubmitting}/>
+                      <Textarea placeholder="Briefly describe this wellness store type" {...field} value={field.value ?? ''} disabled={!isSuperAdmin || isSubmitting}/>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -320,7 +320,7 @@ export function DispensaryTypeDialog({
               {isSuperAdmin && (
                 <div className="p-3 border-t border-b border-dashed my-4 text-sm text-muted-foreground">
                     <ListPlus className="inline h-4 w-4 mr-1.5" />
-                    Product categories and subcategories for this Dispensary Type are now managed in a dedicated section (via &quot;Manage Categories&quot; button on the Dispensary Types page) or directly in Firestore under the <code className="bg-muted px-1 py-0.5 rounded text-xs">dispensaryTypeProductCategories</code> collection with a document ID matching this type&apos;s name.
+                    Product categories and subcategories for this Wellness Store Type are now managed in a dedicated section (via &quot;Manage Categories&quot; button on the Wellness Store Types page) or directly in Firestore under the <code className="bg-muted px-1 py-0.5 rounded text-xs">dispensaryTypeProductCategories</code> collection with a document ID matching this type&apos;s name.
                 </div>
               )}
 

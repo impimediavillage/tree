@@ -21,7 +21,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form'; // Added missing import
 
-// Schema for editing users managed by dispensary owner
+// Schema for editing users managed by wellness store owner
 const dispensaryUserEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
   role: z.enum(['DispensaryStaff', 'LeafUser', 'User']), // Added 'User' as a possible role for completeness
@@ -100,7 +100,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit User: {user.displayName || user.email}</DialogTitle>
-          <DialogDescription>Modify details for this user associated with your dispensary.</DialogDescription>
+          <DialogDescription>Modify details for this user associated with your wellness store.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -114,7 +114,7 @@ function EditDispensaryUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: 
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    <SelectItem value="DispensaryStaff">Dispensary Staff</SelectItem>
+                    <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
                     <SelectItem value="LeafUser">Leaf User (Linked)</SelectItem>
                     {/* <SelectItem value="User">User (Generic - if applicable)</SelectItem> */}
                   </SelectContent>
@@ -177,7 +177,7 @@ export default function DispensaryManageUsersPage() {
     if (!currentUser?.dispensaryId || currentDispensaryStatus !== 'Approved') {
       setIsLoading(false);
       if (currentDispensaryStatus !== 'Approved' && currentUser?.dispensaryId) {
-         toast({ title: "Access Restricted", description: "User management is available for approved dispensaries only.", variant: "destructive"});
+         toast({ title: "Access Restricted", description: "User management is available for approved wellness stores only.", variant: "destructive"});
       }
       setManagedUsers([]);
       return;
@@ -197,7 +197,7 @@ export default function DispensaryManageUsersPage() {
       setManagedUsers(fetchedUsers);
     } catch (error) {
       console.error("Error fetching managed users:", error);
-      toast({ title: "Error", description: "Could not fetch users for your dispensary.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch users for your wellness store.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +232,7 @@ export default function DispensaryManageUsersPage() {
         <UsersIcon className="mx-auto h-12 w-12 text-muted-foreground" />
         <h3 className="mt-2 text-xl font-semibold">Access Restricted</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          User management is only available for approved dispensaries. Your current dispensary status is: {currentDispensaryStatus || 'Not set'}.
+          User management is only available for approved wellness stores. Your current wellness store status is: {currentDispensaryStatus || 'Not set'}.
         </p>
       </Card>
     );
@@ -252,7 +252,7 @@ export default function DispensaryManageUsersPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Add, view, and manage staff and linked Leaf Users for your dispensary.
+            Add, view, and manage staff and linked Leaf Users for your wellness store.
           </p>
         </div>
         <div className="flex gap-2">
@@ -275,7 +275,7 @@ export default function DispensaryManageUsersPage() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="DispensaryStaff">Dispensary Staff</SelectItem>
+                    <SelectItem value="DispensaryStaff">Wellness Store Staff</SelectItem>
                     <SelectItem value="LeafUser">Leaf Users (Linked)</SelectItem>
                 </SelectContent>
             </Select>
@@ -342,4 +342,3 @@ export default function DispensaryManageUsersPage() {
     </div>
   );
 }
-

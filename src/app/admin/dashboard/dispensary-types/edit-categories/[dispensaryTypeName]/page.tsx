@@ -182,7 +182,7 @@ export default function EditDispensaryTypeCategoriesPage() {
 
   const fetchCategories = useCallback(async () => {
     if (!dispensaryTypeName) {
-      toast({ title: "Error", description: "Dispensary type name not provided.", variant: "destructive" });
+      toast({ title: "Error", description: "Wellness store type name not provided.", variant: "destructive" });
       router.push('/admin/dashboard/dispensary-types');
       return;
     }
@@ -311,7 +311,7 @@ export default function EditDispensaryTypeCategoriesPage() {
               className="text-lg text-foreground"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-                For Dispensary Type: <span className="font-semibold text-primary">{dispensaryTypeName}</span>
+                For Wellness Store Type: <span className="font-semibold text-primary">{dispensaryTypeName}</span>
             </p>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -416,4 +416,3 @@ export default function EditDispensaryTypeCategoriesPage() {
     </div>
   );
 }
-

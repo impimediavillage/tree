@@ -20,7 +20,7 @@ export interface Dispensary {
   phone: string;
   ownerEmail: string;
   dispensaryName: string;
-  dispensaryType: string;
+  dispensaryType: string; // This is the field to be updated
   currency: string;
   openTime?: string | null;
   closeTime?: string | null;
@@ -52,7 +52,7 @@ export interface Dispensary {
 // Represents the structure for Dispensary Type documents (basic info)
 export interface DispensaryType {
   id?: string;
-  name: string; // Unique name for the dispensary type
+  name: string; // Unique name for the wellness store type
   description?: string | null;
   iconPath?: string | null;
   image?: string | null;
@@ -64,7 +64,7 @@ export interface DispensaryType {
 // Represents a document in the 'dispensaryTypeProductCategories' collection
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
-  name?: string; // Name of the dispensary type this category structure belongs to
+  name?: string; // Name of the wellness store type this category structure belongs to
   categoriesData: ProductCategory[] | Record<string, any>; // Can be an array for general types or an object for special types (e.g., THC/CBD)
   updatedAt?: Timestamp | Date | string;
 }
@@ -75,7 +75,7 @@ export interface Product {
   id?: string;
   dispensaryId: string;
   dispensaryName: string;
-  dispensaryType: string;
+  dispensaryType: string; // This is the field to be updated
   productOwnerEmail: string;
   name: string;
   description: string;
@@ -99,6 +99,8 @@ export interface Product {
   
   // General
   currency: string; 
+  price: number; // For single-price products (ensure this is consistent or deprecated if priceTiers is primary)
+  unit: string; // For single-price products
   priceTiers: PriceTier[]; 
   quantityInStock: number;
   imageUrl?: string | null;
@@ -283,7 +285,7 @@ export interface AIAdvisorConfig {
 // For Cloud Functions that might deal with raw document data before type casting
 export type DispensaryDocData = Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> & {
   fullName?: string;
-  dispensaryName?: string;
+  dispensaryName?: string; // Name of the wellness store
   applicationDate: Timestamp;
   approvedDate?: Timestamp;
   lastActivityDate?: Timestamp;
@@ -342,7 +344,7 @@ export interface ProductCategoryCount {
 }
 
 // Cart Item type
-export interface CartItem extends Omit<Product, 'priceTiers'> { 
+export interface CartItem extends Omit<Product, 'priceTiers' | 'price' | 'unit'> { 
   id: string; 
   name: string;
   price: number; // Price for the specific unit chosen in the cart
@@ -355,4 +357,3 @@ export interface CartItem extends Omit<Product, 'priceTiers'> {
   category: string; 
   quantityInStock: number;
 }
-    

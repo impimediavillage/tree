@@ -145,8 +145,8 @@ export default function AdminEditDispensaryPage() {
       } as DispensaryType)).sort((a, b) => a.name.localeCompare(b.name));
       setDispensaryTypes(fetchedTypes);
     } catch (error) {
-      console.error("Error fetching dispensary types for admin edit:", error);
-      toast({ title: "Error", description: "Failed to fetch dispensary types.", variant: "destructive" });
+      console.error("Error fetching wellness store types for admin edit:", error);
+      toast({ title: "Error", description: "Failed to fetch wellness store types.", variant: "destructive" });
     }
   }, [toast]);
 
@@ -164,7 +164,7 @@ export default function AdminEditDispensaryPage() {
     }
 
     if (currentUser.role !== 'Super Admin') {
-      toast({ title: "Access Denied", description: "Only Super Admins can edit dispensaries.", variant: "destructive" });
+      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness stores.", variant: "destructive" });
       router.push('/admin/dashboard');
       setIsFetchingData(false);
       return;
@@ -215,19 +215,19 @@ export default function AdminEditDispensaryPage() {
             }
 
           } else {
-            toast({ title: "Not Found", description: "Dispensary not found.", variant: "destructive" });
+            toast({ title: "Not Found", description: "Wellness store not found.", variant: "destructive" });
             router.push('/admin/dashboard/dispensaries');
           }
         } catch (error) {
-          console.error("Error fetching dispensary:", error);
-          toast({ title: "Error", description: "Failed to fetch dispensary details.", variant: "destructive" });
+          console.error("Error fetching wellness store:", error);
+          toast({ title: "Error", description: "Failed to fetch wellness store details.", variant: "destructive" });
         } finally {
           setIsFetchingData(false);
         }
       };
       fetchDispensary();
     } else {
-      toast({ title: "Error", description: "No dispensary ID provided.", variant: "destructive" });
+      toast({ title: "Error", description: "No wellness store ID provided.", variant: "destructive" });
       router.push('/admin/dashboard/dispensaries');
       setIsFetchingData(false);
     }
@@ -236,15 +236,15 @@ export default function AdminEditDispensaryPage() {
 
   const handleAddNewDispensaryType = async () => {
      if (!currentUser || currentUser.role !== 'Super Admin') {
-        toast({ title: "Permission Denied", description: "Only Super Admins can add new dispensary types.", variant: "destructive"});
+        toast({ title: "Permission Denied", description: "Only Super Admins can add new wellness store types.", variant: "destructive"});
         return;
     }
     if (!newDispensaryTypeName.trim()) {
-      toast({ title: "Validation Error", description: "New dispensary type name cannot be empty.", variant: "destructive" });
+      toast({ title: "Validation Error", description: "New wellness store type name cannot be empty.", variant: "destructive" });
       return;
     }
     if (dispensaryTypes.some(type => type.name.toLowerCase() === newDispensaryTypeName.trim().toLowerCase())) {
-      toast({ title: "Duplicate Error", description: "This dispensary type already exists.", variant: "destructive" });
+      toast({ title: "Duplicate Error", description: "This wellness store type already exists.", variant: "destructive" });
       return;
     }
     const defaultIcon = `/icons/${newDispensaryTypeName.trim().toLowerCase().replace(/\s+/g, '-')}.png`;
@@ -256,7 +256,7 @@ export default function AdminEditDispensaryPage() {
     };
     try {
       const newTypeRef = await addDoc(collection(db, 'dispensaryTypes'), newTypeData);
-      toast({ title: "Success", description: `Dispensary type "${newDispensaryTypeName.trim()}" added.` });
+      toast({ title: "Success", description: `Wellness store type "${newDispensaryTypeName.trim()}" added.` });
       const newType = { id: newTypeRef.id, ...newTypeData };
       const updatedTypes = [...dispensaryTypes, newType].sort((a,b) => a.name.localeCompare(b.name));
       setDispensaryTypes(updatedTypes);
@@ -266,8 +266,8 @@ export default function AdminEditDispensaryPage() {
       setNewDispensaryTypeImage('');
       setIsAddTypeDialogOpen(false);
     } catch (error) {
-      console.error("Error adding new dispensary type:", error);
-      toast({ title: "Error", description: "Failed to add new dispensary type.", variant: "destructive" });
+      console.error("Error adding new wellness store type:", error);
+      toast({ title: "Error", description: "Failed to add new wellness store type.", variant: "destructive" });
     }
   };
 
@@ -275,7 +275,7 @@ export default function AdminEditDispensaryPage() {
 
   const initializeMapAndAutocomplete = useCallback(() => {
     if (!window.google || !window.google.maps || !window.google.maps.places || !dispensary) {
-      console.warn("Google Maps API, dispensary data, or refs not ready for edit page map initialization.");
+      console.warn("Google Maps API, wellness store data, or refs not ready for edit page map initialization.");
       return;
     }
     const lat = currentLat ?? dispensary.latitude ?? -29.8587;
@@ -424,11 +424,11 @@ export default function AdminEditDispensaryPage() {
       };
       delete (updateData as any).applicationDate;
       await updateDoc(dispensaryDocRef, updateData);
-      toast({ title: "Dispensary Updated", description: `${data.dispensaryName} has been successfully updated.` });
+      toast({ title: "Wellness Store Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
-      console.error("Error updating dispensary:", error);
-      toast({ title: "Update Failed", description: "Could not update dispensary details.", variant: "destructive" });
+      console.error("Error updating wellness store:", error);
+      toast({ title: "Update Failed", description: "Could not update wellness store details.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -456,7 +456,7 @@ export default function AdminEditDispensaryPage() {
   }
 
   if (!dispensary || (currentUser && currentUser.role !== 'Super Admin')) {
-    return <div className="text-center py-10">Dispensary not found, failed to load, or access denied.</div>;
+    return <div className="text-center py-10">Wellness store not found, failed to load, or access denied.</div>;
   }
 
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
@@ -469,7 +469,7 @@ export default function AdminEditDispensaryPage() {
             className="text-3xl flex items-center text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Building className="mr-3 h-8 w-8 text-primary" /> Edit Dispensary
+            <Building className="mr-3 h-8 w-8 text-primary" /> Edit Wellness Store
           </CardTitle>
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/dashboard/dispensaries"><ArrowLeft className="mr-2 h-4 w-4" /> Back to List</Link>
@@ -495,14 +495,14 @@ export default function AdminEditDispensaryPage() {
               )} />
             </div>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Dispensary Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Store Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Wellness Store Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
                  <FormItem>
-                    <FormLabel>Dispensary Type</FormLabel>
+                    <FormLabel>Wellness Store Type</FormLabel>
                     <div className="flex items-center gap-2">
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
@@ -512,7 +512,7 @@ export default function AdminEditDispensaryPage() {
                             <Dialog open={isAddTypeDialogOpen} onOpenChange={setIsAddTypeDialogOpen}>
                                 <DialogTrigger asChild><Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button></DialogTrigger>
                                 <DialogContent>
-                                    <DialogHeader><DialogTitle>Add New Dispensary Type</DialogTitle><DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
+                                    <DialogHeader><DialogTitle>Add New Wellness Store Type</DialogTitle><DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
                                     <div className="space-y-3 py-2">
                                         <Input value={newDispensaryTypeName} onChange={(e) => setNewDispensaryTypeName(e.target.value)} placeholder="New type name (e.g., Wellness Center)" />
                                         <Input value={newDispensaryTypeIconPath} onChange={(e) => setNewDispensaryTypeIconPath(e.target.value)} placeholder="Icon path (e.g., /icons/wellness.png)" />
@@ -549,7 +549,7 @@ export default function AdminEditDispensaryPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Dispensary Location / Address</FormLabel>
+              <FormItem><FormLabel>Wellness Store Location / Address</FormLabel>
                 <FormControl><Input {...field} ref={locationInputRef} /></FormControl>
                 <FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage />
               </FormItem>
@@ -630,15 +630,15 @@ export default function AdminEditDispensaryPage() {
             </div>
 
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if dispensary only offers order collection.</FormDescription></div><FormMessage /></FormItem>
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness store only offers order collection.</FormDescription></div><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>Order Types Fulfilled</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with same-type dispensaries.</FormDescription><FormMessage /></FormItem>)} />
+              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with wellness stores of the same type.</FormDescription><FormMessage /></FormItem>)} />
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
-                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other dispensaries.</FormDescription><FormMessage /></FormItem>)} />)}
+                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness stores.</FormDescription><FormMessage /></FormItem>)} />)}
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
              <div className="flex gap-4 pt-4">
@@ -653,4 +653,3 @@ export default function AdminEditDispensaryPage() {
     </Card>
   );
 }
-

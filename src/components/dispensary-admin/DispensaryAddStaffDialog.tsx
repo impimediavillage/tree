@@ -85,7 +85,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Staff Member</DialogTitle>
-          <DialogDescription>Create an account for a new staff member. They will start as 'Pending Approval'.</DialogDescription>
+          <DialogDescription>Create an account for a new staff member for your wellness store. They will start as 'Pending Approval'.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">

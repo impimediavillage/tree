@@ -13,7 +13,7 @@ interface AuthContextType {
   currentUser: AppUser | null;
   loading: boolean;
   isSuperAdmin: boolean;
-  isDispensaryOwner: boolean; // True if role is DispensaryOwner AND dispensary is Approved
+  isDispensaryOwner: boolean; // True if role is DispensaryOwner AND wellness store is Approved
   canAccessDispensaryPanel: boolean; // Explicit flag for panel access
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clean up previous listeners
       if (unsubscribeUserSnapshot) unsubscribeUserSnapshot();
       if (unsubscribeDispensarySnapshot) unsubscribeDispensarySnapshot();
-      setCurrentDispensaryStatus(null); // Reset dispensary status
+      setCurrentDispensaryStatus(null); // Reset wellness store status
 
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -53,18 +53,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
 
-            // If user is a DispensaryOwner, fetch and listen to their dispensary status
+            // If user is a DispensaryOwner, fetch and listen to their wellness store status
             if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
               const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
               unsubscribeDispensarySnapshot = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
                 if (dispensaryDocSnap.exists()) {
                   setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
                 } else {
-                  console.warn(`Dispensary document ${appUser.dispensaryId} not found for owner ${appUser.uid}.`);
-                  setCurrentDispensaryStatus(null); // Dispensary not found
+                  console.warn(`Wellness store document ${appUser.dispensaryId} not found for owner ${appUser.uid}.`);
+                  setCurrentDispensaryStatus(null); // Wellness store not found
                 }
               }, (error) => {
-                console.error("Error fetching dispensary document for status:", error);
+                console.error("Error fetching wellness store document for status:", error);
                 setCurrentDispensaryStatus(null);
               });
             } else {
@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
-  // isDispensaryOwner is true if role is DispensaryOwner AND their dispensary status is 'Approved'
+  // isDispensaryOwner is true if role is DispensaryOwner AND their wellness store status is 'Approved'
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';
   const canAccessDispensaryPanel = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'LeafUser' || currentUser?.role === 'User';
