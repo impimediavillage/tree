@@ -52,7 +52,7 @@ export function Header() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2.5 text-2xl font-bold text-primary hover:text-primary/90 transition-colors">
           <Trees className="h-8 w-8" />
-          <span className="hidden sm:inline">The Dispensary Tree</span>
+          <span className="hidden sm:inline">The Wellness Tree</span>
         </Link>
         
         <nav className="flex items-center gap-1 sm:gap-2">

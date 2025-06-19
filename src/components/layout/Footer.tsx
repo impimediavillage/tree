@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="bg-muted/50 border-t border-border py-6 text-muted-foreground">
       <div className="container mx-auto px-4 text-center">
         <p className="text-sm">
-          &copy; {new Date().getFullYear()} Holistic AI Hub. All rights reserved.
+          &copy; {new Date().getFullYear()} The Wellness Tree. All rights reserved.
         </p>
         <div className="mt-2 space-x-4">
           <Link href="/terms" className="hover:text-primary transition-colors text-xs">Terms of Service</Link>

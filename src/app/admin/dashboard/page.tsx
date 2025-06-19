@@ -105,7 +105,7 @@ export default function AdminDashboardOverviewPage() {
             className="text-md text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Welcome to the control center. Oversee and manage all aspects of The Dispensary Tree platform.
+            Welcome to the control center. Oversee and manage all aspects of The Wellness Tree platform.
           </CardDescription>
         </CardHeader>
       </Card>

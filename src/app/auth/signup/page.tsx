@@ -150,7 +150,7 @@ export default function SignUpPage() {
           <CardDescription 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >Join The Dispensary Tree community and explore wellness.</CardDescription>
+          >Join The Wellness Tree community and explore wellness.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -331,6 +331,5 @@ export default function SignUpPage() {
     </div>
   );
 }
-
 
     
