@@ -46,7 +46,7 @@ const managementSidebarNavItems: NavItem[] = [
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
-  { title: 'My Profile', href: '/dispensary-admin/profile', icon: Store }, // Changed from Wellness Profile
+  { title: 'My Profile', href: '/dispensary-admin/profile', icon: Store },
   { title: 'Notifications', href: '/dispensary-admin/notifications', icon: Bell, disabled: true, badge: 'Soon' },
   { title: 'Account Settings', href: '/dispensary-admin/account', icon: UserCircle, disabled: true, badge: 'Soon' },
 ];
@@ -268,7 +268,19 @@ export default function WellnessAdminDashboardLayout({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start" className="w-56">
-                <DropdownMenuLabel>{currentUser.displayName || 'Owner Profile'}</DropdownMenuLabel>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none truncate">
+                          {currentUser.displayName || currentUser.email?.split('@')[0]}
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground truncate">
+                          {currentUser.email}
+                        </p>
+                        <p className="text-xs leading-none text-primary/90 mt-1 font-medium">
+                          My store panel
+                        </p>
+                      </div>
+                </DropdownMenuLabel>
                 <DropdownMenuSeparatorComponent />
                  <DropdownMenuItem onClick={() => router.push('/')}>
                   <LayoutDashboard className="mr-2 h-4 w-4" />
