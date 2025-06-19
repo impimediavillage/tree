@@ -2,16 +2,16 @@
 'use client';
 
 import Link from 'next/link';
-import { Trees, UserCircle, LogIn, LogOut, LayoutDashboard, Settings, ShoppingCart, Briefcase, Loader2, DollarSign } from 'lucide-react'; 
+import { Trees, UserCircle, LogIn, LogOut, LayoutDashboard, Settings, ShoppingCart, Briefcase, Loader2, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { auth as firebaseAuthInstance } from '@/lib/firebase'; 
+import { auth as firebaseAuthInstance } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext'; 
-import { CartIcon } from './CartIcon'; 
+import { useAuth } from '@/contexts/AuthContext';
+import { CartIcon } from './CartIcon';
 
 const getInitials = (name?: string | null, fallback = 'U') => {
   if (!name) return fallback;
@@ -23,18 +23,18 @@ const getInitials = (name?: string | null, fallback = 'U') => {
 };
 
 export function Header() {
-  const { currentUser, loading: authLoading } = useAuth(); 
+  const { currentUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
 
   const handleLogout = async () => {
     try {
-      await firebaseAuthInstance.signOut(); 
+      await firebaseAuthInstance.signOut();
       // Clearing currentUser from AuthContext will be handled by onAuthStateChanged listener
       localStorage.removeItem('currentUserHolisticAI'); // Also explicitly clear localStorage
       toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/auth/signin'); 
+      router.push('/auth/signin');
     } catch (error) {
       console.error('Logout error:', error);
       toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
@@ -54,7 +54,7 @@ export function Header() {
           <Trees className="h-8 w-8" />
           <span className="hidden sm:inline">The Wellness Tree</span>
         </Link>
-        
+
         <nav className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
             <Link href="/dashboard/leaf/credits">
@@ -63,12 +63,12 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
-            <Link href="/browse-dispensary-types">Browse Stores</Link>
+            <Link href="/browse-dispensary-types">Browse Wellness Stores</Link>
           </Button>
-          
+
           <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2" />
-          
-          <CartIcon /> 
+
+          <CartIcon />
 
           {authLoading ? (
             <div className="h-9 w-9 flex items-center justify-center ml-1">
@@ -107,7 +107,7 @@ export function Header() {
                 {currentUser.role === 'DispensaryOwner' && (
                   <DropdownMenuItem onClick={() => router.push('/dispensary-admin/dashboard')}>
                     <Briefcase className="mr-2 h-4 w-4" />
-                    <span>Dispensary Panel</span>
+                    <span>My Store Panel</span>
                   </DropdownMenuItem>
                 )}
                 {(currentUser.role === 'User' || currentUser.role === 'LeafUser') && (
@@ -141,4 +141,3 @@ export function Header() {
     </header>
   );
 }
-
