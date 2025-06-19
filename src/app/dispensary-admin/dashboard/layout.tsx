@@ -277,7 +277,7 @@ export default function WellnessAdminDashboardLayout({
                           {currentUser.email}
                         </p>
                         <p className="text-xs leading-none text-primary/90 mt-1 font-medium">
-                          My store panel
+                          My Store Panel
                         </p>
                       </div>
                 </DropdownMenuLabel>
