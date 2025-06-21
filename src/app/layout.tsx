@@ -24,6 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className={`antialiased flex flex-col min-h-screen bg-background text-foreground`}>
+        <video autoPlay loop muted playsInline className="background-video">
+          <source src="/images/treevid.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
         <AuthProvider>
           <CartProvider> {/* Wrap with CartProvider */}
             <Header />
@@ -47,4 +51,3 @@ export default function RootLayout({
     </html>
   );
 }
-
