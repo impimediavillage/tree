@@ -113,6 +113,8 @@ export default function EditProductPage() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [oldImageUrl, setOldImageUrl] = useState<string | null | undefined>(null);
 
+  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
+  const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -135,6 +137,21 @@ export default function EditProductPage() {
     if (product.category === 'Smoking Gear' || product.category === 'Accessories') return 'Smoking Gear';
     return null;
   };
+  
+  useEffect(() => {
+    if (!isThcCbdSpecialType) {
+        setShowProductDetailsForm(true);
+        return;
+    }
+
+    if (selectedProductStream === 'THC') {
+        setShowProductDetailsForm(watchedStickerProgramOptIn === 'yes');
+    } else if (selectedProductStream) { // Any other stream is selected
+        setShowProductDetailsForm(true);
+    } else { // No stream is selected for the special type
+        setShowProductDetailsForm(false);
+    }
+  }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
 
   const fetchWellnessAndProductData = useCallback(async () => {
     if (!currentUser?.dispensaryId || !productId) { 
@@ -616,7 +633,7 @@ export default function EditProductPage() {
                 </FormItem>
             )}
 
-            {selectedProductStream && (
+            {showProductDetailsForm && selectedProductStream && (
             <div className="mt-6 pt-6 border-t">
                 {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                     <>
@@ -636,7 +653,7 @@ export default function EditProductPage() {
                                     name="stickerProgramOptIn"
                                     render={({ field }) => (
                                         <FormItem className="mt-4">
-                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Wellness Tree Promo design inititative?</FormLabel>
+                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                             <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                             <SelectContent>
@@ -786,7 +803,7 @@ export default function EditProductPage() {
                 </div>
             </div>
             )}
-            {!isThcCbdSpecialType && !selectedProductStream && (
+            {!isThcCbdSpecialType && (
                  <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem> <FormLabel>Main Category *</FormLabel>
                     {mainCategoryOptions.length > 0 ? (
@@ -809,7 +826,22 @@ export default function EditProductPage() {
                     <FormMessage />
                 </FormItem> )} />
             )}
-             <CardFooter className="px-0 pt-8"> <div className="flex gap-4 w-full"> <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData || (isThcCbdSpecialType && !selectedProductStream)}> {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes </Button> <Link href="/dispensary-admin/products" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>Cancel</Button></Link> </div> </CardFooter>
+             <CardFooter className="px-0 pt-8">
+                <div className="flex gap-4 w-full">
+                  {showProductDetailsForm && (
+                      <Button type="submit" size="lg" className="flex-1 text-lg" 
+                        disabled={isLoading || isLoadingInitialData || (isThcCbdSpecialType && !selectedProductStream) || (selectedProductStream === 'THC' && watchedStickerProgramOptIn !== 'yes')}
+                      >
+                          {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
+                      </Button>
+                  )}
+                  <Link href="/dispensary-admin/products" passHref legacyBehavior>
+                    <Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading || isLoadingInitialData}>
+                      Cancel
+                    </Button>
+                  </Link>
+                </div>
+             </CardFooter>
           </form>
         </Form>
       </CardContent>
