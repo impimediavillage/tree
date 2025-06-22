@@ -59,13 +59,13 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newStaffUserData);
 
-      toast({ title: "Staff Member Added", description: `${data.displayName} has been added and is pending your approval.` });
+      toast({ title: "Wellness Staff Added", description: `${data.displayName} has been added and is pending your approval.` });
       onUserAdded();
       setIsOpen(false);
       form.reset();
     } catch (error: any) {
       console.error("Error adding staff member:", error);
-      let errorMessage = "Could not add staff member.";
+      let errorMessage = "Could not add wellness staff.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use by another account.";
       } else if (error.code === 'auth/weak-password') {
@@ -80,11 +80,11 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) form.reset({displayName: '', email: '', password: '', status: 'PendingApproval'}); }}>
       <DialogTrigger asChild>
-        <Button variant="outline"><UserPlus className="mr-2 h-4 w-4" /> Add Staff</Button>
+        <Button variant="outline"><UserPlus className="mr-2 h-4 w-4" /> Add Wellness Staff</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Staff Member</DialogTitle>
+          <DialogTitle>Add New Wellness Staff</DialogTitle>
           <DialogDescription>Create an account for a new staff member for your wellness profile. They will start as 'Pending Approval'.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -114,7 +114,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Staff Member
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Wellness Staff
               </Button>
             </DialogFooter>
           </form>
@@ -123,4 +123,3 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
     </Dialog>
   );
 }
-

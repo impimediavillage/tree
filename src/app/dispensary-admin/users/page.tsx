@@ -8,18 +8,21 @@ import { collection, query, where, orderBy, getDocs, doc, updateDoc, serverTimes
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Loader2, Users as UsersIcon, UserPlus, UserCog, Filter, Edit } from 'lucide-react'; 
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter } from 'lucide-react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { UserCard } from '@/components/admin/UserCard'; 
+import { AddUserDialog } from '@/components/admin/AddUserDialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { DispensaryAddStaffDialog } from '@/components/dispensary-admin/DispensaryAddStaffDialog';
 import { DispensaryAddLeafUserDialog } from '@/components/dispensary-admin/DispensaryAddLeafUserDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form'; 
+
 
 const wellnessUserEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
@@ -248,7 +251,7 @@ export default function WellnessManageUsersPage() {
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Add, view, and manage staff and linked Leaf Users for your wellness profile.
+            Add, view, and manage wellness staff and linked Leaf Users for your wellness profile.
           </p>
         </div>
         <div className="flex gap-2">
@@ -320,7 +323,7 @@ export default function WellnessManageUsersPage() {
           <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
           <h3 className="mt-2 text-xl font-semibold">No Users Found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {managedUsers.length === 0 ? "You haven't added any staff or Leaf Users yet." : "No users match your current filters."}
+            {managedUsers.length === 0 ? "You haven't added any wellness staff or Leaf Users yet." : "No users match your current filters."}
           </p>
            {(searchTerm || filterRole !== 'all' || filterStatus !== 'all') && managedUsers.length > 0 && (
             <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setFilterRole('all'); setFilterStatus('all');}}>
@@ -338,4 +341,3 @@ export default function WellnessManageUsersPage() {
     </div>
   );
 }
-
