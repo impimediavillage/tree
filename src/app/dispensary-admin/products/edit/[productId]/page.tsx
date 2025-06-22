@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Cigarette, Flame, Leaf as LeafIconLucide, Palette, Ruler, Sparkles, Brush, Delete, Info } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Palette, Ruler, Brush, Delete, Info } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,6 +68,14 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   }
 };
 
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear';
+
+const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string }> = {
+  'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
+  'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
+  'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
+  'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
+};
 
 export default function EditProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -83,7 +91,7 @@ export default function EditProductPage() {
 
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
-  const [selectedProductStream, setSelectedProductStream] = useState<'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null>(null); 
+  const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
@@ -120,12 +128,12 @@ export default function EditProductPage() {
   });
 
 
-  const determineProductStream = (product: ProductType | null): 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | null => { 
+  const determineProductStream = (product: ProductType | null): StreamKey | null => {
     if (!product || !product.category) return null;
     if (product.category === 'THC' || product.category === 'CBD') return product.category;
-    if (apparelTypes.includes(product.category)) return 'Apparel'; 
-    if (product.category === 'Smoking Gear') return 'Smoking Gear';
-    return null; 
+    if (apparelTypes.includes(product.category)) return 'Apparel';
+    if (product.category === 'Smoking Gear' || product.category === 'Accessories') return 'Smoking Gear';
+    return null;
   };
 
   const fetchWellnessAndProductData = useCallback(async () => {
@@ -235,9 +243,6 @@ export default function EditProductPage() {
           quantityInStock: productData.quantityInStock ?? undefined,
           imageUrl: productData.imageUrl || null,
           labTested: productData.labTested || false,
-          effects: productData.effects || [],
-          flavors: productData.flavors || [],
-          medicalUses: productData.medicalUses || [],
           isAvailableForPool: productData.isAvailableForPool || false,
           tags: productData.tags || [],
           stickerProgramOptIn: productData.stickerProgramOptIn || null,
@@ -436,8 +441,7 @@ export default function EditProductPage() {
     
   };
   
-  const handleProductStreamSelect = (stream: 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear') => { 
-    
+  const handleProductStreamSelect = (stream: StreamKey) => { 
     console.warn("Product stream cannot be changed after creation.");
   };
 
@@ -477,7 +481,7 @@ export default function EditProductPage() {
         });
         
         if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-            try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed:", e); }
+            try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
         }
         setOldImageUrl(finalImageUrl); 
       } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
@@ -485,7 +489,7 @@ export default function EditProductPage() {
       
       try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); }
       catch (e: any) {
-        if (e.code !== 'storage/object-not-found') console.warn("Old image delete failed (on removal):", e);
+        if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed (on removal):", e);
         else {finalImageUrl = null; setOldImageUrl(null);} 
       }
     }
@@ -591,14 +595,8 @@ export default function EditProductPage() {
                         Product Stream
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {(['THC', 'CBD', 'Apparel', 'Smoking Gear'] as const).map((stream) => { 
-                            let IconComponent = PackagePlus;
-                            let iconColor = "text-gray-500";
-                            if (stream === 'THC') { IconComponent = Flame; iconColor = "text-red-500"; }
-                            else if (stream === 'CBD') { IconComponent = LeafIconLucide; iconColor = "text-green-500"; }
-                            else if (stream === 'Apparel') { IconComponent = Shirt; iconColor = "text-blue-500"; } 
-                            else if (stream === 'Smoking Gear') { IconComponent = Cigarette; iconColor = "text-orange-500"; }
-
+                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
+                            const { text, icon: IconComponent, color } = streamDisplayMapping[stream];
                             return (
                                 <Button
                                     key={stream}
@@ -608,8 +606,8 @@ export default function EditProductPage() {
                                     onClick={() => handleProductStreamSelect(stream)}
                                     disabled 
                                 >
-                                    <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", iconColor)} />
-                                    <span className="text-lg sm:text-xl font-semibold">{stream}</span>
+                                    <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} />
+                                    <span className="text-lg sm:text-xl font-semibold">{text}</span>
                                 </Button>
                             );
                         })}
