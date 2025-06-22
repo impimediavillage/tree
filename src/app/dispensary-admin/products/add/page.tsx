@@ -446,7 +446,7 @@ export default function AddProductPage() {
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
     if (selectedProductStream === 'THC' && !data.stickerProgramOptIn) {
-        toast({ title: "Opt-In Required", description: "Please select your choice for the Sticker and Cap Program participation.", variant: "destructive"});
+        toast({ title: "Opt-In Required", description: "Please select your choice for the Wellness Tree Promo design inititative.", variant: "destructive"});
         form.setError("stickerProgramOptIn", {type: "manual", message: "Participation choice is required for THC products."});
         return;
     }
@@ -598,7 +598,7 @@ export default function AddProductPage() {
                         name="stickerProgramOptIn"
                         render={({ field }) => (
                             <FormItem className="mt-4">
-                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
+                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Wellness Tree Promo design inititative? *</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                 <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -763,7 +763,7 @@ export default function AddProductPage() {
                     <AlertTriangle className="h-6 w-6" />
                     <div>
                         <h4 className="font-semibold">Select a Product Stream</h4>
-                        <p className="text-sm">Please choose a primary product stream (THC, CBD, Apparel, or Smoking Gear) to see relevant fields.</p> 
+                        <p className="text-sm">Please choose a primary product stream (Cannibinoid (other), CBD, Apparel, or Accessories) to see relevant fields.</p> 
                     </div>
                 </div>
             )}
