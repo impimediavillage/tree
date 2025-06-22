@@ -72,10 +72,10 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear';
 
 const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string }> = {
-  'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
-  'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
-  'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
-  'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
+    'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
+    'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
+    'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
+    'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
 };
 
 export default function AddProductPage() {
@@ -590,19 +590,20 @@ export default function AddProductPage() {
             {selectedProductStream === 'THC' && (
                 <Card className="mb-6 p-4 border-amber-500 bg-amber-50/50 shadow-sm">
                     <CardHeader className="p-0 pb-2">
-                        <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice for THC Products</CardTitle>
+                        <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice if adding THC Products</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 text-sm text-amber-600 space-y-2">
-                        <p>The Wellness Tree complies with South African Law regarding the trade of THC products. We invite Wellness Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Wellness Tree" sticker designs and cap designs.</p>
-                        <p>Our beautiful sticker and cap range, designed by leading artist Mary Janes Van Vuuren, can be offered through your wellness profile. By opting in, you agree to provide a FREE THC sample with each sticker/cap sold through the platform.</p>
-                        <p className="mt-2 font-semibold">Please remember: Any THC info is purely for recreational knowledge building for Cannibinoid enthusiasts, and is not relevant for Sticker sales.</p>
+                        <p>The Wellness Tree complies with South African Law regarding the trade of THC products. We therefore cannot sell THC product directly, however we invite Wellness Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Wellness Tree" promo design range.</p>
+                        <p>Store owners are welcome to promote our stickers, caps, and t-shirt designs and offer FREE THC samples to share amongst fellow cannabinoid enthusiasts.</p>
+                        <p>By opting in, you agree to provide a FREE THC sample with each Promo design sold through the platform. YOU set the price of the design and add the relative sample amount of product you wish to offer as a free sample. You help us sell our designs. We help You share your garden's wares with fellow enthusiasts.</p>
+                        <p className="mt-2 font-semibold">Please remember: Any THC info is purely for recreational knowledge building for Cannabinoid enthusiasts, and is not relevant for Sticker sales.</p>
                     </CardContent>
                         <FormField
                         control={form.control}
                         name="stickerProgramOptIn"
                         render={({ field }) => (
                             <FormItem className="mt-4">
-                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
+                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Wellness Tree Promo design inititative?</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                 <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -818,4 +819,6 @@ export default function AddProductPage() {
     </Card>
   );
 }
+    
+
     
