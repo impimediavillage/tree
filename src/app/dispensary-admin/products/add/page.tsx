@@ -126,30 +126,25 @@ export default function AddProductPage() {
     name: "priceTiers",
   });
   
-  const [showProductDetailsForm, setShowProductDetailsForm] = useState(false);
+  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
   useEffect(() => {
-    setShowProductDetailsForm(!isThcCbdSpecialType); 
-  }, [isThcCbdSpecialType]);
-
-  useEffect(() => {
-    if (isThcCbdSpecialType) {
-      if (selectedProductStream === 'THC') {
-        if (watchedStickerProgramOptIn === 'no') {
-          setShowProductDetailsForm(false);
-        } else { 
-          setShowProductDetailsForm(true);
-        }
-      } else if (selectedProductStream === 'CBD' || selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') {
-        setShowProductDetailsForm(true);
-      } else { 
-        setShowProductDetailsForm(false);
-      }
-    } else { 
+    if (!isThcCbdSpecialType) {
       setShowProductDetailsForm(true);
+      return;
     }
-  }, [selectedProductStream, watchedStickerProgramOptIn, isThcCbdSpecialType]);
+  
+    if (selectedProductStream === 'THC') {
+      // Only show form fields if user has opted-in
+      setShowProductDetailsForm(watchedStickerProgramOptIn === 'yes');
+    } else if (selectedProductStream) { // Any other stream is selected
+      // For other streams, show the form right away
+      setShowProductDetailsForm(true);
+    } else { // No stream is selected for the special type
+      setShowProductDetailsForm(false);
+    }
+  }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
 
 
   const resetProductStreamSpecificFields = () => {
@@ -603,7 +598,7 @@ export default function AddProductPage() {
                         name="stickerProgramOptIn"
                         render={({ field }) => (
                             <FormItem className="mt-4">
-                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Wellness Tree Promo design inititative?</FormLabel>
+                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                 <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -773,7 +768,7 @@ export default function AddProductPage() {
                 </div>
             )}
             
-            {!isThcCbdSpecialType && showProductDetailsForm && (
+            {!isThcCbdSpecialType && (
                  <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem> <FormLabel>Main Category *</FormLabel>
                   {mainCategoryOptions.length > 0 ? (
@@ -802,7 +797,7 @@ export default function AddProductPage() {
                 <div className="flex gap-4 w-full">
                     {showProductDetailsForm && (
                         <Button type="submit" size="lg" className="flex-1 text-lg"
-                        disabled={isLoading || isLoadingInitialData || (isThcCbdSpecialType && !selectedProductStream) || (selectedProductStream === 'THC' && !watchedStickerProgramOptIn)}
+                        disabled={isLoading || isLoadingInitialData || (isThcCbdSpecialType && !selectedProductStream) || (selectedProductStream === 'THC' && watchedStickerProgramOptIn !== 'yes')}
                         >
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                             Add Product
