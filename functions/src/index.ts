@@ -1,4 +1,5 @@
 
+'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
@@ -10,8 +11,11 @@ import {
 } from "firebase-functions/v2/firestore";
 import { onRequest, Request } from "firebase-functions/v2/https";
 import type { Response } from "express";
-import * as fs from 'fs';
-import * as path from 'path';
+
+// Import the JSON data directly.
+// Make sure the path is relative to this index.ts file.
+import * as seedData from './data/seed-data.json';
+
 
 import type {
   DispensaryDocData,
@@ -983,8 +987,8 @@ export const copyHomeopathicDispensaryCategoriesData = onRequest({ cors: true },
 
 /**
  * HTTP-callable function to seed a Firestore collection from a large JSON file.
- * Place your JSON file at `functions/src/data/seed-data.json`.
- * The JSON file should be an array of objects.
+ * This function now imports the JSON file at build time, so it must be placed
+ * at `functions/src/data/seed-data.json`.
  */
 export const seedLargeCollection = onRequest({
     timeoutSeconds: 540,
@@ -997,46 +1001,39 @@ export const seedLargeCollection = onRequest({
     try {
         logger.info(`Starting Firestore seed for collection: ${COLLECTION_NAME}`);
 
-        // The path is relative to the compiled 'lib' directory in the deployed function
-        const dataPath = path.join(__dirname, 'data/seed-data.json');
-        
-        if (!fs.existsSync(dataPath)) {
-            const errorMsg = "Seed file not found at 'functions/lib/data/seed-data.json'. Please ensure 'functions/src/data/seed-data.json' exists and was deployed.";
-            logger.error(errorMsg);
-            res.status(500).send({ success: false, message: errorMsg });
-            return;
-        }
-
-        const jsonData = fs.readFileSync(dataPath, 'utf-8');
-        const data: any[] = JSON.parse(jsonData);
+        // The JSON data is imported directly into the function.
+        // The `?? seedData` is a fallback for different module interop settings.
+        const data: any[] = (seedData as any).default ?? seedData;
 
         if (!Array.isArray(data)) {
-            throw new Error("JSON data is not an array of objects.");
+            throw new Error("Imported data from seed-data.json is not an array of objects.");
         }
 
         logger.info(`Found ${data.length} documents to seed.`);
 
         const collectionRef = db.collection(COLLECTION_NAME);
         let batch = db.batch();
-        let writeCount = 0;
+        let writeCountInBatch = 0;
+        let totalWritten = 0;
 
         for (let i = 0; i < data.length; i++) {
             const docData = data[i];
             const docRef = collectionRef.doc(); // Auto-generate document ID
             batch.set(docRef, docData);
+            writeCountInBatch++;
 
-            if ((i + 1) % BATCH_SIZE === 0 || i === data.length - 1) {
+            if (writeCountInBatch === BATCH_SIZE || i === data.length - 1) {
                 await batch.commit();
-                const currentBatchSize = (i % BATCH_SIZE) + 1;
-                writeCount += currentBatchSize;
-                logger.info(`Committed batch of ${currentBatchSize}, total documents written: ${writeCount}`);
+                totalWritten += writeCountInBatch;
+                logger.info(`Committed batch of ${writeCountInBatch} documents. Total written: ${totalWritten}`);
                 batch = db.batch(); // Start a new batch
+                writeCountInBatch = 0; // Reset counter
             }
         }
 
-        const successMsg = `Successfully seeded ${data.length} documents into the '${COLLECTION_NAME}' collection.`;
+        const successMsg = `Successfully seeded ${totalWritten} documents into the '${COLLECTION_NAME}' collection.`;
         logger.info(successMsg);
-        res.status(200).send({ success: true, message: successMsg, documentsSeeded: data.length });
+        res.status(200).send({ success: true, message: successMsg, documentsSeeded: totalWritten });
 
     } catch (error: any) {
         logger.error(`Error seeding Firestore collection '${COLLECTION_NAME}':`, error);
