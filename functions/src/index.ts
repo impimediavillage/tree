@@ -639,7 +639,7 @@ export const onPoolIssueCreated = onDocumentCreated(
  * HTTP-callable function to deduct credits and log AI interaction.
  */
 export const deductCreditsAndLogInteraction = functions.https.onRequest(
-  async (req, res) => {
+  async (req: functions.https.Request, res: ExpressResponse) => {
     if (req.method === "OPTIONS") {
       res.set("Access-Control-Allow-Origin", "*");
       res.set("Access-Control-Allow-Methods", "POST");
@@ -765,7 +765,7 @@ export const deductCreditsAndLogInteraction = functions.https.onRequest(
  * HTTP-callable function to seed a sample dispensary.
  * Also creates an auth user for the dispensary owner if one doesn't exist.
  */
-export const seedSampleDispensary = functions.https.onRequest(async (req, res) => {
+export const seedSampleDispensary = functions.https.onRequest(async (req: functions.https.Request, res: ExpressResponse) => {
   res.set("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") {
     res.set("Access-Control-Allow-Methods", "GET");
@@ -870,7 +870,7 @@ export const seedSampleDispensary = functions.https.onRequest(async (req, res) =
 /**
  * HTTP-callable function to seed sample users.
  */
-export const seedSampleUsers = functions.https.onRequest(async (req, res) => {
+export const seedSampleUsers = functions.https.onRequest(async (req: functions.https.Request, res: ExpressResponse) => {
   res.set("Access-Control-Allow-Origin", "*");
   if (req.method === "OPTIONS") {
     res.set("Access-Control-Allow-Methods", "GET");
@@ -1003,7 +1003,7 @@ async function copyDocumentContent(
 /**
  * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
  */
-export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
+export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req: functions.https.Request, res: ExpressResponse) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
 });
 
@@ -1011,7 +1011,7 @@ export const copyDispensaryTypeCategoriesData = functions.https.onRequest(async 
 /**
  * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
  */
-export const copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
+export const copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req: functions.https.Request, res: ExpressResponse) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
 });
 
@@ -1019,7 +1019,7 @@ export const copyMushroomDispensaryCategoriesData = functions.https.onRequest(as
 /**
  * HTTP-callable Firebase Function to copy data from 'Homeopathic dispensary' to 'Homeopathic store'.
  */
-export const copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
+export const copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(async (req: functions.https.Request, res: ExpressResponse) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
 });
     
@@ -1032,7 +1032,7 @@ export const copyHomeopathicDispensaryCategoriesData = functions.https.onRequest
 export const seedLargeCollection = functions.runWith({
     timeoutSeconds: 540, // Max timeout
     memory: '1GB'       // Increase memory for large file processing
-}).https.onRequest(async (req, res) => {
+}).https.onRequest(async (req: functions.https.Request, res: ExpressResponse) => {
     res.set("Access-Control-Allow-Origin", "*");
     if (req.method === "OPTIONS") {
         res.set("Access-Control-Allow-Methods", "GET");
