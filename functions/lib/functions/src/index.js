@@ -36,12 +36,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.copyHomeopathicDispensaryCategoriesData = exports.copyMushroomDispensaryCategoriesData = exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.seedLargeCollection = exports.copyHomeopathicDispensaryCategoriesData = exports.copyMushroomDispensaryCategoriesData = exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
 const firestore_1 = require("firebase-functions/v2/firestore");
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
@@ -900,5 +902,67 @@ exports.copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (
  */
 exports.copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
+});
+/**
+ * HTTP-callable function to seed a Firestore collection from a large JSON file.
+ * Place your JSON file at `functions/src/data/seed-data.json`.
+ * The JSON file should be an array of objects.
+ */
+exports.seedLargeCollection = functions.runWith({
+    timeoutSeconds: 540, // Max timeout
+    memory: '1GB' // Increase memory for large file processing
+}).https.onRequest(async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    if (req.method === "OPTIONS") {
+        res.set("Access-Control-Allow-Methods", "GET");
+        res.set("Access-Control-Allow-Headers", "Content-Type");
+        res.status(204).send("");
+        return;
+    }
+    const COLLECTION_NAME = "my-seeded-collection"; // You can change this
+    const BATCH_SIZE = 400; // Firestore batch limit is 500, using 400 for safety.
+    try {
+        logger.info(`Starting Firestore seed for collection: ${COLLECTION_NAME}`);
+        // The path is relative to the compiled 'lib' directory in the deployed function
+        const dataPath = path.join(__dirname, 'data/seed-data.json');
+        if (!fs.existsSync(dataPath)) {
+            const errorMsg = "Seed file not found at 'functions/lib/data/seed-data.json'. Please ensure 'functions/src/data/seed-data.json' exists and was deployed.";
+            logger.error(errorMsg);
+            res.status(500).json({ success: false, message: errorMsg });
+            return;
+        }
+        const jsonData = fs.readFileSync(dataPath, 'utf-8');
+        const data = JSON.parse(jsonData);
+        if (!Array.isArray(data)) {
+            throw new Error("JSON data is not an array of objects.");
+        }
+        logger.info(`Found ${data.length} documents to seed.`);
+        const collectionRef = db.collection(COLLECTION_NAME);
+        let batch = db.batch();
+        let writeCount = 0;
+        for (let i = 0; i < data.length; i++) {
+            const docData = data[i];
+            const docRef = collectionRef.doc(); // Auto-generate document ID
+            batch.set(docRef, docData);
+            if ((i + 1) % BATCH_SIZE === 0 || i === data.length - 1) {
+                await batch.commit();
+                const currentBatchSize = (i % BATCH_SIZE) + 1;
+                writeCount += currentBatchSize;
+                logger.info(`Committed batch of ${currentBatchSize}, total documents written: ${writeCount}`);
+                batch = db.batch(); // Start a new batch
+            }
+        }
+        const successMsg = `Successfully seeded ${data.length} documents into the '${COLLECTION_NAME}' collection.`;
+        logger.info(successMsg);
+        res.status(200).json({ success: true, message: successMsg, documentsSeeded: data.length });
+    }
+    catch (error) {
+        logger.error(`Error seeding Firestore collection '${COLLECTION_NAME}':`, error);
+        res.status(500).json({
+            success: false,
+            message: "An error occurred during the seeding process.",
+            errorDetails: (error instanceof Error) ? error.message : "Unknown error"
+        });
+    }
 });
 //# sourceMappingURL=index.js.map
