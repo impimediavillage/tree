@@ -674,15 +674,15 @@ export default function EditProductPage() {
                             <FormItem> <FormLabel>Product Type *</FormLabel>
                             <Select 
                                 onValueChange={(value) => {
-                                    field.onChange(value === "none" ? null : value);
-                                    setSelectedDeliveryMethod(value === "none" ? null : value);
+                                    field.onChange(value === "other" ? null : value);
+                                    setSelectedDeliveryMethod(value === "other" ? null : value);
                                 }} 
                                 value={field.value ?? undefined}
                             >
-                                <FormControl><SelectTrigger><SelectValue placeholder={`Select Product Type for ${selectedProductStream}`} /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
                                     {deliveryMethodOptions.map((method) => ( <SelectItem key={method} value={method}>{method}</SelectItem> ))}
+                                    <SelectItem value="other">Other</SelectItem>
                                 </SelectContent>
                             </Select> <FormMessage />
                             </FormItem> )} />
