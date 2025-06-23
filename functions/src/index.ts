@@ -8,7 +8,8 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onRequest, Request, Response } from "firebase-functions/v2/https";
+import { onRequest, Request } from "firebase-functions/v2/https";
+import type { Response } from "express";
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -987,7 +988,7 @@ export const copyHomeopathicDispensaryCategoriesData = onRequest({ cors: true },
  */
 export const seedLargeCollection = onRequest({
     timeoutSeconds: 540,
-    memory: '1GiB', // Corrected memory format
+    memory: '1GiB', 
     cors: true,
 }, async (req: Request, res: Response) => {
     const COLLECTION_NAME = "my-seeded-collection"; // You can change this

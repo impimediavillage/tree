@@ -555,17 +555,10 @@ exports.onPoolIssueCreated = (0, firestore_1.onDocumentCreated)("poolIssues/{iss
 /**
  * HTTP-callable function to deduct credits and log AI interaction.
  */
-exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)(async (req, res) => {
-    if (req.method === "OPTIONS") {
-        res.set("Access-Control-Allow-Origin", "*");
-        res.set("Access-Control-Allow-Methods", "POST");
-        res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        res.status(204).send("");
-        return;
-    }
-    res.set("Access-Control-Allow-Origin", "*");
+exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)({ cors: true }, // Gen 2 CORS configuration
+async (req, res) => {
     if (req.method !== "POST") {
-        res.status(405).json({ error: "Method Not Allowed" });
+        res.status(405).send({ error: "Method Not Allowed" });
         return;
     }
     const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction, } = req.body;
@@ -573,7 +566,7 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)(async (req, res)
         !advisorSlug ||
         creditsToDeduct === undefined ||
         wasFreeInteraction === undefined) {
-        res.status(400).json({
+        res.status(400).send({
             error: "Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction",
         });
         return;
@@ -613,7 +606,7 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)(async (req, res)
         };
         await db.collection("aiInteractionsLog").add(logEntry);
         logger.info(`Logged AI interaction for user ${userId}, advisor ${advisorSlug}.`);
-        res.status(200).json({
+        res.status(200).send({
             success: true,
             message: "Credits updated and interaction logged successfully.",
             newCredits: newCreditBalance,
@@ -622,10 +615,10 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)(async (req, res)
     catch (error) {
         logger.error("Error in deductCreditsAndLogInteraction:", error);
         if (error instanceof HttpError) {
-            res.status(error.httpStatus).json({ error: error.message, code: error.code });
+            res.status(error.httpStatus).send({ error: error.message, code: error.code });
         }
         else {
-            res.status(500).json({ error: "Internal server error." });
+            res.status(500).send({ error: "Internal server error." });
         }
     }
 });
@@ -633,14 +626,7 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)(async (req, res)
  * HTTP-callable function to seed a sample dispensary.
  * Also creates an auth user for the dispensary owner if one doesn't exist.
  */
-exports.seedSampleDispensary = (0, https_1.onRequest)(async (req, res) => {
-    res.set("Access-Control-Allow-Origin", "*");
-    if (req.method === "OPTIONS") {
-        res.set("Access-Control-Allow-Methods", "GET");
-        res.set("Access-Control-Allow-Headers", "Content-Type");
-        res.status(204).send("");
-        return;
-    }
+exports.seedSampleDispensary = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
     const dispensaryRef = db.collection('dispensaries').doc("sample-dispensary-01");
     const authAdmin = admin.auth();
     const sampleDispensaryData = {
@@ -715,14 +701,14 @@ exports.seedSampleDispensary = (0, https_1.onRequest)(async (req, res) => {
         };
         await ownerUserDocRef.set(ownerFirestoreUserData, { merge: true });
         logger.info(`Successfully created/updated Firestore document for dispensary owner: ${ownerUserRecord.uid}`);
-        res.status(200).json({
+        res.status(200).send({
             success: true,
             message: `Dispensary '${sampleDispensaryData.dispensaryName || 'Unnamed'}' seeded/updated successfully. Auth user for owner ${ownerUserEmail} created/verified.`
         });
     }
     catch (error) {
         logger.error("Error seeding dispensary and owner auth user:", error);
-        res.status(500).json({
+        res.status(500).send({
             success: false,
             message: "Error seeding dispensary and/or owner auth user.",
             errorDetails: error.message
@@ -732,14 +718,7 @@ exports.seedSampleDispensary = (0, https_1.onRequest)(async (req, res) => {
 /**
  * HTTP-callable function to seed sample users.
  */
-exports.seedSampleUsers = (0, https_1.onRequest)(async (req, res) => {
-    res.set("Access-Control-Allow-Origin", "*");
-    if (req.method === "OPTIONS") {
-        res.set("Access-Control-Allow-Methods", "GET");
-        res.set("Access-Control-Allow-Headers", "Content-Type");
-        res.status(204).send("");
-        return;
-    }
+exports.seedSampleUsers = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
     const authAdmin = admin.auth();
     const usersToCreate = [
         { email: "leafuser1@example.com", password: "LeafPass123!", displayName: "Leaf User One" },
@@ -794,7 +773,7 @@ exports.seedSampleUsers = (0, https_1.onRequest)(async (req, res) => {
         }
     }
     const allSuccessful = results.every(r => r.success);
-    res.status(allSuccessful ? 200 : 207).json({
+    res.status(allSuccessful ? 200 : 207).send({
         message: allSuccessful ? "All sample users seeded successfully." : "Some sample users may not have been seeded correctly. Check logs.",
         results,
     });
@@ -803,7 +782,6 @@ exports.seedSampleUsers = (0, https_1.onRequest)(async (req, res) => {
  * Generic HTTP-callable Firebase Function to copy data from one document to another within the same collection.
  */
 async function copyDocumentContent(req, res, collectionName, sourceDocId, targetDocId) {
-    res.set("Access-Control-Allow-Origin", "*");
     try {
         logger.info(`Starting copy from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
         const sourceDocRef = db.collection(collectionName).doc(sourceDocId);
@@ -811,13 +789,13 @@ async function copyDocumentContent(req, res, collectionName, sourceDocId, target
         const sourceDoc = await sourceDocRef.get();
         if (!sourceDoc.exists) {
             logger.error(`Source document '${collectionName}/${sourceDocId}' does not exist.`);
-            res.status(404).json({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'. Ensure the source document ID is correct and case-sensitive.` });
+            res.status(404).send({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'. Ensure the source document ID is correct and case-sensitive.` });
             return;
         }
         const sourceData = sourceDoc.data();
         if (!sourceData) {
             logger.error(`Source document '${collectionName}/${sourceDocId}' has no data.`);
-            res.status(404).json({ success: false, message: `Source document '${sourceDocId}' has no data.` });
+            res.status(404).send({ success: false, message: `Source document '${sourceDocId}' has no data.` });
             return;
         }
         const dataToCopy = {
@@ -827,7 +805,7 @@ async function copyDocumentContent(req, res, collectionName, sourceDocId, target
         };
         await targetDocRef.set(dataToCopy, { merge: true });
         logger.info(`Successfully copied data from '${collectionName}/${sourceDocId}' to '${collectionName}/${targetDocId}'.`);
-        res.status(200).json({
+        res.status(200).send({
             success: true,
             message: `Data successfully copied from '${sourceDocId}' to '${targetDocId}' in '${collectionName}'. Target document now contains the source data and a 'copiedAt' timestamp.`,
             sourceDataCopied: sourceData
@@ -835,7 +813,7 @@ async function copyDocumentContent(req, res, collectionName, sourceDocId, target
     }
     catch (error) {
         logger.error(`Error copying document in ${collectionName} from ${sourceDocId} to ${targetDocId}:`, error);
-        res.status(500).json({
+        res.status(500).send({
             success: false,
             message: "An error occurred while copying the document.",
             errorDetails: (error instanceof Error) ? error.message : "Unknown error"
@@ -845,19 +823,19 @@ async function copyDocumentContent(req, res, collectionName, sourceDocId, target
 /**
  * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
  */
-exports.copyDispensaryTypeCategoriesData = (0, https_1.onRequest)(async (req, res) => {
+exports.copyDispensaryTypeCategoriesData = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
 });
 /**
  * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
  */
-exports.copyMushroomDispensaryCategoriesData = (0, https_1.onRequest)(async (req, res) => {
+exports.copyMushroomDispensaryCategoriesData = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
 });
 /**
  * HTTP-callable Firebase Function to copy data from 'Homeopathic dispensary' to 'Homeopathic store'.
  */
-exports.copyHomeopathicDispensaryCategoriesData = (0, https_1.onRequest)(async (req, res) => {
+exports.copyHomeopathicDispensaryCategoriesData = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
 });
 /**
@@ -867,15 +845,9 @@ exports.copyHomeopathicDispensaryCategoriesData = (0, https_1.onRequest)(async (
  */
 exports.seedLargeCollection = (0, https_1.onRequest)({
     timeoutSeconds: 540,
-    memory: '1GB'
+    memory: '1GiB', // Corrected memory format
+    cors: true,
 }, async (req, res) => {
-    res.set("Access-Control-Allow-Origin", "*");
-    if (req.method === "OPTIONS") {
-        res.set("Access-Control-Allow-Methods", "GET");
-        res.set("Access-Control-Allow-Headers", "Content-Type");
-        res.status(204).send("");
-        return;
-    }
     const COLLECTION_NAME = "my-seeded-collection"; // You can change this
     const BATCH_SIZE = 400; // Firestore batch limit is 500, using 400 for safety.
     try {
@@ -885,7 +857,7 @@ exports.seedLargeCollection = (0, https_1.onRequest)({
         if (!fs.existsSync(dataPath)) {
             const errorMsg = "Seed file not found at 'functions/lib/data/seed-data.json'. Please ensure 'functions/src/data/seed-data.json' exists and was deployed.";
             logger.error(errorMsg);
-            res.status(500).json({ success: false, message: errorMsg });
+            res.status(500).send({ success: false, message: errorMsg });
             return;
         }
         const jsonData = fs.readFileSync(dataPath, 'utf-8');
@@ -911,11 +883,11 @@ exports.seedLargeCollection = (0, https_1.onRequest)({
         }
         const successMsg = `Successfully seeded ${data.length} documents into the '${COLLECTION_NAME}' collection.`;
         logger.info(successMsg);
-        res.status(200).json({ success: true, message: successMsg, documentsSeeded: data.length });
+        res.status(200).send({ success: true, message: successMsg, documentsSeeded: data.length });
     }
     catch (error) {
         logger.error(`Error seeding Firestore collection '${COLLECTION_NAME}':`, error);
-        res.status(500).json({
+        res.status(500).send({
             success: false,
             message: "An error occurred during the seeding process.",
             errorDetails: (error instanceof Error) ? error.message : "Unknown error"
