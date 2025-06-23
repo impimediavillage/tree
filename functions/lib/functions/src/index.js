@@ -38,7 +38,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedLargeCollection = exports.copyHomeopathicDispensaryCategoriesData = exports.copyMushroomDispensaryCategoriesData = exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
-const functions = __importStar(require("firebase-functions"));
+const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
 const firestore_1 = require("firebase-functions/v2/firestore");
