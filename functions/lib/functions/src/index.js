@@ -38,12 +38,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.seedLargeCollection = exports.copyHomeopathicDispensaryCategoriesData = exports.copyMushroomDispensaryCategoriesData = exports.copyDispensaryTypeCategoriesData = exports.seedSampleUsers = exports.seedSampleDispensary = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
-const functions = __importStar(require("firebase-functions/v1"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
 const firestore_1 = require("firebase-functions/v2/firestore");
+const https_1 = require("firebase-functions/v2/https");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+/**
+ * Custom error class for HTTP functions to propagate status codes.
+ */
+class HttpError extends Error {
+    constructor(httpStatus, message, code) {
+        super(message);
+        this.httpStatus = httpStatus;
+        this.message = message;
+        this.code = code;
+        this.name = 'HttpError';
+    }
+}
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
@@ -543,7 +555,7 @@ exports.onPoolIssueCreated = (0, firestore_1.onDocumentCreated)("poolIssues/{iss
 /**
  * HTTP-callable function to deduct credits and log AI interaction.
  */
-exports.deductCreditsAndLogInteraction = functions.https.onRequest(async (req, res) => {
+exports.deductCreditsAndLogInteraction = (0, https_1.onRequest)(async (req, res) => {
     if (req.method === "OPTIONS") {
         res.set("Access-Control-Allow-Origin", "*");
         res.set("Access-Control-Allow-Methods", "POST");
@@ -573,11 +585,11 @@ exports.deductCreditsAndLogInteraction = functions.https.onRequest(async (req, r
             await db.runTransaction(async (transaction) => {
                 const userDoc = await transaction.get(userRef);
                 if (!userDoc.exists) {
-                    throw new functions.https.HttpsError("not-found", "User not found.");
+                    throw new HttpError(404, "User not found.", "not-found");
                 }
                 const currentCredits = userDoc.data()?.credits || 0;
                 if (currentCredits < creditsToDeduct) {
-                    throw new functions.https.HttpsError("failed-precondition", "Insufficient credits.");
+                    throw new HttpError(400, "Insufficient credits.", "failed-precondition");
                 }
                 newCreditBalance = currentCredits - creditsToDeduct;
                 transaction.update(userRef, { credits: newCreditBalance });
@@ -587,7 +599,7 @@ exports.deductCreditsAndLogInteraction = functions.https.onRequest(async (req, r
         else {
             const userDoc = await userRef.get();
             if (!userDoc.exists) {
-                throw new functions.https.HttpsError("not-found", "User not found for free interaction logging.");
+                throw new HttpError(404, "User not found for free interaction logging.", "not-found");
             }
             newCreditBalance = userDoc.data()?.credits || 0;
             logger.info(`Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`);
@@ -609,63 +621,8 @@ exports.deductCreditsAndLogInteraction = functions.https.onRequest(async (req, r
     }
     catch (error) {
         logger.error("Error in deductCreditsAndLogInteraction:", error);
-        if (error instanceof functions.https.HttpsError) {
-            let httpStatus = 500;
-            switch (error.code) {
-                case "ok":
-                    httpStatus = 200;
-                    break;
-                case "cancelled":
-                    httpStatus = 499;
-                    break;
-                case "unknown":
-                    httpStatus = 500;
-                    break;
-                case "invalid-argument":
-                    httpStatus = 400;
-                    break;
-                case "deadline-exceeded":
-                    httpStatus = 504;
-                    break;
-                case "not-found":
-                    httpStatus = 404;
-                    break;
-                case "already-exists":
-                    httpStatus = 409;
-                    break;
-                case "permission-denied":
-                    httpStatus = 403;
-                    break;
-                case "resource-exhausted":
-                    httpStatus = 429;
-                    break;
-                case "failed-precondition":
-                    httpStatus = 400;
-                    break;
-                case "aborted":
-                    httpStatus = 409;
-                    break;
-                case "out-of-range":
-                    httpStatus = 400;
-                    break;
-                case "unimplemented":
-                    httpStatus = 501;
-                    break;
-                case "internal":
-                    httpStatus = 500;
-                    break;
-                case "unavailable":
-                    httpStatus = 503;
-                    break;
-                case "data-loss":
-                    httpStatus = 500;
-                    break;
-                case "unauthenticated":
-                    httpStatus = 401;
-                    break;
-                default: httpStatus = 500;
-            }
-            res.status(httpStatus).json({ error: error.message, code: error.code });
+        if (error instanceof HttpError) {
+            res.status(error.httpStatus).json({ error: error.message, code: error.code });
         }
         else {
             res.status(500).json({ error: "Internal server error." });
@@ -676,7 +633,7 @@ exports.deductCreditsAndLogInteraction = functions.https.onRequest(async (req, r
  * HTTP-callable function to seed a sample dispensary.
  * Also creates an auth user for the dispensary owner if one doesn't exist.
  */
-exports.seedSampleDispensary = functions.https.onRequest(async (req, res) => {
+exports.seedSampleDispensary = (0, https_1.onRequest)(async (req, res) => {
     res.set("Access-Control-Allow-Origin", "*");
     if (req.method === "OPTIONS") {
         res.set("Access-Control-Allow-Methods", "GET");
@@ -775,7 +732,7 @@ exports.seedSampleDispensary = functions.https.onRequest(async (req, res) => {
 /**
  * HTTP-callable function to seed sample users.
  */
-exports.seedSampleUsers = functions.https.onRequest(async (req, res) => {
+exports.seedSampleUsers = (0, https_1.onRequest)(async (req, res) => {
     res.set("Access-Control-Allow-Origin", "*");
     if (req.method === "OPTIONS") {
         res.set("Access-Control-Allow-Methods", "GET");
@@ -888,19 +845,19 @@ async function copyDocumentContent(req, res, collectionName, sourceDocId, target
 /**
  * HTTP-callable Firebase Function to copy data from 'THC - CBD - Mushrooms dispensary' to 'Cannibinoid Store'.
  */
-exports.copyDispensaryTypeCategoriesData = functions.https.onRequest(async (req, res) => {
+exports.copyDispensaryTypeCategoriesData = (0, https_1.onRequest)(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid Store");
 });
 /**
  * HTTP-callable Firebase Function to copy data from 'Mushroom dispensary' to 'Mushroom store'.
  */
-exports.copyMushroomDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
+exports.copyMushroomDispensaryCategoriesData = (0, https_1.onRequest)(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
 });
 /**
  * HTTP-callable Firebase Function to copy data from 'Homeopathic dispensary' to 'Homeopathic store'.
  */
-exports.copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(async (req, res) => {
+exports.copyHomeopathicDispensaryCategoriesData = (0, https_1.onRequest)(async (req, res) => {
     await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
 });
 /**
@@ -908,10 +865,10 @@ exports.copyHomeopathicDispensaryCategoriesData = functions.https.onRequest(asyn
  * Place your JSON file at `functions/src/data/seed-data.json`.
  * The JSON file should be an array of objects.
  */
-exports.seedLargeCollection = functions.runWith({
-    timeoutSeconds: 540, // Max timeout
-    memory: '1GB' // Increase memory for large file processing
-}).https.onRequest(async (req, res) => {
+exports.seedLargeCollection = (0, https_1.onRequest)({
+    timeoutSeconds: 540,
+    memory: '1GB'
+}, async (req, res) => {
     res.set("Access-Control-Allow-Origin", "*");
     if (req.method === "OPTIONS") {
         res.set("Access-Control-Allow-Methods", "GET");
