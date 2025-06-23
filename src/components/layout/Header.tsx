@@ -62,7 +62,10 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
-            <Link href="/browse-dispensary-types">Browse stores</Link>
+            <Link href="/browse-dispensary-types">
+                <span className="sm:hidden">Browse</span>
+                <span className="hidden sm:inline">Browse stores</span>
+            </Link>
           </Button>
 
           <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2" />
