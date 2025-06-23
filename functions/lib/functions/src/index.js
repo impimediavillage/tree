@@ -845,7 +845,7 @@ exports.copyHomeopathicDispensaryCategoriesData = (0, https_1.onRequest)({ cors:
  */
 exports.seedLargeCollection = (0, https_1.onRequest)({
     timeoutSeconds: 540,
-    memory: '1GiB', // Corrected memory format
+    memory: '1GiB',
     cors: true,
 }, async (req, res) => {
     const COLLECTION_NAME = "my-seeded-collection"; // You can change this
