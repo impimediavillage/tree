@@ -1,6 +1,6 @@
 
 import * as logger from "firebase-functions/logger";
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
 import type { Response as ExpressResponse } from 'express'; // For V1 HTTP function response type
