@@ -653,7 +653,7 @@ export default function EditProductPage() {
                                     name="stickerProgramOptIn"
                                     render={({ field }) => (
                                         <FormItem className="mt-4">
-                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Sticker and Cap Program & THC Gifting? *</FormLabel>
+                                        <FormLabel className="text-md font-semibold text-amber-700">Participate in Wellness Tree Promo design initiative? *</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                             <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
                                             <SelectContent>
@@ -671,7 +671,7 @@ export default function EditProductPage() {
                         
                         {deliveryMethodOptions.length > 0 && (
                         <FormField control={form.control} name="subcategory" render={({ field }) => (
-                            <FormItem> <FormLabel>Delivery Method *</FormLabel>
+                            <FormItem> <FormLabel>Product Type *</FormLabel>
                             <Select 
                                 onValueChange={(value) => {
                                     field.onChange(value === "none" ? null : value);
@@ -679,7 +679,7 @@ export default function EditProductPage() {
                                 }} 
                                 value={field.value ?? undefined}
                             >
-                                <FormControl><SelectTrigger><SelectValue placeholder={`Select Delivery Method for ${selectedProductStream}`} /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger><SelectValue placeholder={`Select Product Type for ${selectedProductStream}`} /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="none">None</SelectItem>
                                     {deliveryMethodOptions.map((method) => ( <SelectItem key={method} value={method}>{method}</SelectItem> ))}
