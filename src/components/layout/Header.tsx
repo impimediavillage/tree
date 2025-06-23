@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Trees, UserCircle, LogIn, LogOut, LayoutDashboard, Settings, ShoppingCart, Briefcase, Loader2, DollarSign } from 'lucide-react';
+import { Trees, UserCircle, LogOut, LayoutDashboard, Settings, ShoppingCart, Briefcase, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -58,12 +58,11 @@ export function Header() {
         <nav className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
             <Link href="/dashboard/leaf/credits">
-                <DollarSign className="mr-1.5 h-4 w-4 sm:mr-2 sm:h-5 sm:w-5" />
                 Pricing
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
-            <Link href="/browse-dispensary-types">Browse Wellness Stores</Link>
+            <Link href="/browse-dispensary-types">Browse stores</Link>
           </Button>
 
           <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2" />
@@ -130,10 +129,10 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="outline" size="sm" asChild className="ml-1">
-              <Link href="/auth/signin">
-                <LogIn className="mr-2 h-4 w-4" /> Login
-              </Link>
+             <Button variant="ghost" size="icon" asChild className="ml-1 text-muted-foreground hover:text-primary hover:bg-primary/10">
+                <Link href="/auth/signin" aria-label="Login or create account">
+                    <UserCircle className="h-6 w-6" />
+                </Link>
             </Button>
           )}
         </nav>
