@@ -195,6 +195,9 @@ export const productSchema = z.object({
   subcategory: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
   
+  productType: z.string().optional().nullable(), // For Sativa/Indica/Hybrid
+  mostCommonTerpene: z.string().optional().nullable(),
+
   strain: z.string().optional().nullable(),
   thcContent: z.coerce.number().min(0).max(100).optional().nullable(),
   cbdContent: z.coerce.number().min(0).max(100).optional().nullable(),
@@ -393,6 +396,7 @@ export type Notification = z.infer<typeof notificationSchema>;
 
 
 export const aiInteractionLogSchema = z.object({
+  id: z.string().optional(),
   userId: z.string(),
   advisorSlug: z.string(),
   creditsUsed: z.number().int().min(0),
@@ -488,7 +492,7 @@ export type CreditPackage = z.infer<typeof creditPackageDbSchema>;
 export const aiAdvisorConfigSchema = z.object({
   id: z.string().optional(),
   slug: z.string(),
-  title: z.string(),
+  title: string,
   description: z.string(),
   icon: z.string().optional().nullable(),
   flowName: z.string(),

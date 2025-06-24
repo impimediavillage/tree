@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Palette, Ruler, Brush, Delete, Info } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Palette, Ruler, Brush, Delete, Info, Search as SearchIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,6 +77,52 @@ const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.Elemen
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
 };
 
+const effectKeys = ["anxious", "aroused", "creative", "dizzy", "dry_eyes", "dry_mouth", "energetic", "euphoric", "focus", "giggly", "happy", "headach", "hungry", "lack_of_appetite", "relaxed", "sleepy", "talkative", "tingly", "uplifted"];
+const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
+
+
+const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => void }> = ({ strainData, onSelect }) => {
+    if (!strainData) return null;
+    const { name, type, description, thc_level, most_common_terpene } = strainData;
+    
+    const getAttributesWithBadges = (keys: string[], data: any) => {
+        return keys.map(key => {
+            const value = data[key];
+            if (value && typeof value === 'number' && value > 0) {
+                const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                return (
+                    <Badge key={key} variant="secondary" className="text-xs font-normal">
+                        {formattedKey} <span className="ml-1.5 font-semibold text-primary">{value}%</span>
+                    </Badge>
+                );
+            }
+            return null;
+        }).filter(Boolean);
+    };
+
+    const effectBadges = getAttributesWithBadges(effectKeys, strainData);
+    const medicalBadges = getAttributesWithBadges(medicalKeys, strainData);
+
+    return (
+        <Card className="mt-4 bg-muted/30">
+            <CardHeader>
+                <CardTitle>Selected Strain: {name}</CardTitle>
+                <CardDescription>Review the details below. This data will populate the form.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+                {description && <p><strong>Description:</strong> {description}</p>}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {type && <p><strong>Type:</strong> <Badge variant="outline">{type}</Badge></p>}
+                    {thc_level && <p><strong>THC:</strong> <Badge variant="outline">{thc_level}%</Badge></p>}
+                    {most_common_terpene && <p><strong>Top Terpene:</strong> <Badge variant="outline">{most_common_terpene}</Badge></p>}
+                </div>
+                {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
+                {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
+            </CardContent>
+        </Card>
+    );
+};
+
 export default function EditProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -116,6 +162,11 @@ export default function EditProductPage() {
   const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
+  const [strainQuery, setStrainQuery] = useState('');
+  const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
+  const [isFetchingStrain, setIsFetchingStrain] = useState(false);
+  const [selectedStrainData, setSelectedStrainData] = useState<any | null>(null);
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -152,6 +203,50 @@ export default function EditProductPage() {
         setShowProductDetailsForm(false);
     }
   }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
+
+  const handleFetchStrainInfo = async () => {
+    if (!strainQuery.trim()) return;
+    setIsFetchingStrain(true);
+    setStrainSearchResults([]);
+    setSelectedStrainData(null);
+    try {
+        const q = query(
+            collection(db, 'my-seeded-collection'),
+            where('name', '>=', strainQuery.trim()),
+            where('name', '<=', strainQuery.trim() + '\uf8ff'),
+            limit(10)
+        );
+        const querySnapshot = await getDocs(q);
+        const results = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setStrainSearchResults(results);
+        if (results.length === 0) {
+            toast({ title: "No strains found", description: "No exact or similar strain names found in the database. Please check spelling or enter manually.", variant: "default" });
+        }
+    } catch (error) {
+        console.error("Error fetching strain info:", error);
+        toast({ title: "Error", description: "Could not fetch strain information.", variant: "destructive" });
+    } finally {
+        setIsFetchingStrain(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedStrainData) return;
+    
+    form.setValue('thcContent', selectedStrainData.thc_level || 0);
+    form.setValue('productType', selectedStrainData.type || '');
+    form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
+    form.setValue('description', selectedStrainData.description || form.getValues('description'));
+
+    const getKeysOverZero = (keys: string[], data: any): string[] => {
+        return keys.filter(key => data[key] && typeof data[key] === 'number' && data[key] > 0)
+                   .map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+    };
+
+    form.setValue('effects', getKeysOverZero(effectKeys, selectedStrainData));
+    form.setValue('medicalUses', getKeysOverZero(medicalKeys, selectedStrainData));
+    
+  }, [selectedStrainData, form]);
 
   const fetchWellnessAndProductData = useCallback(async () => {
     if (!currentUser?.dispensaryId || !productId) { 
@@ -240,6 +335,7 @@ export default function EditProductPage() {
           return;
         }
         setExistingProduct(productData);
+        setStrainQuery(productData.strain || '');
         const initialStream = determineProductStream(productData);
         setSelectedProductStream(initialStream);
 
@@ -249,6 +345,8 @@ export default function EditProductPage() {
           category: productData.category,
           subcategory: productData.subcategory || null,
           subSubcategory: productData.subSubcategory || null,
+          productType: productData.productType || '',
+          mostCommonTerpene: productData.mostCommonTerpene || '',
           strain: productData.strain || '',
           thcContent: productData.thcContent ?? undefined,
           cbdContent: productData.cbdContent ?? undefined,
@@ -520,6 +618,8 @@ export default function EditProductPage() {
         category: data.category,
         subcategory: data.subcategory || null,
         subSubcategory: data.subSubcategory || null,
+        productType: data.productType || null,
+        mostCommonTerpene: data.mostCommonTerpene || null,
         currency: data.currency,
         priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
         quantityInStock: data.quantityInStock ?? 0,
@@ -637,6 +737,35 @@ export default function EditProductPage() {
             <div className="mt-6 pt-6 border-t">
                 {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                     <>
+                        <div className="space-y-2">
+                            <FormLabel htmlFor="strain-search">Strain Name</FormLabel>
+                            <div className="flex gap-2">
+                                <Input id="strain-search" placeholder="e.g., Blue Dream" value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} />
+                                <Button type="button" onClick={handleFetchStrainInfo} disabled={!strainQuery.trim() || isFetchingStrain}>
+                                    {isFetchingStrain ? <Loader2 className="h-4 w-4 animate-spin"/> : <SearchIcon className="h-4 w-4"/>}
+                                    <span className="ml-2">Fetch Strain Info</span>
+                                </Button>
+                            </div>
+                            <FormDescription>Note: Search is case-sensitive and works best with full strain names.</FormDescription>
+                        </div>
+
+                        {strainSearchResults.length > 0 && (
+                            <div className="space-y-2 mt-2">
+                                <FormLabel>Search Results</FormLabel>
+                                <div className="flex flex-wrap gap-2">
+                                    {strainSearchResults.map(result => (
+                                        <Button key={result.id} type="button" variant="outline" onClick={() => setSelectedStrainData(result)}>
+                                            {result.name}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {selectedStrainData && <StrainInfoPreview strainData={selectedStrainData} onSelect={setSelectedStrainData} />}
+
+                        <Separator className="my-6"/>
+
                          {selectedProductStream === 'THC' && (
                             <Card className="mb-6 p-4 border-amber-500 bg-amber-50/50 shadow-sm">
                                 <CardHeader className="p-0 pb-2">
@@ -644,9 +773,6 @@ export default function EditProductPage() {
                                 </CardHeader>
                                 <CardContent className="p-0 text-sm text-amber-600 space-y-2">
                                     <p>The Wellness Tree complies with South African Law regarding the trade of THC products. We therefore cannot sell THC product directly, however we invite Wellness Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Wellness Tree" promo design range.</p>
-                                    <p>Store owners are welcome to promote our stickers, caps, and t-shirt designs and offer FREE THC samples to share amongst fellow cannabinoid enthusiasts.</p>
-                                    <p>By opting in, you agree to provide a FREE THC sample with each Promo design sold through the platform. YOU set the price of the design and add the relative sample amount of product you wish to offer as a free sample. You help us sell our designs. We help You share your garden's wares with fellow enthusiasts.</p>
-                                    <p className="mt-2 font-semibold">Please remember: Any THC info is purely for recreational knowledge building for Cannabinoid enthusiasts, and is not relevant for Sticker sales.</p>
                                 </CardContent>
                                  <FormField
                                     control={form.control}
@@ -669,6 +795,11 @@ export default function EditProductPage() {
                         )}
                         <FormField control={form.control} name="category" render={({ field }) => ( <FormItem className="hidden"><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )} />
                         
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="productType" render={({ field }) => ( <FormItem><FormLabel>Product Type</FormLabel><FormControl><Input placeholder="e.g., Sativa, Indica" {...field} value={field.value ?? ''} readOnly /></FormControl><FormDescription>Auto-populated from strain data.</FormDescription><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input placeholder="e.g., Myrcene" {...field} value={field.value ?? ''} readOnly /></FormControl><FormDescription>Auto-populated from strain data.</FormDescription><FormMessage /></FormItem> )} />
+                        </div>
+
                         {deliveryMethodOptions.length > 0 && (
                         <FormField control={form.control} name="subcategory" render={({ field }) => (
                             <FormItem> <FormLabel>Product Type *</FormLabel>
@@ -697,7 +828,7 @@ export default function EditProductPage() {
                             >
                                 <FormControl><SelectTrigger><SelectValue placeholder={`Select Specific Type for ${selectedDeliveryMethod}`} /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="none">Other</SelectItem>
                                     {specificProductTypeOptions.map((type) => ( <SelectItem key={type} value={type}>{type}</SelectItem> ))}
                                 </SelectContent>
                             </Select> <FormMessage />
@@ -706,7 +837,9 @@ export default function EditProductPage() {
                          <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            {selectedProductStream === 'CBD' && (
+                                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            )}
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -848,6 +981,3 @@ export default function EditProductPage() {
     </Card>
   );
 }
-    
-
-    
