@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
@@ -619,6 +619,56 @@ async (req, res) => {
         else {
             res.status(500).send({ error: "Internal server error." });
         }
+    }
+});
+/**
+ * Removes duplicate documents from the 'my-seeded-collection' based on the 'name' field.
+ * Keeps the first encountered document for each unique name and deletes the rest.
+ */
+exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
+    try {
+        const collectionRef = db.collection('my-seeded-collection');
+        const snapshot = await collectionRef.get();
+        if (snapshot.empty) {
+            res.status(200).send({ success: true, message: 'Collection is empty, no duplicates to remove.' });
+            return;
+        }
+        const seenNames = new Map(); // Map<name, docId>
+        const docsToDelete = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const name = data.name;
+            if (name && typeof name === 'string') {
+                if (seenNames.has(name)) {
+                    // This is a duplicate
+                    docsToDelete.push(doc.id);
+                }
+                else {
+                    // First time seeing this name, keep it
+                    seenNames.set(name, doc.id);
+                }
+            }
+        });
+        if (docsToDelete.length === 0) {
+            res.status(200).send({ success: true, message: 'No duplicate names found.' });
+            return;
+        }
+        // Use a batched write to delete all duplicates
+        const batch = db.batch();
+        docsToDelete.forEach(docId => {
+            batch.delete(collectionRef.doc(docId));
+        });
+        await batch.commit();
+        logger.info(`Successfully removed ${docsToDelete.length} duplicate documents.`);
+        res.status(200).send({
+            success: true,
+            message: `Successfully removed ${docsToDelete.length} duplicate documents.`,
+            deletedIds: docsToDelete,
+        });
+    }
+    catch (error) {
+        logger.error("Error removing duplicate strains:", error);
+        res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
     }
 });
 //# sourceMappingURL=index.js.map
