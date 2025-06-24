@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs, QueryDocumentSnapshot } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, Product } from '@/types';
@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -30,7 +30,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 
 const sampleUnits = [
   "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
@@ -78,6 +77,53 @@ const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.Elemen
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
 };
 
+const effectKeys = ["anxious", "aroused", "creative", "dizzy", "dry_eyes", "dry_mouth", "energetic", "euphoric", "focus", "giggly", "happy", "headach", "hungry", "lack_of_appetite", "relaxed", "sleepy", "talkative", "tingly", "uplifted"];
+const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
+
+
+const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => void }> = ({ strainData, onSelect }) => {
+    if (!strainData) return null;
+    const { name, type, description, thc_level, most_common_terpene } = strainData;
+    
+    const getAttributesWithBadges = (keys: string[], data: any) => {
+        return keys.map(key => {
+            const value = data[key];
+            if (value && typeof value === 'number' && value > 0) {
+                const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                return (
+                    <Badge key={key} variant="secondary" className="text-xs font-normal">
+                        {formattedKey} <span className="ml-1.5 font-semibold text-primary">{value}%</span>
+                    </Badge>
+                );
+            }
+            return null;
+        }).filter(Boolean);
+    };
+
+    const effectBadges = getAttributesWithBadges(effectKeys, strainData);
+    const medicalBadges = getAttributesWithBadges(medicalKeys, strainData);
+
+    return (
+        <Card className="mt-4 bg-muted/30">
+            <CardHeader>
+                <CardTitle>Selected Strain: {name}</CardTitle>
+                <CardDescription>Review the details below. This data will populate the form.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+                {description && <p><strong>Description:</strong> {description}</p>}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {type && <p><strong>Type:</strong> <Badge variant="outline">{type}</Badge></p>}
+                    {thc_level && <p><strong>THC:</strong> <Badge variant="outline">{thc_level}%</Badge></p>}
+                    {most_common_terpene && <p><strong>Top Terpene:</strong> <Badge variant="outline">{most_common_terpene}</Badge></p>}
+                </div>
+                {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
+                {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
+            </CardContent>
+        </Card>
+    );
+};
+
+
 export default function AddProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -107,11 +153,18 @@ export default function AddProductPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  
+  const [strainQuery, setStrainQuery] = useState('');
+  const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
+  const [isFetchingStrain, setIsFetchingStrain] = useState(false);
+  const [selectedStrainData, setSelectedStrainData] = useState<any | null>(null);
+
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
+      productType: '', mostCommonTerpene: '',
       strain: null, thcContent: undefined, cbdContent: undefined, 
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], 
@@ -136,12 +189,10 @@ export default function AddProductPage() {
     }
   
     if (selectedProductStream === 'THC') {
-      // Only show form fields if user has opted-in
       setShowProductDetailsForm(watchedStickerProgramOptIn === 'yes');
-    } else if (selectedProductStream) { // Any other stream is selected
-      // For other streams, show the form right away
+    } else if (selectedProductStream) {
       setShowProductDetailsForm(true);
-    } else { // No stream is selected for the special type
+    } else {
       setShowProductDetailsForm(false);
     }
   }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
@@ -153,6 +204,8 @@ export default function AddProductPage() {
       category: '', 
       subcategory: null,
       subSubcategory: null,
+      productType: '',
+      mostCommonTerpene: '',
       strain: null,
       thcContent: undefined,
       cbdContent: undefined,
@@ -172,7 +225,55 @@ export default function AddProductPage() {
     setSelectedSubCategoryL1Name(null);
     setSubCategoryL2Options([]);
     setAvailableStandardSizes([]);
+    setSelectedStrainData(null);
+    setStrainQuery('');
+    setStrainSearchResults([]);
   };
+
+  const handleFetchStrainInfo = async () => {
+    if (!strainQuery.trim()) return;
+    setIsFetchingStrain(true);
+    setStrainSearchResults([]);
+    setSelectedStrainData(null);
+    try {
+        const q = query(
+            collection(db, 'my-seeded-collection'),
+            where('name', '>=', strainQuery.trim()),
+            where('name', '<=', strainQuery.trim() + '\uf8ff'),
+            limit(10)
+        );
+        const querySnapshot = await getDocs(q);
+        const results = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setStrainSearchResults(results);
+        if (results.length === 0) {
+            toast({ title: "No strains found", description: "No exact or similar strain names found in the database. Please check spelling or enter manually.", variant: "default" });
+        }
+    } catch (error) {
+        console.error("Error fetching strain info:", error);
+        toast({ title: "Error", description: "Could not fetch strain information.", variant: "destructive" });
+    } finally {
+        setIsFetchingStrain(false);
+    }
+  };
+  
+  useEffect(() => {
+    if (!selectedStrainData) return;
+    
+    form.setValue('thcContent', selectedStrainData.thc_level || 0);
+    form.setValue('productType', selectedStrainData.type || '');
+    form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
+    form.setValue('description', selectedStrainData.description || '');
+
+    const getKeysOverZero = (keys: string[], data: any): string[] => {
+        return keys.filter(key => data[key] && typeof data[key] === 'number' && data[key] > 0)
+                   .map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+    };
+
+    form.setValue('effects', getKeysOverZero(effectKeys, selectedStrainData));
+    form.setValue('medicalUses', getKeysOverZero(medicalKeys, selectedStrainData));
+    
+  }, [selectedStrainData, form]);
+
 
 
  const fetchInitialData = useCallback(async () => {
@@ -483,6 +584,8 @@ export default function AddProductPage() {
         productData.strain = null; productData.thcContent = null; productData.cbdContent = null;
         productData.effects = []; productData.flavors = []; productData.medicalUses = [];
         productData.stickerProgramOptIn = null;
+        productData.productType = '';
+        productData.mostCommonTerpene = '';
       }
       if (selectedProductStream !== 'Apparel') { 
         productData.gender = null; productData.sizingSystem = null; productData.sizes = [];
@@ -503,6 +606,7 @@ export default function AddProductPage() {
       
       form.reset({
         name: '', description: '', category: '', subcategory: null, subSubcategory: null,
+        productType: '', mostCommonTerpene: '',
         strain: null, thcContent: undefined, cbdContent: undefined, gender: null, sizingSystem: null, sizes: [],
         currency: wellnessData.currency || 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], 
         quantityInStock: undefined, imageUrl: null, labTested: false, effects: [], flavors: [], medicalUses: [],
@@ -618,9 +722,42 @@ export default function AddProductPage() {
             <div className="mt-6 pt-6 border-t">
                 {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                     <>
+                        <div className="space-y-2">
+                            <FormLabel htmlFor="strain-search">Strain Name</FormLabel>
+                            <div className="flex gap-2">
+                                <Input id="strain-search" placeholder="e.g., Blue Dream" value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} />
+                                <Button type="button" onClick={handleFetchStrainInfo} disabled={!strainQuery.trim() || isFetchingStrain}>
+                                    {isFetchingStrain ? <Loader2 className="h-4 w-4 animate-spin"/> : <SearchIcon className="h-4 w-4"/>}
+                                    <span className="ml-2">Fetch Strain Info</span>
+                                </Button>
+                            </div>
+                            <FormDescription>Note: Search is case-sensitive and works best with full strain names.</FormDescription>
+                        </div>
+
+                        {strainSearchResults.length > 0 && (
+                            <div className="space-y-2 mt-2">
+                                <FormLabel>Search Results</FormLabel>
+                                <div className="flex flex-wrap gap-2">
+                                    {strainSearchResults.map(result => (
+                                        <Button key={result.id} type="button" variant="outline" onClick={() => setSelectedStrainData(result)}>
+                                            {result.name}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         
+                        {selectedStrainData && <StrainInfoPreview strainData={selectedStrainData} onSelect={setSelectedStrainData} />}
+
+                        <Separator className="my-6"/>
+
                         <FormField control={form.control} name="category" render={({ field }) => ( <FormItem className="hidden"><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem> )} />
                         
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <FormField control={form.control} name="productType" render={({ field }) => ( <FormItem><FormLabel>Product Type</FormLabel><FormControl><Input placeholder="e.g., Sativa, Indica" {...field} value={field.value ?? ''} readOnly /></FormControl><FormDescription>Auto-populated from strain data.</FormDescription><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input placeholder="e.g., Myrcene" {...field} value={field.value ?? ''} readOnly /></FormControl><FormDescription>Auto-populated from strain data.</FormDescription><FormMessage /></FormItem> )} />
+                        </div>
+
                         {deliveryMethodOptions.length > 0 && (
                         <FormField control={form.control} name="subcategory" render={({ field }) => (
                             <FormItem> <FormLabel>Product Type *</FormLabel>
@@ -649,7 +786,7 @@ export default function AddProductPage() {
                             >
                                 <FormControl><SelectTrigger><SelectValue placeholder={`Select Specific Type for ${selectedDeliveryMethod}`} /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="none">Other</SelectItem>
                                     {specificProductTypeOptions.map((type) => ( <SelectItem key={type} value={type}>{type}</SelectItem> ))}
                                 </SelectContent>
                             </Select> <FormMessage />
@@ -658,7 +795,9 @@ export default function AddProductPage() {
                          <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            {selectedProductStream === 'CBD' && (
+                                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            )}
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -814,6 +953,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-    
-
-    
