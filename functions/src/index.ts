@@ -23,6 +23,10 @@ import type {
   NotificationData,
   NoteDataCloud,
 } from "./types";
+import * as fs from 'fs';
+import * as path from 'path';
+import seedData from './data/seed-data.json';
+
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -735,12 +739,101 @@ export const deductCreditsAndLogInteraction = onRequest(
 );
 
 
+export const seedLargeCollection = onRequest(
+  { timeoutSeconds: 540, memory: '1GiB', cors: true },
+  async (req, res) => {
+    try {
+      if (!Array.isArray(seedData)) {
+        throw new Error("Seed data is not a valid array.");
+      }
+      
+      const collectionRef = db.collection('my-seeded-collection');
+      const batchSize = 400; 
+      let totalSeeded = 0;
 
+      for (let i = 0; i < seedData.length; i += batchSize) {
+        const batch = db.batch();
+        const chunk = seedData.slice(i, i + batchSize);
+        chunk.forEach((docData: any) => {
+          const docRef = collectionRef.doc(); // Auto-generate ID
+          batch.set(docRef, docData);
+        });
+        await batch.commit();
+        totalSeeded += chunk.length;
+        logger.info(`Batch ${i / batchSize + 1} completed. Seeded ${chunk.length} documents.`);
+      }
+      
+      res.status(200).send({
+        success: true,
+        message: `Successfully seeded ${totalSeeded} documents into 'my-seeded-collection'.`,
+      });
+    } catch (error: any) {
+      logger.error("Error seeding large collection:", error);
+      res.status(500).send({
+        success: false,
+        message: 'An error occurred during seeding.',
+        error: error.message,
+      });
+    }
+  }
+);
 
+/**
+ * Removes duplicate documents from the 'my-seeded-collection' based on the 'name' field.
+ * Keeps the first encountered document for each unique name and deletes the rest.
+ */
+export const removeDuplicateStrains = onRequest(
+  { cors: true },
+  async (req, res) => {
+    try {
+      const collectionRef = db.collection('my-seeded-collection');
+      const snapshot = await collectionRef.get();
 
+      if (snapshot.empty) {
+        res.status(200).send({ success: true, message: 'Collection is empty, no duplicates to remove.' });
+        return;
+      }
 
+      const seenNames = new Map<string, string>(); // Map<name, docId>
+      const docsToDelete: string[] = [];
 
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const name = data.name;
 
+        if (name && typeof name === 'string') {
+          if (seenNames.has(name)) {
+            // This is a duplicate
+            docsToDelete.push(doc.id);
+          } else {
+            // First time seeing this name, keep it
+            seenNames.set(name, doc.id);
+          }
+        }
+      });
 
+      if (docsToDelete.length === 0) {
+        res.status(200).send({ success: true, message: 'No duplicate names found.' });
+        return;
+      }
 
+      // Use a batched write to delete all duplicates
+      const batch = db.batch();
+      docsToDelete.forEach(docId => {
+        batch.delete(collectionRef.doc(docId));
+      });
+      await batch.commit();
 
+      logger.info(`Successfully removed ${docsToDelete.length} duplicate documents.`);
+      res.status(200).send({
+        success: true,
+        message: `Successfully removed ${docsToDelete.length} duplicate documents.`,
+        deletedIds: docsToDelete,
+      });
+
+    } catch (error: any) {
+      logger.error("Error removing duplicate strains:", error);
+      res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
+    }
+  }
+);
