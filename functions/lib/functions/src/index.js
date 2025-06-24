@@ -37,12 +37,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.seedLargeCollection = exports.seedHomeopathicCategories = exports.seedMushroomCategories = exports.seedThcCategories = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
+// Import the JSON data directly.
+// Make sure the path is relative to this index.ts file.
+const seed_data_json_1 = __importDefault(require("./data/seed-data.json"));
 /**
  * Custom error class for HTTP functions to propagate status codes.
  */
@@ -653,22 +656,97 @@ exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (r
             res.status(200).send({ success: true, message: 'No duplicate names found.' });
             return;
         }
-        // Use a batched write to delete all duplicates
-        const batch = db.batch();
-        docsToDelete.forEach(docId => {
-            batch.delete(collectionRef.doc(docId));
-        });
-        await batch.commit();
-        logger.info(`Successfully removed ${docsToDelete.length} duplicate documents.`);
+        // Firestore allows a maximum of 500 operations in a single batch.
+        const batchSize = 499; // Keep it slightly under 500 to be safe
+        let totalDeleted = 0;
+        for (let i = 0; i < docsToDelete.length; i += batchSize) {
+            const batchDocs = docsToDelete.slice(i, i + batchSize);
+            const batch = db.batch();
+            batchDocs.forEach(docId => {
+                batch.delete(collectionRef.doc(docId));
+            });
+            await batch.commit();
+            totalDeleted += batchDocs.length;
+            logger.info(`Committed a batch of ${batchDocs.length} deletions.`);
+        }
+        logger.info(`Successfully removed ${totalDeleted} duplicate documents.`);
         res.status(200).send({
             success: true,
-            message: `Successfully removed ${docsToDelete.length} duplicate documents.`,
+            message: `Successfully removed ${totalDeleted} duplicate documents.`,
             deletedIds: docsToDelete,
         });
     }
     catch (error) {
         logger.error("Error removing duplicate strains:", error);
         res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
+    }
+});
+async function copyDocumentContent(req, res, collectionName, sourceDocId, newDocId) {
+    try {
+        const sourceDocRef = db.collection(collectionName).doc(sourceDocId);
+        const newDocRef = db.collection(collectionName).doc(newDocId);
+        const sourceDoc = await sourceDocRef.get();
+        if (!sourceDoc.exists) {
+            res.status(404).send({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'.` });
+            return;
+        }
+        const dataToCopy = sourceDoc.data();
+        if (!dataToCopy) {
+            res.status(404).send({ success: false, message: `Source document '${sourceDocId}' has no data.` });
+            return;
+        }
+        await newDocRef.set(dataToCopy);
+        logger.info(`Successfully copied content from '${sourceDocId}' to '${newDocId}' in collection '${collectionName}'.`);
+    }
+    catch (error) {
+        logger.error(`Error copying document from '${sourceDocId}' to '${newDocId}':`, error);
+        res.status(500).send({ success: false, message: 'An error occurred during the copy process.', error: error.message });
+    }
+}
+exports.seedThcCategories = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid store");
+    res.status(200).send({ success: true, message: "THC categories seeded successfully to 'Cannibinoid store'." });
+});
+exports.seedMushroomCategories = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
+    res.status(200).send({ success: true, message: "Mushroom categories seeded successfully to 'Mushroom store'." });
+});
+exports.seedHomeopathicCategories = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
+    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
+    res.status(200).send({ success: true, message: "Homeopathic categories seeded successfully to 'Homeopathic store'." });
+});
+exports.seedLargeCollection = (0, https_1.onRequest)({
+    timeoutSeconds: 540,
+    memory: '1GiB'
+}, async (req, res) => {
+    try {
+        const collectionRef = db.collection("my-seeded-collection");
+        const batchSize = 499;
+        let totalSeeded = 0;
+        for (let i = 0; ; i += batchSize) {
+            const batch = db.batch();
+            const batchData = seed_data_json_1.default.slice(i, i + batchSize);
+            batchData.forEach((docData) => {
+                const docRef = collectionRef.doc(); // Auto-generate ID
+                batch.set(docRef, docData);
+            });
+            await batch.commit();
+            totalSeeded += batchData.length;
+            logger.info(`Seeded batch of ${batchData.length} documents. Total seeded: ${totalSeeded}`);
+        }
+        logger.info(`Successfully seeded ${totalSeeded} documents into 'my-seeded-collection'.`);
+        res.status(200).send({
+            success: true,
+            message: `Successfully seeded ${totalSeeded} documents.`,
+        });
+    }
+    catch (error) {
+        logger.error("Error seeding large collection:", error);
+        res.status(500).send({
+            success: false,
+            message: "An error occurred during seeding.",
+            error: error.message,
+        });
     }
 });
 //# sourceMappingURL=index.js.map
