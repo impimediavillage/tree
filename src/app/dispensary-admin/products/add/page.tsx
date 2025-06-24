@@ -70,7 +70,7 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 
 type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear';
 
-const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string }> = {
+const streamDisplayMapping: Record<string, { text: string; icon: React.ElementType; color: string }> = {
     'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
     'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
@@ -236,7 +236,7 @@ export default function AddProductPage() {
     setStrainSearchResults([]);
     setSelectedStrainData(null);
     try {
-        const q = query(
+        const q = firestoreQuery(
             collection(db, 'my-seeded-collection'),
             where('name', '>=', strainQuery.trim()),
             where('name', '<=', strainQuery.trim() + '\uf8ff'),
@@ -572,7 +572,7 @@ export default function AddProductPage() {
     setUploadProgress(100); 
 
     try {
-      const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation'> = {
+      const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation' | 'price' | 'unit'> = {
         ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: wellnessData.dispensaryName,
         dispensaryType: wellnessData.dispensaryType, productOwnerEmail: wellnessData.ownerEmail,
         imageUrl: uploadedImageUrl,
@@ -666,7 +666,7 @@ export default function AddProductPage() {
                         Select Product Stream *
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
+                        {(Object.keys(streamDisplayMapping) as (keyof typeof streamDisplayMapping)[]).map((stream) => { 
                             const { text, icon: IconComponent, color } = streamDisplayMapping[stream];
                             return (
                                 <Button
