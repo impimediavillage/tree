@@ -123,6 +123,12 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
     );
 };
 
+const toTitleCase = (str: string) => {
+  return str.replace(/\w\S*/g, (txt) => {
+    return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
+  });
+};
+
 export default function EditProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -210,10 +216,11 @@ export default function EditProductPage() {
     setStrainSearchResults([]);
     setSelectedStrainData(null);
     try {
+        const processedQuery = toTitleCase(strainQuery.trim());
         const q = firestoreQuery(
             collection(db, 'my-seeded-collection'),
-            where('name', '>=', strainQuery.trim()),
-            where('name', '<=', strainQuery.trim() + '\uf8ff'),
+            where('name', '>=', processedQuery),
+            where('name', '<=', processedQuery + '\uf8ff'),
             limit(10)
         );
         const querySnapshot = await getDocs(q);
