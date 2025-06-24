@@ -492,7 +492,7 @@ export type CreditPackage = z.infer<typeof creditPackageDbSchema>;
 export const aiAdvisorConfigSchema = z.object({
   id: z.string().optional(),
   slug: z.string(),
-  title: string,
+  title: z.string(),
   description: z.string(),
   icon: z.string().optional().nullable(),
   flowName: z.string(),
