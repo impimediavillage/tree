@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -112,9 +111,9 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
             <CardContent className="space-y-3 text-sm">
                 {description && <p><strong>Description:</strong> {description}</p>}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {type && <p><strong>Type:</strong> <Badge variant="outline">{type}</Badge></p>}
-                    {thc_level && <p><strong>THC:</strong> <Badge variant="outline">{thc_level}%</Badge></p>}
-                    {most_common_terpene && <p><strong>Top Terpene:</strong> <Badge variant="outline">{most_common_terpene}</Badge></p>}
+                    {type && <div className="flex items-center gap-1.5"><strong>Type:</strong> <Badge variant="outline">{type}</Badge></div>}
+                    {thc_level && <div className="flex items-center gap-1.5"><strong>THC:</strong> <Badge variant="outline">{thc_level}%</Badge></div>}
+                    {most_common_terpene && <div className="flex items-center gap-1.5"><strong>Top Terpene:</strong> <Badge variant="outline">{most_common_terpene}</Badge></div>}
                 </div>
                 {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
                 {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
