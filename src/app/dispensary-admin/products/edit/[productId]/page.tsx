@@ -76,7 +76,7 @@ const streamDisplayMapping: Record<string, { text: string; icon: React.ElementTy
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
 };
 
-const effectKeys = ["anxious", "aroused", "creative", "dizzy", "dry_eyes", "dry_mouth", "energetic", "euphoric", "focus", "giggly", "happy", "headach", "hungry", "lack_of_appetite", "relaxed", "sleepy", "talkative", "tingly", "uplifted"];
+const effectKeys = ["anxious", "aroused", "creative", "dizzy", "dry_eyes", "dry_mouth", "energetic", "euphoric", "focus", "giggly", "happy", "headache", "hungry", "lack_of_appetite", "relaxed", "sleepy", "talkative", "tingly", "uplifted"];
 const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
 
 
@@ -109,11 +109,11 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                 <CardDescription>Review the details below. This data will populate the form.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-                {description && <p><strong>Description:</strong> {description}</p>}
+                {description && <div><strong>Description:</strong> {description}</div>}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {type && <div className="flex items-center gap-1.5"><strong>Type:</strong> <Badge variant="outline">{type}</Badge></div>}
-                    {thc_level && <div className="flex items-center gap-1.5"><strong>THC:</strong> <Badge variant="outline">{thc_level}%</Badge></div>}
-                    {most_common_terpene && <div className="flex items-center gap-1.5"><strong>Top Terpene:</strong> <Badge variant="outline">{most_common_terpene}</Badge></div>}
+                    {type && <div><strong>Type:</strong> <Badge variant="outline">{type}</Badge></div>}
+                    {thc_level && <div><strong>THC:</strong> <Badge variant="outline">{thc_level}%</Badge></div>}
+                    {most_common_terpene && <div><strong>Top Terpene:</strong> <Badge variant="outline">{most_common_terpene}</Badge></div>}
                 </div>
                 {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
                 {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
@@ -356,6 +356,9 @@ export default function EditProductPage() {
           strain: productData.strain || '',
           thcContent: productData.thcContent ?? undefined,
           cbdContent: productData.cbdContent ?? undefined,
+          effects: productData.effects || [],
+          flavors: productData.flavors || [],
+          medicalUses: productData.medicalUses || [],
           gender: productData.gender || null,
           sizingSystem: productData.sizingSystem || null,
           sizes: productData.sizes || [],
