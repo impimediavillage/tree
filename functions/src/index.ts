@@ -649,7 +649,7 @@ export const onPoolIssueCreated = onDocumentCreated(
  */
 export const deductCreditsAndLogInteraction = onRequest(
   { cors: true }, // Gen 2 CORS configuration
-  async (req: Request, res: Response) {
+  async (req: Request, res: Response) => {
     if (req.method !== "POST") {
       res.status(405).send({ error: "Method Not Allowed" });
       return;
@@ -864,7 +864,7 @@ export const seedLargeCollection = onRequest(
       const batchSize = 499; 
       let totalSeeded = 0;
 
-      for (let i = 0; < seedData.length; i += batchSize) {
+      for (let i = 0; i < seedData.length; i += batchSize) {
         const batch = db.batch();
         const batchData = seedData.slice(i, i + batchSize);
         
@@ -894,5 +894,3 @@ export const seedLargeCollection = onRequest(
     }
   }
 );
-
-    
