@@ -935,6 +935,15 @@ export default function AddProductPage() {
                                 <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             )}
                         </div>
+                        <div className="p-2 mt-3 mb-2 rounded-md border border-dashed bg-background/50 text-xs">
+                            <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
+                            <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                                <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                                <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                            </div>
+                        </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect..." disabled={isLoading} getTagClassName={getEffectTagClassName} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add medical use..." disabled={isLoading} getTagClassName={getMedicalTagClassName} /><FormMessage /></FormItem> )} />
