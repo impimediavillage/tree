@@ -184,6 +184,7 @@ export const priceTierSchema = z.object({
     .refine(val => val <= 9999999.99, { 
         message: "Price amount is too high (max 9,999,999.99)."
     }),
+  description: z.string().optional().nullable(),
 });
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
@@ -455,7 +456,7 @@ export const dispensaryDbSchema = baseWellnessSchema.extend({
 export type Dispensary = z.infer<typeof dispensaryDbSchema>;
 
 
-export const productDbSchema = baseProductSchema.extend({
+export const baseProductDbSchema = baseProductSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),
@@ -469,6 +470,7 @@ export const productDbSchema = baseProductSchema.extend({
     longitude: z.number().optional().nullable(),
   }).optional().nullable(),
 });
+export const productDbSchema = baseProductDbSchema;
 export type Product = z.infer<typeof productDbSchema>; 
 
 export const productRequestDbSchema = productRequestSchema.extend({
