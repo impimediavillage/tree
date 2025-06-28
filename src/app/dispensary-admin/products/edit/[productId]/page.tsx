@@ -287,18 +287,21 @@ export default function EditProductPage() {
     const tags: string[] = [];
     for (const key of keys) {
         const rawValue = data[key];
+        let numericValue: number | null = null;
+        let displayValue: string | null = null;
         if (!rawValue) continue;
 
-        let displayValue: string | null = null;
         if (typeof rawValue === 'string') {
             const parsed = parseFloat(rawValue.replace('%', ''));
             if (!isNaN(parsed) && parsed > 0) {
+                numericValue = parsed;
                 displayValue = rawValue;
             }
         } else if (typeof rawValue === 'number' && rawValue > 0) {
+            numericValue = rawValue;
             displayValue = `${rawValue}%`;
         }
-
+        
         if (displayValue !== null) {
             const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             tags.push(`${formattedKey}: ${displayValue}`);
@@ -311,19 +314,22 @@ export default function EditProductPage() {
     if (!selectedStrainData) return;
     
     form.setValue('thcContent', selectedStrainData.thc_level || '', { shouldValidate: true });
-    form.setValue('productType', selectedStrainData.type || '');
-    form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
-    form.setValue('description', selectedStrainData.description || form.getValues('description'));
+    form.setValue('productType', selectedStrainData.type || '', { shouldValidate: true });
+    form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '', { shouldValidate: true });
+    form.setValue('description', selectedStrainData.description || form.getValues('description'), { shouldValidate: true });
 
-    form.setValue('effects', getFormattedTagsWithPercentages(effectKeys, selectedStrainData));
-    form.setValue('medicalUses', getFormattedTagsWithPercentages(medicalKeys, selectedStrainData));
+    form.setValue('effects', getFormattedTagsWithPercentages(effectKeys, selectedStrainData), { shouldValidate: true });
+    form.setValue('medicalUses', getFormattedTagsWithPercentages(medicalKeys, selectedStrainData), { shouldValidate: true });
+    
+    // Explicitly clear flavors before setting new ones to prevent state glitches
+    form.setValue('flavors', [], { shouldDirty: false });
 
     const descriptionText = (selectedStrainData.description || "").toLowerCase();
     const foundFlavors = commonFlavors.filter(flavor => 
       new RegExp(`\\b${flavor}\\b`, 'i').test(descriptionText)
     ).map(flavor => flavor.charAt(0).toUpperCase() + flavor.slice(1));
     
-    form.setValue('flavors', foundFlavors);
+    form.setValue('flavors', foundFlavors, { shouldValidate: true });
     
   }, [selectedStrainData, form, getFormattedTagsWithPercentages]);
 
