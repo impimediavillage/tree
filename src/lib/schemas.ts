@@ -212,11 +212,20 @@ export const productSchema = z.object({
   
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
+  poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative."),
   imageUrl: z.string().url("Invalid image URL.").or(z.literal(null)).optional().nullable(),
   labTested: z.boolean().default(false).optional(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
+}).superRefine((data, ctx) => {
+    if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Pool pricing is required if the product is available for sharing.",
+            path: ["poolPriceTiers"],
+        });
+    }
 });
 export type ProductFormData = z.infer<typeof productSchema>;
 

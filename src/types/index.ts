@@ -99,6 +99,7 @@ export interface Product {
   price: number; 
   unit: string; 
   priceTiers: PriceTier[]; 
+  poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
   imageUrl?: string | null;
   labTested?: boolean;

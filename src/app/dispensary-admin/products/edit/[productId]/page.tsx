@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Palette, Ruler, Brush, Delete, Info, Search as SearchIcon } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Palette, Ruler, Brush, Delete, Info, Search as SearchIcon, Users } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,14 +31,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-const sampleUnits = [
-  "gram", "10 grams", "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+",
-  "1kg", "2kg", "5kg", "10kg", "10kg+",
-  "0.25 oz", "0.5 oz", "oz",
-  "3ml", "5ml", "10ml", "50ml", "100ml", "ml", 
-  "1 litre", "2 litres", "5 litres", "10 litres",
-  "clone", "joint", "mg", "pack", "piece", "seed", "unit"
-];
+const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "piece", "seed", "unit" ];
+const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres" ];
 
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
@@ -213,6 +207,7 @@ export default function EditProductPage() {
 
   const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
+  const watchIsAvailableForPool = form.watch('isAvailableForPool');
 
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
@@ -223,6 +218,7 @@ export default function EditProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
         priceTiers: [{ unit: '', price: undefined as any }], 
+        poolPriceTiers: [],
         stickerProgramOptIn: null,
     },
   });
@@ -230,6 +226,11 @@ export default function EditProductPage() {
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier, replace: replacePriceTiers } = useFieldArray({
     control: form.control,
     name: "priceTiers",
+  });
+  
+  const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier, replace: replacePoolPriceTiers } = useFieldArray({
+    control: form.control,
+    name: "poolPriceTiers",
   });
 
 
@@ -443,6 +444,7 @@ export default function EditProductPage() {
           sizes: productData.sizes || [],
           currency: productData.currency || (fetchedWellness ? fetchedWellness.currency : 'ZAR'),
           priceTiers: productData.priceTiers && productData.priceTiers.length > 0 ? productData.priceTiers : [{ unit: '', price: undefined as any }],
+          poolPriceTiers: productData.poolPriceTiers || [],
           quantityInStock: productData.quantityInStock ?? undefined,
           imageUrl: productData.imageUrl || null,
           labTested: productData.labTested || false,
@@ -455,6 +457,12 @@ export default function EditProductPage() {
         } else {
             replacePriceTiers([{ unit: '', price: undefined as any }]);
         }
+        if (productData.poolPriceTiers && productData.poolPriceTiers.length > 0) {
+            replacePoolPriceTiers(productData.poolPriceTiers);
+        } else {
+            replacePoolPriceTiers([]);
+        }
+
 
         setImagePreview(productData.imageUrl || null);
         setOldImageUrl(productData.imageUrl);
@@ -501,7 +509,7 @@ export default function EditProductPage() {
     } finally {
       setIsLoadingInitialData(false);
     }
-  }, [currentUser?.dispensaryId, productId, router, toast, form, replacePriceTiers]);
+  }, [currentUser?.dispensaryId, productId, router, toast, form, replacePriceTiers, replacePoolPriceTiers]);
 
 
   useEffect(() => {
@@ -710,6 +718,7 @@ export default function EditProductPage() {
         mostCommonTerpene: data.mostCommonTerpene || null,
         currency: data.currency,
         priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
+        poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : null,
         quantityInStock: data.quantityInStock ?? 0,
         imageUrl: finalImageUrl,
         labTested: data.labTested || false,
@@ -980,13 +989,13 @@ export default function EditProductPage() {
                             )}
                         </div>
                         <div className="p-2 mt-3 mb-2 rounded-md border border-dashed bg-background/50 text-xs">
-                            <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
-                            <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                                <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-                                <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-                                <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-                            </div>
+                          <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
+                          <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                          </div>
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect..." disabled={isLoading} getTagClassName={getEffectTagClassName} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
@@ -1047,13 +1056,14 @@ export default function EditProductPage() {
                 
                 <Separator className="my-6" />
                 
-                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm mb-6"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other wellness entities of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
+                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other wellness entities of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
                 
                 <div className="space-y-3 pt-2">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
+                     <FormDescription>Pricing for regular customer sales.</FormDescription>
                     {priceTierFields.map((tierField, index) => (
                         <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end p-4 border rounded-md shadow-sm bg-muted/30">
-                            <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl><SelectContent>{sampleUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl><SelectContent>{regularUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( 
                                 <FormItem>
                                     <FormLabel>Price</FormLabel>
@@ -1075,6 +1085,37 @@ export default function EditProductPage() {
                     <Button type="button" variant="outline" onClick={() => appendPriceTier({ unit: '', price: undefined as any })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Price Tier</Button>
                     <FormMessage>{form.formState.errors.priceTiers?.root?.message || form.formState.errors.priceTiers?.message}</FormMessage>
                 </div>
+                
+                {watchIsAvailableForPool && (
+                   <div className="space-y-3 pt-4 mt-4 border-t">
+                    <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Pool Sharing Pricing *</h3>
+                    <FormDescription>Pricing for bulk sharing with other wellness entities in the pool.</FormDescription>
+                    {poolPriceTierFields.map((tierField, index) => (
+                        <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end p-4 border rounded-md shadow-sm bg-blue-50/30">
+                            <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select bulk unit" /></SelectTrigger></FormControl><SelectContent>{poolUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field }) => ( 
+                                <FormItem>
+                                    <FormLabel>Price</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            type="text"
+                                            placeholder="0.00" 
+                                            {...field} 
+                                            value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : (field.value === null || field.value === undefined ? '' : String(field.value))}
+                                            onChange={e => field.onChange(e.target.value)} 
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem> 
+                            )} />
+                            {poolPriceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="text-destructive hover:bg-destructive/10 self-center md:self-end mt-2 md:mt-0 md:mb-1.5"><Trash2 className="h-5 w-5" /></Button> )}
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier</Button>
+                    <FormMessage>{form.formState.errors.poolPriceTiers?.root?.message || form.formState.errors.poolPriceTiers?.message}</FormMessage>
+                </div>
+                )}
+                
                 <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="quantityInStock" render={({ field }) => ( <FormItem><FormLabel>Stock Qty *</FormLabel><FormControl><Input type="text" placeholder="0" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
                 <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add tag (e.g., Organic, Indoor, Popular)" disabled={isLoading} /><FormMessage /></FormItem> )} />
