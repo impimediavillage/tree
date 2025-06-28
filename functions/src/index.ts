@@ -820,72 +820,67 @@ export const findAndFixStrainImages = onRequest(
         return;
       }
 
-      const updatePromises: Promise<any>[] = [];
-      let successfulUpdates = 0;
-      let batch = db.batch();
-      let batchCount = 0;
-      const batchSize = 499;
-
       logger.info(`Found ${snapshot.size} documents to check for new images.`);
 
-      for (const doc of snapshot.docs) {
+      const checkImagePromises = snapshot.docs.map(async (doc) => {
         const name = doc.data().name;
-        if (!name || typeof name !== 'string') continue;
+        if (!name || typeof name !== 'string') return null;
 
         const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         const extensions = ['jpg', 'png', 'webp'];
-        let foundUrl = null;
-
+        
         for (const ext of extensions) {
           const url = `https://images.leafly.com/flower-images/${slug}.${ext}`;
           try {
-            const response = await axios.head(url);
-            // Check if the request was successful and the content is an image
+            // Using a timeout for each individual request to prevent long hangs
+            const response = await axios.head(url, { timeout: 5000 }); 
             if (response.status === 200 && response.headers['content-type']?.startsWith('image/')) {
-              foundUrl = url;
-              break; // Found a valid image, no need to check other extensions
+              logger.info(`SUCCESS: Found image for "${name}" at ${url}`);
+              return { docRef: doc.ref, newUrl: url };
             }
           } catch (error) {
             // It's expected for some URLs to fail (404), so we can ignore these errors.
-            // We only care about successful HEAD requests.
           }
         }
-
-        if (foundUrl) {
-          batch.update(doc.ref, { img_url: foundUrl });
-          batchCount++;
-          successfulUpdates++;
-          logger.info(`Found image for "${name}": ${foundUrl}`);
-          
-          if (batchCount >= batchSize) {
-            logger.info(`Committing batch of ${batchCount} updates...`);
-            updatePromises.push(batch.commit());
-            batch = db.batch();
-            batchCount = 0;
-          }
-        } else {
-          logger.warn(`No image found for strain: "${name}"`);
-        }
-      }
+        
+        logger.warn(`INFO: No image found for strain: "${name}"`);
+        return null;
+      });
       
-      // Commit any remaining updates in the last batch
-      if (batchCount > 0) {
-        logger.info(`Committing final batch of ${batchCount} updates...`);
-        updatePromises.push(batch.commit());
+      const results = await Promise.all(checkImagePromises);
+      const updates = results.filter((result): result is { docRef: FirebaseFirestore.DocumentReference, newUrl: string } => result !== null);
+
+      if (updates.length === 0) {
+        res.status(200).send({ success: true, message: `Process complete. Checked ${snapshot.size} documents, but no new valid images were found.` });
+        return;
       }
 
-      await Promise.all(updatePromises);
+      logger.info(`Found ${updates.length} new images. Committing updates to Firestore in batches...`);
+
+      const batchSize = 499;
+      const writePromises = [];
+      for (let i = 0; i < updates.length; i += batchSize) {
+        const batch = db.batch();
+        const chunk = updates.slice(i, i + batchSize);
+        chunk.forEach(update => {
+          batch.update(update.docRef, { img_url: update.newUrl });
+        });
+        writePromises.push(batch.commit());
+        logger.info(`Committing batch of ${chunk.length} updates.`);
+      }
+
+      await Promise.all(writePromises);
       
-      logger.info(`Image update process complete. Updated ${successfulUpdates} documents.`);
+      logger.info(`Image update process complete. Updated ${updates.length} documents successfully.`);
       res.status(200).send({
         success: true,
-        message: `Checked ${snapshot.size} documents. Found and updated ${successfulUpdates} image URLs.`,
-        updatedCount: successfulUpdates,
+        message: `Checked ${snapshot.size} documents. Found and updated ${updates.length} image URLs.`,
+        updatedCount: updates.length,
       });
 
     } catch (error: any) {
-      logger.error("Error finding and fixing strain images:", error);
-      res.status(500).send({ success: false, message: 'An error occurred during the image fixing process.', error: error.message });
+      logger.error("A critical error occurred in findAndFixStrainImages function:", error);
+      res.status(500).send({ success: false, message: 'An internal error occurred during the image fixing process.', error: error.message });
     }
   }
 );
