@@ -152,6 +152,15 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                     {cbd_level && <div><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
                     {most_common_terpene && <div><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
                 </div>
+                <div className="p-2 mt-3 mb-2 rounded-md border border-dashed bg-background/50 text-xs">
+                  <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
+                  <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                    <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                    <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                  </div>
+                </div>
                 {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
                 {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
             </CardContent>
