@@ -104,15 +104,29 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
     const { name, type, description, thc_level, cbd_level, most_common_terpene } = strainData;
     
     const getAttributesWithBadges = (keys: string[], data: any, colors: string[]) => {
-        const badges = [];
+        const badges: React.ReactNode[] = [];
         let colorIndex = 0;
         for (const key of keys) {
-            const value = data[key];
-            if (value && typeof value === 'number' && value > 0) {
+            const rawValue = data[key];
+            let numericValue: number | null = null;
+            let displayValue: string | null = null;
+
+            if (rawValue && typeof rawValue === 'string') {
+                const parsed = parseFloat(rawValue.replace('%', ''));
+                if (!isNaN(parsed) && parsed > 0) {
+                    numericValue = parsed;
+                    displayValue = rawValue;
+                }
+            } else if (rawValue && typeof rawValue === 'number' && rawValue > 0) {
+                numericValue = rawValue;
+                displayValue = `${rawValue}%`;
+            }
+
+            if (numericValue !== null && displayValue !== null) {
                 const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 badges.push(
                     <Badge key={key} variant="secondary" className={cn("text-xs font-normal border-none", colors[colorIndex % colors.length])}>
-                        {formattedKey} <span className="ml-1.5 font-semibold">{value}%</span>
+                        {formattedKey} <span className="ml-1.5 font-semibold">{displayValue}</span>
                     </Badge>
                 );
                 colorIndex++;
@@ -267,13 +281,31 @@ export default function EditProductPage() {
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
     form.setValue('description', selectedStrainData.description || form.getValues('description'));
 
-    const getKeysOverZero = (keys: string[], data: any): string[] => {
-        return keys.filter(key => data[key] && typeof data[key] === 'number' && data[key] > 0)
-                   .map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+    const getKeysOverZeroPercent = (keys: string[], data: any): string[] => {
+        const validKeys: string[] = [];
+        for (const key of keys) {
+            const rawValue = data[key];
+            if (!rawValue) continue;
+
+            let numericValue: number | null = null;
+            if (typeof rawValue === 'string') {
+                const parsed = parseFloat(rawValue.replace('%', ''));
+                if (!isNaN(parsed) && parsed > 0) {
+                    numericValue = parsed;
+                }
+            } else if (typeof rawValue === 'number' && rawValue > 0) {
+                numericValue = rawValue;
+            }
+
+            if (numericValue !== null) {
+                validKeys.push(key);
+            }
+        }
+        return validKeys.map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
     };
 
-    form.setValue('effects', getKeysOverZero(effectKeys, selectedStrainData));
-    form.setValue('medicalUses', getKeysOverZero(medicalKeys, selectedStrainData));
+    form.setValue('effects', getKeysOverZeroPercent(effectKeys, selectedStrainData));
+    form.setValue('medicalUses', getKeysOverZeroPercent(medicalKeys, selectedStrainData));
     
   }, [selectedStrainData, form]);
 
