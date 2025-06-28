@@ -5,6 +5,7 @@ import type { Timestamp } from 'firebase/firestore';
 export interface PriceTier {
   unit: string;
   price: number;
+  description?: string | null;
 }
 
 // Updated ProductCategory to support nesting

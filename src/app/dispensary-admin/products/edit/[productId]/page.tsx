@@ -32,7 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "piece", "seed", "unit" ];
-const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres" ];
+const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
@@ -112,7 +112,7 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                     numericValue = parsed;
                     displayValue = rawValue;
                 }
-            } else if (rawValue && typeof rawValue === 'number' && rawValue > 0) {
+            } else if (typeof rawValue === 'number' && rawValue > 0) {
                 numericValue = rawValue;
                 displayValue = `${rawValue}%`;
             }
@@ -623,8 +623,6 @@ export default function EditProductPage() {
     if (selectedProductStream === 'Apparel' && watchedGender && watchedSizingSystem) {
       const sizes = standardSizesData[watchedGender]?.[watchedSizingSystem] || [];
       setAvailableStandardSizes(sizes);
-    } else {
-      setAvailableStandardSizes([]);
     }
   }, [selectedProductStream, watchedGender, watchedSizingSystem]);
 
@@ -1091,27 +1089,52 @@ export default function EditProductPage() {
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Pool Sharing Pricing *</h3>
                     <FormDescription>Pricing for bulk sharing with other wellness entities in the pool.</FormDescription>
                     {poolPriceTierFields.map((tierField, index) => (
-                        <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-end p-4 border rounded-md shadow-sm bg-blue-50/30">
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select bulk unit" /></SelectTrigger></FormControl><SelectContent>{poolUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field }) => ( 
-                                <FormItem>
-                                    <FormLabel>Price</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="text"
-                                            placeholder="0.00" 
-                                            {...field} 
-                                            value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : (field.value === null || field.value === undefined ? '' : String(field.value))}
-                                            onChange={e => field.onChange(e.target.value)} 
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem> 
-                            )} />
-                            {poolPriceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="text-destructive hover:bg-destructive/10 self-center md:self-end mt-2 md:mt-0 md:mb-1.5"><Trash2 className="h-5 w-5" /></Button> )}
+                        <div key={tierField.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-2 items-start p-4 border rounded-md shadow-sm bg-blue-50/30">
+                            <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select bulk unit" /></SelectTrigger></FormControl><SelectContent>{poolUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field }) => ( 
+                                    <FormItem>
+                                        <FormLabel>Price</FormLabel>
+                                        <FormControl>
+                                            <Input 
+                                                type="text"
+                                                placeholder="0.00" 
+                                                {...field} 
+                                                value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : (field.value === null || field.value === undefined ? '' : String(field.value))}
+                                                onChange={e => field.onChange(e.target.value)} 
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem> 
+                                )} />
+                            </div>
+                            {(form.watch(`poolPriceTiers.${index}.unit`) === 'pack' || form.watch(`poolPriceTiers.${index}.unit`) === 'box') && (
+                                <div className="md:col-span-3 mt-2">
+                                    <FormField
+                                        control={form.control}
+                                        name={`poolPriceTiers.${index}.description`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Pack/Box Description</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder="e.g., Pack of 10 seeds, Box of 100g bags"
+                                                        {...field}
+                                                        value={field.value || ''}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            )}
+                            <div className="md:col-span-3 flex justify-end mt-2">
+                                {poolPriceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="text-destructive hover:bg-destructive/10"><Trash2 className="h-5 w-5" /></Button> )}
+                            </div>
                         </div>
                     ))}
-                    <Button type="button" variant="outline" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier</Button>
+                    <Button type="button" variant="outline" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any, description: '' })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier</Button>
                     <FormMessage>{form.formState.errors.poolPriceTiers?.root?.message || form.formState.errors.poolPriceTiers?.message}</FormMessage>
                 </div>
                 )}
