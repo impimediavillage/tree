@@ -316,8 +316,11 @@ export default function AddProductPage() {
         let displayValue: string | null = null;
         if (!rawValue) continue;
 
-        if (typeof rawValue === 'string' && parseFloat(rawValue) > 0) {
-           displayValue = rawValue;
+        if (typeof rawValue === 'string') {
+           const parsed = parseFloat(rawValue.replace('%', ''));
+            if (!isNaN(parsed) && parsed > 0) {
+                displayValue = rawValue;
+            }
         } else if (typeof rawValue === 'number' && rawValue > 0) {
             displayValue = `${rawValue}%`;
         }
@@ -831,7 +834,7 @@ export default function AddProductPage() {
                             <FormLabel htmlFor="strain-search">Strain Name</FormLabel>
                             <div className="flex gap-2">
                                 <Input id="strain-search" placeholder="e.g., Blue Dream" value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} />
-                                <Button type="button" onClick={handleFetchStrainInfo} disabled={!strainQuery.trim() || isFetchingStrain}>
+                                <Button type="button" onClick={handleFetchStrainInfo} disabled={!strainQuery.trim() || isFetchingStrain} className="bg-green-500 hover:bg-green-600 text-white">
                                     {isFetchingStrain ? <Loader2 className="h-4 w-4 animate-spin"/> : <SearchIcon className="h-4 w-4"/>}
                                     <span className="ml-2">Fetch Strain Info</span>
                                 </Button>
@@ -846,14 +849,27 @@ export default function AddProductPage() {
                                     {strainSearchResults.map(result => (
                                         <Card key={result.id} className="overflow-hidden">
                                             <CardContent className="p-0">
-                                                <div className="relative h-32 w-full bg-muted">
-                                                    <Image
-                                                        src={result.img_url && result.img_url !== 'none' ? result.img_url : `https://placehold.co/400x400.png`}
-                                                        alt={result.name}
-                                                        layout="fill"
-                                                        objectFit="cover"
-                                                        onError={(e) => { e.currentTarget.src = `https://placehold.co/400x400.png` }}
-                                                    />
+                                                <div className="relative h-40 w-full bg-muted flex flex-col items-center justify-center">
+                                                     {result.img_url && result.img_url !== 'none' ? (
+                                                        <Image
+                                                            src={result.img_url}
+                                                            alt={result.name}
+                                                            layout="fill"
+                                                            objectFit="cover"
+                                                            onError={(e) => { e.currentTarget.src = `https://placehold.co/400x400.png` }}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center text-center">
+                                                            <Image 
+                                                                src="/icons/thc-cbd.png"
+                                                                alt="No image available"
+                                                                width={64}
+                                                                height={64}
+                                                                className="animate-pulse-slow"
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-2">No image found</p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="p-3">
                                                     <Button className="w-full" type="button" variant="outline" onClick={() => setSelectedStrainData(result)}>
