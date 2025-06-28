@@ -117,8 +117,8 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                     {cbd_level && <div><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
                     {most_common_terpene && <div><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
                 </div>
-                {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
-                {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
+                {effectBadges.length > 0 && <div className="space-y-1"><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
+                {medicalBadges.length > 0 && <div className="space-y-1"><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
             </CardContent>
         </Card>
     );
@@ -171,7 +171,7 @@ export default function AddProductPage() {
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       productType: '', mostCommonTerpene: '',
-      strain: null, thcContent: undefined, cbdContent: undefined, 
+      strain: null, thcContent: '', cbdContent: '', 
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], 
       quantityInStock: undefined, imageUrl: null,
@@ -213,8 +213,8 @@ export default function AddProductPage() {
       productType: '',
       mostCommonTerpene: '',
       strain: null,
-      thcContent: undefined,
-      cbdContent: undefined,
+      thcContent: '',
+      cbdContent: '',
       effects: [],
       flavors: [],
       medicalUses: [],
@@ -266,9 +266,7 @@ export default function AddProductPage() {
   useEffect(() => {
     if (!selectedStrainData) return;
     
-    const thcValue = parseFloat(selectedStrainData.thc_level);
-    form.setValue('thcContent', isNaN(thcValue) ? undefined : thcValue, { shouldValidate: true });
-
+    form.setValue('thcContent', selectedStrainData.thc_level || '', { shouldValidate: true });
     form.setValue('productType', selectedStrainData.type || '');
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
     form.setValue('description', selectedStrainData.description || '');
@@ -616,7 +614,7 @@ export default function AddProductPage() {
       form.reset({
         name: '', description: '', category: '', subcategory: null, subSubcategory: null,
         productType: '', mostCommonTerpene: '',
-        strain: null, thcContent: undefined, cbdContent: undefined, gender: null, sizingSystem: null, sizes: [],
+        strain: null, thcContent: '', cbdContent: '', gender: null, sizingSystem: null, sizes: [],
         currency: wellnessData.currency || 'ZAR', priceTiers: [{ unit: '', price: undefined as any }], 
         quantityInStock: undefined, imageUrl: null, labTested: false, effects: [], flavors: [], medicalUses: [],
         isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
@@ -818,9 +816,9 @@ export default function AddProductPage() {
                         )}
                          <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             {selectedProductStream === 'CBD' && (
-                                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             )}
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />

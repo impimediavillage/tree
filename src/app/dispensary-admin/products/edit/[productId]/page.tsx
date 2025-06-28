@@ -110,15 +110,15 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                 <CardDescription>Review the details below. This data will populate the form.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-                {description && <div><strong>Description:</strong> {description}</div>}
+                {description && <div className="space-y-1"><strong>Description:</strong> {description}</div>}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <div><strong>Type:</strong> <Badge variant="secondary" className="bg-blue-100 text-blue-700">{type}</Badge></div>
-                    {thc_level && <div><strong>THC:</strong> <Badge variant="secondary" className="bg-green-100 text-green-700">{thc_level}</Badge></div>}
-                    {cbd_level && <div><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
-                    {most_common_terpene && <div><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
+                    <div className="space-y-1"><strong>Type:</strong> <Badge variant="secondary" className="bg-blue-100 text-blue-700">{type}</Badge></div>
+                    {thc_level && <div className="space-y-1"><strong>THC:</strong> <Badge variant="secondary" className="bg-green-100 text-green-700">{thc_level}</Badge></div>}
+                    {cbd_level && <div className="space-y-1"><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
+                    {most_common_terpene && <div className="space-y-1"><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
                 </div>
-                {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
-                {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
+                {effectBadges.length > 0 && <div className="space-y-1"><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
+                {medicalBadges.length > 0 && <div className="space-y-1"><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
             </CardContent>
         </Card>
     );
@@ -241,9 +241,7 @@ export default function EditProductPage() {
   useEffect(() => {
     if (!selectedStrainData) return;
     
-    const thcValue = parseFloat(selectedStrainData.thc_level);
-    form.setValue('thcContent', isNaN(thcValue) ? undefined : thcValue, { shouldValidate: true });
-
+    form.setValue('thcContent', selectedStrainData.thc_level || '', { shouldValidate: true });
     form.setValue('productType', selectedStrainData.type || '');
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
     form.setValue('description', selectedStrainData.description || form.getValues('description'));
@@ -358,8 +356,8 @@ export default function EditProductPage() {
           productType: productData.productType || '',
           mostCommonTerpene: productData.mostCommonTerpene || '',
           strain: productData.strain || '',
-          thcContent: productData.thcContent ?? undefined,
-          cbdContent: productData.cbdContent ?? undefined,
+          thcContent: productData.thcContent ?? '',
+          cbdContent: productData.cbdContent ?? '',
           effects: productData.effects || [],
           flavors: productData.flavors || [],
           medicalUses: productData.medicalUses || [],
@@ -646,8 +644,8 @@ export default function EditProductPage() {
 
       if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
         productUpdateData.strain = data.strain || null;
-        productUpdateData.thcContent = data.thcContent ?? null;
-        productUpdateData.cbdContent = data.cbdContent ?? null;
+        productUpdateData.thcContent = data.thcContent || null;
+        productUpdateData.cbdContent = data.cbdContent || null;
         productUpdateData.effects = data.effects || [];
         productUpdateData.flavors = data.flavors || [];
         productUpdateData.medicalUses = data.medicalUses || [];
@@ -864,9 +862,9 @@ export default function EditProductPage() {
                         )}
                          <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             {selectedProductStream === 'CBD' && (
-                                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8" {...field} value={(typeof field.value === 'number' && !isNaN(field.value)) ? field.value.toString() : ''} onChange={e => field.onChange(e.target.value)} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             )}
                         </div>
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
