@@ -80,28 +80,49 @@ const streamDisplayMapping: Record<string, { text: string; icon: React.ElementTy
 const effectKeys = ["anxious", "aroused", "creative", "dizzy", "dry_eyes", "dry_mouth", "energetic", "euphoric", "focus", "giggly", "happy", "headache", "hungry", "lack_of_appetite", "relaxed", "sleepy", "talkative", "tingly", "uplifted"];
 const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
 
+const badgeColors = [
+    "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200", 
+    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200", 
+    "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200", 
+    "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200", 
+    "bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200", 
+    "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200"
+];
+
+const medicalBadgeColors = [
+    "bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200",
+    "bg-lime-100 text-lime-800 dark:bg-lime-900/50 dark:text-lime-200",
+    "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
+    "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/50 dark:text-fuchsia-200",
+    "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200",
+    "bg-stone-200 text-stone-800 dark:bg-stone-700/50 dark:text-stone-200"
+];
+
 
 const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => void }> = ({ strainData, onSelect }) => {
     if (!strainData) return null;
     const { name, type, description, thc_level, cbd_level, most_common_terpene } = strainData;
     
-    const getAttributesWithBadges = (keys: string[], data: any, colorClass: string) => {
-        return keys.map(key => {
+    const getAttributesWithBadges = (keys: string[], data: any, colors: string[]) => {
+        const badges = [];
+        let colorIndex = 0;
+        for (const key of keys) {
             const value = data[key];
             if (value && typeof value === 'number' && value > 0) {
                 const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                return (
-                    <Badge key={key} variant="secondary" className={cn("text-xs font-normal", colorClass)}>
-                        {formattedKey} <span className="ml-1.5 font-semibold text-primary">{value}%</span>
+                badges.push(
+                    <Badge key={key} variant="secondary" className={cn("text-xs font-normal border-none", colors[colorIndex % colors.length])}>
+                        {formattedKey} <span className="ml-1.5 font-semibold">{value}%</span>
                     </Badge>
                 );
+                colorIndex++;
             }
-            return null;
-        }).filter(Boolean);
+        }
+        return badges;
     };
 
-    const effectBadges = getAttributesWithBadges(effectKeys, strainData, "bg-amber-100 text-amber-800");
-    const medicalBadges = getAttributesWithBadges(medicalKeys, strainData, "bg-teal-100 text-teal-800");
+    const effectBadges = getAttributesWithBadges(effectKeys, strainData, badgeColors);
+    const medicalBadges = getAttributesWithBadges(medicalKeys, strainData, medicalBadgeColors);
 
     return (
         <Card className="mt-4 bg-muted/30">
