@@ -1,3 +1,4 @@
+
 "use strict";
 'use server';
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -16,31 +17,22 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.findAndFixStrainImages = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
+const axios_1 = __importDefault(require("axios"));
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 /**
@@ -676,6 +668,80 @@ exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (r
     catch (error) {
         logger.error("Error removing duplicate strains:", error);
         res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
+    }
+});
+/**
+ * Finds documents in 'my-seeded-collection' with img_url === 'none'
+ * and tries to find a valid image URL from leafly.
+ */
+exports.findAndFixStrainImages = (0, https_1.onRequest)({ timeoutSeconds: 540, memory: '1GiB', cors: true }, async (req, res) => {
+    try {
+        const collectionRef = db.collection('my-seeded-collection');
+        const snapshot = await collectionRef.where('img_url', '==', 'none').get();
+        if (snapshot.empty) {
+            res.status(200).send({ success: true, message: 'No documents with img_url as "none" found.' });
+            return;
+        }
+        const updatePromises = [];
+        let successfulUpdates = 0;
+        let batch = db.batch();
+        let batchCount = 0;
+        const batchSize = 499;
+        logger.info(`Found ${snapshot.size} documents to check for new images.`);
+        for (const doc of snapshot.docs) {
+            const name = doc.data().name;
+            if (!name || typeof name !== 'string')
+                continue;
+            const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            const extensions = ['jpg', 'png', 'webp'];
+            let foundUrl = null;
+            for (const ext of extensions) {
+                const url = `https://images.leafly.com/flower-images/${slug}.${ext}`;
+                try {
+                    const response = await axios_1.default.head(url);
+                    // Check if the request was successful and the content is an image
+                    if (response.status === 200 && response.headers['content-type']?.startsWith('image/')) {
+                        foundUrl = url;
+                        break; // Found a valid image, no need to check other extensions
+                    }
+                }
+                catch (error) {
+                    // It's expected for some URLs to fail (404), so we can ignore these errors.
+                    // We only care about successful HEAD requests.
+                }
+            }
+            if (foundUrl) {
+                batch.update(doc.ref, { img_url: foundUrl });
+                batchCount++;
+                successfulUpdates++;
+                logger.info(`Found image for "${name}": ${foundUrl}`);
+                if (batchCount >= batchSize) {
+                    logger.info(`Committing batch of ${batchCount} updates...`);
+                    updatePromises.push(batch.commit());
+                    batch = db.batch();
+                    batchCount = 0;
+                }
+            }
+            else {
+                logger.warn(`No image found for strain: "${name}"`);
+            }
+        }
+        // Commit any remaining updates in the last batch
+        if (batchCount > 0) {
+            logger.info(`Committing final batch of ${batchCount} updates...`);
+            updatePromises.push(batch.commit());
+        }
+        await Promise.all(updatePromises);
+        logger.info(`Image update process complete. Updated ${successfulUpdates} documents.`);
+        res.status(200).send({
+            success: true,
+            message: `Checked ${snapshot.size} documents. Found and updated ${successfulUpdates} image URLs.`,
+            updatedCount: successfulUpdates,
+        });
+    }
+    catch (error) {
+        logger.error("Error finding and fixing strain images:", error);
+        res.status(500).send({ success: false, message: 'An error occurred during the image fixing process.', error: error.message });
     }
 });
 //# sourceMappingURL=index.js.map
