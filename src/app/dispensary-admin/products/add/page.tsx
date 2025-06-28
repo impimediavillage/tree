@@ -307,28 +307,29 @@ export default function AddProductPage() {
     }
   };
   
-  const getKeysOverZeroPercent = (keys: string[], data: any): string[] => {
-    const validKeys: string[] = [];
+  const getFormattedTagsWithPercentages = useCallback((keys: string[], data: any): string[] => {
+    const tags: string[] = [];
     for (const key of keys) {
         const rawValue = data[key];
         if (!rawValue) continue;
-        
-        let numericValue: number | null = null;
+
+        let displayValue: string | null = null;
         if (typeof rawValue === 'string') {
             const parsed = parseFloat(rawValue.replace('%', ''));
             if (!isNaN(parsed) && parsed > 0) {
-                numericValue = parsed;
+                displayValue = rawValue;
             }
         } else if (typeof rawValue === 'number' && rawValue > 0) {
-            numericValue = rawValue;
+            displayValue = `${rawValue}%`;
         }
 
-        if (numericValue !== null) {
-            validKeys.push(key);
+        if (displayValue !== null) {
+            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            tags.push(`${formattedKey}: ${displayValue}`);
         }
     }
-    return validKeys.map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-  };
+    return tags;
+  }, []);
   
   useEffect(() => {
     if (!selectedStrainData) return;
@@ -338,10 +339,10 @@ export default function AddProductPage() {
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
     form.setValue('description', selectedStrainData.description || '');
 
-    form.setValue('effects', getKeysOverZeroPercent(effectKeys, selectedStrainData));
-    form.setValue('medicalUses', getKeysOverZeroPercent(medicalKeys, selectedStrainData));
+    form.setValue('effects', getFormattedTagsWithPercentages(effectKeys, selectedStrainData));
+    form.setValue('medicalUses', getFormattedTagsWithPercentages(medicalKeys, selectedStrainData));
     
-  }, [selectedStrainData, form]);
+  }, [selectedStrainData, form, getFormattedTagsWithPercentages]);
 
 
 
@@ -714,8 +715,8 @@ export default function AddProductPage() {
     return map;
   }, []);
 
-  const getEffectTagClassName = (tag: string) => effectColorMap.get(tag) || 'bg-muted text-muted-foreground';
-  const getMedicalTagClassName = (tag: string) => medicalColorMap.get(tag) || 'bg-muted text-muted-foreground';
+  const getEffectTagClassName = (tag: string) => effectColorMap.get(tag.split(':')[0]) || 'bg-muted text-muted-foreground';
+  const getMedicalTagClassName = (tag: string) => medicalColorMap.get(tag.split(':')[0]) || 'bg-muted text-muted-foreground';
 
 
   if (isLoadingInitialData || authLoading) {
