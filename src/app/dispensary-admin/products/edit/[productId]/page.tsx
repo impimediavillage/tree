@@ -79,6 +79,7 @@ const streamDisplayMapping: Record<string, { text: string; icon: React.ElementTy
 
 const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "hungry", "talkative", "creative", "energetic", "focus", "giggly", "aroused", "tingly"];
 const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
+const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
 
 const badgeColors = [
     "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200", 
@@ -316,6 +317,13 @@ export default function EditProductPage() {
 
     form.setValue('effects', getFormattedTagsWithPercentages(effectKeys, selectedStrainData));
     form.setValue('medicalUses', getFormattedTagsWithPercentages(medicalKeys, selectedStrainData));
+
+    const descriptionText = (selectedStrainData.description || "").toLowerCase();
+    const foundFlavors = commonFlavors.filter(flavor => 
+      new RegExp(`\\b${flavor}\\b`, 'i').test(descriptionText)
+    ).map(flavor => flavor.charAt(0).toUpperCase() + flavor.slice(1));
+    
+    form.setValue('flavors', foundFlavors);
     
   }, [selectedStrainData, form, getFormattedTagsWithPercentages]);
 
