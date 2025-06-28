@@ -3,6 +3,7 @@
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
+import axios from "axios";
 import {
   onDocumentCreated,
   onDocumentUpdated,
@@ -799,6 +800,92 @@ export const removeDuplicateStrains = onRequest(
     } catch (error: any) {
       logger.error("Error removing duplicate strains:", error);
       res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
+    }
+  }
+);
+
+/**
+ * Finds documents in 'my-seeded-collection' with img_url === 'none'
+ * and tries to find a valid image URL from leafly.
+ */
+export const findAndFixStrainImages = onRequest(
+  { timeoutSeconds: 540, memory: '1GiB', cors: true },
+  async (req, res) => {
+    try {
+      const collectionRef = db.collection('my-seeded-collection');
+      const snapshot = await collectionRef.where('img_url', '==', 'none').get();
+
+      if (snapshot.empty) {
+        res.status(200).send({ success: true, message: 'No documents with img_url as "none" found.' });
+        return;
+      }
+
+      const updatePromises: Promise<any>[] = [];
+      let successfulUpdates = 0;
+      let batch = db.batch();
+      let batchCount = 0;
+      const batchSize = 499;
+
+      logger.info(`Found ${snapshot.size} documents to check for new images.`);
+
+      for (const doc of snapshot.docs) {
+        const name = doc.data().name;
+        if (!name || typeof name !== 'string') continue;
+
+        const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        const extensions = ['jpg', 'png', 'webp'];
+        let foundUrl = null;
+
+        for (const ext of extensions) {
+          const url = `https://images.leafly.com/flower-images/${slug}.${ext}`;
+          try {
+            const response = await axios.head(url);
+            // Check if the request was successful and the content is an image
+            if (response.status === 200 && response.headers['content-type']?.startsWith('image/')) {
+              foundUrl = url;
+              break; // Found a valid image, no need to check other extensions
+            }
+          } catch (error) {
+            // It's expected for some URLs to fail (404), so we can ignore these errors.
+            // We only care about successful HEAD requests.
+          }
+        }
+
+        if (foundUrl) {
+          batch.update(doc.ref, { img_url: foundUrl });
+          batchCount++;
+          successfulUpdates++;
+          logger.info(`Found image for "${name}": ${foundUrl}`);
+          
+          if (batchCount >= batchSize) {
+            logger.info(`Committing batch of ${batchCount} updates...`);
+            updatePromises.push(batch.commit());
+            batch = db.batch();
+            batchCount = 0;
+          }
+        } else {
+          logger.warn(`No image found for strain: "${name}"`);
+        }
+      }
+      
+      // Commit any remaining updates in the last batch
+      if (batchCount > 0) {
+        logger.info(`Committing final batch of ${batchCount} updates...`);
+        updatePromises.push(batch.commit());
+      }
+
+      await Promise.all(updatePromises);
+      
+      logger.info(`Image update process complete. Updated ${successfulUpdates} documents.`);
+      res.status(200).send({
+        success: true,
+        message: `Checked ${snapshot.size} documents. Found and updated ${successfulUpdates} image URLs.`,
+        updatedCount: successfulUpdates,
+      });
+
+    } catch (error: any) {
+      logger.error("Error finding and fixing strain images:", error);
+      res.status(500).send({ success: false, message: 'An error occurred during the image fixing process.', error: error.message });
     }
   }
 );
