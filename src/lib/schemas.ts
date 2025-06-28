@@ -195,12 +195,12 @@ export const productSchema = z.object({
   subcategory: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
   
-  productType: z.string().optional().nullable(), // For Sativa/Indica/Hybrid
+  productType: z.string().optional().nullable(),
   mostCommonTerpene: z.string().optional().nullable(),
 
   strain: z.string().optional().nullable(),
-  thcContent: z.coerce.number().min(0).max(100).optional().nullable(),
-  cbdContent: z.coerce.number().min(0).max(100).optional().nullable(),
+  thcContent: z.string().optional().nullable(),
+  cbdContent: z.string().optional().nullable(),
   effects: z.array(z.string()).optional().nullable().default([]),
   flavors: z.array(z.string()).optional().nullable().default([]),
   medicalUses: z.array(z.string()).optional().nullable().default([]),

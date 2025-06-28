@@ -84,8 +84,8 @@ export interface Product {
   subSubcategory?: string | null; 
   
   strain?: string | null;
-  thcContent?: number | null;
-  cbdContent?: number | null;
+  thcContent?: string | null;
+  cbdContent?: string | null;
   effects?: string[] | null;
   flavors?: string[] | null;
   medicalUses?: string[] | null;
@@ -354,4 +354,3 @@ export interface CartItem extends Omit<Product, 'priceTiers' | 'price' | 'unit'>
   category: string; 
   quantityInStock: number;
 }
-
