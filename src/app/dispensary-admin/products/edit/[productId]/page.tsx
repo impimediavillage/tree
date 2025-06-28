@@ -77,7 +77,7 @@ const streamDisplayMapping: Record<string, { text: string; icon: React.ElementTy
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
 };
 
-const effectKeys = ["anxious", "aroused", "creative", "dizzy", "dry_eyes", "dry_mouth", "energetic", "euphoric", "focus", "giggly", "happy", "headache", "hungry", "lack_of_appetite", "relaxed", "sleepy", "talkative", "tingly", "uplifted"];
+const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "hungry", "talkative", "creative", "energetic", "focus", "giggly", "aroused", "tingly"];
 const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
 
 const badgeColors = [
