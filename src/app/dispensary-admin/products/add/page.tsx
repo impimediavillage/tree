@@ -113,8 +113,8 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                 {description && <div><strong>Description:</strong> {description}</div>}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <div><strong>Type:</strong> <Badge variant="secondary" className="bg-blue-100 text-blue-700">{type}</Badge></div>
-                    {thc_level && <div><strong>THC:</strong> <Badge variant="secondary" className="bg-green-100 text-green-700">{thc_level}%</Badge></div>}
-                    {cbd_level && <div><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}%</Badge></div>}
+                    {thc_level && <div><strong>THC:</strong> <Badge variant="secondary" className="bg-green-100 text-green-700">{thc_level}</Badge></div>}
+                    {cbd_level && <div><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
                     {most_common_terpene && <div><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
                 </div>
                 {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
@@ -266,7 +266,9 @@ export default function AddProductPage() {
   useEffect(() => {
     if (!selectedStrainData) return;
     
-    form.setValue('thcContent', selectedStrainData.thc_level || 0);
+    const thcValue = parseFloat(selectedStrainData.thc_level);
+    form.setValue('thcContent', isNaN(thcValue) ? undefined : thcValue, { shouldValidate: true });
+
     form.setValue('productType', selectedStrainData.type || '');
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
     form.setValue('description', selectedStrainData.description || '');
