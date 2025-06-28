@@ -15,6 +15,7 @@ interface MultiInputTagsProps {
   maxTags?: number;
   className?: string;
   disabled?: boolean;
+  getTagClassName?: (tag: string) => string;
 }
 
 export function MultiInputTags({
@@ -24,6 +25,7 @@ export function MultiInputTags({
   maxTags,
   className,
   disabled,
+  getTagClassName,
 }: MultiInputTagsProps) {
   const [inputValue, setInputValue] = React.useState('');
 
@@ -82,7 +84,10 @@ export function MultiInputTags({
             <Badge
               key={index}
               variant="secondary"
-              className="flex items-center gap-1.5 pr-1.5 group"
+              className={cn(
+                "flex items-center gap-1.5 pr-1.5 group border-none", // Make borderless by default
+                getTagClassName ? getTagClassName(tag) : '' // Apply dynamic class
+              )}
             >
               {tag}
               {!disabled && (

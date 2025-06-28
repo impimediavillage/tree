@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -145,15 +145,15 @@ const StrainInfoPreview: React.FC<{ strainData: any; onSelect: (data: any) => vo
                 <CardDescription>Review the details below. This data will populate the form.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-                {description && <div className="space-y-1"><strong>Description:</strong> {description}</div>}
+                {description && <div><strong>Description:</strong> {description}</div>}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <div className="space-y-1"><strong>Type:</strong> <Badge variant="secondary" className="bg-blue-100 text-blue-700">{type}</Badge></div>
-                    {thc_level && <div className="space-y-1"><strong>THC:</strong> <Badge variant="secondary" className="bg-green-100 text-green-700">{thc_level}</Badge></div>}
-                    {cbd_level && <div className="space-y-1"><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
-                    {most_common_terpene && <div className="space-y-1"><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
+                    <div><strong>Type:</strong> <Badge variant="secondary" className="bg-blue-100 text-blue-700">{type}</Badge></div>
+                    {thc_level && <div><strong>THC:</strong> <Badge variant="secondary" className="bg-green-100 text-green-700">{thc_level}</Badge></div>}
+                    {cbd_level && <div><strong>CBD:</strong> <Badge variant="secondary" className="bg-sky-100 text-sky-700">{cbd_level}</Badge></div>}
+                    {most_common_terpene && <div><strong>Top Terpene:</strong> <Badge variant="secondary" className="bg-purple-100 text-purple-700">{most_common_terpene}</Badge></div>}
                 </div>
-                {effectBadges.length > 0 && <div className="space-y-1"><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
-                {medicalBadges.length > 0 && <div className="space-y-1"><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
+                {effectBadges.length > 0 && <div><strong>Effects:</strong><div className="flex flex-wrap gap-1 mt-1">{effectBadges}</div></div>}
+                {medicalBadges.length > 0 && <div><strong>Potential Medical Uses:</strong><div className="flex flex-wrap gap-1 mt-1">{medicalBadges}</div></div>}
             </CardContent>
         </Card>
     );
@@ -298,6 +298,29 @@ export default function AddProductPage() {
     }
   };
   
+  const getKeysOverZeroPercent = (keys: string[], data: any): string[] => {
+    const validKeys: string[] = [];
+    for (const key of keys) {
+        const rawValue = data[key];
+        if (!rawValue) continue;
+        
+        let numericValue: number | null = null;
+        if (typeof rawValue === 'string') {
+            const parsed = parseFloat(rawValue.replace('%', ''));
+            if (!isNaN(parsed) && parsed > 0) {
+                numericValue = parsed;
+            }
+        } else if (typeof rawValue === 'number' && rawValue > 0) {
+            numericValue = rawValue;
+        }
+
+        if (numericValue !== null) {
+            validKeys.push(key);
+        }
+    }
+    return validKeys.map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+  };
+  
   useEffect(() => {
     if (!selectedStrainData) return;
 
@@ -305,29 +328,6 @@ export default function AddProductPage() {
     form.setValue('productType', selectedStrainData.type || '');
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '');
     form.setValue('description', selectedStrainData.description || '');
-
-    const getKeysOverZeroPercent = (keys: string[], data: any): string[] => {
-        const validKeys: string[] = [];
-        for (const key of keys) {
-            const rawValue = data[key];
-            if (!rawValue) continue;
-
-            let numericValue: number | null = null;
-            if (typeof rawValue === 'string') {
-                const parsed = parseFloat(rawValue.replace('%', ''));
-                if (!isNaN(parsed) && parsed > 0) {
-                    numericValue = parsed;
-                }
-            } else if (typeof rawValue === 'number' && rawValue > 0) {
-                numericValue = rawValue;
-            }
-
-            if (numericValue !== null) {
-                validKeys.push(key);
-            }
-        }
-        return validKeys.map(key => key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
-    };
 
     form.setValue('effects', getKeysOverZeroPercent(effectKeys, selectedStrainData));
     form.setValue('medicalUses', getKeysOverZeroPercent(medicalKeys, selectedStrainData));
@@ -686,6 +686,28 @@ export default function AddProductPage() {
       setIsLoading(false);
     }
   };
+  
+  const effectColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    effectKeys.forEach((key, index) => {
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        map.set(formattedKey, badgeColors[index % badgeColors.length]);
+    });
+    return map;
+  }, []);
+
+  const medicalColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    medicalKeys.forEach((key, index) => {
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        map.set(formattedKey, medicalBadgeColors[index % medicalBadgeColors.length]);
+    });
+    return map;
+  }, []);
+
+  const getEffectTagClassName = (tag: string) => effectColorMap.get(tag) || 'bg-muted text-muted-foreground';
+  const getMedicalTagClassName = (tag: string) => medicalColorMap.get(tag) || 'bg-muted text-muted-foreground';
+
 
   if (isLoadingInitialData || authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
@@ -874,9 +896,9 @@ export default function AddProductPage() {
                                 <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             )}
                         </div>
-                        <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect (e.g., Relaxed, Happy, Uplifted)" disabled={isLoading} /><FormMessage /></FormItem> )} />
+                        <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect..." disabled={isLoading} getTagClassName={getEffectTagClassName} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
-                        <Controller control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add medical use (e.g., Pain Relief, Insomnia)" disabled={isLoading} /><FormMessage /></FormItem> )} />
+                        <Controller control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add medical use..." disabled={isLoading} getTagClassName={getMedicalTagClassName} /><FormMessage /></FormItem> )} />
                          <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
                     </>
                 )}
