@@ -188,7 +188,7 @@ export const priceTierSchema = z.object({
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
 
-export const productSchema = z.object({
+const baseProductSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
@@ -218,7 +218,9 @@ export const productSchema = z.object({
   labTested: z.boolean().default(false).optional(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
-}).superRefine((data, ctx) => {
+});
+
+export const productSchema = baseProductSchema.superRefine((data, ctx) => {
     if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -453,7 +455,7 @@ export const dispensaryDbSchema = baseWellnessSchema.extend({
 export type Dispensary = z.infer<typeof dispensaryDbSchema>;
 
 
-export const productDbSchema = productSchema.extend({
+export const productDbSchema = baseProductSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),
