@@ -287,18 +287,12 @@ export default function EditProductPage() {
     const tags: string[] = [];
     for (const key of keys) {
         const rawValue = data[key];
-        let numericValue: number | null = null;
         let displayValue: string | null = null;
         if (!rawValue) continue;
 
-        if (typeof rawValue === 'string') {
-            const parsed = parseFloat(rawValue.replace('%', ''));
-            if (!isNaN(parsed) && parsed > 0) {
-                numericValue = parsed;
-                displayValue = rawValue;
-            }
+        if (typeof rawValue === 'string' && parseFloat(rawValue) > 0) {
+           displayValue = rawValue;
         } else if (typeof rawValue === 'number' && rawValue > 0) {
-            numericValue = rawValue;
             displayValue = `${rawValue}%`;
         }
         
@@ -329,7 +323,10 @@ export default function EditProductPage() {
       new RegExp(`\\b${flavor}\\b`, 'i').test(descriptionText)
     ).map(flavor => flavor.charAt(0).toUpperCase() + flavor.slice(1));
     
-    form.setValue('flavors', foundFlavors, { shouldValidate: true });
+    // Use a timeout to ensure the state updates after the reset.
+    setTimeout(() => {
+        form.setValue('flavors', foundFlavors, { shouldValidate: true, shouldDirty: true });
+    }, 0);
     
   }, [selectedStrainData, form, getFormattedTagsWithPercentages]);
 
@@ -969,7 +966,6 @@ export default function EditProductPage() {
                         <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect..." disabled={isLoading} getTagClassName={getEffectTagClassName} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
                         <Controller control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add medical use..." disabled={isLoading} getTagClassName={getMedicalTagClassName} /><FormMessage /></FormItem> )} />
-                         <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
                     </>
                 )}
                 {selectedProductStream === 'Apparel' && ( 
@@ -1023,6 +1019,11 @@ export default function EditProductPage() {
                 )}
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="Premium OG Kush Flower" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description..." {...field} rows={4} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
+                
+                <Separator className="my-6" />
+                
+                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm mb-6"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other wellness entities of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
+                
                 <div className="space-y-3 pt-2">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
                     {priceTierFields.map((tierField, index) => (
@@ -1057,7 +1058,6 @@ export default function EditProductPage() {
                 <Separator />
                 <div className="space-y-4">
                 <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
-                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Available for Product Sharing Pool</FormLabel><FormDescription>Allow other wellness entities of the same type to request this product from you.</FormDescription></div> </FormItem> )} />
                 </div>
             </div>
             )}
