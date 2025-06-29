@@ -316,7 +316,8 @@ export default function EditProductPage() {
     form.setValue('productType', selectedStrainData.type || '', { shouldValidate: true });
     form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || '', { shouldValidate: true });
     form.setValue('description', selectedStrainData.description || form.getValues('description'), { shouldValidate: true });
-
+    form.setValue('strain', selectedStrainData.name || '', { shouldValidate: true });
+    
     form.setValue('effects', getFormattedTagsWithPercentages(effectKeys, selectedStrainData), { shouldValidate: true });
     form.setValue('medicalUses', getFormattedTagsWithPercentages(medicalKeys, selectedStrainData), { shouldValidate: true });
     
@@ -859,7 +860,7 @@ export default function EditProductPage() {
                           <AlertTriangle className="h-4 w-4" />
                           <AlertTitle>Strain Information</AlertTitle>
                           <AlertDescription>
-                            Search for an existing strain to auto-populate its data where possible. If your strain is not listed, you can enter its name and details manually in the fields below.
+                            Fetching strain info will auto-populate data where possible. If adding a new strain, leave the Strain Name field blank and enter the new name when prompted in the form below.
                           </AlertDescription>
                         </Alert>
                         <div className="space-y-2">
@@ -987,7 +988,7 @@ export default function EditProductPage() {
                             </Select> <FormMessage />
                             </FormItem> )} />
                         )}
-                         <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This can be the specific product type if not covered by subcategories.</FormDescription><FormMessage /></FormItem> )} />
+                         <FormField control={form.control} name="strain" render={({ field }) => ( <FormItem><FormLabel>Strain / Specific Type (if applicable)</FormLabel><FormControl><Input placeholder="e.g., Blue Dream, OG Kush" {...field} value={field.value ?? ''} disabled={!!selectedStrainData} /></FormControl><FormDescription>{selectedStrainData ? 'Strain name is auto-populated and locked.' : 'This can be the specific product type if not covered by subcategories.'}</FormDescription><FormMessage /></FormItem> )} />
                          <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 22.5%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             {selectedProductStream === 'CBD' && (
