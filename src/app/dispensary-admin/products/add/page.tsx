@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon, Users } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon, Users, X } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -941,30 +941,39 @@ export default function AddProductPage() {
                         </div>
                         
                         <div className="space-y-1">
-                          <FormLabel>Effects</FormLabel>
                           <div className="p-2 mt-1 mb-2 rounded-md border border-dashed bg-background/50 text-xs">
                             <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
                             <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
-                            <div className="flex flex-wrap gap-1.5 mt-2">
+                             <div className="flex flex-wrap gap-1.5 mt-2">
                                 <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
                                 <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
                                 <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
                             </div>
                           </div>
+                          <FormLabel>Effects</FormLabel>
                           <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/20 min-h-[40px]">
                             {(watchedEffects || []).length === 0 ? ( <span className="text-xs text-muted-foreground">No effects listed. Fetch strain data or add manually.</span> ) : (
-                              (watchedEffects || []).map((effect, index) => (
-                                <Badge key={index} variant="secondary" className={cn("text-xs font-normal border-none", badgeColors[index % badgeColors.length])}>
-                                    {effect.name}: <span className="ml-1 font-semibold">{effect.percentage}</span>
+                               (watchedEffects || []).map((effect, index) => (
+                                <Badge key={`effect-${index}`} variant="secondary" className={cn("group relative pr-5 text-xs font-normal border-none", badgeColors[index % badgeColors.length])}>
+                                  {effect.name}: <span className="ml-1 font-semibold">{effect.percentage}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeEffect(index)}
+                                    className="absolute top-1/2 -translate-y-1/2 right-1 rounded-full p-0.5 opacity-0 transition-opacity bg-black/20 text-white/70 hover:opacity-100 hover:text-white group-hover:opacity-100"
+                                    aria-label={`Remove ${effect.name}`}
+                                  >
+                                      <X className="h-3 w-3"/>
+                                  </button>
                                 </Badge>
                               ))
                             )}
                           </div>
-                          <Button type="button" variant="secondary" size="sm" onClick={() => setShowEffectsEditor(!showEffectsEditor)} className="mt-2 text-xs">
+                          <Button type="button" size="sm" onClick={() => setShowEffectsEditor(!showEffectsEditor)} className="mt-2 text-xs bg-green-500 hover:bg-green-600 text-white">
                             {showEffectsEditor ? 'Hide Editor' : 'Edit Effects'}
                           </Button>
                           {showEffectsEditor && (
                             <div className="space-y-3 mt-2 p-3 border-l-2 border-primary/20">
+                                <Button type="button" variant="outline" size="sm" className="mb-2" onClick={() => appendEffect({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Effect </Button>
                                 {effectFields.map((field, index) => (
                                 <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
                                   <div className="grid grid-cols-2 gap-x-4 flex-grow">
@@ -974,7 +983,6 @@ export default function AddProductPage() {
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeEffect(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
                                 </div>
                               ))}
-                              <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendEffect({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Effect </Button>
                             </div>
                           )}
                         </div>
@@ -985,18 +993,27 @@ export default function AddProductPage() {
                           <FormLabel>Medical Uses</FormLabel>
                           <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/20 min-h-[40px]">
                             {(watchedMedicalUses || []).length === 0 ? ( <span className="text-xs text-muted-foreground">No medical uses listed.</span> ) : (
-                              (watchedMedicalUses || []).map((use, index) => (
-                                <Badge key={index} variant="secondary" className={cn("text-xs font-normal border-none", medicalBadgeColors[index % medicalBadgeColors.length])}>
-                                    {use.name}: <span className="ml-1 font-semibold">{use.percentage}</span>
+                               (watchedMedicalUses || []).map((use, index) => (
+                                <Badge key={`medical-${index}`} variant="secondary" className={cn("group relative pr-5 text-xs font-normal border-none", medicalBadgeColors[index % medicalBadgeColors.length])}>
+                                  {use.name}: <span className="ml-1 font-semibold">{use.percentage}</span>
+                                  <button
+                                      type="button"
+                                      onClick={() => removeMedicalUse(index)}
+                                      className="absolute top-1/2 -translate-y-1/2 right-1 rounded-full p-0.5 opacity-0 transition-opacity bg-black/20 text-white/70 hover:opacity-100 hover:text-white group-hover:opacity-100"
+                                      aria-label={`Remove ${use.name}`}
+                                  >
+                                      <X className="h-3 w-3"/>
+                                  </button>
                                 </Badge>
                               ))
                             )}
                           </div>
-                          <Button type="button" variant="secondary" size="sm" onClick={() => setShowMedicalUsesEditor(!showMedicalUsesEditor)} className="mt-2 text-xs">
+                          <Button type="button" size="sm" onClick={() => setShowMedicalUsesEditor(!showMedicalUsesEditor)} className="mt-2 text-xs bg-green-500 hover:bg-green-600 text-white">
                             {showMedicalUsesEditor ? 'Hide Editor' : 'Edit Medical Uses'}
                           </Button>
                            {showMedicalUsesEditor && (
                             <div className="space-y-3 mt-2 p-3 border-l-2 border-primary/20">
+                                <Button type="button" variant="outline" size="sm" className="mb-2" onClick={() => appendMedicalUse({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Medical Use </Button>
                                 {medicalUseFields.map((field, index) => (
                                 <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
                                   <div className="grid grid-cols-2 gap-x-4 flex-grow">
@@ -1006,7 +1023,6 @@ export default function AddProductPage() {
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeMedicalUse(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
                                 </div>
                               ))}
-                              <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendMedicalUse({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Medical Use </Button>
                             </div>
                           )}
                         </div>
