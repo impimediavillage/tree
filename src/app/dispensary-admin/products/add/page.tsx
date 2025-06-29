@@ -206,6 +206,9 @@ export default function AddProductPage() {
   const [isFetchingStrain, setIsFetchingStrain] = useState(false);
   const [selectedStrainData, setSelectedStrainData] = useState<any | null>(null);
 
+  const [showEffectsEditor, setShowEffectsEditor] = useState(false);
+  const [showMedicalUsesEditor, setShowMedicalUsesEditor] = useState(false);
+
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -730,6 +733,9 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
   }
 
+  const watchedEffects = form.watch('effects');
+  const watchedMedicalUses = form.watch('medicalUses');
+
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
@@ -821,7 +827,7 @@ export default function AddProductPage() {
             <div className="mt-6 pt-6 border-t">
                 {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                     <>
-                        <Alert className="mb-4">
+                       <Alert className="mb-4">
                           <AlertTriangle className="h-4 w-4" />
                           <AlertTitle>Strain Information</AlertTitle>
                           <AlertDescription>
@@ -933,50 +939,78 @@ export default function AddProductPage() {
                                 <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input type="text" placeholder="e.g., 0.8%" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                             )}
                         </div>
-                        <div className="p-2 mt-3 mb-2 rounded-md border border-dashed bg-background/50 text-xs">
-                          <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
-                          <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-                            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-                            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
+                        
+                        <div className="space-y-1">
                           <FormLabel>Effects</FormLabel>
-                          {effectFields.map((field, index) => (
-                            <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
-                              <div className="grid grid-cols-2 gap-x-4 flex-grow">
-                                <FormField control={form.control} name={`effects.${index}.name`} render={({ field }) => (
-                                  <FormItem> <FormLabel className="text-xs">Effect Name</FormLabel> <FormControl><Input placeholder="e.g., Relaxed" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
-                                )}/>
-                                <FormField control={form.control} name={`effects.${index}.percentage`} render={({ field }) => (
-                                  <FormItem> <FormLabel className="text-xs">Percentage</FormLabel> <FormControl><Input placeholder="e.g., 55%" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
-                                )}/>
-                              </div>
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removeEffect(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
+                          <div className="p-2 mt-1 mb-2 rounded-md border border-dashed bg-background/50 text-xs">
+                            <p className="font-semibold text-muted-foreground mb-1.5">Effect & Medical Use Key:</p>
+                            <p className="text-muted-foreground leading-snug">Percentages indicate the reported likelihood of an effect or its potential as a medical aid.</p>
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                                <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                                <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                                <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
                             </div>
-                          ))}
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendEffect({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Effect </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/20 min-h-[40px]">
+                            {(watchedEffects || []).length === 0 ? ( <span className="text-xs text-muted-foreground">No effects listed. Fetch strain data or add manually.</span> ) : (
+                              (watchedEffects || []).map((effect, index) => (
+                                <Badge key={index} variant="secondary" className={cn("text-xs font-normal border-none", badgeColors[index % badgeColors.length])}>
+                                    {effect.name}: <span className="ml-1 font-semibold">{effect.percentage}</span>
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                          <Button type="button" variant="secondary" size="sm" onClick={() => setShowEffectsEditor(!showEffectsEditor)} className="mt-2 text-xs">
+                            {showEffectsEditor ? 'Hide Editor' : 'Edit Effects'}
+                          </Button>
+                          {showEffectsEditor && (
+                            <div className="space-y-3 mt-2 p-3 border-l-2 border-primary/20">
+                                {effectFields.map((field, index) => (
+                                <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
+                                  <div className="grid grid-cols-2 gap-x-4 flex-grow">
+                                    <FormField control={form.control} name={`effects.${index}.name`} render={({ field }) => ( <FormItem> <FormLabel className="text-xs">Effect Name</FormLabel> <FormControl><Input placeholder="e.g., Relaxed" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem> )}/>
+                                    <FormField control={form.control} name={`effects.${index}.percentage`} render={({ field }) => ( <FormItem> <FormLabel className="text-xs">Percentage</FormLabel> <FormControl><Input placeholder="e.g., 55%" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem> )}/>
+                                  </div>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeEffect(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
+                                </div>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendEffect({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Effect </Button>
+                            </div>
+                          )}
                         </div>
+
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
-                        <div className="space-y-3">
+                        
+                        <div className="space-y-1">
                           <FormLabel>Medical Uses</FormLabel>
-                          {medicalUseFields.map((field, index) => (
-                            <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
-                              <div className="grid grid-cols-2 gap-x-4 flex-grow">
-                                <FormField control={form.control} name={`medicalUses.${index}.name`} render={({ field }) => (
-                                  <FormItem> <FormLabel className="text-xs">Medical Use</FormLabel> <FormControl><Input placeholder="e.g., Pain" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
-                                )}/>
-                                <FormField control={form.control} name={`medicalUses.${index}.percentage`} render={({ field }) => (
-                                  <FormItem> <FormLabel className="text-xs">Percentage</FormLabel> <FormControl><Input placeholder="e.g., 40%" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
-                                )}/>
-                              </div>
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removeMedicalUse(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
+                          <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/20 min-h-[40px]">
+                            {(watchedMedicalUses || []).length === 0 ? ( <span className="text-xs text-muted-foreground">No medical uses listed.</span> ) : (
+                              (watchedMedicalUses || []).map((use, index) => (
+                                <Badge key={index} variant="secondary" className={cn("text-xs font-normal border-none", medicalBadgeColors[index % medicalBadgeColors.length])}>
+                                    {use.name}: <span className="ml-1 font-semibold">{use.percentage}</span>
+                                </Badge>
+                              ))
+                            )}
+                          </div>
+                          <Button type="button" variant="secondary" size="sm" onClick={() => setShowMedicalUsesEditor(!showMedicalUsesEditor)} className="mt-2 text-xs">
+                            {showMedicalUsesEditor ? 'Hide Editor' : 'Edit Medical Uses'}
+                          </Button>
+                           {showMedicalUsesEditor && (
+                            <div className="space-y-3 mt-2 p-3 border-l-2 border-primary/20">
+                                {medicalUseFields.map((field, index) => (
+                                <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
+                                  <div className="grid grid-cols-2 gap-x-4 flex-grow">
+                                    <FormField control={form.control} name={`medicalUses.${index}.name`} render={({ field }) => ( <FormItem> <FormLabel className="text-xs">Medical Use</FormLabel> <FormControl><Input placeholder="e.g., Pain" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem> )}/>
+                                    <FormField control={form.control} name={`medicalUses.${index}.percentage`} render={({ field }) => ( <FormItem> <FormLabel className="text-xs">Percentage</FormLabel> <FormControl><Input placeholder="e.g., 40%" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem> )}/>
+                                  </div>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeMedicalUse(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
+                                </div>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendMedicalUse({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Medical Use </Button>
                             </div>
-                          ))}
-                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendMedicalUse({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Medical Use </Button>
+                          )}
                         </div>
+
                          <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
                     </>
                 )}
