@@ -188,8 +188,12 @@ export const priceTierSchema = z.object({
 });
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
+const attributeSchema = z.object({
+  name: z.string().min(1, 'Name cannot be empty'),
+  percentage: z.string().regex(/^\d+(\.\d+)?%?$/, 'Must be a number or percentage (e.g., "55" or "55%")'),
+});
 
-const baseProductSchema = z.object({
+const baseProductObjectSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
@@ -202,9 +206,9 @@ const baseProductSchema = z.object({
   strain: z.string().optional().nullable(),
   thcContent: z.string().optional().nullable(),
   cbdContent: z.string().optional().nullable(),
-  effects: z.array(z.string()).optional().nullable().default([]),
+  effects: z.array(attributeSchema).optional().nullable().default([]),
   flavors: z.array(z.string()).optional().nullable().default([]),
-  medicalUses: z.array(z.string()).optional().nullable().default([]),
+  medicalUses: z.array(attributeSchema).optional().nullable().default([]),
   stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), 
 
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
@@ -221,7 +225,7 @@ const baseProductSchema = z.object({
   tags: z.array(z.string()).optional().nullable().default([]),
 });
 
-export const productSchema = baseProductSchema.superRefine((data, ctx) => {
+export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => {
     if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -456,7 +460,7 @@ export const dispensaryDbSchema = baseWellnessSchema.extend({
 export type Dispensary = z.infer<typeof dispensaryDbSchema>;
 
 
-export const baseProductDbSchema = baseProductSchema.extend({
+export const baseProductDbSchema = baseProductObjectSchema.extend({
   id: z.string().optional(),
   dispensaryId: z.string(),
   dispensaryName: z.string(),

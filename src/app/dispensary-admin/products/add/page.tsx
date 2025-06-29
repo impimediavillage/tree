@@ -12,7 +12,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs, QueryDocumentSnapshot } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, Product } from '@/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, Product, ProductAttribute } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -232,6 +232,14 @@ export default function AddProductPage() {
     name: "poolPriceTiers",
   });
   
+  const { fields: effectFields, append: appendEffect, remove: removeEffect, replace: replaceEffects } = useFieldArray({
+    control: form.control, name: "effects",
+  });
+  
+  const { fields: medicalUseFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({
+    control: form.control, name: "medicalUses",
+  });
+
   const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
@@ -311,28 +319,28 @@ export default function AddProductPage() {
     }
   };
   
-  const getFormattedTagsWithPercentages = useCallback((keys: string[], data: any): string[] => {
-    const tags: string[] = [];
+  const getFormattedAttributes = useCallback((keys: string[], data: any): ProductAttribute[] => {
+    const attributes: ProductAttribute[] = [];
     for (const key of keys) {
-        const rawValue = data[key];
-        let displayValue: string | null = null;
-        if (!rawValue) continue;
-
-        if (typeof rawValue === 'string') {
-           const parsed = parseFloat(rawValue.replace('%', ''));
-            if (!isNaN(parsed) && parsed > 0) {
-                displayValue = rawValue;
-            }
-        } else if (typeof rawValue === 'number' && rawValue > 0) {
-            displayValue = `${rawValue}%`;
+      const rawValue = data[key];
+      let displayValue: string | null = null;
+      if (!rawValue) continue;
+  
+      if (typeof rawValue === 'string') {
+        const parsed = parseFloat(rawValue.replace('%', ''));
+        if (!isNaN(parsed) && parsed > 0) {
+          displayValue = rawValue.includes('%') ? rawValue : `${rawValue}%`;
         }
-        
-        if (displayValue !== null) {
-            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            tags.push(`${formattedKey}: ${displayValue}`);
-        }
+      } else if (typeof rawValue === 'number' && rawValue > 0) {
+        displayValue = `${rawValue}%`;
+      }
+      
+      if (displayValue !== null) {
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        attributes.push({ name: formattedKey, percentage: displayValue });
+      }
     }
-    return tags;
+    return attributes;
   }, []);
   
   useEffect(() => {
@@ -344,8 +352,8 @@ export default function AddProductPage() {
     form.setValue('description', selectedStrainData.description || '', { shouldValidate: true });
     form.setValue('strain', selectedStrainData.name || '', { shouldValidate: true });
 
-    form.setValue('effects', getFormattedTagsWithPercentages(effectKeys, selectedStrainData), { shouldValidate: true });
-    form.setValue('medicalUses', getFormattedTagsWithPercentages(medicalKeys, selectedStrainData), { shouldValidate: true });
+    replaceEffects(getFormattedAttributes(effectKeys, selectedStrainData));
+    replaceMedicalUses(getFormattedAttributes(medicalKeys, selectedStrainData));
     
     // Explicitly clear flavors before setting new ones to prevent state glitches
     form.setValue('flavors', [], { shouldDirty: false });
@@ -361,7 +369,7 @@ export default function AddProductPage() {
     }, 0);
 
 
-  }, [selectedStrainData, form, getFormattedTagsWithPercentages]);
+  }, [selectedStrainData, form, getFormattedAttributes, replaceEffects, replaceMedicalUses]);
 
 
 
@@ -718,28 +726,6 @@ export default function AddProductPage() {
     }
   };
   
-  const effectColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    effectKeys.forEach((key, index) => {
-        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        map.set(formattedKey, badgeColors[index % badgeColors.length]);
-    });
-    return map;
-  }, []);
-
-  const medicalColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    medicalKeys.forEach((key, index) => {
-        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        map.set(formattedKey, medicalBadgeColors[index % medicalBadgeColors.length]);
-    });
-    return map;
-  }, []);
-
-  const getEffectTagClassName = (tag: string) => effectColorMap.get(tag.split(':')[0]) || 'bg-muted text-muted-foreground';
-  const getMedicalTagClassName = (tag: string) => medicalColorMap.get(tag.split(':')[0]) || 'bg-muted text-muted-foreground';
-
-
   if (isLoadingInitialData || authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
   }
@@ -956,9 +942,41 @@ export default function AddProductPage() {
                             <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
                           </div>
                         </div>
-                        <Controller control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add effect..." disabled={isLoading} getTagClassName={getEffectTagClassName} /><FormMessage /></FormItem> )} />
+                        <div className="space-y-3">
+                          <FormLabel>Effects</FormLabel>
+                          {effectFields.map((field, index) => (
+                            <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
+                              <div className="grid grid-cols-2 gap-x-4 flex-grow">
+                                <FormField control={form.control} name={`effects.${index}.name`} render={({ field }) => (
+                                  <FormItem> <FormLabel className="text-xs">Effect Name</FormLabel> <FormControl><Input placeholder="e.g., Relaxed" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
+                                )}/>
+                                <FormField control={form.control} name={`effects.${index}.percentage`} render={({ field }) => (
+                                  <FormItem> <FormLabel className="text-xs">Percentage</FormLabel> <FormControl><Input placeholder="e.g., 55%" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
+                                )}/>
+                              </div>
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removeEffect(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
+                            </div>
+                          ))}
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendEffect({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Effect </Button>
+                        </div>
                         <Controller control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add flavor (e.g., Earthy, Sweet, Citrus)" disabled={isLoading} /><FormMessage /></FormItem> )} />
-                        <Controller control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses (tags)</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add medical use..." disabled={isLoading} getTagClassName={getMedicalTagClassName} /><FormMessage /></FormItem> )} />
+                        <div className="space-y-3">
+                          <FormLabel>Medical Uses</FormLabel>
+                          {medicalUseFields.map((field, index) => (
+                            <div key={field.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
+                              <div className="grid grid-cols-2 gap-x-4 flex-grow">
+                                <FormField control={form.control} name={`medicalUses.${index}.name`} render={({ field }) => (
+                                  <FormItem> <FormLabel className="text-xs">Medical Use</FormLabel> <FormControl><Input placeholder="e.g., Pain" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
+                                )}/>
+                                <FormField control={form.control} name={`medicalUses.${index}.percentage`} render={({ field }) => (
+                                  <FormItem> <FormLabel className="text-xs">Percentage</FormLabel> <FormControl><Input placeholder="e.g., 40%" {...field} /></FormControl> <FormMessage className="text-xs" /> </FormItem>
+                                )}/>
+                              </div>
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removeMedicalUse(index)} className="text-destructive hover:bg-destructive/10 mt-6 shrink-0 h-9 w-9"> <Trash2 className="h-4 w-4" /> </Button>
+                            </div>
+                          ))}
+                          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendMedicalUse({ name: '', percentage: '' })}> <PlusCircle className="mr-2 h-4 w-4" /> Add Medical Use </Button>
+                        </div>
                          <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
                     </>
                 )}

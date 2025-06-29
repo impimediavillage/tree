@@ -70,6 +70,10 @@ export interface DispensaryTypeProductCategoriesDoc {
   updatedAt?: Timestamp | Date | string;
 }
 
+export interface ProductAttribute {
+  name: string;
+  percentage: string;
+}
 
 // Represents a Product document in Firestore
 export interface Product {
@@ -87,9 +91,9 @@ export interface Product {
   strain?: string | null;
   thcContent?: string | null;
   cbdContent?: string | null;
-  effects?: string[] | null;
+  effects?: ProductAttribute[] | null;
   flavors?: string[] | null;
-  medicalUses?: string[] | null;
+  medicalUses?: ProductAttribute[] | null;
   stickerProgramOptIn?: 'yes' | 'no' | null; 
 
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;
@@ -114,6 +118,8 @@ export interface Product {
     latitude?: number | null;
     longitude?: number | null;
   } | null;
+  productType?: string | null;
+  mostCommonTerpene?: string | null;
 }
 
 export interface NoteData {
