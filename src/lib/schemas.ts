@@ -220,7 +220,7 @@ const baseProductObjectSchema = z.object({
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
-  imageUrl: z.string().url("Invalid image URL.").or(z.literal(null)).optional().nullable(),
+  imageUrls: z.array(z.string().url()).max(5, "You can upload a maximum of 5 images.").optional().nullable().default([]),
   labTested: z.boolean().default(false).optional(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),

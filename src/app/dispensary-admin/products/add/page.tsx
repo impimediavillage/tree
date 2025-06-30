@@ -22,15 +22,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon, Users, X } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon, Users, X } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -195,11 +195,6 @@ export default function AddProductPage() {
   const [specificProductTypeOptions, setSpecificProductTypeOptions] = useState<string[]>([]);
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
-
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
   
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
@@ -208,6 +203,8 @@ export default function AddProductPage() {
 
   const [showEffectsEditor, setShowEffectsEditor] = useState(false);
   const [showMedicalUsesEditor, setShowMedicalUsesEditor] = useState(false);
+
+  const [files, setFiles] = useState<File[]>([]);
 
 
   const form = useForm<ProductFormData>({
@@ -219,7 +216,7 @@ export default function AddProductPage() {
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any }], 
       poolPriceTiers: [],
-      quantityInStock: undefined, imageUrl: null,
+      quantityInStock: undefined, imageUrls: [],
       labTested: false, effects: [], flavors: [], medicalUses: [],
       isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
     },
@@ -593,25 +590,6 @@ export default function AddProductPage() {
     }
     form.setValue('sizes', [], { shouldValidate: true });
   }, [selectedProductStream, watchedGender, watchedSizingSystem, form]);
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { 
-        toast({ title: "Image Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => { setImagePreview(reader.result as string); };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null); setImagePreview(null); form.setValue('imageUrl', null);
-    if (imageInputRef.current) imageInputRef.current.value = "";
-  };
   
   const handleProductStreamSelect = (stream: StreamKey) => {
     resetProductStreamSpecificFields();
@@ -652,24 +630,37 @@ export default function AddProductPage() {
         return;
     }
 
+    setIsLoading(true);
+    let uploadedImageUrls: string[] = [];
 
-    setIsLoading(true); setUploadProgress(null);
-    let uploadedImageUrl: string | null = null;
-
-    if (imageFile) {
-      const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
-      const fileStorageRef = storageRef(storage, filePath);
-      const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
-      try {
-        uploadedImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
-          async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
+    if (files.length > 0) {
+        const uploadPromises = files.map(file => {
+            const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${file.name}`;
+            const fileStorageRef = storageRef(storage, filePath);
+            const uploadTask = uploadBytesResumable(fileStorageRef, file);
+            return new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed', 
+                    null, 
+                    (error) => reject(error),
+                    async () => {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        resolve(downloadURL);
+                    }
+                );
+            });
         });
-      } catch (error) {
-        toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return;
-      }
+
+        try {
+            toast({ title: `Uploading ${files.length} image(s)...`, description: "Please wait.", variant: "default" });
+            uploadedImageUrls = await Promise.all(uploadPromises);
+            toast({ title: "Upload Complete!", description: "All images have been uploaded successfully.", variant: "default" });
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            toast({ title: "Image Upload Failed", description: "One or more images failed to upload. Please try again.", variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
     }
-    setUploadProgress(100); 
 
     try {
       const totalStock = data.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
@@ -677,7 +668,7 @@ export default function AddProductPage() {
       const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation' | 'price' | 'unit'> = {
         ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: wellnessData.dispensaryName,
         dispensaryType: wellnessData.dispensaryType, productOwnerEmail: wellnessData.ownerEmail,
-        imageUrl: uploadedImageUrl,
+        imageUrls: uploadedImageUrls,
         priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
         poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : null,
         quantityInStock: totalStock,
@@ -713,15 +704,15 @@ export default function AddProductPage() {
         strain: null, thcContent: '', cbdContent: '', gender: null, sizingSystem: null, sizes: [],
         currency: wellnessData.currency || 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any }], 
         poolPriceTiers: [],
-        quantityInStock: undefined, imageUrl: null, labTested: false, effects: [], flavors: [], medicalUses: [],
+        quantityInStock: undefined, imageUrls: [], labTested: false, effects: [], flavors: [], medicalUses: [],
         isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
       });
+      setFiles([]);
       setSelectedProductStream(null);
       setSelectedDeliveryMethod(null);
       setSelectedMainCategoryName(null); setSelectedSubCategoryL1Name(null);
       setAvailableStandardSizes([]);
       
-      setImageFile(null); setImagePreview(null); setUploadProgress(null);
       router.push('/dispensary-admin/products');
     } catch (error) {
       toast({ title: "Add Product Failed", description: "An unexpected error occurred. Please try again.", variant: "destructive" });
@@ -827,6 +818,25 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
             <div className="mt-6 pt-6 border-t">
+                <h3 className="text-xl font-semibold text-foreground mb-4" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h3>
+                <FormField
+                    control={form.control}
+                    name="imageUrls" 
+                    render={() => (
+                        <FormItem>
+                            <FormLabel>Product Images *</FormLabel>
+                            <MultiImageDropzone
+                                value={files}
+                                onChange={setFiles}
+                                maxFiles={5}
+                                maxSize={100 * 1024} // 100KB
+                            />
+                            <FormDescription>Upload up to 5 images (max 100KB each). Drag & drop or click to select.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                
                 {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                     <>
                        <Alert className="mb-4">
@@ -1135,8 +1145,6 @@ export default function AddProductPage() {
                 <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
                 
                 <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add tag (e.g., Organic, Indoor, Popular)" disabled={isLoading} /><FormMessage /></FormItem> )} />
-                <Separator /> <h3 className="text-lg font-medium text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Image</h3>
-                <FormField control={form.control} name="imageUrl" render={() => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image"/> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile ? "Change Image" : "Upload Image"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/*" onChange={handleImageChange} disabled={isLoading} /> {imagePreview && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove Image </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Click "Add Product" to save.</p>} <FormDescription>Recommended: Clear, well-lit photo. PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
             </div>
             )}
 
@@ -1196,4 +1204,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
