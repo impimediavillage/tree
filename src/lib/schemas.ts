@@ -184,6 +184,7 @@ export const priceTierSchema = z.object({
     .refine(val => val <= 9999999.99, { 
         message: "Price amount is too high (max 9,999,999.99)."
     }),
+  quantityInStock: z.coerce.number().int().min(0, "Stock must be a non-negative number.").optional().nullable(),
   description: z.string().optional().nullable(),
 });
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
@@ -218,7 +219,7 @@ const baseProductObjectSchema = z.object({
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
-  quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative."),
+  quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
   imageUrl: z.string().url("Invalid image URL.").or(z.literal(null)).optional().nullable(),
   labTested: z.boolean().default(false).optional(),
   isAvailableForPool: z.boolean().default(false).optional(),
