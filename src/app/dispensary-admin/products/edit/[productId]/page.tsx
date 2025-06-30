@@ -22,15 +22,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, UploadCloud, Trash2, Image as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Palette, Ruler, Brush, Delete, Info, Search as SearchIcon, Users, X } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ImageIcon as ImageIconLucide, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Brush, Delete, Info, Search as SearchIcon, X } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -200,11 +200,9 @@ export default function EditProductPage() {
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const [oldImageUrl, setOldImageUrl] = useState<string | null | undefined>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [deletedImageUrls, setDeletedImageUrls] = useState<string[]>([]);
 
   const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
@@ -458,7 +456,7 @@ export default function EditProductPage() {
           priceTiers: productData.priceTiers && productData.priceTiers.length > 0 ? productData.priceTiers : [{ unit: '', price: undefined as any, quantityInStock: undefined as any }],
           poolPriceTiers: productData.poolPriceTiers || [],
           quantityInStock: productData.quantityInStock ?? undefined,
-          imageUrl: productData.imageUrl || null,
+          imageUrls: productData.imageUrls || [],
           labTested: productData.labTested || false,
           isAvailableForPool: productData.isAvailableForPool || false,
           tags: productData.tags || [],
@@ -474,11 +472,8 @@ export default function EditProductPage() {
         } else {
             replacePoolPriceTiers([]);
         }
-
-
-        setImagePreview(productData.imageUrl || null);
-        setOldImageUrl(productData.imageUrl);
-
+        setExistingImageUrls(productData.imageUrls || []);
+        
         if (isSpecialType && initialStream && localCategoryStructureObject) {
           if (initialStream === 'THC' || initialStream === 'CBD') {
             const compoundDetails = localCategoryStructureObject[initialStream];
@@ -637,30 +632,6 @@ export default function EditProductPage() {
       setAvailableStandardSizes(sizes);
     }
   }, [selectedProductStream, watchedGender, watchedSizingSystem]);
-
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-       if (file.size > 5 * 1024 * 1024) { 
-        toast({ title: "Image Too Large", description: "Please select an image smaller than 5MB.", variant: "destructive" });
-        return;
-      }
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-      form.setValue('imageUrl', ''); 
-    }
-  };
-
-  const handleRemoveImage = async () => {
-    setImageFile(null);
-    setImagePreview(null);
-    form.setValue('imageUrl', null); 
-    if (imageInputRef.current) imageInputRef.current.value = "";
-    
-  };
   
   const handleProductStreamSelect = (stream: StreamKey) => { 
     console.warn("Product stream cannot be changed after creation.");
@@ -678,6 +649,14 @@ export default function EditProductPage() {
     form.setValue('sizes', [], { shouldValidate: true });
   };
 
+  const handleRemoveExistingImage = (index: number) => {
+    const urlToRemove = existingImageUrls[index];
+    if (urlToRemove) {
+      setExistingImageUrls(prev => prev.filter((_, i) => i !== index));
+      setDeletedImageUrls(prev => [...prev, urlToRemove]);
+    }
+  };
+
 
   const onSubmit = async (data: ProductFormData) => {
     if (!currentUser?.dispensaryId || !wellnessData || !existingProduct?.id) {
@@ -688,33 +667,45 @@ export default function EditProductPage() {
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
 
-    setIsLoading(true); setUploadProgress(null);
-    let finalImageUrl: string | null | undefined = form.getValues('imageUrl'); 
+    setIsLoading(true);
+    let finalImageUrls = [...existingImageUrls];
 
-    if (imageFile) { 
-      const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${imageFile.name}`;
-      const fileStorageRef = storageRef(storage, filePath);
-      const uploadTask = uploadBytesResumable(fileStorageRef, imageFile);
-      try {
-        finalImageUrl = await new Promise((resolve, reject) => {
-          uploadTask.on('state_changed', (s) => setUploadProgress((s.bytesTransferred / s.totalBytes) * 100), reject,
-          async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)));
+    if (files.length > 0) {
+        const uploadPromises = files.map(file => {
+            const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${file.name}`;
+            const fileStorageRef = storageRef(storage, filePath);
+            const uploadTask = uploadBytesResumable(fileStorageRef, file);
+            return new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed', null, reject,
+                    async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+                );
+            });
         });
-        
-        if (oldImageUrl && oldImageUrl !== finalImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-            try { await deleteObject(storageRef(storage, oldImageUrl)); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.warn("Old icon not found or delete failed:", e); }
+
+        try {
+            toast({ title: `Uploading ${files.length} new image(s)...`, variant: "default" });
+            const newUploadedUrls = await Promise.all(uploadPromises);
+            finalImageUrls.push(...newUploadedUrls);
+            toast({ title: "Upload Complete!", variant: "default" });
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            toast({ title: "Image Upload Failed", variant: "destructive" });
+            setIsLoading(false);
+            return;
         }
-        setOldImageUrl(finalImageUrl); 
-      } catch (error) { toast({ title: "Image Upload Failed", variant: "destructive" }); setIsLoading(false); return; }
-    } else if (form.getValues('imageUrl') === null && oldImageUrl && oldImageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-      
-      try { await deleteObject(storageRef(storage, oldImageUrl)); finalImageUrl = null; setOldImageUrl(null); }
-      catch (e: any) {
-        if (e.code !== 'storage/object-not-found') console.warn("Old image not found or delete failed (on removal):", e);
-        else {finalImageUrl = null; setOldImageUrl(null);} 
-      }
     }
-    
+
+     if (deletedImageUrls.length > 0) {
+        const deletePromises = deletedImageUrls.map(url => {
+            if (url.startsWith('https://firebasestorage.googleapis.com')) {
+                return deleteObject(storageRef(storage, url)).catch(e => {
+                    if (e.code !== 'storage/object-not-found') console.warn(`Failed to delete old image: ${url}`, e);
+                });
+            }
+            return Promise.resolve();
+        });
+        await Promise.all(deletePromises);
+    }
     
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
@@ -733,7 +724,7 @@ export default function EditProductPage() {
         priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
         poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : null,
         quantityInStock: totalStock,
-        imageUrl: finalImageUrl,
+        imageUrls: finalImageUrls,
         labTested: data.labTested || false,
         isAvailableForPool: data.isAvailableForPool || false,
         tags: data.tags || [],
@@ -779,7 +770,7 @@ export default function EditProductPage() {
     } catch (error) {
       toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
       console.error("Error updating product:", error);
-    } finally { setIsLoading(false); setUploadProgress(null); }
+    } finally { setIsLoading(false); }
   };
   
   if (authLoading || isLoadingInitialData) {
@@ -1177,8 +1168,50 @@ export default function EditProductPage() {
                 
                 <FormField control={form.control} name="currency" render={({ field }) => ( <FormItem><FormLabel>Currency *</FormLabel><FormControl><Input placeholder="ZAR" {...field} maxLength={3} readOnly disabled value={field.value ?? ''}/></FormControl><FormMessage /></FormItem> )} />
                 <Controller control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>General Tags</FormLabel><MultiInputTags value={field.value || []} onChange={field.onChange} placeholder="Add tag (e.g., Organic, Indoor, Popular)" disabled={isLoading} /><FormMessage /></FormItem> )} />
-                <Separator /> <h3 className="text-lg font-medium text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Image</h3>
-                <FormField control={form.control} name="imageUrl" render={() => ( <FormItem> <div className="flex items-center gap-4"> {imagePreview ? ( <div className="relative w-32 h-32 rounded border p-1 bg-muted"> <Image src={imagePreview} alt="Product preview" layout="fill" objectFit="cover" className="rounded" data-ai-hint="product image" /> </div> ) : ( <div className="w-32 h-32 rounded border bg-muted flex items-center justify-center"> <ImageIconLucide className="w-12 h-12 text-muted-foreground" /> </div> )} <div className="flex flex-col gap-2"> <Button type="button" variant="outline" onClick={() => imageInputRef.current?.click()} disabled={isLoading}> <UploadCloud className="mr-2 h-4 w-4" /> {imageFile || imagePreview ? "Change Image" : "Upload Image"} </Button> <Input id="imageUpload" type="file" className="hidden" ref={imageInputRef} accept="image/png, image/jpeg, image/webp, image/gif" onChange={(e) => handleImageChange(e)} /> {(imagePreview || form.getValues('imageUrl')) && ( <Button type="button" variant="ghost" size="sm" onClick={handleRemoveImage} className="text-destructive hover:text-destructive-foreground hover:bg-destructive/10" disabled={isLoading}> <Trash2 className="mr-2 h-4 w-4" /> Remove Image </Button> )} </div> </div> {uploadProgress !== null && uploadProgress < 100 && ( <div className="mt-2"> <Progress value={uploadProgress} className="w-full h-2" /> <p className="text-xs text-muted-foreground text-center mt-1">Uploading: {Math.round(uploadProgress)}%</p> </div> )} {uploadProgress === 100 && <p className="text-xs text-green-600 mt-1">Upload complete. Save changes.</p>} <FormDescription>Recommended: Clear, well-lit photo. PNG, JPG, WEBP. Max 5MB.</FormDescription> <FormMessage /> </FormItem> )} />
+                <Separator />
+                <FormField
+                    control={form.control}
+                    name="imageUrls"
+                    render={() => (
+                        <FormItem>
+                            <FormLabel>Product Images *</FormLabel>
+                            <div className="space-y-2">
+                                <p className="text-sm text-muted-foreground">Existing Images</p>
+                                {existingImageUrls.length > 0 ? (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                                    {existingImageUrls.map((url, i) => (
+                                        <div key={url} className="relative aspect-square w-full rounded-md shadow-lg">
+                                        <Image src={url} alt={`Existing image ${i + 1}`} layout="fill" objectFit="cover" className="rounded-md" />
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                                            onClick={() => handleRemoveExistingImage(i)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                        </div>
+                                    ))}
+                                    </div>
+                                ) : <p className="text-xs text-muted-foreground">No existing images.</p>}
+                            </div>
+
+                            <div className="mt-4">
+                                <p className="text-sm text-muted-foreground mb-2">Add New Images</p>
+                                <MultiImageDropzone
+                                    value={files}
+                                    onChange={setFiles}
+                                    maxFiles={5 - existingImageUrls.length}
+                                    maxSize={100 * 1024}
+                                    disabled={isLoading || existingImageUrls.length >= 5}
+                                />
+                            </div>
+                            <FormDescription>Upload up to 5 images (max 100KB each). Drag & drop or click to select.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <Separator />
                 <div className="space-y-4">
                 <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
@@ -1230,4 +1263,3 @@ export default function EditProductPage() {
     </Card>
   );
 }
-
