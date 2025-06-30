@@ -32,7 +32,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 
-const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "piece", "seed", "unit" ];
+const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 
@@ -214,7 +214,7 @@ export default function AddProductPage() {
       productType: '', mostCommonTerpene: '',
       strain: null, thcContent: '', cbdContent: '', 
       gender: null, sizingSystem: null, sizes: [],
-      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any }], 
+      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
       poolPriceTiers: [],
       quantityInStock: undefined, imageUrls: [],
       labTested: false, effects: [], flavors: [], medicalUses: [],
@@ -702,7 +702,7 @@ export default function AddProductPage() {
         name: '', description: '', category: '', subcategory: null, subSubcategory: null,
         productType: '', mostCommonTerpene: '',
         strain: null, thcContent: '', cbdContent: '', gender: null, sizingSystem: null, sizes: [],
-        currency: wellnessData.currency || 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any }], 
+        currency: wellnessData.currency || 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
         poolPriceTiers: [],
         quantityInStock: undefined, imageUrls: [], labTested: false, effects: [], flavors: [], medicalUses: [],
         isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
@@ -1105,16 +1105,21 @@ export default function AddProductPage() {
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
                     <FormDescription>Pricing for regular customer sales.</FormDescription>
                     {priceTierFields.map((tierField, index) => (
-                        <div key={tierField.id} className="flex items-start gap-2 p-3 border rounded-md bg-muted/30">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2 flex-grow">
-                                <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl><SelectContent>{regularUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field }) => ( <FormItem><FormLabel>Stock Qty</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                        <div key={tierField.id} className="space-y-2 items-start p-3 border rounded-md bg-muted/30">
+                            <div className="flex items-start gap-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2 flex-grow">
+                                    <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field }) => ( <FormItem><FormLabel>Unit</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl><SelectContent>{regularUnits.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field }) => ( <FormItem><FormLabel>Stock Qty</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
+                                {priceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 mt-6"><Trash2 className="h-5 w-5" /></Button> )}
                             </div>
-                            {priceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 mt-6"><Trash2 className="h-5 w-5" /></Button> )}
+                            {(form.watch(`priceTiers.${index}.unit`) === 'pack' || form.watch(`priceTiers.${index}.unit`) === 'box') && (
+                                <FormField control={form.control} name={`priceTiers.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Pack/Box Description</FormLabel><FormControl><Input placeholder="e.g., Pack of 10 pre-rolls" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
+                            )}
                         </div>
                     ))}
-                    <Button type="button" variant="outline" onClick={() => appendPriceTier({ unit: '', price: undefined as any, quantityInStock: undefined as any })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Price Tier</Button>
+                    <Button type="button" variant="outline" onClick={() => appendPriceTier({ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Price Tier</Button>
                     <FormMessage>{form.formState.errors.priceTiers?.root?.message || form.formState.errors.priceTiers?.message}</FormMessage>
                 </div>
                 
