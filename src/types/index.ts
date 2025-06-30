@@ -5,6 +5,7 @@ import type { Timestamp } from 'firebase/firestore';
 export interface PriceTier {
   unit: string;
   price: number;
+  quantityInStock?: number | null;
   description?: string | null;
 }
 
@@ -101,8 +102,6 @@ export interface Product {
   sizes?: string[] | null;
   
   currency: string; 
-  price: number; 
-  unit: string; 
   priceTiers: PriceTier[]; 
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
@@ -349,7 +348,7 @@ export interface ProductCategoryCount {
 }
 
 // Cart Item type
-export interface CartItem extends Omit<Product, 'priceTiers' | 'price' | 'unit'> { 
+export interface CartItem extends Omit<Product, 'priceTiers' | 'quantityInStock'> { 
   id: string; 
   name: string;
   price: number; 
