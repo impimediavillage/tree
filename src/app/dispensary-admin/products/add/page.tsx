@@ -665,30 +665,40 @@ export default function AddProductPage() {
     try {
       const totalStock = data.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
       
-      const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation' | 'price' | 'unit'> = {
+      const productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt' | 'dispensaryLocation'> = {
         ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: wellnessData.dispensaryName,
         dispensaryType: wellnessData.dispensaryType, productOwnerEmail: wellnessData.ownerEmail,
         imageUrls: uploadedImageUrls,
         priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
-        poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : null,
+        poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : [],
         quantityInStock: totalStock,
       };
       
       if (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') {
-        productData.strain = null; productData.thcContent = null; productData.cbdContent = null;
-        productData.effects = []; productData.flavors = []; productData.medicalUses = [];
-        productData.stickerProgramOptIn = null;
-        productData.productType = '';
-        productData.mostCommonTerpene = '';
+        (productData as Partial<Product>).strain = null;
+        (productData as Partial<Product>).thcContent = null;
+        (productData as Partial<Product>).cbdContent = null;
+        (productData as Partial<Product>).effects = [];
+        (productData as Partial<Product>).flavors = [];
+        (productData as Partial<Product>).medicalUses = [];
+        (productData as Partial<Product>).stickerProgramOptIn = null;
+        (productData as Partial<Product>).productType = '';
+        (productData as Partial<Product>).mostCommonTerpene = '';
       }
-      if (selectedProductStream !== 'Apparel') { 
-        productData.gender = null; productData.sizingSystem = null; productData.sizes = [];
+      
+      if (selectedProductStream !== 'Apparel') {
+        (productData as Partial<Product>).gender = null;
+        (productData as Partial<Product>).sizingSystem = null;
+        (productData as Partial<Product>).sizes = [];
       }
-      if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') { 
-        productData.subcategory = null; productData.subSubcategory = null;
+      
+      if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') {
+        (productData as Partial<Product>).subcategory = null;
+        (productData as Partial<Product>).subSubcategory = null;
       }
-      if (!data.subcategory) productData.subcategory = null;
-      if (!data.subSubcategory) productData.subSubcategory = null;
+      
+      if (!data.subcategory) (productData as Partial<Product>).subcategory = null;
+      if (!data.subSubcategory) (productData as Partial<Product>).subSubcategory = null;
 
 
       await addDoc(collection(db, 'products'), {

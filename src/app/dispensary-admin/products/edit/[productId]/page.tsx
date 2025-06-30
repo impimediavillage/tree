@@ -712,59 +712,42 @@ export default function EditProductPage() {
       
       const totalStock = data.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
       
-      const productUpdateData: Partial<ProductType> = { 
-        name: data.name,
-        description: data.description,
-        category: data.category,
-        subcategory: data.subcategory || null,
-        subSubcategory: data.subSubcategory || null,
-        productType: data.productType || null,
-        mostCommonTerpene: data.mostCommonTerpene || null,
-        currency: data.currency,
-        priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
-        poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : null,
-        quantityInStock: totalStock,
-        imageUrls: finalImageUrls,
-        labTested: data.labTested || false,
-        isAvailableForPool: data.isAvailableForPool || false,
-        tags: data.tags || [],
-        updatedAt: serverTimestamp() as any,
-        stickerProgramOptIn: (selectedProductStream === 'THC' ? data.stickerProgramOptIn : null) || null,
+      const productUpdateData: Partial<ProductType> = {
+          ...data,
+          imageUrls: finalImageUrls,
+          priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0),
+          poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : [],
+          quantityInStock: totalStock,
+          updatedAt: serverTimestamp() as any,
       };
 
-      if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
-        productUpdateData.strain = data.strain || null;
-        productUpdateData.thcContent = data.thcContent || null;
-        productUpdateData.cbdContent = data.cbdContent || null;
-        productUpdateData.effects = data.effects || [];
-        productUpdateData.flavors = data.flavors || [];
-        productUpdateData.medicalUses = data.medicalUses || [];
-        
-        productUpdateData.gender = null; productUpdateData.sizingSystem = null; productUpdateData.sizes = [];
-      } else if (selectedProductStream === 'Apparel') { 
-        productUpdateData.gender = data.gender || null;
-        productUpdateData.sizingSystem = data.sizingSystem || null;
-        productUpdateData.sizes = data.sizes || [];
-        
-        productUpdateData.strain = null; productUpdateData.thcContent = null; productUpdateData.cbdContent = null;
-        productUpdateData.effects = []; productUpdateData.flavors = []; productUpdateData.medicalUses = [];
+      if (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') {
+        productUpdateData.strain = null;
+        productUpdateData.thcContent = null;
+        productUpdateData.cbdContent = null;
+        productUpdateData.effects = [];
+        productUpdateData.flavors = [];
+        productUpdateData.medicalUses = [];
         productUpdateData.stickerProgramOptIn = null;
-      } else if (selectedProductStream === 'Smoking Gear') {
-        
-        productUpdateData.strain = null; productUpdateData.thcContent = null; productUpdateData.cbdContent = null;
-        productUpdateData.effects = []; productUpdateData.flavors = []; productUpdateData.medicalUses = [];
-        productUpdateData.gender = null; productUpdateData.sizingSystem = null; productUpdateData.sizes = [];
-        productUpdateData.stickerProgramOptIn = null;
+        productUpdateData.productType = '';
+        productUpdateData.mostCommonTerpene = '';
       }
-       
-      if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') { 
-        productUpdateData.subcategory = null; productUpdateData.subSubcategory = null;
+
+      if (selectedProductStream !== 'Apparel') {
+        productUpdateData.gender = null;
+        productUpdateData.sizingSystem = null;
+        productUpdateData.sizes = [];
       }
+
+      if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') {
+          productUpdateData.subcategory = null;
+          productUpdateData.subSubcategory = null;
+      }
+
       if (!data.subcategory) productUpdateData.subcategory = null;
       if (!data.subSubcategory) productUpdateData.subSubcategory = null;
 
-
-      await updateDoc(productDocRef, productUpdateData);
+      await updateDoc(productDocRef, productUpdateData as { [x: string]: any });
       toast({ title: "Product Updated!", description: `${data.name} has been successfully updated.` });
       router.push('/dispensary-admin/products');
     } catch (error) {
