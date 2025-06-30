@@ -105,7 +105,7 @@ export interface Product {
   priceTiers: PriceTier[]; 
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
-  imageUrl?: string | null;
+  imageUrls?: string[] | null;
   labTested?: boolean;
   isAvailableForPool?: boolean;
   tags?: string[] | null;
@@ -348,13 +348,13 @@ export interface ProductCategoryCount {
 }
 
 // Cart Item type
-export interface CartItem extends Omit<Product, 'priceTiers' | 'quantityInStock'> { 
+export interface CartItem extends Omit<Product, 'priceTiers' | 'quantityInStock' | 'imageUrls'> { 
   id: string; 
   name: string;
   price: number; 
   unit: string; 
   quantity: number;
-  imageUrl?: string | null;
+  imageUrl?: string | null; // Keep first image for cart display
   currency: string;
   dispensaryId: string;
   dispensaryName: string;
