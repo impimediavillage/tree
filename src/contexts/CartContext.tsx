@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Product, CartItem } from '@/types';
+import type { Product, CartItem, PriceTier } from '@/types';
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -52,29 +52,61 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [cartItems]);
 
   const addToCart = (product: Product, quantityToAdd: number = 1) => {
-    if (product.quantityInStock <= 0) {
+    const priceTier = product.priceTiers?.[0]; // Assume we're adding the first tier
+    if (!priceTier) {
+        toast({ title: "Not Available", description: `${product.name} does not have a price set and cannot be added.`, variant: "destructive"});
+        return;
+    }
+
+    const tierStock = priceTier.quantityInStock ?? product.quantityInStock ?? 0;
+    if (tierStock <= 0) {
         toast({ title: "Out of Stock", description: `${product.name} is currently out of stock.`, variant: "destructive"});
         return;
     }
+    
     setCartItems(prevItems => {
+      // Since UI doesn't support adding different tiers, we find by product.id
       const existingItem = prevItems.find(item => item.id === product.id);
+      
       if (existingItem) {
         const newQuantity = existingItem.quantity + quantityToAdd;
-        if (newQuantity > product.quantityInStock) {
-            toast({ title: "Stock Limit Reached", description: `Cannot add more ${product.name}. Max ${product.quantityInStock} in stock. Cart updated to max.`, variant: "destructive"});
+        if (newQuantity > existingItem.quantityInStock) {
+            toast({ title: "Stock Limit Reached", description: `Cannot add more ${product.name}. Max ${existingItem.quantityInStock} in stock.`, variant: "destructive"});
             return prevItems.map(item =>
-                item.id === product.id ? { ...item, quantity: product.quantityInStock } : item
+                item.id === product.id ? { ...item, quantity: existingItem.quantityInStock } : item
             );
         }
         return prevItems.map(item =>
           item.id === product.id ? { ...item, quantity: newQuantity } : item
         );
       } else {
-        if (quantityToAdd > product.quantityInStock) {
-            toast({ title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name}. Only ${product.quantityInStock} available. Added max to cart.`, variant: "destructive"});
-             return [...prevItems, { ...product, quantity: product.quantityInStock }];
+        const stockForThisTier = priceTier.quantityInStock ?? product.quantityInStock;
+        if (quantityToAdd > stockForThisTier) {
+            toast({ title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name}. Only ${stockForThisTier} available. Added max to cart.`, variant: "destructive"});
+             const newItem: CartItem = {
+                ...product,
+                price: priceTier.price,
+                unit: priceTier.unit,
+                quantity: stockForThisTier,
+                imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
+                quantityInStock: stockForThisTier,
+            };
+            return [...prevItems, newItem];
         }
-        return [...prevItems, { ...product, quantity: quantityToAdd }];
+        const newItem: CartItem = {
+            ...product,
+            price: priceTier.price,
+            unit: priceTier.unit,
+            quantity: quantityToAdd,
+            imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
+            quantityInStock: stockForThisTier,
+        };
+        toast({
+          title: `Added to Cart!`,
+          description: `${newItem.name} has been added to your cart.`,
+          variant: "default",
+        });
+        return [...prevItems, newItem];
       }
     });
   };
@@ -147,4 +179,3 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
-
