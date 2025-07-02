@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import type { Dispensary, Product, ProductAttribute } from '@/types';
+import type { Dispensary, Product, ProductAttribute, PriceTier } from '@/types';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -88,9 +88,10 @@ const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon }: { trigg
 
 interface PublicProductCardProps {
   product: Product;
+  tier: PriceTier;
 }
 
-function PublicProductCard({ product }: PublicProductCardProps) {
+function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const { toast } = useToast();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -108,20 +109,20 @@ function PublicProductCard({ product }: PublicProductCardProps) {
 
   const dataAiHintProduct = `${product.category} ${product.name.split(" ")[0] || ""}`;
 
-  const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
-  const tierStock = firstPriceTier?.quantityInStock ?? product.quantityInStock ?? 0;
+  const tierStock = tier.quantityInStock ?? 0;
   
-  const itemInCart = cartItems.find(item => item.id === product.id);
+  const cartItemId = `${product.id}-${tier.unit}`;
+  const itemInCart = cartItems.find(item => item.id === cartItemId);
   const currentQuantityInCart = itemInCart?.quantity || 0;
   const canAddToCart = tierStock > currentQuantityInCart;
 
   const handleAddToCart = () => {
-    addToCart(product, 1); 
+    addToCart(product, tier, 1);
   };
   
-  const displayTier = firstPriceTier ? {
-      price: firstPriceTier.price,
-      unit: firstPriceTier.unit
+  const displayTier = tier ? {
+      price: tier.price,
+      unit: tier.unit
   } : null;
 
   return (
@@ -210,7 +211,7 @@ function PublicProductCard({ product }: PublicProductCardProps) {
           )}
           <Button 
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold" 
-              disabled={!firstPriceTier || tierStock <= 0 || !canAddToCart}
+              disabled={tierStock <= 0 || !canAddToCart}
               onClick={handleAddToCart}
               aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
           >
@@ -356,6 +357,19 @@ export default function WellnessStorePage() {
     }
     setFilteredProducts(tempProducts);
   }, [searchTerm, selectedCategory, products]);
+  
+  const displayItems = useMemo(() => {
+    return filteredProducts.flatMap(product => {
+      if (Array.isArray(product.priceTiers) && product.priceTiers.length > 0) {
+        return product.priceTiers.map((tier, index) => ({
+          product,
+          tier,
+          key: `${product.id}-${tier.unit}-${index}`
+        }));
+      }
+      return [];
+    });
+  }, [filteredProducts]);
 
   if (isLoading) {
     return (
@@ -456,10 +470,10 @@ export default function WellnessStorePage() {
       </div>
 
 
-      {filteredProducts.length > 0 ? (
+      {displayItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
-            <PublicProductCard key={product.id} product={product} />
+          {displayItems.map(item => (
+            <PublicProductCard key={item.key} product={item.product} tier={item.tier} />
           ))}
         </div>
       ) : (

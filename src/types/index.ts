@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 // Price Tier Interface
@@ -348,16 +349,19 @@ export interface ProductCategoryCount {
 }
 
 // Cart Item type
-export interface CartItem extends Omit<Product, 'priceTiers' | 'quantityInStock' | 'imageUrls'> { 
-  id: string; 
+export interface CartItem {
+  id: string; // Unique ID for the cart item, e.g., `${productId}-${unit}`
+  productId: string; // Original product ID
   name: string;
-  price: number; 
-  unit: string; 
-  quantity: number;
-  imageUrl?: string | null; // Keep first image for cart display
-  currency: string;
+  description: string;
+  category: string;
+  strain?: string | null;
   dispensaryId: string;
   dispensaryName: string;
-  category: string; 
+  currency: string;
+  price: number;
+  unit: string;
+  quantity: number;
   quantityInStock: number;
+  imageUrl?: string | null;
 }
