@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Product, ProductAttribute } from '@/types';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -151,9 +151,10 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
             {product.description}
           </p>
           {firstPriceTier && (
-            <div className="flex items-center gap-1.5 text-foreground font-medium">
-              <span>{firstPriceTier.price.toFixed(2)} {product.currency}</span>
-              <span className="text-muted-foreground">/ {firstPriceTier.unit}</span>
+            <div className="flex items-baseline gap-1.5 text-foreground">
+              <span className="font-medium text-muted-foreground">{product.currency}</span>
+              <span className="text-xl font-bold text-green-600">{firstPriceTier.price.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground">/ {firstPriceTier.unit}</span>
             </div>
           )}
            <div className="flex items-center gap-1.5 text-muted-foreground">
