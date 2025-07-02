@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Product, CartItem, PriceTier } from '@/types';
@@ -52,7 +51,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [cartItems]);
 
   const addToCart = (product: Product, tier: PriceTier, quantityToAdd: number = 1) => {
-    if (!tier) {
+    if (!tier || tier.price === undefined) {
       toast({ title: "Not Available", description: `${product.name} does not have a price set and cannot be added.`, variant: "destructive"});
       return;
     }
@@ -65,87 +64,85 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     const cartItemId = `${product.id}-${tier.unit}`;
     
-    const existingItem = cartItems.find(item => item.id === cartItemId);
+    setCartItems(prevItems => {
+        const existingItem = prevItems.find(item => item.id === cartItemId);
 
-    if (existingItem) {
-      const newQuantity = existingItem.quantity + quantityToAdd;
-      if (newQuantity > existingItem.quantityInStock) {
-        setCartItems(prevItems => prevItems.map(item =>
-          item.id === cartItemId ? { ...item, quantity: existingItem.quantityInStock } : item
-        ));
-        toast({ title: "Stock Limit Reached", description: `Cannot add more ${product.name} (${tier.unit}). Max ${existingItem.quantityInStock} in stock.`, variant: "destructive"});
-      } else {
-        setCartItems(prevItems => prevItems.map(item =>
-          item.id === cartItemId ? { ...item, quantity: newQuantity } : item
-        ));
-        toast({
-          title: "Cart Updated",
-          description: `${product.name} quantity increased to ${newQuantity}.`,
-          variant: "default",
-        });
-      }
-    } else {
-      let finalQuantityToAdd = quantityToAdd;
-      if (quantityToAdd > tierStock) {
-        finalQuantityToAdd = tierStock;
-        toast({ title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available. Added max to cart.`, variant: "destructive"});
-      }
+        if (existingItem) {
+          const newQuantity = existingItem.quantity + quantityToAdd;
+          if (newQuantity > existingItem.quantityInStock) {
+            toast({ title: "Stock Limit Reached", description: `Cannot add more ${product.name} (${tier.unit}). Max ${existingItem.quantityInStock} in stock.`, variant: "destructive"});
+            return prevItems.map(item =>
+              item.id === cartItemId ? { ...item, quantity: existingItem.quantityInStock } : item
+            );
+          } else {
+            toast({ title: "Cart Updated", description: `${product.name} quantity increased to ${newQuantity}.`, variant: "default" });
+            return prevItems.map(item =>
+              item.id === cartItemId ? { ...item, quantity: newQuantity } : item
+            );
+          }
+        } else {
+          let finalQuantityToAdd = quantityToAdd;
+          if (quantityToAdd > tierStock) {
+            finalQuantityToAdd = tierStock;
+            toast({ title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available. Added max to cart.`, variant: "destructive"});
+          }
 
-      const newItem: CartItem = {
-        id: cartItemId,
-        productId: product.id!,
-        name: product.name,
-        description: product.description,
-        category: product.category,
-        strain: product.strain,
-        dispensaryId: product.dispensaryId,
-        dispensaryName: product.dispensaryName,
-        currency: product.currency,
-        price: tier.price,
-        unit: tier.unit,
-        quantity: finalQuantityToAdd,
-        quantityInStock: tierStock,
-        imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
-      };
-      setCartItems(prevItems => [...prevItems, newItem]);
-      toast({
-        title: `Added to Cart!`,
-        description: `${newItem.name} (${newItem.unit}) has been added to your cart.`,
-        variant: "default",
-      });
-    }
+          const newItem: CartItem = {
+            id: cartItemId,
+            productId: product.id!,
+            name: product.name,
+            description: product.description,
+            category: product.category,
+            strain: product.strain,
+            dispensaryId: product.dispensaryId,
+            dispensaryName: product.dispensaryName,
+            currency: product.currency,
+            price: tier.price,
+            unit: tier.unit,
+            quantity: finalQuantityToAdd,
+            quantityInStock: tierStock,
+            imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
+          };
+          toast({ title: `Added to Cart!`, description: `${newItem.name} (${newItem.unit}) has been added to your cart.`, variant: "default" });
+          return [...prevItems, newItem];
+        }
+    });
   };
   
   const removeFromCart = (cartItemId: string) => {
-    const itemToRemove = cartItems.find(item => item.id === cartItemId);
-    if (itemToRemove) {
-      setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId));
-      toast({ title: "Item Removed", description: `${itemToRemove.name} (${itemToRemove.unit}) removed from your cart.`, variant: "default" });
-    }
+    setCartItems(prevItems => {
+        const itemToRemove = prevItems.find(item => item.id === cartItemId);
+        if (itemToRemove) {
+          toast({ title: "Item Removed", description: `${itemToRemove.name} (${itemToRemove.unit}) removed from your cart.`, variant: "default" });
+        }
+        return prevItems.filter(item => item.id !== cartItemId);
+    });
   };
 
   const updateQuantity = (cartItemId: string, newQuantity: number) => {
-    const itemToUpdate = cartItems.find(item => item.id === cartItemId);
-    if (!itemToUpdate) {
-      console.warn(`Item with id ${cartItemId} not found in cart to update.`);
-      return;
-    }
+    setCartItems(prevItems => {
+        const itemToUpdate = prevItems.find(item => item.id === cartItemId);
+        if (!itemToUpdate) {
+          console.warn(`Item with id ${cartItemId} not found in cart to update.`);
+          return prevItems;
+        }
 
-    if (newQuantity <= 0) {
-      removeFromCart(cartItemId);
-      return;
-    }
-    
-    if (newQuantity > itemToUpdate.quantityInStock) {
-      setCartItems(prevItems => prevItems.map(item =>
-          item.id === cartItemId ? { ...item, quantity: itemToUpdate.quantityInStock } : item
-      ));
-      toast({ title: "Stock Limit Reached", description: `Only ${itemToUpdate.quantityInStock} of ${itemToUpdate.name} (${itemToUpdate.unit}) available.`, variant: "destructive" });
-    } else {
-        setCartItems(prevItems => prevItems.map(item =>
+        if (newQuantity <= 0) {
+          toast({ title: "Item Removed", description: `${itemToUpdate.name} (${itemToUpdate.unit}) removed from cart.`});
+          return prevItems.filter(item => item.id !== cartItemId);
+        }
+        
+        if (newQuantity > itemToUpdate.quantityInStock) {
+          toast({ title: "Stock Limit Reached", description: `Only ${itemToUpdate.quantityInStock} of ${itemToUpdate.name} (${itemToUpdate.unit}) available.`, variant: "destructive" });
+          return prevItems.map(item =>
+              item.id === cartItemId ? { ...item, quantity: itemToUpdate.quantityInStock } : item
+          );
+        }
+        
+        return prevItems.map(item =>
             item.id === cartItemId ? { ...item, quantity: newQuantity } : item
-        ));
-    }
+        );
+    });
   };
 
   const clearCart = () => {
@@ -192,4 +189,3 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
-
