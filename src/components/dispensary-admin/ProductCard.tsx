@@ -1,22 +1,73 @@
-
 'use client';
 
 import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import type { Product } from '@/types';
+import type { Product, ProductAttribute } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Edit, Trash2, Package, DollarSign, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Edit, Trash2, Package, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, Sparkles, Brain, Leaf } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
   onDelete: (productId: string, productName: string, imageUrls?: (string | null)[] | null) => Promise<void>;
 }
+
+// New component for displaying info in a dialog
+const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon }: { triggerText: string; title: string; items: (string | ProductAttribute)[]; itemType: 'flavor' | 'effect' | 'medical'; icon: React.ElementType }) => {
+  if (!items || items.length === 0) return null;
+
+  const badgeColors = {
+    flavor: [
+      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
+      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
+      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
+    ],
+    effect: [
+      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
+      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
+      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
+    ],
+    medical: [
+      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
+      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
+      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
+    ]
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="text-xs h-7 px-2">
+            <Icon className="mr-1.5 h-3.5 w-3.5" />
+            {triggerText}
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {title}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-wrap gap-2 py-4">
+          {items.map((item, index) => {
+            const isAttribute = typeof item === 'object' && 'name' in item;
+            const name = isAttribute ? item.name : item;
+            const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
+
+            return (
+              <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
+                {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
+              </Badge>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export function ProductCard({ product, onDelete }: ProductCardProps) {
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
@@ -25,7 +76,6 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
   const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
   const dataAiHintProduct = `product ${product.category} ${product.name.split(" ")[0] || ""}`;
   
-  // Use imageUrls array, fall back to single imageUrl for compatibility
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
 
   const openViewer = (index: number) => {
@@ -102,7 +152,6 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
           </p>
           {firstPriceTier && (
             <div className="flex items-center gap-1.5 text-foreground font-medium">
-              <DollarSign className="h-4 w-4 text-accent" />
               <span>{firstPriceTier.price.toFixed(2)} {product.currency}</span>
               <span className="text-muted-foreground">/ {firstPriceTier.unit}</span>
             </div>
@@ -112,6 +161,11 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
               <span className={`font-semibold ${product.quantityInStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {product.quantityInStock}
               </span>
+          </div>
+           <div className="flex flex-wrap gap-2 pt-2">
+            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
+            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={Leaf} />
+            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
           </div>
         </CardContent>
         <CardFooter className="flex gap-2 border-t pt-3 mt-auto">
