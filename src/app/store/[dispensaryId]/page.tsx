@@ -17,6 +17,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 // New component for displaying info in a dialog
@@ -198,6 +199,27 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
             <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
             <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
             <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+            {product.description && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-xs h-7 px-2">
+                    <Info className="mr-1.5 h-3.5 w-3.5" />
+                    Full Description
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{product.name}</DialogTitle>
+                    <DialogDescription>Full Product Description</DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="max-h-[60vh] pr-4">
+                    <div className="py-4 whitespace-pre-wrap text-sm text-foreground">
+                      {product.description}
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
@@ -496,3 +518,4 @@ export default function WellnessStorePage() {
     </div>
   );
 }
+
