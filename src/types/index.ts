@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 
 // Price Tier Interface
@@ -106,6 +105,7 @@ export interface Product {
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
   imageUrls?: string[] | null;
+  imageUrl?: string | null; // Keep for backward compatibility
   labTested?: boolean;
   isAvailableForPool?: boolean;
   tags?: string[] | null;
