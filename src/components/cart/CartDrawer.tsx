@@ -153,7 +153,7 @@ export function CartDrawer() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive-foreground"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => removeFromCart(item.id!)}
                             aria-label={`Remove ${item.name} from cart`}
                             >
@@ -166,25 +166,27 @@ export function CartDrawer() {
               </div>
             </ScrollArea>
 
-            <SheetFooter className="p-4 sm:p-6 border-t border-border mt-auto space-y-4 bg-muted/30">
-              <div className="flex justify-between items-center text-lg font-semibold">
-                <span className="text-muted-foreground">Subtotal:</span>
-                <span className="text-primary">
-                  {cartItems[0]?.currency || 'ZAR'} {getCartTotal().toFixed(2)}
-                </span>
+            <SheetFooter className="p-4 sm:p-6 border-t border-border mt-auto bg-muted/30">
+              <div className="space-y-4 w-full">
+                  <div className="flex justify-between items-center text-lg font-semibold">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="text-primary">
+                          {cartItems[0]?.currency || 'ZAR'} {getCartTotal().toFixed(2)}
+                      </span>
+                  </div>
+                  <Separator />
+                  <div className="space-y-3">
+                      <Button onClick={handleCheckout} className="w-full text-lg py-3 bg-primary hover:bg-primary/90 text-primary-foreground">
+                          Proceed to Checkout
+                      </Button>
+                      <Button variant="outline" onClick={clearCart} className="w-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" /> Clear Cart
+                      </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                      <Info className="inline h-3 w-3 mr-1" /> Shipping & taxes will be calculated at checkout (Demo).
+                  </p>
               </div>
-              <Separator />
-              <div className="flex flex-col gap-3">
-                <Button onClick={handleCheckout} className="w-full text-lg py-3 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  Proceed to Checkout
-                </Button>
-                <Button variant="outline" onClick={clearCart} className="w-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive-foreground">
-                    <Trash2 className="mr-2 h-4 w-4" /> Clear Cart
-                </Button>
-              </div>
-               <p className="text-xs text-muted-foreground text-center pt-1">
-                <Info className="inline h-3 w-3 mr-1" /> Shipping & taxes will be calculated at checkout (Demo).
-              </p>
             </SheetFooter>
           </>
         )}
@@ -192,4 +194,3 @@ export function CartDrawer() {
     </Sheet>
   );
 }
-
