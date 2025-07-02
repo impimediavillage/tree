@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
@@ -107,21 +106,25 @@ export default function WellnessProductsPage() {
 
   const totalPages = Math.ceil(filteredAndSortedProducts.length / PRODUCTS_PER_PAGE);
 
-  const handleDeleteProduct = async (productId: string, productName: string, imageUrl?: string | null) => {
+  const handleDeleteProduct = async (productId: string, productName: string, imageUrls?: (string | null)[] | null) => {
     try {
-      if (imageUrl && imageUrl.startsWith('https://firebasestorage.googleapis.com')) {
-        try {
-          const imageStorageRef = storageRef(storage, imageUrl);
-          await deleteObject(imageStorageRef);
-        } catch (storageError: any) {
-          if (storageError.code !== 'storage/object-not-found') {
-            console.error("Error deleting product image from storage:", storageError);
-            toast({ title: "Image Deletion Failed", description: `Could not delete image for "${productName}". Product document deletion will proceed.`, variant: "destructive" });
-          } else {
-            console.warn(`Image not found in storage for product "${productName}": ${imageUrl}`);
+      // Delete all images from storage
+      if (imageUrls && imageUrls.length > 0) {
+        const deletePromises = imageUrls.map(url => {
+          if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
+            const imageStorageRef = storageRef(storage, url);
+            return deleteObject(imageStorageRef).catch(error => {
+              // Log error but don't block deletion of product doc
+              if (error.code !== 'storage/object-not-found') {
+                console.warn(`Failed to delete image ${url}:`, error);
+              }
+            });
           }
-        }
+          return Promise.resolve();
+        });
+        await Promise.all(deletePromises);
       }
+      
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
       setAllProducts(prev => prev.filter(p => p.id !== productId));
@@ -275,4 +278,3 @@ export default function WellnessProductsPage() {
     </div>
   );
 }
-
