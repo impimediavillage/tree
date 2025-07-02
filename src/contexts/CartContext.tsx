@@ -52,13 +52,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (product: Product, tier: PriceTier, quantityToAdd: number = 1) => {
     if (!tier || tier.price === undefined) {
-      toast({ title: "Not Available", description: `${product.name} does not have a price set and cannot be added.`, variant: "destructive"});
+      setTimeout(() => toast({ title: "Not Available", description: `${product.name} does not have a price set and cannot be added.`, variant: "destructive"}), 0);
       return;
     }
 
     const tierStock = tier.quantityInStock ?? 0;
     if (tierStock <= 0) {
-      toast({ title: "Out of Stock", description: `${product.name} (${tier.unit}) is currently out of stock.`, variant: "destructive"});
+      setTimeout(() => toast({ title: "Out of Stock", description: `${product.name} (${tier.unit}) is currently out of stock.`, variant: "destructive"}), 0);
       return;
     }
 
@@ -70,21 +70,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         if (existingItem) {
           const newQuantity = existingItem.quantity + quantityToAdd;
           if (newQuantity > existingItem.quantityInStock) {
-            toast({ title: "Stock Limit Reached", description: `Cannot add more ${product.name} (${tier.unit}). Max ${existingItem.quantityInStock} in stock.`, variant: "destructive"});
+            setTimeout(() => toast({ title: "Stock Limit Reached", description: `Cannot add more ${product.name} (${tier.unit}). Max ${existingItem.quantityInStock} in stock.`, variant: "destructive"}), 0);
             return prevItems.map(item =>
               item.id === cartItemId ? { ...item, quantity: existingItem.quantityInStock } : item
             );
           } else {
-            toast({ title: "Cart Updated", description: `${product.name} quantity increased to ${newQuantity}.`, variant: "default" });
+            setTimeout(() => toast({ title: "Cart Updated", description: `${product.name} quantity increased to ${newQuantity}.`, variant: "default" }), 0);
             return prevItems.map(item =>
               item.id === cartItemId ? { ...item, quantity: newQuantity } : item
             );
           }
         } else {
           let finalQuantityToAdd = quantityToAdd;
+          let toastMessage: { title: string; description: string; variant: 'default' | 'destructive' } | null = null;
           if (quantityToAdd > tierStock) {
             finalQuantityToAdd = tierStock;
-            toast({ title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available. Added max to cart.`, variant: "destructive"});
+            toastMessage = { title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available. Added max to cart.`, variant: "destructive"};
           }
 
           const newItem: CartItem = {
@@ -103,40 +104,49 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             quantityInStock: tierStock,
             imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
           };
-          toast({ title: `Added to Cart!`, description: `${newItem.name} (${newItem.unit}) has been added to your cart.`, variant: "default" });
+          if (!toastMessage) {
+              toastMessage = { title: `Added to Cart!`, description: `${newItem.name} (${newItem.unit}) has been added to your cart.`, variant: "default" };
+          }
+          setTimeout(() => toast(toastMessage!), 0);
           return [...prevItems, newItem];
         }
     });
   };
   
   const removeFromCart = (cartItemId: string) => {
+    let itemToRemoveName = '';
+
     setCartItems(prevItems => {
         const itemToRemove = prevItems.find(item => item.id === cartItemId);
         if (itemToRemove) {
-          toast({ title: "Item Removed", description: `${itemToRemove.name} (${itemToRemove.unit}) removed from your cart.`, variant: "default" });
+          itemToRemoveName = `${itemToRemove.name} (${itemToRemove.unit})`;
         }
         return prevItems.filter(item => item.id !== cartItemId);
     });
+
+    if(itemToRemoveName) {
+      setTimeout(() => toast({ title: "Item Removed", description: `${itemToRemoveName} removed from your cart.`, variant: "default" }), 0);
+    }
   };
 
   const updateQuantity = (cartItemId: string, newQuantity: number) => {
     setCartItems(prevItems => {
         const itemToUpdate = prevItems.find(item => item.id === cartItemId);
         if (!itemToUpdate) {
-          console.warn(`Item with id ${cartItemId} not found in cart to update.`);
-          return prevItems;
+            console.warn(`Item with id ${cartItemId} not found in cart to update.`);
+            return prevItems;
         }
 
         if (newQuantity <= 0) {
-          toast({ title: "Item Removed", description: `${itemToUpdate.name} (${itemToUpdate.unit}) removed from cart.`});
-          return prevItems.filter(item => item.id !== cartItemId);
+            setTimeout(() => toast({ title: "Item Removed", description: `${itemToUpdate.name} (${itemToUpdate.unit}) removed from cart.`, variant: "default"}), 0);
+            return prevItems.filter(item => item.id !== cartItemId);
         }
         
         if (newQuantity > itemToUpdate.quantityInStock) {
-          toast({ title: "Stock Limit Reached", description: `Only ${itemToUpdate.quantityInStock} of ${itemToUpdate.name} (${itemToUpdate.unit}) available.`, variant: "destructive" });
-          return prevItems.map(item =>
-              item.id === cartItemId ? { ...item, quantity: itemToUpdate.quantityInStock } : item
-          );
+            setTimeout(() => toast({ title: "Stock Limit Reached", description: `Only ${itemToUpdate.quantityInStock} of ${itemToUpdate.name} (${itemToUpdate.unit}) available.`, variant: "destructive" }), 0);
+            return prevItems.map(item =>
+                item.id === cartItemId ? { ...item, quantity: itemToUpdate.quantityInStock } : item
+            );
         }
         
         return prevItems.map(item =>
@@ -147,7 +157,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = () => {
     setCartItems([]);
-    toast({ title: "Cart Cleared", description: "All items have been removed from your cart.", variant: "default" });
+    setTimeout(() => toast({ title: "Cart Cleared", description: "All items have been removed from your cart.", variant: "default" }), 0);
   };
 
   const getCartTotal = () => {
