@@ -22,27 +22,10 @@ import { Separator } from '@/components/ui/separator';
 
 
 // New component for displaying info in a dialog
-const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon, children }: { triggerText: string; title: string; items?: (string | ProductAttribute)[]; itemType: 'flavor' | 'effect' | 'medical' | 'description'; icon: React.ElementType; children?: React.ReactNode }) => {
-  if ((!items || items.length === 0) && !children) return null;
-
-  const badgeColors = {
-    flavor: [
-      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
-      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
-      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
-    ],
-    effect: [
-      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
-      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
-      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
-    ],
-    medical: [
-      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
-      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
-      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
-    ],
-    description: []
-  };
+const InfoDialog = ({ triggerText, title, icon: Icon, children }: { triggerText: string; title: string; icon: React.ElementType; children?: React.ReactNode }) => {
+  if (!children) return null;
+  
+  const isDescription = triggerText === 'Full Description';
 
   return (
     <Dialog>
@@ -52,45 +35,14 @@ const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon, children 
             {triggerText}
         </Button>
       </DialogTrigger>
-      <DialogContent className={itemType === 'description' ? 'sm:max-w-2xl' : undefined}>
+      <DialogContent className={isDescription ? 'sm:max-w-2xl' : undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {title}</DialogTitle>
-          {itemType === 'description' && <DialogDescription>Full Product Details</DialogDescription>}
+           {isDescription && <DialogDescription>Full Product Details</DialogDescription>}
         </DialogHeader>
-        {children ? (
-             <ScrollArea className="max-h-[70vh] pr-4">
-                {children}
-            </ScrollArea>
-        ) : (
-            <div className="flex flex-col items-start gap-2 py-4">
-                <div className="flex flex-wrap gap-2">
-                    {items!.map((item, index) => {
-                        const isAttribute = typeof item === 'object' && 'name' in item;
-                        const name = isAttribute ? item.name : item;
-                        const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
-
-                        return (
-                        <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
-                            {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
-                        </Badge>
-                        );
-                    })}
-                </div>
-                {(itemType === 'effect' || itemType === 'medical') && (
-                    <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-                        <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
-                        <p className="text-muted-foreground leading-snug">
-                            Indicates the reported likelihood of an effect or its potential as a medical aid.
-                        </p>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-                            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-                            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-                        </div>
-                    </div>
-                )}
-            </div>
-        )}
+        <ScrollArea className="max-h-[70vh] pr-4">
+            {children}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
@@ -116,6 +68,29 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   
   const gridColsClass = images.length > 1 ? 'grid-cols-2' : 'grid-cols-1';
   const gridRowsClass = images.length > 2 ? 'grid-rows-2' : 'grid-rows-1';
+  
+  const ImageCollageComponent = images.length > 0 ? (
+    <div className="mb-4">
+      <div className={cn('grid h-48 w-full gap-0.5 rounded-md overflow-hidden', gridColsClass, gridRowsClass)}>
+        {images.slice(0, 4).map((url, i) => (
+          <div
+            key={url ? `${url}-${i}` : i}
+            className={cn(
+              'relative cursor-pointer overflow-hidden',
+              images.length === 3 && i === 2 && 'col-span-2',
+              images.length === 1 && 'col-span-2 row-span-2'
+            )}
+            onClick={() => openViewer(i)}
+          >
+            {url && <Image src={url} alt={`${product.name} image ${i + 1}`} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover transition-transform duration-300 hover:scale-105" />}
+            {images.length > 4 && i === 3 && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60"><span className="text-white text-2xl font-bold">+{images.length - 3}</span></div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
 
   const dataAiHintProduct = `${product.category} ${product.name.split(" ")[0] || ""}`;
 
@@ -134,6 +109,24 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
       price: tier.price,
       unit: tier.unit
   } : null;
+
+  const badgeColors = {
+    flavor: [
+      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
+      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
+      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
+    ],
+    effect: [
+      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
+      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
+      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
+    ],
+    medical: [
+      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
+      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
+      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
+    ],
+  };
 
   return (
     <>
@@ -205,39 +198,89 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
         <CardContent className="flex-grow space-y-2.5 py-2">
           <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed" title={product.description}>{product.description}</p>
           <div className="flex flex-wrap gap-2 pt-2">
-            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
-            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
-            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
-            {product.description && (
-                <InfoDialog title={product.name} triggerText="Full Description" itemType="description" icon={Info}>
-                    {images.length > 0 && (
-                        <div className="mb-4">
-                            <div className={cn('grid h-48 w-full gap-0.5 rounded-md overflow-hidden', gridColsClass, gridRowsClass)}>
-                                {images.slice(0, 4).map((url, i) => (
-                                    <div
-                                        key={url ? `${url}-${i}` : i}
-                                        className={cn(
-                                            'relative cursor-pointer overflow-hidden',
-                                            images.length === 3 && i === 2 && 'col-span-2',
-                                            images.length === 1 && 'col-span-2 row-span-2'
-                                        )}
-                                        onClick={() => openViewer(i)}
-                                    >
-                                        {url && <Image src={url} alt={`${product.name} image ${i + 1}`} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover transition-transform duration-300 hover:scale-105" />}
-                                        {images.length > 4 && i === 3 && (
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/60"><span className="text-white text-2xl font-bold">+{images.length - 3}</span></div>
-                                        )}
-                                    </div>
+            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" icon={Sparkles}>
+                {(product.effects && product.effects.length > 0) ? (
+                    <>
+                        {ImageCollageComponent}
+                        {ImageCollageComponent && <Separator className="my-4" />}
+                        <div className="flex flex-col items-start gap-2 py-4">
+                            <div className="flex flex-wrap gap-2">
+                                {product.effects.map((item, index) => (
+                                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors['effect'][index % badgeColors['effect'].length])}>
+                                        {item.name} {item.percentage && <span className="ml-1.5 font-semibold">({item.percentage})</span>}
+                                    </Badge>
+                                ))}
+                            </div>
+                            <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                                <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+                                <p className="text-muted-foreground leading-snug">Indicates the reported likelihood of an effect.</p>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                                    <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                                    <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : null}
+            </InfoDialog>
+
+            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" icon={LeafIcon}>
+                {(product.flavors && product.flavors.length > 0) ? (
+                    <>
+                        {ImageCollageComponent}
+                        {ImageCollageComponent && <Separator className="my-4" />}
+                        <div className="flex flex-col items-start gap-2 py-4">
+                            <div className="flex flex-wrap gap-2">
+                                {product.flavors.map((item, index) => (
+                                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors['flavor'][index % badgeColors['flavor'].length])}>
+                                        {item}
+                                    </Badge>
                                 ))}
                             </div>
                         </div>
-                    )}
-                    <Separator className="my-4" />
-                    <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
-                        {product.description}
-                    </div>
-                </InfoDialog>
-            )}
+                    </>
+                ) : null}
+            </InfoDialog>
+
+            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" icon={Brain}>
+                {(product.medicalUses && product.medicalUses.length > 0) ? (
+                     <>
+                        {ImageCollageComponent}
+                        {ImageCollageComponent && <Separator className="my-4" />}
+                        <div className="flex flex-col items-start gap-2 py-4">
+                            <div className="flex flex-wrap gap-2">
+                                {product.medicalUses.map((item, index) => (
+                                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors['medical'][index % badgeColors['medical'].length])}>
+                                        {item.name} {item.percentage && <span className="ml-1.5 font-semibold">({item.percentage})</span>}
+                                    </Badge>
+                                ))}
+                            </div>
+                            <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                                <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+                                <p className="text-muted-foreground leading-snug">Indicates its potential as a medical aid.</p>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                                    <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                                    <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : null}
+            </InfoDialog>
+
+            <InfoDialog title={product.name} triggerText="Full Description" icon={Info}>
+                {product.description ? (
+                    <>
+                        {ImageCollageComponent}
+                        {ImageCollageComponent && <Separator className="my-4" />}
+                        <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
+                            {product.description}
+                        </div>
+                    </>
+                ) : null}
+            </InfoDialog>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
