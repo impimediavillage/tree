@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -51,18 +52,33 @@ const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon }: { trigg
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {title}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-wrap gap-2 py-4">
-          {items.map((item, index) => {
-            const isAttribute = typeof item === 'object' && 'name' in item;
-            const name = isAttribute ? item.name : item;
-            const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
+        <div className="flex flex-col items-start gap-2 py-4">
+            <div className="flex flex-wrap gap-2">
+                {items.map((item, index) => {
+                    const isAttribute = typeof item === 'object' && 'name' in item;
+                    const name = isAttribute ? item.name : item;
+                    const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
 
-            return (
-              <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
-                {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
-              </Badge>
-            );
-          })}
+                    return (
+                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
+                        {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
+                    </Badge>
+                    );
+                })}
+            </div>
+            {(itemType === 'effect' || itemType === 'medical') && (
+                <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                    <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+                    <p className="text-muted-foreground leading-snug">
+                        Indicates the reported likelihood of an effect or its potential as a medical aid.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                        <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                        <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                    </div>
+                </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>
