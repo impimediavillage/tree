@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import type { Dispensary, Product } from '@/types';
+import type { Dispensary, Product, ProductAttribute } from '@/types';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,26 +25,28 @@ function PublicProductCard({ product }: PublicProductCardProps) {
   const { toast } = useToast();
   const dataAiHintProduct = `${product.category} ${product.name.split(" ")[0] || ""}`;
 
+  // This is the key change. Get the first price tier.
+  const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
+
+  // The stock should be based on the tier being added.
+  const tierStock = firstPriceTier?.quantityInStock ?? product.quantityInStock ?? 0;
+  
+  // Since the UI only supports one tier, we check by product ID. The cart context will handle the tier details.
   const itemInCart = cartItems.find(item => item.id === product.id);
   const currentQuantityInCart = itemInCart?.quantity || 0;
-  const canAddToCart = product.quantityInStock > currentQuantityInCart;
+  const canAddToCart = tierStock > currentQuantityInCart;
 
   const handleAddToCart = () => {
-    if (!canAddToCart) {
-      toast({
-        title: "Stock Limit Reached",
-        description: `You already have the maximum available stock of ${product.name} in your cart.`,
-        variant: "destructive",
-      });
-      return;
-    }
+    // The addToCart function in the context will handle the logic of which tier to add.
+    // It will also handle the toast notifications for stock, etc.
     addToCart(product, 1); 
-    toast({
-      title: `Added to Cart!`,
-      description: `${product.name} has been added to your cart.`,
-      variant: "default",
-    });
   };
+  
+  // Create a display-ready price tier, handling the case where it might be null
+  const displayTier = firstPriceTier ? {
+      price: firstPriceTier.price,
+      unit: firstPriceTier.unit
+  } : null;
 
   return (
     <Card 
@@ -67,18 +69,18 @@ function PublicProductCard({ product }: PublicProductCardProps) {
           </div>
         )}
         <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-            {product.thcContent !== null && product.thcContent !== undefined && product.thcContent > 0 && (
+            {product.thcContent && (
                 <Badge variant="secondary" className="bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                    <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}%
+                    <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
                 </Badge>
             )}
-            {product.cbdContent !== null && product.cbdContent !== undefined && product.cbdContent > 0 && (
+            {product.cbdContent && (
                 <Badge variant="secondary" className="bg-blue-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                    <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}%
+                    <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}
                 </Badge>
             )}
         </div>
-         {product.quantityInStock > 0 ? (
+         {tierStock > 0 ? (
             <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">In Stock</Badge>
         ) : (
             <Badge variant="destructive" className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm text-xs px-2 py-1 shadow">Out of Stock</Badge>
@@ -99,7 +101,7 @@ function PublicProductCard({ product }: PublicProductCardProps) {
                 {product.effects && product.effects.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 items-center">
                         <Zap className="h-3.5 w-3.5 text-amber-500 flex-shrink-0"/>
-                        {product.effects.slice(0, 3).map(effect => <Badge key={effect} variant="outline" className="text-xs px-1.5 py-0.5">{effect}</Badge>)}
+                        {product.effects.slice(0, 3).map(effect => <Badge key={effect.name} variant="outline" className="text-xs px-1.5 py-0.5">{effect.name}</Badge>)}
                          {product.effects.length > 3 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{product.effects.length - 3} more</Badge>}
                     </div>
                 )}
@@ -114,18 +116,22 @@ function PublicProductCard({ product }: PublicProductCardProps) {
         ) : null}
       </CardContent>
       <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
-        <p className="text-2xl font-bold text-accent self-end">
-            {product.currency} {product.price.toFixed(2)}
-            <span className="text-xs text-muted-foreground"> / {product.unit}</span>
-        </p>
+        {displayTier ? (
+            <p className="text-2xl font-bold text-accent self-end">
+                {product.currency} {displayTier.price.toFixed(2)}
+                <span className="text-xs text-muted-foreground"> / {displayTier.unit}</span>
+            </p>
+        ) : (
+            <p className="text-sm text-muted-foreground self-end">Price not available</p>
+        )}
         <Button 
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold" 
-            disabled={product.quantityInStock <= 0 || !canAddToCart}
+            disabled={!firstPriceTier || tierStock <= 0 || !canAddToCart}
             onClick={handleAddToCart}
-            aria-label={product.quantityInStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+            aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
         >
           <ShoppingCart className="mr-2 h-5 w-5" /> 
-          {product.quantityInStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
+          {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
         </Button>
       </CardFooter>
     </Card>
@@ -332,4 +338,3 @@ export default function WellnessStorePage() {
     </div>
   );
 }
-
