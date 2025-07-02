@@ -10,11 +10,14 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, MapPin, Clock, Tag, ShoppingCart, Info, Search, FilterX, Leaf as LeafIcon, Flame, Zap } from 'lucide-react';
+import { Loader2, AlertTriangle, MapPin, Clock, Tag, ShoppingCart, Info, Search, FilterX, Leaf as LeafIcon, Flame, Zap, ChevronLeft, ChevronRight, X, ImageIcon as ImageIconLucide } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/contexts/CartContext'; 
-import { useToast } from '@/hooks/use-toast';   
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+
 
 interface PublicProductCardProps {
   product: Product;
@@ -23,118 +26,206 @@ interface PublicProductCardProps {
 function PublicProductCard({ product }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const { toast } = useToast();
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
+
+  const openViewer = (index: number) => {
+    setSelectedImageIndex(index);
+    setIsViewerOpen(true);
+  };
+  
+  const gridColsClass = images.length > 1 ? 'grid-cols-2' : 'grid-cols-1';
+  const gridRowsClass = images.length > 2 ? 'grid-rows-2' : 'grid-rows-1';
+
   const dataAiHintProduct = `${product.category} ${product.name.split(" ")[0] || ""}`;
 
-  // This is the key change. Get the first price tier.
   const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
-
-  // The stock should be based on the tier being added.
   const tierStock = firstPriceTier?.quantityInStock ?? product.quantityInStock ?? 0;
   
-  // Since the UI only supports one tier, we check by product ID. The cart context will handle the tier details.
   const itemInCart = cartItems.find(item => item.id === product.id);
   const currentQuantityInCart = itemInCart?.quantity || 0;
   const canAddToCart = tierStock > currentQuantityInCart;
 
   const handleAddToCart = () => {
-    // The addToCart function in the context will handle the logic of which tier to add.
-    // It will also handle the toast notifications for stock, etc.
     addToCart(product, 1); 
   };
   
-  // Create a display-ready price tier, handling the case where it might be null
   const displayTier = firstPriceTier ? {
       price: firstPriceTier.price,
       unit: firstPriceTier.unit
   } : null;
 
   return (
-    <Card 
-        className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card text-card-foreground group border border-border hover:border-primary/60"
-        data-ai-hint={dataAiHintProduct}
-    >
-      <div className="relative w-full h-48 sm:h-56 overflow-hidden">
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            layout="fill"
-            objectFit="cover"
-            className="transition-transform duration-300 group-hover:scale-105"
-            data-ai-hint={`product ${product.name.split(" ")[0] || ""}`}
-          />
-        ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
-            <ShoppingCart className="h-16 w-16 text-muted-foreground/30" />
-          </div>
-        )}
-        <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-            {product.thcContent && (
-                <Badge variant="secondary" className="bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                    <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
-                </Badge>
-            )}
-            {product.cbdContent && (
-                <Badge variant="secondary" className="bg-blue-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                    <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}
-                </Badge>
-            )}
-        </div>
-         {tierStock > 0 ? (
-            <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">In Stock</Badge>
-        ) : (
-            <Badge variant="destructive" className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm text-xs px-2 py-1 shadow">Out of Stock</Badge>
-        )}
-      </div>
-      <CardHeader className="pb-2 pt-4">
-        <CardTitle className="text-lg font-semibold truncate text-primary" title={product.name}>{product.name}</CardTitle>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Tag className="h-3.5 w-3.5"/> <span>{product.category}</span>
-            {product.strain && <span className="truncate">| {product.strain}</span>}
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow space-y-2.5 py-2">
-        <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed" title={product.description}>{product.description}</p>
-        
-        {(product.effects && product.effects.length > 0) || (product.flavors && product.flavors.length > 0) ? (
-            <div className="space-y-1.5 pt-1">
-                {product.effects && product.effects.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 items-center">
-                        <Zap className="h-3.5 w-3.5 text-amber-500 flex-shrink-0"/>
-                        {product.effects.slice(0, 3).map(effect => <Badge key={effect.name} variant="outline" className="text-xs px-1.5 py-0.5">{effect.name}</Badge>)}
-                         {product.effects.length > 3 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{product.effects.length - 3} more</Badge>}
+    <>
+      <Card 
+          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card text-card-foreground group border border-border hover:border-primary/60"
+          data-ai-hint={dataAiHintProduct}
+      >
+        <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted group">
+          {images.length > 0 ? (
+            <div className={cn('grid h-full w-full gap-0.5', gridColsClass, gridRowsClass)}>
+              {images.slice(0, 4).map((url, i) => (
+                <div
+                  key={url ? `${url}-${i}`: i}
+                  className={cn(
+                    'relative cursor-pointer overflow-hidden',
+                    images.length === 3 && i === 2 && 'col-span-2',
+                    images.length === 1 && 'col-span-2 row-span-2'
+                  )}
+                  onClick={() => openViewer(i)}
+                >
+                  {url && (
+                    <Image
+                      src={url}
+                      alt={`${product.name} image ${i + 1}`}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      data-ai-hint={`product image ${product.name}`}
+                    />
+                  )}
+                  {images.length > 4 && i === 3 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                      <span className="text-white text-2xl font-bold">+{images.length - 3}</span>
                     </div>
-                )}
-                 {product.flavors && product.flavors.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 items-center">
-                         <LeafIcon className="h-3.5 w-3.5 text-green-500 flex-shrink-0"/>
-                        {product.flavors.slice(0, 3).map(flavor => <Badge key={flavor} variant="outline" className="text-xs px-1.5 py-0.5">{flavor}</Badge>)}
-                        {product.flavors.length > 3 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{product.flavors.length - 3} more</Badge>}
-                    </div>
-                )}
+                  )}
+                </div>
+              ))}
             </div>
-        ) : null}
-      </CardContent>
-      <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
-        {displayTier ? (
-            <p className="text-2xl font-bold text-accent self-end">
-                {product.currency} {displayTier.price.toFixed(2)}
-                <span className="text-xs text-muted-foreground"> / {displayTier.unit}</span>
-            </p>
-        ) : (
-            <p className="text-sm text-muted-foreground self-end">Price not available</p>
-        )}
-        <Button 
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold" 
-            disabled={!firstPriceTier || tierStock <= 0 || !canAddToCart}
-            onClick={handleAddToCart}
-            aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-        >
-          <ShoppingCart className="mr-2 h-5 w-5" /> 
-          {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
-        </Button>
-      </CardFooter>
-    </Card>
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <ImageIconLucide className="h-16 w-16 text-muted-foreground/30" />
+            </div>
+          )}
+          <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
+              {product.thcContent && (
+                  <Badge variant="secondary" className="bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
+                      <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
+                  </Badge>
+              )}
+              {product.cbdContent && (
+                  <Badge variant="secondary" className="bg-blue-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
+                      <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}
+                  </Badge>
+              )}
+          </div>
+           {tierStock > 0 ? (
+              <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">In Stock</Badge>
+          ) : (
+              <Badge variant="destructive" className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm text-xs px-2 py-1 shadow">Out of Stock</Badge>
+          )}
+        </div>
+        <CardHeader className="pb-2 pt-4">
+          <CardTitle className="text-lg font-semibold truncate text-primary" title={product.name}>{product.name}</CardTitle>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Tag className="h-3.5 w-3.5"/> <span>{product.category}</span>
+              {product.strain && <span className="truncate">| {product.strain}</span>}
+          </div>
+        </CardHeader>
+        <CardContent className="flex-grow space-y-2.5 py-2">
+          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed" title={product.description}>{product.description}</p>
+          
+          {(product.effects && product.effects.length > 0) || (product.flavors && product.flavors.length > 0) ? (
+              <div className="space-y-1.5 pt-1">
+                  {product.effects && product.effects.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                          <Zap className="h-3.5 w-3.5 text-amber-500 flex-shrink-0"/>
+                          {product.effects.slice(0, 3).map(effect => <Badge key={effect.name} variant="outline" className="text-xs px-1.5 py-0.5">{effect.name}</Badge>)}
+                           {product.effects.length > 3 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{product.effects.length - 3} more</Badge>}
+                      </div>
+                  )}
+                   {product.flavors && product.flavors.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                           <LeafIcon className="h-3.5 w-3.5 text-green-500 flex-shrink-0"/>
+                          {product.flavors.slice(0, 3).map(flavor => <Badge key={flavor} variant="outline" className="text-xs px-1.5 py-0.5">{flavor}</Badge>)}
+                          {product.flavors.length > 3 && <Badge variant="outline" className="text-xs px-1.5 py-0.5">+{product.flavors.length - 3} more</Badge>}
+                      </div>
+                  )}
+              </div>
+          ) : null}
+        </CardContent>
+        <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
+          {displayTier ? (
+              <p className="text-2xl font-bold text-accent self-end">
+                  {product.currency} {displayTier.price.toFixed(2)}
+                  <span className="text-xs text-muted-foreground"> / {displayTier.unit}</span>
+              </p>
+          ) : (
+              <p className="text-sm text-muted-foreground self-end">Price not available</p>
+          )}
+          <Button 
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold" 
+              disabled={!firstPriceTier || tierStock <= 0 || !canAddToCart}
+              onClick={handleAddToCart}
+              aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" /> 
+            {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
+          </Button>
+        </CardFooter>
+      </Card>
+      <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
+        <DialogContent className="max-w-4xl p-2 sm:p-4">
+          <DialogHeader>
+            <DialogTitle>{product.name}</DialogTitle>
+            <DialogDescription>
+              Image {selectedImageIndex + 1} of {images.length}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="relative aspect-video w-full">
+            {images[selectedImageIndex] && (
+              <Image
+                src={images[selectedImageIndex]!}
+                alt={`${product.name} image ${selectedImageIndex + 1}`}
+                fill
+                className="object-contain rounded-md"
+                data-ai-hint={`product fullscreen ${product.name}`}
+              />
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-2 overflow-x-auto p-1">
+                {images.map((url, i) => (
+                  url && (
+                    <button
+                      key={url}
+                      className={cn(
+                        "h-16 w-16 rounded-md border-2 flex-shrink-0",
+                        i === selectedImageIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
+                      )}
+                      onClick={() => setSelectedImageIndex(i)}
+                    >
+                      <div className="relative h-full w-full rounded overflow-hidden">
+                        <Image src={url} alt={`Thumbnail ${i+1}`} fill className="object-cover"/>
+                      </div>
+                    </button>
+                  )
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
