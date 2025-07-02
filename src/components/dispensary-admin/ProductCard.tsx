@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -8,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Edit, Trash2, Package, DollarSign, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -145,6 +146,12 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
 
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
         <DialogContent className="max-w-4xl p-2 sm:p-4">
+          <DialogHeader>
+            <DialogTitle>{product.name}</DialogTitle>
+            <DialogDescription>
+              Image {selectedImageIndex + 1} of {images.length}
+            </DialogDescription>
+          </DialogHeader>
           <div className="relative aspect-video w-full">
             {images[selectedImageIndex] && (
               <Image
