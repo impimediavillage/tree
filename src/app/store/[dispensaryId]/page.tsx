@@ -153,7 +153,7 @@ function DesignDialog({ isOpen, onOpenChange, designs, product, tier }: DesignDi
         ...product,
         id: `design-${product.id}`,
         name: `Design Pack: ${product.name}`,
-        description: `Promotional design pack. Includes a free sample of ${product.name} (${tier.unit})`,
+        description: `DESIGN_PACK|${product.name}|${tier.unit}`,
         imageUrls: [designs.logoUrl_clay],
         imageUrl: designs.logoUrl_clay,
     };
@@ -443,9 +443,9 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                             <span>Free samples value</span>
                         </div>
                     </div>
-                    <div className="w-full flex flex-col gap-2 mt-1 p-3 bg-green-50/70 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
+                    <div className="w-full mt-1 p-3 bg-green-50/70 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
                         <p className="text-xs text-green-900 dark:text-green-200">
-                           Qualify for a FREE <strong className="font-semibold">{tier.unit} sample</strong> of this strain for designing our new promotional range for stickers, caps, t-shirts, and hoodies. Sharing the Love one toke at a time.
+                           Qualify for a FREE <strong className="font-semibold">{tier.unit} sample</strong> for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time.
                         </p>
                     </div>
                     <div className="w-full pt-2">
@@ -760,5 +760,3 @@ export default function WellnessStorePage() {
     </div>
   );
 }
-
-    

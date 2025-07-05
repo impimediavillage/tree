@@ -89,7 +89,24 @@ export function CartDrawer() {
           <>
             <ScrollArea className="flex-grow overflow-y-auto px-4 sm:px-6 py-4">
               <div className="space-y-5">
-                {cartItems.map(item => (
+                {cartItems.map(item => {
+                  const isDesignPack = item.description?.startsWith('DESIGN_PACK|');
+                  let freeSampleName: string | undefined;
+                  let freeSampleUnit: string | undefined;
+                  
+                  if (isDesignPack) {
+                    try {
+                      const parts = item.description.split('|');
+                      if (parts.length === 3) {
+                        freeSampleName = parts[1];
+                        freeSampleUnit = parts[2];
+                      }
+                    } catch(e) {
+                      console.error("Error parsing design pack description:", e);
+                    }
+                  }
+
+                  return (
                   <div key={item.id} className="flex gap-4 border-b border-border pb-4 last:border-b-0 last:pb-0">
                     <div className="relative h-24 w-24 rounded-md overflow-hidden bg-muted flex-shrink-0 border border-border">
                       {item.imageUrl ? (
@@ -104,19 +121,14 @@ export function CartDrawer() {
                         <ShoppingCart className="h-10 w-10 text-muted-foreground/50 m-auto" />
                       )}
                     </div>
-                    <div className="flex-grow flex flex-col justify-between">
+                    <div className="flex-grow flex flex-col">
                       <div>
                         <h3 className="font-semibold text-md text-foreground hover:text-primary transition-colors cursor-default" title={item.name}>
                           {item.name}
                         </h3>
-                         {item.id.startsWith('design-') && item.description ? (
-                          <div className="flex items-start gap-2 mt-1 text-sm text-green-600 dark:text-green-400">
-                            <Gift className="h-6 w-6 flex-shrink-0" />
-                            <p className="font-medium">{item.description}</p>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">{item.category}</p>
-                        )}
+                         {!isDesignPack && (
+                            <p className="text-xs text-muted-foreground">{item.category}</p>
+                         )}
                         <p className="text-md font-semibold text-accent mt-1">
                           {item.currency} {(item.price * item.quantity).toFixed(2)}
                           {item.quantity > 1 && (
@@ -167,9 +179,17 @@ export function CartDrawer() {
                             <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
+                       {isDesignPack && freeSampleName && freeSampleUnit && (
+                          <div className="flex items-start gap-2 mt-3 pt-3 text-sm text-green-600 dark:text-green-400 border-t border-border">
+                            <Gift className="h-8 w-8 flex-shrink-0" />
+                            <p className="font-medium">
+                              Includes {item.quantity} of Free samples of {freeSampleName} - {freeSampleUnit}
+                            </p>
+                          </div>
+                        )}
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </ScrollArea>
 
