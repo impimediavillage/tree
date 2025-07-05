@@ -48,26 +48,24 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     const logoPrompt = `
       You are a master graphic designer creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-      **Core Concept: A Modern, Embroidered, Animated Badge**
-      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The badge should have a **3D effect** and a **cartoonish, hyper-animated style** infused with vibrant **retro, Rastafarian, and 420-friendly** design elements. The entire logo must be presented on a clean, solid white background for versatility.
+      **Core Concept: An Animated, Embroidered Vector Badge**
+      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The style is a vibrant fusion of **retro, Rastafarian, reggae, and 420 culture** with a modern, **animated vector** feel. The entire logo must be presented on a clean, solid white background.
 
-      **Visual Breakdown:**
-      - **Central Image:** A colorful and engaging **3D isometric, animated-style vector image** of a cannabis bud representing the "${strain}" strain must be at the very center.
-      - **Internal Background:** The area inside the badge, behind the central bud, must feature a **creative, animated cartoon background** that thematically matches the strain's name, "${strain}". (e.g., "Blue Dream" might have a dreamy, animated blue sky).
-      - **Borders & Text:**
-          1. The badge must have a distinct, embroidered-style circular outer border.
-          2. Just inside this main border, create another decorative border.
-          3. Between these two borders, the text must be placed around the top curve.
-      - **Text Instructions (CRITICAL):**
-          - The text must follow the circular curve of the borders perfectly.
-          - The strain name, **"${strain}"**, must be the most prominent text, rendered in a **bold, readable, modern font**.
-          - Directly below the strain name (also following the curve), the brand name **"The Wellness Tree"** must appear in a smaller, but still bold and clear, rounded font. The text must always be clearly readable.
+      **Visual Structure (from inside out):**
+      1.  **Central Artwork:** In the center of the badge, create an **animated vector-style image of a cannabis bud** representing the "${strain}" strain. This artwork should seamlessly **merge with a creative, themed background** that reflects the retro, 420, and reggae style. This central area is the main artistic focus.
+      2.  **Text Band:** Surrounding the central artwork, there must be a **plain, solid-colored ring** that serves as a clean background for the text. This separates the text from the complex background of the artwork.
+      3.  **Text (on the plain band):**
+          - The text must follow the circular curve of the band perfectly.
+          - The strain name, **"${strain}"**, must be at the top, rendered in a **bold, readable, modern font**. It should be the most prominent text.
+          - Directly below the strain name (also following the curve), the brand name **"The Wellness Tree"** must appear in a smaller, but still bold and clear, rounded font.
+          - Both text elements must be clearly readable against their plain background.
+      4.  **Outer Border:** The entire badge must be enclosed by a distinct, **embroidered-style external border** that gives the badge a tactile, 3D effect.
 
       **Final Quality Check:**
-      - The image is a single, circular, embroidered-style badge.
-      - The style is a consistent fusion of cartoon, retro, Rasta, and 420 culture.
-      - The central strain image is a 3D isometric vector.
-      - The text "The Wellness Tree" and "${strain}" are perfectly curved, readable, and follow the specified hierarchy.
+      - The logo is a single, circular, embroidered-style badge.
+      - The central artwork is an animated vector of the strain, merging with a creative, themed background.
+      - The text is placed on a separate, plain-colored circular band.
+      - The text includes "${strain}" and "The Wellness Tree", is perfectly curved, and follows the specified size hierarchy.
       - The entire logo is on a solid white background.
     `;
     const logoUrl = await generateImage(logoPrompt);
