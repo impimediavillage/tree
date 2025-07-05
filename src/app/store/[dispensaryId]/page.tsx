@@ -60,9 +60,9 @@ interface DesignDialogProps {
     logoUrl_comic: string;
     productMontageUrl_comic: string;
     stickerSheetUrl_comic: string;
-    logoUrl_galactic: string;
-    productMontageUrl_galactic: string;
-    stickerSheetUrl_galactic: string;
+    logoUrl_rasta: string;
+    productMontageUrl_rasta: string;
+    stickerSheetUrl_rasta: string;
     logoUrl_farmstyle: string;
     productMontageUrl_farmstyle: string;
     stickerSheetUrl_farmstyle: string;
@@ -102,10 +102,10 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
     { label: '2D Comic Stickers', url: designs?.stickerSheetUrl_comic, filename: `${strainName}-stickers-comic.png` },
   ];
   
-  const galacticItems = [
-    { label: 'Galactic Logo', url: designs?.logoUrl_galactic, filename: `${strainName}-logo-galactic.png` },
-    { label: 'Galactic Montage', url: designs?.productMontageUrl_galactic, filename: `${strainName}-montage-galactic.png` },
-    { label: 'Galactic Stickers', url: designs?.stickerSheetUrl_galactic, filename: `${strainName}-stickers-galactic.png` },
+  const rastaItems = [
+    { label: 'Rasta Logo', url: designs?.logoUrl_rasta, filename: `${strainName}-logo-rasta.png` },
+    { label: 'Rasta Montage', url: designs?.productMontageUrl_rasta, filename: `${strainName}-montage-rasta.png` },
+    { label: 'Rasta Stickers', url: designs?.stickerSheetUrl_rasta, filename: `${strainName}-stickers-rasta.png` },
   ];
 
   const farmstyleItems = [
@@ -133,7 +133,7 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="clay">3D Clay</TabsTrigger>
             <TabsTrigger value="comic">2D Comic</TabsTrigger>
-            <TabsTrigger value="galactic">Galactic</TabsTrigger>
+            <TabsTrigger value="rasta">Rasta Reggae</TabsTrigger>
             <TabsTrigger value="farmstyle">Farmstyle</TabsTrigger>
             <TabsTrigger value="imaginative">Imaginative</TabsTrigger>
           </TabsList>
@@ -171,9 +171,9 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
               )}
             </div>
           </TabsContent>
-          <TabsContent value="galactic" className="pt-4">
+          <TabsContent value="rasta" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {galacticItems.map((item) =>
+              {rastaItems.map((item) =>
                 item.url ? (
                   <div key={item.label} className="space-y-2 flex flex-col items-center">
                     <p className="font-semibold text-sm">{item.label}</p>

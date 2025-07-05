@@ -22,9 +22,9 @@ const GenerateThcDesignsOutputSchema = z.object({
   logoUrl_comic: z.string().url().describe('URL of the primary circular logo design in 2D comic style.'),
   productMontageUrl_comic: z.string().url().describe('URL of the 2D comic style product montage (cap, shirt, hoodie, etc.).'),
   stickerSheetUrl_comic: z.string().url().describe('URL of the 2D comic style downloadable sticker sheet.'),
-  logoUrl_galactic: z.string().url().describe('URL of the primary circular logo design in Galactic Superhero style.'),
-  productMontageUrl_galactic: z.string().url().describe('URL of the Galactic Superhero style product montage.'),
-  stickerSheetUrl_galactic: z.string().url().describe('URL of the Galactic Superhero style downloadable sticker sheet.'),
+  logoUrl_rasta: z.string().url().describe('URL of the primary circular logo design in Rasta Reggae style.'),
+  productMontageUrl_rasta: z.string().url().describe('URL of the Rasta Reggae style product montage.'),
+  stickerSheetUrl_rasta: z.string().url().describe('URL of the Rasta Reggae style downloadable sticker sheet.'),
   logoUrl_farmstyle: z.string().url().describe('URL of the primary circular logo design in Farmstyle Retro style.'),
   productMontageUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style product montage.'),
   stickerSheetUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style downloadable sticker sheet.'),
@@ -180,33 +180,34 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       return { logoUrl_comic, productMontageUrl_comic, stickerSheetUrl_comic };
     };
 
-    // --- Pipeline for Galactic Superhero Style ---
-    const generateGalacticDesigns = async () => {
-        const logoPrompt_galactic = `
-        You are a lead designer for a futuristic sci-fi franchise, creating a single, high-resolution circular logo for the cannabis strain "${strain}".
+    // --- Pipeline for Rasta Reggae Style ---
+    const generateRastaReggaeDesigns = async () => {
+        const logoPrompt_rasta = `
+        You are a talented graphic designer with a deep appreciation for Rastafarian culture and art. Create a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-        **Core Concept: A Sleek, Star-Trek Inspired Metallic Badge**
-        The final output must be a single, visually striking circular logo on a solid white background. The style is a clean, sleek, metallic badge reminiscent of a **Starfleet insignia or a superhero emblem**.
+        **Core Concept: A Vibrant, 2D Vector Rasta-Reggae Badge**
+        The final output must be a single, visually striking circular logo on a solid white background. The style is a clean, vibrant, 2D vector art style inspired by classic reggae album covers and Rastafarian symbolism.
 
         **Visual Structure:**
         1.  **Central Artwork (Dominant Feature):**
-            - Features a **stylized, metallic, 3D vector representation of a cannabis bud** for the "${strain}" strain. The bud should look powerful and iconic.
-            - This bud is set against a **vibrant, cosmic nebula background** inside the badge, filled with swirling galaxies and stars, giving a sense of deep space.
+            - The largest part of the badge, featuring a **stylized, 2D vector illustration of a cannabis bud** for the "${strain}" strain.
+            - This bud is seamlessly **merged into a background that evokes a Rasta-Reggae theme**. Think of a sunburst pattern with the Rasta colors (red, gold, green), or subtle patterns inspired by African textiles. The artwork should feel unified and soulful.
         2.  **Readable Text Ring:**
-            - Surrounding the central artwork is a **plain, solid-colored ring** in a polished metallic finish (like brushed steel or chrome).
-            - There must be a **clean gap** between the text and the borders.
-            - The text itself must be rendered in a **futuristic, sans-serif, holographic font style**, appearing to glow slightly.
+            - Surrounding the central artwork is a **plain, solid-colored ring** (e.g., black or dark green) for text.
+            - There must be a **slight, clean gap** between the text and the inner and outer borders of this ring to ensure readability.
+            - The text must be rendered in a **bold, friendly, slightly rounded font**, reminiscent of vintage reggae posters (e.g., a font like "Kool Beans" or "Keep on Truckin'").
             - The font must be **BOLD, CLEAR, and HIGHLY READABLE**.
-            - Text follows the circular curve. The strain name, **"${strain.toUpperCase()}"**, and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
-        3.  **Sleek Metallic Outer Border:**
-            - The entire badge is framed by a distinct, **polished metallic outer border**.
+            - The text must follow the circular curve of the ring.
+            - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
+        3.  **Clean Vector Outer Border:**
+            - The entire badge is framed by a distinct, **clean vector border**, possibly a tri-color stripe of red, gold, and green.
 
-        **Final Check:** The logo is a single, circular badge with a futuristic, metallic feel. The central artwork is a stylized metallic cannabis bud against a cosmic background. The text ring is clear with glowing holographic text. The entire design is on a solid white background.
+        **Final Quality Check:** The logo is a single, circular 2D badge with a vibrant Rasta-Reggae feel. The central artwork is a stylized vector cannabis bud merged into a themed background. The text ring is clear with a friendly, readable font. The entire design is on a solid white background.
         `;
-      const logoUrl_galactic = await generateImage(logoPrompt_galactic);
-      const productMontageUrl_galactic = await generateImage(getProductMontagePrompt(logoUrl_galactic, "To boldly grow where no one has grown before."));
-      const stickerSheetUrl_galactic = await generateImage(getStickerSheetPrompt(logoUrl_galactic));
-      return { logoUrl_galactic, productMontageUrl_galactic, stickerSheetUrl_galactic };
+      const logoUrl_rasta = await generateImage(logoPrompt_rasta);
+      const productMontageUrl_rasta = await generateImage(getProductMontagePrompt(logoUrl_rasta, "One love, one heart, one bud."));
+      const stickerSheetUrl_rasta = await generateImage(getStickerSheetPrompt(logoUrl_rasta));
+      return { logoUrl_rasta, productMontageUrl_rasta, stickerSheetUrl_rasta };
     };
     
     // --- Pipeline for Farmstyle Retro Style ---
@@ -263,13 +264,13 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     const [
       clayResults, 
       comicResults, 
-      galacticResults, 
+      rastaResults, 
       farmstyleResults, 
       imaginativeResults
     ] = await Promise.all([
       generateClayDesigns(),
       generateComicDesigns(),
-      generateGalacticDesigns(),
+      generateRastaReggaeDesigns(),
       generateFarmstyleDesigns(),
       generateImaginativeDesigns()
     ]);
@@ -278,7 +279,7 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     return {
       ...clayResults,
       ...comicResults,
-      ...galacticResults,
+      ...rastaResults,
       ...farmstyleResults,
       ...imaginativeResults,
     };
