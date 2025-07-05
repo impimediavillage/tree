@@ -25,9 +25,12 @@ const GenerateThcDesignsOutputSchema = z.object({
   logoUrl_galactic: z.string().url().describe('URL of the primary circular logo design in Galactic Superhero style.'),
   productMontageUrl_galactic: z.string().url().describe('URL of the Galactic Superhero style product montage.'),
   stickerSheetUrl_galactic: z.string().url().describe('URL of the Galactic Superhero style downloadable sticker sheet.'),
-  logoUrl_cyberpunk: z.string().url().describe('URL of the primary circular logo design in Cyberpunk style.'),
-  productMontageUrl_cyberpunk: z.string().url().describe('URL of the Cyberpunk style product montage.'),
-  stickerSheetUrl_cyberpunk: z.string().url().describe('URL of the Cyberpunk style downloadable sticker sheet.'),
+  logoUrl_farmstyle: z.string().url().describe('URL of the primary circular logo design in Farmstyle Retro style.'),
+  productMontageUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style product montage.'),
+  stickerSheetUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style downloadable sticker sheet.'),
+  logoUrl_imaginative: z.string().url().describe('URL of the primary circular logo design in a unique, imaginative style.'),
+  productMontageUrl_imaginative: z.string().url().describe('URL of the imaginative style product montage.'),
+  stickerSheetUrl_imaginative: z.string().url().describe('URL of the imaginative style downloadable sticker sheet.'),
 });
 type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
 
@@ -206,41 +209,69 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       return { logoUrl_galactic, productMontageUrl_galactic, stickerSheetUrl_galactic };
     };
     
-    // --- Pipeline for Cyberpunk Style ---
-    const generateCyberpunkDesigns = async () => {
-        const logoPrompt_cyberpunk = `
-        You are a net-runner and graphic designer in a neon-drenched dystopian future, creating a single, high-resolution circular logo for the cannabis strain "${strain}".
+    // --- Pipeline for Farmstyle Retro Style ---
+    const generateFarmstyleDesigns = async () => {
+        const logoPrompt_farmstyle = `
+        You are a classic brand designer creating a logo for a rustic, high-quality cannabis strain "${strain}".
 
-        **Core Concept: A Glitching, Holographic Cyberpunk Emblem**
-        The final output must be a single, visually striking circular logo on a solid white background. The style is a **gritty, high-tech cyberpunk aesthetic**, filled with neon glows and holographic elements.
+        **Core Concept: A Hand-Painted, Retro Farmstand Sign Badge**
+        The final output must be a single, circular logo on a solid white background. The style should feel like a **vintage, hand-painted wooden sign** or a **classic seed packet design**, emphasizing a rustic, organic quality.
 
         **Visual Structure:**
         1.  **Central Artwork (Dominant Feature):**
-            - Features a **glowing, semi-translucent, holographic 3D vector of a cannabis bud** for the "${strain}" strain, with subtle **glitch effects and data streams**.
-            - It merges into a background depicting a **dark, rain-slicked dystopian cityscape at night, illuminated by vibrant neon signs**, all contained within the badge.
+            - A detailed, **hand-painted style illustration of a cannabis bud** for the "${strain}" strain. It should look natural and artisanal.
+            - This bud is seamlessly merged into a background that suggests a **rustic wood grain, faded burlap texture, or a simple, retro sunburst pattern**.
         2.  **Readable Text Ring:**
-            - Surrounding the central artwork is a **plain, solid-colored ring** with a carbon fiber texture or dark metallic sheen.
+            - Surrounding the central artwork is a **plain, solid-colored ring** that looks like painted wood.
             - There must be a **clean gap** between the text and the borders.
-            - The text must be rendered in a **digital, pixelated, or glitch-style font**, glowing with a vibrant neon color (like magenta or cyan).
-            - The font must be **BOLD, CLEAR, and HIGHLY READABLE**.
-            - Text follows the circular curve. The strain name, **"${strain.toUpperCase()}"**, and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
-        3.  **Cybernetic Outer Border:**
-            - The entire badge is framed by a **complex, circuit-board-like or cybernetic border**, with glowing neon lines.
+            - The text must be rendered in a classic, **slightly distressed serif or script font**, reminiscent of old-fashioned flour sacks or barn signs.
+            - Font must be **BOLD, CLEAR, and HIGHLY READABLE**.
+            - Text follows the circular curve. The strain name **"${strain.toUpperCase()}"** and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
+        3.  **Rustic Outer Border:**
+            - The entire badge is framed by a simple, **painted ring or a border that looks like rustic rope**, giving it a handmade feel.
 
-        **Final Check:** The logo is a single, circular badge with a cyberpunk, neon-holographic feel. The central artwork is a glitching holographic cannabis bud against a neon city background. The text ring is clear, with glowing digital text. The entire design is on a solid white background.
+        **Final Check:** The logo feels authentic, handmade, and timeless, like a premium organic product from a trusted local farm. The entire design is on a solid white background.
         `;
-      const logoUrl_cyberpunk = await generateImage(logoPrompt_cyberpunk);
-      const productMontageUrl_cyberpunk = await generateImage(getProductMontagePrompt(logoUrl_cyberpunk, "Wake up, samurai. We have a city to smoke."));
-      const stickerSheetUrl_cyberpunk = await generateImage(getStickerSheetPrompt(logoUrl_cyberpunk));
-      return { logoUrl_cyberpunk, productMontageUrl_cyberpunk, stickerSheetUrl_cyberpunk };
+      const logoUrl_farmstyle = await generateImage(logoPrompt_farmstyle);
+      const productMontageUrl_farmstyle = await generateImage(getProductMontagePrompt(logoUrl_farmstyle, "High quality, down to earth."));
+      const stickerSheetUrl_farmstyle = await generateImage(getStickerSheetPrompt(logoUrl_farmstyle));
+      return { logoUrl_farmstyle, productMontageUrl_farmstyle, stickerSheetUrl_farmstyle };
+    };
+
+    // --- Pipeline for Imaginative (Surprise Me) Style ---
+    const generateImaginativeDesigns = async () => {
+        const logoPrompt_imaginative = `
+        You are a visionary and experimental graphic artist. Your task is to create a single, completely unique, and artistically surprising circular logo for the cannabis strain "${strain}".
+
+        **Core Concept: Surprise Me.**
+        I want you to be highly creative and imaginative. The style is entirely up to you. It could be **abstract, surreal, minimalist, futuristic, psychedelic, painterly, or something completely new**. The goal is to create a visually stunning and memorable piece of art that represents the essence of the strain name in a non-literal way.
+
+        **Key Instructions:**
+        1.  **Avoid Clichés:** Do not use typical cannabis leaves or generic 420 imagery unless you can reinvent it in a truly novel way.
+        2.  **Artistic Interpretation:** Interpret the strain name **"${strain}"** abstractly or metaphorically. Focus on the feeling, the colors, the history, or the name's components to inspire your design.
+        3.  **Maintain Structure:** The final design must be a **single, circular logo** on a solid white background. It must include the text **"${strain.toUpperCase()}"** and **"THE WELLNESS TREE"**, but you have complete freedom on how and where to integrate the text. It can be part of the artwork, minimalist, bold, handwritten, etc., as long as it's readable.
+
+        **Final Quality Check:** The result is a unique, high-concept piece of art that is both surprising and beautiful, and would look incredible on merchandise.
+        `;
+      const logoUrl_imaginative = await generateImage(logoPrompt_imaginative);
+      const productMontageUrl_imaginative = await generateImage(getProductMontagePrompt(logoUrl_imaginative, "Reality is for people who can't handle their weed."));
+      const stickerSheetUrl_imaginative = await generateImage(getStickerSheetPrompt(logoUrl_imaginative));
+      return { logoUrl_imaginative, productMontageUrl_imaginative, stickerSheetUrl_imaginative };
     };
 
     // --- Run all generation pipelines in parallel ---
-    const [clayResults, comicResults, galacticResults, cyberpunkResults] = await Promise.all([
+    const [
+      clayResults, 
+      comicResults, 
+      galacticResults, 
+      farmstyleResults, 
+      imaginativeResults
+    ] = await Promise.all([
       generateClayDesigns(),
       generateComicDesigns(),
       generateGalacticDesigns(),
-      generateCyberpunkDesigns()
+      generateFarmstyleDesigns(),
+      generateImaginativeDesigns()
     ]);
 
     // --- Combine results and return ---
@@ -248,7 +279,8 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       ...clayResults,
       ...comicResults,
       ...galacticResults,
-      ...cyberpunkResults,
+      ...farmstyleResults,
+      ...imaginativeResults,
     };
   }
 );

@@ -63,9 +63,12 @@ interface DesignDialogProps {
     logoUrl_galactic: string;
     productMontageUrl_galactic: string;
     stickerSheetUrl_galactic: string;
-    logoUrl_cyberpunk: string;
-    productMontageUrl_cyberpunk: string;
-    stickerSheetUrl_cyberpunk: string;
+    logoUrl_farmstyle: string;
+    productMontageUrl_farmstyle: string;
+    stickerSheetUrl_farmstyle: string;
+    logoUrl_imaginative: string;
+    productMontageUrl_imaginative: string;
+    stickerSheetUrl_imaginative: string;
   } | null;
   strainName: string;
 }
@@ -105,10 +108,16 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
     { label: 'Galactic Stickers', url: designs?.stickerSheetUrl_galactic, filename: `${strainName}-stickers-galactic.png` },
   ];
 
-  const cyberpunkItems = [
-    { label: 'Cyberpunk Logo', url: designs?.logoUrl_cyberpunk, filename: `${strainName}-logo-cyberpunk.png` },
-    { label: 'Cyberpunk Montage', url: designs?.productMontageUrl_cyberpunk, filename: `${strainName}-montage-cyberpunk.png` },
-    { label: 'Cyberpunk Stickers', url: designs?.stickerSheetUrl_cyberpunk, filename: `${strainName}-stickers-cyberpunk.png` },
+  const farmstyleItems = [
+    { label: 'Farmstyle Logo', url: designs?.logoUrl_farmstyle, filename: `${strainName}-logo-farmstyle.png` },
+    { label: 'Farmstyle Montage', url: designs?.productMontageUrl_farmstyle, filename: `${strainName}-montage-farmstyle.png` },
+    { label: 'Farmstyle Stickers', url: designs?.stickerSheetUrl_farmstyle, filename: `${strainName}-stickers-farmstyle.png` },
+  ];
+
+  const imaginativeItems = [
+    { label: 'Imaginative Logo', url: designs?.logoUrl_imaginative, filename: `${strainName}-logo-imaginative.png` },
+    { label: 'Imaginative Montage', url: designs?.productMontageUrl_imaginative, filename: `${strainName}-montage-imaginative.png` },
+    { label: 'Imaginative Stickers', url: designs?.stickerSheetUrl_imaginative, filename: `${strainName}-stickers-imaginative.png` },
   ];
 
   return (
@@ -117,15 +126,16 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
         <DialogHeader>
           <DialogTitle>Generated Designs for {strainName}</DialogTitle>
           <DialogDescription>
-            Four design styles have been generated. You can download each image.
+            Five design styles have been generated. You can download each image.
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="clay" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="clay">3D Clay</TabsTrigger>
             <TabsTrigger value="comic">2D Comic</TabsTrigger>
             <TabsTrigger value="galactic">Galactic</TabsTrigger>
-            <TabsTrigger value="cyberpunk">Cyberpunk</TabsTrigger>
+            <TabsTrigger value="farmstyle">Farmstyle</TabsTrigger>
+            <TabsTrigger value="imaginative">Imaginative</TabsTrigger>
           </TabsList>
           <TabsContent value="clay" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -178,9 +188,26 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
               )}
             </div>
           </TabsContent>
-          <TabsContent value="cyberpunk" className="pt-4">
+          <TabsContent value="farmstyle" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {cyberpunkItems.map((item) =>
+              {farmstyleItems.map((item) =>
+                item.url ? (
+                  <div key={item.label} className="space-y-2 flex flex-col items-center">
+                    <p className="font-semibold text-sm">{item.label}</p>
+                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
+                      <Image src={item.url} alt={item.label} fill className="object-contain" />
+                    </div>
+                    <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>
+                      Download
+                    </Button>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="imaginative" className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {imaginativeItems.map((item) =>
                 item.url ? (
                   <div key={item.label} className="space-y-2 flex flex-col items-center">
                     <p className="font-semibold text-sm">{item.label}</p>
