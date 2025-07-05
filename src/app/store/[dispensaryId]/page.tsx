@@ -60,16 +60,18 @@ const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType,
            {isDescription && <DialogDescription>Full Product Details</DialogDescription>}
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-            {children ? children : (
+            {children}
+            {children && items && items.length > 0 && <Separator className="my-4" />}
+            {items && items.length > 0 && (
               <div className="flex flex-col items-start gap-2 py-4">
                 <div className="flex flex-wrap gap-2">
-                  {items && itemType && items.map((item, index) => {
+                  {items.map((item, index) => {
                       const isAttribute = typeof item === 'object' && 'name' in item;
                       const name = isAttribute ? item.name : item;
                       const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
 
                       return (
-                      <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
+                      <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType!][index % badgeColors[itemType!].length])}>
                           {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
                       </Badge>
                       );
@@ -248,12 +250,12 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     setIsProcessing(true);
     toast({ title: "Processing...", description: "Preparing your design pack and cart item." });
     
-    let cartImageUrl = product.imageUrls?.[0] || product.imageUrl || null;
+    let cartImageUrl = product.imageUrls?.[0] || null;
     try {
         cartImageUrl = await downscaleImage(designs.logoUrl_clay, 150, 150);
     } catch(e) {
-        console.error("Failed to downscale image for cart, using original.", e);
-        toast({ title: "Image Warning", description: "Could not downscale image, using original.", variant: "default"});
+        console.error("Failed to downscale image for cart, using original if available.", e);
+        toast({ title: "Image Warning", description: "Could not downscale image, using original product image.", variant: "default"});
     }
 
     const cartItemId = `design-${product.id}-${tier.unit}`;
@@ -414,9 +416,15 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
   const infoButtons = (
     <div className="w-full pt-3">
       <div className="flex flex-wrap gap-2 justify-center">
-        <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
-        <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
-        <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+        <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles}>
+          {ImageCollageComponent}
+        </InfoDialog>
+        <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon}>
+          {ImageCollageComponent}
+        </InfoDialog>
+        <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain}>
+          {ImageCollageComponent}
+        </InfoDialog>
         <InfoDialog className={infoClasses} title={product.name} triggerText="Full Description" icon={Info}>
             {product.description ? (
                 <>
@@ -426,7 +434,7 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                         {product.description}
                     </div>
                 </>
-            ) : null}
+            ) : ImageCollageComponent}
         </InfoDialog>
       </div>
     </div>
@@ -521,12 +529,12 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                 </div>
                  <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
                     <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-                        Qualify for FREE {tier.unit} samples for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time.
+                        Promotional design pack. Includes a free sample of {product.name} ({tier.unit})
                     </p>
                 </div>
                 <div className="w-full space-y-2">
                     <Button
-                        className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
                         disabled={tierStock <= 0}
                         onClick={() => onGenerateDesigns(product, tier)}
                         aria-label={`Generate designs for ${product.name}`}
@@ -534,7 +542,6 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                         <Sparkles className="h-5 w-5" />
                         Generate Designs
                     </Button>
-                    <p className="text-center text-xs text-muted-foreground font-bold">to qualify for the free product samples</p>
                 </div>
             </>
           ) : (
