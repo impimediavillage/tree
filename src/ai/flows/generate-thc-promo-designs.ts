@@ -44,19 +44,22 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     outputSchema: GenerateThcDesignsOutputSchema,
   },
   async ({ strain }) => {
-    // Shared core design brief to ensure consistency
-    const coreDesignBrief = `
-      The design style is a modern, magical, animated badge with a retro, Rastafarian, 420-style, *embroidered* look.
-      The central element is a vibrantly animated, 3D isometric cannabis bud of the "${strain}" strain.
-      The text "The Wellness Tree" and "${strain}" must curve elegantly around the inside of a circular border.
-      The strain name "${strain}" must be the more prominent text, with "The Wellness Tree" smaller but still clearly readable in a bold, rounded font.
-    `;
-
     // --- Step 1: Generate the primary logo ---
     const logoPrompt = `
       As a world-class graphic designer, create a single, high-resolution circular logo for the cannabis strain "${strain}".
-      ${coreDesignBrief}
-      The final image must be just the logo on a clean, solid white background. It must look like a magical, modern, retro badge with an embroidered texture.
+
+      **Core Elements & Style:**
+      - **Overall Style:** The final image must be a single, circular logo that looks like a modern, magical, animated badge. It must have a retro, Rastafarian, 420-style, and a detailed **embroidered** texture.
+      - **Central Image:** The main feature is a vibrantly animated, 3D isometric cannabis bud of the "${strain}" strain.
+      - **Background:** The logo must be on a clean, solid white background.
+
+      **Text Instructions (Crucial):**
+      - **Placement:** Both text elements must curve elegantly around the *inside* of the circular border, located at the **top** of the badge.
+      - **Content & Hierarchy:**
+          1. The strain name, **"${strain}"**, must be the most prominent text.
+          2. The brand name, **"The Wellness Tree"**, must appear directly *below* the strain name (still following the curve at the top). It should be in a smaller, but still bold and clearly readable, rounded font.
+
+      **Final Check:** Ensure the text is perfectly curved, the strain name is larger, and the "The Wellness Tree" text is smaller but readable. The entire design must have a cohesive embroidered, retro-modern, and magical look.
     `;
     const logoUrl = await generateImage(logoPrompt);
 
