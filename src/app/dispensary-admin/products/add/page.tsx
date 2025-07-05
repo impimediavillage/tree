@@ -1114,6 +1114,12 @@ export default function AddProductPage() {
                 <div className="space-y-3 pt-2">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
                     <FormDescription>Pricing for regular customer sales.</FormDescription>
+                    <div className="text-sm p-3 border border-yellow-300 bg-yellow-50/50 rounded-md space-y-1">
+                        <p className="font-bold text-yellow-800">24% is added on each transaction as a commission to the Wellness Tree.</p>
+                        <p className="text-xs text-yellow-700">
+                            The commission amount is calculated from deducting your product price from the TAX amount you mentioned when creating your store, then adding 20%. Your E store will show the prices you give with the 20% added. <strong className="uppercase">!!!Important. Please add your prices with TAX.</strong>
+                        </p>
+                    </div>
                     {priceTierFields.map((tierField, index) => (
                         <div key={tierField.id} className="space-y-2 items-start p-3 border rounded-md bg-muted/30">
                             <div className="flex items-start gap-2">
@@ -1137,6 +1143,12 @@ export default function AddProductPage() {
                    <div className="space-y-3 pt-4 mt-4 border-t">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Pool Sharing Pricing *</h3>
                     <FormDescription>Pricing for bulk sharing with other wellness entities in the pool.</FormDescription>
+                    <div className="text-sm p-3 border border-blue-300 bg-blue-50/50 rounded-md space-y-1">
+                        <p className="font-bold text-blue-800">10% is added on each transaction as a commission to the Wellness Tree.</p>
+                        <p className="text-xs text-blue-700">
+                            The commission amount is calculated from deducting your product price from the TAX amount you mentioned when creating your store, then adding 20%. <strong className="uppercase">!!!Important. Please add your prices with TAX.</strong>
+                        </p>
+                    </div>
                     {poolPriceTierFields.map((tierField, index) => (
                         <div key={tierField.id} className="space-y-2 items-start p-3 border rounded-md shadow-sm bg-blue-50/30">
                             <div className="flex items-start gap-2">
