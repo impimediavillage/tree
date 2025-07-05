@@ -108,6 +108,7 @@ export interface Product {
   imageUrls?: string[] | null;
   imageUrl?: string | null; // Keep for backward compatibility
   labTested?: boolean;
+  labTestReportUrl?: string | null;
   isAvailableForPool?: boolean;
   tags?: string[] | null;
   

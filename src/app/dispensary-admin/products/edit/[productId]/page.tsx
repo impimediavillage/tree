@@ -25,12 +25,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, Trash2, ImageIcon as ImageIconLucideSvg, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Brush, Delete, Info, Search as SearchIcon, X } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
+import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -207,6 +209,7 @@ export default function EditProductPage() {
   const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
+  const watchLabTested = form.watch('labTested');
 
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
@@ -215,6 +218,9 @@ export default function EditProductPage() {
 
   const [showEffectsEditor, setShowEffectsEditor] = useState(false);
   const [showMedicalUsesEditor, setShowMedicalUsesEditor] = useState(false);
+  
+  const [labTestFile, setLabTestFile] = useState<File | null>(null);
+  const [existingLabReportUrl, setExistingLabReportUrl] = useState<string | null>(null);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -222,6 +228,8 @@ export default function EditProductPage() {
         priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
         poolPriceTiers: [],
         stickerProgramOptIn: null,
+        labTested: false,
+        labTestReportUrl: null,
     },
   });
 
@@ -458,10 +466,12 @@ export default function EditProductPage() {
           quantityInStock: productData.quantityInStock ?? undefined,
           imageUrls: productData.imageUrls || [],
           labTested: productData.labTested || false,
+          labTestReportUrl: productData.labTestReportUrl || null,
           isAvailableForPool: productData.isAvailableForPool || false,
           tags: productData.tags || [],
           stickerProgramOptIn: productData.stickerProgramOptIn || null,
         });
+        setExistingLabReportUrl(productData.labTestReportUrl || null);
         if (productData.priceTiers && productData.priceTiers.length > 0) {
             replacePriceTiers(productData.priceTiers);
         } else {
@@ -667,8 +677,14 @@ export default function EditProductPage() {
         form.setError("category", { type: "manual", message: "Category is required." }); return;
     }
 
+    if (data.labTested && !labTestFile && !existingLabReportUrl) {
+        toast({ title: "Lab Report Required", description: "Please upload a lab test report image.", variant: "destructive" });
+        return;
+    }
+
     setIsLoading(true);
     let finalImageUrls = [...existingImageUrls];
+    let finalLabReportUrl = existingLabReportUrl;
 
     if (files.length > 0) {
         const uploadPromises = files.map(file => {
@@ -706,6 +722,37 @@ export default function EditProductPage() {
         });
         await Promise.all(deletePromises);
     }
+
+    if (labTestFile) {
+      try {
+        toast({ title: "Uploading Lab Report...", variant: "default" });
+        const filePath = `dispensary-products/${currentUser.dispensaryId}/lab-reports/${Date.now()}_${labTestFile.name}`;
+        const fileStorageRef = storageRef(storage, filePath);
+        const uploadTask = uploadBytesResumable(fileStorageRef, labTestFile);
+        finalLabReportUrl = await new Promise<string>((resolve, reject) => {
+          uploadTask.on('state_changed', null, reject,
+            async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+          );
+        });
+        // If a new report is uploaded, delete the old one if it exists
+        if (existingLabReportUrl && existingLabReportUrl.startsWith('https://firebasestorage.googleapis.com')) {
+          await deleteObject(storageRef(storage, existingLabReportUrl)).catch(e => console.warn("Old lab report delete failed:", e));
+        }
+      } catch (error) {
+        console.error("Lab report upload failed:", error);
+        toast({ title: "Lab Report Upload Failed", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+    } else if (!data.labTested && existingLabReportUrl) {
+      // If checkbox is unchecked, delete the existing report
+      try {
+        await deleteObject(storageRef(storage, existingLabReportUrl));
+        finalLabReportUrl = null;
+      } catch (e: any) {
+        if (e.code !== 'storage/object-not-found') console.warn("Old lab report delete failed:", e);
+      }
+    }
     
     try {
       const productDocRef = doc(db, "products", existingProduct.id);
@@ -715,6 +762,7 @@ export default function EditProductPage() {
       const productUpdateData: Partial<ProductType> = {
           ...data,
           imageUrls: finalImageUrls,
+          labTestReportUrl: data.labTested ? finalLabReportUrl : null,
           priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0),
           poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : [],
           quantityInStock: totalStock,
@@ -1213,9 +1261,54 @@ export default function EditProductPage() {
                     )}
                 />
                 <Separator />
-                <div className="space-y-4">
-                <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
-                </div>
+                 <FormField
+                    control={form.control}
+                    name="labTested"
+                    render={({ field }) => (
+                        <div className="space-y-4 rounded-md border p-4 shadow-sm">
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={!!field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={isLoading}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>Lab Tested</FormLabel>
+                                    <FormDescription>
+                                        Product has been independently lab tested.
+                                    </FormDescription>
+                                </div>
+                            </FormItem>
+                            {watchLabTested && (
+                                <div className="pl-9 animate-fade-in-scale-up" style={{ animationDuration: '0.3s' }}>
+                                    <FormItem>
+                                        <FormLabel>Lab Test Report</FormLabel>
+                                        {existingLabReportUrl && !labTestFile && (
+                                            <div className="relative w-48 h-48 my-2">
+                                                <Image src={existingLabReportUrl} alt="Existing lab report" layout="fill" objectFit="contain" className="rounded-md border p-1" />
+                                                 <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={() => { setExistingLabReportUrl(null); form.setValue('labTestReportUrl', null, {shouldValidate: true});}}>
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
+                                            </div>
+                                        )}
+                                        <FormControl>
+                                            <SingleImageDropzone 
+                                                value={labTestFile} 
+                                                onChange={setLabTestFile} 
+                                                maxSize={200 * 1024} // 200KB
+                                            />
+                                        </FormControl>
+                                        <FormDescription>Upload an image of the lab test results (max 200KB). A new upload will replace the existing one.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                />
+
             </div>
             )}
             {!isThcCbdSpecialType && (
@@ -1263,5 +1356,3 @@ export default function EditProductPage() {
     </Card>
   );
 }
-
-    

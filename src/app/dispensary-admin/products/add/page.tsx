@@ -31,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
+import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -205,6 +206,7 @@ export default function AddProductPage() {
   const [showMedicalUsesEditor, setShowMedicalUsesEditor] = useState(false);
 
   const [files, setFiles] = useState<File[]>([]);
+  const [labTestFile, setLabTestFile] = useState<File | null>(null);
 
 
   const form = useForm<ProductFormData>({
@@ -217,7 +219,7 @@ export default function AddProductPage() {
       currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
       poolPriceTiers: [],
       quantityInStock: undefined, imageUrls: [],
-      labTested: false, effects: [], flavors: [], medicalUses: [],
+      labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
       isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
     },
   });
@@ -243,6 +245,7 @@ export default function AddProductPage() {
   const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
+  const watchLabTested = form.watch('labTested');
 
   useEffect(() => {
     if (!isThcCbdSpecialType) {
@@ -278,7 +281,10 @@ export default function AddProductPage() {
       sizingSystem: null,
       sizes: [],
       stickerProgramOptIn: null,
+      labTested: false,
+      labTestReportUrl: null,
     });
+    setLabTestFile(null);
     setSelectedDeliveryMethod(null);
     setDeliveryMethodOptions([]);
     setSpecificProductTypeOptions([]);
@@ -629,9 +635,15 @@ export default function AddProductPage() {
         form.setError("stickerProgramOptIn", {type: "manual", message: "Participation choice is required for THC products."});
         return;
     }
+    if (data.labTested && !labTestFile) {
+        toast({ title: "Lab Report Required", description: "Please upload a lab test report image.", variant: "destructive" });
+        return;
+    }
+
 
     setIsLoading(true);
     let uploadedImageUrls: string[] = [];
+    let uploadedLabReportUrl: string | null = null;
 
     if (files.length > 0) {
         const uploadPromises = files.map(file => {
@@ -661,6 +673,27 @@ export default function AddProductPage() {
             return;
         }
     }
+    
+    if (labTestFile) {
+        try {
+            toast({ title: "Uploading Lab Report...", variant: "default" });
+            const filePath = `dispensary-products/${currentUser.dispensaryId}/lab-reports/${Date.now()}_${labTestFile.name}`;
+            const fileStorageRef = storageRef(storage, filePath);
+            const uploadTask = uploadBytesResumable(fileStorageRef, labTestFile);
+            uploadedLabReportUrl = await new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed', null, reject,
+                    async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+                );
+            });
+            toast({ title: "Lab Report Uploaded!", variant: "default" });
+        } catch (error) {
+            console.error("Lab report upload failed:", error);
+            toast({ title: "Lab Report Upload Failed", variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
+    }
+
 
     try {
       const totalStock = data.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
@@ -669,6 +702,7 @@ export default function AddProductPage() {
         ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: wellnessData.dispensaryName,
         dispensaryType: wellnessData.dispensaryType, productOwnerEmail: wellnessData.ownerEmail,
         imageUrls: uploadedImageUrls,
+        labTestReportUrl: uploadedLabReportUrl,
         priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0), 
         poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : [],
         quantityInStock: totalStock,
@@ -714,10 +748,11 @@ export default function AddProductPage() {
         strain: null, thcContent: '', cbdContent: '', gender: null, sizingSystem: null, sizes: [],
         currency: wellnessData.currency || 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
         poolPriceTiers: [],
-        quantityInStock: undefined, imageUrls: [], labTested: false, effects: [], flavors: [], medicalUses: [],
+        quantityInStock: undefined, imageUrls: [], labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
         isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
       });
       setFiles([]);
+      setLabTestFile(null);
       setSelectedProductStream(null);
       setSelectedDeliveryMethod(null);
       setSelectedMainCategoryName(null); setSelectedSubCategoryL1Name(null);
@@ -1048,8 +1083,6 @@ export default function AddProductPage() {
                             </div>
                           )}
                         </div>
-
-                         <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm"> <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} disabled={isLoading} /></FormControl> <div className="space-y-1 leading-none"><FormLabel>Lab Tested</FormLabel><FormDescription>Check this if the product has been independently lab tested for quality and potency.</FormDescription></div> </FormItem> )} />
                     </>
                 )}
 
@@ -1209,6 +1242,47 @@ export default function AddProductPage() {
                 </FormItem> )} />
             )}
 
+             <FormField
+                control={form.control}
+                name="labTested"
+                render={({ field }) => (
+                    <div className="space-y-4 rounded-md border p-4 shadow-sm">
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                                <Checkbox
+                                    checked={!!field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={isLoading}
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel>Lab Tested</FormLabel>
+                                <FormDescription>
+                                    Check this if the product has been independently lab tested for
+                                    quality and potency.
+                                </FormDescription>
+                            </div>
+                        </FormItem>
+                        {watchLabTested && (
+                            <div className="pl-9 animate-fade-in-scale-up" style={{ animationDuration: '0.3s' }}>
+                                <FormItem>
+                                    <FormLabel>Upload Lab Test Report *</FormLabel>
+                                    <FormControl>
+                                        <SingleImageDropzone 
+                                            value={labTestFile} 
+                                            onChange={setLabTestFile} 
+                                            maxSize={200 * 1024} // 200KB
+                                        />
+                                    </FormControl>
+                                    <FormDescription>Upload an image of the lab test results (max 200KB).</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            </div>
+                        )}
+                    </div>
+                )}
+            />
+
 
             <CardFooter className="px-0 pt-8">
                 <div className="flex gap-4 w-full">
@@ -1231,5 +1305,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
