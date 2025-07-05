@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart, Trash2, Plus, Minus, X, Info } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, X, Info, Gift } from 'lucide-react';
 
 export function CartDrawer() {
   const {
@@ -109,7 +109,14 @@ export function CartDrawer() {
                         <h3 className="font-semibold text-md text-foreground hover:text-primary transition-colors cursor-default" title={item.name}>
                           {item.name}
                         </h3>
-                        <p className="text-xs text-muted-foreground">{item.category}</p>
+                         {item.id.startsWith('design-') && item.description ? (
+                          <div className="flex items-start gap-2 mt-1 text-sm text-green-600 dark:text-green-400">
+                            <Gift className="h-6 w-6 flex-shrink-0" />
+                            <p className="font-medium">{item.description}</p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">{item.category}</p>
+                        )}
                         <p className="text-md font-semibold text-accent mt-1">
                           {item.currency} {(item.price * item.quantity).toFixed(2)}
                           {item.quantity > 1 && (
