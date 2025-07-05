@@ -248,7 +248,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     setIsProcessing(true);
     toast({ title: "Processing...", description: "Preparing your design pack and cart item." });
     
-    let cartImageUrl = designs.logoUrl_clay; // Default to full size if downscaling fails
+    let cartImageUrl = product.imageUrls?.[0] || product.imageUrl || null;
     try {
         cartImageUrl = await downscaleImage(designs.logoUrl_clay, 150, 150);
     } catch(e) {
@@ -264,7 +264,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
       name: `Design Pack: ${product.name}`,
       description: `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`,
       imageUrl: cartImageUrl,
-      imageUrls: [cartImageUrl],
+      imageUrls: cartImageUrl ? [cartImageUrl] : [],
     };
     
     const designPackTier: PriceTier = {
@@ -526,12 +526,13 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                 </div>
                 <div className="w-full space-y-2">
                     <Button
-                        className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-semibold"
+                        className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold"
                         disabled={tierStock <= 0}
                         onClick={() => onGenerateDesigns(product, tier)}
                         aria-label={`Generate designs for ${product.name}`}
                     >
-                        <Sparkles className="mr-2 h-5 w-5" /> Generate Designs
+                        <Sparkles className="h-5 w-5" />
+                        Generate Designs
                     </Button>
                     <p className="text-center text-xs text-muted-foreground font-bold">to qualify for the free product samples</p>
                 </div>
