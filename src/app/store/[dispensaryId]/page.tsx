@@ -447,6 +447,8 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                         <p className="text-xs text-green-900 dark:text-green-200">
                            Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
                         </p>
+                    </div>
+                     <div className="w-full pt-2">
                         <Button 
                             onClick={handleGenerateDesigns} 
                             disabled={isGeneratingDesigns || !product.strain} 
@@ -455,8 +457,8 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                             {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                             Generate Designs
                         </Button>
-                         <p className="text-xs text-center text-muted-foreground font-semibold">
-                           to qualify for the free product samples
+                        <p className="text-xs text-center text-muted-foreground font-semibold mt-1">
+                            to qualify for the free product samples
                         </p>
                     </div>
                 </>
