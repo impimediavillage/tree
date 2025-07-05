@@ -36,10 +36,9 @@ async function generateImage(prompt: string): Promise<string> {
     return media.url;
 }
 
-
-export const generateThcPromoDesigns = ai.defineFlow(
+const generateThcPromoDesignsFlow = ai.defineFlow(
   {
-    name: 'generateThcPromoDesigns',
+    name: 'generateThcPromoDesignsFlow',
     inputSchema: GenerateThcDesignsInputSchema,
     outputSchema: GenerateThcDesignsOutputSchema,
   },
@@ -65,3 +64,8 @@ export const generateThcPromoDesigns = ai.defineFlow(
     };
   }
 );
+
+// Export an async wrapper function that can be used as a server action.
+export async function generateThcPromoDesigns(input: GenerateThcDesignsInput): Promise<GenerateThcDesignsOutput> {
+  return generateThcPromoDesignsFlow(input);
+}
