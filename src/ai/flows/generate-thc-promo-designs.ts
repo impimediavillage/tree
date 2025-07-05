@@ -48,24 +48,27 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     const logoPrompt = `
       You are a master graphic designer creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-      **Core Concept: An Animated, Embroidered Vector Badge**
-      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The style is a vibrant fusion of **retro, Rastafarian, reggae, and 420 culture** with a modern, **animated vector** feel. The entire logo must be presented on a clean, solid white background.
+      **Core Concept: A "Marvel Comic" Style Embroidered Badge**
+      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The style is a vibrant fusion of a **retro Marvel comic book aesthetic, Rastafarian colors, and 420 culture**, all rendered with a modern, **animated vector** feel. The entire logo must be presented on a clean, solid white background.
 
       **Visual Structure (from inside out):**
-      1.  **Central Artwork:** In the center of the badge, create an **animated vector-style image of a cannabis bud** representing the "${strain}" strain. This artwork should seamlessly **merge with a creative, themed background** that reflects the retro, 420, and reggae style. This central area is the main artistic focus.
-      2.  **Text Band:** Surrounding the central artwork, there must be a **plain, solid-colored ring** that serves as a clean background for the text. This separates the text from the complex background of the artwork.
+      1.  **Central Artwork:**
+          - Create an **animated vector-style image of a cannabis bud** representing the "${strain}" strain.
+          - This artwork should be the main focus and **protrude slightly from the bottom of its circular frame**, breaking the boundary for a dynamic 3D effect.
+          - The background for the strain image should be **large and impactful**, reflecting the Rasta/420/comic theme in a creative, animated cartoon style.
+      2.  **Text Band:** Surrounding the central artwork, there must be a **plain, solid-colored ring** that serves as a clean background for the text. This creates separation and ensures readability.
       3.  **Text (on the plain band):**
-          - The text must follow the circular curve of the band perfectly.
-          - The strain name, **"${strain}"**, must be at the top, rendered in a **bold, readable, modern font**. It should be the most prominent text.
-          - Directly below the strain name (also following the curve), the brand name **"The Wellness Tree"** must appear in a smaller, but still bold and clear, rounded font.
-          - Both text elements must be clearly readable against their plain background.
-      4.  **Outer Border:** The entire badge must be enclosed by a distinct, **embroidered-style external border** that gives the badge a tactile, 3D effect.
+          - The text must follow the circular curve of the band perfectly at the top.
+          - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured.
+          - **Both text elements must be in ALL CAPITAL LETTERS and be the SAME SIZE and FONT.**
+          - The font should be a **bold, readable, modern, comic-book style font**.
+      4.  **Outer Border:** The entire badge must be enclosed by a distinct, **embroidered-style external border** that gives the badge a tactile, 3D, and almost stitched-on appearance.
 
       **Final Quality Check:**
-      - The logo is a single, circular, embroidered-style badge.
-      - The central artwork is an animated vector of the strain, merging with a creative, themed background.
-      - The text is placed on a separate, plain-colored circular band.
-      - The text includes "${strain}" and "The Wellness Tree", is perfectly curved, and follows the specified size hierarchy.
+      - The logo is a single, circular, embroidered-style badge with a comic/Rasta/420 theme.
+      - The central artwork is an animated vector of the strain that **breaks its frame at the bottom**.
+      - The text is on a separate, plain-colored circular band.
+      - The text includes "${strain.toUpperCase()}" and "THE WELLNESS TREE" in **all caps** and at the **same size and font style**.
       - The entire logo is on a solid white background.
     `;
     const logoUrl = await generateImage(logoPrompt);
