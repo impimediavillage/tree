@@ -56,18 +56,21 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
           - This is the largest part of the badge, occupying the majority of the space to maximize visual impact.
           - The artwork features a **hyper-realistic, 3D modelling clay sculpture of a cannabis bud** for the "${strain}" strain.
           - This bud should be the centerpiece, seamlessly **merging into a vibrant, retro, 420-themed background, also rendered in a realistic clay style**. The background and the bud should feel like a single, cohesive piece of sculpted art.
-      2.  **Compact Text Ring:**
-          - Surrounding the central artwork is an **extremely narrow, plain, solid-colored ring** for text. The spacing between the text and the borders of this ring should be minimal to maximize the size of the central artwork.
-          - The text must follow the circular curve of this ring.
+      2.  **Readable Text Ring:**
+          - Surrounding the central artwork is a **plain, solid-colored ring** for text.
+          - There must be a **slight, clean gap** between the text and the inner and outer borders of this ring to ensure readability.
+          - The text itself must also be rendered in a **3D modelling clay style**, looking as if it were sculpted.
+          - The font must be **BOLD, CLEAR, and HIGHLY READABLE**.
+          - The text must follow the circular curve of the ring.
           - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured.
-          - Both text elements must be in **ALL CAPITAL LETTERS** and use the **SAME BOLD, READABLE, RETRO-STYLE FONT**.
+          - Both text elements must be in **ALL CAPITAL LETTERS** and use the **SAME FONT**.
       3.  **Sculpted Clay Outer Border:**
           - The entire badge is framed by a distinct, **sculpted clay-style external border** that gives it a tactile, 3D appearance.
 
       **Final Quality Check:**
       - The logo is a single, circular 3D badge with a modelling clay effect.
       - The central artwork is the dominant feature, with a hyper-realistic clay cannabis bud merging into a retro 420 background made of the same material.
-      - The text ring is extremely compact, and the text ("${strain.toUpperCase()}" and "THE WELLNESS TREE") is in all caps with the same font.
+      - The text ring is clear, with the text ("${strain.toUpperCase()}" and "THE WELLNESS TREE") also made of clay, in all caps, with the same readable font, and having a slight gap from its borders.
       - The entire design is on a solid white background.
     `;
     const logoUrl = await generateImage(logoPrompt);
