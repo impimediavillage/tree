@@ -127,7 +127,43 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [designs, setDesigns] = useState<GeneratedDesigns | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  async function downscaleImage(dataUrl: string, maxWidth: number, maxHeight: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = document.createElement('img');
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let { width, height } = img;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                return reject(new Error('Could not get canvas context'));
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Use JPEG for better compression of photographic/complex images
+            resolve(canvas.toDataURL('image/jpeg', 0.8)); 
+        };
+        img.onerror = (err) => reject(err);
+        img.src = dataUrl;
+    });
+}
+
 
   useEffect(() => {
     if (isOpen && product && !designs && !isGenerating) {
@@ -156,14 +192,13 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
       setTimeout(() => {
         setDesigns(null);
         setIsGenerating(false);
+        setIsProcessing(false);
       }, 300);
     }
   }, [isOpen, product, designs, isGenerating, onOpenChange, toast]);
 
   const handleDownloadZip = async () => {
     if (!designs || !product) return;
-    setIsDownloading(true);
-    toast({ title: "Preparing Download...", description: "Please wait while we zip the design files." });
     try {
         const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
@@ -205,13 +240,22 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     } catch(e) {
         console.error("Failed to create or download zip", e);
         toast({ title: "Download Failed", description: "Could not prepare the zip file for download.", variant: "destructive" });
-    } finally {
-        setIsDownloading(false);
     }
   };
   
-  const handleAddToCartAndDownload = () => {
+  const handleAddToCartAndDownload = async () => {
     if (!product || !tier || !designs) return;
+    setIsProcessing(true);
+    toast({ title: "Processing...", description: "Preparing your design pack and cart item." });
+    
+    let cartImageUrl = designs.logoUrl_clay; // Default to full size if downscaling fails
+    try {
+        cartImageUrl = await downscaleImage(designs.logoUrl_clay, 150, 150);
+    } catch(e) {
+        console.error("Failed to downscale image for cart, using original.", e);
+        toast({ title: "Image Warning", description: "Could not downscale image, using original.", variant: "default"});
+    }
+
     const cartItemId = `design-${product.id}-${tier.unit}`;
     
     const designPackProduct: Product = {
@@ -219,6 +263,8 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
       id: cartItemId, 
       name: `Design Pack: ${product.name}`,
       description: `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`,
+      imageUrl: cartImageUrl,
+      imageUrls: [cartImageUrl],
     };
     
     const designPackTier: PriceTier = {
@@ -227,7 +273,9 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     };
     
     addToCart(designPackProduct, designPackTier, 1);
-    handleDownloadZip();
+    await handleDownloadZip();
+
+    setIsProcessing(false);
     onOpenChange(false);
   };
   
@@ -261,8 +309,8 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
         {designs && (
             <>
                 <div className="flex justify-end p-4 border-b">
-                    <Button onClick={handleAddToCartAndDownload} size="lg" className="bg-green-600 hover:bg-green-700 text-white" disabled={isDownloading}>
-                         {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5" />}
+                    <Button onClick={handleAddToCartAndDownload} size="lg" className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessing}>
+                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5" />}
                         Add Design Pack to Cart & Download Logos
                     </Button>
                 </div>
@@ -471,7 +519,7 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                         <span>Free samples value</span>
                     </div>
                 </div>
-                <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
+                 <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
                     <p className="text-xs font-semibold text-green-700 dark:text-green-300">
                         Qualify for FREE {tier.unit} samples for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time.
                     </p>
