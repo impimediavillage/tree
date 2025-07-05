@@ -367,11 +367,32 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const medicalClasses = "border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-800/70";
   const infoClasses = "border-transparent bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-200 dark:hover:bg-amber-800/70";
 
+  const infoButtons = (
+    <div className="w-full pt-3 mt-3 border-t">
+      <div className="flex flex-wrap gap-2 justify-center">
+        <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
+        <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
+        <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+        <InfoDialog className={infoClasses} title={product.name} triggerText="Full Description" icon={Info}>
+            {product.description ? (
+                <>
+                    {ImageCollageComponent}
+                    {ImageCollageComponent && <Separator className="my-4" />}
+                    <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
+                        {product.description}
+                    </div>
+                </>
+            ) : null}
+        </InfoDialog>
+      </div>
+    </div>
+  );
 
   return (
     <>
       <Card 
-          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card text-card-foreground group border border-border hover:border-primary/60"
+          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card text-card-foreground group border border-border hover:border-primary/60 animate-fade-in-scale-up"
+          style={{ animationFillMode: 'backwards' }}
           data-ai-hint={dataAiHintProduct}
       >
         <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted group">
@@ -439,25 +460,6 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
             <div className="flex-grow">
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
             </div>
-            <div className="pt-2">
-                <Separator className="my-2" />
-                <div className="flex flex-wrap gap-2">
-                    <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
-                    <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
-                    <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
-                    <InfoDialog className={infoClasses} title={product.name} triggerText="Full Description" icon={Info}>
-                        {product.description ? (
-                            <>
-                                {ImageCollageComponent}
-                                {ImageCollageComponent && <Separator className="my-4" />}
-                                <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
-                                    {product.description}
-                                </div>
-                            </>
-                        ) : null}
-                    </InfoDialog>
-                </div>
-            </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
             {isThcProduct ? (
@@ -497,14 +499,14 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
             ) : (
                 <>
                     {displayTier && (
-                        <div className="w-full text-right">
-                        <p className="text-2xl font-bold text-black dark:text-white">
-                            <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
-                            {displayTier.price.toFixed(2)}
-                        </p>
-                        <div className="flex items-center justify-end text-xs text-muted-foreground">
-                            <span>/ {displayTier.unit}</span>
-                        </div>
+                         <div className="w-full text-right">
+                            <p className="text-2xl font-bold text-black dark:text-white">
+                                <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                                {displayTier.price.toFixed(2)}
+                            </p>
+                            <div className="flex items-center justify-end text-xs text-muted-foreground">
+                                <span>/ {displayTier.unit}</span>
+                            </div>
                         </div>
                     )}
                     <div className="w-full pt-2">
@@ -520,6 +522,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                     </div>
                 </>
             )}
+            {infoButtons}
         </CardFooter>
       </Card>
       
