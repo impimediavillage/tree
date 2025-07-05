@@ -9,12 +9,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const GenerateThcDesignsInputSchema = z.object({
+const GenerateThcDesignsInputSchema = z.object({
   strain: z.string().describe('The name of the THC strain for which to generate designs.'),
 });
 export type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
 
-export const GenerateThcDesignsOutputSchema = z.object({
+const GenerateThcDesignsOutputSchema = z.object({
   promoImageUrl: z.string().url().describe('URL of the general promotional image.'),
   singleStickerImageUrl: z.string().url().describe('URL of the single large sticker image.'),
   fourStickerImageUrl: z.string().url().describe('URL of the four-sticker collage image.'),
@@ -30,7 +30,7 @@ async function generateImage(prompt: string): Promise<string> {
             responseModalities: ['TEXT', 'IMAGE'],
         },
     });
-    if (!media.url) {
+    if (!media || !media.url) {
         throw new Error('Image generation failed to produce a URL.');
     }
     return media.url;
