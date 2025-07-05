@@ -1117,7 +1117,7 @@ export default function AddProductPage() {
                     <div className="text-sm p-3 border border-yellow-300 bg-yellow-50/50 rounded-md space-y-1">
                         <p className="font-bold text-yellow-800">24% is added on each transaction as a commission to the Wellness Tree.</p>
                         <p className="text-xs text-yellow-700">
-                            The commission amount is calculated from deducting your product price from the TAX amount you mentioned when creating your store, then adding 20%. Your E store will show the prices you give with the 20% added. <strong className="uppercase">!!!Important. Please add your prices with TAX.</strong>
+                            The commission amount is calculated from deducting the TAX amount you gave when creating your store, from your product price. We then add 24% commission. Your E store will show the prices you give with the 24% added. <strong className="uppercase">!!!Important. Please add your prices with TAX.</strong>
                         </p>
                     </div>
                     {priceTierFields.map((tierField, index) => (
@@ -1142,11 +1142,11 @@ export default function AddProductPage() {
                 {watchIsAvailableForPool && (
                    <div className="space-y-3 pt-4 mt-4 border-t">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Pool Sharing Pricing *</h3>
-                    <FormDescription>Pricing for bulk sharing with other wellness entities in the pool.</FormDescription>
+                    <FormDescription>Pricing for bulk design sharing with other wellness stores in the pool.</FormDescription>
                     <div className="text-sm p-3 border border-blue-300 bg-blue-50/50 rounded-md space-y-1">
-                        <p className="font-bold text-blue-800">10% is added on each transaction as a commission to the Wellness Tree.</p>
+                        <p className="font-bold text-blue-800">12% is added on each transaction as a commission to the Wellness Tree.</p>
                         <p className="text-xs text-blue-700">
-                            The commission amount is calculated from deducting your product price from the TAX amount you mentioned when creating your store, then adding 20%. <strong className="uppercase">!!!Important. Please add your prices with TAX.</strong>
+                           The commission amount is calculated from deducting the TAX amount you gave when creating your store, from your product price. We then add 12% commission. Your Pricing Pool will show the prices you give with the 12% added. <strong className="uppercase">!!!Important. Please add your prices with TAX.</strong>
                         </p>
                     </div>
                     {poolPriceTierFields.map((tierField, index) => (
@@ -1231,3 +1231,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
