@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
@@ -114,40 +113,54 @@ type GeneratedDesigns = {
     stickerSheetUrl_imaginative: string;
 };
 
-interface DesignCtaDialogProps {
+
+interface DesignViewerDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  designs: GeneratedDesigns | null;
-  product: Product;
-  tier: PriceTier;
+  product: Product | null;
+  tier: PriceTier | null;
 }
 
-function DesignCtaDialog({ isOpen, onOpenChange, designs, product, tier }: DesignCtaDialogProps) {
+function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewerDialogProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [designs, setDesigns] = useState<GeneratedDesigns | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleConfirmAddToCart = () => {
-    if (!product || !tier || !designs) return;
-    const designProductId = `design-${product.id}-${tier.unit}`;
-    const designProduct: Product = {
-      ...product,
-      id: designProductId,
-      name: `Design Pack: ${product.name}`,
-      description: `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`,
-      imageUrls: null,
-      imageUrl: null, 
-    };
-    const designTier: PriceTier = {
-      ...tier,
-      unit: 'Design Pack',
-    };
-    addToCart(designProduct, designTier, 1);
-    onOpenChange(false);
-  };
+  useEffect(() => {
+    if (isOpen && product && !designs && !isGenerating) {
+      const generate = async () => {
+        if (!product.strain) {
+          toast({ title: "Strain Name Missing", description: "Cannot generate designs without a strain name.", variant: "destructive" });
+          onOpenChange(false);
+          return;
+        }
+        setIsGenerating(true);
+        try {
+          const { generateThcPromoDesigns } = await import('@/ai/flows/generate-thc-promo-designs');
+          const result = await generateThcPromoDesigns({ strain: product.strain });
+          setDesigns(result);
+        } catch (error) {
+          console.error("Error generating designs:", error);
+          toast({ title: "Design Generation Failed", description: "Could not generate promotional designs. Please try again later.", variant: "destructive" });
+          onOpenChange(false);
+        } finally {
+          setIsGenerating(false);
+        }
+      };
+      generate();
+    } else if (!isOpen) {
+      // Reset when closed
+      setTimeout(() => {
+        setDesigns(null);
+        setIsGenerating(false);
+      }, 300);
+    }
+  }, [isOpen, product, designs, isGenerating, onOpenChange, toast]);
 
   const handleDownloadZip = async () => {
-    if (!designs) return;
+    if (!designs || !product) return;
     setIsDownloading(true);
     toast({ title: "Preparing Download...", description: "Please wait while we zip the design files." });
     try {
@@ -174,10 +187,6 @@ function DesignCtaDialog({ isOpen, onOpenChange, designs, product, tier }: Desig
         
         const fetchedImages = (await Promise.all(fetchPromises)).filter(Boolean) as { name: string; blob: Blob }[];
         
-        if(fetchedImages.length !== designImages.length) {
-            toast({ title: "Download Incomplete", description: "Some design images could not be fetched. The zip file may be incomplete.", variant: "destructive" });
-        }
-
         fetchedImages.forEach(img => {
             zip.file(img.name, img.blob);
         });
@@ -186,7 +195,7 @@ function DesignCtaDialog({ isOpen, onOpenChange, designs, product, tier }: Desig
         
         const link = document.createElement('a');
         link.href = URL.createObjectURL(zipBlob);
-        link.download = `${product.name}_design_pack_preview.zip`;
+        link.download = `${product.name}_design_pack_logos.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -199,64 +208,110 @@ function DesignCtaDialog({ isOpen, onOpenChange, designs, product, tier }: Desig
         setIsDownloading(false);
     }
   };
-
-  const designPreviews = designs ? [
-    { title: "3D Clay", url: designs.logoUrl_clay },
-    { title: "2D Comic", url: designs.logoUrl_comic },
-    { title: "Rasta Reggae", url: designs.logoUrl_rasta },
-    { title: "Farmstyle", url: designs.logoUrl_farmstyle },
-    { title: "Imaginative", url: designs.logoUrl_imaginative },
+  
+  const handleAddToCartAndDownload = () => {
+    if (!product || !tier || !designs) return;
+    const cartItemId = `design-${product.id}-${tier.unit}`;
+    
+    // Create a special product representation for the cart
+    const designPackProduct: Product = {
+      ...product,
+      id: cartItemId, // Use the unique ID for the cart item itself
+      name: `Design Pack: ${product.name}`,
+      description: `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`, // Encode details for cart display
+      imageUrls: [designs.logoUrl_clay], // Use one image as a representative
+      imageUrl: designs.logoUrl_clay,
+    };
+    
+    // Use the tier from the original product card
+    const designPackTier: PriceTier = {
+      ...tier,
+      unit: 'Design Pack', // Clarify the unit
+    };
+    
+    addToCart(designPackProduct, designPackTier, 1);
+    handleDownloadZip();
+    onOpenChange(false);
+  };
+  
+  // Design data for tabs
+  const designTabs = designs ? [
+    { value: 'clay', title: '3D Clay', images: { logo: designs.logoUrl_clay, montage: designs.productMontageUrl_clay, sticker: designs.stickerSheetUrl_clay } },
+    { value: 'comic', title: '2D Comic', images: { logo: designs.logoUrl_comic, montage: designs.productMontageUrl_comic, sticker: designs.stickerSheetUrl_comic } },
+    { value: 'rasta', title: 'Rasta Reggae', images: { logo: designs.logoUrl_rasta, montage: designs.productMontageUrl_rasta, sticker: designs.stickerSheetUrl_rasta } },
+    { value: 'farmstyle', title: 'Farmstyle', images: { logo: designs.logoUrl_farmstyle, montage: designs.productMontageUrl_farmstyle, sticker: designs.stickerSheetUrl_farmstyle } },
+    { value: 'imaginative', title: 'Imaginative', images: { logo: designs.logoUrl_imaginative, montage: designs.productMontageUrl_imaginative, sticker: designs.stickerSheetUrl_imaginative } },
   ] : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="sm:max-w-5xl">
         <DialogHeader>
-          <DialogTitle>Download Your Design Pack!</DialogTitle>
-          <DialogDescription className="text-base text-green-600 dark:text-green-400 font-semibold flex items-center gap-2">
-            <Gift className="h-5 w-5" /> Your purchase includes a FREE sample of {product.name} ({tier.unit}).
+          <DialogTitle>Generated Designs for: {product?.name}</DialogTitle>
+          <DialogDescription>
+            Review the generated designs below. Add the pack to your cart to receive the design files and your free product sample.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4 py-4">
-            {designPreviews.map(({title, url}) => (
-                <div key={title} className="space-y-2 text-center">
-                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
-                        <Image src={url} alt={title} fill className="object-contain p-2"/>
-                    </div>
-                    <p className="text-sm font-medium">{title}</p>
+        
+        {isGenerating && (
+            <div className="flex flex-col items-center justify-center h-96">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <p className="mt-4 text-lg text-muted-foreground">Generating your unique designs...</p>
+                <p className="text-sm text-muted-foreground">(This can take up to a minute)</p>
+            </div>
+        )}
+        
+        {designs && (
+            <>
+                <div className="flex justify-end p-4 border-b">
+                    <Button onClick={handleAddToCartAndDownload} size="lg" className="bg-green-600 hover:bg-green-700 text-white" disabled={isDownloading}>
+                         {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5" />}
+                        Add Design Pack to Cart & Download Logos
+                    </Button>
                 </div>
-            ))}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 mt-2">
-            <Button onClick={handleDownloadZip} variant="outline" className="w-full sm:w-auto" disabled={isDownloading}>
-                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                Download Design Previews (ZIP)
-            </Button>
-            <Button onClick={handleConfirmAddToCart} size="lg" className="w-full sm:flex-grow bg-primary text-primary-foreground text-lg">
-                <ShoppingCart className="mr-3 h-5 w-5" />
-                Add Design Pack to Cart
-            </Button>
-        </div>
+                <Tabs defaultValue="clay" className="w-full">
+                    <TabsList className="grid w-full grid-cols-5">
+                        {designTabs.map(tab => (
+                            <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
+                        ))}
+                    </TabsList>
+                    {designTabs.map(tab => (
+                        <TabsContent key={tab.value} value={tab.value}>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                               <Card>
+                                  <CardHeader><CardTitle>Logo</CardTitle></CardHeader>
+                                  <CardContent><div className="relative aspect-square"><Image src={tab.images.logo} alt={`${tab.title} Logo`} fill className="object-contain p-2"/></div></CardContent>
+                               </Card>
+                               <Card>
+                                  <CardHeader><CardTitle>Product Montage</CardTitle></CardHeader>
+                                  <CardContent><div className="relative aspect-square"><Image src={tab.images.montage} alt={`${tab.title} Montage`} fill className="object-contain p-2"/></div></CardContent>
+                               </Card>
+                               <Card>
+                                  <CardHeader><CardTitle>Sticker Sheet</CardTitle></CardHeader>
+                                  <CardContent><div className="relative aspect-square"><Image src={tab.images.sticker} alt={`${tab.title} Sticker Sheet`} fill className="object-contain p-2"/></div></CardContent>
+                               </Card>
+                            </div>
+                        </TabsContent>
+                    ))}
+                </Tabs>
+            </>
+        )}
+        
       </DialogContent>
     </Dialog>
-  );
+  )
 }
-
 
 interface PublicProductCardProps {
   product: Product;
   tier: PriceTier;
+  onGenerateDesigns: (product: Product, tier: PriceTier) => void;
 }
 
-function PublicProductCard({ product, tier }: PublicProductCardProps) {
+function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
-  const { toast } = useToast();
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  
-  const [isGeneratingDesigns, setIsGeneratingDesigns] = useState(false);
-  const [generatedDesigns, setGeneratedDesigns] = useState<GeneratedDesigns | null>(null);
-  const [isCtaDialogOpen, setIsCtaDialogOpen] = useState(false);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
 
@@ -302,32 +357,8 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
 
   const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.category === "THC";
   
-  const handleGenerateDesigns = async () => {
-    if (!product.strain) {
-      toast({ title: "Strain Name Missing", description: "Cannot generate designs without a strain name.", variant: "destructive" });
-      return;
-    }
-    setIsGeneratingDesigns(true);
-    setGeneratedDesigns(null);
-    try {
-      const { generateThcPromoDesigns } = await import('@/ai/flows/generate-thc-promo-designs');
-      const result = await generateThcPromoDesigns({ strain: product.strain });
-      setGeneratedDesigns(result);
-      setIsCtaDialogOpen(true);
-    } catch (error) {
-      console.error("Error generating designs:", error);
-      toast({ title: "Design Generation Failed", description: "Could not generate promotional designs. Please try again later.", variant: "destructive" });
-    } finally {
-      setIsGeneratingDesigns(false);
-    }
-  };
-
   const handleAddToCartClick = () => {
-    if (isThcProduct) {
-      handleGenerateDesigns();
-    } else {
-      addToCart(product, tier, 1);
-    }
+    addToCart(product, tier, 1);
   };
 
   const effectsClasses = "border-transparent bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-200 dark:hover:bg-purple-800/70";
@@ -336,7 +367,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const infoClasses = "border-transparent bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-200 dark:hover:bg-amber-800/70";
 
   const infoButtons = (
-    <div className="w-full pt-3 mt-auto">
+    <div className="w-full pt-3">
       <div className="flex flex-wrap gap-2 justify-center">
         <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
         <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
@@ -430,28 +461,55 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
             </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 mt-auto">
-            <div className="w-full text-right">
-                <p className="text-2xl font-bold text-black dark:text-white">
-                    <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
-                    {tier.price.toFixed(2)}
-                </p>
-                <div className="flex items-center justify-end text-xs text-muted-foreground">
+          <div className="w-full text-right">
+            <p className="text-2xl font-bold text-black dark:text-white">
+              <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+              {tier.price.toFixed(2)}
+            </p>
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+                {isThcProduct ? (
+                  <>
                     <span className="mr-1">/ {tier.unit}</span>
-                </div>
+                    <Gift className="h-3 w-3 mr-1" />
+                    <span>Free samples value</span>
+                  </>
+                ) : (
+                  <span className="mr-1">/ {tier.unit}</span>
+                )}
             </div>
-            
-            <div className="w-full pt-2">
-                <Button
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
-                    disabled={tierStock <= 0 || !canAddToCart || isGeneratingDesigns}
-                    onClick={handleAddToCartClick}
-                    aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-                >
-                    {isGeneratingDesigns ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
-                    {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-                </Button>
+          </div>
+
+          {isThcProduct ? (
+            <div className="w-full space-y-2">
+              <div className="p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+                  Qualify for FREE {tier.unit} samples for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time.
+                </p>
+              </div>
+               <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-semibold"
+                  disabled={tierStock <= 0}
+                  onClick={() => onGenerateDesigns(product, tier)}
+                  aria-label={`Generate designs for ${product.name}`}
+              >
+                  <Sparkles className="mr-2 h-5 w-5" /> Generate Designs
+              </Button>
+               <p className="text-center text-xs text-muted-foreground font-bold">to qualify for the free product samples</p>
             </div>
-            {infoButtons}
+          ) : (
+            <div className="w-full">
+              <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                  disabled={tierStock <= 0 || !canAddToCart}
+                  onClick={handleAddToCartClick}
+                  aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+              >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+              </Button>
+            </div>
+          )}
+          {infoButtons}
         </CardFooter>
       </Card>
       
@@ -488,14 +546,6 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
           )}
         </DialogContent>
       </Dialog>
-      
-      <DesignCtaDialog 
-        isOpen={isCtaDialogOpen}
-        onOpenChange={setIsCtaDialogOpen} 
-        designs={generatedDesigns} 
-        product={product}
-        tier={tier}
-      />
     </>
   );
 }
@@ -515,6 +565,14 @@ export default function WellnessStorePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
+
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [designViewerState, setDesignViewerState] = useState<{product: Product | null, tier: PriceTier | null}>({product: null, tier: null});
+  
+  const handleGenerateDesignsClick = (product: Product, tier: PriceTier) => {
+    setDesignViewerState({ product, tier });
+    setIsViewerOpen(true);
+  };
 
   useEffect(() => {
     if (!wellnessId) {
@@ -665,7 +723,7 @@ export default function WellnessStorePage() {
         <Card className="mb-8 bg-primary/10 border-primary/20">
           <CardContent className="p-4 text-center">
             <p className="font-bold text-primary flex items-center justify-center gap-2">
-              <Gift className="h-5 w-5"/> FREE cannabis products with your THC strain sticker, cap, t-shirt, & hoodie designs.
+              <Gift className="h-5 w-5"/> FREE cannabis products with your THC strain sticker, cap, t-shirt, &amp; hoodie designs.
             </p>
           </CardContent>
         </Card>
@@ -700,7 +758,7 @@ export default function WellnessStorePage() {
       {displayItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {displayItems.map(item => (
-            <PublicProductCard key={item.key} product={item.product} tier={item.tier} />
+            <PublicProductCard key={item.key} product={item.product} tier={item.tier} onGenerateDesigns={handleGenerateDesignsClick} />
           ))}
         </div>
       ) : (
@@ -720,6 +778,13 @@ export default function WellnessStorePage() {
           )}
         </div>
       )}
+
+      <DesignViewerDialog 
+        isOpen={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+        product={designViewerState.product}
+        tier={designViewerState.tier}
+      />
     </div>
   );
 }
