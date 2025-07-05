@@ -149,9 +149,12 @@ function DesignDialog({ isOpen, onOpenChange, designs, product, tier }: DesignDi
   const handleAddToCart = () => {
     if (!product || !tier || !designs) return;
 
+    // Create a unique ID for the design pack based on product ID and tier unit
+    const designProductId = `design-${product.id}-${tier.unit}`;
+
     const designProduct: Product = {
         ...product,
-        id: `design-${product.id}`,
+        id: designProductId,
         name: `Design Pack: ${product.name}`,
         description: `DESIGN_PACK|${product.name}|${tier.unit}`,
         imageUrls: [designs.logoUrl_clay],
@@ -160,7 +163,7 @@ function DesignDialog({ isOpen, onOpenChange, designs, product, tier }: DesignDi
 
     const designTier: PriceTier = {
         ...tier,
-        unit: 'Design Pack',
+        unit: 'Design Pack', // The unit for the design pack itself
     };
 
     addToCart(designProduct, designTier, 1);
@@ -336,7 +339,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const infoClasses = "border-transparent bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-200 dark:hover:bg-amber-800/70";
 
   const infoButtons = (
-    <div className="w-full pt-3 mt-auto border-t">
+    <div className="w-full pt-3 mt-auto">
       <div className="flex flex-wrap gap-2 justify-center">
         <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
         <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
@@ -437,7 +440,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                             <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
                             {tier.price.toFixed(2)}
                         </p>
-                         <div className="flex items-center justify-end text-xs text-muted-foreground">
+                        <div className="flex items-center justify-end text-xs text-muted-foreground">
                             <span className="mr-1">/ {tier.unit}</span>
                             <Gift className="mr-1 h-3 w-3 text-green-600" />
                             <span>Free samples value</span>
@@ -445,7 +448,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                     </div>
                     <div className="w-full mt-1 p-3 bg-green-50/70 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
                         <p className="text-xs text-green-900 dark:text-green-200">
-                           Qualify for a FREE <strong className="font-semibold">{tier.unit} sample</strong> for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time.
+                           Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
                         </p>
                     </div>
                     <div className="w-full pt-2">
