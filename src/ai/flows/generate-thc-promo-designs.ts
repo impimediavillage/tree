@@ -48,27 +48,27 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     const logoPrompt = `
       You are a master graphic designer creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-      **Core Concept: A Retro 420 Embroidered Badge**
-      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The overall style is a **retro 420 aesthetic**, clean and modern, but with a vintage feel. The entire logo must be presented on a clean, solid white background.
+      **Core Concept: A Modern Retro 420 Embroidered Badge**
+      The final output must be a single, visually striking circular logo on a solid white background. The style is a modern take on a retro 420 aesthetic, resembling a high-quality **embroidered material badge** with a clean, vector finish.
 
-      **Visual Structure (from inside out):**
-      1.  **Central Artwork & Background:**
-          - The central area of the badge must feature a **hyper-realistic vector illustration of a cannabis bud** representing the "${strain}" strain. The bud should be highly detailed and accurate.
-          - The background for the bud should be a clean, subtly textured graphic with a retro, 420-inspired theme.
-      2.  **Text Band:** Surrounding the central artwork, there must be a **plain, solid-colored ring** that serves as a clean background for the text. This creates separation and ensures readability.
-      3.  **Text (on the plain band):**
-          - The text must follow the circular curve of the band perfectly.
+      **Visual Structure:**
+      1.  **Central Artwork (Dominant Feature):**
+          - This is the largest part of the badge.
+          - The artwork features a **hyper-realistic, animated-style vector of a cannabis bud** for the "${strain}" strain.
+          - This bud should seamlessly **merge into a vibrant, retro, 420-themed animated background**. The background and the bud should feel like a single, cohesive piece of art, not separate elements.
+      2.  **Compact Text Ring:**
+          - Surrounding the central artwork is a **narrow, plain, solid-colored ring** for text, ensuring maximum space for the artwork.
+          - The text must follow the circular curve of this ring.
           - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured.
-          - **Both text elements must be in ALL CAPITAL LETTERS and be the SAME SIZE and FONT.**
-          - The font should be a **bold, readable, retro-style font**.
-      4.  **Outer Border:** The entire badge must be enclosed by a distinct, **embroidered-style external border** that gives the badge a tactile, 3D, and stitched-on appearance.
+          - Both text elements must be in **ALL CAPITAL LETTERS** and use the **SAME BOLD, READABLE, RETRO-STYLE FONT**.
+      3.  **Embroidered Outer Border:**
+          - The entire badge is framed by a distinct, **embroidered-style external border** that gives it a tactile, stitched appearance.
 
       **Final Quality Check:**
-      - The logo is a single, circular, embroidered-style badge with a retro 420 theme.
-      - The central artwork features a hyper-realistic vector cannabis bud.
-      - The text is on a separate, plain-colored circular band for maximum readability.
-      - The text includes "${strain.toUpperCase()}" and "THE WELLNESS TREE" in **all caps** and at the **same size and font style**.
-      - The entire logo is on a solid white background.
+      - The logo is a single, circular embroidered-style badge.
+      - The central artwork is the dominant feature, with an animated vector bud merging into a retro 420 background.
+      - The text ring is compact, and the text ("${strain.toUpperCase()}" and "THE WELLNESS TREE") is in all caps with the same font.
+      - The entire design is on a solid white background.
     `;
     const logoUrl = await generateImage(logoPrompt);
 
@@ -76,17 +76,18 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     // --- Step 2: Generate the product montage USING the logo from step 1 ---
     const productMontagePrompt = [
         { media: { url: logoUrl } },
-        { text: `You are a master brand designer. Your task is to create an attractive promotional product montage on a single, clean white background.
+        { text: `You are a professional product photographer and brand designer. Your task is to create a clean, minimalist, studio-quality product montage on a single, solid white background.
 
       **Instructions:**
-      1.  **Use the provided circular logo image exactly as it is.** DO NOT CHANGE THE LOGO DESIGN.
-      2.  Apply this PRE-EXISTING logo design attractively to the following items, ensuring they are well-spaced:
+      1.  **Use the provided circular logo image exactly as it is.** DO NOT CHANGE, ALTER, OR RECREATE THE LOGO DESIGN.
+      2.  Apply this PRE-EXISTING logo design to the following three items:
           - A black baseball cap (logo on the front).
           - A black t-shirt (logo large on the chest).
           - A black hoodie (logo large on the chest).
-      3.  Subtly include a humorous, spiritual, 420-style quote somewhere in the image. The quote should be stylishly integrated into the overall composition.
+      3.  Arrange the three items (cap, t-shirt, hoodie) in a visually appealing, well-spaced composition. The final image should look like a professional shot for an e-commerce store.
+      4.  There should be NO other text, quotes, or elements in the image. Only the three apparel items on a white background.
 
-      **Final Check:** The final output should be a single image containing only the cap, t-shirt, hoodie, and the quote, all on a white background.`
+      **Final Check:** The final image contains ONLY the cap, t-shirt, and hoodie with the provided logo, expertly arranged on a clean white background.`
         }
     ];
     const productMontageUrl = await generateImage(productMontagePrompt);
@@ -94,15 +95,16 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     // --- Step 3: Generate the sticker sheet USING the logo from step 1 ---
     const stickerSheetPrompt = [
         { media: { url: logoUrl } },
-        { text: `You are a master brand designer. Your task is to create a high-resolution sticker sheet on a solid white background, ready for download and printing.
+        { text: `You are a graphic designer creating a print-ready sticker sheet.
 
       **Instructions:**
-      1.  **Use the provided circular logo image exactly as it is.** DO NOT CHANGE THE LOGO DESIGN.
-      2.  Arrange **four** identical instances of this circular logo on the sheet.
-      3.  The arrangement should be a 2x2 grid, well-spaced.
-      4.  Below each of the four stickers, add a small, stylish line of promotional text that promotes a 420 lifestyle and "The Wellness Tree". The text can be slightly different for each sticker but should maintain a consistent style.
+      1.  **Use the provided circular logo image exactly as it is.** DO NOT CHANGE, ALTER, OR RECREATE THE LOGO DESIGN.
+      2.  Arrange **four (4)** identical instances of this circular logo on a single, high-resolution image with a solid white background.
+      3.  The arrangement should be a clean, well-spaced 2x2 grid.
+      4.  Each sticker should have a subtle, thin die-cut outline to show it is a sticker.
+      5.  There must be NO promotional text, quotes, or any other elements on the sheet. Just the four stickers on a white background.
 
-      **Final Check:** The final output should be a single image containing only the four circular stickers and their respective promotional texts on a clean white background.`
+      **Final Check:** The final output is a single image containing only four identical copies of the provided circular logo, arranged in a 2x2 grid on a white background.`
         }
     ];
     const stickerSheetUrl = await generateImage(stickerSheetPrompt);
