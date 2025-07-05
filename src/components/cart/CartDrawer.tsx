@@ -90,7 +90,7 @@ export function CartDrawer() {
             <ScrollArea className="flex-grow overflow-y-auto px-4 sm:px-6 py-4">
               <div className="space-y-5">
                 {cartItems.map(item => {
-                  const isDesignPack = item.description?.startsWith('DESIGN_PACK|');
+                  const isDesignPack = item.description?.startsWith('PROMO_DESIGN_PACK|');
                   let freeSampleName: string | undefined;
                   let freeSampleUnit: string | undefined;
                   
@@ -117,6 +117,8 @@ export function CartDrawer() {
                           objectFit="cover"
                           data-ai-hint={`cart item ${item.name.split(" ")[0] || ""}`}
                         />
+                      ) : isDesignPack ? (
+                        <Gift className="h-10 w-10 text-primary m-auto" />
                       ) : (
                         <ShoppingCart className="h-10 w-10 text-muted-foreground/50 m-auto" />
                       )}
