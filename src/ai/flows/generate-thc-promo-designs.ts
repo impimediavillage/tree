@@ -53,11 +53,11 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
 
       **Visual Structure:**
       1.  **Central Artwork (Dominant Feature):**
-          - This is the largest part of the badge.
+          - This is the largest part of the badge, occupying the majority of the space to maximize visual impact.
           - The artwork features a **hyper-realistic, animated-style vector of a cannabis bud** for the "${strain}" strain.
           - This bud should seamlessly **merge into a vibrant, retro, 420-themed animated background**. The background and the bud should feel like a single, cohesive piece of art, not separate elements.
       2.  **Compact Text Ring:**
-          - Surrounding the central artwork is a **narrow, plain, solid-colored ring** for text, ensuring maximum space for the artwork.
+          - Surrounding the central artwork is an **extremely narrow, plain, solid-colored ring** for text. The spacing between the text and the borders of this ring should be minimal to maximize the size of the central artwork.
           - The text must follow the circular curve of this ring.
           - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured.
           - Both text elements must be in **ALL CAPITAL LETTERS** and use the **SAME BOLD, READABLE, RETRO-STYLE FONT**.
@@ -67,7 +67,7 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       **Final Quality Check:**
       - The logo is a single, circular embroidered-style badge.
       - The central artwork is the dominant feature, with an animated vector bud merging into a retro 420 background.
-      - The text ring is compact, and the text ("${strain.toUpperCase()}" and "THE WELLNESS TREE") is in all caps with the same font.
+      - The text ring is extremely compact, and the text ("${strain.toUpperCase()}" and "THE WELLNESS TREE") is in all caps with the same font.
       - The entire design is on a solid white background.
     `;
     const logoUrl = await generateImage(logoPrompt);
