@@ -244,26 +244,26 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
         const logoPrompt_imaginative = `
         You are a visionary artist creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-        **Core Concept: An Imaginative, Unique Badge**
-        The final output must be a single, visually striking circular logo on a solid white background. The style is entirely up to your artistic interpretation—it can be abstract, surreal, futuristic, minimalist, or anything else you can imagine. The goal is to create something truly unique and unexpected.
+        **Core Concept: A Cosmic 420 Shaman Alien Badge**
+        The final output must be a single, visually striking circular logo on a solid white background. The style should be a blend of cosmic, shamanic, and alien aesthetics, with a vibrant 420 theme.
 
         **Visual Structure:**
         1.  **Central Artwork (Dominant Feature):**
             - This is the largest part of the badge.
-            - The artwork features an **imaginative, artistic interpretation of a cannabis bud** for the "${strain}" strain. It should not be a simple, literal drawing.
-            - This artwork should be seamlessly **merged into an equally creative and abstract background**. The entire central piece should feel like a single work of art.
+            - The artwork features a **surreal, alien-like cannabis bud** for the "${strain}" strain, possibly glowing or with cosmic energy.
+            - This artwork should be seamlessly **merged into a mystical, shamanic background with cosmic elements like stars, nebulae, or galaxies**. The entire central piece should feel like a portal to another dimension.
         2.  **Readable Text Ring:**
-            - Surrounding the central artwork is a **plain, solid-colored ring** for text.
+            - Surrounding the central artwork is a **plain, solid-colored ring** that might have subtle alien or shamanic glyphs.
             - There must be a **slight, clean gap** between the text and the borders.
-            - The text must be rendered in a **creative yet highly readable font**.
+            - The text must be rendered in a **futuristic or mystical font that is still highly readable**.
             - Text follows the circular curve. The strain name **"${strain.toUpperCase()}"** and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
-        3.  **Creative Outer Border:**
-            - The entire badge is framed by a distinct, **creative border** that complements the central artwork's style.
+        3.  **Themed Outer Border:**
+            - The entire badge is framed by a distinct border that complements the cosmic shamanic alien style, perhaps looking like a piece of an alien artifact or a shaman's sacred tool.
 
-        **Final Quality Check:** The logo is a single, circular badge with a unique, imaginative style. The central artwork is an artistic interpretation of a cannabis bud on a creative background. The text is stylized but clear. The entire design is on a solid white background.
+        **Final Quality Check:** The logo is a single, circular badge with a unique cosmic 420 shaman alien style. The central artwork is a surreal interpretation of a cannabis bud on a mystical, cosmic background. The text is stylized but clear. The entire design is on a solid white background.
         `;
       const logoUrl_imaginative = await generateImage(logoPrompt_imaginative);
-      const productMontageUrl_imaginative = await generateImage(getProductMontagePrompt(logoUrl_imaginative, "My imagination is my only limit."));
+      const productMontageUrl_imaginative = await generateImage(getProductMontagePrompt(logoUrl_imaginative, "Take me to your dealer."));
       const stickerSheetUrl_imaginative = await generateImage(getStickerSheetPrompt(logoUrl_imaginative));
       return { logoUrl_imaginative, productMontageUrl_imaginative, stickerSheetUrl_imaginative };
     };
