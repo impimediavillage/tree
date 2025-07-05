@@ -46,20 +46,20 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
   async ({ strain }) => {
     // --- Step 1: Generate the primary logo ---
     const logoPrompt = `
-      As a world-class graphic designer, create a single, high-resolution circular logo for the cannabis strain "${strain}".
+      As a world-class graphic designer specializing in modern branding, create a single, high-resolution circular logo for the cannabis strain "${strain}". The final image must be a **hyper-animated, modern badge** with a vibrant, retro, Rastafarian, and 420-friendly style.
 
       **Core Elements & Style:**
-      - **Overall Style:** The final image must be a single, circular logo that looks like a modern, magical, animated badge. It must have a retro, **reggae**, Rastafarian, 420-style, and a detailed **embroidered** texture.
-      - **Central Image:** The main feature is a vibrantly animated, 3D isometric cannabis bud of the "${strain}" strain.
-      - **Background:** The logo must be on a clean, solid white background.
+      - **Central Image:** At the center, there must be a **3D isometric, animated cartoon-style** cannabis bud representing the "${strain}" strain. It should be colorful and engaging.
+      - **Background:** The background inside the badge must be a creative and **animated cartoon scene that thematically matches the strain's name, "${strain}"**. For example, if the strain is "Blue Dream," the background might be a dreamy, blue sky with cartoon clouds. The entire logo must be presented on a final solid white background for easy use.
+      - **Overall Look:** The badge must look polished, modern, and magical, like a collectible item from a high-end animated series.
 
       **Text Instructions (Crucial):**
-      - **Placement:** Both text elements must curve elegantly around the *inside* of the circular border, located at the **top** of the badge.
+      - **Placement & Style:** The text must be placed at the top of the badge, following the curve of the circular border perfectly.
       - **Content & Hierarchy:**
-          1. The strain name, **"${strain}"**, must be the most prominent text.
-          2. The brand name, **"The Wellness Tree"**, must appear directly *below* the strain name (still following the curve at the top). It should be in a smaller, but still bold and clearly readable, rounded font.
+          1. The strain name, **"${strain}"**, must be the most prominent text, using a bold, stylish, and easily readable modern font.
+          2. The brand name, **"The Wellness Tree"**, must appear directly below the strain name, also curved. This text must be in a smaller, but still bold and clear, rounded font.
 
-      **Final Check:** Ensure the text is perfectly curved, the strain name is larger, and the "The Wellness Tree" text is smaller but readable. The entire design must have a cohesive embroidered, retro-modern, reggae, and magical look.
+      **Final Check:** The output is a single circular logo. Text is perfectly curved and readable. The hierarchy between the strain name and brand name is clear. The style is a consistent fusion of retro, Rasta, 420 culture, and modern animation.
     `;
     const logoUrl = await generateImage(logoPrompt);
 
