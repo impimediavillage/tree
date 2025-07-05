@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
@@ -48,6 +48,62 @@ const InfoDialog = ({ triggerText, title, icon: Icon, children }: { triggerText:
   );
 };
 
+// Dialog for viewing generated designs
+interface DesignDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  designs: { logoUrl: string; productMontageUrl: string; stickerSheetUrl: string; } | null;
+  strainName: string;
+}
+
+function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialogProps) {
+  const downloadImage = (url: string, filename: string) => {
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+      }).catch(e => console.error("Download failed:", e));
+  };
+
+  const designItems = [
+    { label: 'Logo', url: designs?.logoUrl, filename: `${strainName}-logo.png` },
+    { label: 'Product Montage', url: designs?.productMontageUrl, filename: `${strainName}-montage.png` },
+    { label: 'Sticker Sheet', url: designs?.stickerSheetUrl, filename: `${strainName}-stickers.png` },
+  ];
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Generated Designs for {strainName}</DialogTitle>
+          <DialogDescription>Here are the AI-generated designs. You can download each image.</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
+          {designItems.map((item) => (
+            item.url ? (
+              <div key={item.label} className="space-y-2 flex flex-col items-center">
+                 <p className="font-semibold text-sm">{item.label}</p>
+                 <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
+                  <Image src={item.url} alt={item.label} fill className="object-contain" />
+                 </div>
+                 <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>Download</Button>
+              </div>
+            ) : null
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 interface PublicProductCardProps {
   product: Product;
   tier: PriceTier;
@@ -60,7 +116,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const [isGeneratingDesigns, setIsGeneratingDesigns] = useState(false);
-  const [generatedDesigns, setGeneratedDesigns] = useState<{ designMontageUrl: string; tShirtDesignUrl: string; stickerSheetUrl: string; } | null>(null);
+  const [generatedDesigns, setGeneratedDesigns] = useState<{ logoUrl: string; productMontageUrl: string; stickerSheetUrl: string; } | null>(null);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
 
@@ -383,60 +439,6 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
       {/* Dialog for generated designs */}
       <DesignDialog isOpen={!!generatedDesigns} onOpenChange={() => setGeneratedDesigns(null)} designs={generatedDesigns} strainName={product.strain || 'design'} />
     </>
-  );
-}
-
-interface DesignDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  designs: { designMontageUrl: string; tShirtDesignUrl: string; stickerSheetUrl: string; } | null;
-  strainName: string;
-}
-
-function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialogProps) {
-  const downloadImage = (url: string, filename: string) => {
-    fetch(url)
-      .then(response => response.blob())
-      .then(blob => {
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(blobUrl);
-      }).catch(e => console.error("Download failed:", e));
-  };
-
-  const designItems = [
-    { label: 'Design Montage', url: designs?.designMontageUrl, filename: `${strainName}-montage.png` },
-    { label: 'T-Shirt Design', url: designs?.tShirtDesignUrl, filename: `${strainName}-tshirt.png` },
-    { label: 'Sticker Sheet', url: designs?.stickerSheetUrl, filename: `${strainName}-stickers.png` },
-  ];
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Generated Designs for {strainName}</DialogTitle>
-          <DialogDescription>Here are the AI-generated designs. You can download each image.</DialogDescription>
-        </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
-          {designItems.map((item) => (
-            item.url ? (
-              <div key={item.label} className="space-y-2 flex flex-col items-center">
-                 <p className="font-semibold text-sm">{item.label}</p>
-                 <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
-                  <Image src={item.url} alt={item.label} fill className="object-contain" />
-                 </div>
-                 <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>Download</Button>
-              </div>
-            ) : null
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 }
 

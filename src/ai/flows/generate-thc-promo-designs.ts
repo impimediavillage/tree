@@ -13,14 +13,14 @@ import { z } from 'zod';
 const GenerateThcDesignsInputSchema = z.object({
   strain: z.string().describe('The name of the THC strain for which to generate designs.'),
 });
-type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
+export type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
 
 const GenerateThcDesignsOutputSchema = z.object({
-  designMontageUrl: z.string().url().describe('URL of the full branding package montage.'),
-  tShirtDesignUrl: z.string().url().describe('URL of the isolated 27cm circular t-shirt/hoodie design.'),
+  logoUrl: z.string().url().describe('URL of the primary circular logo design.'),
+  productMontageUrl: z.string().url().describe('URL of the product montage (cap, shirt, hoodie, etc.).'),
   stickerSheetUrl: z.string().url().describe('URL of the downloadable sticker sheet.'),
 });
-type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
+export type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
 
 // Helper function for a single image generation call
 async function generateImage(prompt: string): Promise<string> {
@@ -45,50 +45,44 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
   },
   async ({ strain }) => {
     // Define detailed prompts for each of the three required images
-    const designMontagePrompt = `
-      You are the world's best graphic designer, a master of modern cannabis branding.
-      Create a single, large, high-resolution promotional montage image on a clean white background for the cannabis strain "${strain}".
-      This montage must showcase a cohesive brand identity with a retro, modern, badge-style aesthetic and Rastafarian 420 culture influences. All elements must share this consistent look and feel.
-      The montage must clearly and attractively display these five items:
-      1. A round, badge-style sticker (license disc size). The design must feature a stunning, vibrantly animated 3D isometric image of a "${strain}" cannabis bud.
-      2. A long rectangular standalone sticker with the same matching animated design theme.
-      3. A black baseball cap with the circular badge design on the front.
-      4. A black t-shirt with the circular badge design large on the chest.
-      5. A black hoodie with the circular badge design large on the chest.
-      For all circular designs, the text "The Wellness Tree" and "${strain}" must elegantly curve around the border. The strain name "${strain}" should be the more prominent text, with "The Wellness Tree" smaller but clearly readable. Overlay the entire montage with a subtle, spiritual, or humorous 420-style quote as promotional text.
+    const logoPrompt = `
+      As a world-class graphic designer, create a single, high-resolution circular logo for the cannabis strain "${strain}".
+      The design must have a modern, retro, Rastafarian, 420-style, *embroidered* look.
+      The central element must be a vibrantly animated, 3D isometric cannabis bud of the "${strain}" strain.
+      The text "The Wellness Tree" and "${strain}" must curve elegantly around the inside of the circular border.
+      The strain name "${strain}" must be the more prominent text, with "The Wellness Tree" smaller but clearly readable.
+      The final image should be just the logo on a clean, solid white background.
     `;
 
-    const tShirtDesignPrompt = `
-      As a master graphic designer, generate a single, high-resolution 27cm x 27cm image on a solid white background.
-      The image must be a retro, modern, badge-style circular graphic for the cannabis strain "${strain}".
-      The design must feature a central, vibrantly animated 3D isometric image of the "${strain}" cannabis bud. The entire design must be cohesive and professional.
-      The text "The Wellness Tree" and "${strain}" must curve perfectly inside the circular border. Ensure "${strain}" is the larger, more dominant text, and "The Wellness Tree" is smaller but perfectly legible.
-      The style must be a sophisticated fusion of retro, modern, and Rastafarian 420 culture themes.
-      Below the main circular graphic, add two separate lines of text:
-      1. Promotional text: "Embrace the 420 Lifestyle".
-      2. A small, humorous or spiritual 420-style quote.
+    const productMontagePrompt = `
+      You are a master brand designer. You have just created a circular, embroidered-style logo for the cannabis strain "${strain}".
+      Now, create a promotional product montage on a single, clean white background.
+      This image must showcase that *exact* logo design applied to the following items:
+      1. A black baseball cap (logo on the front).
+      2. A black t-shirt (logo large on the chest).
+      3. A black hoodie (logo large on the chest).
+      Also, include a long, standalone rectangular sticker that perfectly matches the embroidered, retro-modern style of the circular logo.
+      All items should be well-spaced and presented attractively.
     `;
 
     const stickerSheetPrompt = `
-      As a top-tier brand designer, create a downloadable, high-resolution sticker sheet on a solid white background for the cannabis strain "${strain}".
-      All stickers on this sheet must have a consistent, matching look and feel, characterized by a retro, modern, badge-style aesthetic with Rastafarian 420 culture influences.
-      The sheet must be well-spaced and composed as follows:
-      - Top row: Two identical round, badge-style, license-disc sized stickers. Each sticker must feature a vibrantly animated 3D isometric image of the "${strain}" bud. The text "The Wellness Tree" and "${strain}" must curve along the border, with "${strain}" being the more prominent text.
-      - Below the top row: The marketing text "Promoting the 420 Lifestyle".
-      - Bottom row: Two identical long rectangular stickers, matching the overall animated and retro theme.
-      - Below the bottom row: The marketing text "The Wellness Tree".
+      You are a master brand designer. You have just created a circular, embroidered-style logo and a matching rectangular sticker for the cannabis strain "${strain}".
+      Now, create a high-resolution sticker sheet on a solid white background, ready for download and printing.
+      The sheet must contain two instances of the circular logo (license-disc size) arranged side-by-side at the top.
+      Below them, include two instances of the matching rectangular sticker, also side-by-side.
+      Ensure all four stickers are well-spaced.
     `;
     
     // Generate images in parallel
-    const [designMontageUrl, tShirtDesignUrl, stickerSheetUrl] = await Promise.all([
-      generateImage(designMontagePrompt),
-      generateImage(tShirtDesignPrompt),
+    const [logoUrl, productMontageUrl, stickerSheetUrl] = await Promise.all([
+      generateImage(logoPrompt),
+      generateImage(productMontagePrompt),
       generateImage(stickerSheetPrompt),
     ]);
 
     return {
-      designMontageUrl,
-      tShirtDesignUrl,
+      logoUrl,
+      productMontageUrl,
       stickerSheetUrl,
     };
   }
