@@ -48,25 +48,25 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     const logoPrompt = `
       You are a master graphic designer creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-      **Core Concept: A Modern Retro 420 Embroidered Badge**
-      The final output must be a single, visually striking circular logo on a solid white background. The style is a modern take on a retro 420 aesthetic, resembling a high-quality **embroidered material badge** with a clean, vector finish.
+      **Core Concept: A Hyper-Realistic 3D Clay Badge**
+      The final output must be a single, visually striking circular logo on a solid white background. The style is hyper-realistic, resembling a high-quality **3D badge sculpted from modelling clay**.
 
       **Visual Structure:**
       1.  **Central Artwork (Dominant Feature):**
           - This is the largest part of the badge, occupying the majority of the space to maximize visual impact.
-          - The artwork features a **hyper-realistic, animated-style vector of a cannabis bud** for the "${strain}" strain.
-          - This bud should seamlessly **merge into a vibrant, retro, 420-themed animated background**. The background and the bud should feel like a single, cohesive piece of art, not separate elements.
+          - The artwork features a **hyper-realistic, 3D modelling clay sculpture of a cannabis bud** for the "${strain}" strain.
+          - This bud should be the centerpiece, seamlessly **merging into a vibrant, retro, 420-themed background, also rendered in a realistic clay style**. The background and the bud should feel like a single, cohesive piece of sculpted art.
       2.  **Compact Text Ring:**
           - Surrounding the central artwork is an **extremely narrow, plain, solid-colored ring** for text. The spacing between the text and the borders of this ring should be minimal to maximize the size of the central artwork.
           - The text must follow the circular curve of this ring.
           - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured.
           - Both text elements must be in **ALL CAPITAL LETTERS** and use the **SAME BOLD, READABLE, RETRO-STYLE FONT**.
-      3.  **Embroidered Outer Border:**
-          - The entire badge is framed by a distinct, **embroidered-style external border** that gives it a tactile, stitched appearance.
+      3.  **Sculpted Clay Outer Border:**
+          - The entire badge is framed by a distinct, **sculpted clay-style external border** that gives it a tactile, 3D appearance.
 
       **Final Quality Check:**
-      - The logo is a single, circular embroidered-style badge.
-      - The central artwork is the dominant feature, with an animated vector bud merging into a retro 420 background.
+      - The logo is a single, circular 3D badge with a modelling clay effect.
+      - The central artwork is the dominant feature, with a hyper-realistic clay cannabis bud merging into a retro 420 background made of the same material.
       - The text ring is extremely compact, and the text ("${strain.toUpperCase()}" and "THE WELLNESS TREE") is in all caps with the same font.
       - The entire design is on a solid white background.
     `;
