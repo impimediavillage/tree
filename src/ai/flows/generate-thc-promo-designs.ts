@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for generating promotional THC strain designs.
@@ -12,14 +13,14 @@ import { z } from 'zod';
 const GenerateThcDesignsInputSchema = z.object({
   strain: z.string().describe('The name of the THC strain for which to generate designs.'),
 });
-export type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
+type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
 
 const GenerateThcDesignsOutputSchema = z.object({
   designMontageUrl: z.string().url().describe('URL of the full branding package montage.'),
   tShirtDesignUrl: z.string().url().describe('URL of the isolated 27cm circular t-shirt/hoodie design.'),
   stickerSheetUrl: z.string().url().describe('URL of the downloadable sticker sheet.'),
 });
-export type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
+type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
 
 // Helper function for a single image generation call
 async function generateImage(prompt: string): Promise<string> {
@@ -45,24 +46,24 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
   async ({ strain }) => {
     // Define detailed prompts for each of the three required images
     const designMontagePrompt = `
-      You are the world's best graphic designer with deep knowledge of designing for the modern cannabis market.
+      You are the world's best graphic designer, a master of modern cannabis branding.
       Create a single, large, high-resolution promotional montage image on a clean white background for the cannabis strain "${strain}".
-      The montage must clearly and attractively display these five items, well-spaced:
-      1. A round sticker (license disc size). The design must feature a stunning, animated-style 3D isometric image of a "${strain}" cannabis bud.
-      2. A long rectangular standalone sticker with a similar design theme.
-      3. A black baseball cap with the circular sticker design on the front.
-      4. A black t-shirt with the circular sticker design large on the chest.
-      5. A black hoodie with the circular sticker design large on the chest.
-      The text "The Wellness Tree" and "${strain}" must elegantly curve around the border of the circular sticker. The strain name "${strain}" should be the more prominent text, with "The Wellness Tree" slightly smaller but clearly readable.
-      The overall style is a fusion of retro, modern, and Rastafarian 420 culture.
+      This montage must showcase a cohesive brand identity with a retro, modern, badge-style aesthetic and Rastafarian 420 culture influences. All elements must share this consistent look and feel.
+      The montage must clearly and attractively display these five items:
+      1. A round, badge-style sticker (license disc size). The design must feature a stunning, vibrantly animated 3D isometric image of a "${strain}" cannabis bud.
+      2. A long rectangular standalone sticker with the same matching animated design theme.
+      3. A black baseball cap with the circular badge design on the front.
+      4. A black t-shirt with the circular badge design large on the chest.
+      5. A black hoodie with the circular badge design large on the chest.
+      For all circular designs, the text "The Wellness Tree" and "${strain}" must elegantly curve around the border. The strain name "${strain}" should be the more prominent text, with "The Wellness Tree" smaller but clearly readable. Overlay the entire montage with a subtle, spiritual, or humorous 420-style quote as promotional text.
     `;
 
     const tShirtDesignPrompt = `
       As a master graphic designer, generate a single, high-resolution 27cm x 27cm image on a solid white background.
-      The image should contain a large circular graphic for the cannabis strain "${strain}".
-      This design must feature a central, animated-style 3D isometric image of the "${strain}" cannabis bud.
+      The image must be a retro, modern, badge-style circular graphic for the cannabis strain "${strain}".
+      The design must feature a central, vibrantly animated 3D isometric image of the "${strain}" cannabis bud. The entire design must be cohesive and professional.
       The text "The Wellness Tree" and "${strain}" must curve perfectly inside the circular border. Ensure "${strain}" is the larger, more dominant text, and "The Wellness Tree" is smaller but perfectly legible.
-      The style must be a sophisticated mix of retro and modern 420 culture themes.
+      The style must be a sophisticated fusion of retro, modern, and Rastafarian 420 culture themes.
       Below the main circular graphic, add two separate lines of text:
       1. Promotional text: "Embrace the 420 Lifestyle".
       2. A small, humorous or spiritual 420-style quote.
@@ -70,11 +71,12 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
 
     const stickerSheetPrompt = `
       As a top-tier brand designer, create a downloadable, high-resolution sticker sheet on a solid white background for the cannabis strain "${strain}".
+      All stickers on this sheet must have a consistent, matching look and feel, characterized by a retro, modern, badge-style aesthetic with Rastafarian 420 culture influences.
       The sheet must be well-spaced and composed as follows:
-      - Top row: Two identical round, license-disc sized stickers, side-by-side. Each sticker must feature a unique, clean, animated-style 3D isometric image of the "${strain}" bud and incorporate retro and modern 420 culture design elements. The text "The Wellness Tree" and "${strain}" must curve along the border of each sticker, with "${strain}" being the more prominent text.
-      - Below the top row of circular stickers: Add the marketing text "Promoting the 420 Lifestyle".
-      - Bottom row: Two identical long rectangular stickers, side-by-side, matching the overall theme.
-      - Below the bottom row of rectangular stickers: Add the marketing text "The Wellness Tree".
+      - Top row: Two identical round, badge-style, license-disc sized stickers. Each sticker must feature a vibrantly animated 3D isometric image of the "${strain}" bud. The text "The Wellness Tree" and "${strain}" must curve along the border, with "${strain}" being the more prominent text.
+      - Below the top row: The marketing text "Promoting the 420 Lifestyle".
+      - Bottom row: Two identical long rectangular stickers, matching the overall animated and retro theme.
+      - Below the bottom row: The marketing text "The Wellness Tree".
     `;
     
     // Generate images in parallel
