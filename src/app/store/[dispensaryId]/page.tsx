@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // New component for displaying info in a dialog
@@ -52,15 +53,22 @@ const InfoDialog = ({ triggerText, title, icon: Icon, children }: { triggerText:
 interface DesignDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  designs: { logoUrl: string; productMontageUrl: string; stickerSheetUrl: string; } | null;
+  designs: {
+    logoUrl_clay: string;
+    productMontageUrl_clay: string;
+    stickerSheetUrl_clay: string;
+    logoUrl_comic: string;
+    productMontageUrl_comic: string;
+    stickerSheetUrl_comic: string;
+  } | null;
   strainName: string;
 }
 
 function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialogProps) {
   const downloadImage = (url: string, filename: string) => {
     fetch(url)
-      .then(response => response.blob())
-      .then(blob => {
+      .then((response) => response.blob())
+      .then((blob) => {
         const blobUrl = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
@@ -69,13 +77,20 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
         a.click();
         a.remove();
         window.URL.revokeObjectURL(blobUrl);
-      }).catch(e => console.error("Download failed:", e));
+      })
+      .catch((e) => console.error('Download failed:', e));
   };
 
-  const designItems = [
-    { label: 'Logo', url: designs?.logoUrl, filename: `${strainName}-logo.png` },
-    { label: 'Product Montage', url: designs?.productMontageUrl, filename: `${strainName}-montage.png` },
-    { label: 'Sticker Sheet', url: designs?.stickerSheetUrl, filename: `${strainName}-stickers.png` },
+  const clayItems = [
+    { label: '3D Clay Logo', url: designs?.logoUrl_clay, filename: `${strainName}-logo-clay.png` },
+    { label: '3D Clay Montage', url: designs?.productMontageUrl_clay, filename: `${strainName}-montage-clay.png` },
+    { label: '3D Clay Stickers', url: designs?.stickerSheetUrl_clay, filename: `${strainName}-stickers-clay.png` },
+  ];
+
+  const comicItems = [
+    { label: '2D Comic Logo', url: designs?.logoUrl_comic, filename: `${strainName}-logo-comic.png` },
+    { label: '2D Comic Montage', url: designs?.productMontageUrl_comic, filename: `${strainName}-montage-comic.png` },
+    { label: '2D Comic Stickers', url: designs?.stickerSheetUrl_comic, filename: `${strainName}-stickers-comic.png` },
   ];
 
   return (
@@ -83,21 +98,50 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Generated Designs for {strainName}</DialogTitle>
-          <DialogDescription>Here are the AI-generated designs. You can download each image.</DialogDescription>
+          <DialogDescription>
+            Two design styles have been generated. You can download each image.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
-          {designItems.map((item) => (
-            item.url ? (
-              <div key={item.label} className="space-y-2 flex flex-col items-center">
-                 <p className="font-semibold text-sm">{item.label}</p>
-                 <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
-                  <Image src={item.url} alt={item.label} fill className="object-contain" />
-                 </div>
-                 <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>Download</Button>
-              </div>
-            ) : null
-          ))}
-        </div>
+        <Tabs defaultValue="clay" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="clay">3D Clay Style</TabsTrigger>
+            <TabsTrigger value="comic">2D Comic Style</TabsTrigger>
+          </TabsList>
+          <TabsContent value="clay" className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {clayItems.map((item) =>
+                item.url ? (
+                  <div key={item.label} className="space-y-2 flex flex-col items-center">
+                    <p className="font-semibold text-sm">{item.label}</p>
+                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
+                      <Image src={item.url} alt={item.label} fill className="object-contain" />
+                    </div>
+                    <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>
+                      Download
+                    </Button>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="comic" className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {comicItems.map((item) =>
+                item.url ? (
+                  <div key={item.label} className="space-y-2 flex flex-col items-center">
+                    <p className="font-semibold text-sm">{item.label}</p>
+                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
+                      <Image src={item.url} alt={item.label} fill className="object-contain" />
+                    </div>
+                    <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>
+                      Download
+                    </Button>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
@@ -116,7 +160,14 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const [isGeneratingDesigns, setIsGeneratingDesigns] = useState(false);
-  const [generatedDesigns, setGeneratedDesigns] = useState<{ logoUrl: string; productMontageUrl: string; stickerSheetUrl: string; } | null>(null);
+  const [generatedDesigns, setGeneratedDesigns] = useState<{
+    logoUrl_clay: string;
+    productMontageUrl_clay: string;
+    stickerSheetUrl_clay: string;
+    logoUrl_comic: string;
+    productMontageUrl_comic: string;
+    stickerSheetUrl_comic: string;
+  } | null>(null);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
 
