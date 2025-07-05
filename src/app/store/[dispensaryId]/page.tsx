@@ -23,10 +23,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // New component for displaying info in a dialog
-const InfoDialog = ({ triggerText, title, icon: Icon, children }: { triggerText: string; title: string; icon: React.ElementType; children?: React.ReactNode }) => {
-  if (!children) return null;
+const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType }: { triggerText: string; title: string; icon: React.ElementType; children?: React.ReactNode; items?: (string | ProductAttribute)[]; itemType?: 'flavor' | 'effect' | 'medical' }) => {
+  if (!children && (!items || items.length === 0)) return null;
   
   const isDescription = triggerText === 'Full Description';
+
+  const badgeColors = {
+    flavor: [
+      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
+      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
+      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
+    ],
+    effect: [
+      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
+      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
+      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
+    ],
+    medical: [
+      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
+      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
+      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
+    ]
+  };
 
   return (
     <Dialog>
@@ -42,7 +60,36 @@ const InfoDialog = ({ triggerText, title, icon: Icon, children }: { triggerText:
            {isDescription && <DialogDescription>Full Product Details</DialogDescription>}
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-            {children}
+            {children ? children : (
+              <div className="flex flex-col items-start gap-2 py-4">
+                <div className="flex flex-wrap gap-2">
+                  {items && itemType && items.map((item, index) => {
+                      const isAttribute = typeof item === 'object' && 'name' in item;
+                      const name = isAttribute ? item.name : item;
+                      const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
+
+                      return (
+                      <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
+                          {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
+                      </Badge>
+                      );
+                  })}
+                </div>
+                {(itemType === 'effect' || itemType === 'medical') && (
+                    <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                        <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+                        <p className="text-muted-foreground leading-snug">
+                            Indicates the reported likelihood of an effect or its potential as a medical aid.
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                        </div>
+                    </div>
+                )}
+              </div>
+            )}
         </ScrollArea>
       </DialogContent>
     </Dialog>
@@ -66,9 +113,9 @@ interface DesignDialogProps {
     logoUrl_farmstyle: string;
     productMontageUrl_farmstyle: string;
     stickerSheetUrl_farmstyle: string;
-    logoUrl_trippy: string;
-    productMontageUrl_trippy: string;
-    stickerSheetUrl_trippy: string;
+    logoUrl_imaginative: string;
+    productMontageUrl_imaginative: string;
+    stickerSheetUrl_imaginative: string;
   } | null;
   strainName: string;
 }
@@ -114,10 +161,10 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
     { label: 'Farmstyle Stickers', url: designs?.stickerSheetUrl_farmstyle, filename: `${strainName}-stickers-farmstyle.png` },
   ];
 
-  const trippyItems = [
-    { label: 'Trippy Logo', url: designs?.logoUrl_trippy, filename: `${strainName}-logo-trippy.png` },
-    { label: 'Trippy Montage', url: designs?.productMontageUrl_trippy, filename: `${strainName}-montage-trippy.png` },
-    { label: 'Trippy Stickers', url: designs?.stickerSheetUrl_trippy, filename: `${strainName}-stickers-trippy.png` },
+  const imaginativeItems = [
+    { label: 'Imaginative Logo', url: designs?.logoUrl_imaginative, filename: `${strainName}-logo-imaginative.png` },
+    { label: 'Imaginative Montage', url: designs?.productMontageUrl_imaginative, filename: `${strainName}-montage-imaginative.png` },
+    { label: 'Imaginative Stickers', url: designs?.stickerSheetUrl_imaginative, filename: `${strainName}-stickers-imaginative.png` },
   ];
 
   return (
@@ -135,7 +182,7 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
             <TabsTrigger value="comic">2D Comic</TabsTrigger>
             <TabsTrigger value="rasta">Rasta Reggae</TabsTrigger>
             <TabsTrigger value="farmstyle">Farmstyle</TabsTrigger>
-            <TabsTrigger value="trippy">Trippy</TabsTrigger>
+            <TabsTrigger value="imaginative">Imaginative</TabsTrigger>
           </TabsList>
           <TabsContent value="clay" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -205,9 +252,9 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
               )}
             </div>
           </TabsContent>
-          <TabsContent value="trippy" className="pt-4">
+          <TabsContent value="imaginative" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {trippyItems.map((item) =>
+              {imaginativeItems.map((item) =>
                 item.url ? (
                   <div key={item.label} className="space-y-2 flex flex-col items-center">
                     <p className="font-semibold text-sm">{item.label}</p>
@@ -313,24 +360,6 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
       unit: tier.unit
   } : null;
 
-  const badgeColors = {
-    flavor: [
-      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
-      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
-      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
-    ],
-    effect: [
-      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
-      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
-      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
-    ],
-    medical: [
-      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
-      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
-      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
-    ],
-  };
-
   const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.category === "THC";
 
 
@@ -422,17 +451,15 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
           {isThcProduct && (
-            <>
-              <div className="w-full">
-                <Button onClick={handleGenerateDesigns} disabled={isGeneratingDesigns || !product.strain} variant="outline" className="w-full">
-                  {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  Generate Designs
-                </Button>
-              </div>
+            <div className="w-full flex flex-col gap-2">
+              <Button onClick={handleGenerateDesigns} disabled={isGeneratingDesigns || !product.strain} variant="outline" className="w-full">
+                {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Generate Designs
+              </Button>
               <p className="text-xs text-muted-foreground p-2 bg-muted/50 rounded-md w-full">
                 Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
               </p>
-            </>
+            </div>
           )}
 
           {displayTier && (
