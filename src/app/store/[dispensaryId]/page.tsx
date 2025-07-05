@@ -404,78 +404,9 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
         <CardContent className="flex-grow space-y-2.5 py-2">
           <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed" title={product.description}>{product.description}</p>
           <div className="flex flex-wrap gap-2 pt-2">
-            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" icon={Sparkles}>
-                {(product.effects && product.effects.length > 0) ? (
-                    <>
-                        {ImageCollageComponent}
-                        {ImageCollageComponent && <Separator className="my-4" />}
-                        <div className="flex flex-col items-start gap-2 py-4">
-                            <div className="flex flex-wrap gap-2">
-                                {product.effects.map((item, index) => (
-                                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors['effect'][index % badgeColors['effect'].length])}>
-                                        {item.name} {item.percentage && <span className="ml-1.5 font-semibold">({item.percentage})</span>}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-                                <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
-                                <p className="text-muted-foreground leading-snug">Indicates the reported likelihood of an effect.</p>
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                    <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-                                    <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-                                    <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                ) : null}
-            </InfoDialog>
-
-            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" icon={LeafIcon}>
-                {(product.flavors && product.flavors.length > 0) ? (
-                    <>
-                        {ImageCollageComponent}
-                        {ImageCollageComponent && <Separator className="my-4" />}
-                        <div className="flex flex-col items-start gap-2 py-4">
-                            <div className="flex flex-wrap gap-2">
-                                {product.flavors.map((item, index) => (
-                                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors['flavor'][index % badgeColors['flavor'].length])}>
-                                        {item}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                ) : null}
-            </InfoDialog>
-
-            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" icon={Brain}>
-                {(product.medicalUses && product.medicalUses.length > 0) ? (
-                     <>
-                        {ImageCollageComponent}
-                        {ImageCollageComponent && <Separator className="my-4" />}
-                        <div className="flex flex-col items-start gap-2 py-4">
-                            <div className="flex flex-wrap gap-2">
-                                {product.medicalUses.map((item, index) => (
-                                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors['medical'][index % badgeColors['medical'].length])}>
-                                        {item.name} {item.percentage && <span className="ml-1.5 font-semibold">({item.percentage})</span>}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-                                <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
-                                <p className="text-muted-foreground leading-snug">Indicates its potential as a medical aid.</p>
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                    <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-                                    <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-                                    <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                ) : null}
-            </InfoDialog>
-
+            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
+            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
+            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
             <InfoDialog title={product.name} triggerText="Full Description" icon={Info}>
                 {product.description ? (
                     <>
@@ -490,37 +421,35 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
-          {displayTier && (
-              <p className="text-2xl font-bold text-accent self-end">
-                  {product.currency} {displayTier.price.toFixed(2)}
-                  <span className="text-xs text-muted-foreground"> / {displayTier.unit}</span>
+          {isThcProduct && (
+            <>
+              <div className="w-full">
+                <Button onClick={handleGenerateDesigns} disabled={isGeneratingDesigns || !product.strain} variant="outline" className="w-full">
+                  {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  Generate Designs
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground p-2 bg-muted/50 rounded-md w-full">
+                Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
               </p>
+            </>
           )}
 
-           {isThcProduct && (
-            <p className="text-xs text-muted-foreground p-2 bg-muted/50 rounded-md w-full">
-              Get this FREE product with Promo material for stickers, caps, t-shirts, and hoodies to match your chosen strain.
+          {displayTier && (
+            <p className="text-2xl font-bold text-accent self-end w-full text-right">
+              {product.currency} {displayTier.price.toFixed(2)}
+              <span className="text-xs text-muted-foreground"> / {displayTier.unit}</span>
             </p>
           )}
 
-          <div className="flex flex-col w-full gap-2">
-            {isThcProduct && (
-              <Button onClick={handleGenerateDesigns} disabled={isGeneratingDesigns || !product.strain} variant="outline" className="w-full">
-                {isGeneratingDesigns ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-2 h-4 w-4" />
-                )}
-                Generate Designs
-              </Button>
-            )}
-            <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold" 
-                disabled={tierStock <= 0 || !canAddToCart}
-                onClick={handleAddToCart}
-                aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+          <div className="w-full pt-2">
+            <Button
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+              disabled={tierStock <= 0 || !canAddToCart}
+              onClick={handleAddToCart}
+              aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
             >
-              <ShoppingCart className="mr-2 h-5 w-5" /> 
+              <ShoppingCart className="mr-2 h-5 w-5" />
               {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
             </Button>
           </div>
