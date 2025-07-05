@@ -28,9 +28,9 @@ const GenerateThcDesignsOutputSchema = z.object({
   logoUrl_farmstyle: z.string().url().describe('URL of the primary circular logo design in Farmstyle Retro style.'),
   productMontageUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style product montage.'),
   stickerSheetUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style downloadable sticker sheet.'),
-  logoUrl_trippy: z.string().url().describe('URL of the primary circular logo design in a trippy, psychedelic style.'),
-  productMontageUrl_trippy: z.string().url().describe('URL of the trippy style product montage.'),
-  stickerSheetUrl_trippy: z.string().url().describe('URL of the trippy style downloadable sticker sheet.'),
+  logoUrl_imaginative: z.string().url().describe('URL of the primary circular logo design in a unique, imaginative style.'),
+  productMontageUrl_imaginative: z.string().url().describe('URL of the imaginative style product montage.'),
+  stickerSheetUrl_imaginative: z.string().url().describe('URL of the imaginative style downloadable sticker sheet.'),
 });
 type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
 
@@ -239,34 +239,33 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       return { logoUrl_farmstyle, productMontageUrl_farmstyle, stickerSheetUrl_farmstyle };
     };
 
-    // --- Pipeline for Trippy Psychedelic Style ---
-    const generateTrippyDesigns = async () => {
-        const logoPrompt_trippy = `
-        You are a psychedelic artist from the 1960s, creating a single, high-resolution circular logo for the cannabis strain "${strain}".
+    // --- Pipeline for Imaginative Style ---
+    const generateImaginativeDesigns = async () => {
+        const logoPrompt_imaginative = `
+        You are a visionary artist creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-        **Core Concept: A Mind-Bending, Trippy Badge**
-        The final output must be a single, visually striking circular logo on a solid white background. The style is a **vibrant, psychedelic, and trippy art style**, featuring swirling patterns, melting effects, and a surreal color palette.
+        **Core Concept: An Imaginative, Unique Badge**
+        The final output must be a single, visually striking circular logo on a solid white background. The style is entirely up to your artistic interpretation—it can be abstract, surreal, futuristic, minimalist, or anything else you can imagine. The goal is to create something truly unique and unexpected.
 
         **Visual Structure:**
         1.  **Central Artwork (Dominant Feature):**
             - This is the largest part of the badge.
-            - The artwork features a **surreal, almost melting illustration of a cannabis bud** for the "${strain}" strain.
-            - This bud is seamlessly **merged into a background of swirling, hypnotic patterns and vibrant, otherworldly colors**. The entire central piece should feel like a portal to another dimension.
+            - The artwork features an **imaginative, artistic interpretation of a cannabis bud** for the "${strain}" strain. It should not be a simple, literal drawing.
+            - This artwork should be seamlessly **merged into an equally creative and abstract background**. The entire central piece should feel like a single work of art.
         2.  **Readable Text Ring:**
             - Surrounding the central artwork is a **plain, solid-colored ring** for text.
             - There must be a **slight, clean gap** between the text and the borders.
-            - The text itself must be rendered in a **groovy, flowing, psychedelic font** (like "Keep on Truckin'" or similar bubble/liquid fonts from the 70s).
-            - The font must be **BOLD, CLEAR, and HIGHLY READABLE** despite its stylized nature.
+            - The text must be rendered in a **creative yet highly readable font**.
             - Text follows the circular curve. The strain name **"${strain.toUpperCase()}"** and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
-        3.  **Flowing Outer Border:**
-            - The entire badge is framed by a distinct, **flowing, almost liquid-like border** that enhances the psychedelic, trippy feel.
+        3.  **Creative Outer Border:**
+            - The entire badge is framed by a distinct, **creative border** that complements the central artwork's style.
 
-        **Final Quality Check:** The logo is a single, circular badge with a strong psychedelic effect. The central artwork is a surreal cannabis bud merged into a trippy background. The text is stylized but clear. The entire design is on a solid white background.
+        **Final Quality Check:** The logo is a single, circular badge with a unique, imaginative style. The central artwork is an artistic interpretation of a cannabis bud on a creative background. The text is stylized but clear. The entire design is on a solid white background.
         `;
-      const logoUrl_trippy = await generateImage(logoPrompt_trippy);
-      const productMontageUrl_trippy = await generateImage(getProductMontagePrompt(logoUrl_trippy, "My other car is the mothership."));
-      const stickerSheetUrl_trippy = await generateImage(getStickerSheetPrompt(logoUrl_trippy));
-      return { logoUrl_trippy, productMontageUrl_trippy, stickerSheetUrl_trippy };
+      const logoUrl_imaginative = await generateImage(logoPrompt_imaginative);
+      const productMontageUrl_imaginative = await generateImage(getProductMontagePrompt(logoUrl_imaginative, "My imagination is my only limit."));
+      const stickerSheetUrl_imaginative = await generateImage(getStickerSheetPrompt(logoUrl_imaginative));
+      return { logoUrl_imaginative, productMontageUrl_imaginative, stickerSheetUrl_imaginative };
     };
 
     // --- Run all generation pipelines in parallel ---
@@ -275,13 +274,13 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       comicResults, 
       rastaResults, 
       farmstyleResults, 
-      trippyResults
+      imaginativeResults
     ] = await Promise.all([
       generateClayDesigns(),
       generateComicDesigns(),
       generateRastaReggaeDesigns(),
       generateFarmstyleDesigns(),
-      generateTrippyDesigns()
+      generateImaginativeDesigns()
     ]);
 
     // --- Combine results and return ---
@@ -290,7 +289,7 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
       ...comicResults,
       ...rastaResults,
       ...farmstyleResults,
-      ...trippyResults,
+      ...imaginativeResults,
     };
   }
 );
