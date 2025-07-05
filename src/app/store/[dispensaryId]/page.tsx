@@ -66,9 +66,9 @@ interface DesignDialogProps {
     logoUrl_farmstyle: string;
     productMontageUrl_farmstyle: string;
     stickerSheetUrl_farmstyle: string;
-    logoUrl_imaginative: string;
-    productMontageUrl_imaginative: string;
-    stickerSheetUrl_imaginative: string;
+    logoUrl_trippy: string;
+    productMontageUrl_trippy: string;
+    stickerSheetUrl_trippy: string;
   } | null;
   strainName: string;
 }
@@ -114,10 +114,10 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
     { label: 'Farmstyle Stickers', url: designs?.stickerSheetUrl_farmstyle, filename: `${strainName}-stickers-farmstyle.png` },
   ];
 
-  const imaginativeItems = [
-    { label: 'Imaginative Logo', url: designs?.logoUrl_imaginative, filename: `${strainName}-logo-imaginative.png` },
-    { label: 'Imaginative Montage', url: designs?.productMontageUrl_imaginative, filename: `${strainName}-montage-imaginative.png` },
-    { label: 'Imaginative Stickers', url: designs?.stickerSheetUrl_imaginative, filename: `${strainName}-stickers-imaginative.png` },
+  const trippyItems = [
+    { label: 'Trippy Logo', url: designs?.logoUrl_trippy, filename: `${strainName}-logo-trippy.png` },
+    { label: 'Trippy Montage', url: designs?.productMontageUrl_trippy, filename: `${strainName}-montage-trippy.png` },
+    { label: 'Trippy Stickers', url: designs?.stickerSheetUrl_trippy, filename: `${strainName}-stickers-trippy.png` },
   ];
 
   return (
@@ -135,7 +135,7 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
             <TabsTrigger value="comic">2D Comic</TabsTrigger>
             <TabsTrigger value="rasta">Rasta Reggae</TabsTrigger>
             <TabsTrigger value="farmstyle">Farmstyle</TabsTrigger>
-            <TabsTrigger value="imaginative">Imaginative</TabsTrigger>
+            <TabsTrigger value="trippy">Trippy</TabsTrigger>
           </TabsList>
           <TabsContent value="clay" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -205,9 +205,9 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
               )}
             </div>
           </TabsContent>
-          <TabsContent value="imaginative" className="pt-4">
+          <TabsContent value="trippy" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {imaginativeItems.map((item) =>
+              {trippyItems.map((item) =>
                 item.url ? (
                   <div key={item.label} className="space-y-2 flex flex-col items-center">
                     <p className="font-semibold text-sm">{item.label}</p>
