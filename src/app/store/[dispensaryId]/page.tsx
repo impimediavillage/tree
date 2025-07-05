@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // New component for displaying info in a dialog
-const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType }: { triggerText: string; title: string; icon: React.ElementType; children?: React.ReactNode; items?: (string | ProductAttribute)[]; itemType?: 'flavor' | 'effect' | 'medical' }) => {
+const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType, className }: { triggerText: string; title: string; icon: React.ElementType; children?: React.ReactNode; items?: (string | ProductAttribute)[]; itemType?: 'flavor' | 'effect' | 'medical'; className?: string; }) => {
   if (!children && (!items || items.length === 0)) return null;
   
   const isDescription = triggerText === 'Full Description';
@@ -49,7 +49,7 @@ const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="text-xs h-7 px-2">
+        <Button variant="outline" size="sm" className={cn("text-xs h-7 px-2", className)}>
             <Icon className="mr-1.5 h-3.5 w-3.5" />
             {triggerText}
         </Button>
@@ -361,6 +361,11 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   } : null;
 
   const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.category === "THC";
+  
+  const effectsClasses = "border-transparent bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-200 dark:hover:bg-purple-800/70";
+  const flavorsClasses = "border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-200 dark:hover:bg-green-800/70";
+  const medicalClasses = "border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-800/70";
+  const infoClasses = "border-transparent bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/50 dark:text-amber-200 dark:hover:bg-amber-800/70";
 
 
   return (
@@ -430,79 +435,90 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
               {product.strain && <span className="truncate">| {product.strain}</span>}
           </div>
         </CardHeader>
-        <CardContent className="flex-grow space-y-2.5 py-2">
-          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed" title={product.description}>{product.description}</p>
-          <div className="flex flex-wrap gap-2 pt-2">
-            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
-            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
-            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
-            <InfoDialog title={product.name} triggerText="Full Description" icon={Info}>
-                {product.description ? (
-                    <>
-                        {ImageCollageComponent}
-                        {ImageCollageComponent && <Separator className="my-4" />}
-                        <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
-                            {product.description}
-                        </div>
-                    </>
-                ) : null}
-            </InfoDialog>
-          </div>
+        <CardContent className="flex-grow flex flex-col space-y-2.5 py-2">
+            <div className="flex-grow">
+                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
+            </div>
+            <div className="pt-2">
+                <Separator className="my-2" />
+                <div className="flex flex-wrap gap-2">
+                    <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
+                    <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
+                    <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+                    <InfoDialog className={infoClasses} title={product.name} triggerText="Full Description" icon={Info}>
+                        {product.description ? (
+                            <>
+                                {ImageCollageComponent}
+                                {ImageCollageComponent && <Separator className="my-4" />}
+                                <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
+                                    {product.description}
+                                </div>
+                            </>
+                        ) : null}
+                    </InfoDialog>
+                </div>
+            </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
-            {displayTier && (
-                <div className="w-full text-right">
-                <p className="text-2xl font-bold text-black dark:text-white">
-                    <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
-                    {displayTier.price.toFixed(2)}
-                </p>
-                <div className="flex items-center justify-end text-xs text-muted-foreground">
-                    {isThcProduct ? (
-                    <>
-                        <span className="mr-1">/ {displayTier.unit}</span>
-                        <Gift className="mr-1 h-3 w-3 text-green-600" />
-                        <span>Free samples value</span>
-                    </>
-                    ) : (
-                    <span>/ {displayTier.unit}</span>
+            {isThcProduct ? (
+                <>
+                    {displayTier && (
+                        <div className="w-full text-right">
+                            <p className="text-2xl font-bold text-black dark:text-white">
+                                <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                                {displayTier.price.toFixed(2)}
+                            </p>
+                            <div className="flex items-center justify-end text-xs text-muted-foreground">
+                                <span className="mr-1">/ {displayTier.unit}</span>
+                                <Gift className="mr-1 h-3 w-3 text-green-600" />
+                                <span>Free samples value</span>
+                            </div>
+                        </div>
                     )}
-                </div>
-                </div>
-            )}
-
-            {isThcProduct && (
-                <div className="w-full flex flex-col gap-2 mt-1">
-                <div className="text-xs text-green-900 bg-green-100/70 dark:bg-green-900/30 dark:text-green-200 p-2.5 rounded-md border border-green-200/50 dark:border-green-800/50">
-                    <p>
-                    Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
-                    </p>
-                </div>
-                <Button 
-                    onClick={handleGenerateDesigns} 
-                    disabled={isGeneratingDesigns || !product.strain} 
-                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold"
-                >
-                    {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                    Generate Designs
-                </Button>
-                <p className="text-xs text-center text-muted-foreground -mt-1">
-                    to qualify for the free product samples
-                </p>
-                </div>
-            )}
-
-            {!isThcProduct && (
-                <div className="w-full pt-2">
-                    <Button
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
-                    disabled={tierStock <= 0 || !canAddToCart}
-                    onClick={handleAddToCart}
-                    aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-                    >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
-                    </Button>
-                </div>
+                    <div className="w-full flex flex-col gap-2 mt-1">
+                        <div className="text-xs text-green-900 bg-green-100/70 dark:bg-green-900/30 dark:text-green-200 p-2.5 rounded-md border border-green-200/50 dark:border-green-800/50">
+                            <p>
+                            Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
+                            </p>
+                        </div>
+                        <Button 
+                            onClick={handleGenerateDesigns} 
+                            disabled={isGeneratingDesigns || !product.strain} 
+                            className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold"
+                        >
+                            {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                            Generate Designs
+                        </Button>
+                        <p className="text-xs text-center text-muted-foreground font-semibold -mt-1">
+                            to qualify for the free product samples
+                        </p>
+                    </div>
+                </>
+            ) : (
+                <>
+                    {displayTier && (
+                        <div className="w-full text-right">
+                        <p className="text-2xl font-bold text-black dark:text-white">
+                            <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                            {displayTier.price.toFixed(2)}
+                        </p>
+                        <div className="flex items-center justify-end text-xs text-muted-foreground">
+                            <span>/ {displayTier.unit}</span>
+                        </div>
+                        </div>
+                    )}
+                    <div className="w-full pt-2">
+                        <Button
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                        disabled={tierStock <= 0 || !canAddToCart}
+                        onClick={handleAddToCart}
+                        aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+                        >
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
+                        </Button>
+                    </div>
+                </>
             )}
         </CardFooter>
       </Card>
