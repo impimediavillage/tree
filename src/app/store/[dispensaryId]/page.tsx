@@ -153,7 +153,7 @@ function DesignDialog({ isOpen, onOpenChange, designs, product, tier }: DesignDi
         ...product,
         id: `design-${product.id}`,
         name: `Design Pack: ${product.name}`,
-        description: `Promotional design pack. Includes a free sample of ${product.name} (${tier.unit}).`,
+        description: `Free Sample: ${tier.unit} of ${product.name}`,
         imageUrls: [designs.logoUrl_clay],
         imageUrl: designs.logoUrl_clay,
     };
@@ -432,23 +432,23 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
         <CardFooter className="flex flex-col items-start gap-3 pt-3 mt-auto">
              {isThcProduct ? (
                 <>
+                    <div className="w-full flex flex-col gap-2 mt-1 p-3 bg-green-50/70 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
+                        <p className="text-xs text-green-900 dark:text-green-200">
+                           Qualify for a FREE <strong className="font-semibold">{tier.unit} sample</strong> of this strain for designing our new promotional range. Sharing the Love one toke at a time.
+                        </p>
+                    </div>
                     <div className="w-full text-right">
                         <p className="text-2xl font-bold text-black dark:text-white">
                             <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
                             {tier.price.toFixed(2)}
                         </p>
-                        <div className="flex items-center justify-end text-xs text-muted-foreground">
+                         <div className="flex items-center justify-end text-xs text-muted-foreground">
                             <span className="mr-1">/ {tier.unit}</span>
                             <Gift className="mr-1 h-3 w-3 text-green-600" />
                             <span>Free samples value</span>
                         </div>
                     </div>
-                    <div className="w-full flex flex-col gap-2 mt-1 p-3 bg-green-50/70 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
-                        <p className="text-xs text-green-900 dark:text-green-200">
-                           Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
-                        </p>
-                    </div>
-                     <div className="w-full pt-2">
+                    <div className="w-full pt-2">
                         <Button 
                             onClick={handleGenerateDesigns} 
                             disabled={isGeneratingDesigns || !product.strain} 
