@@ -222,6 +222,7 @@ const baseProductObjectSchema = z.object({
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
   imageUrls: z.array(z.string().url()).max(5, "You can upload a maximum of 5 images.").optional().nullable().default([]),
   labTested: z.boolean().default(false).optional(),
+  labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
 });
