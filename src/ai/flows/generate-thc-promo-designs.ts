@@ -48,25 +48,24 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     const logoPrompt = `
       You are a master graphic designer creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-      **Core Concept: A "Marvel Comic" Style Embroidered Badge**
-      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The style is a vibrant fusion of a **retro Marvel comic book aesthetic, Rastafarian colors, and 420 culture**, all rendered with a modern, **animated vector** feel. The entire logo must be presented on a clean, solid white background.
+      **Core Concept: A Retro 420 Embroidered Badge**
+      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The overall style is a **retro 420 aesthetic**, clean and modern, but with a vintage feel. The entire logo must be presented on a clean, solid white background.
 
       **Visual Structure (from inside out):**
       1.  **Central Artwork & Background:**
-          - For the center of the badge, create a single, unified piece of artwork that serves as the background for this area.
-          - This artwork must prominently feature an **animated, 3D isometric vector-style image of a cannabis bud** representing the "${strain}" strain. The bud should be integrated into its background, not floating on top.
-          - The overall theme of this central artwork must be a creative fusion of a **retro, 420, Rasta, and Marvel comic-inspired** style.
+          - The central area of the badge must feature a **hyper-realistic vector illustration of a cannabis bud** representing the "${strain}" strain. The bud should be highly detailed and accurate.
+          - The background for the bud should be a clean, subtly textured graphic with a retro, 420-inspired theme.
       2.  **Text Band:** Surrounding the central artwork, there must be a **plain, solid-colored ring** that serves as a clean background for the text. This creates separation and ensures readability.
       3.  **Text (on the plain band):**
-          - The text must follow the circular curve of the band perfectly at the top.
+          - The text must follow the circular curve of the band perfectly.
           - The strain name, **"${strain.toUpperCase()}"**, and the brand name **"THE WELLNESS TREE"** must be featured.
           - **Both text elements must be in ALL CAPITAL LETTERS and be the SAME SIZE and FONT.**
-          - The font should be a **bold, readable, modern, comic-book style font**.
-      4.  **Outer Border:** The entire badge must be enclosed by a distinct, **embroidered-style external border** that gives the badge a tactile, 3D, and almost stitched-on appearance.
+          - The font should be a **bold, readable, retro-style font**.
+      4.  **Outer Border:** The entire badge must be enclosed by a distinct, **embroidered-style external border** that gives the badge a tactile, 3D, and stitched-on appearance.
 
       **Final Quality Check:**
-      - The logo is a single, circular, embroidered-style badge with a comic/Rasta/420 theme.
-      - The central area is a single piece of artwork featuring the strain bud as part of its background, and this artwork is fully contained within the text band.
+      - The logo is a single, circular, embroidered-style badge with a retro 420 theme.
+      - The central artwork features a hyper-realistic vector cannabis bud.
       - The text is on a separate, plain-colored circular band for maximum readability.
       - The text includes "${strain.toUpperCase()}" and "THE WELLNESS TREE" in **all caps** and at the **same size and font style**.
       - The entire logo is on a solid white background.
