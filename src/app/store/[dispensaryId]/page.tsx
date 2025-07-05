@@ -60,6 +60,12 @@ interface DesignDialogProps {
     logoUrl_comic: string;
     productMontageUrl_comic: string;
     stickerSheetUrl_comic: string;
+    logoUrl_galactic: string;
+    productMontageUrl_galactic: string;
+    stickerSheetUrl_galactic: string;
+    logoUrl_cyberpunk: string;
+    productMontageUrl_cyberpunk: string;
+    stickerSheetUrl_cyberpunk: string;
   } | null;
   strainName: string;
 }
@@ -92,6 +98,18 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
     { label: '2D Comic Montage', url: designs?.productMontageUrl_comic, filename: `${strainName}-montage-comic.png` },
     { label: '2D Comic Stickers', url: designs?.stickerSheetUrl_comic, filename: `${strainName}-stickers-comic.png` },
   ];
+  
+  const galacticItems = [
+    { label: 'Galactic Logo', url: designs?.logoUrl_galactic, filename: `${strainName}-logo-galactic.png` },
+    { label: 'Galactic Montage', url: designs?.productMontageUrl_galactic, filename: `${strainName}-montage-galactic.png` },
+    { label: 'Galactic Stickers', url: designs?.stickerSheetUrl_galactic, filename: `${strainName}-stickers-galactic.png` },
+  ];
+
+  const cyberpunkItems = [
+    { label: 'Cyberpunk Logo', url: designs?.logoUrl_cyberpunk, filename: `${strainName}-logo-cyberpunk.png` },
+    { label: 'Cyberpunk Montage', url: designs?.productMontageUrl_cyberpunk, filename: `${strainName}-montage-cyberpunk.png` },
+    { label: 'Cyberpunk Stickers', url: designs?.stickerSheetUrl_cyberpunk, filename: `${strainName}-stickers-cyberpunk.png` },
+  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -99,13 +117,15 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
         <DialogHeader>
           <DialogTitle>Generated Designs for {strainName}</DialogTitle>
           <DialogDescription>
-            Two design styles have been generated. You can download each image.
+            Four design styles have been generated. You can download each image.
           </DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="clay" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="clay">3D Clay Style</TabsTrigger>
-            <TabsTrigger value="comic">2D Comic Style</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="clay">3D Clay</TabsTrigger>
+            <TabsTrigger value="comic">2D Comic</TabsTrigger>
+            <TabsTrigger value="galactic">Galactic</TabsTrigger>
+            <TabsTrigger value="cyberpunk">Cyberpunk</TabsTrigger>
           </TabsList>
           <TabsContent value="clay" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -141,6 +161,40 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
               )}
             </div>
           </TabsContent>
+          <TabsContent value="galactic" className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {galacticItems.map((item) =>
+                item.url ? (
+                  <div key={item.label} className="space-y-2 flex flex-col items-center">
+                    <p className="font-semibold text-sm">{item.label}</p>
+                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
+                      <Image src={item.url} alt={item.label} fill className="object-contain" />
+                    </div>
+                    <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>
+                      Download
+                    </Button>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="cyberpunk" className="pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {cyberpunkItems.map((item) =>
+                item.url ? (
+                  <div key={item.label} className="space-y-2 flex flex-col items-center">
+                    <p className="font-semibold text-sm">{item.label}</p>
+                    <div className="relative aspect-square w-full rounded-lg overflow-hidden border bg-muted">
+                      <Image src={item.url} alt={item.label} fill className="object-contain" />
+                    </div>
+                    <Button variant="outline" onClick={() => downloadImage(item.url!, item.filename)}>
+                      Download
+                    </Button>
+                  </div>
+                ) : null
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>
@@ -160,14 +214,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const [isGeneratingDesigns, setIsGeneratingDesigns] = useState(false);
-  const [generatedDesigns, setGeneratedDesigns] = useState<{
-    logoUrl_clay: string;
-    productMontageUrl_clay: string;
-    stickerSheetUrl_clay: string;
-    logoUrl_comic: string;
-    productMontageUrl_comic: string;
-    stickerSheetUrl_comic: string;
-  } | null>(null);
+  const [generatedDesigns, setGeneratedDesigns] = useState<DesignDialogProps['designs']>(null);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
 

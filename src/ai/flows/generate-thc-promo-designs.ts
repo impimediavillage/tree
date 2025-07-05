@@ -1,8 +1,8 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow for generating promotional THC strain designs in two styles: 3D Clay and 2D Comic.
- * - generateThcPromoDesigns - A function that takes a strain name and generates design images in both styles.
+ * @fileOverview A Genkit flow for generating promotional THC strain designs in multiple styles.
+ * - generateThcPromoDesigns - A function that takes a strain name and generates design images in all styles.
  * - GenerateThcDesignsInput - The input type for the function.
  * - GenerateThcDesignsOutput - The return type for the function, containing URLs for all generated designs.
  */
@@ -22,6 +22,12 @@ const GenerateThcDesignsOutputSchema = z.object({
   logoUrl_comic: z.string().url().describe('URL of the primary circular logo design in 2D comic style.'),
   productMontageUrl_comic: z.string().url().describe('URL of the 2D comic style product montage (cap, shirt, hoodie, etc.).'),
   stickerSheetUrl_comic: z.string().url().describe('URL of the 2D comic style downloadable sticker sheet.'),
+  logoUrl_galactic: z.string().url().describe('URL of the primary circular logo design in Galactic Superhero style.'),
+  productMontageUrl_galactic: z.string().url().describe('URL of the Galactic Superhero style product montage.'),
+  stickerSheetUrl_galactic: z.string().url().describe('URL of the Galactic Superhero style downloadable sticker sheet.'),
+  logoUrl_cyberpunk: z.string().url().describe('URL of the primary circular logo design in Cyberpunk style.'),
+  productMontageUrl_cyberpunk: z.string().url().describe('URL of the Cyberpunk style product montage.'),
+  stickerSheetUrl_cyberpunk: z.string().url().describe('URL of the Cyberpunk style downloadable sticker sheet.'),
 });
 type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
 
@@ -66,9 +72,8 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
   },
   async ({ strain }) => {
     // --- Prompts for Montage and Stickers (reusable) ---
-    const getProductMontagePrompt = (logoUrl: string) => [
-        { media: { url: logoUrl } },
-        { text: `You are a professional product photographer and brand designer. Your task is to create a clean, minimalist, studio-quality product montage on a single, solid white background.
+    const getProductMontagePrompt = (logoUrl: string, quote?: string) => {
+        const textPrompt = `You are a professional product photographer and brand designer. Your task is to create a clean, minimalist, studio-quality product montage on a single, solid white background.
 
       **Instructions:**
       1.  **Use the provided circular logo image exactly as it is.** DO NOT CHANGE, ALTER, OR RECREATE THE LOGO DESIGN.
@@ -77,11 +82,13 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
           - A black t-shirt (logo large on the chest).
           - A black hoodie (logo large on the chest).
       3.  Arrange the three items (cap, t-shirt, hoodie) in a visually appealing, well-spaced composition. The final image should look like a professional shot for an e-commerce store.
-      4.  There should be NO other text, quotes, or elements in the image. Only the three apparel items on a white background.
+      4.  ${quote ? `Subtly incorporate the following humorous 420-themed quote into the scene, perhaps on a small card or tag: "${quote}"` : 'There should be NO other text, quotes, or elements in the image. Only the three apparel items on a white background.'}
 
-      **Final Check:** The final image contains ONLY the cap, t-shirt, and hoodie with the provided logo, expertly arranged on a clean white background.`
-        }
-    ];
+      **Final Check:** The final image contains ONLY the cap, t-shirt, and hoodie with the provided logo, expertly arranged on a clean white background, with the requested text if applicable.`;
+      
+      return [ { media: { url: logoUrl } }, { text: textPrompt } ];
+    };
+
 
     const getStickerSheetPrompt = (logoUrl: string) => [
         { media: { url: logoUrl } },
@@ -129,7 +136,7 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
         - The entire design is on a solid white background.
       `;
       const logoUrl_clay = await generateImage(logoPrompt_clay);
-      const productMontageUrl_clay = await generateImage(getProductMontagePrompt(logoUrl_clay));
+      const productMontageUrl_clay = await generateImage(getProductMontagePrompt(logoUrl_clay, "I'm not high, I'm just tall."));
       const stickerSheetUrl_clay = await generateImage(getStickerSheetPrompt(logoUrl_clay));
       return { logoUrl_clay, productMontageUrl_clay, stickerSheetUrl_clay };
     };
@@ -165,21 +172,83 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
         - The entire design is on a solid white background.
         `;
       const logoUrl_comic = await generateImage(logoPrompt_comic);
-      const productMontageUrl_comic = await generateImage(getProductMontagePrompt(logoUrl_comic));
+      const productMontageUrl_comic = await generateImage(getProductMontagePrompt(logoUrl_comic, "This weed is so loud I can't hear you."));
       const stickerSheetUrl_comic = await generateImage(getStickerSheetPrompt(logoUrl_comic));
       return { logoUrl_comic, productMontageUrl_comic, stickerSheetUrl_comic };
     };
 
-    // --- Run both generation pipelines in parallel ---
-    const [clayResults, comicResults] = await Promise.all([
+    // --- Pipeline for Galactic Superhero Style ---
+    const generateGalacticDesigns = async () => {
+        const logoPrompt_galactic = `
+        You are a lead designer for a futuristic sci-fi franchise, creating a single, high-resolution circular logo for the cannabis strain "${strain}".
+
+        **Core Concept: A Sleek, Star-Trek Inspired Metallic Badge**
+        The final output must be a single, visually striking circular logo on a solid white background. The style is a clean, sleek, metallic badge reminiscent of a **Starfleet insignia or a superhero emblem**.
+
+        **Visual Structure:**
+        1.  **Central Artwork (Dominant Feature):**
+            - Features a **stylized, metallic, 3D vector representation of a cannabis bud** for the "${strain}" strain. The bud should look powerful and iconic.
+            - This bud is set against a **vibrant, cosmic nebula background** inside the badge, filled with swirling galaxies and stars, giving a sense of deep space.
+        2.  **Readable Text Ring:**
+            - Surrounding the central artwork is a **plain, solid-colored ring** in a polished metallic finish (like brushed steel or chrome).
+            - There must be a **clean gap** between the text and the borders.
+            - The text itself must be rendered in a **futuristic, sans-serif, holographic font style**, appearing to glow slightly.
+            - The font must be **BOLD, CLEAR, and HIGHLY READABLE**.
+            - Text follows the circular curve. The strain name, **"${strain.toUpperCase()}"**, and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
+        3.  **Sleek Metallic Outer Border:**
+            - The entire badge is framed by a distinct, **polished metallic outer border**.
+
+        **Final Check:** The logo is a single, circular badge with a futuristic, metallic feel. The central artwork is a stylized metallic cannabis bud against a cosmic background. The text ring is clear with glowing holographic text. The entire design is on a solid white background.
+        `;
+      const logoUrl_galactic = await generateImage(logoPrompt_galactic);
+      const productMontageUrl_galactic = await generateImage(getProductMontagePrompt(logoUrl_galactic, "To boldly grow where no one has grown before."));
+      const stickerSheetUrl_galactic = await generateImage(getStickerSheetPrompt(logoUrl_galactic));
+      return { logoUrl_galactic, productMontageUrl_galactic, stickerSheetUrl_galactic };
+    };
+    
+    // --- Pipeline for Cyberpunk Style ---
+    const generateCyberpunkDesigns = async () => {
+        const logoPrompt_cyberpunk = `
+        You are a net-runner and graphic designer in a neon-drenched dystopian future, creating a single, high-resolution circular logo for the cannabis strain "${strain}".
+
+        **Core Concept: A Glitching, Holographic Cyberpunk Emblem**
+        The final output must be a single, visually striking circular logo on a solid white background. The style is a **gritty, high-tech cyberpunk aesthetic**, filled with neon glows and holographic elements.
+
+        **Visual Structure:**
+        1.  **Central Artwork (Dominant Feature):**
+            - Features a **glowing, semi-translucent, holographic 3D vector of a cannabis bud** for the "${strain}" strain, with subtle **glitch effects and data streams**.
+            - It merges into a background depicting a **dark, rain-slicked dystopian cityscape at night, illuminated by vibrant neon signs**, all contained within the badge.
+        2.  **Readable Text Ring:**
+            - Surrounding the central artwork is a **plain, solid-colored ring** with a carbon fiber texture or dark metallic sheen.
+            - There must be a **clean gap** between the text and the borders.
+            - The text must be rendered in a **digital, pixelated, or glitch-style font**, glowing with a vibrant neon color (like magenta or cyan).
+            - The font must be **BOLD, CLEAR, and HIGHLY READABLE**.
+            - Text follows the circular curve. The strain name, **"${strain.toUpperCase()}"**, and **"THE WELLNESS TREE"** must be featured in **ALL CAPS** and use the **SAME FONT**.
+        3.  **Cybernetic Outer Border:**
+            - The entire badge is framed by a **complex, circuit-board-like or cybernetic border**, with glowing neon lines.
+
+        **Final Check:** The logo is a single, circular badge with a cyberpunk, neon-holographic feel. The central artwork is a glitching holographic cannabis bud against a neon city background. The text ring is clear, with glowing digital text. The entire design is on a solid white background.
+        `;
+      const logoUrl_cyberpunk = await generateImage(logoPrompt_cyberpunk);
+      const productMontageUrl_cyberpunk = await generateImage(getProductMontagePrompt(logoUrl_cyberpunk, "Wake up, samurai. We have a city to smoke."));
+      const stickerSheetUrl_cyberpunk = await generateImage(getStickerSheetPrompt(logoUrl_cyberpunk));
+      return { logoUrl_cyberpunk, productMontageUrl_cyberpunk, stickerSheetUrl_cyberpunk };
+    };
+
+    // --- Run all generation pipelines in parallel ---
+    const [clayResults, comicResults, galacticResults, cyberpunkResults] = await Promise.all([
       generateClayDesigns(),
-      generateComicDesigns()
+      generateComicDesigns(),
+      generateGalacticDesigns(),
+      generateCyberpunkDesigns()
     ]);
 
     // --- Combine results and return ---
     return {
       ...clayResults,
       ...comicResults,
+      ...galacticResults,
+      ...cyberpunkResults,
     };
   }
 );
