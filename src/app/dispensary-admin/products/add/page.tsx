@@ -1113,7 +1113,7 @@ export default function AddProductPage() {
                 
                 <div className="space-y-3 pt-2">
                     <h3 className="text-lg font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing Tiers *</h3>
-                    <FormDescription>Pricing for regular customer sales.</FormDescription>
+                    <FormDescription>Pricing for sample attached to design price.</FormDescription>
                     <div className="text-sm p-3 border border-yellow-300 bg-yellow-50/50 rounded-md space-y-1">
                         <p className="font-bold text-yellow-800">24% is added on each transaction as a commission to the Wellness Tree.</p>
                         <p className="text-xs text-yellow-700">
