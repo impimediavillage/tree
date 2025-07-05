@@ -452,13 +452,14 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
             {displayTier && (
                 <div className="w-full text-right">
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-2xl font-bold text-black dark:text-white">
                     <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
                     {displayTier.price.toFixed(2)}
                 </p>
                 <div className="flex items-center justify-end text-xs text-muted-foreground">
                     {isThcProduct ? (
                     <>
+                        <span className="mr-1">/ {displayTier.unit}</span>
                         <Gift className="mr-1 h-3 w-3 text-green-600" />
                         <span>Free samples value</span>
                     </>
@@ -470,7 +471,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
             )}
 
             {isThcProduct && (
-                <div className="w-full flex flex-col gap-3 mt-1">
+                <div className="w-full flex flex-col gap-2 mt-1">
                 <div className="text-xs text-green-900 bg-green-100/70 dark:bg-green-900/30 dark:text-green-200 p-2.5 rounded-md border border-green-200/50 dark:border-green-800/50">
                     <p>
                     Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
@@ -479,25 +480,30 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
                 <Button 
                     onClick={handleGenerateDesigns} 
                     disabled={isGeneratingDesigns || !product.strain} 
-                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold"
                 >
                     {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                     Generate Designs
                 </Button>
+                <p className="text-xs text-center text-muted-foreground -mt-1">
+                    to qualify for the free product samples
+                </p>
                 </div>
             )}
 
-            <div className="w-full pt-2">
-                <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
-                disabled={tierStock <= 0 || !canAddToCart}
-                onClick={handleAddToCart}
-                aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-                >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
-                </Button>
-            </div>
+            {!isThcProduct && (
+                <div className="w-full pt-2">
+                    <Button
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                    disabled={tierStock <= 0 || !canAddToCart}
+                    onClick={handleAddToCart}
+                    aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+                    >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
+                    </Button>
+                </div>
+            )}
         </CardFooter>
       </Card>
       
