@@ -59,8 +59,8 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  const [isGeneratingDesigns, setIsGeneratingDesigns] = React.useState(false);
-  const [generatedDesigns, setGeneratedDesigns] = React.useState<{ promoImageUrl: string; singleStickerImageUrl: string; fourStickerImageUrl: string; } | null>(null);
+  const [isGeneratingDesigns, setIsGeneratingDesigns] = useState(false);
+  const [generatedDesigns, setGeneratedDesigns] = useState<{ promoImageUrl: string; singleStickerImageUrl: string; fourStickerImageUrl: string; } | null>(null);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
 
