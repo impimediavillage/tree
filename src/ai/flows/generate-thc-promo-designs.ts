@@ -44,33 +44,41 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     outputSchema: GenerateThcDesignsOutputSchema,
   },
   async ({ strain }) => {
-    // Define detailed prompts for each of the three required images
-    const logoPrompt = `
-      As a world-class graphic designer, create a single, high-resolution circular logo for the cannabis strain "${strain}".
-      The design must have a modern, retro, Rastafarian, 420-style, *embroidered* look.
-      The central element must be a vibrantly animated, 3D isometric cannabis bud of the "${strain}" strain.
+    // Shared core design brief to ensure consistency
+    const coreDesignBrief = `
+      The design style is a modern, retro, Rastafarian, 420-style, *embroidered* look.
+      The central element is a vibrantly animated, 3D isometric cannabis bud of the "${strain}" strain.
       The text "The Wellness Tree" and "${strain}" must curve elegantly around the inside of the circular border.
       The strain name "${strain}" must be the more prominent text, with "The Wellness Tree" smaller but clearly readable.
+    `;
+
+    // Prompt 1: Generate the primary logo.
+    const logoPrompt = `
+      As a world-class graphic designer, create a single, high-resolution circular logo for the cannabis strain "${strain}".
+      ${coreDesignBrief}
       The final image should be just the logo on a clean, solid white background.
     `;
 
+    // Prompt 2: Generate the product montage, explicitly referencing the style of the first prompt.
     const productMontagePrompt = `
-      You are a master brand designer. You have just created a circular, embroidered-style logo for the cannabis strain "${strain}".
-      Now, create a promotional product montage on a single, clean white background.
-      This image must showcase that *exact* logo design applied to the following items:
+      You are a master brand designer. Your task is to create a promotional product montage on a single, clean white background.
+      A logo has ALREADY been designed with this exact specification: ${coreDesignBrief}.
+      Your job is to apply this PRE-EXISTING logo design to the following items:
       1. A black baseball cap (logo on the front).
       2. A black t-shirt (logo large on the chest).
       3. A black hoodie (logo large on the chest).
-      Also, include a long, standalone rectangular sticker that perfectly matches the embroidered, retro-modern style of the circular logo.
-      All items should be well-spaced and presented attractively.
+      Also, create a long, standalone rectangular sticker that perfectly MATCHES the style of the pre-existing logo.
+      Do not invent a new logo style. Replicate the specified design precisely. All items should be well-spaced and presented attractively.
     `;
 
+    // Prompt 3: Generate the sticker sheet, also explicitly referencing the pre-designed style.
     const stickerSheetPrompt = `
-      You are a master brand designer. You have just created a circular, embroidered-style logo and a matching rectangular sticker for the cannabis strain "${strain}".
-      Now, create a high-resolution sticker sheet on a solid white background, ready for download and printing.
-      The sheet must contain two instances of the circular logo (license-disc size) arranged side-by-side at the top.
-      Below them, include two instances of the matching rectangular sticker, also side-by-side.
-      Ensure all four stickers are well-spaced.
+      You are a master brand designer. Your task is to create a high-resolution sticker sheet on a solid white background, ready for download and printing.
+      A circular logo and a matching rectangular sticker have ALREADY been designed with this exact specification: ${coreDesignBrief}.
+      Your job is to arrange the pre-existing designs as follows:
+      - Two instances of the circular logo (license-disc size) arranged side-by-side at the top.
+      - Two instances of the matching rectangular sticker, also side-by-side, below the circular logos.
+      Do not invent new designs. Replicate the specified designs precisely. Ensure all four stickers are well-spaced.
     `;
     
     // Generate images in parallel
