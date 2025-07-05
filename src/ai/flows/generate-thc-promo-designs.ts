@@ -13,14 +13,14 @@ import { z } from 'zod';
 const GenerateThcDesignsInputSchema = z.object({
   strain: z.string().describe('The name of the THC strain for which to generate designs.'),
 });
-export type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
+type GenerateThcDesignsInput = z.infer<typeof GenerateThcDesignsInputSchema>;
 
 const GenerateThcDesignsOutputSchema = z.object({
   logoUrl: z.string().url().describe('URL of the primary circular logo design.'),
   productMontageUrl: z.string().url().describe('URL of the product montage (cap, shirt, hoodie, etc.).'),
   stickerSheetUrl: z.string().url().describe('URL of the downloadable sticker sheet.'),
 });
-export type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
+type GenerateThcDesignsOutput = z.infer<typeof GenerateThcDesignsOutputSchema>;
 
 // Helper function for a single image generation call
 async function generateImage(prompt: string | ({ media: { url: string; }; } | { text: string; })[]): Promise<string> {
@@ -44,22 +44,31 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
     outputSchema: GenerateThcDesignsOutputSchema,
   },
   async ({ strain }) => {
-    // --- Step 1: Generate the primary logo ---
+    // --- Step 1: Generate the primary logo with very specific instructions ---
     const logoPrompt = `
-      As a world-class graphic designer specializing in modern branding, create a single, high-resolution circular logo for the cannabis strain "${strain}". The final image must be a **hyper-animated, modern badge** with a vibrant, retro, Rastafarian, and 420-friendly style.
+      You are a master graphic designer creating a single, high-resolution circular logo for the cannabis strain "${strain}".
 
-      **Core Elements & Style:**
-      - **Central Image:** At the center, there must be a **3D isometric, animated cartoon-style** cannabis bud representing the "${strain}" strain. It should be colorful and engaging.
-      - **Background:** The background inside the badge must be a creative and **animated cartoon scene that thematically matches the strain's name, "${strain}"**. For example, if the strain is "Blue Dream," the background might be a dreamy, blue sky with cartoon clouds. The entire logo must be presented on a final solid white background for easy use.
-      - **Overall Look:** The badge must look polished, modern, and magical, like a collectible item from a high-end animated series.
+      **Core Concept: A Modern, Embroidered, Animated Badge**
+      The final output must be a single circular logo that looks like a **high-quality embroidered material badge**. The badge should have a **3D effect** and a **cartoonish, hyper-animated style** infused with vibrant **retro, Rastafarian, and 420-friendly** design elements. The entire logo must be presented on a clean, solid white background for versatility.
 
-      **Text Instructions (Crucial):**
-      - **Placement & Style:** The text must be placed at the top of the badge, following the curve of the circular border perfectly.
-      - **Content & Hierarchy:**
-          1. The strain name, **"${strain}"**, must be the most prominent text, using a bold, stylish, and easily readable modern font.
-          2. The brand name, **"The Wellness Tree"**, must appear directly below the strain name, also curved. This text must be in a smaller, but still bold and clear, rounded font.
+      **Visual Breakdown:**
+      - **Central Image:** A colorful and engaging **3D isometric, animated-style vector image** of a cannabis bud representing the "${strain}" strain must be at the very center.
+      - **Internal Background:** The area inside the badge, behind the central bud, must feature a **creative, animated cartoon background** that thematically matches the strain's name, "${strain}". (e.g., "Blue Dream" might have a dreamy, animated blue sky).
+      - **Borders & Text:**
+          1. The badge must have a distinct, embroidered-style circular outer border.
+          2. Just inside this main border, create another decorative border.
+          3. Between these two borders, the text must be placed around the top curve.
+      - **Text Instructions (CRITICAL):**
+          - The text must follow the circular curve of the borders perfectly.
+          - The strain name, **"${strain}"**, must be the most prominent text, rendered in a **bold, readable, modern font**.
+          - Directly below the strain name (also following the curve), the brand name **"The Wellness Tree"** must appear in a smaller, but still bold and clear, rounded font. The text must always be clearly readable.
 
-      **Final Check:** The output is a single circular logo. Text is perfectly curved and readable. The hierarchy between the strain name and brand name is clear. The style is a consistent fusion of retro, Rasta, 420 culture, and modern animation.
+      **Final Quality Check:**
+      - The image is a single, circular, embroidered-style badge.
+      - The style is a consistent fusion of cartoon, retro, Rasta, and 420 culture.
+      - The central strain image is a 3D isometric vector.
+      - The text "The Wellness Tree" and "${strain}" are perfectly curved, readable, and follow the specified hierarchy.
+      - The entire logo is on a solid white background.
     `;
     const logoUrl = await generateImage(logoPrompt);
 
