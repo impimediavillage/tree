@@ -450,40 +450,58 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 border-t mt-auto">
-          {isThcProduct && (
-            <div className="w-full flex flex-col gap-2">
-              <Button onClick={handleGenerateDesigns} disabled={isGeneratingDesigns || !product.strain} variant="outline" className="w-full">
-                {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate Designs
-              </Button>
-              <p className="text-xs text-muted-foreground p-2 bg-muted/50 rounded-md w-full">
-                Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
-              </p>
+            {displayTier && (
+                <div className="w-full text-right">
+                <p className="text-2xl font-bold text-foreground">
+                    <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                    {displayTier.price.toFixed(2)}
+                </p>
+                <div className="flex items-center justify-end text-xs text-muted-foreground">
+                    {isThcProduct ? (
+                    <>
+                        <Gift className="mr-1 h-3 w-3 text-green-600" />
+                        <span>Free samples value</span>
+                    </>
+                    ) : (
+                    <span>/ {displayTier.unit}</span>
+                    )}
+                </div>
+                </div>
+            )}
+
+            {isThcProduct && (
+                <div className="w-full flex flex-col gap-3 mt-1">
+                <div className="text-xs text-green-900 bg-green-100/70 dark:bg-green-900/30 dark:text-green-200 p-2.5 rounded-md border border-green-200/50 dark:border-green-800/50">
+                    <p>
+                    Qualify for FREE PRODUCTS OFFERED AS SAMPLES for designing our new STRAIN sticker range for stickers, caps, tshirts, and hoodies. Sharing the Love one toke at a time .
+                    </p>
+                </div>
+                <Button 
+                    onClick={handleGenerateDesigns} 
+                    disabled={isGeneratingDesigns || !product.strain} 
+                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                >
+                    {isGeneratingDesigns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                    Generate Designs
+                </Button>
+                </div>
+            )}
+
+            <div className="w-full pt-2">
+                <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                disabled={tierStock <= 0 || !canAddToCart}
+                onClick={handleAddToCart}
+                aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+                >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
+                </Button>
             </div>
-          )}
-
-          {displayTier && (
-            <p className="text-2xl font-bold text-accent self-end w-full text-right">
-              {product.currency} {displayTier.price.toFixed(2)}
-              <span className="text-xs text-muted-foreground"> / {displayTier.unit}</span>
-            </p>
-          )}
-
-          <div className="w-full pt-2">
-            <Button
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
-              disabled={tierStock <= 0 || !canAddToCart}
-              onClick={handleAddToCart}
-              aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-            >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              {tierStock <= 0 ? 'Out of Stock' : (canAddToCart ? 'Add to Cart' : 'Max in Cart')}
-            </Button>
-          </div>
         </CardFooter>
       </Card>
       
-      {/* Viewer for product images */}
+      {/* Viewer Dialog */}
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
         <DialogContent className="max-w-4xl p-2 sm:p-4">
           <DialogHeader>
@@ -517,7 +535,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
         </DialogContent>
       </Dialog>
       
-      {/* Dialog for generated designs */}
+      {/* Design Dialog */}
       <DesignDialog isOpen={!!generatedDesigns} onOpenChange={() => setGeneratedDesigns(null)} designs={generatedDesigns} strainName={product.strain || 'design'} />
     </>
   );
