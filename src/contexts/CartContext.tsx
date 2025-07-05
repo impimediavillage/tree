@@ -98,8 +98,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             toastMessage = { title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available. Added max to cart.`, variant: "destructive"};
           }
 
-          const isDesignPack = product.description?.startsWith('PROMO_DESIGN_PACK|');
-
           const newItem: CartItem = {
             id: cartItemId,
             productId: product.id!,
@@ -114,7 +112,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             unit: tier.unit,
             quantity: finalQuantityToAdd,
             quantityInStock: tierStock,
-            imageUrl: isDesignPack ? null : (product.imageUrls?.[0] ?? product.imageUrl ?? null),
+            imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
           };
           if (!toastMessage) {
               toastMessage = { title: `Added to Cart!`, description: `${newItem.name} (${newItem.unit}) has been added to your cart.`, variant: "default" };
