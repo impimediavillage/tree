@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
@@ -60,7 +60,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const [isGeneratingDesigns, setIsGeneratingDesigns] = useState(false);
-  const [generatedDesigns, setGeneratedDesigns] = useState<{ promoImageUrl: string; singleStickerImageUrl: string; fourStickerImageUrl: string; } | null>(null);
+  const [generatedDesigns, setGeneratedDesigns] = useState<{ designMontageUrl: string; tShirtDesignUrl: string; stickerSheetUrl: string; } | null>(null);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
 
@@ -389,7 +389,7 @@ function PublicProductCard({ product, tier }: PublicProductCardProps) {
 interface DesignDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  designs: { promoImageUrl: string; singleStickerImageUrl: string; fourStickerImageUrl: string; } | null;
+  designs: { designMontageUrl: string; tShirtDesignUrl: string; stickerSheetUrl: string; } | null;
   strainName: string;
 }
 
@@ -410,9 +410,9 @@ function DesignDialog({ isOpen, onOpenChange, designs, strainName }: DesignDialo
   };
 
   const designItems = [
-    { label: 'Promo Art', url: designs?.promoImageUrl, filename: `${strainName}-promo.png` },
-    { label: 'Large Sticker', url: designs?.singleStickerImageUrl, filename: `${strainName}-sticker.png` },
-    { label: 'Sticker Sheet', url: designs?.fourStickerImageUrl, filename: `${strainName}-sticker-sheet.png` },
+    { label: 'Design Montage', url: designs?.designMontageUrl, filename: `${strainName}-montage.png` },
+    { label: 'T-Shirt Design', url: designs?.tShirtDesignUrl, filename: `${strainName}-tshirt.png` },
+    { label: 'Sticker Sheet', url: designs?.stickerSheetUrl, filename: `${strainName}-stickers.png` },
   ];
 
   return (
