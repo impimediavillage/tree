@@ -29,7 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
@@ -194,57 +194,71 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     ] : [];
 
     return (
-        <DialogContentComponent className="max-w-5xl">
-            <DialogHeaderComponent>
+        <DialogContentComponent className="max-w-5xl h-[90vh] flex flex-col p-0">
+            <DialogHeaderComponent className="px-6 pt-6 pb-4">
                 <DialogTitleComponent>Generated Assets for &quot;{subjectName}&quot;</DialogTitleComponent>
                 <DialogDescriptionComponent>
                     Here are the themed assets generated for your product. You can download these images for your marketing.
                 </DialogDescriptionComponent>
             </DialogHeaderComponent>
-            {isLoading && (
-                <div className="flex flex-col items-center justify-center h-96 gap-4">
+
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
                     <Loader2 className="h-16 w-16 animate-spin text-primary" />
                     <p className="text-lg text-muted-foreground">Generating themes... this can take a moment.</p>
                 </div>
-            )}
-            {designs && (
-                <Tabs defaultValue="3D Clay" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
-                       {designThemes.map(theme => (
-                             <TabsTrigger key={theme.name} value={theme.name}>{theme.name}</TabsTrigger>
-                        ))}
-                    </TabsList>
-                    {designThemes.map(theme => theme.data && (
-                        <TabsContent key={theme.name} value={theme.name}>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                               <Card>
-                                    <CardHeader><CardTitle>Circular Sticker</CardTitle></CardHeader>
-                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.circularStickerUrl} alt={`${theme.name} circular sticker`} fill className="object-contain p-2"/></div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Rectangular Sticker</CardTitle></CardHeader>
-                                    <CardContent><div className="relative aspect-[2/1]"><Image src={theme.data.rectangularStickerUrl} alt={`${theme.name} rectangular sticker`} fill className="object-contain p-2"/></div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Printable Sticker Sheet</CardTitle></CardHeader>
-                                    <CardContent><div className="relative aspect-[1/1.414]"><Image src={theme.data.stickerSheetUrl} alt={`${theme.name} sticker sheet`} fill className="object-contain p-2"/></div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Cap Mockup</CardTitle></CardHeader>
-                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.capUrl} alt={`${theme.name} cap`} fill className="object-contain p-2"/></div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>T-Shirt Mockup</CardTitle></CardHeader>
-                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.tShirtUrl} alt={`${theme.name} t-shirt`} fill className="object-contain p-2"/></div></CardContent>
-                                </Card>
-                                <Card>
-                                    <CardHeader><CardTitle>Hoodie Mockup</CardTitle></CardHeader>
-                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.hoodieUrl} alt={`${theme.name} hoodie`} fill className="object-contain p-2"/></div></CardContent>
-                                </Card>
-                            </div>
-                        </TabsContent>
-                    ))}
-                </Tabs>
+            ) : designs ? (
+                <div className="flex-grow min-h-0">
+                    <Tabs defaultValue="3D Clay" className="w-full h-full flex flex-col">
+                        <div className="px-6 border-b">
+                            <ScrollArea className="w-full whitespace-nowrap">
+                                <TabsList className="inline-flex h-auto p-1">
+                                    {designThemes.map(theme => (
+                                        <TabsTrigger key={theme.name} value={theme.name} className="px-4 py-2">{theme.name}</TabsTrigger>
+                                    ))}
+                                </TabsList>
+                                <ScrollBar orientation="horizontal" />
+                            </ScrollArea>
+                        </div>
+                        <ScrollArea className="flex-grow px-6 py-4">
+                            {designThemes.map(theme => theme.data && (
+                                <TabsContent key={theme.name} value={theme.name} className="mt-0">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <Card>
+                                            <CardHeader><CardTitle className="text-base">Circular Sticker</CardTitle></CardHeader>
+                                            <CardContent><div className="relative aspect-square"><Image src={theme.data.circularStickerUrl} alt={`${theme.name} circular sticker`} fill className="object-contain p-2"/></div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader><CardTitle className="text-base">Rectangular Sticker</CardTitle></CardHeader>
+                                            <CardContent><div className="relative aspect-[2/1]"><Image src={theme.data.rectangularStickerUrl} alt={`${theme.name} rectangular sticker`} fill className="object-contain p-2"/></div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader><CardTitle className="text-base">Printable Sticker Sheet</CardTitle></CardHeader>
+                                            <CardContent><div className="relative aspect-[1/1.414]"><Image src={theme.data.stickerSheetUrl} alt={`${theme.name} sticker sheet`} fill className="object-contain p-2"/></div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader><CardTitle className="text-base">Cap Mockup</CardTitle></CardHeader>
+                                            <CardContent><div className="relative aspect-square"><Image src={theme.data.capUrl} alt={`${theme.name} cap`} fill className="object-contain p-2"/></div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader><CardTitle className="text-base">T-Shirt Mockup</CardTitle></CardHeader>
+                                            <CardContent><div className="relative aspect-square"><Image src={theme.data.tShirtUrl} alt={`${theme.name} t-shirt`} fill className="object-contain p-2"/></div></CardContent>
+                                        </Card>
+                                        <Card>
+                                            <CardHeader><CardTitle className="text-base">Hoodie Mockup</CardTitle></CardHeader>
+                                            <CardContent><div className="relative aspect-square"><Image src={theme.data.hoodieUrl} alt={`${theme.name} hoodie`} fill className="object-contain p-2"/></div></CardContent>
+                                        </Card>
+                                    </div>
+                                </TabsContent>
+                            ))}
+                        </ScrollArea>
+                    </Tabs>
+                </div>
+            ) : (
+                 <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
+                    <AlertTriangle className="h-16 w-16 text-destructive" />
+                    <p className="text-lg text-muted-foreground">Failed to generate designs.</p>
+                </div>
             )}
         </DialogContentComponent>
     );
