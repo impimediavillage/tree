@@ -98,7 +98,7 @@ const scrapeProductHandlesForCategory = async (categoryUrl: string, log: (messag
       const { data } = await axiosWithRetry(currentPageUrl);
       const $ = cheerio.load(data);
       
-      $('a.product-item__image-wrapper').each((_, el) => {
+      $('a.product-item__image-wrapper').each((_: number, el: cheerio.Element) => {
         const href = $(el).attr('href');
         if (href) {
           const handle = href.split('/').pop();
@@ -127,7 +127,7 @@ const scrapeCategories = async (log: (message: string) => void): Promise<Omit<Ju
     const $ = cheerio.load(data);
     const categories: Omit<JustBrandCategory, 'products'>[] = [];
 
-    $('a.collection-grid-item').each((_, el) => {
+    $('a.collection-grid-item').each((_: number, el: cheerio.Element) => {
       const url = $(el).attr('href');
       const name = $(el).find('.collection-grid-item__title').text().trim();
       if (url && name) {
