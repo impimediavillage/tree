@@ -325,6 +325,7 @@ export default function EditProductPage() {
   const [existingLabReportUrl, setExistingLabReportUrl] = useState<string | null>(null);
   
   const [assetGeneratorSubjectType, setAssetGeneratorSubjectType] = useState<'store' | 'strain' | null>(null);
+  const [assetGeneratorStrainName, setAssetGeneratorStrainName] = useState('');
   const [isGeneratingAssets, setIsGeneratingAssets] = useState(false);
   const [generatedAssets, setGeneratedAssets] = useState<GenerateBrandAssetsOutput | null>(null);
   const [isAssetViewerOpen, setIsAssetViewerOpen] = useState(false);
@@ -374,6 +375,12 @@ export default function EditProductPage() {
         setShowProductDetailsForm(false);
     }
   }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
+
+  useEffect(() => {
+    if (existingProduct?.strain) {
+      setAssetGeneratorStrainName(existingProduct.strain);
+    }
+  }, [existingProduct]);
 
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
@@ -774,12 +781,12 @@ export default function EditProductPage() {
 
     if (assetGeneratorSubjectType === 'store' && wellnessData) {
         subjectName = wellnessData.dispensaryName;
-    } else if (assetGeneratorSubjectType === 'strain' && form.getValues('strain')) {
-        subjectName = form.getValues('strain')!;
+    } else if (assetGeneratorSubjectType === 'strain' && assetGeneratorStrainName) {
+        subjectName = assetGeneratorStrainName;
     }
 
     if (!subjectName) {
-        toast({ title: "Subject Name Missing", description: "Please provide a store or strain name to generate assets.", variant: "destructive" });
+        toast({ title: "Subject Name Missing", description: "Please select 'Use store name' or enter a strain name to generate assets.", variant: "destructive" });
         return;
     }
 
@@ -952,7 +959,7 @@ export default function EditProductPage() {
 
   const watchedEffects = form.watch('effects');
   const watchedMedicalUses = form.watch('medicalUses');
-  const assetGeneratorSubjectName = assetGeneratorSubjectType === 'store' ? wellnessData?.dispensaryName : form.getValues('strain');
+  const assetGeneratorSubjectName = assetGeneratorSubjectType === 'store' ? wellnessData?.dispensaryName : assetGeneratorStrainName;
 
 
   return (
@@ -1027,16 +1034,15 @@ export default function EditProductPage() {
                             </FormItem>
                         </RadioGroup>
                         {assetGeneratorSubjectType === 'strain' && (
-                             <div className="pl-6 pt-2 space-y-2">
-                                <FormLabel htmlFor="strain-search">Strain Name</FormLabel>
-                                <div className="flex gap-2">
-                                    <Input id="strain-search" placeholder="e.g., Blue Dream" value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} />
-                                    <Button type="button" onClick={handleFetchStrainInfo} disabled={!strainQuery.trim() || isFetchingStrain}>
-                                        {isFetchingStrain ? <Loader2 className="h-4 w-4 animate-spin"/> : <SearchIcon className="h-4 w-4"/>}
-                                    </Button>
-                                </div>
-                                {selectedStrainData && <p className="text-sm text-green-600">Selected: {selectedStrainData.name}</p>}
-                                <FormMessage>{!form.getValues('strain') && 'Please select a strain to generate assets.'}</FormMessage>
+                            <div className="pl-6 pt-2 space-y-2">
+                                <FormLabel htmlFor="asset-strain-name">Strain Name</FormLabel>
+                                <Input 
+                                    id="asset-strain-name" 
+                                    placeholder="Enter the strain name for the assets" 
+                                    value={assetGeneratorStrainName} 
+                                    onChange={(e) => setAssetGeneratorStrainName(e.target.value)} 
+                                />
+                                <FormDescription>This name will be used on the generated assets.</FormDescription>
                             </div>
                         )}
                          <Button type="button" onClick={handleGenerateAssets} disabled={!assetGeneratorSubjectName}>
