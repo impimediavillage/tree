@@ -372,7 +372,7 @@ export default function WellnessSignupPage() {
         <CardTitle 
             className="text-3xl text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >Virtual Wellness Sign-Up</CardTitle>
+        >Virtual Store Sign-Up</CardTitle>
         <CardDescription 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
@@ -392,13 +392,13 @@ export default function WellnessSignupPage() {
             </div>
             
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Wellness Information</h2>
+            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Store Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Wellness Name</FormLabel><FormControl><Input placeholder="Your Wellness Name" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="Your Store Name" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
-                <FormItem><FormLabel>Wellness Type</FormLabel>
+                <FormItem><FormLabel>Store Type</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -419,13 +419,13 @@ export default function WellnessSignupPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
             <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Wellness Location / Address</FormLabel>
+              <FormItem><FormLabel>Store Location / Address</FormLabel>
                 <FormControl><Input placeholder="e.g. 123 Main St, Anytown" {...field} ref={locationInputRef} /></FormControl>
                 <FormDescription>Start typing your address. Select from suggestions to pinpoint on map.</FormDescription><FormMessage />
               </FormItem>
             )} />
             <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm" />
-            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with wellness type.</FormDescription>
+            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with store type.</FormDescription>
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             
@@ -525,27 +525,27 @@ export default function WellnessSignupPage() {
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
+                <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your store only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>What type of orders will you fulfill?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
 
             <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in product sharing with other wellness entities?</FormLabel>
+              <FormItem><FormLabel>Participate in product sharing with other wellness stores?</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
                   <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
-                <FormDescription>Allows sharing products with wellness entities of the same type.</FormDescription><FormMessage /></FormItem>)} />
+                <FormDescription>Allows sharing products with other wellness stores of the same type.</FormDescription><FormMessage /></FormItem>)} />
 
             {form.watch("participateSharing") === "yes" && (
               <FormField control={form.control} name="leadTime" render={({ field }) => (
                 <FormItem><FormLabel>Lead time to transfer products</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl>
                     <SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                  <FormDescription>Time needed to get products to other wellness entities in your country.</FormDescription><FormMessage /></FormItem>)} />)}
+                  <FormDescription>Time needed to get products to other wellness stores in your country.</FormDescription><FormMessage /></FormItem>)} />)}
 
             <FormField control={form.control} name="message" render={({ field }) => (
-              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness entity..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness store..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
 
             <FormField control={form.control} name="acceptTerms" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0">
@@ -567,4 +567,3 @@ export default function WellnessSignupPage() {
     </Card>
   );
 }
-

@@ -80,7 +80,7 @@ export default function AdminProductPoolPage() {
     },
     {
       accessorKey: "dispensaryName",
-      header: "Wellness Name",
+      header: "Store Name",
     },
     {
       accessorKey: "category",
