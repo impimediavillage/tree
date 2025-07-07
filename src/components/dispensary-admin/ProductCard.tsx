@@ -90,6 +90,7 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
 
   const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
+  const tierUnit = firstPriceTier?.unit;
   const dataAiHintProduct = `product ${product.category} ${product.name.split(" ")[0] || ""}`;
   
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
@@ -187,7 +188,7 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
         </CardContent>
         <CardFooter className="flex gap-2 border-t pt-3 mt-auto">
           <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link href={`/dispensary-admin/products/edit/${product.id}`}>
+            <Link href={`/dispensary-admin/products/edit/${product.id}${tierUnit ? `?unit=${encodeURIComponent(tierUnit)}` : ''}`}>
               <Edit className="mr-1.5 h-4 w-4" /> Edit
             </Link>
           </Button>

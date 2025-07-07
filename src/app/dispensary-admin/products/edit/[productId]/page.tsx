@@ -1,18 +1,18 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, ProductAttribute } from '@/types';
+import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, ProductAttribute, PriceTier } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -176,7 +176,9 @@ export default function EditProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const productId = params.productId as string;
+  const unitToEdit = searchParams.get('unit');
   const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -248,10 +250,10 @@ export default function EditProductPage() {
     control: form.control, name: "medicalUses",
   });
   
+  const [showProductDetailsForm, setShowProductDetailsForm] = useState(false);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
-  const [showProductDetailsForm, setShowProductDetailsForm] = useState(false);
 
   const determineProductStream = (product: ProductType | null): StreamKey | null => {
     if (!product || !product.category) return null;
@@ -440,50 +442,51 @@ export default function EditProductPage() {
           setIsLoadingInitialData(false); 
           return;
         }
-        setExistingProduct(productData);
-        setStrainQuery(productData.strain || '');
+
         const initialStream = determineProductStream(productData);
         setSelectedProductStream(initialStream);
 
+        let formInitialData = { ...productData };
+        if (unitToEdit) {
+            const tierToEdit = productData.priceTiers?.find(t => t.unit === unitToEdit);
+            const poolTierToEdit = productData.poolPriceTiers?.find(t => t.unit === unitToEdit);
+            formInitialData.priceTiers = tierToEdit ? [tierToEdit] : [];
+            formInitialData.poolPriceTiers = poolTierToEdit ? [poolTierToEdit] : [];
+        }
+
+        setExistingProduct(productData);
+        setStrainQuery(productData.strain || '');
+        
         form.reset({
-          name: productData.name,
-          description: productData.description,
-          category: productData.category,
-          subcategory: productData.subcategory || null,
-          subSubcategory: productData.subSubcategory || null,
-          productType: productData.productType || '',
-          mostCommonTerpene: productData.mostCommonTerpene || '',
-          strain: productData.strain || '',
-          thcContent: productData.thcContent ?? '',
-          cbdContent: productData.cbdContent ?? '',
-          effects: productData.effects || [],
-          flavors: productData.flavors || [],
-          medicalUses: productData.medicalUses || [],
-          gender: productData.gender || null,
-          sizingSystem: productData.sizingSystem || null,
-          sizes: productData.sizes || [],
-          currency: productData.currency || (fetchedWellness ? fetchedWellness.currency : 'ZAR'),
-          priceTiers: productData.priceTiers && productData.priceTiers.length > 0 ? productData.priceTiers : [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
-          poolPriceTiers: productData.poolPriceTiers || [],
-          quantityInStock: productData.quantityInStock ?? undefined,
-          imageUrls: productData.imageUrls || [],
-          labTested: productData.labTested || false,
-          labTestReportUrl: productData.labTestReportUrl || null,
-          isAvailableForPool: productData.isAvailableForPool || false,
-          tags: productData.tags || [],
-          stickerProgramOptIn: productData.stickerProgramOptIn || null,
+          name: formInitialData.name,
+          description: formInitialData.description,
+          category: formInitialData.category,
+          subcategory: formInitialData.subcategory || null,
+          subSubcategory: formInitialData.subSubcategory || null,
+          productType: formInitialData.productType || '',
+          mostCommonTerpene: formInitialData.mostCommonTerpene || '',
+          strain: formInitialData.strain || '',
+          thcContent: formInitialData.thcContent ?? '',
+          cbdContent: formInitialData.cbdContent ?? '',
+          effects: formInitialData.effects || [],
+          flavors: formInitialData.flavors || [],
+          medicalUses: formInitialData.medicalUses || [],
+          gender: formInitialData.gender || null,
+          sizingSystem: formInitialData.sizingSystem || null,
+          sizes: formInitialData.sizes || [],
+          currency: formInitialData.currency || (fetchedWellness ? fetchedWellness.currency : 'ZAR'),
+          priceTiers: formInitialData.priceTiers && formInitialData.priceTiers.length > 0 ? formInitialData.priceTiers : [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
+          poolPriceTiers: formInitialData.poolPriceTiers || [],
+          quantityInStock: formInitialData.quantityInStock ?? undefined,
+          imageUrls: formInitialData.imageUrls || [],
+          labTested: formInitialData.labTested || false,
+          labTestReportUrl: formInitialData.labTestReportUrl || null,
+          isAvailableForPool: formInitialData.isAvailableForPool || false,
+          tags: formInitialData.tags || [],
+          stickerProgramOptIn: formInitialData.stickerProgramOptIn || null,
         });
+
         setExistingLabReportUrl(productData.labTestReportUrl || null);
-        if (productData.priceTiers && productData.priceTiers.length > 0) {
-            replacePriceTiers(productData.priceTiers);
-        } else {
-            replacePriceTiers([{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }]);
-        }
-        if (productData.poolPriceTiers && productData.poolPriceTiers.length > 0) {
-            replacePoolPriceTiers(productData.poolPriceTiers);
-        } else {
-            replacePoolPriceTiers([]);
-        }
         setExistingImageUrls(productData.imageUrls || []);
         
         if (isSpecialType && initialStream && localCategoryStructureObject) {
@@ -517,7 +520,6 @@ export default function EditProductPage() {
           setAvailableStandardSizes(sizes);
         }
 
-
       } else { 
         toast({ title: "Error", description: "Product not found.", variant: "destructive" }); 
         router.push("/dispensary-admin/products");
@@ -528,7 +530,7 @@ export default function EditProductPage() {
     } finally {
       setIsLoadingInitialData(false);
     }
-  }, [currentUser?.dispensaryId, productId, router, toast, form, replacePriceTiers, replacePoolPriceTiers]);
+  }, [currentUser?.dispensaryId, productId, router, toast, form, unitToEdit]);
 
 
   useEffect(() => {
@@ -669,143 +671,142 @@ export default function EditProductPage() {
     }
   };
 
-  const onSubmit = async (data: ProductFormData) => {
-    if (!currentUser?.dispensaryId || !wellnessData || !existingProduct?.id) {
-      toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" });
-      return;
-    }
-    if (!data.category || data.category.trim() === "") {
-        toast({ title: "Category Required", description: "Please select or enter a main product category.", variant: "destructive"});
-        setError("category", { type: "manual", message: "Category is required." }); 
-        return;
-    }
+  const onSubmit = useCallback(async (data: ProductFormData) => {
+      if (!currentUser?.dispensaryId || !existingProduct?.id) {
+          toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" });
+          return;
+      }
+      if (!data.category || data.category.trim() === "") {
+          setError("category", { type: "manual", message: "Category is required." }); 
+          toast({ title: "Category Required", description: "Please select or enter a main product category.", variant: "destructive"});
+          return;
+      }
+      if (data.labTested && !labTestFile && !existingLabReportUrl) {
+          toast({ title: "Lab Report Required", description: "Please upload a lab test report image.", variant: "destructive" });
+          return;
+      }
 
-    if (data.labTested && !labTestFile && !existingLabReportUrl) {
-        toast({ title: "Lab Report Required", description: "Please upload a lab test report image.", variant: "destructive" });
-        return;
-    }
+      setIsLoading(true);
+      let finalImageUrls = [...existingImageUrls];
+      let finalLabReportUrl = existingLabReportUrl;
 
-    setIsLoading(true);
-    let finalImageUrls = [...existingImageUrls];
-    let finalLabReportUrl = existingLabReportUrl;
+      if (files.length > 0) {
+          const uploadPromises = files.map(file => {
+              const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${file.name}`;
+              const fileStorageRef = storageRef(storage, filePath);
+              const uploadTask = uploadBytesResumable(fileStorageRef, file);
+              return new Promise<string>((resolve, reject) => {
+                  uploadTask.on('state_changed', null, reject,
+                      async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+                  );
+              });
+          });
 
-    if (files.length > 0) {
-        const uploadPromises = files.map(file => {
-            const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${file.name}`;
-            const fileStorageRef = storageRef(storage, filePath);
-            const uploadTask = uploadBytesResumable(fileStorageRef, file);
-            return new Promise<string>((resolve, reject) => {
-                uploadTask.on('state_changed', null, reject,
-                    async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
-                );
-            });
-        });
+          try {
+              toast({ title: `Uploading ${files.length} new image(s)...`, variant: "default" });
+              const newUploadedUrls = await Promise.all(uploadPromises);
+              finalImageUrls.push(...newUploadedUrls);
+              toast({ title: "Upload Complete!", variant: "default" });
+          } catch (error) {
+              console.error("Image upload failed:", error);
+              toast({ title: "Image Upload Failed", variant: "destructive" });
+              setIsLoading(false);
+              return;
+          }
+      }
 
+      if (deletedImageUrls.length > 0) {
+          const deletePromises = deletedImageUrls.map(url => {
+              if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
+                  return deleteObject(storageRef(storage, url)).catch(e => {
+                      if (e.code !== 'storage/object-not-found') console.warn(`Failed to delete old image: ${url}`, e);
+                  });
+              }
+              return Promise.resolve();
+          });
+          await Promise.all(deletePromises);
+      }
+
+      if (labTestFile) {
         try {
-            toast({ title: `Uploading ${files.length} new image(s)...`, variant: "default" });
-            const newUploadedUrls = await Promise.all(uploadPromises);
-            finalImageUrls.push(...newUploadedUrls);
-            toast({ title: "Upload Complete!", variant: "default" });
+          toast({ title: "Uploading Lab Report...", variant: "default" });
+          const filePath = `dispensary-products/${currentUser.dispensaryId}/lab-reports/${Date.now()}_${labTestFile.name}`;
+          const fileStorageRef = storageRef(storage, filePath);
+          const uploadTask = uploadBytesResumable(fileStorageRef, labTestFile);
+          finalLabReportUrl = await new Promise<string>((resolve, reject) => {
+            uploadTask.on('state_changed', null, reject,
+              async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+            );
+          });
+          if (existingLabReportUrl && existingLabReportUrl.startsWith('https://firebasestorage.googleapis.com')) {
+            await deleteObject(storageRef(storage, existingLabReportUrl)).catch(e => console.warn("Old lab report delete failed:", e));
+          }
         } catch (error) {
-            console.error("Image upload failed:", error);
-            toast({ title: "Image Upload Failed", variant: "destructive" });
-            setIsLoading(false);
-            return;
+          console.error("Lab report upload failed:", error);
+          toast({ title: "Lab Report Upload Failed", variant: "destructive" });
+          setIsLoading(false);
+          return;
         }
-    }
-
-     if (deletedImageUrls.length > 0) {
-        const deletePromises = deletedImageUrls.map(url => {
-            if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
-                return deleteObject(storageRef(storage, url)).catch(e => {
-                    if (e.code !== 'storage/object-not-found') console.warn(`Failed to delete old image: ${url}`, e);
-                });
-            }
-            return Promise.resolve();
-        });
-        await Promise.all(deletePromises);
-    }
-
-    if (labTestFile) {
+      } else if (!data.labTested && existingLabReportUrl) {
+        try {
+          await deleteObject(storageRef(storage, existingLabReportUrl));
+          finalLabReportUrl = null;
+        } catch (e: any) {
+          if (e.code !== 'storage/object-not-found') console.warn("Old lab report delete failed:", e);
+        }
+      }
+      
       try {
-        toast({ title: "Uploading Lab Report...", variant: "default" });
-        const filePath = `dispensary-products/${currentUser.dispensaryId}/lab-reports/${Date.now()}_${labTestFile.name}`;
-        const fileStorageRef = storageRef(storage, filePath);
-        const uploadTask = uploadBytesResumable(fileStorageRef, labTestFile);
-        finalLabReportUrl = await new Promise<string>((resolve, reject) => {
-          uploadTask.on('state_changed', null, reject,
-            async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
-          );
-        });
-        // If a new report is uploaded, delete the old one if it exists
-        if (existingLabReportUrl && existingLabReportUrl.startsWith('https://firebasestorage.googleapis.com')) {
-          await deleteObject(storageRef(storage, existingLabReportUrl)).catch(e => console.warn("Old lab report delete failed:", e));
-        }
+          const productDocRef = doc(db, "products", existingProduct.id);
+          
+          const productDataToUpdate = { ...existingProduct };
+          
+          // Merge form data into the existing product data clone
+          Object.assign(productDataToUpdate, data);
+          
+          if (unitToEdit) {
+              const editedTier = data.priceTiers?.[0];
+              if (editedTier) {
+                  const tierIndex = productDataToUpdate.priceTiers.findIndex(t => t.unit === unitToEdit);
+                  if (tierIndex !== -1) {
+                      productDataToUpdate.priceTiers[tierIndex] = editedTier;
+                  } else {
+                      productDataToUpdate.priceTiers.push(editedTier);
+                  }
+              }
+
+              const editedPoolTier = data.poolPriceTiers?.[0];
+              if (editedPoolTier) {
+                  if (!productDataToUpdate.poolPriceTiers) productDataToUpdate.poolPriceTiers = [];
+                  const poolTierIndex = productDataToUpdate.poolPriceTiers.findIndex(t => t.unit === unitToEdit);
+                  if (poolTierIndex !== -1) {
+                      productDataToUpdate.poolPriceTiers[poolTierIndex] = editedPoolTier;
+                  } else {
+                      productDataToUpdate.poolPriceTiers.push(editedPoolTier);
+                  }
+              }
+          }
+
+          const totalStock = productDataToUpdate.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
+
+          const finalUpdateData = {
+            ...productDataToUpdate,
+            imageUrls: finalImageUrls,
+            labTestReportUrl: data.labTested ? finalLabReportUrl : null,
+            quantityInStock: totalStock,
+            updatedAt: serverTimestamp() as any,
+          };
+          
+          await updateDoc(productDocRef, finalUpdateData as { [x: string]: any });
+          toast({ title: "Product Updated!", description: `${data.name} has been successfully updated.` });
+          router.push('/dispensary-admin/products');
       } catch (error) {
-        console.error("Lab report upload failed:", error);
-        toast({ title: "Lab Report Upload Failed", variant: "destructive" });
-        setIsLoading(false);
-        return;
+        toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
+        console.error("Error updating product:", error);
+      } finally { 
+        setIsLoading(false); 
       }
-    } else if (!data.labTested && existingLabReportUrl) {
-      // If checkbox is unchecked, delete the existing report
-      try {
-        await deleteObject(storageRef(storage, existingLabReportUrl));
-        finalLabReportUrl = null;
-      } catch (e: any) {
-        if (e.code !== 'storage/object-not-found') console.warn("Old lab report delete failed:", e);
-      }
-    }
-    
-    try {
-      const productDocRef = doc(db, "products", existingProduct.id);
-      
-      const totalStock = data.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
-      
-      const productUpdateData: Partial<ProductType> = {
-          ...data,
-          imageUrls: finalImageUrls,
-          labTestReportUrl: data.labTested ? finalLabReportUrl : null,
-          priceTiers: data.priceTiers.filter(tier => tier.unit && tier.price > 0),
-          poolPriceTiers: data.isAvailableForPool ? (data.poolPriceTiers?.filter(tier => tier.unit && tier.price > 0) || []) : [],
-          quantityInStock: totalStock,
-          updatedAt: serverTimestamp() as any,
-      };
-
-      if (selectedProductStream !== 'THC' && selectedProductStream !== 'CBD') {
-        productUpdateData.strain = null;
-        productUpdateData.thcContent = null;
-        productUpdateData.cbdContent = null;
-        productUpdateData.effects = [];
-        productUpdateData.flavors = [];
-        productUpdateData.medicalUses = [];
-        productUpdateData.stickerProgramOptIn = null;
-        productUpdateData.productType = '';
-        productUpdateData.mostCommonTerpene = '';
-      }
-
-      if (selectedProductStream !== 'Apparel') {
-        productUpdateData.gender = null;
-        productUpdateData.sizingSystem = null;
-        productUpdateData.sizes = [];
-      }
-
-      if (selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') {
-          productUpdateData.subcategory = null;
-          productUpdateData.subSubcategory = null;
-      }
-
-      if (!data.subcategory) productUpdateData.subcategory = null;
-      if (!data.subSubcategory) productUpdateData.subSubcategory = null;
-
-      await updateDoc(productDocRef, productUpdateData as { [x: string]: any });
-      toast({ title: "Product Updated!", description: `${data.name} has been successfully updated.` });
-      router.push('/dispensary-admin/products');
-    } catch (error) {
-      toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
-      console.error("Error updating product:", error);
-    } finally { setIsLoading(false); }
-  };
+  }, [currentUser, existingProduct, productId, files, deletedImageUrls, labTestFile, existingImageUrls, existingLabReportUrl, router, toast, setError, unitToEdit]);
   
   if (authLoading || isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
@@ -1176,14 +1177,14 @@ export default function EditProductPage() {
                                     <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field }) => ( <FormItem><FormLabel>Stock Qty</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
-                                {priceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 mt-6"><Trash2 className="h-5 w-5" /></Button> )}
+                                {priceTierFields.length > 1 && !unitToEdit && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="text-destructive hover:bg-destructive/10 mt-6"><Trash2 className="h-5 w-5" /></Button> )}
                             </div>
                             {(form.watch(`priceTiers.${index}.unit`) === 'pack' || form.watch(`priceTiers.${index}.unit`) === 'box') && (
                                 <FormField control={form.control} name={`priceTiers.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Pack/Box Description</FormLabel><FormControl><Input placeholder="e.g., Pack of 10 pre-rolls" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
                             )}
                         </div>
                     ))}
-                    <Button type="button" variant="outline" onClick={() => appendPriceTier({ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Price Tier</Button>
+                    {!unitToEdit && <Button type="button" variant="outline" onClick={() => appendPriceTier({ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Price Tier</Button>}
                     <FormMessage>{form.formState.errors.priceTiers?.root?.message || form.formState.errors.priceTiers?.message}</FormMessage>
                 </div>
                 
@@ -1205,14 +1206,14 @@ export default function EditProductPage() {
                                     <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field }) => ( <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field }) => ( <FormItem><FormLabel>Stock Qty</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                 </div>
-                                {poolPriceTierFields.length > 1 && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="text-destructive hover:bg-destructive/10 mt-6"><Trash2 className="h-5 w-5" /></Button> )}
+                                {poolPriceTierFields.length > 1 && !unitToEdit && ( <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="text-destructive hover:bg-destructive/10 mt-6"><Trash2 className="h-5 w-5" /></Button> )}
                             </div>
                             {(form.watch(`poolPriceTiers.${index}.unit`) === 'pack' || form.watch(`poolPriceTiers.${index}.unit`) === 'box') && (
                                 <FormField control={form.control} name={`poolPriceTiers.${index}.description`} render={({ field }) => ( <FormItem><FormLabel>Pack/Box Description</FormLabel><FormControl><Input placeholder="e.g., Pack of 10 seeds, Box of 100g bags" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )}/>
                             )}
                         </div>
                     ))}
-                    <Button type="button" variant="outline" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any, description: '', quantityInStock: undefined as any })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier</Button>
+                    {!unitToEdit && <Button type="button" variant="outline" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any, description: '', quantityInStock: undefined as any })} className="mt-2"><PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier</Button>}
                     <FormMessage>{form.formState.errors.poolPriceTiers?.root?.message || form.formState.errors.poolPriceTiers?.message}</FormMessage>
                 </div>
                 )}
