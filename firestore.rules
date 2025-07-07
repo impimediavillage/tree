@@ -1,47 +1,97 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Default deny all reads and writes
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper functions to check user roles from the /users collection
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+    
+    function isDispensaryOwner(dispensaryId) {
+      // Check if the user is a dispensary owner AND if they own the specific dispensary
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userDoc.role == 'DispensaryOwner' && userDoc.dispensaryId == dispensaryId;
+    }
+    
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Allow admins to write to admin-only collections
-    match /scrapeLogs/{logId} {
-      allow read, write: if request.auth.token.admin == true;
-    }
-    match /importsHistory/{historyId} {
-      allow read, write: if request.auth.token.admin == true;
-    }
-    
-    // Public read for the scraped catalog and approved dispensaries
-    match /justbrand_catalog/{categoryId} {
+    // Publicly readable collections
+    match /dispensaryTypes/{typeId} {
       allow read: if true;
-      match /products/{productId} {
-        allow read: if true;
-      }
+      allow write: if isSuperAdmin();
     }
-    
+
     match /dispensaries/{dispensaryId} {
-      // Public can read approved dispensary profiles
-      allow read: if resource.data.status == 'Approved';
-      // Admins can write
-      allow write: if request.auth.token.admin == true;
+      allow read: if true;
+      // Allow update by the assigned owner or a super admin
+      allow write: if isDispensaryOwner(dispensaryId) || isSuperAdmin();
     }
     
-    // Users can read/update their own user document
+    match /products/{productId} {
+      allow read: if true;
+      // Allow write by the owner of the product's dispensary or a super admin
+      allow write: if isDispensaryOwner(resource.data.dispensaryId) || isSuperAdmin();
+    }
+    
+    match /creditPackages/{packageId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // User-specific data
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      // Admins can do anything
-      allow read, write: if request.auth.token.admin == true;
+      // Admins can list all users. Users can get their own data.
+      allow get: if request.auth.uid == userId || isSuperAdmin();
+      allow list: if isSuperAdmin();
+      // Users can create their own document on signup.
+      allow create: if request.auth.uid == userId;
+      // Users can update their own doc, and admins can update any user doc.
+      allow update: if request.auth.uid == userId || isSuperAdmin();
+      // Only admins can delete users.
+      allow delete: if isSuperAdmin();
     }
     
-    // Allow anyone to submit a dispensary application (create only)
-    match /dispensaries/{dispensaryId} {
-       allow create: if true;
+    match /aiInteractionsLog/{logId} {
+      // A user can read their own logs, and admins can read any.
+      allow read: if request.auth.uid == resource.data.userId || isSuperAdmin();
+      // Assume logs are created by a trusted server process (functions), not directly by clients.
+      allow write: if false; 
+    }
+    
+    match /notifications/{notificationId} {
+      allow read: if request.auth.uid == resource.data.recipientUid || isSuperAdmin();
+       // Assume notifications are created by functions, but allow admin write for management.
+      allow write: if isSuperAdmin();
+    }
+
+    // Authenticated user accessible collections
+    match /productRequests/{requestId} {
+      allow read, write: if isAuthenticated(); // For simplicity, any auth'd user can make/read requests
+    }
+
+    match /poolIssues/{issueId} {
+      allow read, write: if isAuthenticated(); // For simplicity, any auth'd user can read/report issues
+    }
+
+    // Admin-only collections for scraped data and logs
+    match /scrapeLogs/{logId} {
+      allow read, write: if isSuperAdmin();
+    }
+    
+    match /importsHistory/{historyId} {
+      allow read, write: if isSuperAdmin();
+    }
+     
+    match /justbrand_catalog/{docId}/{document=**} {
+      allow read: if isAuthenticated(); // Allow any signed-in user to read catalog
+      allow write: if isSuperAdmin(); // Only admin can write to catalog
+    }
+    
+     match /my-seeded-collection/{docId}/{document=**} {
+      allow read: if isAuthenticated(); // Allow any signed-in user to read catalog
+      allow write: if isSuperAdmin(); // Only admin can write to catalog
     }
   }
 }
