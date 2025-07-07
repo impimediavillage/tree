@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scrapeJustBrandCatalog = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.scrapeJustBrandCatalog = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onUserDocUpdate = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
@@ -63,7 +63,27 @@ const db = admin.firestore();
 mail_1.default.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@example.com";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:9002"; // For generating public URLs
-// ... [ All existing functions: sendDispensaryNotificationEmail, generateHtmlEmail, onLeafUserCreated, onDispensaryCreated, onDispensaryUpdate, onProductRequestCreated, onProductRequestUpdated, onPoolIssueCreated, deductCreditsAndLogInteraction, removeDuplicateStrains, findAndFixStrainImages ]
+// Helper function to sync a user's role from their Firestore doc to their Auth custom claims
+const setClaimsFromDoc = async (userId, userData) => {
+    if (!userData) {
+        logger.warn(`No user data provided for ${userId}, cannot set claims.`);
+        return;
+    }
+    try {
+        const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
+        const newClaims = { role: userData.role || null };
+        // Avoid unnecessary updates if claims are identical
+        if (currentClaims.role === newClaims.role) {
+            logger.log(`Claims for user ${userId} are already up-to-date.`);
+            return;
+        }
+        await admin.auth().setCustomUserClaims(userId, newClaims);
+        logger.info(`Successfully set custom claims for user ${userId}:`, newClaims);
+    }
+    catch (error) {
+        logger.error(`Error setting custom claims for ${userId}:`, error);
+    }
+};
 /**
  * Sends a notification email using SendGrid.
  */
@@ -130,16 +150,18 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
 }
 /**
  * Cloud Function triggered when a new Leaf User document is created.
- * Sends a "Welcome" email to the new Leaf User, unless they signed up publicly.
+ * Sends a "Welcome" email and syncs claims.
  */
 exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", async (event) => {
     const snapshot = event.data;
     if (!snapshot) {
         logger.error("No data associated with the user creation event.");
-        return null;
+        return;
     }
     const userData = snapshot.data();
     const userId = event.params.userId;
+    // Set custom claims for the new user
+    await setClaimsFromDoc(userId, userData);
     // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
         logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
@@ -162,7 +184,17 @@ exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}",
     else {
         logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
-    return null;
+});
+/**
+ * NEW: Trigger to sync user roles from Firestore to Auth claims on document update.
+ */
+exports.onUserDocUpdate = (0, firestore_1.onDocumentUpdated)("users/{userId}", async (event) => {
+    if (!event.data) {
+        logger.warn(`No data in user update event for ${event.params.userId}`);
+        return;
+    }
+    logger.log(`User document updated for ${event.params.userId}. Re-syncing claims.`);
+    await setClaimsFromDoc(event.params.userId, event.data.after.data());
 });
 /**
  * Cloud Function triggered when a new dispensary document is created.
@@ -258,12 +290,7 @@ exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{d
         }
         const userId = userRecord.uid;
         try {
-            await admin.auth().setCustomUserClaims(userId, {
-                role: "DispensaryOwner",
-                dispensaryId: dispensaryId,
-            });
-            logger.info(`Custom claims set for user ${userId}: role=DispensaryOwner, dispensaryId=${dispensaryId}`);
-            const userDocRef = db.collection("users").doc(userId);
+            const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
             const firestoreUserDataUpdate = {
                 uid: userId, email: ownerEmail, displayName: ownerDisplayName,
                 role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
@@ -275,8 +302,9 @@ exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{d
                 firestoreUserDataUpdate.createdAt = admin.firestore.FieldValue.serverTimestamp();
                 firestoreUserDataUpdate.credits = 100; // Default credits for new owner
             }
+            // Setting the user doc will trigger onUserDocCreate or onUserDocUpdate to set the claims
             await userDocRef.set(firestoreUserDataUpdate, { merge: true });
-            logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+            logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by trigger.`);
             const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
             await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
             logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
@@ -685,8 +713,12 @@ exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (r
  * This function is secured and can only be called by an authenticated admin user.
  */
 exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    if (!request.auth || request.auth.token.admin !== true) {
-        throw new https_1.HttpsError('permission-denied', 'You must be an admin to run this operation.');
+    // Check if the user is authenticated and has the 'Super Admin' role or 'admin' claim.
+    const isSuperAdmin = request.auth?.token?.role === 'Super Admin';
+    const isAdminClaim = request.auth?.token?.admin === true;
+    if (!isSuperAdmin && !isAdminClaim) {
+        // Throw a specific error that the client can understand.
+        throw new https_1.HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
     }
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
     const logRef = db.collection('scrapeLogs').doc(runId);

@@ -9,12 +9,10 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onRequest, Request } from "firebase-functions/v2/https";
+import { onRequest, Request, onCall, HttpsError } from "firebase-functions/v2/https";
 import type { Response } from "express";
 
-// Import the JSON data directly.
-// Make sure the path is relative to this index.ts file.
-import seedData from './data/seed-data.json';
+// Import types
 import type {
   DispensaryDocData,
   ProductRequestDocData,
@@ -23,7 +21,10 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
+
 /**
  * Custom error class for HTTP functions to propagate status codes.
  */
@@ -42,6 +43,31 @@ const db = admin.firestore();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@example.com";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:9002"; // For generating public URLs
+
+
+// Helper function to sync a user's role from their Firestore doc to their Auth custom claims
+const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefined) => {
+  if (!userData) {
+    logger.warn(`No user data provided for ${userId}, cannot set claims.`);
+    return;
+  }
+  
+  try {
+    const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
+    const newClaims = { role: userData.role || null };
+
+    // Avoid unnecessary updates if claims are identical
+    if (currentClaims.role === newClaims.role) {
+      logger.log(`Claims for user ${userId} are already up-to-date.`);
+      return;
+    }
+  
+    await admin.auth().setCustomUserClaims(userId, newClaims);
+    logger.info(`Successfully set custom claims for user ${userId}:`, newClaims);
+  } catch (error) {
+    logger.error(`Error setting custom claims for ${userId}:`, error);
+  }
+};
 
 
 /**
@@ -121,7 +147,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
 
 /**
  * Cloud Function triggered when a new Leaf User document is created.
- * Sends a "Welcome" email to the new Leaf User, unless they signed up publicly.
+ * Sends a "Welcome" email and syncs claims.
  */
 export const onLeafUserCreated = onDocumentCreated(
   "users/{userId}",
@@ -129,10 +155,13 @@ export const onLeafUserCreated = onDocumentCreated(
     const snapshot = event.data;
     if (!snapshot) {
       logger.error("No data associated with the user creation event.");
-      return null;
+      return;
     }
     const userData = snapshot.data() as UserDocData;
     const userId = event.params.userId;
+    
+    // Set custom claims for the new user
+    await setClaimsFromDoc(userId, userData);
 
     // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
@@ -156,9 +185,20 @@ export const onLeafUserCreated = onDocumentCreated(
     } else {
       logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
-    return null;
   }
 );
+
+/**
+ * NEW: Trigger to sync user roles from Firestore to Auth claims on document update.
+ */
+export const onUserDocUpdate = onDocumentUpdated("users/{userId}", async (event) => {
+  if (!event.data) {
+    logger.warn(`No data in user update event for ${event.params.userId}`);
+    return;
+  }
+  logger.log(`User document updated for ${event.params.userId}. Re-syncing claims.`);
+  await setClaimsFromDoc(event.params.userId, event.data.after.data() as UserDocData);
+});
 
 
 /**
@@ -273,28 +313,23 @@ export const onDispensaryUpdate = onDocumentUpdated(
       const userId = userRecord.uid;
 
       try {
-        await admin.auth().setCustomUserClaims(userId, {
-          role: "DispensaryOwner",
-          dispensaryId: dispensaryId,
-        });
-        logger.info(`Custom claims set for user ${userId}: role=DispensaryOwner, dispensaryId=${dispensaryId}`);
-
-        const userDocRef = db.collection("users").doc(userId);
+        const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
         const firestoreUserDataUpdate: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
             photoURL: userRecord.photoURL || null,
-            lastLoginAt: admin.firestore.FieldValue.serverTimestamp() as FirebaseFirestore.Timestamp,
+            lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
-            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp() as FirebaseFirestore.Timestamp;
+            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
             (firestoreUserDataUpdate as UserDocData).credits = 100; // Default credits for new owner
         }
         
+        // Setting the user doc will trigger onUserDocCreate or onUserDocUpdate to set the claims
         await userDocRef.set(firestoreUserDataUpdate, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by trigger.`);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -804,93 +839,116 @@ export const removeDuplicateStrains = onRequest(
   }
 );
 
+/**
+ * Callable function to scrape the JustBrand.co.za catalog.
+ * This function is secured and can only be called by an authenticated admin user.
+ */
+export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
+    // Check if the user is authenticated and has the 'Super Admin' role or 'admin' claim.
+    const isSuperAdmin = request.auth?.token?.role === 'Super Admin';
+    const isAdminClaim = request.auth?.token?.admin === true;
 
-async function copyDocumentContent(
-  req: Request,
-  res: Response,
-  collectionName: string,
-  sourceDocId: string,
-  newDocId: string
-) {
-  try {
-    const sourceDocRef = db.collection(collectionName).doc(sourceDocId);
-    const newDocRef = db.collection(collectionName).doc(newDocId);
-
-    const sourceDoc = await sourceDocRef.get();
-    if (!sourceDoc.exists) {
-      res.status(404).send({ success: false, message: `Source document '${sourceDocId}' not found in '${collectionName}'.` });
-      return;
+    if (!isSuperAdmin && !isAdminClaim) {
+        // Throw a specific error that the client can understand.
+        throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
     }
 
-    const dataToCopy = sourceDoc.data();
-    if (!dataToCopy) {
-        res.status(404).send({ success: false, message: `Source document '${sourceDocId}' has no data.` });
-        return;
-    }
+    const runId = new Date().toISOString().replace(/[:.]/g, '-');
+    const logRef = db.collection('scrapeLogs').doc(runId);
+    // Corrected historyRef path
+    const historyRef = db.collection('importsHistory').doc(runId);
 
-    await newDocRef.set(dataToCopy);
-    logger.info(`Successfully copied content from '${sourceDocId}' to '${newDocId}' in collection '${collectionName}'.`);
-    
-  } catch (error: any) {
-    logger.error(`Error copying document from '${sourceDocId}' to '${newDocId}':`, error);
-    res.status(500).send({ success: false, message: 'An error occurred during the copy process.', error: error.message });
-  }
-}
+    const logMessages: string[] = [];
+    const log = (message: string) => {
+        logger.info(`[${runId}] ${message}`);
+        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    };
 
-export const seedThcCategories = onRequest({ cors: true }, async (req, res) => {
-    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "THC - CBD - Mushrooms dispensary", "Cannibinoid store");
-    res.status(200).send({ success: true, message: "THC categories seeded successfully to 'Cannibinoid store'." });
-});
-
-export const seedMushroomCategories = onRequest({ cors: true }, async (req, res) => {
-    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Mushroom dispensary", "Mushroom store");
-    res.status(200).send({ success: true, message: "Mushroom categories seeded successfully to 'Mushroom store'." });
-});
-
-export const seedHomeopathicCategories = onRequest({ cors: true }, async (req, res) => {
-    await copyDocumentContent(req, res, "dispensaryTypeProductCategories", "Homeopathic dispensary", "Homeopathic store");
-    res.status(200).send({ success: true, message: "Homeopathic categories seeded successfully to 'Homeopathic store'." });
-});
-
-
-export const seedLargeCollection = onRequest(
-  {
-    timeoutSeconds: 540,
-    memory: '1GiB'
-  },
-  async (req: Request, res: Response) => {
     try {
-      const collectionRef = db.collection("my-seeded-collection");
-      const batchSize = 499; 
-      let totalSeeded = 0;
+        log('ScrapeJustBrandCatalog function triggered by admin.');
+        await logRef.set({
+            status: 'started',
+            startTime: admin.firestore.FieldValue.serverTimestamp(),
+            messages: logMessages,
+            itemCount: 0,
+            successCount: 0,
+            failCount: 0,
+        } as ScrapeLog);
 
-      for (let i = 0; i < seedData.length; i += batchSize) {
-        const batch = db.batch();
-        const batchData = seedData.slice(i, i + batchSize);
+        const catalog = await runScraper(log);
+
+        let totalProducts = 0;
+        let batch = db.batch();
+        let operationCount = 0;
+        const MAX_OPS_PER_BATCH = 499;
+
+        for (const category of catalog) {
+            totalProducts += category.products.length;
+            
+            // Create a document for the category itself (without the products array)
+            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
+            const { products, ...categoryData } = category;
+            batch.set(categoryRef, { ...categoryData, productCount: products.length });
+            operationCount++;
+
+            if (operationCount >= MAX_OPS_PER_BATCH) {
+                await batch.commit();
+                log(`Committed batch of ${operationCount} operations.`);
+                batch = db.batch();
+                operationCount = 0;
+            }
+
+            // Create a document for each product in a subcollection
+            for (const product of products) {
+                if (product.handle) {
+                    const productRef = categoryRef.collection('products').doc(product.handle);
+                    batch.set(productRef, product);
+                    operationCount++;
+
+                    if (operationCount >= MAX_OPS_PER_BATCH) {
+                        await batch.commit();
+                        log(`Committed batch of ${operationCount} operations.`);
+                        batch = db.batch();
+                        operationCount = 0;
+                    }
+                } else {
+                    log(`Skipping product with no handle in category: ${category.name}`);
+                }
+            }
+        }
+
+        if (operationCount > 0) {
+            await batch.commit();
+            log(`Committed final batch of ${operationCount} operations.`);
+        }
         
-        batchData.forEach((docData) => {
-          const docRef = collectionRef.doc(); // Auto-generate ID
-          batch.set(docRef, docData);
-        });
-
-        await batch.commit();
-        totalSeeded += batchData.length;
-        logger.info(`Seeded batch of ${batchData.length} documents. Total seeded: ${totalSeeded}`);
-      }
-
-      logger.info(`Successfully seeded ${totalSeeded} documents into 'my-seeded-collection'.`);
-      res.status(200).send({
-        success: true,
-        message: `Successfully seeded ${totalSeeded} documents.`,
-      });
+        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
+        
+        const finalLog: Partial<ScrapeLog> = {
+            status: 'completed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            itemCount: totalProducts,
+            successCount: totalProducts,
+            failCount: 0,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+        
+        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
 
     } catch (error: any) {
-      logger.error("Error seeding large collection:", error);
-      res.status(500).send({
-        success: false,
-        message: "An error occurred during seeding.",
-        error: error.message,
-      });
+        logger.error(`[${runId}] Scraping failed:`, error);
+        log(`FATAL ERROR: ${error.message}`);
+        const finalLog: Partial<ScrapeLog> = {
+            status: 'failed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            error: error.message,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+
+        throw new HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
     }
-  }
-);
+});
