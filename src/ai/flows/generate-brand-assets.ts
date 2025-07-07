@@ -26,11 +26,14 @@ const ThemeAssetSchema = z.object({
 });
 
 const GenerateBrandAssetsOutputSchema = z.object({
-  hyperRealistic: ThemeAssetSchema,
-  vectorToon: ThemeAssetSchema,
-  retroFarmstyle: ThemeAssetSchema,
+  clay: ThemeAssetSchema,
+  comic: ThemeAssetSchema,
+  rasta: ThemeAssetSchema,
+  farmstyle: ThemeAssetSchema,
+  imaginative: ThemeAssetSchema,
 });
 export type GenerateBrandAssetsOutput = z.infer<typeof GenerateBrandAssetsOutputSchema>;
+
 
 // Helper function for a single image generation call
 async function generateImage(prompt: string | ({ media: { url: string; }; } | { text: string; })[]): Promise<string> {
@@ -53,122 +56,92 @@ async function generateImage(prompt: string | ({ media: { url: string; }; } | { 
     return media.url;
 }
 
-// Reusable function to get prompts for secondary assets
-const getSecondaryAssetPrompts = (circularStickerUrl: string, rectangularStickerUrl: string) => {
-    const apparelPrompt = (apparelType: 'cap' | 't-shirt' | 'hoodie') => [
-        { media: { url: circularStickerUrl } },
-        { text: `You are a professional apparel mock-up designer. Your task is to create a clean, minimalist, studio-quality product mockup on a single, solid white background.
+// --- PROMPT GENERATION HELPERS ---
 
-        **Instructions:**
-        1.  **Use the provided circular logo image exactly as it is.** DO NOT CHANGE, ALTER, OR RECREATE THE LOGO DESIGN.
-        2.  Apply this PRE-EXISTING logo design onto a plain, black ${apparelType}.
-        3.  The logo should be placed prominently and realistically on the chest (for t-shirt/hoodie) or front panel (for cap).
-        4.  The final image should contain ONLY the single apparel item on a solid white background. No other text, items, or distractions.
-
-        **Final Check:** The final output is a single image of a black ${apparelType} with the provided logo, on a clean white background.`
-        }
-    ];
-
-    const getPrintableStickerSheetPrompt = [
-        { media: { url: circularStickerUrl } },
-        { media: { url: rectangularStickerUrl } },
-        { text: `You are a professional print designer. Your task is to create a print-ready sticker sheet on a clean, A4-proportioned white background.
-
-      **Instructions:**
-      1.  You are provided with two sticker designs: one circular, one rectangular.
-      2.  Arrange multiple copies of both the circular and rectangular stickers onto the A4 background.
-      3.  The layout should be clean, well-spaced, and optimized for printing, as if to be printed and cut out.
-      4.  Ensure the stickers are rendered at a high resolution suitable for print.
-      5.  Each sticker should have a subtle die-cut outline to indicate where it would be cut.
-
-      **Final Check:** The final output is a single, A4-proportioned image that looks like a professional sticker sheet ready for printing, featuring multiple copies of both provided sticker designs.` }
-    ];
-
-    return { apparelPrompt, getPrintableStickerSheetPrompt };
-};
-
-
-const getCircularStickerPrompt = (style: 'hyper-realistic' | 'vector-toon' | 'retro-farmstyle', subjectName: string, isStore: boolean) => {
+const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
+    const artworkSubject = isStore
+        ? 'an artistic, high-concept representation of a vibrant green wellness plant'
+        : `a stylized representation of the '${subjectName}' wellness plant strain`;
 
     const styleDetails = {
-        'hyper-realistic': {
-            styleDescription: 'hyper-realistic 3D rendered',
-            artworkSubject: isStore 
-                ? 'a vibrant, artistic representation of a premium wellness plant, featuring shimmering crystals and lush, healthy green leaves'
-                : `a photorealistic wellness plant bud representing the '${subjectName}' strain`,
-            fontAndBorderStyle: 'The entire design must look like a high-end 3D render with realistic textures, lighting, and depth. It should have a clean, premium, and modern feel.',
+        'clay': {
+            styleDescription: 'hyper-realistic 3D badge sculpted from modelling clay',
+            artworkStyle: `The artwork features a hyper-realistic, 3D clay sculpture of a wellness plant, seamlessly merging into a vibrant, retro, 420-themed background, also rendered in a realistic clay style.`,
+            fontAndBorderStyle: 'The text and border must also be rendered in a 3D modelling clay style. The entire badge is framed by a distinct, sculpted clay-style external border.',
         },
-        'vector-toon': {
-            styleDescription: 'vibrant 2D vector cartoon',
-            artworkSubject: isStore
-                ? 'a fun, stylized drawing of a wellness plant or a friendly plant-themed character'
-                : `a fun, personified, cartoon wellness plant bud character for the '${subjectName}' strain`,
-            fontAndBorderStyle: 'Use a bright, saturated color palette with bold black outlines. The style should be fun, animated, and clean, like a modern vector illustration.',
+        'comic': {
+            styleDescription: 'vibrant 2D vector comic badge',
+            artworkStyle: `The artwork features a bold, 2D vector comic-style drawing of a wellness plant, merging into a vibrant, retro, 420-themed background in the same comic vector style. Use bold black outlines and flat, saturated colors.`,
+            fontAndBorderStyle: 'The text must be in a bold, 2D comic book font with a strong black outline. The entire badge is framed by a distinct, bold black vector line.',
         },
-        'retro-farmstyle': {
-            styleDescription: 'retro, farm-style',
-            artworkSubject: isStore
-                ? 'a detailed, hand-drawn or woodcut-style illustration of a wellness plant, reminiscent of vintage botanical drawings'
-                : `a detailed, hand-drawn or woodcut-style illustration of the '${subjectName}' strain, reminiscent of vintage seed packets`,
-            fontAndBorderStyle: 'Use a muted, earthy color palette (browns, greens, creams). The texture should feel slightly distressed or printed on old paper. The font should be a classic, slightly distressed serif or script font that fits the vintage aesthetic.',
+        'rasta': {
+            styleDescription: 'vibrant, 2D vector Rasta-Reggae badge',
+            artworkStyle: `A stylized, 2D vector illustration of a wellness plant, merged into a background that evokes a Rasta-Reggae theme (e.g., a sunburst pattern with red, gold, green).`,
+            fontAndBorderStyle: `The text must be in a bold, friendly, slightly rounded font reminiscent of vintage reggae posters. The badge is framed by a clean vector border, possibly a tri-color stripe of red, gold, and green.`,
         },
+        'farmstyle': {
+            styleDescription: 'hand-painted, retro farmstand sign badge',
+            artworkStyle: `A detailed, hand-painted style illustration of a wellness plant, looking natural and artisanal, on a background suggesting rustic wood grain or faded burlap.`,
+            fontAndBorderStyle: `The text must be in a classic, slightly distressed serif or script font. The entire badge is framed by a simple, painted ring or a border that looks like rustic rope.`,
+        },
+        'imaginative': {
+            styleDescription: 'cosmic 420 shaman alien badge',
+            artworkStyle: `A surreal, alien-like wellness plant, possibly glowing or with cosmic energy, merged into a mystical, shamanic background with stars, nebulae, or galaxies.`,
+            fontAndBorderStyle: `The text must be in a futuristic or mystical font that is still highly readable. The border should complement the cosmic shamanic alien style.`,
+        }
     };
 
     const details = styleDetails[style];
 
-    return `Create a single, **${details.styleDescription} circular sticker** on a solid white background.
+    return `Create a single, high-resolution, **${details.styleDescription} circular sticker** on a solid white background.
     
-    **Subject:** ${details.artworkSubject}.
+    **Central Artwork:** ${artworkSubject}. ${details.artworkStyle}
     
-    **Style:** ${details.fontAndBorderStyle}
-    
-    **Branding:** The design must be enclosed in a simple, clean circular border that matches the overall style.
-    - On the **top curve** of the border, elegantly incorporate the name **"${subjectName}"**.
-    - On the **bottom curve** of the border, elegantly incorporate the words **"The Wellness Tree"**.
-    - Both text elements must use the same bold, readable, rounded font that follows the curve of the sticker and complements the design style.
+    **Text and Border:** The design must be enclosed in a circular border.
+    - On the **top curve** of the border, incorporate the name **"${subjectName.toUpperCase()}"**.
+    - On the **bottom curve** of the border, incorporate the words **"THE WELLNESS TREE"**.
+    - Both text elements must use the same bold, readable, rounded font that follows the curve and complements the design style. ${details.fontAndBorderStyle}
     
     **Final Check:** The output is a single, circular, ${style}-style sticker on a white background, featuring the specified subject and text.`;
 };
 
-const getRectangularStickerPrompt = (circularStickerUrl: string) => {
-    return [
-        { media: { url: circularStickerUrl } },
-        { text: `You are a professional graphic designer. Your task is to create a rectangular sticker that perfectly complements the provided circular sticker design.
+const getRectangularStickerPrompt = (circularStickerUrl: string) => [
+    { media: { url: circularStickerUrl } },
+    { text: `You are a professional graphic designer. Your task is to create a rectangular sticker that perfectly complements the provided circular sticker design. Analyze the style, theme, and colors of the circular sticker. Create a new **rectangular** sticker design that feels like it belongs to the same brand family. It should NOT just be the circular design on a rectangular background. The new design must incorporate the same subject matter and visual style (e.g., if the original is hyper-realistic, the new one should also be hyper-realistic). Ensure the final image is on a solid white background.` }
+];
 
-      **Instructions:**
-      1.  Analyze the style, theme, and colors of the circular sticker.
-      2.  Create a new **rectangular** sticker design that feels like it belongs to the same brand family. It should NOT just be the circular design on a rectangular background.
-      3.  The new design must incorporate the same subject matter and visual style (e.g., if the original is hyper-realistic, the new one should also be hyper-realistic).
-      4.  Ensure the final image is on a solid white background, suitable for printing.
+const getApparelPrompt = (circularStickerUrl: string, apparelType: 'cap' | 't-shirt' | 'hoodie') => [
+    { media: { url: circularStickerUrl } },
+    { text: `You are a professional apparel mock-up designer. Your task is to create a clean, minimalist, studio-quality product mockup on a solid white background. Use the provided circular logo image exactly as it is. DO NOT CHANGE, ALTER, OR RECREATE THE LOGO DESIGN. Apply this PRE-EXISTING logo design onto a plain, black ${apparelType}. The logo should be placed prominently and realistically on the chest (for t-shirt/hoodie) or front panel (for cap). The final image should contain ONLY the single apparel item on a solid white background.` }
+];
 
-      **Final Check:** The output is a new, creative rectangular sticker that matches the style of the input image.`
-        }
-    ];
-};
+const getPrintableStickerSheetPrompt = (circularStickerUrl: string, rectangularStickerUrl: string) => [
+    { media: { url: circularStickerUrl } },
+    { media: { url: rectangularStickerUrl } },
+    { text: `You are a professional print designer. Create a print-ready sticker sheet on a clean, A4-proportioned white background. You are provided with two sticker designs: one circular (90mm), one rectangular (90mm high, proportionate width). Arrange multiple copies of both stickers onto the A4 background. The layout should be clean, well-spaced, and optimized for printing and cutting. Each sticker must have a subtle die-cut outline.` }
+];
 
-// --- Theme Generation Pipeline ---
+// --- THEME GENERATION PIPELINE ---
 
-const generateThemeAssets = async (style: 'hyper-realistic' | 'vector-toon' | 'retro-farmstyle', name: string, isStore: boolean) => {
+const generateThemeAssets = async (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', name: string, isStore: boolean): Promise<ThemeAssetSet> => {
     const circularStickerPrompt = getCircularStickerPrompt(style, name, isStore);
     const circularStickerUrl = await generateImage(circularStickerPrompt);
 
     const rectangularStickerPrompt = getRectangularStickerPrompt(circularStickerUrl);
     const rectangularStickerUrl = await generateImage(rectangularStickerPrompt);
 
-    const { apparelPrompt, getPrintableStickerSheetPrompt } = getSecondaryAssetPrompts(circularStickerUrl, rectangularStickerUrl);
-    
     const [capUrl, tShirtUrl, hoodieUrl, stickerSheetUrl] = await Promise.all([
-        generateImage(apparelPrompt('cap')),
-        generateImage(apparelPrompt('t-shirt')),
-        generateImage(apparelPrompt('hoodie')),
-        generateImage(getPrintableStickerSheetPrompt),
+        generateImage(getApparelPrompt(circularStickerUrl, 'cap')),
+        generateImage(getApparelPrompt(circularStickerUrl, 't-shirt')),
+        generateImage(getApparelPrompt(circularStickerUrl, 'hoodie')),
+        generateImage(getPrintableStickerSheetPrompt(circularStickerUrl, rectangularStickerUrl)),
     ]);
 
     return { circularStickerUrl, rectangularStickerUrl, capUrl, tShirtUrl, hoodieUrl, stickerSheetUrl };
 };
 
+// --- MAIN FLOW ---
 
-// Main Flow
 const generateBrandAssetsFlow = ai.defineFlow(
   {
     name: 'generateBrandAssetsFlow',
@@ -176,13 +149,15 @@ const generateBrandAssetsFlow = ai.defineFlow(
     outputSchema: GenerateBrandAssetsOutputSchema,
   },
   async ({ name, isStore }) => {
-    const [hyperRealistic, vectorToon, retroFarmstyle] = await Promise.all([
-        generateThemeAssets('hyper-realistic', name, isStore),
-        generateThemeAssets('vector-toon', name, isStore),
-        generateThemeAssets('retro-farmstyle', name, isStore),
+    const [clay, comic, rasta, farmstyle, imaginative] = await Promise.all([
+        generateThemeAssets('clay', name, isStore),
+        generateThemeAssets('comic', name, isStore),
+        generateThemeAssets('rasta', name, isStore),
+        generateThemeAssets('farmstyle', name, isStore),
+        generateThemeAssets('imaginative', name, isStore),
     ]);
 
-    return { hyperRealistic, vectorToon, retroFarmstyle };
+    return { clay, comic, rasta, farmstyle, imaginative };
   }
 );
 

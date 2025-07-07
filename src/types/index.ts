@@ -379,7 +379,9 @@ export interface ThemeAssetSet {
 }
 
 export interface GenerateBrandAssetsOutput {
-  hyperRealistic: ThemeAssetSet;
-  vectorToon: ThemeAssetSet;
-  retroFarmstyle: ThemeAssetSet;
+  clay: ThemeAssetSet;
+  comic: ThemeAssetSet;
+  rasta: ThemeAssetSet;
+  farmstyle: ThemeAssetSet;
+  imaginative: ThemeAssetSet;
 }
