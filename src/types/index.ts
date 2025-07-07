@@ -375,6 +375,7 @@ export interface ThemeAssetSet {
     capUrl: string;
     tShirtUrl: string;
     hoodieUrl: string;
+    stickerSheetUrl: string;
 }
 
 export interface GenerateBrandAssetsOutput {
