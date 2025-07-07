@@ -37,13 +37,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findAndFixStrainImages = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
+exports.scrapeJustBrandCatalog = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onLeafUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
-const axios_1 = __importDefault(require("axios"));
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
+const justbrand_scraper_1 = require("./scrapers/justbrand-scraper");
 /**
  * Custom error class for HTTP functions to propagate status codes.
  */
@@ -63,6 +63,7 @@ const db = admin.firestore();
 mail_1.default.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@example.com";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:9002"; // For generating public URLs
+// ... [ All existing functions: sendDispensaryNotificationEmail, generateHtmlEmail, onLeafUserCreated, onDispensaryCreated, onDispensaryUpdate, onProductRequestCreated, onProductRequestUpdated, onPoolIssueCreated, deductCreditsAndLogInteraction, removeDuplicateStrains, findAndFixStrainImages ]
 /**
  * Sends a notification email using SendGrid.
  */
@@ -680,70 +681,65 @@ exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (r
     }
 });
 /**
- * Finds documents in 'my-seeded-collection' with img_url === 'none'
- * and tries to find a valid image URL from leafly.
+ * Callable function to scrape the JustBrand.co.za catalog.
+ * This function is secured and can only be called by an authenticated admin user.
  */
-exports.findAndFixStrainImages = (0, https_1.onRequest)({ timeoutSeconds: 540, memory: '1GiB', cors: true }, async (req, res) => {
+exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
+    if (!request.auth || request.auth.token.admin !== true) {
+        throw new https_1.HttpsError('permission-denied', 'You must be an admin to run this operation.');
+    }
+    const runId = new Date().toISOString().replace(/[:.]/g, '-');
+    const logRef = db.collection('scrapeLogs').doc(runId);
+    const historyRef = db.collection('imports/history').doc(runId);
+    const logMessages = [];
+    const log = (message) => {
+        logger.info(`[${runId}] ${message}`);
+        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    };
     try {
-        const collectionRef = db.collection('my-seeded-collection');
-        const snapshot = await collectionRef.where('img_url', '==', 'none').get();
-        if (snapshot.empty) {
-            res.status(200).send({ success: true, message: 'No documents with img_url as "none" found.' });
-            return;
-        }
-        logger.info(`Found ${snapshot.size} documents to check for new images.`);
-        const checkImagePromises = snapshot.docs.map(async (doc) => {
-            const name = doc.data().name;
-            if (!name || typeof name !== 'string')
-                return null;
-            const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-            const extensions = ['jpg', 'png', 'webp'];
-            for (const ext of extensions) {
-                const url = `https://images.leafly.com/flower-images/${slug}.${ext}`;
-                try {
-                    // Using a timeout for each individual request to prevent long hangs
-                    const response = await axios_1.default.head(url, { timeout: 5000 });
-                    if (response.status === 200 && response.headers['content-type']?.startsWith('image/')) {
-                        logger.info(`SUCCESS: Found image for "${name}" at ${url}`);
-                        return { docRef: doc.ref, newUrl: url };
-                    }
-                }
-                catch (error) {
-                    // It's expected for some URLs to fail (404), so we can ignore these errors.
-                }
-            }
-            logger.warn(`INFO: No image found for strain: "${name}"`);
-            return null;
+        log('ScrapeJustBrandCatalog function triggered by admin.');
+        await logRef.set({
+            status: 'started',
+            startTime: admin.firestore.FieldValue.serverTimestamp(),
+            messages: logMessages,
+            itemCount: 0,
+            successCount: 0,
+            failCount: 0,
         });
-        const results = await Promise.all(checkImagePromises);
-        const updates = results.filter((result) => result !== null);
-        if (updates.length === 0) {
-            res.status(200).send({ success: true, message: `Process complete. Checked ${snapshot.size} documents, but no new valid images were found.` });
-            return;
+        const catalog = await (0, justbrand_scraper_1.runScraper)(log);
+        let totalProducts = 0;
+        const batch = db.batch();
+        for (const category of catalog) {
+            totalProducts += category.products.length;
+            const categoryRef = db.collection('justbrandCatalog').doc(category.slug);
+            batch.set(categoryRef, category);
         }
-        logger.info(`Found ${updates.length} new images. Committing updates to Firestore in batches...`);
-        const batchSize = 499;
-        const writePromises = [];
-        for (let i = 0; i < updates.length; i += batchSize) {
-            const batch = db.batch();
-            const chunk = updates.slice(i, i + batchSize);
-            chunk.forEach(update => {
-                batch.update(update.docRef, { img_url: update.newUrl });
-            });
-            writePromises.push(batch.commit());
-            logger.info(`Committing batch of ${chunk.length} updates.`);
-        }
-        await Promise.all(writePromises);
-        logger.info(`Image update process complete. Updated ${updates.length} documents successfully.`);
-        res.status(200).send({
-            success: true,
-            message: `Checked ${snapshot.size} documents. Found and updated ${updates.length} image URLs.`,
-            updatedCount: updates.length,
-        });
+        await batch.commit();
+        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
+        const finalLog = {
+            status: 'completed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            itemCount: totalProducts,
+            successCount: totalProducts,
+            failCount: 0,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
     }
     catch (error) {
-        logger.error("A critical error occurred in findAndFixStrainImages function:", error);
-        res.status(500).send({ success: false, message: 'An internal error occurred during the image fixing process.', error: error.message });
+        logger.error(`[${runId}] Scraping failed:`, error);
+        log(`FATAL ERROR: ${error.message}`);
+        const finalLog = {
+            status: 'failed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            error: error.message,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+        throw new https_1.HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
     }
 });
 //# sourceMappingURL=index.js.map
