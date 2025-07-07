@@ -1,4 +1,5 @@
 "use strict";
+'use server';
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -54,7 +55,9 @@ const normalizePrice = (priceString) => {
     if (!priceString)
         return 0;
     // Removes currency symbol, commas, and converts to a float.
-    return parseFloat(priceString.replace(/[R,]/g, '').trim());
+    const numberValue = parseFloat(priceString.replace(/[R,]/g, '').trim());
+    // If parsing fails (e.g., for "Sold Out"), return 0 instead of NaN
+    return isNaN(numberValue) ? 0 : numberValue;
 };
 const normalizeImageUrl = (url) => {
     if (!url)
