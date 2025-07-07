@@ -127,4 +127,3 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
     </Dialog>
   );
 }
-

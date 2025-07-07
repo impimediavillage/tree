@@ -13,13 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter } from 'lucide-react';
+import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter, UserCog } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UserCard } from '@/components/admin/UserCard'; 
-import { AddUserDialog } from '@/components/admin/AddUserDialog';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { DispensaryAddStaffDialog } from '@/components/dispensary-admin/DispensaryAddStaffDialog';
 import { DispensaryAddLeafUserDialog } from '@/components/dispensary-admin/DispensaryAddLeafUserDialog';
 

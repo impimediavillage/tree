@@ -190,11 +190,10 @@ export default function WellnessAdminOverviewPage() {
         />
          <QuickActionCard
             title="Sales & Analytics"
-            description="View sales reports, track product performance, and gain insights. (Coming Soon)"
+            description="View sales reports, track product performance, and gain insights."
             icon={BarChart3}
-            link="#"
+            link="/dispensary-admin/analytics"
             buttonText="View Analytics"
-            disabled
         />
       </div>
     </div>
@@ -225,4 +224,3 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, i
       </CardContent>
     </Card>
 );
-
