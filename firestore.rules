@@ -3,87 +3,45 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+  
+    // Default deny all reads and writes
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Allow public read on dispensaries and products for public-facing store pages
-    match /dispensaries/{dispensaryId} {
-      allow read: if true;
-      allow write: if request.auth.token.admin == true; // Only admins can create/update
-    }
-
-    match /dispensaryTypeProductCategories/{typeId} {
-      allow read: if true;
-      allow write: if request.auth.token.admin == true;
-    }
-
-    match /dispensaryTypes/{typeId} {
-      allow read: if true;
-      allow write: if request.auth.token.admin == true;
-    }
-
-    match /products/{productId} {
-      allow read: if true; // Public can read products
-      // Allow write if the user is the owner of the dispensary
-      allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.dispensaryId;
-    }
-
-    // Secure user data
-    match /users/{userId} {
-      allow read: if request.auth.uid != null; // Any authenticated user can read profiles
-      allow create: if request.auth.uid == userId; // Users can create their own profile
-      allow update: if request.auth.uid == userId || request.auth.token.admin == true; // Users can update their own, admin can update any
-      allow delete: if request.auth.token.admin == true; // Only admins can delete users
-    }
-
-    // Product requests can be read by involved parties or admin
-    match /productRequests/{requestId} {
-      allow read: if request.auth.uid != null && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.requesterDispensaryId ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.productOwnerDispensaryId ||
-        request.auth.token.admin == true
-      );
-      allow create, update: if request.auth.uid != null; // More specific logic handled in backend/rules
-    }
-
-    // Pool issues can be read by involved parties or admin
-    match /poolIssues/{issueId} {
-      allow read: if request.auth.uid != null;
-      allow create: if request.auth.uid != null;
-      allow update: if request.auth.token.admin == true;
-    }
-
-    // Notifications are private to the recipient
-    match /notifications/{notificationId} {
-      allow read, update, delete: if request.auth.uid == resource.data.recipientUid;
-      allow create: if request.auth.uid != null; // Creation is handled by backend functions
-    }
-    
-    // Public read on credit packages
-    match /creditPackages/{packageId} {
-        allow read: if true;
-        allow write: if request.auth.token.admin == true;
-    }
-    
-    // Read-only for AI interaction logs for users, admin has full access
-    match /aiInteractionsLog/{logId} {
-        allow read: if request.auth.uid == resource.data.userId || request.auth.token.admin == true;
-        allow create, write, delete: if request.auth.token.admin == true; // Creation is handled by backend
-    }
-
-    // Scraper related collections - Admin only
-    match /justbrandCatalog/{docId} {
-      allow read: if true; // Allow public read for catalog data
-      allow write: if request.auth.token.admin == true;
-    }
-
+    // Allow admins to write to admin-only collections
     match /scrapeLogs/{logId} {
       allow read, write: if request.auth.token.admin == true;
     }
-
-    match /imports/history/{historyId} {
+    match /importsHistory/{historyId} {
       allow read, write: if request.auth.token.admin == true;
+    }
+    
+    // Public read for the scraped catalog and approved dispensaries
+    match /justbrand_catalog/{categoryId} {
+      allow read: if true;
+      match /products/{productId} {
+        allow read: if true;
+      }
+    }
+    
+    match /dispensaries/{dispensaryId} {
+      // Public can read approved dispensary profiles
+      allow read: if resource.data.status == 'Approved';
+      // Admins can write
+      allow write: if request.auth.token.admin == true;
+    }
+    
+    // Users can read/update their own user document
+    match /users/{userId} {
+      allow read, update: if request.auth.uid == userId;
+      // Admins can do anything
+      allow read, write: if request.auth.token.admin == true;
+    }
+    
+    // Allow anyone to submit a dispensary application (create only)
+    match /dispensaries/{dispensaryId} {
+       allow create: if true;
     }
   }
 }
