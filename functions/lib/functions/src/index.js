@@ -690,7 +690,8 @@ exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSe
     }
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
     const logRef = db.collection('scrapeLogs').doc(runId);
-    const historyRef = db.collection('imports/history').doc(runId);
+    // Corrected historyRef path
+    const historyRef = db.collection('importsHistory').doc(runId);
     const logMessages = [];
     const log = (message) => {
         logger.info(`[${runId}] ${message}`);
@@ -714,7 +715,7 @@ exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSe
         for (const category of catalog) {
             totalProducts += category.products.length;
             // Create a document for the category itself (without the products array)
-            const categoryRef = db.collection('justbrandCatalog').doc(category.slug);
+            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
             const { products, ...categoryData } = category;
             batch.set(categoryRef, { ...categoryData, productCount: products.length });
             operationCount++;
