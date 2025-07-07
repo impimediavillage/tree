@@ -24,7 +24,6 @@ import type {
   ScrapeLog
 } from "./types";
 import { runScraper } from './scrapers/justbrand-scraper';
-import { on } from "events";
 
 /**
  * Custom error class for HTTP functions to propagate status codes.

@@ -77,7 +77,7 @@ export interface UserDocData {
   credits?: number;
   role?: string;
   dispensaryId?: string | null;
-  status?: 'Active' | 'Suspended' | 'PendingApproval';
+  status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
   createdAt?: firestore.Timestamp | firestore.FieldValue;
   lastLoginAt?: firestore.Timestamp | firestore.FieldValue | null;
   signupSource?: string; // Added to match User type
