@@ -181,6 +181,18 @@ export default function EditProductPage() {
   const unitToEdit = searchParams.get('unit');
   const { toast } = useToast();
 
+  const form = useForm<ProductFormData>({
+    resolver: zodResolver(productSchema),
+    defaultValues: {
+        priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
+        poolPriceTiers: [],
+        stickerProgramOptIn: null,
+        labTested: false,
+        labTestReportUrl: null,
+    },
+  });
+  const { setError } = form;
+
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
@@ -218,20 +230,7 @@ export default function EditProductPage() {
   
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   const [existingLabReportUrl, setExistingLabReportUrl] = useState<string | null>(null);
-
-  const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
-    defaultValues: {
-        priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
-        poolPriceTiers: [],
-        stickerProgramOptIn: null,
-        labTested: false,
-        labTestReportUrl: null,
-    },
-  });
   
-  const { setError } = form;
-
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier, replace: replacePriceTiers } = useFieldArray({
     control: form.control,
     name: "priceTiers",
@@ -435,7 +434,7 @@ export default function EditProductPage() {
       const productDocRef = doc(db, "products", productId);
       const productSnap = await getDoc(productDocRef);
       if (productSnap.exists()) {
-        const productData = productSnap.data() as ProductType;
+        const productData = { id: productSnap.id, ...productSnap.data() } as ProductType;
         if (productData.dispensaryId !== currentUser.dispensaryId) {
           toast({ title: "Access Denied", description: "You do not have permission to edit this product.", variant: "destructive" });
           router.push("/dispensary-admin/products"); 
@@ -530,7 +529,7 @@ export default function EditProductPage() {
     } finally {
       setIsLoadingInitialData(false);
     }
-  }, [currentUser?.dispensaryId, productId, router, toast, form, unitToEdit]);
+  }, [currentUser, productId, router, toast, form, unitToEdit, authLoading]);
 
 
   useEffect(() => {
@@ -670,64 +669,67 @@ export default function EditProductPage() {
       setDeletedImageUrls(prev => [...prev, urlToRemove]);
     }
   };
-
+  
   const onSubmit = useCallback(async (data: ProductFormData) => {
-      if (!currentUser?.dispensaryId || !existingProduct?.id) {
-          toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" });
-          return;
-      }
-      if (!data.category || data.category.trim() === "") {
-          setError("category", { type: "manual", message: "Category is required." }); 
-          toast({ title: "Category Required", description: "Please select or enter a main product category.", variant: "destructive"});
-          return;
-      }
-      if (data.labTested && !labTestFile && !existingLabReportUrl) {
-          toast({ title: "Lab Report Required", description: "Please upload a lab test report image.", variant: "destructive" });
-          return;
-      }
+    // This function will use the `existingProduct` from the component's state.
+    // It's critical that `existingProduct` is correctly populated and includes the 'id'.
+    if (!currentUser?.dispensaryId || !existingProduct?.id) {
+        toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" });
+        return;
+    }
+    if (!data.category || data.category.trim() === "") {
+        setError("category", { type: "manual", message: "Category is required." }); 
+        toast({ title: "Category Required", description: "Please select or enter a main product category.", variant: "destructive"});
+        return;
+    }
+    if (data.labTested && !labTestFile && !existingLabReportUrl) {
+        toast({ title: "Lab Report Required", description: "Please upload a lab test report image.", variant: "destructive" });
+        return;
+    }
 
-      setIsLoading(true);
-      let finalImageUrls = [...existingImageUrls];
-      let finalLabReportUrl = existingLabReportUrl;
+    setIsLoading(true);
+    let finalImageUrls = [...existingImageUrls];
+    let finalLabReportUrl = existingLabReportUrl;
 
-      if (files.length > 0) {
-          const uploadPromises = files.map(file => {
-              const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${file.name}`;
-              const fileStorageRef = storageRef(storage, filePath);
-              const uploadTask = uploadBytesResumable(fileStorageRef, file);
-              return new Promise<string>((resolve, reject) => {
-                  uploadTask.on('state_changed', null, reject,
-                      async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
-                  );
-              });
-          });
+    // Handle File Uploads
+    if (files.length > 0) {
+        const uploadPromises = files.map(file => {
+            const filePath = `dispensary-products/${currentUser.dispensaryId}/${Date.now()}_${file.name}`;
+            const fileStorageRef = storageRef(storage, filePath);
+            const uploadTask = uploadBytesResumable(fileStorageRef, file);
+            return new Promise<string>((resolve, reject) => {
+                uploadTask.on('state_changed', null, reject,
+                    async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+                );
+            });
+        });
 
-          try {
-              toast({ title: `Uploading ${files.length} new image(s)...`, variant: "default" });
-              const newUploadedUrls = await Promise.all(uploadPromises);
-              finalImageUrls.push(...newUploadedUrls);
-              toast({ title: "Upload Complete!", variant: "default" });
-          } catch (error) {
-              console.error("Image upload failed:", error);
-              toast({ title: "Image Upload Failed", variant: "destructive" });
-              setIsLoading(false);
-              return;
-          }
-      }
+        try {
+            toast({ title: `Uploading ${files.length} new image(s)...`, variant: "default" });
+            const newUploadedUrls = await Promise.all(uploadPromises);
+            finalImageUrls.push(...newUploadedUrls);
+            toast({ title: "Upload Complete!", variant: "default" });
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            toast({ title: "Image Upload Failed", variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
+    }
 
-      if (deletedImageUrls.length > 0) {
-          const deletePromises = deletedImageUrls.map(url => {
-              if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
-                  return deleteObject(storageRef(storage, url)).catch(e => {
-                      if (e.code !== 'storage/object-not-found') console.warn(`Failed to delete old image: ${url}`, e);
-                  });
-              }
-              return Promise.resolve();
-          });
-          await Promise.all(deletePromises);
-      }
-
-      if (labTestFile) {
+    if (deletedImageUrls.length > 0) {
+        const deletePromises = deletedImageUrls.map(url => {
+            if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
+                return deleteObject(storageRef(storage, url)).catch(e => {
+                    if (e.code !== 'storage/object-not-found') console.warn(`Failed to delete old image: ${url}`, e);
+                });
+            }
+            return Promise.resolve();
+        });
+        await Promise.all(deletePromises);
+    }
+    
+    if (labTestFile) {
         try {
           toast({ title: "Uploading Lab Report...", variant: "default" });
           const filePath = `dispensary-products/${currentUser.dispensaryId}/lab-reports/${Date.now()}_${labTestFile.name}`;
@@ -747,66 +749,71 @@ export default function EditProductPage() {
           setIsLoading(false);
           return;
         }
-      } else if (!data.labTested && existingLabReportUrl) {
-        try {
-          await deleteObject(storageRef(storage, existingLabReportUrl));
-          finalLabReportUrl = null;
-        } catch (e: any) {
-          if (e.code !== 'storage/object-not-found') console.warn("Old lab report delete failed:", e);
-        }
-      }
-      
+    } else if (!data.labTested && existingLabReportUrl) {
       try {
-          const productDocRef = doc(db, "products", existingProduct.id);
-          
-          const productDataToUpdate = { ...existingProduct };
-          
-          // Merge form data into the existing product data clone
-          Object.assign(productDataToUpdate, data);
-          
-          if (unitToEdit) {
-              const editedTier = data.priceTiers?.[0];
-              if (editedTier) {
-                  const tierIndex = productDataToUpdate.priceTiers.findIndex(t => t.unit === unitToEdit);
-                  if (tierIndex !== -1) {
-                      productDataToUpdate.priceTiers[tierIndex] = editedTier;
-                  } else {
-                      productDataToUpdate.priceTiers.push(editedTier);
-                  }
-              }
-
-              const editedPoolTier = data.poolPriceTiers?.[0];
-              if (editedPoolTier) {
-                  if (!productDataToUpdate.poolPriceTiers) productDataToUpdate.poolPriceTiers = [];
-                  const poolTierIndex = productDataToUpdate.poolPriceTiers.findIndex(t => t.unit === unitToEdit);
-                  if (poolTierIndex !== -1) {
-                      productDataToUpdate.poolPriceTiers[poolTierIndex] = editedPoolTier;
-                  } else {
-                      productDataToUpdate.poolPriceTiers.push(editedPoolTier);
-                  }
-              }
-          }
-
-          const totalStock = productDataToUpdate.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
-
-          const finalUpdateData = {
-            ...productDataToUpdate,
-            imageUrls: finalImageUrls,
-            labTestReportUrl: data.labTested ? finalLabReportUrl : null,
-            quantityInStock: totalStock,
-            updatedAt: serverTimestamp() as any,
-          };
-          
-          await updateDoc(productDocRef, finalUpdateData as { [x: string]: any });
-          toast({ title: "Product Updated!", description: `${data.name} has been successfully updated.` });
-          router.push('/dispensary-admin/products');
-      } catch (error) {
-        toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
-        console.error("Error updating product:", error);
-      } finally { 
-        setIsLoading(false); 
+        await deleteObject(storageRef(storage, existingLabReportUrl));
+        finalLabReportUrl = null;
+      } catch (e: any) {
+        if (e.code !== 'storage/object-not-found') console.warn("Old lab report delete failed:", e);
       }
-  }, [currentUser, existingProduct, productId, files, deletedImageUrls, labTestFile, existingImageUrls, existingLabReportUrl, router, toast, setError, unitToEdit]);
+    }
+    
+    try {
+        const productDocRef = doc(db, "products", existingProduct.id);
+        
+        // Start with a clone of the original full product data
+        const originalFullProduct = { ...existingProduct };
+
+        // Combine the form data into the cloned full data structure
+        const combinedData = { ...originalFullProduct, ...data };
+        
+        // If editing a specific tier, update only that tier in the full list
+        if (unitToEdit) {
+            const editedTier = data.priceTiers?.[0];
+            if (editedTier) {
+                const tierIndex = originalFullProduct.priceTiers.findIndex(t => t.unit === unitToEdit);
+                if (tierIndex !== -1) {
+                    originalFullProduct.priceTiers[tierIndex] = editedTier;
+                } else {
+                    originalFullProduct.priceTiers.push(editedTier);
+                }
+            }
+            combinedData.priceTiers = originalFullProduct.priceTiers; // Use the modified full tier list
+
+            const editedPoolTier = data.poolPriceTiers?.[0];
+            if (editedPoolTier) {
+                if (!originalFullProduct.poolPriceTiers) originalFullProduct.poolPriceTiers = [];
+                const poolTierIndex = originalFullProduct.poolPriceTiers.findIndex(t => t.unit === unitToEdit);
+                if (poolTierIndex !== -1) {
+                    originalFullProduct.poolPriceTiers[poolTierIndex] = editedPoolTier;
+                } else {
+                    originalFullProduct.poolPriceTiers.push(editedPoolTier);
+                }
+                combinedData.poolPriceTiers = originalFullProduct.poolPriceTiers;
+            }
+        }
+        
+        const totalStock = combinedData.priceTiers.reduce((sum, tier) => sum + (Number(tier.quantityInStock) || 0), 0);
+
+        const finalUpdateData = {
+          ...combinedData,
+          imageUrls: finalImageUrls,
+          labTestReportUrl: data.labTested ? finalLabReportUrl : null,
+          quantityInStock: totalStock,
+          updatedAt: serverTimestamp() as any,
+        };
+        
+        await updateDoc(productDocRef, finalUpdateData as { [x: string]: any });
+        toast({ title: "Product Updated!", description: `${data.name} has been successfully updated.` });
+        router.push('/dispensary-admin/products');
+    } catch (error) {
+      toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
+      console.error("Error updating product:", error);
+    } finally { 
+      setIsLoading(false); 
+    }
+}, [currentUser, existingProduct, productId, files, deletedImageUrls, labTestFile, existingImageUrls, existingLabReportUrl, router, toast, setError, unitToEdit]);
+
   
   if (authLoading || isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
@@ -1361,4 +1368,3 @@ export default function EditProductPage() {
   );
 }
 
-    
