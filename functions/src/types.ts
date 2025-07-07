@@ -1,5 +1,4 @@
 
-
 // This file can be used to share type definitions between your main app and Cloud Functions
 
 // Re-export comprehensive types from the main application for use in seed functions, etc.
@@ -101,6 +100,40 @@ export interface NotificationData {
   // Consider adding type and severity if needed by functions
 }
 
+// Scraper-related types
+export interface JustBrandVariant {
+  title: string;
+  sku: string | null;
+  price: number;
+  image: string | null;
+}
 
-    
+export interface JustBrandProduct {
+  title: string;
+  handle: string;
+  productUrl: string;
+  description: string;
+  price: number;
+  priceMin: number;
+  priceMax: number;
+  images: string[];
+  variants: JustBrandVariant[];
+}
 
+export interface JustBrandCategory {
+  name: string;
+  slug: string;
+  url: string;
+  products: JustBrandProduct[];
+}
+
+export interface ScrapeLog {
+  status: 'started' | 'completed' | 'failed';
+  startTime: FirebaseFirestore.Timestamp;
+  endTime?: FirebaseFirestore.Timestamp;
+  itemCount: number;
+  successCount: number;
+  failCount: number;
+  error?: string;
+  messages: string[];
+}
