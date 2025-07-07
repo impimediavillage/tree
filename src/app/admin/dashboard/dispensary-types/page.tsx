@@ -52,7 +52,7 @@ export default function AdminWellnessTypesPage() {
       setFilteredTypes(fetchedTypes); 
     } catch (error) {
       console.error("Error fetching wellness types:", error);
-      toast({ title: "Error", description: "Could not fetch wellness types.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not fetch store types.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -78,11 +78,11 @@ export default function AdminWellnessTypesPage() {
     }
     try {
       await deleteDoc(doc(db, 'dispensaryTypes', typeId));
-      toast({ title: "Wellness Type Deleted", description: `"${typeName}" has been removed.` });
+      toast({ title: "Store Type Deleted", description: `"${typeName}" has been removed.` });
       fetchWellnessTypes(); 
     } catch (error) {
       console.error("Error deleting wellness type:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete wellness type.", variant: "destructive" });
+      toast({ title: "Deletion Failed", description: "Could not delete store type.", variant: "destructive" });
     }
   };
 
@@ -94,13 +94,13 @@ export default function AdminWellnessTypesPage() {
             className="text-3xl font-bold flex items-center gap-2 text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <ListChecks className="h-8 w-8 text-primary"/> Manage Wellness Types
+            <ListChecks className="h-8 w-8 text-primary"/> Manage Store Types
           </h1>
           <p 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Create, view, edit, and delete wellness types for the platform.
+            Create, view, edit, and delete store types for the platform.
           </p>
         </div>
         {isSuperAdmin && (
@@ -124,7 +124,7 @@ export default function AdminWellnessTypesPage() {
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Loading wellness types...</p>
+          <p className="ml-2 text-muted-foreground">Loading store types...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
@@ -141,7 +141,7 @@ export default function AdminWellnessTypesPage() {
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
               <ListChecks className="mx-auto h-12 w-12 mb-3 text-orange-500" />
-              No wellness types found {searchTerm ? 'matching your criteria' : ''}.
+              No store types found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
@@ -149,4 +149,3 @@ export default function AdminWellnessTypesPage() {
     </div>
   );
 }
-

@@ -54,7 +54,7 @@ export default function BrowseWellnessTypesPage() {
             className="text-xl text-foreground/90 dark:text-foreground/80 mt-3 max-w-2xl mx-auto"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            Discover a variety of wellness entities offering unique products and services. Click on a type to see available options.
+            Discover a variety of wellness stores offering unique products and services. Click on a type to see available options.
           </p>
         </div>
       </div>
@@ -94,4 +94,3 @@ export default function BrowseWellnessTypesPage() {
     </div>
   );
 }
-
