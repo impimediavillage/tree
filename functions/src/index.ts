@@ -817,7 +817,8 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
 
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
     const logRef = db.collection('scrapeLogs').doc(runId);
-    const historyRef = db.collection('imports/history').doc(runId);
+    // Corrected historyRef path
+    const historyRef = db.collection('importsHistory').doc(runId);
 
     const logMessages: string[] = [];
     const log = (message: string) => {
@@ -847,7 +848,7 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
             totalProducts += category.products.length;
             
             // Create a document for the category itself (without the products array)
-            const categoryRef = db.collection('justbrandCatalog').doc(category.slug);
+            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
             const { products, ...categoryData } = category;
             batch.set(categoryRef, { ...categoryData, productCount: products.length });
             operationCount++;

@@ -708,13 +708,44 @@ exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSe
         });
         const catalog = await (0, justbrand_scraper_1.runScraper)(log);
         let totalProducts = 0;
-        const batch = db.batch();
+        let batch = db.batch();
+        let operationCount = 0;
+        const MAX_OPS_PER_BATCH = 499;
         for (const category of catalog) {
             totalProducts += category.products.length;
+            // Create a document for the category itself (without the products array)
             const categoryRef = db.collection('justbrandCatalog').doc(category.slug);
-            batch.set(categoryRef, category);
+            const { products, ...categoryData } = category;
+            batch.set(categoryRef, { ...categoryData, productCount: products.length });
+            operationCount++;
+            if (operationCount >= MAX_OPS_PER_BATCH) {
+                await batch.commit();
+                log(`Committed batch of ${operationCount} operations.`);
+                batch = db.batch();
+                operationCount = 0;
+            }
+            // Create a document for each product in a subcollection
+            for (const product of products) {
+                if (product.handle) {
+                    const productRef = categoryRef.collection('products').doc(product.handle);
+                    batch.set(productRef, product);
+                    operationCount++;
+                    if (operationCount >= MAX_OPS_PER_BATCH) {
+                        await batch.commit();
+                        log(`Committed batch of ${operationCount} operations.`);
+                        batch = db.batch();
+                        operationCount = 0;
+                    }
+                }
+                else {
+                    log(`Skipping product with no handle in category: ${category.name}`);
+                }
+            }
         }
-        await batch.commit();
+        if (operationCount > 0) {
+            await batch.commit();
+            log(`Committed final batch of ${operationCount} operations.`);
+        }
         log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
         const finalLog = {
             status: 'completed',
