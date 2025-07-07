@@ -104,7 +104,7 @@ const scrapeProductDetails = async (productHandle) => {
             title: productData.title,
             handle: productData.handle,
             productUrl,
-            description: cheerio.load(productData.body_html || '').text().trim(),
+            description: cheerio.load(productData.body_html || '').root().text().trim(),
             price: normalizePrice(productData.variants[0]?.price || '0'),
             priceMin: normalizePrice(productData.price_min?.toString() || '0'),
             priceMax: normalizePrice(productData.price_max?.toString() || '0'),
