@@ -35,38 +35,6 @@ export default function SignInPage() {
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
 
-    // --- TEMPORARY SUPER ADMIN OVERRIDE - CHECK FIRST ---
-    if (data.email === 'impimediavillage@gmail.com' && data.password === 'Wonder@1234') {
-      console.warn(
-        "**********************************************************************************\n" +
-        "WARNING: Bypassing Firebase Auth for Super Admin test user.\n" +
-        "This is for local development convenience ONLY and is INSECURE.\n" +
-        "This user session is NOT a real Firebase authenticated session.\n" +
-        "REMOVE THIS BEFORE ANY PRODUCTION DEPLOYMENT.\n" +
-        "**********************************************************************************"
-      );
-      const superAdminUser: AppUser = {
-        uid: 'super-admin-test-uid-001', // Using a fake but consistent UID for testing
-        email: 'impimediavillage@gmail.com',
-        displayName: 'Super Admin (Dev Test)',
-        photoURL: null,
-        role: 'Super Admin',
-        credits: 99999, // Generous credits for testing
-        status: 'Active',
-      };
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(superAdminUser));
-      toast({
-        title: 'Super Admin Login (Dev Mode)',
-        description: 'Logged in as Super Admin for local testing. This is not a real Firebase session.',
-        variant: 'default', 
-        duration: 7000, // Longer duration for warning
-      });
-      router.push('/admin/dashboard');
-      setIsLoading(false);
-      return; // Important: exit after handling the test admin
-    }
-    // --- END OF TEMPORARY SUPER ADMIN OVERRIDE ---
-
     // Normal Firebase Authentication flow
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
