@@ -314,18 +314,17 @@ export const onDispensaryUpdate = onDocumentUpdated(
       const userId = userRecord.uid;
 
       try {
-        // This is where DispensaryOwner claims are set. The onUserDocUpdate will handle syncing.
-        const userDocRef = doc(db, "users").doc(userId);
+        const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
         const firestoreUserDataUpdate: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
             photoURL: userRecord.photoURL || null,
-            lastLoginAt: admin.firestore.FieldValue.serverTimestamp() as FirebaseFirestore.Timestamp,
+            lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
         };
 
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
-            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp() as FirebaseFirestore.Timestamp;
+            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
             (firestoreUserDataUpdate as UserDocData).credits = 100; // Default credits for new owner
         }
         
@@ -846,8 +845,13 @@ export const removeDuplicateStrains = onRequest(
  * This function is secured and can only be called by an authenticated admin user.
  */
 export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    if (!request.auth || request.auth.token.role !== 'Super Admin') {
-        throw new HttpsError('permission-denied', 'You must be a Super Admin to run this operation.');
+    // Check if the user is authenticated and has the 'Super Admin' role or 'admin' claim.
+    const isSuperAdmin = request.auth?.token?.role === 'Super Admin';
+    const isAdminClaim = request.auth?.token?.admin === true;
+
+    if (!isSuperAdmin && !isAdminClaim) {
+        // Throw a specific error that the client can understand.
+        throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
     }
 
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
