@@ -713,7 +713,7 @@ export default function EditProductPage() {
 
      if (deletedImageUrls.length > 0) {
         const deletePromises = deletedImageUrls.map(url => {
-            if (url.startsWith('https://firebasestorage.googleapis.com')) {
+            if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
                 return deleteObject(storageRef(storage, url)).catch(e => {
                     if (e.code !== 'storage/object-not-found') console.warn(`Failed to delete old image: ${url}`, e);
                 });
