@@ -12,7 +12,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs, QueryDocumentSnapshot } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, Product, ProductAttribute, GenerateBrandAssetsOutput } from '@/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, Product, ProductAttribute, GenerateBrandAssetsOutput, ThemeAssetSet } from '@/types';
 import { generateBrandAssets } from '@/ai/flows/generate-brand-assets';
 
 import { Button } from '@/components/ui/button';
@@ -186,7 +186,7 @@ interface DesignResultDialogProps {
 }
 
 const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, designs, isLoading, subjectName }) => {
-    const designThemes = designs ? [
+    const designThemes: {name: string, data: ThemeAssetSet}[] = designs ? [
         { name: 'Hyper Realistic', data: designs.hyperRealistic },
         { name: 'Vector Toon', data: designs.vectorToon },
         { name: 'Retro Farmstyle', data: designs.retroFarmstyle },
@@ -223,6 +223,10 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                                 <Card>
                                     <CardHeader><CardTitle>Rectangular Sticker</CardTitle></CardHeader>
                                     <CardContent><div className="relative aspect-[2/1]"><Image src={theme.data.rectangularStickerUrl} alt={`${theme.name} rectangular sticker`} fill className="object-contain p-2"/></div></CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle>Printable Sticker Sheet</CardTitle></CardHeader>
+                                    <CardContent><div className="relative aspect-[1/1.414]"><Image src={theme.data.stickerSheetUrl} alt={`${theme.name} sticker sheet`} fill className="object-contain p-2"/></div></CardContent>
                                 </Card>
                                 <Card>
                                     <CardHeader><CardTitle>Cap Mockup</CardTitle></CardHeader>
@@ -849,6 +853,8 @@ export default function AddProductPage() {
   
   const handleGenerateAssets = async () => {
     let subjectName = '';
+    let isStore = assetGeneratorSubjectType === 'store';
+    
     if (assetGeneratorSubjectType === 'store' && wellnessData) {
         subjectName = wellnessData.dispensaryName;
     } else if (assetGeneratorSubjectType === 'strain' && form.getValues('strain')) {
@@ -864,7 +870,7 @@ export default function AddProductPage() {
     setGeneratedAssets(null);
     setIsAssetViewerOpen(true);
     try {
-        const result = await generateBrandAssets({ name: subjectName });
+        const result = await generateBrandAssets({ name: subjectName, isStore });
         setGeneratedAssets(result);
     } catch (error) {
         console.error("Error generating brand assets:", error);
