@@ -79,9 +79,27 @@ export default function WellnessProductsPage() {
     return ['all', ...uniqueCategories.sort()];
   }, [allProducts, currentDispensaryType]);
 
+  const displayableProductVariants = useMemo(() => {
+    return allProducts.flatMap(product => {
+      // If there are price tiers, create a card for each.
+      if (product.priceTiers && product.priceTiers.length > 0) {
+        return product.priceTiers.map((tier, index) => ({
+          ...product,
+          // Create a unique ID for this specific variant for React keys
+          __variant_key__: `${product.id}-${tier.unit}-${index}`,
+          // Override priceTiers to only contain the current one for this card
+          priceTiers: [tier],
+          // Override quantityInStock to reflect the tier's stock for this card
+          quantityInStock: tier.quantityInStock ?? 0,
+        }));
+      }
+      // If a product has no tiers, show it as a single card.
+      return [{ ...product, __variant_key__: product.id! }];
+    });
+  }, [allProducts]);
 
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...allProducts];
+    let filtered = [...displayableProductVariants];
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -97,7 +115,7 @@ export default function WellnessProductsPage() {
       filtered = filtered.filter(product => product.category === selectedCategory);
     }
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
-  }, [allProducts, searchTerm, selectedCategory]);
+  }, [displayableProductVariants, searchTerm, selectedCategory]);
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
@@ -230,8 +248,8 @@ export default function WellnessProductsPage() {
         </div>
       ) : paginatedProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-          {paginatedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
+          {paginatedProducts.map((productVariant) => (
+            <ProductCard key={(productVariant as any).__variant_key__} product={productVariant as Product} onDelete={handleDeleteProduct} />
           ))}
         </div>
       ) : (
