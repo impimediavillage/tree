@@ -3,6 +3,7 @@ import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getFunctions, type Functions } from 'firebase/functions'; // Import Functions
 // import { getAnalytics, type Analytics } from "firebase/analytics"; // Optional: if you need analytics
 
 const firebaseConfig = {
@@ -37,6 +38,7 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
+let functions: Functions; // Add this
 // let analytics: Analytics; // Optional
 
 if (getApps().length === 0) {
@@ -48,11 +50,11 @@ if (getApps().length === 0) {
 auth = getAuth(app);
 db = getFirestore(app);
 storage = getStorage(app);
+functions = getFunctions(app, 'us-central1'); // Initialize Functions
 
 // Optional: Initialize Analytics if needed and measurementId is present
 // if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
 //   analytics = getAnalytics(app);
 // }
 
-export { app, auth, db, storage /*, analytics */ };
-
+export { app, auth, db, storage, functions /*, analytics */ };
