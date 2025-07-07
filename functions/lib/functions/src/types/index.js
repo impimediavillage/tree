@@ -1,4 +1,6 @@
 "use strict";
 'use server';
-Object.defineProperty(exports, "__esModule", { value: true });
+// This file is intentionally left blank.
+// All type definitions have been consolidated into `functions/src/types.ts`
+// to resolve TypeScript compilation issues.
 //# sourceMappingURL=index.js.map
