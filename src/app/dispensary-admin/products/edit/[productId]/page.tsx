@@ -206,11 +206,6 @@ export default function EditProductPage() {
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [deletedImageUrls, setDeletedImageUrls] = useState<string[]>([]);
 
-  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
-  const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
-  const watchIsAvailableForPool = form.watch('isAvailableForPool');
-  const watchLabTested = form.watch('labTested');
-
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
   const [isFetchingStrain, setIsFetchingStrain] = useState(false);
@@ -250,6 +245,11 @@ export default function EditProductPage() {
   const { fields: medicalUseFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({
     control: form.control, name: "medicalUses",
   });
+  
+  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
+  const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
+  const watchIsAvailableForPool = form.watch('isAvailableForPool');
+  const watchLabTested = form.watch('labTested');
 
   const determineProductStream = (product: ProductType | null): StreamKey | null => {
     if (!product || !product.category) return null;
