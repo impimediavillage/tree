@@ -12,7 +12,8 @@ import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, ProductAttribute, PriceTier } from '@/types';
+import type { Product as ProductType, Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, ProductAttribute, PriceTier, GenerateBrandAssetsOutput } from '@/types';
+import { generateBrandAssets } from '@/ai/flows/generate-brand-assets';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, ImageIcon as ImageIconLucideSvg, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Brush, Delete, Info, Search as SearchIcon, X } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ImageIcon as ImageIconLucideSvg, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Brush, Delete, Info, Search as SearchIcon, X, Palette } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +33,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent as DialogContentComponent, DialogHeader as DialogHeaderComponent, DialogTitle as DialogTitleComponent, DialogDescription as DialogDescriptionComponent } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -172,6 +176,75 @@ const toTitleCase = (str: string) => {
   });
 };
 
+interface DesignResultDialogProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+    designs: GenerateBrandAssetsOutput | null;
+    isLoading: boolean;
+    subjectName: string;
+}
+
+const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, designs, isLoading, subjectName }) => {
+    const designThemes = designs ? [
+        { name: 'Hyper Realistic', data: designs.hyperRealistic },
+        { name: 'Vector Toon', data: designs.vectorToon },
+        { name: 'Retro Farmstyle', data: designs.retroFarmstyle },
+    ] : [];
+
+    return (
+        <DialogContentComponent className="max-w-5xl">
+            <DialogHeaderComponent>
+                <DialogTitleComponent>Generated Assets for &quot;{subjectName}&quot;</DialogTitleComponent>
+                <DialogDescriptionComponent>
+                    Here are the themed assets generated for your product. You can download these images for your marketing.
+                </DialogDescriptionComponent>
+            </DialogHeaderComponent>
+            {isLoading && (
+                <div className="flex flex-col items-center justify-center h-96 gap-4">
+                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                    <p className="text-lg text-muted-foreground">Generating themes... this can take a moment.</p>
+                </div>
+            )}
+            {designs && (
+                <Tabs defaultValue="hyperRealistic" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="hyperRealistic">Hyper Realistic</TabsTrigger>
+                        <TabsTrigger value="vectorToon">Vector Toon</TabsTrigger>
+                        <TabsTrigger value="retroFarmstyle">Retro Farmstyle</TabsTrigger>
+                    </TabsList>
+                    {designThemes.map(theme => (
+                        <TabsContent key={theme.name} value={theme.name.replace(/\s+/g, '')}>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                <Card>
+                                    <CardHeader><CardTitle>Circular Sticker</CardTitle></CardHeader>
+                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.circularStickerUrl} alt={`${theme.name} circular sticker`} fill className="object-contain p-2"/></div></CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle>Rectangular Sticker</CardTitle></CardHeader>
+                                    <CardContent><div className="relative aspect-[2/1]"><Image src={theme.data.rectangularStickerUrl} alt={`${theme.name} rectangular sticker`} fill className="object-contain p-2"/></div></CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle>Cap Mockup</CardTitle></CardHeader>
+                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.capUrl} alt={`${theme.name} cap`} fill className="object-contain p-2"/></div></CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle>T-Shirt Mockup</CardTitle></CardHeader>
+                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.tShirtUrl} alt={`${theme.name} t-shirt`} fill className="object-contain p-2"/></div></CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle>Hoodie Mockup</CardTitle></CardHeader>
+                                    <CardContent><div className="relative aspect-square"><Image src={theme.data.hoodieUrl} alt={`${theme.name} hoodie`} fill className="object-contain p-2"/></div></CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+                    ))}
+                </Tabs>
+            )}
+        </DialogContentComponent>
+    );
+};
+
+
 export default function EditProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -231,6 +304,11 @@ export default function EditProductPage() {
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   const [existingLabReportUrl, setExistingLabReportUrl] = useState<string | null>(null);
   
+  const [assetGeneratorSubjectType, setAssetGeneratorSubjectType] = useState<'store' | 'strain' | null>(null);
+  const [isGeneratingAssets, setIsGeneratingAssets] = useState(false);
+  const [generatedAssets, setGeneratedAssets] = useState<GenerateBrandAssetsOutput | null>(null);
+  const [isAssetViewerOpen, setIsAssetViewerOpen] = useState(false);
+
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier, replace: replacePriceTiers } = useFieldArray({
     control: form.control,
     name: "priceTiers",
@@ -670,6 +748,34 @@ export default function EditProductPage() {
     }
   };
   
+  const handleGenerateAssets = async () => {
+    let subjectName = '';
+    if (assetGeneratorSubjectType === 'store' && wellnessData) {
+        subjectName = wellnessData.dispensaryName;
+    } else if (assetGeneratorSubjectType === 'strain' && form.getValues('strain')) {
+        subjectName = form.getValues('strain')!;
+    }
+
+    if (!subjectName) {
+        toast({ title: "Subject Name Missing", description: "Please provide a store or strain name to generate assets.", variant: "destructive" });
+        return;
+    }
+
+    setIsGeneratingAssets(true);
+    setGeneratedAssets(null);
+    setIsAssetViewerOpen(true);
+    try {
+        const result = await generateBrandAssets({ name: subjectName });
+        setGeneratedAssets(result);
+    } catch (error) {
+        console.error("Error generating brand assets:", error);
+        toast({ title: "Asset Generation Failed", description: "Could not generate assets. Please try again later.", variant: "destructive" });
+        setIsAssetViewerOpen(false); // Close dialog on error
+    } finally {
+        setIsGeneratingAssets(false);
+    }
+  };
+
   const onSubmit = useCallback(async (data: ProductFormData) => {
     // This function will use the `existingProduct` from the component's state.
     // It's critical that `existingProduct` is correctly populated and includes the 'id'.
@@ -824,9 +930,11 @@ export default function EditProductPage() {
 
   const watchedEffects = form.watch('effects');
   const watchedMedicalUses = form.watch('medicalUses');
+  const assetGeneratorSubjectName = assetGeneratorSubjectType === 'store' ? wellnessData?.dispensaryName : form.getValues('strain');
 
 
   return (
+    <>
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -877,6 +985,43 @@ export default function EditProductPage() {
                     </div>
                     <FormDescription>Product stream cannot be changed after creation for this wellness type.</FormDescription>
                 </FormItem>
+            )}
+             
+            {(selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear') && (
+                <Card className="bg-muted/30 border-primary/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Palette className="text-primary"/> Promotional Asset Generator</CardTitle>
+                        <CardDescription>Create a pack of themed stickers and apparel mockups for this product.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <RadioGroup onValueChange={(value) => setAssetGeneratorSubjectType(value as 'store' | 'strain')} value={assetGeneratorSubjectType || ''}>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl><RadioGroupItem value="store" id="r1"/></FormControl>
+                                <FormLabel className="font-normal" htmlFor="r1">Use Store Name: <span className="font-semibold text-primary">{wellnessData?.dispensaryName}</span></FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl><RadioGroupItem value="strain" id="r2"/></FormControl>
+                                <FormLabel className="font-normal" htmlFor="r2">Use Strain Name</FormLabel>
+                            </FormItem>
+                        </RadioGroup>
+                        {assetGeneratorSubjectType === 'strain' && (
+                             <div className="pl-6 pt-2 space-y-2">
+                                <FormLabel htmlFor="strain-search">Strain Name</FormLabel>
+                                <div className="flex gap-2">
+                                    <Input id="strain-search" placeholder="e.g., Blue Dream" value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} />
+                                    <Button type="button" onClick={handleFetchStrainInfo} disabled={!strainQuery.trim() || isFetchingStrain}>
+                                        {isFetchingStrain ? <Loader2 className="h-4 w-4 animate-spin"/> : <SearchIcon className="h-4 w-4"/>}
+                                    </Button>
+                                </div>
+                                {selectedStrainData && <p className="text-sm text-green-600">Selected: {selectedStrainData.name}</p>}
+                                <FormMessage>{!form.getValues('strain') && 'Please select a strain to generate assets.'}</FormMessage>
+                            </div>
+                        )}
+                         <Button type="button" onClick={handleGenerateAssets} disabled={!assetGeneratorSubjectName}>
+                            <Sparkles className="mr-2 h-4 w-4"/> Generate Sticker & Apparel Pack
+                         </Button>
+                    </CardContent>
+                </Card>
             )}
 
             {showProductDetailsForm && selectedProductStream && (
@@ -1365,6 +1510,15 @@ export default function EditProductPage() {
         </Form>
       </CardContent>
     </Card>
+    <Dialog open={isAssetViewerOpen} onOpenChange={setIsAssetViewerOpen}>
+        <DesignResultDialog
+            isOpen={isAssetViewerOpen}
+            onOpenChange={setIsAssetViewerOpen}
+            designs={generatedAssets}
+            isLoading={isGeneratingAssets}
+            subjectName={assetGeneratorSubjectName || 'Assets'}
+        />
+    </Dialog>
+    </>
   );
 }
-

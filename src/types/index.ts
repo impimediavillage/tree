@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 
 // Price Tier Interface
@@ -365,4 +366,19 @@ export interface CartItem {
   quantity: number;
   quantityInStock: number;
   imageUrl?: string | null;
+}
+
+// New type for generated brand assets
+export interface ThemeAssetSet {
+    circularStickerUrl: string;
+    rectangularStickerUrl: string;
+    capUrl: string;
+    tShirtUrl: string;
+    hoodieUrl: string;
+}
+
+export interface GenerateBrandAssetsOutput {
+  hyperRealistic: ThemeAssetSet;
+  vectorToon: ThemeAssetSet;
+  retroFarmstyle: ThemeAssetSet;
 }
