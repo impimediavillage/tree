@@ -94,21 +94,21 @@ const getCircularStickerPrompt = (style: 'hyper-realistic' | 'vector-toon' | 're
         'hyper-realistic': {
             styleDescription: 'hyper-realistic 3D rendered',
             artworkSubject: isStore 
-                ? 'a vibrant, artistic representation of premium cannabis, featuring shimmering trichomes and lush, healthy cannabis leaves'
-                : `a photorealistic cannabis bud representing the '${subjectName}' strain`,
+                ? 'a vibrant, artistic representation of a premium wellness plant, featuring shimmering crystals and lush, healthy green leaves'
+                : `a photorealistic wellness plant bud representing the '${subjectName}' strain`,
             fontAndBorderStyle: 'The entire design must look like a high-end 3D render with realistic textures, lighting, and depth. It should have a clean, premium, and modern feel.',
         },
         'vector-toon': {
             styleDescription: 'vibrant 2D vector cartoon',
             artworkSubject: isStore
-                ? 'a fun, stylized drawing of a cannabis plant or a friendly cannabis-themed character'
-                : `a fun, personified, cartoon cannabis bud character for the '${subjectName}' strain`,
+                ? 'a fun, stylized drawing of a wellness plant or a friendly plant-themed character'
+                : `a fun, personified, cartoon wellness plant bud character for the '${subjectName}' strain`,
             fontAndBorderStyle: 'Use a bright, saturated color palette with bold black outlines. The style should be fun, animated, and clean, like a modern vector illustration.',
         },
         'retro-farmstyle': {
             styleDescription: 'retro, farm-style',
             artworkSubject: isStore
-                ? 'a detailed, hand-drawn or woodcut-style illustration of a cannabis plant, reminiscent of vintage botanical drawings'
+                ? 'a detailed, hand-drawn or woodcut-style illustration of a wellness plant, reminiscent of vintage botanical drawings'
                 : `a detailed, hand-drawn or woodcut-style illustration of the '${subjectName}' strain, reminiscent of vintage seed packets`,
             fontAndBorderStyle: 'Use a muted, earthy color palette (browns, greens, creams). The texture should feel slightly distressed or printed on old paper. The font should be a classic, slightly distressed serif or script font that fits the vintage aesthetic.',
         },
