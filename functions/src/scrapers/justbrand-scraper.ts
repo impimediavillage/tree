@@ -1,6 +1,6 @@
 
 import axios from 'axios';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import type { JustBrandCategory, JustBrandProduct, JustBrandVariant } from '../types';
 
 const BASE_URL = 'https://www.justbrand.co.za';
