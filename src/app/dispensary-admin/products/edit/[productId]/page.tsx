@@ -227,6 +227,8 @@ export default function EditProductPage() {
         labTestReportUrl: null,
     },
   });
+  
+  const { setError } = form;
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier, replace: replacePriceTiers } = useFieldArray({
     control: form.control,
@@ -246,7 +248,7 @@ export default function EditProductPage() {
     control: form.control, name: "medicalUses",
   });
   
-  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
+  const [showProductDetailsForm, setShowProductDetailsForm] = useState(false);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
@@ -667,14 +669,15 @@ export default function EditProductPage() {
     }
   };
 
-
-  const onSubmit = async (data: ProductFormData) => {
+  const onSubmit = useCallback(async (data: ProductFormData) => {
     if (!currentUser?.dispensaryId || !wellnessData || !existingProduct?.id) {
-      toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" }); return;
+      toast({ title: "Error", description: "Critical data missing. Cannot update product.", variant: "destructive" });
+      return;
     }
-     if (!data.category || data.category.trim() === "") {
+    if (!data.category || data.category.trim() === "") {
         toast({ title: "Category Required", description: "Please select or enter a main product category.", variant: "destructive"});
-        form.setError("category", { type: "manual", message: "Category is required." }); return;
+        setError("category", { type: "manual", message: "Category is required." }); 
+        return;
     }
 
     if (data.labTested && !labTestFile && !existingLabReportUrl) {
@@ -802,7 +805,7 @@ export default function EditProductPage() {
       toast({ title: "Update Failed", description: "Could not update product. Please try again.", variant: "destructive" });
       console.error("Error updating product:", error);
     } finally { setIsLoading(false); }
-  };
+  }, [currentUser, wellnessData, existingProduct, toast, router, setError, labTestFile, existingLabReportUrl, existingImageUrls, files, deletedImageUrls, selectedProductStream]);
   
   if (authLoading || isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
