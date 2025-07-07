@@ -186,10 +186,12 @@ interface DesignResultDialogProps {
 }
 
 const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, designs, isLoading, subjectName }) => {
-    const designThemes: {name: string, data: ThemeAssetSet}[] = designs ? [
-        { name: 'Hyper Realistic', data: designs.hyperRealistic },
-        { name: 'Vector Toon', data: designs.vectorToon },
-        { name: 'Retro Farmstyle', data: designs.retroFarmstyle },
+    const designThemes: {name: string, data: ThemeAssetSet | undefined}[] = designs ? [
+        { name: '3D Clay', data: designs.clay },
+        { name: '2D Comic', data: designs.comic },
+        { name: 'Rasta Reggae', data: designs.rasta },
+        { name: 'Farmstyle', data: designs.farmstyle },
+        { name: 'Imaginative', data: designs.imaginative },
     ] : [];
 
     return (
@@ -207,14 +209,14 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                 </div>
             )}
             {designs && (
-                <Tabs defaultValue="hyperRealistic" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="hyperRealistic">Hyper Realistic</TabsTrigger>
-                        <TabsTrigger value="vectorToon">Vector Toon</TabsTrigger>
-                        <TabsTrigger value="retroFarmstyle">Retro Farmstyle</TabsTrigger>
+                <Tabs defaultValue="3D Clay" className="w-full">
+                    <TabsList className="grid w-full grid-cols-5">
+                        {designThemes.map(theme => (
+                             <TabsTrigger key={theme.name} value={theme.name}>{theme.name}</TabsTrigger>
+                        ))}
                     </TabsList>
-                    {designThemes.map(theme => (
-                        <TabsContent key={theme.name} value={theme.name.replace(/\s+/g, '')}>
+                    {designThemes.map(theme => theme.data && (
+                        <TabsContent key={theme.name} value={theme.name}>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                                 <Card>
                                     <CardHeader><CardTitle>Circular Sticker</CardTitle></CardHeader>
