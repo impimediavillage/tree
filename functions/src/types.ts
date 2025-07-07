@@ -129,8 +129,8 @@ export interface JustBrandCategory {
 
 export interface ScrapeLog {
   status: 'started' | 'completed' | 'failed';
-  startTime: FirebaseFirestore.Timestamp;
-  endTime?: FirebaseFirestore.Timestamp;
+  startTime: any;
+  endTime?: any;
   itemCount: number;
   successCount: number;
   failCount: number;
