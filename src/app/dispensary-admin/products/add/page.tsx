@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs, QueryDocumentSnapshot } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
@@ -187,16 +187,56 @@ interface DesignResultDialogProps {
   subjectName: string;
   isStoreAsset: boolean;
   currentUser: import('@/types').User | null;
-  deductCredits: (credits: number, slug: string) => Promise<boolean>;
 }
 
-const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset, currentUser, deductCredits }) => {
+const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset, currentUser }) => {
+    const { toast } = useToast();
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
     const [generatingTheme, setGeneratingTheme] = useState<ThemeKey | null>(null);
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
     const [expandedAssets, setExpandedAssets] = useState<ExpandedThemeAssets>({});
-    const { toast } = useToast();
     const generationInitiatedRef = useRef(false);
+
+    const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
+        if (!currentUser?.uid) {
+            toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
+            return false;
+        }
+
+        const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
+        if (!functionUrl) {
+            console.error("Deduct credits function URL is not configured.");
+            toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
+            return false;
+        }
+
+        try {
+            const response = await fetch(functionUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.uid,
+                    advisorSlug: interactionSlug,
+                    creditsToDeduct,
+                    wasFreeInteraction: false,
+                }),
+            });
+            
+            const data = await response.json();
+            if (!response.ok) {
+                const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
+                toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
+                return false;
+            }
+
+            toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
+            return true;
+        } catch (e: any) {
+            console.error("Network or parsing error in deductCredits:", e);
+            toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
+            return false;
+        }
+    }, [currentUser?.uid, toast]);
 
     useEffect(() => {
         const generateLogos = async () => {
@@ -847,6 +887,24 @@ export default function AddProductPage() {
   };
 
 
+  const handleGenerateAssets = () => {
+    let subjectName = '';
+    
+    if (assetGeneratorSubjectType === 'store' && wellnessData) {
+        subjectName = wellnessData.dispensaryName;
+    } else if (assetGeneratorSubjectType === 'strain' && assetGeneratorStrainName) {
+        subjectName = assetGeneratorStrainName;
+    }
+
+    if (!subjectName) {
+        toast({ title: "Subject Name Missing", description: "Please select 'Use store name' or enter a strain name to generate assets.", variant: "destructive" });
+        return;
+    }
+    
+    setIsAssetViewerOpen(true);
+  };
+
+
   const onSubmit = async (data: ProductFormData) => {
     if (selectedProductStream === 'Promo') {
         toast({ title: "Info", description: "Please generate and review assets. This stream does not create a product listing.", variant: "default" });
@@ -995,68 +1053,7 @@ export default function AddProductPage() {
       setIsLoading(false);
     }
   };
-
-  const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
-    if (!currentUser || !currentUser.uid) {
-        toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
-        return false;
-    }
-
-    const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
-    if (!functionUrl) {
-        console.error("Deduct credits function URL is not configured.");
-        toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
-        return false;
-    }
-
-    try {
-        const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: currentUser.uid,
-                advisorSlug: interactionSlug,
-                creditsToDeduct,
-                wasFreeInteraction: false,
-            }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-            const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
-            toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
-            return false;
-        }
-        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
-        return true;
-    } catch (e: any) {
-        console.error("Network or parsing error in deductCredits:", e);
-        toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
-        return false;
-    }
-  }, [currentUser, toast]);
   
-  const handleGenerateAssets = () => {
-    let subjectName = '';
-    
-    if (assetGeneratorSubjectType === 'store' && wellnessData) {
-        subjectName = wellnessData.dispensaryName;
-    } else if (assetGeneratorSubjectType === 'strain' && assetGeneratorStrainName) {
-        subjectName = assetGeneratorStrainName;
-    }
-
-    if (!subjectName) {
-        toast({ title: "Subject Name Missing", description: "Please select 'Use store name' or enter a strain name to generate assets.", variant: "destructive" });
-        return;
-    }
-    
-    setIsAssetViewerOpen(true);
-  };
-
-
-  if (isLoadingInitialData || authLoading) {
-    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <div className="space-y-4"> <Skeleton className="h-12 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-12 w-full" /> <Skeleton className="h-32 w-full" /> <Skeleton className="h-12 w-full" /> </div> </div> );
-  }
-
   const watchedEffects = form.watch('effects');
   const watchedMedicalUses = form.watch('medicalUses');
   const assetGeneratorSubjectName = assetGeneratorSubjectType === 'store' ? wellnessData?.dispensaryName : assetGeneratorStrainName;
@@ -1216,10 +1213,8 @@ export default function AddProductPage() {
             subjectName={assetGeneratorSubjectName || 'Assets'}
             isStoreAsset={assetGeneratorSubjectType === 'store'}
             currentUser={currentUser}
-            deductCredits={deductCredits}
         />
     </Dialog>
     </>
   );
 }
-
