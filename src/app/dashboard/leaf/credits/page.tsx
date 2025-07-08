@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DollarSign, CheckCircle, Loader2 } from 'lucide-react';
+import { DollarSign, CheckCircle, Loader2, Palette, Gift, Heart } from 'lucide-react';
 import type { User, CreditPackage } from '@/types';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ export default function LeafCreditsPage() {
     setIsLoadingPackages(true);
     try {
       const packagesCollectionRef = collection(db, 'creditPackages');
+      // A filter to fetch packages specifically for Leaf Users might be needed in the future
       const q = query(packagesCollectionRef, where('isActive', '==', true), orderBy('price'));
       const querySnapshot = await getDocs(q);
       const fetchedPackages: CreditPackage[] = [];
@@ -119,54 +120,59 @@ export default function LeafCreditsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {creditPackages.map((pkg) => (
-            <Card 
-              key={pkg.id} 
-              className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card text-card-foreground border border-border hover:border-primary/50"
-              data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
-            >
-              <CardHeader className="pb-4">
-                <CardTitle className="text-xl font-bold text-primary text-center">{pkg.name}</CardTitle>
-                <p className="text-3xl font-extrabold text-center text-accent my-2">
-                  {pkg.price.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">{pkg.currency}</span>
-                </p>
-                <p className="text-lg text-center">
-                    <span className="text-2xl font-bold text-primary">{pkg.credits}</span>
-                    <span className="text-muted-foreground"> Credits</span>
-                    {pkg.bonusCredits && pkg.bonusCredits > 0 && (
-                        <span className="text-sm text-green-600 font-medium"> + {pkg.bonusCredits} Bonus!</span>
-                    )}
-                </p>
-              </CardHeader>
-              <CardContent className="flex-grow flex flex-col">
-                {pkg.description && <p className="text-sm text-muted-foreground mb-4 text-center line-clamp-2">{pkg.description}</p>}
-                <ul className="space-y-2 mb-6 text-sm">
-                  {/* Placeholder for features if any, for now a generic one */}
-                  <li className="flex items-center gap-2 text-card-foreground">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Access to AI Advisors</span>
-                  </li>
-                  {pkg.bonusCredits && pkg.bonusCredits > 0 && (
-                     <li className="flex items-center gap-2 text-card-foreground">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span>Includes {pkg.bonusCredits} bonus credits</span>
-                    </li>
-                  )}
-                   <li className="flex items-center gap-2 text-card-foreground">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span>Support The Wellness Tree</span>
-                    </li>
-                </ul>
-                <Button 
-                  className="mt-auto w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md py-3"
-                  onClick={() => handlePurchase(pkg)}
-                  disabled={isLoading}
-                >
-                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `Purchase ${pkg.name}`}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {creditPackages.map((pkg) => {
+            const packageFeatures = [
+                { text: "Access to AI Advisors", icon: CheckCircle },
+                // Conditionally add the new feature
+                ...(pkg.name === 'Casual Plan' || pkg.name === 'Deep Roots'
+                    ? [{ text: 'Access to Sticker and Promo Designer', icon: Palette }]
+                    : []),
+                ...(pkg.bonusCredits && pkg.bonusCredits > 0
+                    ? [{ text: `Includes ${pkg.bonusCredits} bonus credits`, icon: Gift }]
+                    : []),
+                { text: "Support The Wellness Tree", icon: Heart },
+            ];
+
+            return (
+              <Card 
+                key={pkg.id} 
+                className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card text-card-foreground border border-border hover:border-primary/50"
+                data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
+              >
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-xl font-bold text-primary text-center">{pkg.name}</CardTitle>
+                  <p className="text-3xl font-extrabold text-center text-accent my-2">
+                    {pkg.price.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">{pkg.currency}</span>
+                  </p>
+                  <p className="text-lg text-center">
+                      <span className="text-2xl font-bold text-primary">{pkg.credits}</span>
+                      <span className="text-muted-foreground"> Credits</span>
+                      {pkg.bonusCredits && pkg.bonusCredits > 0 && (
+                          <span className="text-sm text-green-600 font-medium"> + {pkg.bonusCredits} Bonus!</span>
+                      )}
+                  </p>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col">
+                  {pkg.description && <p className="text-sm text-muted-foreground mb-4 text-center line-clamp-2">{pkg.description}</p>}
+                  <ul className="space-y-2 mb-6 text-sm">
+                    {packageFeatures.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-2 text-card-foreground">
+                        <feature.icon className="h-4 w-4 text-green-500" />
+                        <span>{feature.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className="mt-auto w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md py-3"
+                    onClick={() => handlePurchase(pkg)}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `Purchase ${pkg.name}`}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
       <p 
@@ -178,4 +184,3 @@ export default function LeafCreditsPage() {
     </div>
   );
 }
-    
