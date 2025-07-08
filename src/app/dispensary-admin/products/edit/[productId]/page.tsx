@@ -176,7 +176,7 @@ const toTitleCase = (str: string) => {
   });
 };
 
-type ThemeKey = 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
+type ThemeKey = 'clay' | 'comic' | 'rasta' | 'imaginative';
 type ExpandedThemeAssets = Partial<Record<ThemeKey, ThemeAssetSet>>;
 
 interface DesignResultDialogProps {
@@ -196,7 +196,8 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const generationInitiatedRef = useRef(false);
 
     const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
-        if (!currentUser?.uid) {
+        const userId = currentUser?.uid;
+        if (!userId) {
             toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
             return false;
         }
@@ -212,17 +213,12 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
             const response = await fetch(functionUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: currentUser.uid,
-                    advisorSlug: interactionSlug,
-                    creditsToDeduct,
-                    wasFreeInteraction: false,
-                }),
+                body: JSON.stringify({ userId, advisorSlug: interactionSlug, creditsToDeduct, wasFreeInteraction: false }),
             });
             
-            const data = await response.json();
             if (!response.ok) {
-                const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
+                const data = await response.json().catch(() => ({ error: `An unknown error occurred (status: ${response.status})` }));
+                const errorMessage = data.error || `Failed to deduct credits (status: ${response.status})`;
                 toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
                 return false;
             }
