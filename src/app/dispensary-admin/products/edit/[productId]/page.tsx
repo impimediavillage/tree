@@ -240,7 +240,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const designThemes: { key: ThemeKey; title: string; logoUrl?: string; }[] = initialLogos ? [
         { key: 'clay', title: '3D Clay', logoUrl: initialLogos.clayLogoUrl },
         { key: 'comic', title: '2D Comic', logoUrl: initialLogos.comicLogoUrl },
-        { key: 'rasta', title: 'Rasta Reggae', logoUrl: initialLogos.rastaLogoUrl },
+        { key: 'rasta', title: 'Retro 420', logoUrl: initialLogos.rastaLogoUrl },
         { key: 'farmstyle', title: 'Farmstyle', logoUrl: initialLogos.farmstyleLogoUrl },
         { key: 'imaginative', title: 'Imaginative', logoUrl: initialLogos.imaginativeLogoUrl },
     ] : [];

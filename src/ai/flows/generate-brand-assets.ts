@@ -49,60 +49,69 @@ async function generateImage(prompt: string | ({ media: { url: string; }; } | { 
 
 const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
     const artworkSubject = isStore
-        ? 'a 3D isometric, stylized, energetic representation of a hyper-detailed wellness plant'
+        ? 'a 3D stylized wellness plant with mystical smoke'
         : `a 3D isometric, stylized, energetic representation of the '${subjectName}' wellness plant strain`;
     
     const styleDetails = {
         'clay': {
-            styleDescription: 'hyper-realistic 3D badge sculpted from modelling clay',
-            artworkStyle: `The artwork features a hyper-realistic, 3D clay sculpture of ${artworkSubject}, seamlessly merging into a vibrant, retro, 420-themed background, also rendered in a realistic clay style.`,
-            fontAndBorderStyle: 'The text and border must also be rendered in a 3D modelling clay style. The entire badge is framed by a distinct, sculpted clay-style external border.',
+            styleDescription: 'hyper-realistic 3D badge sculpted from modeling clay',
+            artworkStyle: `A hyper-detailed, 3D clay sculpture of **${artworkSubject}**, merged into a vibrant, retro 420-themed clay environment with sculpted texture lighting.`,
+            fontAndBorderStyle: `The entire border and text must be sculpted from modeling clay with natural imperfection, casting realistic shadows.`,
         },
         'comic': {
-            styleDescription: 'hyper-vibrant 2D vector comic badge',
-            artworkStyle: `A hyper-vibrant and creative 2D vector comic-style drawing of ${artworkSubject}. The style should be dynamic and energetic, with exaggerated perspectives and action lines. The background is a pop-art explosion of retro 420-themed patterns and Ben-Day dots, rendered in the same dynamic comic style. Use bold, expressive black outlines and a palette of oversaturated, high-contrast colors.`,
-            fontAndBorderStyle: 'The text must be in a bold, 2D comic book font with a strong black outline. The entire badge is framed by a distinct, bold black vector line.',
+            styleDescription: 'bold, high-contrast 2D vector comic badge',
+            artworkStyle: `Bold, flat-color vector art of **${artworkSubject}** in a comic panel style. Use thick outlines, halftone shading, and retro-pop color combinations.`,
+            fontAndBorderStyle: `Strong 2D comic book font with black outlines; clean, thick vector ring outline.`,
         },
         'rasta': {
-            styleDescription: 'vibrant, 2D vector Rasta-Reggae badge',
-            artworkStyle: `A vibrant, retro 420 cartoon character that is a mashup of Sonic the Hedgehog's energy and Bob Marley's rasta style. The character is dynamically posed, like a superhero, either smoking a giant stylized joint or triumphantly holding up ${artworkSubject}. The background is a psychedelic explosion of Rasta colors and patterns.`,
-            fontAndBorderStyle: `The text must be in a bold, groovy, slightly rounded font reminiscent of vintage 70s reggae posters. The badge is framed by a clean vector border, possibly a tri-color stripe of red, gold, and green.`,
+            styleDescription: 'vivid 2D reggae-inspired vector badge',
+            artworkStyle: `Reggae-themed stylized illustration of **${artworkSubject}** with red-gold-green sunbursts, psychedelic gradients, or tribal linework in the background.`,
+            fontAndBorderStyle: `Friendly, softly rounded reggae-style font. Use a smooth circular vector ring or tri-color border.`,
         },
         'farmstyle': {
-            styleDescription: 'vibrant, hand-painted, retro farmstand sign badge',
-            artworkStyle: `A vibrant and richly detailed, hand-painted illustration of ${artworkSubject}, in a style reminiscent of a classic, high-quality botanical drawing from a vintage seed packet, but with a modern, artisanal flair. The background is a creative composition suggesting a sun-drenched, bountiful farm with elements like rustic wood grain, faded burlap, and perhaps a subtle, retro sunburst pattern.`,
-            fontAndBorderStyle: `The text must be in a classic, slightly distressed serif or script font. The entire badge is framed by a simple, painted ring or a border that looks like rustic rope.`,
+            styleDescription: 'rustic, hand-painted retro farmstand badge',
+            artworkStyle: `A classic, brush-painted rendering of **${artworkSubject}** on a backdrop that looks like wood, burlap, or faded paint signage.`,
+            fontAndBorderStyle: `Slightly worn serif or script font, hand-lettered. Outer ring looks like rope, woodgrain, or paint stroke.`,
         },
         'imaginative': {
-            styleDescription: 'cosmic 420 rasta alien shaman badge',
-            artworkStyle: `A surreal, rasta alien-like version of ${artworkSubject}, possibly glowing or with cosmic energy, merged into a mystical, shamanic background with stars, nebulae, galaxies, and subtle reggae/rasta patterns.`,
-            fontAndBorderStyle: `The text must be in a futuristic or mystical font that is still highly readable. The border should complement the cosmic shamanic rasta alien style.`,
+            styleDescription: 'cosmic, rasta-alien-shaman badge with psychedelic energy',
+            artworkStyle: `Surreal, mystical version of **${artworkSubject}**, glowing or ethereal, surrounded by cosmic effects (nebulae, tribal stars, astral lines).`,
+            fontAndBorderStyle: `Futuristic or cosmic rune-like font; circular border made of energy trails, stars, or geometric rasta patterns.`,
         }
     };
+    
     const details = styleDetails[style];
 
-    return `Create a single, high-resolution, **${details.styleDescription} circular sticker** on a solid white background.
-    
-    **Central Artwork:** ${details.artworkStyle}
-    
-    **Text and Border:** The design must be enclosed in a circular border.
-    - On the **top curve** of the border, incorporate the name **"${subjectName.toUpperCase()}"**.
-    - On the **bottom curve** of the border, incorporate the words **"THE WELLNESS TREE"**.
-    - Both text elements must use the same bold, readable, rounded font that follows the curve and complements the design style. ${details.fontAndBorderStyle}
-    
-    **Final Check:** The output is a single, circular, ${style}-style sticker on a white background, featuring the specified subject and text.`;
+    return `Generate a single, high-resolution **${details.styleDescription}** circular badge-style sticker on a **solid white background**.
+
+🌀 CENTRAL ARTWORK:
+- Center the composition with a hyper-clear, modern, vibrant interpretation of **${artworkSubject}**.
+- The artwork should use **${details.artworkStyle}** to blend the subject into a cohesive background, using **strong lighting**, **rich textures**, and **vivid, contrasting colors** to create a bold focal point.
+
+🧾 TEXT & BORDER RULES:
+- The design must be enclosed in a **precise circular border**.
+- **Top Arc Text:** Include "${subjectName.toUpperCase()}" following the top curve of the circle.
+- **Bottom Arc Text:** Include "THE WELLNESS TREE" on the bottom curve.
+- Both texts must follow the circle perfectly and use the **${details.fontAndBorderStyle}** to match the design language.
+- Ensure the text is bold, readable, cleanly curved, and **visually balanced** around the sticker’s circumference.
+
+✅ FINAL OUTPUT GUIDELINES:
+- The sticker should appear completely circular, professionally composed, and centered on a plain white background.
+- There should be no external shadows, noise, or watermarks.
+- Use high contrast, rich texture, and clean layering to emphasize depth and visual pop.
+- All elements should be balanced: central image, curved text, and border should work harmoniously.`;
 };
 
 
 const getRectangularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
     const artworkSubject = isStore
-        ? 'a 3D isometric, stylized, energetic representation of a hyper-detailed wellness plant'
+        ? 'a 3D stylized wellness plant with mystical smoke'
         : `a 3D isometric, stylized, energetic representation of the '${subjectName}' wellness plant strain`;
     
     const styleDetails = {
         'clay': { styleDescription: 'hyper-realistic 3D sculpted from modelling clay' },
         'comic': { styleDescription: 'vibrant 2D vector comic' },
-        'rasta': { styleDescription: 'vibrant, 2D vector Rasta-Reggae' },
+        'rasta': { styleDescription: 'vivid 2D reggae-inspired vector' },
         'farmstyle': { styleDescription: 'hand-painted, retro farmstand sign' },
         'imaginative': { styleDescription: 'cosmic 420 rasta alien shaman' }
     };
