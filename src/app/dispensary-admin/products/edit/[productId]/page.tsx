@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, Trash2, ImageIcon as ImageIconLucideSvg, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Brush, Delete, Info, Search as SearchIcon, X, Palette, Eye, DollarSign } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -185,16 +185,56 @@ interface DesignResultDialogProps {
   subjectName: string;
   isStoreAsset: boolean;
   currentUser: import('@/types').User | null;
-  deductCredits: (credits: number, slug: string) => Promise<boolean>;
 }
 
-const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset, currentUser, deductCredits }) => {
+const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset, currentUser }) => {
+    const { toast } = useToast();
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
     const [generatingTheme, setGeneratingTheme] = useState<ThemeKey | null>(null);
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
     const [expandedAssets, setExpandedAssets] = useState<ExpandedThemeAssets>({});
-    const { toast } = useToast();
     const generationInitiatedRef = useRef(false);
+
+    const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
+        if (!currentUser?.uid) {
+            toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
+            return false;
+        }
+
+        const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
+        if (!functionUrl) {
+            console.error("Deduct credits function URL is not configured.");
+            toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
+            return false;
+        }
+
+        try {
+            const response = await fetch(functionUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: currentUser.uid,
+                    advisorSlug: interactionSlug,
+                    creditsToDeduct,
+                    wasFreeInteraction: false,
+                }),
+            });
+            
+            const data = await response.json();
+            if (!response.ok) {
+                const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
+                toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
+                return false;
+            }
+
+            toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
+            return true;
+        } catch (e: any) {
+            console.error("Network or parsing error in deductCredits:", e);
+            toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
+            return false;
+        }
+    }, [currentUser?.uid, toast]);
 
     useEffect(() => {
         const generateLogos = async () => {
@@ -897,45 +937,6 @@ export default function EditProductPage() {
       setDeletedImageUrls(prev => [...prev, urlToRemove]);
     }
   };
-
-  const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
-    if (!currentUser || !currentUser.uid) {
-        toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
-        return false;
-    }
-
-    const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
-    if (!functionUrl) {
-        console.error("Deduct credits function URL is not configured.");
-        toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
-        return false;
-    }
-
-    try {
-        const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: currentUser.uid,
-                advisorSlug: interactionSlug,
-                creditsToDeduct,
-                wasFreeInteraction: false,
-            }),
-        });
-        if (!response.ok) {
-            const data = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-            const errorMessage = data.error || `Failed to deduct credits (status: ${response.status})`;
-            toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
-            return false;
-        }
-        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
-        return true;
-    } catch (e: any) {
-        console.error("Network or parsing error in deductCredits:", e);
-        toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
-        return false;
-    }
-  }, [currentUser, toast]);
   
   const handleGenerateAssets = () => {
     let subjectName = '';
@@ -1212,10 +1213,8 @@ export default function EditProductPage() {
             subjectName={assetGeneratorSubjectName || 'Assets'}
             isStoreAsset={assetGeneratorSubjectType === 'store'}
             currentUser={currentUser}
-            deductCredits={deductCredits}
         />
     </Dialog>
     </>
   );
 }
-
