@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs, QueryDocumentSnapshot } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon, Users, X, Palette, Eye } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, AlertTriangle, Flame, Leaf as LeafIconLucide, PlusCircle, Shirt, Sparkles, Brush, Delete, Info, Search as SearchIcon, Users, X, Palette, Eye, DollarSign } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,13 +69,14 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   }
 };
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Promo';
 
 const streamDisplayMapping: Record<string, { text: string; icon: React.ElementType; color: string }> = {
     'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
     'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
-    'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' }
+    'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
+    'Promo': { text: 'Promo & Sticker Sets', icon: Palette, color: 'text-orange-500' },
 };
 
 const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "hungry", "talkative", "creative", "energetic", "focus", "giggly", "aroused", "tingly"];
@@ -185,9 +186,11 @@ interface DesignResultDialogProps {
   onOpenChange: (open: boolean) => void;
   subjectName: string;
   isStoreAsset: boolean;
+  currentUser: import('@/types').User | null;
+  deductCredits: (credits: number, slug: string) => Promise<boolean>;
 }
 
-const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset }) => {
+const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset, currentUser, deductCredits }) => {
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
     const [generatingTheme, setGeneratingTheme] = useState<ThemeKey | null>(null);
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
@@ -195,34 +198,59 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const { toast } = useToast();
 
     useEffect(() => {
+        const generateLogos = async () => {
+            if (!currentUser || (currentUser.credits ?? 0) < 5) {
+                toast({ title: "Insufficient Credits", description: "You need at least 5 credits to generate initial logos.", variant: "destructive" });
+                onOpenChange(false);
+                return;
+            }
+            
+            setIsLoadingInitial(true);
+            const creditsDeducted = await deductCredits(5, 'promo-asset-generator-initial');
+            if (!creditsDeducted) {
+                setIsLoadingInitial(false);
+                onOpenChange(false);
+                return;
+            }
+
+            try {
+                const result = await generateInitialLogos({ name: subjectName, isStore: isStoreAsset });
+                setInitialLogos(result);
+            } catch (error) {
+                console.error("Error generating initial logos:", error);
+                toast({ title: "Logo Generation Failed", description: "Could not generate initial logo designs. Please note credits were deducted.", variant: "destructive" });
+                onOpenChange(false);
+            } finally {
+                setIsLoadingInitial(false);
+            }
+        };
+
         if (isOpen && !initialLogos && isLoadingInitial) {
-            const generateLogos = async () => {
-                try {
-                    const result = await generateInitialLogos({ name: subjectName, isStore: isStoreAsset });
-                    setInitialLogos(result);
-                } catch (error) {
-                    console.error("Error generating initial logos:", error);
-                    toast({ title: "Logo Generation Failed", description: "Could not generate initial logo designs.", variant: "destructive" });
-                    onOpenChange(false);
-                } finally {
-                    setIsLoadingInitial(false);
-                }
-            };
             generateLogos();
         } else if (!isOpen) {
-            // Reset state when dialog closes
             setTimeout(() => {
               setIsLoadingInitial(true);
               setInitialLogos(null);
               setExpandedAssets({});
               setGeneratingTheme(null);
-            }, 300); // Delay to allow fade-out animation
+            }, 300);
         }
-    }, [isOpen, initialLogos, isLoadingInitial, onOpenChange, subjectName, isStoreAsset, toast]);
+    }, [isOpen, initialLogos, isLoadingInitial, onOpenChange, subjectName, isStoreAsset, toast, currentUser, deductCredits]);
     
     const handleGenerateApparel = async (themeKey: ThemeKey, logoUrl: string) => {
-        if (generatingTheme) return; // Prevent multiple generations at once
+        if (generatingTheme) return;
+        if (!currentUser || (currentUser.credits ?? 0) < 8) {
+            toast({ title: "Insufficient Credits", description: "You need at least 8 credits to visualize on gear.", variant: "destructive" });
+            return;
+        }
+
         setGeneratingTheme(themeKey);
+        const creditsDeducted = await deductCredits(8, `promo-asset-generator-theme-${themeKey}`);
+        if (!creditsDeducted) {
+            setGeneratingTheme(null);
+            return;
+        }
+
         try {
             const result = await generateApparelForTheme({
                 style: themeKey,
@@ -233,7 +261,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
             setExpandedAssets(prev => ({ ...prev, [themeKey]: result }));
         } catch (error) {
             console.error(`Error generating apparel for theme ${themeKey}:`, error);
-            toast({ title: "Apparel Generation Failed", description: `Could not generate assets for the ${themeKey} theme.`, variant: "destructive" });
+            toast({ title: "Apparel Generation Failed", description: `Could not generate assets for the ${themeKey} theme. Credits were deducted.`, variant: "destructive" });
         } finally {
             setGeneratingTheme(null);
         }
@@ -252,14 +280,14 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
             <DialogHeaderComponent className="px-6 pt-6 pb-4 border-b">
                 <DialogTitleComponent>Generated Assets for &quot;{subjectName}&quot;</DialogTitleComponent>
                 <DialogDescriptionComponent>
-                    Select a theme to view its assets. Click &quot;Visualize on Gear&quot; to generate the full branding package.
+                    Initial generation costs 5 credits. Visualizing a theme on gear costs 8 credits. Current balance: <span className="font-bold text-primary">{currentUser?.credits ?? 0}</span>
                 </DialogDescriptionComponent>
             </DialogHeaderComponent>
 
             {isLoadingInitial ? (
                 <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
                     <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                    <p className="text-lg text-muted-foreground">Generating initial logos...</p>
+                    <p className="text-lg text-muted-foreground">Generating initial logos (5 credits)...</p>
                 </div>
             ) : initialLogos ? (
                 <Tabs defaultValue="clay" className="flex-grow flex flex-col min-h-0">
@@ -288,8 +316,8 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                                                     <Image src={theme.logoUrl!} alt={`${theme.title} circular sticker`} fill className="object-contain p-2"/>
                                                 </div>
                                                 {!assets && (
-                                                    <Button className="w-full mt-auto" onClick={() => handleGenerateApparel(theme.key, theme.logoUrl!)} disabled={!!generatingTheme}>
-                                                        {isGeneratingTheme ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>Generating...</> : <><Eye className="mr-2 h-4 w-4"/>Visualize on Gear</>}
+                                                    <Button className="w-full mt-auto" onClick={() => handleGenerateApparel(theme.key, theme.logoUrl!)} disabled={!!generatingTheme || (currentUser?.credits ?? 0) < 8}>
+                                                        {isGeneratingTheme ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>Generating...</> : <><Eye className="mr-2 h-4 w-4"/>Visualize on Gear (8 credits)</>}
                                                     </Button>
                                                 )}
                                             </CardContent>
@@ -449,7 +477,7 @@ export default function AddProductPage() {
   
     if (selectedProductStream === 'THC') {
       setShowProductDetailsForm(watchedStickerProgramOptIn === 'yes');
-    } else if (selectedProductStream) {
+    } else if (selectedProductStream && selectedProductStream !== 'Promo') {
       setShowProductDetailsForm(true);
     } else {
       setShowProductDetailsForm(false);
@@ -817,6 +845,10 @@ export default function AddProductPage() {
 
 
   const onSubmit = async (data: ProductFormData) => {
+    if (selectedProductStream === 'Promo') {
+        toast({ title: "Info", description: "Please generate and review assets. This stream does not create a product listing.", variant: "default" });
+        return;
+    }
     if (!currentUser?.dispensaryId || !wellnessData) {
       toast({ title: "Error", description: "User or wellness data not found.", variant: "destructive" }); return;
     }
@@ -960,6 +992,44 @@ export default function AddProductPage() {
       setIsLoading(false);
     }
   };
+
+  const deductCredits = async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
+    if (!currentUser || !currentUser.uid) {
+        toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
+        return false;
+    }
+
+    const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
+    if (!functionUrl) {
+        console.error("Deduct credits function URL is not configured.");
+        toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
+        return false;
+    }
+
+    try {
+        const response = await fetch(functionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: currentUser.uid,
+                advisorSlug: interactionSlug,
+                creditsToDeduct,
+                wasFreeInteraction: false,
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || `Failed to deduct credits (status: ${response.status})`);
+        }
+        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
+        // The AuthContext onSnapshot listener will automatically update the currentUser state globally.
+        return true;
+    } catch (e: any) {
+        console.error("Error deducting credits:", e);
+        toast({ title: "Credit Deduction Failed", description: e.message || "Could not deduct credits.", variant: "destructive" });
+        return false;
+    }
+  };
   
   const handleGenerateAssets = () => {
     let subjectName = '';
@@ -986,6 +1056,8 @@ export default function AddProductPage() {
   const watchedEffects = form.watch('effects');
   const watchedMedicalUses = form.watch('medicalUses');
   const assetGeneratorSubjectName = assetGeneratorSubjectType === 'store' ? wellnessData?.dispensaryName : assetGeneratorStrainName;
+  const showProductForm = selectedProductStream && selectedProductStream !== 'Promo';
+
 
   return (
     <>
@@ -1021,7 +1093,7 @@ export default function AddProductPage() {
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Select Product Stream *
                     </FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as (keyof typeof streamDisplayMapping)[]).map((stream) => { 
                             const { text, icon: IconComponent, color } = streamDisplayMapping[stream];
                             return (
@@ -1038,15 +1110,18 @@ export default function AddProductPage() {
                             );
                         })}
                     </div>
-                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
+                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Promo') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
 
-            {(selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear' || selectedProductStream === 'THC') && (
+            {selectedProductStream === 'Promo' && (
                 <Card className="bg-muted/30 border-primary/20">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Palette className="text-primary"/> Promotional Asset Generator</CardTitle>
-                        <CardDescription>Create a pack of themed stickers and apparel mockups for this product.</CardDescription>
+                        <CardDescription>
+                            Create a pack of themed stickers and apparel mockups. Your credits: 
+                            <span className="font-bold text-primary ml-1">{currentUser?.credits ?? '0'}</span>
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <RadioGroup onValueChange={(value) => setAssetGeneratorSubjectType(value as 'store' | 'strain')} value={assetGeneratorSubjectType || ''}>
@@ -1082,7 +1157,7 @@ export default function AddProductPage() {
                  <Separator className="my-6" />
             )}
 
-            {selectedProductStream === 'THC' && (
+            {selectedProductStream === 'THC' && showProductDetailsForm && (
                 <Card className="mb-6 p-4 border-amber-500 bg-amber-50/50 shadow-sm">
                     <CardHeader className="p-0 pb-2">
                         <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice if adding THC Products</CardTitle>
@@ -1113,7 +1188,19 @@ export default function AddProductPage() {
                 </Card>
             )}
 
-            { /* The rest of the form is omitted for brevity as it was correct */ }
+            {showProductDetailsForm && (
+                <>
+                 {/* The rest of the form is omitted for brevity as it was correct and very long */}
+                 <div className="flex gap-4 pt-4">
+                    <Button type="submit" size="lg" className="flex-1 text-lg"
+                    disabled={isLoading}
+                    >
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                    Add Product
+                    </Button>
+                </div>
+                </>
+            )}
           </form>
         </Form>
       </CardContent>
@@ -1124,8 +1211,11 @@ export default function AddProductPage() {
             onOpenChange={setIsAssetViewerOpen}
             subjectName={assetGeneratorSubjectName || 'Assets'}
             isStoreAsset={assetGeneratorSubjectType === 'store'}
+            currentUser={currentUser}
+            deductCredits={deductCredits}
         />
     </Dialog>
     </>
   );
 }
+
