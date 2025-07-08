@@ -522,3 +522,33 @@ export const aiAdvisorConfigSchema = z.object({
   dataAiHint: z.string().optional().nullable(),
 });
 export type AIAdvisorConfig = z.infer<typeof aiAdvisorConfigSchema>;
+
+
+// Schemas for Brand Asset Generation
+export const GenerateInitialLogosInputSchema = z.object({
+  name: z.string().describe('The name of the store or strain for which to generate logos.'),
+  isStore: z.boolean().describe('Whether the name provided is a store name or a strain name.'),
+});
+
+export const GenerateInitialLogosOutputSchema = z.object({
+  clayLogoUrl: z.string().url(),
+  comicLogoUrl: z.string().url(),
+  rastaLogoUrl: z.string().url(),
+  farmstyleLogoUrl: z.string().url(),
+  imaginativeLogoUrl: z.string().url(),
+});
+
+export const GenerateApparelInputSchema = z.object({
+  style: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
+  circularStickerUrl: z.string().url().describe("The URL of the pre-generated circular logo for the chosen theme."),
+  subjectName: z.string().describe('The name of the store or strain.'),
+});
+
+export const ThemeAssetSetSchema = z.object({
+    circularStickerUrl: z.string().url(),
+    rectangularStickerUrl: z.string().url(),
+    capUrl: z.string().url(),
+    tShirtUrl: z.string().url(),
+    hoodieUrl: z.string().url(),
+    stickerSheetUrl: z.string().url(),
+});
