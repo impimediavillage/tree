@@ -140,21 +140,28 @@ const getTrippyStickerPrompt = (circularStickerUrl: string, subjectName: string)
     The output should be a single, wacky circular sticker on a solid white background.` }
 ];
 
-const getPrintableStickerSheetPrompt = (circularStickerUrl: string, rectangularStickerUrl: string) => [
+const getCircularStickerSheetPrompt = (circularStickerUrl: string) => [
     { media: { url: circularStickerUrl } },
-    { media: { url: rectangularStickerUrl } },
-    { text: `You are a professional print designer. Create a print-ready sticker sheet on a clean, **A4-proportioned white background (portrait orientation)**.
-    
-    You are provided with two sticker designs:
-    1. A primary circular sticker.
-    2. A primary rectangular sticker.
+    { text: `You are a professional print designer. Use the provided circular sticker design **exactly as it is**. Create a print-ready sticker sheet on a clean, **A4-proportioned white background (portrait orientation)**.
     
     **Layout Instructions:**
-    - Arrange multiple duplicates of the **primary circular sticker (as 90mm circles)**.
-    - Arrange multiple duplicates of the **primary rectangular sticker (as 90mm high, with proportionate width)**.
-    - The layout should be clean, well-spaced, and optimized for printing and cutting. Each individual sticker on the sheet must have a subtle die-cut outline.
+    - Arrange multiple duplicates of the provided circular sticker. Each sticker should be **90mm in diameter**.
+    - The layout must be clean, well-spaced, and optimized for printing and cutting. 
+    - Each individual sticker on the sheet must have a subtle die-cut outline.
     
-    **Final Check:** The output is a single image containing only duplicates of the provided circular and rectangular stickers, neatly arranged on an A4 sheet with die-cut lines.` }
+    **Final Check:** The output is a single image containing ONLY duplicates of the provided circular sticker, neatly arranged on an A4 sheet with die-cut lines.` }
+];
+
+const getRectangularStickerSheetPrompt = (rectangularStickerUrl: string) => [
+    { media: { url: rectangularStickerUrl } },
+    { text: `You are a professional print designer. Use the provided rectangular sticker design **exactly as it is**. Create a print-ready sticker sheet on a clean, **A4-proportioned white background (portrait orientation)**.
+    
+    **Layout Instructions:**
+    - Arrange multiple duplicates of the provided rectangular sticker.
+    - The layout must be clean, well-spaced, and optimized for printing and cutting. 
+    - Each individual sticker on the sheet must have a subtle die-cut outline.
+    
+    **Final Check:** The output is a single image containing ONLY duplicates of the provided rectangular sticker, neatly arranged on an A4 sheet with die-cut lines.` }
 ];
 
 
@@ -208,8 +215,11 @@ const generateApparelForThemeFlow = ai.defineFlow(
         generateImage(getApparelPrompt(circularStickerUrl, 'hoodie')),
     ]);
 
-    // Once the rectangular sticker is ready, generate the A4 sheet
-    const stickerSheetUrl = await generateImage(getPrintableStickerSheetPrompt(circularStickerUrl, rectangularStickerUrl));
+    // Once the circular and rectangular stickers are ready, generate the A4 sheets in parallel
+    const [circularStickerSheetUrl, rectangularStickerSheetUrl] = await Promise.all([
+        generateImage(getCircularStickerSheetPrompt(circularStickerUrl)),
+        generateImage(getRectangularStickerSheetPrompt(rectangularStickerUrl))
+    ]);
 
     return { 
         circularStickerUrl, 
@@ -217,7 +227,8 @@ const generateApparelForThemeFlow = ai.defineFlow(
         capUrl, 
         tShirtUrl, 
         hoodieUrl, 
-        stickerSheetUrl,
+        circularStickerSheetUrl,
+        rectangularStickerSheetUrl,
         trippySticker1Url,
         trippySticker2Url
     };

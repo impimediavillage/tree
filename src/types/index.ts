@@ -395,7 +395,8 @@ export interface ThemeAssetSet {
     capUrl: string;
     tShirtUrl: string;
     hoodieUrl: string;
-    stickerSheetUrl: string;
+    circularStickerSheetUrl: string;
+    rectangularStickerSheetUrl: string;
     trippySticker1Url: string;
     trippySticker2Url: string;
 }

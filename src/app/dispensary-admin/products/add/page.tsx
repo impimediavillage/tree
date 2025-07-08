@@ -296,7 +296,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                                         </Card>
 
                                         {isGeneratingTheme && !assets && (
-                                            Array.from({ length: 5 }).map((_, i) => (
+                                            Array.from({ length: 7 }).map((_, i) => (
                                                 <Card key={i} className="col-span-1 flex items-center justify-center min-h-[300px] animate-pulse">
                                                     <Loader2 className="h-10 w-10 text-primary animate-spin" />
                                                 </Card>
@@ -328,11 +328,18 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                                                         <div className="relative aspect-square w-full"><Image src={assets.trippySticker2Url} alt={`${theme.title} trippy sticker 2`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
                                                     </CardContent>
                                                 </Card>
-                                                <Card className="col-span-1 md:col-span-2">
-                                                    <CardHeader><CardTitle>5. Printable Sheet</CardTitle></CardHeader>
+                                                <Card className="col-span-1">
+                                                    <CardHeader><CardTitle>5. Circular Stickers</CardTitle></CardHeader>
                                                     <CardContent>
-                                                        <div className="relative aspect-[1/1.414] w-full"><Image src={assets.stickerSheetUrl} alt={`${theme.title} sticker sheet`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
-                                                        <p className="text-xs text-center text-muted-foreground mt-2">A4-Proportioned Sticker Sheet</p>
+                                                        <div className="relative aspect-[1/1.414] w-full"><Image src={assets.circularStickerSheetUrl} alt={`${theme.title} circular sticker sheet`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                        <p className="text-xs text-center text-muted-foreground mt-2">A4 Sheet</p>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card className="col-span-1">
+                                                    <CardHeader><CardTitle>6. Rectangular Stickers</CardTitle></CardHeader>
+                                                    <CardContent>
+                                                        <div className="relative aspect-[1/1.414] w-full"><Image src={assets.rectangularStickerSheetUrl} alt={`${theme.title} rectangular sticker sheet`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                        <p className="text-xs text-center text-muted-foreground mt-2">A4 Sheet</p>
                                                     </CardContent>
                                                 </Card>
                                             </>
