@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, Trash2, ImageIcon as ImageIconLucideSvg, AlertTriangle, PlusCircle, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Brush, Delete, Info, Search as SearchIcon, X, Palette, Eye, DollarSign } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -194,7 +194,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
     const [expandedAssets, setExpandedAssets] = useState<ExpandedThemeAssets>({});
     const { toast } = useToast();
-    const generationInitiatedRef = React.useRef(false);
+    const generationInitiatedRef = useRef(false);
 
     useEffect(() => {
         const generateLogos = async () => {
@@ -922,9 +922,9 @@ export default function EditProductPage() {
                 wasFreeInteraction: false,
             }),
         });
-        const data = await response.json();
         if (!response.ok) {
-            const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
+            const data = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
+            const errorMessage = data.error || `Failed to deduct credits (status: ${response.status})`;
             toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
             return false;
         }
@@ -935,7 +935,7 @@ export default function EditProductPage() {
         toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
         return false;
     }
-  }, [currentUser?.uid, toast]);
+  }, [currentUser, toast]);
   
   const handleGenerateAssets = () => {
     let subjectName = '';
@@ -1218,3 +1218,4 @@ export default function EditProductPage() {
     </>
   );
 }
+
