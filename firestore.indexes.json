@@ -113,6 +113,14 @@
       ]
     },
     {
+      "collectionGroup": "aiInteractionsLog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "dispensaryId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "creditPackages",
       "queryScope": "COLLECTION",
       "fields": [
