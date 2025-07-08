@@ -228,6 +228,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                 style: themeKey,
                 circularStickerUrl: logoUrl,
                 subjectName: subjectName,
+                isStore: isStoreAsset,
             });
             setExpandedAssets(prev => ({ ...prev, [themeKey]: result }));
         } catch (error) {
@@ -247,7 +248,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     ] : [];
 
     return (
-        <DialogContentComponent className="max-w-6xl h-[95vh] flex flex-col p-0">
+        <DialogContentComponent className="max-w-7xl h-[95vh] flex flex-col p-0">
             <DialogHeaderComponent className="px-6 pt-6 pb-4 border-b">
                 <DialogTitleComponent>Generated Assets for &quot;{subjectName}&quot;</DialogTitleComponent>
                 <DialogDescriptionComponent>
@@ -273,7 +274,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                         </ScrollArea>
                     </div>
                     {designThemes.map((theme) => {
-                        const apparel = expandedAssets[theme.key];
+                        const assets = expandedAssets[theme.key];
                         const isGeneratingTheme = generatingTheme === theme.key;
 
                         return (
@@ -286,7 +287,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                                                 <div className="relative aspect-square w-full max-w-[280px]">
                                                     <Image src={theme.logoUrl!} alt={`${theme.title} circular sticker`} fill className="object-contain p-2"/>
                                                 </div>
-                                                {!apparel && (
+                                                {!assets && (
                                                     <Button className="w-full mt-auto" onClick={() => handleGenerateApparel(theme.key, theme.logoUrl!)} disabled={!!generatingTheme}>
                                                         {isGeneratingTheme ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/>Generating...</> : <><Eye className="mr-2 h-4 w-4"/>Visualize on Gear</>}
                                                     </Button>
@@ -294,37 +295,43 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
                                             </CardContent>
                                         </Card>
 
-                                        {isGeneratingTheme && !apparel && (
-                                            Array.from({ length: 3 }).map((_, i) => (
+                                        {isGeneratingTheme && !assets && (
+                                            Array.from({ length: 5 }).map((_, i) => (
                                                 <Card key={i} className="col-span-1 flex items-center justify-center min-h-[300px] animate-pulse">
                                                     <Loader2 className="h-10 w-10 text-primary animate-spin" />
                                                 </Card>
                                             ))
                                         )}
 
-                                        {apparel && (
+                                        {assets && (
                                             <>
                                                 <Card className="col-span-1">
                                                     <CardHeader><CardTitle>2. Apparel Mockups</CardTitle></CardHeader>
                                                     <CardContent className="space-y-4">
-                                                        <div className="relative aspect-square w-full"><Image src={apparel.tShirtUrl} alt={`${theme.title} t-shirt`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                        <div className="relative aspect-square w-full"><Image src={assets.tShirtUrl} alt={`${theme.title} t-shirt`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <div className="relative aspect-square w-full"><Image src={apparel.capUrl} alt={`${theme.title} cap`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
-                                                            <div className="relative aspect-square w-full"><Image src={apparel.hoodieUrl} alt={`${theme.title} hoodie`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                            <div className="relative aspect-square w-full"><Image src={assets.capUrl} alt={`${theme.title} cap`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                            <div className="relative aspect-square w-full"><Image src={assets.hoodieUrl} alt={`${theme.title} hoodie`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
                                                         </div>
                                                     </CardContent>
                                                 </Card>
                                                 <Card className="col-span-1">
-                                                    <CardHeader><CardTitle>3. Sticker Variation</CardTitle></CardHeader>
+                                                    <CardHeader><CardTitle>3. Rectangular Sticker</CardTitle></CardHeader>
                                                     <CardContent className="space-y-4">
-                                                        <div className="relative aspect-video w-full"><Image src={apparel.rectangularStickerUrl} alt={`${theme.title} rectangular sticker`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
-                                                        <p className="text-xs text-center text-muted-foreground">Rectangular Sticker</p>
+                                                        <div className="relative aspect-video w-full"><Image src={assets.rectangularStickerUrl} alt={`${theme.title} rectangular sticker`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
                                                     </CardContent>
                                                 </Card>
                                                 <Card className="col-span-1">
-                                                    <CardHeader><CardTitle>4. Printable Sheet</CardTitle></CardHeader>
+                                                    <CardHeader><CardTitle>4. Wacky Variations</CardTitle></CardHeader>
+                                                     <CardContent className="grid grid-cols-2 gap-2">
+                                                        <div className="relative aspect-square w-full"><Image src={assets.trippySticker1Url} alt={`${theme.title} trippy sticker 1`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                        <div className="relative aspect-square w-full"><Image src={assets.trippySticker2Url} alt={`${theme.title} trippy sticker 2`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card className="col-span-1 md:col-span-2">
+                                                    <CardHeader><CardTitle>5. Printable Sheet</CardTitle></CardHeader>
                                                     <CardContent>
-                                                        <div className="relative aspect-[1/1.414] w-full"><Image src={apparel.stickerSheetUrl} alt={`${theme.title} sticker sheet`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
+                                                        <div className="relative aspect-[1/1.414] w-full"><Image src={assets.stickerSheetUrl} alt={`${theme.title} sticker sheet`} fill className="object-contain p-2 rounded-md bg-muted"/></div>
                                                         <p className="text-xs text-center text-muted-foreground mt-2">A4-Proportioned Sticker Sheet</p>
                                                     </CardContent>
                                                 </Card>
