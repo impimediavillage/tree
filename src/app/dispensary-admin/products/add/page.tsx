@@ -1019,14 +1019,15 @@ export default function AddProductPage() {
         });
         const data = await response.json();
         if (!response.ok) {
-            throw new Error(data.error || `Failed to deduct credits (status: ${response.status})`);
+            const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
+            toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
+            return false;
         }
         toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
-        // The AuthContext onSnapshot listener will automatically update the currentUser state globally.
         return true;
     } catch (e: any) {
-        console.error("Error deducting credits:", e);
-        toast({ title: "Credit Deduction Failed", description: e.message || "Could not deduct credits.", variant: "destructive" });
+        console.error("Network or parsing error in deductCredits:", e);
+        toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
         return false;
     }
   };
