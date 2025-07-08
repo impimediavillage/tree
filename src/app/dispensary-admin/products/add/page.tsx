@@ -198,7 +198,8 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const generationInitiatedRef = useRef(false);
 
     const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
-        if (!currentUser?.uid) {
+        const userId = currentUser?.uid;
+        if (!userId) {
             toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
             return false;
         }
@@ -214,17 +215,12 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
             const response = await fetch(functionUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: currentUser.uid,
-                    advisorSlug: interactionSlug,
-                    creditsToDeduct,
-                    wasFreeInteraction: false,
-                }),
+                body: JSON.stringify({ userId, advisorSlug: interactionSlug, creditsToDeduct, wasFreeInteraction: false }),
             });
             
-            const data = await response.json();
             if (!response.ok) {
-                const errorMessage = data.error || `An unknown error occurred (status: ${response.status})`;
+                const data = await response.json().catch(() => ({ error: `An unknown error occurred (status: ${response.status})` }));
+                const errorMessage = data.error || `Failed to deduct credits (status: ${response.status})`;
                 toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
                 return false;
             }
@@ -1156,37 +1152,6 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                  <Separator className="my-6" />
-            )}
-
-            {selectedProductStream === 'THC' && showProductDetailsForm && (
-                <Card className="mb-6 p-4 border-amber-500 bg-amber-50/50 shadow-sm">
-                    <CardHeader className="p-0 pb-2">
-                        <CardTitle className="text-md flex items-center text-amber-700"><Info className="h-5 w-5 mr-2"/>Important Notice if adding THC Products</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 text-sm text-amber-600 space-y-2">
-                        <p>The Wellness Tree complies with South African Law regarding the trade of THC products. We therefore cannot sell THC product directly, however we invite Wellness Owners to offer THC products as a <strong className="font-semibold">FREE gift</strong> accompanying the sale of our exclusive "The Wellness Tree" promo design range.</p>
-                        <p>Store owners are welcome to promote our stickers, caps, and t-shirt designs and offer FREE THC samples to share amongst fellow cannabinoid enthusiasts.</p>
-                        <p>By opting in, you agree to provide a FREE THC sample with each Promo design sold through the platform. YOU set the price of the design and add the relative sample amount of product you wish to offer as a free sample. You help us sell our designs. We help You share your garden's wares with fellow enthusiasts.</p>
-                        <p className="mt-2 font-semibold">Please remember: Any THC info is purely for recreational knowledge building for Cannabinoid enthusiasts, and is not relevant for Sticker sales.</p>
-                    </CardContent>
-                        <FormField
-                        control={form.control}
-                        name="stickerProgramOptIn"
-                        render={({ field }) => (
-                            <FormItem className="mt-4">
-                            <FormLabel className="text-md font-semibold text-amber-700">Participate in Wellness Tree Promo design initiative? *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                <FormControl><SelectTrigger className="bg-white/70 border-amber-400"><SelectValue placeholder="Select your choice" /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="yes">Yes, I want to participate</SelectItem>
-                                    <SelectItem value="no">No, not at this time</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </Card>
             )}
 
             {showProductDetailsForm && (
