@@ -59,18 +59,18 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
             fontAndBorderStyle: 'The text and border must also be rendered in a 3D modelling clay style. The entire badge is framed by a distinct, sculpted clay-style external border.',
         },
         'comic': {
-            styleDescription: 'vibrant 2D vector comic badge',
-            artworkStyle: `The artwork features a bold, 2D vector comic-style drawing of ${artworkSubject}, merging into a vibrant, retro, 420-themed background in the same comic vector style. Use bold black outlines and flat, saturated colors.`,
+            styleDescription: 'hyper-vibrant 2D vector comic badge',
+            artworkStyle: `A hyper-vibrant and creative 2D vector comic-style drawing of ${artworkSubject}. The style should be dynamic and energetic, with exaggerated perspectives and action lines. The background is a pop-art explosion of retro 420-themed patterns and Ben-Day dots, rendered in the same dynamic comic style. Use bold, expressive black outlines and a palette of oversaturated, high-contrast colors.`,
             fontAndBorderStyle: 'The text must be in a bold, 2D comic book font with a strong black outline. The entire badge is framed by a distinct, bold black vector line.',
         },
         'rasta': {
             styleDescription: 'vibrant, 2D vector Rasta-Reggae badge',
-            artworkStyle: `A stylized, 2D vector illustration of ${artworkSubject}, merged into a background that evokes a Rasta-Reggae theme (e.g., a sunburst pattern with red, gold, green).`,
-            fontAndBorderStyle: `The text must be in a bold, friendly, slightly rounded font reminiscent of vintage reggae posters. The badge is framed by a clean vector border, possibly a tri-color stripe of red, gold, and green.`,
+            artworkStyle: `A vibrant, retro 420 cartoon character that is a mashup of Sonic the Hedgehog's energy and Bob Marley's rasta style. The character is dynamically posed, like a superhero, either smoking a giant stylized joint or triumphantly holding up ${artworkSubject}. The background is a psychedelic explosion of Rasta colors and patterns.`,
+            fontAndBorderStyle: `The text must be in a bold, groovy, slightly rounded font reminiscent of vintage 70s reggae posters. The badge is framed by a clean vector border, possibly a tri-color stripe of red, gold, and green.`,
         },
         'farmstyle': {
-            styleDescription: 'hand-painted, retro farmstand sign badge',
-            artworkStyle: `A detailed, hand-painted style illustration of ${artworkSubject}, looking natural and artisanal, on a background suggesting rustic wood grain or faded burlap.`,
+            styleDescription: 'vibrant, hand-painted, retro farmstand sign badge',
+            artworkStyle: `A vibrant and richly detailed, hand-painted illustration of ${artworkSubject}, in a style reminiscent of a classic, high-quality botanical drawing from a vintage seed packet, but with a modern, artisanal flair. The background is a creative composition suggesting a sun-drenched, bountiful farm with elements like rustic wood grain, faded burlap, and perhaps a subtle, retro sunburst pattern.`,
             fontAndBorderStyle: `The text must be in a classic, slightly distressed serif or script font. The entire badge is framed by a simple, painted ring or a border that looks like rustic rope.`,
         },
         'imaginative': {
