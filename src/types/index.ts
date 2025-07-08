@@ -266,6 +266,7 @@ export interface Notification {
 export interface AIInteractionLog {
   id?: string;
   userId: string;
+  dispensaryId?: string | null;
   advisorSlug: string;
   creditsUsed: number;
   wasFreeInteraction: boolean;
