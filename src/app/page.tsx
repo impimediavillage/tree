@@ -202,8 +202,8 @@ export default function HolisticAiHubPage() {
             <Link href="/design/brand-assets">
               <Palette className="mr-2 h-5 w-5" />
               Design Your Own Sticker & Apparel Pack
-            </Button>
-          </CardHeader>
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent className="p-6 flex-grow">
           <h3 className="text-lg font-semibold text-foreground mb-4 text-center">AI-Powered Brand Asset Generator</h3>
