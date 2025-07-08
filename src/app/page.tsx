@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -192,26 +191,6 @@ export default function HolisticAiHubPage() {
         </div>
       </div>
       
-       <Card
-        className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-accent/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md"
-        style={{ animationFillMode: 'backwards', animationDelay: `100ms` }}
-        data-ai-hint="promo asset generator"
-      >
-        <CardHeader className="bg-muted/30 p-4 border-b border-accent/20">
-          <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-md">
-            <Link href="/design/brand-assets">
-              <Palette className="mr-2 h-5 w-5" />
-              Design Your Own Sticker & Apparel Pack
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent className="p-6 flex-grow">
-          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">AI-Powered Brand Asset Generator</h3>
-          <p className="text-center text-muted-foreground">Instantly create unique, professional logos, sticker sheets, and apparel mockups for your store or favorite strain. Get started for free!</p>
-        </CardContent>
-      </Card>
-
-
       {isLoadingUser ? (
          <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -318,7 +297,6 @@ export default function HolisticAiHubPage() {
         </Card>
       )}
 
-
       <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
           <h2 
@@ -340,6 +318,26 @@ export default function HolisticAiHubPage() {
           ))}
         </div>
       </section>
+
+      <Card
+        className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-accent/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md"
+        style={{ animationFillMode: 'backwards', animationDelay: `100ms` }}
+        data-ai-hint="promo asset generator"
+      >
+        <CardHeader className="bg-muted/30 p-4 border-b border-accent/20">
+          <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-md">
+            <Link href="/design/brand-assets">
+              <Palette className="mr-2 h-5 w-5" />
+              Design Your Own Sticker & Apparel Pack
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent className="p-6 flex-grow">
+          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">AI-Powered Brand Asset Generator</h3>
+          <p className="text-center text-muted-foreground">Instantly create unique, professional logos, sticker sheets, and apparel mockups for your store or favorite strain. Get started for free!</p>
+        </CardContent>
+      </Card>
+      
     </div>
   );
 }
