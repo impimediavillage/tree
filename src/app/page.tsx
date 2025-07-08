@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2 } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
@@ -164,7 +164,7 @@ export default function HolisticAiHubPage() {
 
   const leafUserBenefits = [
     { text: "Cant afford wellness advice? Now You can with The Wellness Tree FREE Leaf package.", icon: Gift },
-    { text: "10 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
+    { text: "20 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
     { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
@@ -191,6 +191,26 @@ export default function HolisticAiHubPage() {
           </p>
         </div>
       </div>
+      
+       <Card
+        className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-accent/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md"
+        style={{ animationFillMode: 'backwards', animationDelay: `100ms` }}
+        data-ai-hint="promo asset generator"
+      >
+        <CardHeader className="bg-muted/30 p-4 border-b border-accent/20">
+          <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-md">
+            <Link href="/design/brand-assets">
+              <Palette className="mr-2 h-5 w-5" />
+              Design Your Own Sticker & Apparel Pack
+            </Button>
+          </CardHeader>
+        </CardHeader>
+        <CardContent className="p-6 flex-grow">
+          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">AI-Powered Brand Asset Generator</h3>
+          <p className="text-center text-muted-foreground">Instantly create unique, professional logos, sticker sheets, and apparel mockups for your store or favorite strain. Get started for free!</p>
+        </CardContent>
+      </Card>
+
 
       {isLoadingUser ? (
          <div className="flex justify-center items-center py-10">
