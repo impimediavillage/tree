@@ -551,7 +551,8 @@ export const ThemeAssetSetSchema = z.object({
     capUrl: z.string().url(),
     tShirtUrl: z.string().url(),
     hoodieUrl: z.string().url(),
-    stickerSheetUrl: z.string().url(),
+    circularStickerSheetUrl: z.string().url(),
+    rectangularStickerSheetUrl: z.string().url(),
     trippySticker1Url: z.string().url(),
     trippySticker2Url: z.string().url(),
 });
