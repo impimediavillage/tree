@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -14,7 +13,7 @@ import type { GenerateInitialLogosOutput, ThemeAssetSet, StickerSet, Product, Pr
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog as DialogRoot, DialogContent as DialogContentComponent, DialogHeader as DialogHeaderComponent, DialogTitle as DialogTitleComponent, DialogDescription as DialogDescriptionComponent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AlertTriangle, Eye, Loader2, ShoppingCart, Sparkles, Store, Download } from 'lucide-react';
@@ -34,7 +33,7 @@ interface DesignResultDialogProps {
 
 export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset }) => {
     const router = useRouter();
-    const { currentUser, setCurrentUser } = useAuth(); // Using setCurrentUser from context
+    const { currentUser, setCurrentUser } = useAuth();
     const { addToCart } = useCart();
     const { toast } = useToast();
 
@@ -313,14 +312,14 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
     const userIsOwner = currentUser?.role === 'DispensaryOwner';
 
     return (
-        <DialogRoot open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContentComponent className="max-w-7xl h-[95vh] flex flex-col p-0">
-                <DialogHeaderComponent className="px-6 pt-6 pb-4 border-b">
-                    <DialogTitleComponent>Generated Assets for &quot;{subjectName}&quot;</DialogTitleComponent>
-                    <DialogDescriptionComponent>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-7xl h-[95vh] flex flex-col p-0">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                    <DialogTitle>Generated Assets for &quot;{subjectName}&quot;</DialogTitle>
+                    <DialogDescription>
                         Initial generation costs 5 credits. Visualizing a theme on gear costs 8 credits. Current balance: <span className="font-bold text-primary">{currentUser?.credits ?? 0}</span>
-                    </DialogDescriptionComponent>
-                </DialogHeaderComponent>
+                    </DialogDescription>
+                </DialogHeader>
 
                 {isLoadingInitial ? (
                     <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
@@ -437,7 +436,7 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
                         <p className="text-lg text-muted-foreground">Failed to generate logos.</p>
                     </div>
                 )}
-            </DialogContentComponent>
-        </DialogRoot>
+            </DialogContent>
+        </Dialog>
     );
 };
