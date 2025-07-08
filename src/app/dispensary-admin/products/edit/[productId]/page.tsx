@@ -194,6 +194,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
     const [expandedAssets, setExpandedAssets] = useState<ExpandedThemeAssets>({});
     const { toast } = useToast();
+    const generationInitiatedRef = React.useRef(false);
 
     useEffect(() => {
         const generateLogos = async () => {
@@ -223,7 +224,8 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
             }
         };
 
-        if (isOpen && !initialLogos && isLoadingInitial) {
+        if (isOpen && !generationInitiatedRef.current) {
+            generationInitiatedRef.current = true;
             generateLogos();
         } else if (!isOpen) {
             setTimeout(() => {
@@ -231,9 +233,10 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
               setInitialLogos(null);
               setExpandedAssets({});
               setGeneratingTheme(null);
+              generationInitiatedRef.current = false;
             }, 300);
         }
-    }, [isOpen, initialLogos, isLoadingInitial, onOpenChange, subjectName, isStoreAsset, toast, currentUser, deductCredits]);
+    }, [isOpen, onOpenChange, subjectName, isStoreAsset, toast, currentUser, deductCredits]);
     
     const handleGenerateApparel = async (themeKey: ThemeKey, logoUrl: string) => {
         if (generatingTheme) return;
@@ -932,7 +935,7 @@ export default function EditProductPage() {
         toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
         return false;
     }
-  }, [currentUser, toast]);
+  }, [currentUser?.uid, toast]);
   
   const handleGenerateAssets = () => {
     let subjectName = '';
