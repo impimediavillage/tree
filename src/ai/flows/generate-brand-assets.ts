@@ -2,47 +2,61 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for generating a themed brand asset pack (stickers, apparel).
- * - generateBrandAssets - A function that takes a subject name and generates design images in multiple styles.
- * - GenerateBrandAssetsInput - The input type for the function.
- * - GenerateBrandAssetsOutput - The return type for the function, containing URLs for all generated designs.
+ * This file is structured for a two-stage generation process:
+ * 1. `generateInitialLogos`: Creates five themed circular logo designs.
+ * 2. `generateApparelForTheme`: Takes a chosen logo and generates the full apparel/sticker set for that theme.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const GenerateBrandAssetsInputSchema = z.object({
-  name: z.string().describe('The name of the store or strain for which to generate assets.'),
+// --- STAGE 1: Initial Logo Generation ---
+
+const GenerateInitialLogosInputSchema = z.object({
+  name: z.string().describe('The name of the store or strain for which to generate logos.'),
   isStore: z.boolean().describe('Whether the name provided is a store name or a strain name.'),
 });
-export type GenerateBrandAssetsInput = z.infer<typeof GenerateBrandAssetsInputSchema>;
+export type GenerateInitialLogosInput = z.infer<typeof GenerateInitialLogosInputSchema>;
 
-const ThemeAssetSchema = z.object({
-    circularStickerUrl: z.string().url(),
+export const GenerateInitialLogosOutputSchema = z.object({
+  clayLogoUrl: z.string().url(),
+  comicLogoUrl: z.string().url(),
+  rastaLogoUrl: z.string().url(),
+  farmstyleLogoUrl: z.string().url(),
+  imaginativeLogoUrl: z.string().url(),
+});
+export type GenerateInitialLogosOutput = z.infer<typeof GenerateInitialLogosOutputSchema>;
+
+
+// --- STAGE 2: Apparel & Sticker Generation for a Chosen Theme ---
+
+export const GenerateApparelInputSchema = z.object({
+  style: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
+  circularStickerUrl: z.string().url().describe("The URL of the pre-generated circular logo for the chosen theme."),
+  subjectName: z.string().describe('The name of the store or strain.'),
+});
+export type GenerateApparelInput = z.infer<typeof GenerateApparelInputSchema>;
+
+export const ThemeAssetSetSchema = z.object({
+    circularStickerUrl: z.string().url(), // Included for consistency, though already known
     rectangularStickerUrl: z.string().url(),
     capUrl: z.string().url(),
     tShirtUrl: z.string().url(),
     hoodieUrl: z.string().url(),
     stickerSheetUrl: z.string().url(),
 });
-
-const GenerateBrandAssetsOutputSchema = z.object({
-  clay: ThemeAssetSchema,
-  comic: ThemeAssetSchema,
-  rasta: ThemeAssetSchema,
-  farmstyle: ThemeAssetSchema,
-  imaginative: ThemeAssetSchema,
-});
-export type GenerateBrandAssetsOutput = z.infer<typeof GenerateBrandAssetsOutputSchema>;
+export type ThemeAssetSet = z.infer<typeof ThemeAssetSetSchema>;
 
 
-// Helper function for a single image generation call
+// --- SHARED HELPERS ---
+
 async function generateImage(prompt: string | ({ media: { url: string; }; } | { text: string; })[]): Promise<string> {
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt: prompt,
         config: {
             responseModalities: ['TEXT', 'IMAGE'],
-            safetySettings: [ // Relaxed safety settings for creative content
+            safetySettings: [
                 { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
                 { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
                 { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
@@ -61,41 +75,40 @@ async function generateImage(prompt: string | ({ media: { url: string; }; } | { 
 const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
     const artworkSubject = isStore
         ? 'an artistic, high-concept representation of a vibrant green wellness plant'
-        : `a stylized representation of the '${subjectName}' wellness plant strain`;
-
+        : `a 3D isometric, stylized, energetic representation of the '${subjectName}' wellness plant strain`;
+    
     const styleDetails = {
         'clay': {
             styleDescription: 'hyper-realistic 3D badge sculpted from modelling clay',
-            artworkStyle: `The artwork features a hyper-realistic, 3D clay sculpture of a wellness plant, seamlessly merging into a vibrant, retro, 420-themed background, also rendered in a realistic clay style.`,
+            artworkStyle: `The artwork features a hyper-realistic, 3D clay sculpture of ${artworkSubject}, seamlessly merging into a vibrant, retro, 420-themed background, also rendered in a realistic clay style.`,
             fontAndBorderStyle: 'The text and border must also be rendered in a 3D modelling clay style. The entire badge is framed by a distinct, sculpted clay-style external border.',
         },
         'comic': {
             styleDescription: 'vibrant 2D vector comic badge',
-            artworkStyle: `The artwork features a bold, 2D vector comic-style drawing of a wellness plant, merging into a vibrant, retro, 420-themed background in the same comic vector style. Use bold black outlines and flat, saturated colors.`,
+            artworkStyle: `The artwork features a bold, 2D vector comic-style drawing of ${artworkSubject}, merging into a vibrant, retro, 420-themed background in the same comic vector style. Use bold black outlines and flat, saturated colors.`,
             fontAndBorderStyle: 'The text must be in a bold, 2D comic book font with a strong black outline. The entire badge is framed by a distinct, bold black vector line.',
         },
         'rasta': {
             styleDescription: 'vibrant, 2D vector Rasta-Reggae badge',
-            artworkStyle: `A stylized, 2D vector illustration of a wellness plant, merged into a background that evokes a Rasta-Reggae theme (e.g., a sunburst pattern with red, gold, green).`,
+            artworkStyle: `A stylized, 2D vector illustration of ${artworkSubject}, merged into a background that evokes a Rasta-Reggae theme (e.g., a sunburst pattern with red, gold, green).`,
             fontAndBorderStyle: `The text must be in a bold, friendly, slightly rounded font reminiscent of vintage reggae posters. The badge is framed by a clean vector border, possibly a tri-color stripe of red, gold, and green.`,
         },
         'farmstyle': {
             styleDescription: 'hand-painted, retro farmstand sign badge',
-            artworkStyle: `A detailed, hand-painted style illustration of a wellness plant, looking natural and artisanal, on a background suggesting rustic wood grain or faded burlap.`,
+            artworkStyle: `A detailed, hand-painted style illustration of ${artworkSubject}, looking natural and artisanal, on a background suggesting rustic wood grain or faded burlap.`,
             fontAndBorderStyle: `The text must be in a classic, slightly distressed serif or script font. The entire badge is framed by a simple, painted ring or a border that looks like rustic rope.`,
         },
         'imaginative': {
             styleDescription: 'cosmic 420 shaman alien badge',
-            artworkStyle: `A surreal, alien-like wellness plant, possibly glowing or with cosmic energy, merged into a mystical, shamanic background with stars, nebulae, or galaxies.`,
+            artworkStyle: `A surreal, alien-like version of ${artworkSubject}, possibly glowing or with cosmic energy, merged into a mystical, shamanic background with stars, nebulae, or galaxies.`,
             fontAndBorderStyle: `The text must be in a futuristic or mystical font that is still highly readable. The border should complement the cosmic shamanic alien style.`,
         }
     };
-
     const details = styleDetails[style];
 
     return `Create a single, high-resolution, **${details.styleDescription} circular sticker** on a solid white background.
     
-    **Central Artwork:** ${artworkSubject}. ${details.artworkStyle}
+    **Central Artwork:** ${details.artworkStyle}
     
     **Text and Border:** The design must be enclosed in a circular border.
     - On the **top curve** of the border, incorporate the name **"${subjectName.toUpperCase()}"**.
@@ -104,6 +117,7 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
     
     **Final Check:** The output is a single, circular, ${style}-style sticker on a white background, featuring the specified subject and text.`;
 };
+
 
 const getRectangularStickerPrompt = (circularStickerUrl: string) => [
     { media: { url: circularStickerUrl } },
@@ -121,15 +135,44 @@ const getPrintableStickerSheetPrompt = (circularStickerUrl: string, rectangularS
     { text: `You are a professional print designer. Create a print-ready sticker sheet on a clean, A4-proportioned white background. You are provided with two sticker designs: one circular (90mm), one rectangular (90mm high, proportionate width). Arrange multiple copies of both stickers onto the A4 background. The layout should be clean, well-spaced, and optimized for printing and cutting. Each sticker must have a subtle die-cut outline.` }
 ];
 
-// --- THEME GENERATION PIPELINE ---
 
-const generateThemeAssets = async (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', name: string, isStore: boolean): Promise<ThemeAssetSet> => {
-    const circularStickerPrompt = getCircularStickerPrompt(style, name, isStore);
-    const circularStickerUrl = await generateImage(circularStickerPrompt);
+// --- FLOW DEFINITIONS ---
 
-    const rectangularStickerPrompt = getRectangularStickerPrompt(circularStickerUrl);
-    const rectangularStickerUrl = await generateImage(rectangularStickerPrompt);
+// Stage 1 Flow
+const generateInitialLogosFlow = ai.defineFlow(
+  {
+    name: 'generateInitialLogosFlow',
+    inputSchema: GenerateInitialLogosInputSchema,
+    outputSchema: GenerateInitialLogosOutputSchema,
+  },
+  async ({ name, isStore }) => {
+    const [clayLogoUrl, comicLogoUrl, rastaLogoUrl, farmstyleLogoUrl, imaginativeLogoUrl] = await Promise.all([
+      generateImage(getCircularStickerPrompt('clay', name, isStore)),
+      generateImage(getCircularStickerPrompt('comic', name, isStore)),
+      generateImage(getCircularStickerPrompt('rasta', name, isStore)),
+      generateImage(getCircularStickerPrompt('farmstyle', name, isStore)),
+      generateImage(getCircularStickerPrompt('imaginative', name, isStore)),
+    ]);
+    return { clayLogoUrl, comicLogoUrl, rastaLogoUrl, farmstyleLogoUrl, imaginativeLogoUrl };
+  }
+);
+export async function generateInitialLogos(input: GenerateInitialLogosInput): Promise<GenerateInitialLogosOutput> {
+  return generateInitialLogosFlow(input);
+}
 
+
+// Stage 2 Flow
+const generateApparelForThemeFlow = ai.defineFlow(
+  {
+    name: 'generateApparelForThemeFlow',
+    inputSchema: GenerateApparelInputSchema,
+    outputSchema: ThemeAssetSetSchema,
+  },
+  async ({ style, circularStickerUrl, subjectName }) => {
+    // Generate the rectangular sticker first, as it's needed for the sheet
+    const rectangularStickerUrl = await generateImage(getRectangularStickerPrompt(circularStickerUrl));
+
+    // Generate the rest in parallel
     const [capUrl, tShirtUrl, hoodieUrl, stickerSheetUrl] = await Promise.all([
         generateImage(getApparelPrompt(circularStickerUrl, 'cap')),
         generateImage(getApparelPrompt(circularStickerUrl, 't-shirt')),
@@ -138,29 +181,8 @@ const generateThemeAssets = async (style: 'clay' | 'comic' | 'rasta' | 'farmstyl
     ]);
 
     return { circularStickerUrl, rectangularStickerUrl, capUrl, tShirtUrl, hoodieUrl, stickerSheetUrl };
-};
-
-// --- MAIN FLOW ---
-
-const generateBrandAssetsFlow = ai.defineFlow(
-  {
-    name: 'generateBrandAssetsFlow',
-    inputSchema: GenerateBrandAssetsInputSchema,
-    outputSchema: GenerateBrandAssetsOutputSchema,
-  },
-  async ({ name, isStore }) => {
-    const [clay, comic, rasta, farmstyle, imaginative] = await Promise.all([
-        generateThemeAssets('clay', name, isStore),
-        generateThemeAssets('comic', name, isStore),
-        generateThemeAssets('rasta', name, isStore),
-        generateThemeAssets('farmstyle', name, isStore),
-        generateThemeAssets('imaginative', name, isStore),
-    ]);
-
-    return { clay, comic, rasta, farmstyle, imaginative };
   }
 );
-
-export async function generateBrandAssets(input: GenerateBrandAssetsInput): Promise<GenerateBrandAssetsOutput> {
-  return generateBrandAssetsFlow(input);
+export async function generateApparelForTheme(input: GenerateApparelInput): Promise<ThemeAssetSet> {
+    return generateApparelForThemeFlow(input);
 }
