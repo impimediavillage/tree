@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DollarSign, CheckCircle, Loader2, Palette, Gift, Heart } from 'lucide-react';
+import { DollarSign, Loader2, Palette, Gift, Heart, Sparkles } from 'lucide-react';
 import type { User, CreditPackage } from '@/types';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -122,8 +122,7 @@ export default function LeafCreditsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {creditPackages.map((pkg) => {
             const packageFeatures = [
-                { text: "Access to AI Advisors", icon: CheckCircle },
-                // Conditionally add the new feature
+                { text: "Access to AI Advisors", icon: Sparkles },
                 ...(pkg.name === 'Casual Plan' || pkg.name === 'Deep Roots'
                     ? [{ text: 'Access to Sticker and Promo Designer', icon: Palette }]
                     : []),
