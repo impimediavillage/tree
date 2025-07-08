@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 
 // Price Tier Interface
@@ -400,4 +399,13 @@ export interface ThemeAssetSet {
     rectangularStickerSheetUrl: string;
     trippySticker1Url: string;
     trippySticker2Url: string;
+}
+
+export interface StickerSet {
+  id?: string;
+  dispensaryId: string;
+  name: string;
+  theme: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
+  assets: ThemeAssetSet;
+  createdAt: Timestamp | Date | string;
 }

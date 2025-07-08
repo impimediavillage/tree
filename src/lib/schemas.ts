@@ -416,6 +416,7 @@ export type Notification = z.infer<typeof notificationSchema>;
 export const aiInteractionLogSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
+  dispensaryId: z.string().optional().nullable(),
   advisorSlug: z.string(),
   creditsUsed: z.number().int().min(0),
   wasFreeInteraction: z.boolean().default(false),
@@ -556,3 +557,14 @@ export const ThemeAssetSetSchema = z.object({
     trippySticker1Url: z.string().url(),
     trippySticker2Url: z.string().url(),
 });
+
+
+export const stickerSetSchema = z.object({
+  id: z.string().optional(),
+  dispensaryId: z.string(),
+  name: z.string(),
+  theme: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
+  assets: ThemeAssetSetSchema,
+  createdAt: z.any(),
+});
+export type StickerSet = z.infer<typeof stickerSetSchema>;
