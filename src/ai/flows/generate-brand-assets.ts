@@ -49,7 +49,7 @@ async function generateImage(prompt: string | ({ media: { url: string; }; } | { 
 
 const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
     const artworkSubject = isStore
-        ? 'an artistic, high-concept representation of a vibrant green wellness plant with shimmering crystals'
+        ? 'a 3D isometric, stylized, energetic representation of a hyper-detailed wellness cannabis plant'
         : `a 3D isometric, stylized, energetic representation of the '${subjectName}' wellness plant strain`;
     
     const styleDetails = {
@@ -74,9 +74,9 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
             fontAndBorderStyle: `The text must be in a classic, slightly distressed serif or script font. The entire badge is framed by a simple, painted ring or a border that looks like rustic rope.`,
         },
         'imaginative': {
-            styleDescription: 'cosmic 420 shaman alien badge',
-            artworkStyle: `A surreal, alien-like version of ${artworkSubject}, possibly glowing or with cosmic energy, merged into a mystical, shamanic background with stars, nebulae, or galaxies.`,
-            fontAndBorderStyle: `The text must be in a futuristic or mystical font that is still highly readable. The border should complement the cosmic shamanic alien style.`,
+            styleDescription: 'cosmic 420 rasta alien shaman badge',
+            artworkStyle: `A surreal, rasta alien-like version of ${artworkSubject}, possibly glowing or with cosmic energy, merged into a mystical, shamanic background with stars, nebulae, galaxies, and subtle reggae/rasta patterns.`,
+            fontAndBorderStyle: `The text must be in a futuristic or mystical font that is still highly readable. The border should complement the cosmic shamanic rasta alien style.`,
         }
     };
     const details = styleDetails[style];
@@ -110,9 +110,16 @@ const getApparelPrompt = (circularStickerUrl: string, apparelType: 'cap' | 't-sh
     ];
 };
 
-const getTrippyStickerPrompt = (circularStickerUrl: string) => [
+const getTrippyStickerPrompt = (circularStickerUrl: string, subjectName: string) => [
     { media: { url: circularStickerUrl } },
-    { text: `Analyze the provided circular sticker. Create a new, unique circular sticker that is a **wacky, fun, and trippy reinterpretation** of the original. It must maintain the same core style (e.g., if the original is 3D clay, this must also be 3D clay) but introduce surreal, psychedelic, or humorous elements. Do NOT include any text or borders. The output should be a single, circular sticker on a solid white background.` }
+    { text: `Analyze the provided circular sticker. Create a new, unique circular sticker that is a **wacky, fun, and trippy reinterpretation** of the original. It must maintain the same core style (e.g., if the original is 3D clay, this must also be 3D clay) but introduce surreal, psychedelic, or humorous elements.
+    
+    **Text and Border:** The design must be enclosed in a circular border.
+    - On the **top curve** of the border, incorporate the name **"${subjectName.toUpperCase()}"**.
+    - On the **bottom curve** of the border, incorporate the words **"THE WELLNESS TREE"**.
+    - The font and border style must be **DIFFERENT** from the original sticker but still complementary and wacky. Be creative with the text and border to match the trippy theme.
+    
+    The output should be a single, wacky circular sticker on a solid white background.` }
 ];
 
 const getPrintableStickerSheetPrompt = (
@@ -178,8 +185,8 @@ const generateApparelForThemeFlow = ai.defineFlow(
     // Stage 2a: Generate the sticker variations in parallel
     const [rectangularStickerUrl, trippySticker1Url, trippySticker2Url] = await Promise.all([
         generateImage(getRectangularStickerPrompt(circularStickerUrl)),
-        generateImage(getTrippyStickerPrompt(circularStickerUrl)),
-        generateImage(getTrippyStickerPrompt(circularStickerUrl)), // Call twice for two different variations
+        generateImage(getTrippyStickerPrompt(circularStickerUrl, subjectName)),
+        generateImage(getTrippyStickerPrompt(circularStickerUrl, subjectName)), // Call twice for two different variations
     ]);
 
     // Stage 2b: Generate apparel and the final sticker sheet in parallel
