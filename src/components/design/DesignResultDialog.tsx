@@ -4,6 +4,7 @@
 import * as React from 'react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { db } from '@/lib/firebase';
@@ -13,7 +14,7 @@ import type { GenerateInitialLogosOutput, ThemeAssetSet, StickerSet, Product, Pr
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent as DialogContentComponent, DialogHeader as DialogHeaderComponent, DialogTitle as DialogTitleComponent, DialogDescription as DialogDescriptionComponent } from '@/components/ui/dialog';
+import { Dialog as DialogRoot, DialogContent as DialogContentComponent, DialogHeader as DialogHeaderComponent, DialogTitle as DialogTitleComponent, DialogDescription as DialogDescriptionComponent } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AlertTriangle, Eye, Loader2, ShoppingCart, Sparkles, Store, Download } from 'lucide-react';
@@ -32,6 +33,7 @@ interface DesignResultDialogProps {
 }
 
 export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset }) => {
+    const router = useRouter();
     const { currentUser, setCurrentUser } = useAuth(); // Using setCurrentUser from context
     const { addToCart } = useCart();
     const { toast } = useToast();
@@ -106,9 +108,17 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
 
     useEffect(() => {
         const generateLogos = async () => {
-            if (!currentUser || (currentUser.credits ?? 0) < 5) {
-                toast({ title: "Insufficient Credits", description: "You need at least 5 credits to generate initial logos.", variant: "destructive" });
+            if (!currentUser) {
+                toast({ title: "Sign Up to Continue", description: "Please create a free account to generate assets and receive 20 welcome credits.", variant: "default" });
                 onOpenChange(false);
+                router.push('/auth/signup');
+                return;
+            }
+
+            if ((currentUser.credits ?? 0) < 5) {
+                toast({ title: "Insufficient Credits", description: "You need at least 5 credits to generate logos. Redirecting you to top up.", variant: "destructive" });
+                onOpenChange(false);
+                router.push('/dashboard/leaf/credits');
                 return;
             }
             
@@ -144,12 +154,21 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
               generationInitiatedRef.current = false;
             }, 300);
         }
-    }, [isOpen, onOpenChange, subjectName, isStoreAsset, toast, currentUser, deductCredits]);
+    }, [isOpen, onOpenChange, subjectName, isStoreAsset, toast, currentUser, deductCredits, router]);
     
     const handleGenerateApparel = async (themeKey: ThemeKey, logoUrl: string) => {
         if (generatingTheme) return;
-        if (!currentUser || (currentUser.credits ?? 0) < 8) {
-            toast({ title: "Insufficient Credits", description: "You need at least 8 credits to visualize on gear.", variant: "destructive" });
+
+        if (!currentUser) {
+            toast({ title: "Please Sign In", description: "You must be logged in to visualize assets.", variant: "destructive" });
+            router.push('/auth/signin');
+            return;
+        }
+
+        if ((currentUser.credits ?? 0) < 8) {
+            toast({ title: "Insufficient Credits", description: "You need 8 credits to visualize on gear. Redirecting to top up.", variant: "destructive" });
+            onOpenChange(false);
+            router.push('/dashboard/leaf/credits');
             return;
         }
 
@@ -294,7 +313,7 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
     const userIsOwner = currentUser?.role === 'DispensaryOwner';
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogRoot open={isOpen} onOpenChange={onOpenChange}>
             <DialogContentComponent className="max-w-7xl h-[95vh] flex flex-col p-0">
                 <DialogHeaderComponent className="px-6 pt-6 pb-4 border-b">
                     <DialogTitleComponent>Generated Assets for &quot;{subjectName}&quot;</DialogTitleComponent>
@@ -419,6 +438,6 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
                     </div>
                 )}
             </DialogContentComponent>
-        </Dialog>
+        </DialogRoot>
     );
 };
