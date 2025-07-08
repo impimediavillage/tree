@@ -895,7 +895,7 @@ export default function EditProductPage() {
     }
   };
 
-  const deductCredits = async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
+  const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
     if (!currentUser || !currentUser.uid) {
         toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
         return false;
@@ -932,7 +932,7 @@ export default function EditProductPage() {
         toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
         return false;
     }
-  };
+  }, [currentUser, toast]);
   
   const handleGenerateAssets = () => {
     let subjectName = '';
