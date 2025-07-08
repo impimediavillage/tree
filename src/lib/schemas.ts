@@ -542,6 +542,7 @@ export const GenerateApparelInputSchema = z.object({
   style: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
   circularStickerUrl: z.string().url().describe("The URL of the pre-generated circular logo for the chosen theme."),
   subjectName: z.string().describe('The name of the store or strain.'),
+  isStore: z.boolean().describe('Whether the subject is a store or strain for prompt context.'),
 });
 
 export const ThemeAssetSetSchema = z.object({
@@ -551,4 +552,6 @@ export const ThemeAssetSetSchema = z.object({
     tShirtUrl: z.string().url(),
     hoodieUrl: z.string().url(),
     stickerSheetUrl: z.string().url(),
+    trippySticker1Url: z.string().url(),
+    trippySticker2Url: z.string().url(),
 });

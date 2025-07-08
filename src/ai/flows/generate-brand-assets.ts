@@ -49,7 +49,7 @@ async function generateImage(prompt: string | ({ media: { url: string; }; } | { 
 
 const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
     const artworkSubject = isStore
-        ? 'a 3D isometric, stylized, energetic representation of a hyper-detailed wellness cannabis plant'
+        ? 'a 3D isometric, stylized, energetic representation of a hyper-detailed wellness plant'
         : `a 3D isometric, stylized, energetic representation of the '${subjectName}' wellness plant strain`;
     
     const styleDetails = {
@@ -94,10 +94,28 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
 };
 
 
-const getRectangularStickerPrompt = (circularStickerUrl: string) => [
-    { media: { url: circularStickerUrl } },
-    { text: `You are a professional graphic designer. Your task is to create a **long rectangular sticker** that perfectly complements the provided circular sticker design. Analyze the style, theme, and colors of the circular sticker. Create a new rectangular sticker design that feels like it belongs to the same brand family. It should NOT just be the circular design on a rectangular background. The new design must incorporate the same subject matter and visual style (e.g., if the original is hyper-realistic, the new one should also be hyper-realistic). Ensure the final image is on a solid white background.` }
-];
+const getRectangularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative', subjectName: string, isStore: boolean) => {
+    const artworkSubject = isStore
+        ? 'a 3D isometric, stylized, energetic representation of a hyper-detailed wellness plant'
+        : `a 3D isometric, stylized, energetic representation of the '${subjectName}' wellness plant strain`;
+    
+    const styleDetails = {
+        'clay': { styleDescription: 'hyper-realistic 3D sculpted from modelling clay' },
+        'comic': { styleDescription: 'vibrant 2D vector comic' },
+        'rasta': { styleDescription: 'vibrant, 2D vector Rasta-Reggae' },
+        'farmstyle': { styleDescription: 'hand-painted, retro farmstand sign' },
+        'imaginative': { styleDescription: 'cosmic 420 rasta alien shaman' }
+    };
+    const details = styleDetails[style];
+
+    return `Create a single, high-resolution, **long rectangular sticker** in a **${details.styleDescription} style** on a solid white background.
+    
+    **Artwork:** The design must incorporate the same subject matter (${artworkSubject}) and visual style as its circular counterpart. Create a compelling rectangular composition; do NOT just place a circle on a rectangle.
+    
+    **Text:** The sticker must clearly and legibly incorporate the text **"${subjectName.toUpperCase()}"** and **"THE WELLNESS TREE"**. The font should be bold, readable, and match the overall design style.
+    
+    **Final Check:** The output is a single, rectangular, ${style}-style sticker on a white background, with integrated artwork and text.`;
+};
 
 const getApparelPrompt = (circularStickerUrl: string, apparelType: 'cap' | 't-shirt' | 'hoodie') => {
     const placement = apparelType === 't-shirt'
@@ -122,30 +140,21 @@ const getTrippyStickerPrompt = (circularStickerUrl: string, subjectName: string)
     The output should be a single, wacky circular sticker on a solid white background.` }
 ];
 
-const getPrintableStickerSheetPrompt = (
-    circularStickerUrl: string, 
-    rectangularStickerUrl: string, 
-    trippySticker1Url: string, 
-    trippySticker2Url: string
-) => [
+const getPrintableStickerSheetPrompt = (circularStickerUrl: string, rectangularStickerUrl: string) => [
     { media: { url: circularStickerUrl } },
     { media: { url: rectangularStickerUrl } },
-    { media: { url: trippySticker1Url } },
-    { media: { url: trippySticker2Url } },
     { text: `You are a professional print designer. Create a print-ready sticker sheet on a clean, **A4-proportioned white background (portrait orientation)**.
     
-    You are provided with four sticker designs:
+    You are provided with two sticker designs:
     1. A primary circular sticker.
     2. A primary rectangular sticker.
-    3. A wacky circular sticker.
-    4. Another wacky circular sticker.
     
     **Layout Instructions:**
     - Arrange multiple duplicates of the **primary circular sticker (as 90mm circles)**.
-    - Arrange multiple duplicates of the **primary rectangular sticker (as 90mm high, with proportionate width)** underneath the circular ones.
-    - Place the **two different wacky circular stickers** at the bottom of the sheet.
+    - Arrange multiple duplicates of the **primary rectangular sticker (as 90mm high, with proportionate width)**.
+    - The layout should be clean, well-spaced, and optimized for printing and cutting. Each individual sticker on the sheet must have a subtle die-cut outline.
     
-    The layout should be clean, well-spaced, and optimized for printing and cutting. Each individual sticker on the sheet must have a subtle die-cut outline.` }
+    **Final Check:** The output is a single image containing only duplicates of the provided circular and rectangular stickers, neatly arranged on an A4 sheet with die-cut lines.` }
 ];
 
 
@@ -181,23 +190,37 @@ const generateApparelForThemeFlow = ai.defineFlow(
     inputSchema: GenerateApparelInputSchema,
     outputSchema: ThemeAssetSetSchema,
   },
-  async ({ style, circularStickerUrl, subjectName }) => {
-    // Stage 2a: Generate the sticker variations in parallel
-    const [rectangularStickerUrl, trippySticker1Url, trippySticker2Url] = await Promise.all([
-        generateImage(getRectangularStickerPrompt(circularStickerUrl)),
+  async ({ style, circularStickerUrl, subjectName, isStore }) => {
+    // Generate all assets that only depend on the initial inputs in parallel
+    const [
+        rectangularStickerUrl, 
+        trippySticker1Url, 
+        trippySticker2Url,
+        capUrl,
+        tShirtUrl,
+        hoodieUrl
+    ] = await Promise.all([
+        generateImage(getRectangularStickerPrompt(style, subjectName, isStore)),
         generateImage(getTrippyStickerPrompt(circularStickerUrl, subjectName)),
-        generateImage(getTrippyStickerPrompt(circularStickerUrl, subjectName)), // Call twice for two different variations
-    ]);
-
-    // Stage 2b: Generate apparel and the final sticker sheet in parallel
-    const [capUrl, tShirtUrl, hoodieUrl, stickerSheetUrl] = await Promise.all([
+        generateImage(getTrippyStickerPrompt(circularStickerUrl, subjectName)),
         generateImage(getApparelPrompt(circularStickerUrl, 'cap')),
         generateImage(getApparelPrompt(circularStickerUrl, 't-shirt')),
         generateImage(getApparelPrompt(circularStickerUrl, 'hoodie')),
-        generateImage(getPrintableStickerSheetPrompt(circularStickerUrl, rectangularStickerUrl, trippySticker1Url, trippySticker2Url)),
     ]);
 
-    return { circularStickerUrl, rectangularStickerUrl, capUrl, tShirtUrl, hoodieUrl, stickerSheetUrl };
+    // Once the rectangular sticker is ready, generate the A4 sheet
+    const stickerSheetUrl = await generateImage(getPrintableStickerSheetPrompt(circularStickerUrl, rectangularStickerUrl));
+
+    return { 
+        circularStickerUrl, 
+        rectangularStickerUrl, 
+        capUrl, 
+        tShirtUrl, 
+        hoodieUrl, 
+        stickerSheetUrl,
+        trippySticker1Url,
+        trippySticker2Url
+    };
   }
 );
 export async function generateApparelForTheme(input: GenerateApparelInput): Promise<ThemeAssetSet> {

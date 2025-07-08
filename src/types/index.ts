@@ -386,6 +386,7 @@ export interface GenerateApparelInput {
     style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
     circularStickerUrl: string;
     subjectName: string;
+    isStore: boolean;
 }
 
 export interface ThemeAssetSet {
@@ -395,4 +396,6 @@ export interface ThemeAssetSet {
     tShirtUrl: string;
     hoodieUrl: string;
     stickerSheetUrl: string;
+    trippySticker1Url: string;
+    trippySticker2Url: string;
 }
