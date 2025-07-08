@@ -368,7 +368,16 @@ export interface CartItem {
   imageUrl?: string | null;
 }
 
-// New type for generated brand assets
+// New types for generated brand assets
+
+export interface GenerateInitialLogosOutput {
+    clayLogoUrl: string;
+    comicLogoUrl: string;
+    rastaLogoUrl: string;
+    farmstyleLogoUrl: string;
+    imaginativeLogoUrl: string;
+}
+
 export interface ThemeAssetSet {
     circularStickerUrl: string;
     rectangularStickerUrl: string;
@@ -376,12 +385,4 @@ export interface ThemeAssetSet {
     tShirtUrl: string;
     hoodieUrl: string;
     stickerSheetUrl: string;
-}
-
-export interface GenerateBrandAssetsOutput {
-  clay: ThemeAssetSet;
-  comic: ThemeAssetSet;
-  rasta: ThemeAssetSet;
-  farmstyle: ThemeAssetSet;
-  imaginative: ThemeAssetSet;
 }
