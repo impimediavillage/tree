@@ -9,43 +9,18 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-// --- STAGE 1: Initial Logo Generation ---
-
-const GenerateInitialLogosInputSchema = z.object({
-  name: z.string().describe('The name of the store or strain for which to generate logos.'),
-  isStore: z.boolean().describe('Whether the name provided is a store name or a strain name.'),
-});
-export type GenerateInitialLogosInput = z.infer<typeof GenerateInitialLogosInputSchema>;
-
-export const GenerateInitialLogosOutputSchema = z.object({
-  clayLogoUrl: z.string().url(),
-  comicLogoUrl: z.string().url(),
-  rastaLogoUrl: z.string().url(),
-  farmstyleLogoUrl: z.string().url(),
-  imaginativeLogoUrl: z.string().url(),
-});
-export type GenerateInitialLogosOutput = z.infer<typeof GenerateInitialLogosOutputSchema>;
-
-
-// --- STAGE 2: Apparel & Sticker Generation for a Chosen Theme ---
-
-export const GenerateApparelInputSchema = z.object({
-  style: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
-  circularStickerUrl: z.string().url().describe("The URL of the pre-generated circular logo for the chosen theme."),
-  subjectName: z.string().describe('The name of the store or strain.'),
-});
-export type GenerateApparelInput = z.infer<typeof GenerateApparelInputSchema>;
-
-export const ThemeAssetSetSchema = z.object({
-    circularStickerUrl: z.string().url(), // Included for consistency, though already known
-    rectangularStickerUrl: z.string().url(),
-    capUrl: z.string().url(),
-    tShirtUrl: z.string().url(),
-    hoodieUrl: z.string().url(),
-    stickerSheetUrl: z.string().url(),
-});
-export type ThemeAssetSet = z.infer<typeof ThemeAssetSetSchema>;
+import {
+    GenerateInitialLogosInputSchema,
+    GenerateInitialLogosOutputSchema,
+    GenerateApparelInputSchema,
+    ThemeAssetSetSchema
+} from '@/lib/schemas';
+import type {
+    GenerateInitialLogosInput,
+    GenerateInitialLogosOutput,
+    GenerateApparelInput,
+    ThemeAssetSet
+} from '@/types';
 
 
 // --- SHARED HELPERS ---
