@@ -196,7 +196,7 @@ const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenC
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
     const [expandedAssets, setExpandedAssets] = useState<ExpandedThemeAssets>({});
     const { toast } = useToast();
-    const generationInitiatedRef = React.useRef(false);
+    const generationInitiatedRef = useRef(false);
 
     useEffect(() => {
         const generateLogos = async () => {
@@ -1033,7 +1033,7 @@ export default function AddProductPage() {
         toast({ title: "Credit System Error", description: "Could not communicate with the credit system. Please check your connection and try again.", variant: "destructive" });
         return false;
     }
-  }, [currentUser?.uid, toast]);
+  }, [currentUser, toast]);
   
   const handleGenerateAssets = () => {
     let subjectName = '';
@@ -1222,3 +1222,4 @@ export default function AddProductPage() {
     </>
   );
 }
+
