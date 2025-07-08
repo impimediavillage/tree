@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -11,6 +10,7 @@ import type { User as AppUser, Dispensary } from '@/types';
 
 interface AuthContextType {
   currentUser: AppUser | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
   loading: boolean;
   isSuperAdmin: boolean;
   isDispensaryOwner: boolean; // True if role is DispensaryOwner AND wellness store is Approved
@@ -111,7 +111,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ 
-        currentUser, 
+        currentUser,
+        setCurrentUser, 
         loading, 
         isSuperAdmin, 
         isDispensaryOwner, 
