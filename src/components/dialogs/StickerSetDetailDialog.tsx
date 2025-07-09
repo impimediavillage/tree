@@ -56,14 +56,14 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
           }
         } catch (error) {
           console.error('Error fetching strain info:', error);
-          toast({ title: "Strain Info Error", description: "Could not load additional strain information.", variant: 'destructive' });
+          // Do not show a toast for this non-critical error
         } finally {
           setIsLoadingStrain(false);
         }
       };
       fetchStrainInfo();
     }
-  }, [isOpen, stickerSet.name, strainInfo, toast]);
+  }, [isOpen, stickerSet.name, strainInfo]);
 
   const handleAddToCart = () => {
     const stickerProduct: Product = {
@@ -163,8 +163,10 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
                         </div>
                     </div>
                 ) : (
-                    <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                        <p>No detailed strain information found for &quot;{stickerSet.name}&quot;.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
+                        <Info className="h-16 w-16 text-primary/40 mb-4 animate-pulse-slow" />
+                        <h4 className="text-lg font-semibold text-foreground">No Strain Data Available</h4>
+                        <p className="mt-1">Detailed info for &quot;{stickerSet.name}&quot; could not be found in our database.</p>
                     </div>
                 )}
             </ScrollArea>
