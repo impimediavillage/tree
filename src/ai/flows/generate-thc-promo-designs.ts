@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview A Genkit flow for generating promotional THC strain designs on-demand.
- * - generateInitialClayLogo: Creates just the 3D clay style logo to start.
+ * - generateSingleThemedLogo: Creates a single logo for a specific theme.
  * - generateThemeAssets: Creates the full asset pack (montage, stickers) for a given theme.
  * - findStrainImage: A utility to find/generate a photorealistic image for a strain.
  */
@@ -10,13 +10,15 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-// Define the inputs/outputs for the new on-demand flows.
-const GenerateSingleLogoInputSchema = z.object({
+// Define the inputs/outputs for the flows.
+const GenerateThemedLogoInputSchema = z.object({
   strain: z.string().describe('The name of the THC strain.'),
+  theme: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
 });
-const GenerateSingleLogoOutputSchema = z.object({
+const GenerateThemedLogoOutputSchema = z.object({
   logoUrl: z.string().url(),
 });
+
 const GenerateThemeAssetsInputSchema = z.object({
   strain: z.string(),
   theme: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
@@ -119,20 +121,21 @@ const getStickerSheetPrompt = (logoUrl: string) => [
 ];
 
 
-// --- NEW ON-DEMAND FLOWS ---
+// --- REFACTORED & NEW FLOWS ---
 
-const generateInitialClayLogoFlow = ai.defineFlow(
+const generateSingleThemedLogoFlow = ai.defineFlow(
   {
-    name: 'generateInitialClayLogoFlow',
-    inputSchema: GenerateSingleLogoInputSchema,
-    outputSchema: GenerateSingleLogoOutputSchema,
+    name: 'generateSingleThemedLogoFlow',
+    inputSchema: GenerateThemedLogoInputSchema,
+    outputSchema: GenerateThemedLogoOutputSchema,
   },
-  async ({ strain }) => {
-    const logoPrompt = getUnifiedStickerPrompt('clay', strain);
+  async ({ strain, theme }) => {
+    const logoPrompt = getUnifiedStickerPrompt(theme, strain);
     const logoUrl = await generateImage(logoPrompt);
     return { logoUrl };
   }
 );
+
 
 const generateThemeAssetsFlow = ai.defineFlow(
   {
@@ -142,8 +145,6 @@ const generateThemeAssetsFlow = ai.defineFlow(
   },
   async ({ strain, theme, logoUrl }) => {
     // This flow assumes the logo is already created and passed in.
-    // If a different logo is needed per theme, it should be generated here.
-    // For now, we use the provided logoUrl for all assets.
     const [productMontageUrl, stickerSheetUrl] = await Promise.all([
       generateImage(getProductMontagePrompt(logoUrl)),
       generateImage(getStickerSheetPrompt(logoUrl)),
@@ -155,8 +156,8 @@ const generateThemeAssetsFlow = ai.defineFlow(
 
 // --- EXPORTED WRAPPER FUNCTIONS ---
 
-export async function generateInitialClayLogo(input: z.infer<typeof GenerateSingleLogoInputSchema>): Promise<z.infer<typeof GenerateSingleLogoOutputSchema>> {
-  return generateInitialClayLogoFlow(input);
+export async function generateSingleThemedLogo(input: z.infer<typeof GenerateThemedLogoInputSchema>): Promise<z.infer<typeof GenerateThemedLogoOutputSchema>> {
+  return generateSingleThemedLogoFlow(input);
 }
 
 export async function generateThemeAssets(input: z.infer<typeof GenerateThemeAssetsInputSchema>): Promise<z.infer<typeof GenerateThemeAssetsOutputSchema>> {
