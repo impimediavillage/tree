@@ -3,23 +3,21 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Allow public read access for all files. This is generally safe
-    // for assets like images, icons, etc., that are meant to be displayed in the app.
+    // Allow public read on all files by default for simplicity.
+    // You might want to tighten this later.
     match /{allPaths=**} {
-      allow read: if true;
+      allow read;
     }
 
-    // Only Super Admins can upload assets for dispensary types (icons, banners).
-    // This requires the 'Super Admin' role to be set as a custom claim on the user's auth token.
+    // Only Super Admins can write to the assets folder for dispensary types.
     match /dispensary-type-assets/{allPaths=**} {
       allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
     }
 
-    // Any authenticated user can upload assets to their own sticker set folder.
-    // This rule ensures users can only write to their own directory, identified by their UID.
-    match /stickersets/{userId}/{allPaths=**} {
+    // This is the corrected rule for user sticker sets.
+    // It allows any authenticated user to write to a folder that matches their UID.
+    match /stickersets/{userId}/{fileName=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
   }
 }
