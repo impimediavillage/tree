@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db, functions } from '@/lib/firebase';
@@ -747,3 +748,4 @@ export default function WellnessStorePage() {
     </div>
   );
 }
+
