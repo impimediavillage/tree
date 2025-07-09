@@ -296,7 +296,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
                     <div className="flex justify-end p-4 border-b">
                         <Button onClick={handleAddToCartAndDownload} size="lg" className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessing}>
                             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5" />}
-                            Add Design Pack to Cart & Download Logos
+                            Add Design Pack to Cart &amp; Download Logos
                         </Button>
                     </div>
                 )}
@@ -497,33 +497,36 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
         <CardFooter className="flex flex-col items-start gap-3 pt-3 mt-auto">
           {isThcProduct ? (
             <>
-                <div className="w-full text-right">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                        <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
-                        {tier.price.toFixed(2)}
-                    </p>
-                    <div className="flex items-center justify-end text-xs text-muted-foreground">
-                        <span className="mr-1">/ {tier.unit}</span>
-                        <Gift className="h-3 w-3 mr-1" />
-                        <span>Free samples value</span>
-                    </div>
+              <div className="w-full text-right">
+                <p className="text-2xl font-bold text-black dark:text-white">
+                  <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                  {tier.price.toFixed(2)}
+                </p>
+                <div className="flex items-center justify-end text-xs text-muted-foreground">
+                  <span className="mr-1">/ {tier.unit}</span>
+                  <Gift className="h-3 w-3 mr-1" />
+                  <span>Sticker price</span>
                 </div>
-                 <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
-                    <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-                        Promotional design pack. Includes a free sample of {product.name} ({tier.unit})
-                    </p>
-                </div>
-                <div className="w-full space-y-2">
-                    <Button
-                        className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
-                        disabled={tierStock <= 0}
-                        onClick={() => onGenerateDesigns(product, tier)}
-                        aria-label={`Generate designs for ${product.name}`}
-                    >
-                        <Sparkles className="h-5 w-5" />
-                        Generate Designs
-                    </Button>
-                </div>
+                <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
+                  FREE SAMPLE with this sticker
+                </p>
+              </div>
+              <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
+                <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+                  Press Buy Design below to buy a strain sticker and receive your free sample.
+                </p>
+              </div>
+              <div className="w-full space-y-2">
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
+                  disabled={tierStock <= 0}
+                  onClick={() => onGenerateDesigns(product, tier)}
+                  aria-label={`Buy design for ${product.name}`}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  Buy design
+                </Button>
+              </div>
             </>
           ) : (
             <>
@@ -828,3 +831,5 @@ export default function WellnessStorePage() {
     </div>
   );
 }
+
+    
