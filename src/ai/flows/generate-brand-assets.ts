@@ -81,6 +81,7 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
     };
     
     const details = styleDetails[style];
+    const subjectName_UPPERCASE = subjectName.toUpperCase();
 
     return `Generate a single, high-resolution **${details.styleDescription}** circular badge-style sticker on a **solid white background**.
 
@@ -90,7 +91,7 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
 
 🧾 TEXT & BORDER RULES:
 - The design must be enclosed in a **precise circular border**.
-- **Top Arc Text:** Include "${subjectName.toUpperCase()}" following the top curve of the circle.
+- **Top Arc Text:** Include "${subjectName_UPPERCASE}" following the top curve of the circle.
 - **Bottom Arc Text:** Include "THE WELLNESS TREE" on the bottom curve.
 - Both texts must follow the circle perfectly and use the **${details.fontAndBorderStyle}** to match the design language.
 - Ensure the text is bold, readable, cleanly curved, and **visually balanced** around the sticker’s circumference.
