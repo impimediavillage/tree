@@ -5,7 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
@@ -14,69 +15,107 @@ import type { User } from '@/types';
 interface AdvisorCardProps {
   title: string;
   description: string;
+  longDescription: string;
   icon: React.ElementType;
   link: string;
+  imageSrc: string;
+  imageHint: string;
   dataAiHint?: string;
   delay?: number;
 }
 
-const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, icon: Icon, link, dataAiHint, delay = 0 }) => (
-  <Card
-    className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"
-    style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
-    data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
-  >
-    <CardHeader className="flex flex-row items-center gap-4 pb-2">
-      <Icon className="h-10 w-10 text-primary" />
-      <CardTitle className="text-xl font-semibold text-card-foreground">{title}</CardTitle>
-    </CardHeader>
-    <CardContent className="flex-grow flex flex-col">
-      <CardDescription className="text-muted-foreground mb-4 flex-grow">{description}</CardDescription>
-      <Button asChild className="mt-auto w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-        <Link href={link}>Consult Advisor</Link>
-      </Button>
-    </CardContent>
-  </Card>
+const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescription, icon: Icon, link, imageSrc, imageHint, dataAiHint, delay = 0 }) => (
+  <Dialog>
+    <Card
+      className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"
+      style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
+      data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
+    >
+      <CardHeader className="flex flex-row items-center gap-4 pb-2">
+        <Icon className="h-10 w-10 text-primary" />
+        <CardTitle className="text-xl font-semibold text-card-foreground">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-grow flex flex-col">
+        <CardDescription className="text-muted-foreground mb-4 flex-grow">{description}</CardDescription>
+        <DialogTrigger asChild>
+            <Button className="mt-auto w-full bg-green-600 hover:bg-green-700 text-white">Learn more</Button>
+        </DialogTrigger>
+      </CardContent>
+    </Card>
+    <DialogContent className="sm:max-w-lg p-0">
+        <div className="relative h-48 w-full">
+            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="cover" data-ai-hint={imageHint} className="rounded-t-lg" />
+        </div>
+        <div className="p-6">
+            <DialogHeader>
+                <DialogTitle className="text-2xl flex items-center gap-3"><Icon className="h-7 w-7 text-primary" />{title}</DialogTitle>
+                <DialogDescription className="pt-2 text-base text-muted-foreground">
+                    {longDescription}
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-6">
+                <Button asChild size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <Link href={link}>Consult Advisor</Link>
+                </Button>
+            </DialogFooter>
+        </div>
+    </DialogContent>
+  </Dialog>
 );
 
 const advisors: AdvisorCardProps[] = [
   {
     title: 'Cannabinoid Advisor',
     description: 'Personalized advice on THC & CBD for health and wellness, based on medical knowledge.',
+    longDescription: 'Our Cannabinoid Advisor leverages deep pharmacological data to provide safe, personalized guidance on using THC and CBD for a wide range of ailments. Get recommendations on dosage, delivery methods, and product types tailored to your specific needs.',
     icon: Leaf,
     link: '/advisors/cannabinoid',
+    imageSrc: 'https://placehold.co/600x400.png',
+    imageHint: 'cannabis leaf microscope',
     dataAiHint: 'cannabis wellness',
     delay: 100,
   },
   {
-    title: 'Gardening Advisor',
+    title: 'The conscious gardener',
     description: 'Expert guidance on organic permaculture, plant identification, and companion planting.',
+    longDescription: 'Cultivate a thriving, sustainable garden with our permaculture expert. "The conscious gardener" identifies plants from your photos, suggests ideal companion species, and offers organic solutions to common gardening challenges, helping you create a balanced ecosystem.',
     icon: Sprout,
     link: '/advisors/gardening',
+    imageSrc: 'https://placehold.co/600x400.png',
+    imageHint: 'permaculture garden',
     dataAiHint: 'organic gardening',
     delay: 200,
   },
   {
     title: 'Homeopathic Advisor',
     description: 'Recommendations for gentle homeopathic remedies for various conditions, with dosage and sources.',
+    longDescription: 'Explore the world of gentle healing with our Homeopathic Advisor. It provides detailed information on remedies based on homeopathic principles, including Latin names, potency suggestions, dosage, and safe usage guidelines for both physical and emotional symptoms.',
     icon: ShieldCheck,
     link: '/advisors/homeopathy',
+    imageSrc: 'https://placehold.co/600x400.png',
+    imageHint: 'homeopathy remedies plants',
     dataAiHint: 'homeopathy remedy',
     delay: 300,
   },
   {
     title: 'Mushroom Advisor',
     description: 'Discover mushroom-based products for mental, physical, and spiritual well-being.',
+    longDescription: 'Journey into the fungal kingdom with "Mushroom Funguy," your joyful guide to medicinal and sacred mushrooms. Get science-backed recommendations for mental clarity, physical vitality, and spiritual exploration, complete with legal disclaimers and safety advice.',
     icon: Brain,
     link: '/advisors/mushroom',
+    imageSrc: 'https://placehold.co/600x400.png',
+    imageHint: 'mushrooms glowing forest',
     dataAiHint: 'medicinal mushrooms',
     delay: 400,
   },
   {
     title: 'Traditional Medicine Advisor',
     description: 'Culturally relevant advice on African and indigenous healing practices and remedies.',
+    longDescription: 'Connect with ancient wisdom through our Traditional Medicine Advisor. Focused on African and indigenous healing, it offers respectful, culturally appropriate advice on herbs, rituals, and diets, always encouraging consultation with licensed traditional healers.',
     icon: HandHelping,
     link: '/advisors/traditional-medicine',
+    imageSrc: 'https://placehold.co/600x400.png',
+    imageHint: 'african traditional healer',
     dataAiHint: 'traditional healing',
     delay: 500,
   },
@@ -153,9 +192,9 @@ export default function HolisticAiHubPage() {
 
  const wellnessBenefits = [
     { text: "E-store with product listings, shopping cart, and integrated payments with Payfast.", icon: ShoppingCart },
-    { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
     { text: "Engage in private, inter-store trading and bulk product transactions", icon: Truck },
+    { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
     { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
     { text: "Paid Stripe onboarding assistance", icon: DollarSign },
@@ -321,24 +360,28 @@ export default function HolisticAiHubPage() {
         </div>
       </section>
 
-      <Card
-        className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-accent/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md"
-        style={{ animationFillMode: 'backwards', animationDelay: `100ms` }}
-        data-ai-hint="promo asset generator"
-      >
-        <CardHeader className="bg-muted/30 p-4 border-b border-accent/20">
-          <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground text-md">
-            <Link href="/design/brand-assets">
-              <Palette className="mr-2 h-5 w-5" />
-              Design Your Own Sticker & Apparel Pack
-            </Link>
-          </Button>
-        </CardHeader>
-        <CardContent className="p-6 flex-grow">
-          <h3 className="text-lg font-semibold text-foreground mb-4 text-center">AI-Powered Brand Asset Generator</h3>
-          <p className="text-center text-muted-foreground">Instantly create unique, professional logos, sticker sheets, and apparel mockups for your store or favorite strain. Get started for free!</p>
-        </CardContent>
-      </Card>
+      <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.4s' }}>
+        <Card
+          className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 bg-card/70 dark:bg-card/80 backdrop-blur-md"
+          data-ai-hint="promo asset generator"
+        >
+          <CardHeader className="text-center p-6">
+              <Palette className="mx-auto h-12 w-12 text-primary mb-3"/>
+              <CardTitle className="text-2xl font-bold">AI Asset Generator</CardTitle>
+              <CardDescription className="text-muted-foreground max-w-md mx-auto">
+                Instantly create unique logos, sticker sheets, and apparel mockups for your store or favorite strain.
+              </CardDescription>
+          </CardHeader>
+          <CardFooter className="p-6 pt-0">
+             <Button asChild size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700 text-white">
+              <Link href="/design/brand-assets">
+                <Sparkles className="mr-2 h-5 w-5" />
+                Design Your Own Sticker & Apparel Pack
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </section>
       
     </div>
   );
