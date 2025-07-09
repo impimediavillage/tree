@@ -99,6 +99,24 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
       url
   }));
 
+  const badgeColors = {
+    flavor: [
+      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
+      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
+      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
+    ],
+    effect: [
+      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
+      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
+      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
+    ],
+    medical: [
+      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
+      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
+      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
+    ]
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
@@ -135,30 +153,48 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
                         <Loader2 className="h-8 w-8 animate-spin text-primary"/>
                     </div>
                 ) : strainInfo ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div>
                             <h4 className="font-semibold text-lg flex items-center gap-2"><Info className="h-5 w-5 text-primary"/>Description</h4>
-                            <p className="text-muted-foreground mt-1">{strainInfo.description || "No description available."}</p>
+                            <p className="text-muted-foreground mt-1 text-sm">{strainInfo.description || "No description available."}</p>
                         </div>
                         <Separator/>
                         <div>
                             <h4 className="font-semibold text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Common Effects</h4>
                             <div className="flex flex-wrap gap-2 mt-2">
-                                {strainInfo.effects?.map((eff: ProductAttribute, i: number) => <Badge key={i} variant="secondary">{eff.name} ({eff.percentage})</Badge>)}
+                                {strainInfo.effects?.map((eff: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.effect[i % badgeColors.effect.length])}>{eff.name} ({eff.percentage})</Badge>)}
+                            </div>
+                            <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                                <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+                                <p className="text-muted-foreground leading-snug">Indicates the reported likelihood of an effect.</p>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                                <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                                <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                                </div>
                             </div>
                         </div>
                          <Separator/>
                         <div>
                             <h4 className="font-semibold text-lg flex items-center gap-2"><Brain className="h-5 w-5 text-primary"/>Medical Uses</h4>
                             <div className="flex flex-wrap gap-2 mt-2">
-                               {strainInfo.medical?.map((med: ProductAttribute, i: number) => <Badge key={i} variant="secondary">{med.name} ({med.percentage})</Badge>)}
+                               {strainInfo.medical?.map((med: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.medical[i % badgeColors.medical.length])}>{med.name} ({med.percentage})</Badge>)}
+                            </div>
+                            <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                                <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+                                <p className="text-muted-foreground leading-snug">Indicates its potential as a medical aid.</p>
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                                    <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                                    <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                                </div>
                             </div>
                         </div>
                         <Separator/>
                         <div>
                             <h4 className="font-semibold text-lg flex items-center gap-2"><Leaf className="h-5 w-5 text-primary"/>Flavors</h4>
                              <div className="flex flex-wrap gap-2 mt-2">
-                                {strainInfo.flavor?.map((flav: string, i: number) => <Badge key={i} variant="secondary">{flav}</Badge>)}
+                                {strainInfo.flavor?.map((flav: string, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.flavor[i % badgeColors.flavor.length])}>{flav}</Badge>)}
                             </div>
                         </div>
                     </div>
