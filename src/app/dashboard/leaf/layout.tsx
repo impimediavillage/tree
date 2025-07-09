@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings } from 'lucide-react'; 
+import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Palette } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -18,9 +18,10 @@ import { auth as firebaseAuthInstance } from '@/lib/firebase';
 
 const sidebarNavItems = [
   { title: 'Overview', href: '/dashboard/leaf', icon: LayoutDashboard },
+  { title: 'My Profile', href: '/dashboard/leaf/profile', icon: UserCircle },
+  { title: 'My Sticker Sets', href: '/dashboard/leaf/sticker-sets', icon: Palette },
   { title: 'My Credits', href: '/dashboard/leaf/credits', icon: DollarSign },
   { title: 'Interaction History', href: '/dashboard/leaf/history', icon: History },
-  { title: 'My Profile', href: '/dashboard/leaf/profile', icon: UserCircle },
 ];
 
 const getInitials = (name?: string | null, fallback = 'LU') => {
@@ -195,3 +196,5 @@ export default function LeafDashboardLayout({
     </div>
   );
 }
+
+    

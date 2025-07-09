@@ -6,11 +6,17 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState } from 'react';
-import type { User } from '@/types';
+import { useEffect, useState, useCallback } from 'react';
+import type { User, StickerSet } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { FeaturedStickerCard } from '@/components/cards/FeaturedStickerCard';
+
 
 interface AdvisorCardProps {
   title: string;
@@ -175,25 +181,37 @@ const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText
 
 
 export default function HolisticAiHubPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const { currentUser, loading: authLoading } = useAuth();
+  const [featuredStickerSets, setFeaturedStickerSets] = useState<StickerSet[]>([]);
+  const [isLoadingSets, setIsLoadingSets] = useState(true);
+
+  const fetchFeaturedStickerSets = useCallback(async () => {
+    setIsLoadingSets(true);
+    try {
+      const setsQuery = query(
+        collection(db, 'stickersets'),
+        where('isPublic', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(4)
+      );
+      const querySnapshot = await getDocs(setsQuery);
+      const sets = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StickerSet));
+      setFeaturedStickerSets(sets);
+    } catch (error) {
+      console.error("Error fetching featured sticker sets:", error);
+    } finally {
+      setIsLoadingSets(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        setCurrentUser(JSON.parse(storedUserString) as User);
-      } catch (e) {
-        console.error("Error parsing current user from localStorage on main page:", e);
-      }
-    }
-    setIsLoadingUser(false);
-  }, []);
+    fetchFeaturedStickerSets();
+  }, [fetchFeaturedStickerSets]);
 
  const wellnessBenefits = [
     { text: "E-store with product listings, shopping cart, and integrated payments with Payfast.", icon: ShoppingCart },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
-    { text: "Engage in private, inter-store trading and bulk product transactions", icon: Truck },
+    { text: "Engage in private, inter-store trading and bulk product transactions.", icon: Truck },
     { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
     { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
@@ -202,12 +220,12 @@ export default function HolisticAiHubPage() {
   ];
 
   const leafUserBenefits = [
-    { text: "Cant afford wellness advice? Now You can with The Wellness Tree FREE Leaf package.", icon: Gift },
+    { text: "Can't afford wellness advice? Now You can with The Wellness Tree FREE Leaf package.", icon: Gift },
     { text: "20 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
-    { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
+    { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
-    { text: "Design your own strain stickers set and Promo images on caps, hoodies and tshirts to 420 your outfit with your favorite strain.", icon: Gift },
+    { text: "Design your own strain stickers set and Promo images on caps, hoodies and tshirts to 420 your outfit with your favorite strain.", icon: Palette },
   ];
 
 
@@ -232,7 +250,7 @@ export default function HolisticAiHubPage() {
         </div>
       </div>
       
-      {isLoadingUser ? (
+      {authLoading ? (
          <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -382,7 +400,31 @@ export default function HolisticAiHubPage() {
           </CardFooter>
         </Card>
       </section>
+
+      {featuredStickerSets.length > 0 && (
+        <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.5s' }}>
+          <div className="text-center mb-10">
+            <h2
+              className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+            >
+              <ImageIcon className="h-10 w-10 text-primary" /> Featured Sticker Sets
+            </h2>
+            <p
+              className="text-lg text-foreground max-w-2xl mx-auto mt-3"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+            >
+              Check out the latest designs created by our community.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredStickerSets.map(set => <FeaturedStickerCard key={set.id} stickerSet={set} />)}
+          </div>
+        </section>
+      )}
       
     </div>
   );
 }
+
+    
