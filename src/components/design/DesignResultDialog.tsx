@@ -6,8 +6,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { generateInitialLogos, generateApparelForTheme } from '@/ai/flows/generate-brand-assets';
 import type { GenerateInitialLogosOutput, ThemeAssetSet, StickerSet } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -182,6 +183,29 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
         }
         setIsProcessing(true);
         try {
+            // Helper function to upload a data URI to Firebase Storage
+            const uploadAsset = async (dataUrl: string, assetName: string): Promise<string> => {
+                const path = `stickersets/${currentUser.uid}/${Date.now()}_${assetName}.png`;
+                const sRef = storageRef(storage, path);
+                const base64Data = dataUrl.split(',')[1];
+                if (!base64Data) throw new Error(`Invalid data URI for ${assetName}`);
+                await uploadString(sRef, base64Data, 'base64', { contentType: 'image/png' });
+                return getDownloadURL(sRef);
+            };
+
+            toast({ title: "Saving Assets...", description: "Uploading generated images to secure storage. This may take a moment." });
+
+            // Create an array of promises for all asset uploads
+            const assetUploadPromises = Object.entries(assets).map(([key, dataUrl]) => 
+                uploadAsset(dataUrl, `${subjectName}_${themeKey}_${key}`).then(storageUrl => [key, storageUrl])
+            );
+            
+            // Wait for all uploads to complete
+            const uploadedAssetEntries = await Promise.all(assetUploadPromises);
+            // Reconstruct the assets object with the new storage URLs
+            const storageUrls = Object.fromEntries(uploadedAssetEntries) as ThemeAssetSet;
+
+            // Proceed to save the Firestore document with the storage URLs
             const stickerSetData: Omit<StickerSet, 'id'> = {
                 creatorUid: currentUser.uid,
                 creatorDisplayName: currentUser.displayName || 'Anonymous',
@@ -189,18 +213,20 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
                 dispensaryId: currentUser.dispensaryId || null,
                 name: subjectName,
                 theme: themeKey,
-                assets: assets,
+                assets: storageUrls, // Use the new object with storage URLs
                 isPublic: true, 
                 salesCount: 0,
                 viewCount: 0,
                 createdAt: serverTimestamp() as any,
             };
             await addDoc(collection(db, 'stickersets'), stickerSetData);
+            
             toast({ 
                 title: "Success!", 
                 description: `Your "${subjectName}" design pack has been saved to your collections.`
             });
             onOpenChange(false);
+
             // Redirect user to their collection page
             if (currentUser.role === 'DispensaryOwner') {
                 router.push('/dispensary-admin/promotions');
@@ -209,7 +235,8 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
             }
         } catch (error) {
             console.error("Error adding sticker set to store:", error);
-            toast({ title: "Save Failed", description: "Could not save the asset pack to your collections.", variant: "destructive" });
+            const errorMessage = error instanceof Error ? error.message : "Could not save the asset pack to your collections.";
+            toast({ title: "Save Failed", description: errorMessage, variant: "destructive" });
         } finally {
             setIsProcessing(false);
         }
