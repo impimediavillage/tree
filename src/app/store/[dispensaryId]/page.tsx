@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db, functions } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import type { Dispensary, Product, ProductAttribute, PriceTier, CartItem } from '@/types';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -100,12 +100,6 @@ const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType,
 
 type ThemeKey = 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
 
-type GeneratedThemeAssets = {
-  logoUrl: string;
-  productMontageUrl: string;
-  stickerSheetUrl: string;
-};
-
 interface DesignViewerDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -116,153 +110,84 @@ interface DesignViewerDialogProps {
 function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewerDialogProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const [isLoadingInitial, setIsLoadingInitial] = useState(true);
-  const [generatingTheme, setGeneratingTheme] = useState<ThemeKey | null>(null);
-  const [generatedAssets, setGeneratedAssets] = useState<Partial<Record<ThemeKey, GeneratedThemeAssets>>>({});
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<ThemeKey>('clay');
   
-  const generationInitiated = useRef(false);
+  const [loadingThemes, setLoadingThemes] = React.useState<Set<ThemeKey>>(new Set());
+  const [generatedLogos, setGeneratedLogos] = React.useState<Partial<Record<ThemeKey, string>>>({});
+  
+  const generationInitiated = React.useRef(false);
 
-  useEffect(() => {
-    const generateInitial = async () => {
-      if (!product || !product.strain) {
-        toast({ title: "Strain Name Missing", description: "Cannot generate designs without a strain name.", variant: "destructive" });
-        onOpenChange(false);
-        return;
-      }
-      setIsLoadingInitial(true);
-      generationInitiated.current = true;
-      try {
-        const { generateInitialClayLogo } = await import('@/ai/flows/generate-thc-promo-designs');
-        const { logoUrl } = await generateInitialClayLogo({ strain: product.strain });
-        
-        // Fetch remaining assets for the clay theme
-        const { generateThemeAssets } = await import('@/ai/flows/generate-thc-promo-designs');
-        const themeAssets = await generateThemeAssets({ strain: product.strain, theme: 'clay', logoUrl });
-        
-        setGeneratedAssets(prev => ({...prev, clay: themeAssets}));
-      } catch (error) {
-        console.error("Error generating initial designs:", error);
-        toast({ title: "Design Generation Failed", description: "Could not generate initial designs. Please try again.", variant: "destructive" });
-        onOpenChange(false);
-      } finally {
-        setIsLoadingInitial(false);
-      }
-    };
+  const generateLogoForTheme = React.useCallback(async (theme: ThemeKey) => {
+    if (!product?.strain) return;
+    
+    setLoadingThemes(prev => new Set(prev).add(theme));
+    try {
+      const { generateSingleThemedLogo } = await import('@/ai/flows/generate-thc-promo-designs');
+      const { logoUrl } = await generateSingleThemedLogo({ strain: product.strain, theme });
+      setGeneratedLogos(prev => ({ ...prev, [theme]: logoUrl }));
+    } catch (error) {
+      console.error(`Error generating logo for ${theme}:`, error);
+      toast({ title: "Design Generation Failed", description: `Could not generate the ${theme} logo.`, variant: "destructive" });
+    } finally {
+      setLoadingThemes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(theme);
+        return newSet;
+      });
+    }
+  }, [product, toast]);
 
+  React.useEffect(() => {
     if (isOpen && !generationInitiated.current) {
-      generateInitial();
+      generationInitiated.current = true;
+      generateLogoForTheme('clay');
     } else if (!isOpen) {
       setTimeout(() => {
-        setGeneratedAssets({});
-        setIsLoadingInitial(true);
-        setGeneratingTheme(null);
-        setActiveTab('clay');
+        setGeneratedLogos({});
+        setLoadingThemes(new Set());
         generationInitiated.current = false;
       }, 300);
     }
-  }, [isOpen, product, onOpenChange, toast]);
+  }, [isOpen, generateLogoForTheme]);
   
-  const handleTabChange = async (newTab: string) => {
+  const handleTabChange = (newTab: string) => {
     const themeKey = newTab as ThemeKey;
-    setActiveTab(themeKey);
-
-    if (generatedAssets[themeKey] || generatingTheme) return;
-
-    setGeneratingTheme(themeKey);
-    try {
-        const { generateInitialClayLogo, generateThemeAssets } = await import('@/ai/flows/generate-thc-promo-designs');
-        
-        // A placeholder logo generation for the new theme - can be optimized to generate a themed logo
-        const { logoUrl } = await generateInitialClayLogo({ strain: product!.strain! });
-        const themeAssets = await generateThemeAssets({ strain: product!.strain!, theme: themeKey, logoUrl });
-        
-        setGeneratedAssets(prev => ({ ...prev, [themeKey]: themeAssets }));
-    } catch (error) {
-        console.error(`Error generating designs for theme ${themeKey}:`, error);
-        toast({ title: "Design Generation Failed", description: `Could not generate designs for ${themeKey} theme.`, variant: "destructive" });
-    } finally {
-        setGeneratingTheme(null);
+    if (!generatedLogos[themeKey] && !loadingThemes.has(themeKey)) {
+      generateLogoForTheme(themeKey);
     }
   };
-
-  async function downscaleImage(dataUrl: string, maxWidth: number, maxHeight: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const img = document.createElement('img');
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            let { width, height } = img;
-            if (width > height) { if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; } } 
-            else { if (height > maxHeight) { width = Math.round((width * maxHeight) / height); height = maxHeight; } }
-            canvas.width = width; canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return reject(new Error('Could not get canvas context'));
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.8)); 
-        };
-        img.onerror = (err) => reject(err);
-        img.src = dataUrl;
-    });
-  }
-
-  const handleAddToCartAndDownload = async () => {
-    const currentAssets = generatedAssets[activeTab];
-    if (!product || !tier || !currentAssets) return;
-    setIsProcessing(true);
-    toast({ title: "Processing...", description: "Preparing your design pack and cart item." });
-    
-    let cartImageUrl = product.imageUrls?.[0] || null;
-    try {
-        cartImageUrl = await downscaleImage(currentAssets.logoUrl, 150, 150);
-    } catch(e) {
-        toast({ title: "Image Warning", description: "Could not downscale image, using original product image.", variant: "default"});
-    }
-    const cartItemId = `design-${product.id}-${tier.unit}`;
+  
+  const handleAddToCart = () => {
+    if (!product || !tier) return;
     
     const designPackProduct: Product = {
       ...product,
-      id: cartItemId, name: `Design Pack: ${product.name}`,
-      description: `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`,
-      imageUrl: cartImageUrl, imageUrls: cartImageUrl ? [cartImageUrl] : [],
+      id: `design-${product.id}-${tier.unit}`,
+      name: `Sticker Design: ${product.name}`,
+      description: `A sticker design for ${product.name} - ${tier.unit}`,
+      category: 'Digital Design',
+      imageUrl: generatedLogos['clay'] || product.imageUrls?.[0] || null,
+      // Default other necessary fields
+      dispensaryId: product.dispensaryId,
+      dispensaryName: product.dispensaryName,
+      dispensaryType: product.dispensaryType,
+      productOwnerEmail: product.productOwnerEmail,
+      currency: product.currency,
+      priceTiers: [],
+      quantityInStock: 999,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     
-    const designPackTier: PriceTier = { ...tier, unit: 'Design Pack', };
+    const designPackTier: PriceTier = {
+        ...tier,
+        unit: 'Design Purchase',
+    };
     
     addToCart(designPackProduct, designPackTier, 1);
-    
-    // Download logic
-    try {
-      const JSZip = (await import('jszip')).default;
-      const zip = new JSZip();
-      const allLogosToDownload = Object.values(generatedAssets).map(asset => asset?.logoUrl).filter(Boolean) as string[];
-
-      const fetchPromises = allLogosToDownload.map((url, i) =>
-          fetch(url)
-              .then(res => res.blob())
-              .then(blob => ({ name: `${product.name}_logo_${Object.keys(generatedAssets)[i]}.png`, blob }))
-              .catch(e => { console.error(`Failed to fetch ${url}`, e); return null; })
-      );
-      
-      const fetchedImages = (await Promise.all(fetchPromises)).filter(Boolean) as { name: string; blob: Blob }[];
-      fetchedImages.forEach(img => { zip.file(img.name, img.blob); });
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(zipBlob);
-      link.download = `${product.name}_logos.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-
-    } catch(e) {
-        toast({ title: "Download Failed", description: "Could not prepare the zip file for download.", variant: "destructive" });
-    }
-
-    setIsProcessing(false);
+    toast({ title: "Added to Cart", description: `"${product.name}" sticker design added.` });
     onOpenChange(false);
   };
-  
+
   const designTabs: { value: ThemeKey; title: string; }[] = [
     { value: 'clay', title: '3D Clay' },
     { value: 'comic', title: '2D Comic' },
@@ -270,65 +195,57 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     { value: 'farmstyle', title: 'Farmstyle' },
     { value: 'imaginative', title: 'Imaginative' },
   ];
-  
-  const currentThemeAssets = generatedAssets[activeTab];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Generated Designs for: {product?.name}</DialogTitle>
+          <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
           <DialogDescription>
-            Review the generated designs below. Add the pack to your cart to receive the design files and your free product sample.
+            Select a theme tab to generate a logo concept.
           </DialogDescription>
         </DialogHeader>
         
-        {isLoadingInitial && (
-            <div className="flex flex-col items-center justify-center h-96">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                <p className="mt-4 text-lg text-muted-foreground">Generating initial '3D Clay' theme...</p>
-            </div>
-        )}
-        
-        {!isLoadingInitial && (
-            <>
-                {currentThemeAssets && (
-                    <div className="flex justify-end p-4 border-b">
-                        <Button onClick={handleAddToCartAndDownload} size="lg" className="bg-green-600 hover:bg-green-700 text-white" disabled={isProcessing}>
-                            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5" />}
-                            Add Design Pack to Cart &amp; Download Logos
-                        </Button>
+        <Tabs defaultValue="clay" className="w-full" onValueChange={handleTabChange}>
+          <TabsList className="grid w-full grid-cols-5">
+            {designTabs.map(tab => (
+              <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
+            ))}
+          </TabsList>
+          {designTabs.map(tab => (
+            <TabsContent key={tab.value} value={tab.value}>
+              <Card>
+                <CardContent className="flex items-center justify-center p-6 min-h-[300px]">
+                  {loadingThemes.has(tab.value) ? (
+                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                      <p>Generating {tab.title} theme...</p>
                     </div>
-                )}
-                <Tabs defaultValue="clay" className="w-full" onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-5">
-                        {designTabs.map(tab => (
-                            <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
-                        ))}
-                    </TabsList>
-                    {designTabs.map(tab => (
-                        <TabsContent key={tab.value} value={tab.value}>
-                          {generatingTheme === tab.value ? (
-                            <div className="flex items-center justify-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
-                          ) : generatedAssets[tab.value] ? (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                               <Card><CardHeader><CardTitle>Logo</CardTitle></CardHeader><CardContent><div className="relative aspect-square"><Image src={generatedAssets[tab.value]!.logoUrl} alt={`${tab.title} Logo`} fill className="object-contain p-2"/></div></CardContent></Card>
-                               <Card><CardHeader><CardTitle>Product Montage</CardTitle></CardHeader><CardContent><div className="relative aspect-square"><Image src={generatedAssets[tab.value]!.productMontageUrl} alt={`${tab.title} Montage`} fill className="object-contain p-2"/></div></CardContent></Card>
-                               <Card><CardHeader><CardTitle>Sticker Sheet</CardTitle></CardHeader><CardContent><div className="relative aspect-square"><Image src={generatedAssets[tab.value]!.stickerSheetUrl} alt={`${tab.title} Sticker Sheet`} fill className="object-contain p-2"/></div></CardContent></Card>
-                            </div>
-                          ) : (
-                             <div className="flex items-center justify-center h-64 text-muted-foreground">Select tab to generate this theme.</div>
-                          )}
-                        </TabsContent>
-                    ))}
-                </Tabs>
-            </>
-        )}
-        
+                  ) : generatedLogos[tab.value] ? (
+                    <div className="relative aspect-square w-full max-w-sm">
+                      <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
+                    </div>
+                  ) : (
+                    <div className="text-center text-muted-foreground">
+                      <p>Select this tab to generate the logo.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
+        </Tabs>
+
+        <DialogFooter className="mt-4">
+          <Button onClick={handleAddToCart} size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+            <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
+
 
 interface PublicProductCardProps {
   product: Product;
@@ -504,7 +421,6 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                 </p>
                 <div className="flex items-center justify-end text-xs text-muted-foreground">
                   <span className="mr-1">/ {tier.unit}</span>
-                  <Gift className="h-3 w-3 mr-1" />
                   <span>Sticker price</span>
                 </div>
                 <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
@@ -831,5 +747,3 @@ export default function WellnessStorePage() {
     </div>
   );
 }
-
-    
