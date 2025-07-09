@@ -39,8 +39,8 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
       data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
     >
       <CardHeader className="p-0">
-        <div className="relative aspect-video w-full">
-            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="cover" data-ai-hint={imageHint} />
+        <div className="relative aspect-[4/3] w-full bg-muted/30">
+            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="contain" className="p-2" data-ai-hint={imageHint} />
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow flex flex-col">
