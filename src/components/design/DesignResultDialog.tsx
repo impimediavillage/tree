@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,20 +6,18 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { generateInitialLogos, generateApparelForTheme } from '@/ai/flows/generate-brand-assets';
-import type { GenerateInitialLogosOutput, ThemeAssetSet, StickerSet, Product, PriceTier } from '@/types';
+import type { GenerateInitialLogosOutput, ThemeAssetSet, StickerSet } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { AlertTriangle, Eye, Loader2, ShoppingCart, Sparkles, Store, Download } from 'lucide-react';
+import { AlertTriangle, Eye, Loader2, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type JSZip from 'jszip';
 
 
 type ThemeKey = 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
@@ -34,33 +33,15 @@ interface DesignResultDialogProps {
 export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset }) => {
     const router = useRouter();
     const { currentUser, setCurrentUser } = useAuth();
-    const { addToCart } = useCart();
     const { toast } = useToast();
 
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
     const [generatingTheme, setGeneratingTheme] = useState<ThemeKey | null>(null);
     const [initialLogos, setInitialLogos] = useState<GenerateInitialLogosOutput | null>(null);
     const [expandedAssets, setExpandedAssets] = useState<ExpandedThemeAssets>({});
-    const [stickerPackPrice, setStickerPackPrice] = useState<number>(60); // Default price
     const [isProcessing, setIsProcessing] = useState(false);
     
     const generationInitiatedRef = useRef(false);
-
-    useEffect(() => {
-        const fetchPricing = async () => {
-            try {
-                const pricingDoc = await getDoc(doc(db, 'platformConfig', 'pricing'));
-                if (pricingDoc.exists()) {
-                    const data = pricingDoc.data();
-                    const finalPrice = data.basePrice * (1 + data.commissionRate);
-                    setStickerPackPrice(finalPrice);
-                }
-            } catch (error) {
-                console.error("Could not fetch sticker pricing, using default.", error);
-            }
-        };
-        fetchPricing();
-    }, []);
 
     const deductCredits = useCallback(async (creditsToDeduct: number, interactionSlug: string): Promise<boolean> => {
         if (!currentUser?.uid) {
@@ -108,7 +89,7 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
     useEffect(() => {
         const generateLogos = async () => {
             if (!currentUser) {
-                toast({ title: "Sign Up to Continue", description: "Please create a free account to generate assets and receive 20 welcome credits.", variant: "default" });
+                toast({ title: "Sign Up to Continue", description: "Please create a free account to generate assets and receive welcome credits.", variant: "default" });
                 onOpenChange(false);
                 router.push('/auth/signup');
                 return;
@@ -194,108 +175,41 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
         }
     };
     
-    const handleDownloadZip = async (assets: ThemeAssetSet, themeName: string) => {
-      try {
-          const JSZip = (await import('jszip')).default;
-          const zip = new JSZip();
-  
-          const designImages = [
-              { name: `${subjectName}-${themeName}-logo-circular.png`, url: assets.circularStickerUrl },
-              { name: `${subjectName}-${themeName}-logo-rectangular.png`, url: assets.rectangularStickerUrl },
-              { name: `${subjectName}-${themeName}-mockup-cap.png`, url: assets.capUrl },
-              { name: `${subjectName}-${themeName}-mockup-tshirt.png`, url: assets.tShirtUrl },
-              { name: `${subjectName}-${themeName}-mockup-hoodie.png`, url: assets.hoodieUrl },
-              { name: `${subjectName}-${themeName}-variation-1.png`, url: assets.trippySticker1Url },
-              { name: `${subjectName}-${themeName}-variation-2.png`, url: assets.trippySticker2Url },
-              { name: `${subjectName}-${themeName}-sheet-circular.png`, url: assets.circularStickerSheetUrl },
-              { name: `${subjectName}-${themeName}-sheet-rectangular.png`, url: assets.rectangularStickerSheetUrl },
-          ];
-  
-          const fetchPromises = designImages.map(img =>
-              fetch(img.url)
-                  .then(res => res.blob())
-                  .then(blob => ({ name: img.name, blob }))
-                  .catch(e => {
-                      console.error(`Failed to fetch ${img.url}`, e);
-                      return null;
-                  })
-          );
-          
-          const fetchedImages = (await Promise.all(fetchPromises)).filter(Boolean) as { name: string; blob: Blob }[];
-          
-          fetchedImages.forEach(img => {
-              zip.file(img.name, img.blob);
-          });
-  
-          const zipBlob = await zip.generateAsync({ type: 'blob' });
-          
-          const link = document.createElement('a');
-          link.href = URL.createObjectURL(zipBlob);
-          link.download = `${subjectName}_${themeName}_design_pack.zip`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-  
-      } catch(e) {
-          console.error("Failed to create or download zip", e);
-          toast({ title: "Download Failed", description: "Could not prepare the zip file for download.", variant: "destructive" });
-      }
-    };
-
-    const handleAddToCartAndDownload = async (assets: ThemeAssetSet, themeName: string) => {
-        setIsProcessing(true);
-        toast({ title: "Processing...", description: "Preparing your design pack and cart item." });
-
-        const cartProduct: Product = {
-            id: `design-pack-${subjectName.replace(/\s+/g, '-')}-${themeName}`,
-            name: `Design Pack: ${subjectName} (${themeName})`,
-            description: `A promotional design asset pack. Includes digital files.`,
-            category: 'Digital Goods',
-            dispensaryId: 'platform',
-            dispensaryName: 'The Wellness Tree',
-            dispensaryType: 'Digital',
-            productOwnerEmail: 'platform@thewellnesstree.com',
-            currency: 'ZAR',
-            priceTiers: [],
-            quantityInStock: 999, // Essentially unlimited
-            imageUrl: assets.circularStickerUrl,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-
-        const priceTier: PriceTier = {
-            unit: '1 Pack',
-            price: stickerPackPrice,
-            quantityInStock: 999,
-        };
-        
-        addToCart(cartProduct, priceTier, 1);
-        await handleDownloadZip(assets, themeName);
-        setIsProcessing(false);
-        onOpenChange(false);
-    };
-    
     const handleAddToStore = async (assets: ThemeAssetSet, themeKey: ThemeKey) => {
-        if (!currentUser?.dispensaryId) {
-            toast({ title: "Error", description: "No store found to add assets to.", variant: "destructive" });
+        if (!currentUser?.uid) {
+            toast({ title: "Error", description: "You must be logged in to save a sticker set.", variant: "destructive" });
             return;
         }
         setIsProcessing(true);
         try {
-            const stickerSet: Omit<StickerSet, 'id'> = {
-                dispensaryId: currentUser.dispensaryId,
+            const stickerSetData: Omit<StickerSet, 'id'> = {
+                creatorUid: currentUser.uid,
+                creatorDisplayName: currentUser.displayName || 'Anonymous',
+                creatorRole: currentUser.role,
+                dispensaryId: currentUser.dispensaryId || null,
                 name: subjectName,
                 theme: themeKey,
                 assets: assets,
+                isPublic: true, 
+                salesCount: 0,
+                viewCount: 0,
                 createdAt: serverTimestamp() as any,
             };
-            await addDoc(collection(db, 'stickersets'), stickerSet);
-            toast({ title: "Success!", description: `The ${themeKey} theme assets have been added to your store's promo collections.`});
+            await addDoc(collection(db, 'stickersets'), stickerSetData);
+            toast({ 
+                title: "Success!", 
+                description: `Your "${subjectName}" design pack has been saved to your collections.`
+            });
             onOpenChange(false);
+            // Redirect user to their collection page
+            if (currentUser.role === 'DispensaryOwner') {
+                router.push('/dispensary-admin/promotions');
+            } else {
+                router.push('/dashboard/leaf/sticker-sets');
+            }
         } catch (error) {
             console.error("Error adding sticker set to store:", error);
-            toast({ title: "Save Failed", description: "Could not save the asset pack to your store.", variant: "destructive" });
+            toast({ title: "Save Failed", description: "Could not save the asset pack to your collections.", variant: "destructive" });
         } finally {
             setIsProcessing(false);
         }
@@ -308,8 +222,6 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
         { key: 'farmstyle', title: 'Farmstyle', logoUrl: initialLogos.farmstyleLogoUrl },
         { key: 'imaginative', title: 'Imaginative', logoUrl: initialLogos.imaginativeLogoUrl },
     ] : [];
-
-    const userIsOwner = currentUser?.role === 'DispensaryOwner';
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -347,17 +259,10 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
                                     <ScrollArea className="h-full px-6 py-4">
                                         {assets && (
                                             <div className="sticky top-0 z-10 py-2 mb-4 bg-background/80 backdrop-blur-sm">
-                                                {userIsOwner ? (
-                                                    <Button size="lg" className="w-full" onClick={() => handleAddToStore(assets, theme.key)} disabled={isProcessing}>
-                                                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Store className="mr-2 h-4 w-4" />}
-                                                        Add {theme.title} Promos To My Store
-                                                    </Button>
-                                                ) : (
-                                                    <Button size="lg" className="w-full" onClick={() => handleAddToCartAndDownload(assets, theme.key)} disabled={isProcessing}>
-                                                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4" />}
-                                                        Add Pack to Cart & Download (R{stickerPackPrice.toFixed(2)})
-                                                    </Button>
-                                                )}
+                                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 text-primary-foreground" onClick={() => handleAddToStore(assets, theme.key)} disabled={isProcessing}>
+                                                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Store className="mr-2 h-4 w-4" />}
+                                                    Add this sticker & promo set to store
+                                                </Button>
                                             </div>
                                         )}
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
