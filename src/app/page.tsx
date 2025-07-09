@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -151,10 +152,10 @@ export default function HolisticAiHubPage() {
   }, []);
 
  const wellnessBenefits = [
-    { text: "Engage in private, inter-store trading and bulk product transactions", icon: Truck },
-    { text: "E-store with product listings, shopping cart, and integrated payments (Stripe, Google Pay, Google Wallet).", icon: ShoppingCart },
+    { text: "E-store with product listings, shopping cart, and integrated payments with Payfast.", icon: ShoppingCart },
     { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
+    { text: "Engage in private, inter-store trading and bulk product transactions", icon: Truck },
     { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
     { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
     { text: "Paid Stripe onboarding assistance", icon: DollarSign },
@@ -167,6 +168,7 @@ export default function HolisticAiHubPage() {
     { text: "Get instant wellness assistance with  already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
+    { text: "Design your own strain stickers set and Promo images on caps, hoodies and tshirts to 420 your outfit with your favorite strain.", icon: Gift },
   ];
 
 
