@@ -3,6 +3,7 @@
 /**
  * @fileOverview A Genkit flow for generating promotional THC strain designs in multiple styles.
  * - generateThcPromoDesigns - A function that takes a strain name and generates design images in all styles.
+ * - findStrainImage - A function that generates a photorealistic image for a given strain name.
  * - GenerateThcDesignsInput - The input type for the function.
  * - GenerateThcDesignsOutput - The return type for the function, containing URLs for all generated designs.
  */
@@ -22,9 +23,9 @@ const GenerateThcDesignsOutputSchema = z.object({
   logoUrl_comic: z.string().url().describe('URL of the primary circular logo design in 2D comic style.'),
   productMontageUrl_comic: z.string().url().describe('URL of the 2D comic style product montage (cap, shirt, hoodie, etc.).'),
   stickerSheetUrl_comic: z.string().url().describe('URL of the 2D comic style downloadable sticker sheet.'),
+  stickerSheetUrl_rasta: z.string().url().describe('URL of the Rasta Reggae style downloadable sticker sheet.'),
   logoUrl_rasta: z.string().url().describe('URL of the primary circular logo design in Rasta Reggae style.'),
   productMontageUrl_rasta: z.string().url().describe('URL of the Rasta Reggae style product montage.'),
-  stickerSheetUrl_rasta: z.string().url().describe('URL of the Rasta Reggae style downloadable sticker sheet.'),
   logoUrl_farmstyle: z.string().url().describe('URL of the primary circular logo design in Farmstyle Retro style.'),
   productMontageUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style product montage.'),
   stickerSheetUrl_farmstyle: z.string().url().describe('URL of the Farmstyle Retro style downloadable sticker sheet.'),
@@ -296,4 +297,31 @@ const generateThcPromoDesignsFlow = ai.defineFlow(
 
 export async function generateThcPromoDesigns(input: GenerateThcDesignsInput): Promise<GenerateThcDesignsOutput> {
   return generateThcPromoDesignsFlow(input);
+}
+
+
+// --- New Flow for finding a strain image ---
+const FindStrainImageInputSchema = z.object({
+  strainName: z.string().describe('The name of the cannabis strain to find an image for.'),
+});
+
+const FindStrainImageOutputSchema = z.object({
+  imageUrl: z.string().url().describe('URL of the generated strain image.'),
+});
+
+const findStrainImageFlow = ai.defineFlow(
+  {
+    name: 'findStrainImageFlow',
+    inputSchema: FindStrainImageInputSchema,
+    outputSchema: FindStrainImageOutputSchema,
+  },
+  async ({ strainName }) => {
+    const prompt = `a professional, high-quality, photorealistic macro photograph of a cannabis bud for the strain '${strainName}' on a clean, plain, dark background.`;
+    const imageUrl = await generateImage(prompt);
+    return { imageUrl };
+  }
+);
+
+export async function findStrainImage(input: z.infer<typeof FindStrainImageInputSchema>): Promise<z.infer<typeof FindStrainImageOutputSchema>> {
+  return findStrainImageFlow(input);
 }
