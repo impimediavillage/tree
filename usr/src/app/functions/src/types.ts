@@ -3,7 +3,7 @@
 import type { firestore } from 'firebase-admin';
 
 // Re-export comprehensive types from the main application for use in seed functions, etc.
-export type { Dispensary, User } from '../../src/types'; // Corrected path
+export type { Dispensary, User } from '../../../../src/types'; // Corrected path
 
 export interface DispensaryDocData {
   fullName?: string | null; // Added for display name generation, allow null
