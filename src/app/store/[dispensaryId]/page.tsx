@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/contexts/CartContext'; 
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -160,11 +160,14 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
   const handleAddToCart = () => {
     if (!product || !tier) return;
     
+    // Create a special description to hold the free sample info
+    const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
+
     const designPackProduct: Product = {
       ...product,
-      id: `design-${product.id}-${tier.unit}`,
+      id: `design-${product.id}-${tier.unit}`, // Unique ID for this specific tier design
       name: `Sticker Design: ${product.name}`,
-      description: `A sticker design for ${product.name} - ${tier.unit}`,
+      description: specialDescription, // Embed sample info here
       category: 'Digital Design',
       imageUrl: generatedLogos['clay'] || product.imageUrls?.[0] || null,
       // Default other necessary fields
@@ -174,13 +177,14 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
       productOwnerEmail: product.productOwnerEmail,
       currency: product.currency,
       priceTiers: [],
-      quantityInStock: 999,
+      quantityInStock: 999, // Essentially unlimited
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     
+    // Create a price tier specific to this design purchase
     const designPackTier: PriceTier = {
-        ...tier,
+        ...tier, // Copy details like price
         unit: 'Design Purchase',
     };
     
