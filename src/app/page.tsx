@@ -33,20 +33,29 @@ interface AdvisorCardProps {
 const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescription, icon: Icon, link, imageSrc, imageHint, dataAiHint, delay = 0 }) => (
   <Dialog>
     <Card
-      className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"
+      className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 overflow-hidden"
       style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
       data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
     >
-      <CardHeader className="flex flex-row items-center gap-4 pb-2">
-        <Icon className="h-10 w-10 text-primary" />
-        <CardTitle className="text-xl font-semibold text-card-foreground">{title}</CardTitle>
+      <CardHeader className="p-0">
+        <div className="relative h-40 w-full">
+            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="cover" data-ai-hint={imageHint} />
+        </div>
       </CardHeader>
-      <CardContent className="flex-grow flex flex-col">
-        <CardDescription className="text-muted-foreground mb-4 flex-grow">{description}</CardDescription>
-        <DialogTrigger asChild>
-            <Button className="mt-auto w-full bg-green-600 hover:bg-green-700 text-white">Learn more</Button>
-        </DialogTrigger>
+      <CardContent className="p-4 flex-grow flex flex-col">
+          <div className="flex items-start gap-3 mb-2">
+              <Icon className="h-8 w-8 text-primary flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-xl font-semibold text-card-foreground">{title}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{description}</p>
+              </div>
+          </div>
       </CardContent>
+      <CardFooter className="p-4 pt-0 mt-auto">
+          <DialogTrigger asChild>
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">Learn more</Button>
+          </DialogTrigger>
+      </CardFooter>
     </Card>
     <DialogContent className="sm:max-w-lg p-0">
         <div className="relative h-48 w-full">
@@ -76,7 +85,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Our Cannabinoid Advisor leverages deep pharmacological data to provide safe, personalized guidance on using THC and CBD for a wide range of ailments. Get recommendations on dosage, delivery methods, and product types tailored to your specific needs.',
     icon: Leaf,
     link: '/advisors/cannabinoid',
-    imageSrc: 'https://placehold.co/600x400.png',
+    imageSrc: '/images/cbd.png',
     imageHint: 'cannabis leaf microscope',
     dataAiHint: 'cannabis wellness',
     delay: 100,
@@ -87,7 +96,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Cultivate a thriving, sustainable garden with our permaculture expert. "The conscious gardener" identifies plants from your photos, suggests ideal companion species, and offers organic solutions to common gardening challenges, helping you create a balanced ecosystem.',
     icon: Sprout,
     link: '/advisors/gardening',
-    imageSrc: 'https://placehold.co/600x400.png',
+    imageSrc: '/images/garden.png',
     imageHint: 'permaculture garden',
     dataAiHint: 'organic gardening',
     delay: 200,
@@ -98,7 +107,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Explore the world of gentle healing with our Homeopathic Advisor. It provides detailed information on remedies based on homeopathic principles, including Latin names, potency suggestions, dosage, and safe usage guidelines for both physical and emotional symptoms.',
     icon: ShieldCheck,
     link: '/advisors/homeopathy',
-    imageSrc: 'https://placehold.co/600x400.png',
+    imageSrc: '/images/homeopathy.png',
     imageHint: 'homeopathy remedies plants',
     dataAiHint: 'homeopathy remedy',
     delay: 300,
@@ -109,7 +118,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Journey into the fungal kingdom with "Mushroom Funguy," your joyful guide to medicinal and sacred mushrooms. Get science-backed recommendations for mental clarity, physical vitality, and spiritual exploration, complete with legal disclaimers and safety advice.',
     icon: Brain,
     link: '/advisors/mushroom',
-    imageSrc: 'https://placehold.co/600x400.png',
+    imageSrc: '/images/mushroom.png',
     imageHint: 'mushrooms glowing forest',
     dataAiHint: 'medicinal mushrooms',
     delay: 400,
@@ -120,10 +129,54 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Connect with ancient wisdom through our Traditional Medicine Advisor. Focused on African and indigenous healing, it offers respectful, culturally appropriate advice on herbs, rituals, and diets, always encouraging consultation with licensed traditional healers.',
     icon: HandHelping,
     link: '/advisors/traditional-medicine',
-    imageSrc: 'https://placehold.co/600x400.png',
+    imageSrc: '/images/healer.png',
     imageHint: 'african traditional healer',
     dataAiHint: 'traditional healing',
     delay: 500,
+  },
+  {
+    title: 'Qigong Advisor',
+    description: 'Harmonize your mind, body, and spirit. Get personalized Qigong exercises and philosophy from an AI master.',
+    longDescription: 'Unlock your vital life force (Qi) with the Qigong Advisor. This AI master guides you through ancient breathing techniques, gentle movements, and meditation practices to improve your health, reduce stress, and cultivate inner peace.',
+    icon: Zap,
+    link: '/advisors/qigong',
+    imageSrc: '/images/qigong.png',
+    imageHint: 'qigong meditation nature',
+    dataAiHint: 'qigong energy healing',
+    delay: 600,
+  },
+  {
+    title: 'Flower Power Advisor',
+    description: 'Explore the subtle healing energies of flower essences. Discover the perfect floral remedy for your emotional state.',
+    longDescription: 'Tap into the vibrational healing of nature with the Flower Power Advisor. Describe your emotional state, and our AI will recommend specific flower essences, like Bach remedies, to help you find balance, resolve conflict, and bloom into your true self.',
+    icon: Sprout,
+    link: '/advisors/flower-power',
+    imageSrc: '/images/flower.png',
+    imageHint: 'flower remedies healing',
+    dataAiHint: 'bach remedies',
+    delay: 700,
+  },
+  {
+    title: 'Aromatherapy AI',
+    description: 'Inhale wellness. Find the perfect essential oil blends for your mood, health, and home environment.',
+    longDescription: 'Let our Aromatherapy AI guide your senses to well-being. Get expert advice on essential oil properties, create custom blends for diffusers or topical application, and learn safe practices for everything from stress relief to boosting your immune system.',
+    icon: Sparkles,
+    link: '/advisors/aromatherapy',
+    imageSrc: '/images/aroma.png',
+    imageHint: 'aromatherapy oils diffuser',
+    dataAiHint: 'essential oils',
+    delay: 800,
+  },
+   {
+    title: 'Vegan food Guru AI',
+    description: 'Delicious, nutritious, and compassionate. Get plant-based recipes, nutritional advice, and vegan lifestyle tips.',
+    longDescription: "Embark on a flavorful plant-based journey with the Vegan Food Guru. Whether you need a quick weeknight recipe, a plan to ensure you're getting all your nutrients, or tips for navigating restaurants, our AI has you covered with delicious and compassionate advice.",
+    icon: Leaf,
+    link: '/advisors/vegan-guru',
+    imageSrc: 'https://placehold.co/600x400.png',
+    imageHint: 'vegan food platter',
+    dataAiHint: 'vegan food',
+    delay: 900,
   },
 ];
 
@@ -426,5 +479,3 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
-
-    
