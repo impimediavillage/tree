@@ -163,26 +163,27 @@ export const onLeafUserCreated = onDocumentCreated(
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
 
-    // Only send email if role is LeafUser
-    if (userData.role === 'LeafUser' && userData.email) {
-      const welcomeCredits = userData.signupSource === 'public' ? 20 : 10;
+    // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
+    if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
       logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
 
       const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Wellness Tree!";
+      const subject = "Welcome to The Dispensary Tree!";
       const greeting = `Dear ${userDisplayName},`;
       const content = [
-        `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
+        `Thank you for joining The Dispensary Tree! We're excited to have you as part of our community.`,
         `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
-        `You've received ${welcomeCredits} free credits to get started with our AI advisors.`,
+        `You've received 10 free credits to get started with our AI advisors.`,
         `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
       ];
       const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+      const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
       
       await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
+    } else if (userData.role === 'LeafUser' && userData.signupSource === 'public') {
+        logger.log(`New Leaf User created via public signup (ID: ${userId}). Welcome email skipped.`);
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
@@ -713,17 +714,13 @@ export const deductCreditsAndLogInteraction = onRequest(
 
     try {
       let newCreditBalance = 0;
-      let dispensaryId: string | null = null;
-
       if (!wasFreeInteraction) {
         await db.runTransaction(async (transaction) => {
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists) {
             throw new HttpError(404, "User not found.", "not-found");
           }
-          const userData = userDoc.data() as UserDocData;
-          dispensaryId = userData.dispensaryId || null;
-          const currentCredits = userData?.credits || 0;
+          const currentCredits = (userDoc.data() as UserDocData)?.credits || 0;
           if (currentCredits < creditsToDeduct) {
             throw new HttpError(400, "Insufficient credits.", "failed-precondition");
           }
@@ -738,9 +735,7 @@ export const deductCreditsAndLogInteraction = onRequest(
         if (!userDoc.exists) {
           throw new HttpError(404, "User not found for free interaction logging.", "not-found");
         }
-        const userData = userDoc.data() as UserDocData;
-        dispensaryId = userData.dispensaryId || null;
-        newCreditBalance = userData?.credits || 0;
+        newCreditBalance = (userDoc.data() as UserDocData)?.credits || 0;
         logger.info(
           `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
         );
@@ -748,7 +743,6 @@ export const deductCreditsAndLogInteraction = onRequest(
 
       const logEntry = {
         userId,
-        dispensaryId, // Add dispensaryId to the log
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
         timestamp: admin.firestore.Timestamp.now() as any,
@@ -956,5 +950,32 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
         await historyRef.set(finalLog);
 
         throw new HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
+    }
+});
+
+
+/**
+ * Callable function to update the image URL for a strain in the seed data.
+ * This is triggered when a strain with a "none" image is viewed.
+ */
+export const updateStrainImageUrl = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+
+    const { strainId, imageUrl } = request.data;
+
+    if (!strainId || typeof strainId !== 'string' || !imageUrl || typeof imageUrl !== 'string') {
+        throw new HttpsError('invalid-argument', 'The function must be called with "strainId" and "imageUrl" arguments.');
+    }
+
+    try {
+        const strainRef = db.collection('my-seeded-collection').doc(strainId);
+        await strainRef.update({ img_url: imageUrl });
+        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}.`);
+        return { success: true, message: 'Image URL updated successfully.' };
+    } catch (error: any) {
+        logger.error(`Error updating strain image URL for ${strainId}:`, error);
+        throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
