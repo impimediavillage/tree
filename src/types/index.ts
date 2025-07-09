@@ -403,9 +403,17 @@ export interface ThemeAssetSet {
 
 export interface StickerSet {
   id?: string;
-  dispensaryId: string;
-  name: string;
+  creatorUid: string;
+  creatorDisplayName: string;
+  creatorRole: User['role'];
+  dispensaryId?: string | null; // For store-created sets
+  name: string; // e.g., "Lemon Haze"
   theme: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
   assets: ThemeAssetSet;
+  isPublic: boolean;
+  salesCount: number;
+  viewCount: number;
   createdAt: Timestamp | Date | string;
 }
+
+    

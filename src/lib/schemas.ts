@@ -199,7 +199,7 @@ const baseProductObjectSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
   subcategory: z.string().optional().nullable(),
-  subSubcategory: z.string().optional().nullable(),
+  subSubCategory: z.string().optional().nullable(),
   
   productType: z.string().optional().nullable(),
   mostCommonTerpene: z.string().optional().nullable(),
@@ -500,7 +500,7 @@ export const poolIssueDbSchema = poolIssueSchema.extend({
   createdAt: z.any(),
   updatedAt: z.any(),
 });
-export type PoolIssue = z.infer<typeof poolIssueDbSchema>;
+export type PoolIssue = z.infer<typeof poolIssueSchema>;
 
 export const creditPackageDbSchema = creditPackageSchema.extend({
   id: z.string().optional(),
@@ -558,13 +558,20 @@ export const ThemeAssetSetSchema = z.object({
     trippySticker2Url: z.string().url(),
 });
 
-
 export const stickerSetSchema = z.object({
   id: z.string().optional(),
-  dispensaryId: z.string(),
+  creatorUid: z.string(),
+  creatorDisplayName: z.string(),
+  creatorRole: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff']),
+  dispensaryId: z.string().optional().nullable(),
   name: z.string(),
   theme: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
   assets: ThemeAssetSetSchema,
+  isPublic: z.boolean().default(true),
+  salesCount: z.number().int().min(0).default(0),
+  viewCount: z.number().int().min(0).default(0),
   createdAt: z.any(),
 });
-export type StickerSet = z.infer<typeof stickerSetSchema>;
+export type StickerSetDbData = z.infer<typeof stickerSetSchema>;
+
+    
