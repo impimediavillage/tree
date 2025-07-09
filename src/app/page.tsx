@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { FeaturedStickerCard } from '@/components/cards/FeaturedStickerCard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 interface AdvisorCardProps {
@@ -57,23 +58,23 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
           </DialogTrigger>
       </CardFooter>
     </Card>
-    <DialogContent className="sm:max-w-lg p-0">
-        <div className="relative aspect-video w-full">
+    <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[600px]">
+        <div className="relative aspect-video w-full flex-shrink-0">
             <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="cover" data-ai-hint={imageHint} className="rounded-t-lg" />
         </div>
-        <div className="p-6">
-            <DialogHeader>
+        <ScrollArea className="flex-grow px-6 pb-4">
+            <DialogHeader className="text-left">
                 <DialogTitle className="text-2xl flex items-center gap-3"><Icon className="h-7 w-7 text-primary" />{title}</DialogTitle>
                 <DialogDescription className="pt-2 text-base text-muted-foreground">
                     {longDescription}
                 </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="mt-6">
-                <Button asChild size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <Link href={link}>Consult Advisor</Link>
-                </Button>
-            </DialogFooter>
-        </div>
+        </ScrollArea>
+        <DialogFooter className="p-6 pt-4 border-t mt-auto flex-shrink-0">
+            <Button asChild size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                <Link href={link}>Consult Advisor</Link>
+            </Button>
+        </DialogFooter>
     </DialogContent>
   </Dialog>
 );
