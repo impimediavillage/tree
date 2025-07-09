@@ -38,8 +38,8 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
       data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
     >
       <CardHeader className="p-0">
-        <div className="relative h-40 w-full">
-            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="cover" data-ai-hint={imageHint} />
+        <div className="relative h-40 w-full bg-muted/20">
+            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="contain" className="p-2" data-ai-hint={imageHint} />
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow flex flex-col">
@@ -58,8 +58,8 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
       </CardFooter>
     </Card>
     <DialogContent className="sm:max-w-lg p-0">
-        <div className="relative h-48 w-full">
-            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="cover" data-ai-hint={imageHint} className="rounded-t-lg" />
+        <div className="relative h-48 w-full bg-muted/20">
+            <Image src={imageSrc} alt={`${title} illustration`} layout="fill" objectFit="contain" data-ai-hint={imageHint} className="rounded-t-lg p-2" />
         </div>
         <div className="p-6">
             <DialogHeader>
@@ -85,7 +85,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Our Cannabinoid Advisor leverages deep pharmacological data to provide safe, personalized guidance on using THC and CBD for a wide range of ailments. Get recommendations on dosage, delivery methods, and product types tailored to your specific needs.',
     icon: Leaf,
     link: '/advisors/cannabinoid',
-    imageSrc: '/images/cbd.png',
+    imageSrc: '/images/cbd1.png',
     imageHint: 'cannabis leaf microscope',
     dataAiHint: 'cannabis wellness',
     delay: 100,
@@ -129,7 +129,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: 'Connect with ancient wisdom through our Traditional Medicine Advisor. Focused on African and indigenous healing, it offers respectful, culturally appropriate advice on herbs, rituals, and diets, always encouraging consultation with licensed traditional healers.',
     icon: HandHelping,
     link: '/advisors/traditional-medicine',
-    imageSrc: '/images/healer.png',
+    imageSrc: '/images/healer1.png',
     imageHint: 'african traditional healer',
     dataAiHint: 'traditional healing',
     delay: 500,
@@ -173,7 +173,7 @@ const advisors: AdvisorCardProps[] = [
     longDescription: "Embark on a flavorful plant-based journey with the Vegan Food Guru. Whether you need a quick weeknight recipe, a plan to ensure you're getting all your nutrients, or tips for navigating restaurants, our AI has you covered with delicious and compassionate advice.",
     icon: Leaf,
     link: '/advisors/vegan-guru',
-    imageSrc: 'https://placehold.co/600x400.png',
+    imageSrc: '/images/vegan.png',
     imageHint: 'vegan food platter',
     dataAiHint: 'vegan food',
     delay: 900,
