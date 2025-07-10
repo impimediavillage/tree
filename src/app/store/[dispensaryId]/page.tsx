@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/contexts/CartContext'; 
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -114,6 +114,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
   
   const [loadingThemes, setLoadingThemes] = React.useState<Set<ThemeKey>>(new Set());
   const [generatedLogos, setGeneratedLogos] = React.useState<Partial<Record<ThemeKey, string>>>({});
+  const [selectedTheme, setSelectedTheme] = React.useState<ThemeKey>('clay');
   
   const generationInitiated = React.useRef(false);
 
@@ -146,12 +147,14 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
         setGeneratedLogos({});
         setLoadingThemes(new Set());
         generationInitiated.current = false;
+        setSelectedTheme('clay');
       }, 300);
     }
   }, [isOpen, generateLogoForTheme]);
   
   const handleTabChange = (newTab: string) => {
     const themeKey = newTab as ThemeKey;
+    setSelectedTheme(themeKey);
     if (!generatedLogos[themeKey] && !loadingThemes.has(themeKey)) {
       generateLogoForTheme(themeKey);
     }
@@ -160,6 +163,17 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
   const handleAddToCart = () => {
     if (!product || !tier) return;
     
+    const activeLogoUrl = generatedLogos[selectedTheme];
+
+    if (!activeLogoUrl) {
+      toast({
+        title: "Design Not Ready",
+        description: "Please wait for the selected theme's design to finish generating before adding to cart.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
 
     const designPackProduct: Product = {
@@ -168,7 +182,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
       name: `Sticker Design: ${product.name}`,
       description: specialDescription,
       category: 'Digital Design',
-      imageUrl: generatedLogos['clay'] || product.imageUrls?.[0] || null,
+      imageUrl: activeLogoUrl,
       dispensaryId: product.dispensaryId,
       dispensaryName: product.dispensaryName,
       dispensaryType: product.dispensaryType,
@@ -208,20 +222,20 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="clay" className="w-full flex-grow flex flex-col min-h-0" onValueChange={handleTabChange}>
-          <div className="px-6 border-b flex-shrink-0">
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
-              {designTabs.map(tab => (
-                <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-          
-          <div className="flex-grow p-4 min-h-0">
-            <ScrollArea className="h-full">
-              <div className="h-full flex flex-col items-center justify-center p-4 border rounded-lg bg-muted/50">
+        <div className="flex-grow flex flex-col min-h-0">
+          <Tabs defaultValue="clay" className="w-full flex-grow flex flex-col min-h-0" onValueChange={handleTabChange}>
+            <div className="px-6 border-b flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                {designTabs.map(tab => (
+                  <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            
+            <div className="flex-grow p-4 min-h-0">
+              <ScrollArea className="h-full">
                   {designTabs.map(tab => (
-                    <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex-grow flex items-center justify-center">
+                    <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex-grow flex items-center justify-center h-full">
                       {loadingThemes.has(tab.value) ? (
                         <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -238,16 +252,16 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
                       )}
                     </TabsContent>
                   ))}
-              </div>
-            </ScrollArea>
-          </div>
+              </ScrollArea>
+            </div>
 
-          <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
-            <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
-              <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
-            </Button>
-          </DialogFooter>
-        </Tabs>
+            <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background/80 backdrop-blur-sm">
+                <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
+                </Button>
+            </DialogFooter>
+          </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );
