@@ -238,7 +238,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl h-[90vh] p-0 flex flex-col">
+      <DialogContent className="sm:max-w-xl h-[90vh] p-0 flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
           <DialogDescription>
@@ -263,6 +263,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
             
             <div className="flex-grow flex flex-col p-4 min-h-0">
                 <ScrollArea className="flex-grow">
+                  <div className="flex-grow flex flex-col justify-center items-center">
                     {visibleTabs.map(tab => (
                         <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex flex-col justify-center items-center flex-grow">
                              {loadingThemes.has(tab.value) ? (
@@ -281,6 +282,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
                                 )}
                         </TabsContent>
                     ))}
+                  </div>
                 </ScrollArea>
                 <div className="flex-shrink-0 pt-4">
                     <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!!activeTierCartItem}>
@@ -798,5 +800,3 @@ export default function WellnessStorePage() {
     </div>
   );
 }
-
-    
