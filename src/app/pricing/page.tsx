@@ -15,37 +15,42 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenChange: (open: boolean) => void }) {
   const router = useRouter();
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0">
-        <DialogHeader className="p-0">
+      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[600px]">
+        <DialogHeader className="p-0 flex-shrink-0">
           <div className="relative h-48 w-full">
-            <Image src="/images/cbd.png" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-t-lg" data-ai-hint="wellness plant" />
+            <Image src="/images/cbd1.png" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-t-lg" data-ai-hint="wellness plant" />
           </div>
-          <div className="p-6">
+          <div className="p-6 pb-2">
             <DialogTitle className="text-2xl font-bold text-primary">Join The Wellness Tree!</DialogTitle>
             <DialogDescription className="mt-2 text-muted-foreground">
               To purchase credits and unlock our powerful AI tools, you need to create a free Leaf User account.
             </DialogDescription>
           </div>
         </DialogHeader>
-        <div className="px-6 pb-6 space-y-4">
-          <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-            <h4 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-5 w-5 text-accent"/> Sticker & Promo Designer</h4>
-            <p className="text-sm text-muted-foreground mt-1">Unleash your creativity and design unique sticker sets for your favorite strains or products.</p>
+        <ScrollArea className="flex-grow px-6 pb-4 min-h-0">
+          <div className="space-y-4">
+            <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+              <h4 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-5 w-5 text-accent"/> Sticker & Promo Designer</h4>
+              <p className="text-sm text-muted-foreground mt-1">Unleash your creativity and design unique sticker sets for your favorite strains or products.</p>
+            </div>
+            <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+              <h4 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> AI Advisors</h4>
+              <p className="text-sm text-muted-foreground mt-1">Get personalized, expert-level advice on everything from gardening to traditional medicine.</p>
+            </div>
           </div>
-          <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-            <h4 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> AI Advisors</h4>
-            <p className="text-sm text-muted-foreground mt-1">Get personalized, expert-level advice on everything from gardening to traditional medicine.</p>
-          </div>
-          <Button size="lg" className="w-full text-lg mt-4" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
-            <Leaf className="mr-2 h-5 w-5"/>
-            Sign Up For Free
-          </Button>
+        </ScrollArea>
+        <div className="px-6 pb-6 pt-4 border-t flex-shrink-0">
+            <Button size="lg" className="w-full text-lg" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
+                <Leaf className="mr-2 h-5 w-5"/>
+                Sign Up For Free
+            </Button>
         </div>
       </DialogContent>
     </Dialog>
