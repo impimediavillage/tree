@@ -216,7 +216,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     const designPackTier: PriceTier = {
         ...tier,
         unit: tier.unit,
-        price: 60.00, // Fixed price for designs
+        price: tier.price, // Use the product tier's price
     };
     
     addToCart(designPackProduct, designPackTier, 1);
