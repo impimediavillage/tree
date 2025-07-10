@@ -203,7 +203,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
           <DialogDescription>
@@ -212,7 +212,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
         </DialogHeader>
         
         <Tabs defaultValue="clay" className="w-full" onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
             {designTabs.map(tab => (
               <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
             ))}
@@ -425,7 +425,8 @@ function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCa
                   {tier.price.toFixed(2)}
                 </p>
                 <div className="flex items-center justify-end text-xs text-muted-foreground">
-                  <span className="mr-1">/ {tier.unit}</span>
+                  <span>{tier.unit}</span>
+                  <span className="mx-1">/</span>
                   <span>Sticker price</span>
                 </div>
                 <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
@@ -752,6 +753,3 @@ export default function WellnessStorePage() {
     </div>
   );
 }
-
-
-    
