@@ -62,7 +62,7 @@ export function Header() {
             </Link>
           </Button>
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
-            <Link href="/dispensaries/by-type/Cannibinoid%20store">
+            <Link href="/browse-dispensary-types">
                 <span className="sm:hidden">Browse</span>
                 <span className="hidden sm:inline">Browse stores</span>
             </Link>
