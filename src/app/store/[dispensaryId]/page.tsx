@@ -160,31 +160,28 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
   const handleAddToCart = () => {
     if (!product || !tier) return;
     
-    // Create a special description to hold the free sample info
     const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
 
     const designPackProduct: Product = {
       ...product,
-      id: `design-${product.id}-${tier.unit}`, // Unique ID for this specific tier design
+      id: `design-${product.id}-${tier.unit}`,
       name: `Sticker Design: ${product.name}`,
-      description: specialDescription, // Embed sample info here
+      description: specialDescription,
       category: 'Digital Design',
       imageUrl: generatedLogos['clay'] || product.imageUrls?.[0] || null,
-      // Default other necessary fields
       dispensaryId: product.dispensaryId,
       dispensaryName: product.dispensaryName,
       dispensaryType: product.dispensaryType,
       productOwnerEmail: product.productOwnerEmail,
       currency: product.currency,
       priceTiers: [],
-      quantityInStock: 999, // Essentially unlimited
+      quantityInStock: 999,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     
-    // Create a price tier specific to this design purchase
     const designPackTier: PriceTier = {
-        ...tier, // Copy details like price
+        ...tier,
         unit: 'Design Purchase',
     };
     
@@ -203,46 +200,48 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent className="max-w-xl h-[90vh] p-0 flex flex-col">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
           <DialogDescription>
             Select a theme tab to generate a logo concept.
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="clay" className="w-full" onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
-            {designTabs.map(tab => (
-              <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
-            ))}
-          </TabsList>
-          {designTabs.map(tab => (
-            <TabsContent key={tab.value} value={tab.value}>
-              <Card>
-                <CardContent className="flex items-center justify-center p-6 min-h-[300px]">
-                  {loadingThemes.has(tab.value) ? (
-                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                      <p>Generating {tab.title} theme...</p>
-                    </div>
-                  ) : generatedLogos[tab.value] ? (
-                    <div className="relative aspect-square w-full max-w-sm">
-                      <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
-                    </div>
-                  ) : (
-                    <div className="text-center text-muted-foreground">
-                      <p>Select this tab to generate the logo.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
+        <div className="flex-grow min-h-0 px-6 pb-4">
+            <Tabs defaultValue="clay" className="w-full h-full flex flex-col" onValueChange={handleTabChange}>
+              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                {designTabs.map(tab => (
+                  <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
+                ))}
+              </TabsList>
+              {designTabs.map(tab => (
+                <TabsContent key={tab.value} value={tab.value} className="flex-grow mt-4">
+                  <Card className="h-full">
+                    <CardContent className="flex items-center justify-center p-6 h-full">
+                      {loadingThemes.has(tab.value) ? (
+                        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                          <p>Generating {tab.title} theme...</p>
+                        </div>
+                      ) : generatedLogos[tab.value] ? (
+                        <div className="relative aspect-square w-full max-w-sm">
+                          <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
+                        </div>
+                      ) : (
+                        <div className="text-center text-muted-foreground">
+                          <p>Select this tab to generate the logo.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              ))}
+            </Tabs>
+        </div>
 
-        <DialogFooter className="mt-4">
-          <Button onClick={handleAddToCart} size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+        <DialogFooter className="px-6 pb-6 pt-4 border-t mt-auto">
+          <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
             <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
           </Button>
         </DialogFooter>
