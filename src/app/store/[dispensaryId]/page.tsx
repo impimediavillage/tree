@@ -201,50 +201,53 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
           <DialogDescription>
             Select a theme tab to generate a logo concept.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-grow min-h-0 px-6 pb-4">
-          <Tabs defaultValue="clay" className="w-full h-full flex flex-col" onValueChange={handleTabChange}>
+        <Tabs defaultValue="clay" className="w-full flex-grow flex flex-col min-h-0" onValueChange={handleTabChange}>
+          <div className="px-6 border-b flex-shrink-0">
             <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
               {designTabs.map(tab => (
                 <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
               ))}
             </TabsList>
-            
-            <div className="flex-grow mt-4 p-4 border rounded-lg bg-muted/50 flex items-center justify-center min-h-0">
-              {designTabs.map(tab => (
-                <TabsContent key={tab.value} value={tab.value} className="w-full h-full m-0">
-                  <div className="flex items-center justify-center w-full h-full">
-                    {loadingThemes.has(tab.value) ? (
-                      <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p>Generating {tab.title} theme...</p>
-                      </div>
-                    ) : generatedLogos[tab.value] ? (
-                      <div className="relative aspect-square w-full max-w-xs">
-                        <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
-                      </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <p>Select this tab to generate the logo.</p>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              ))}
-            </div>
-             <DialogFooter className="mt-4">
-                <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                  <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
-                </Button>
-              </DialogFooter>
-          </Tabs>
-        </div>
+          </div>
+          
+          <div className="flex-grow p-4 min-h-0">
+            <ScrollArea className="h-full">
+              <div className="h-full flex flex-col items-center justify-center p-4 border rounded-lg bg-muted/50">
+                  {designTabs.map(tab => (
+                    <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex-grow flex items-center justify-center">
+                      {loadingThemes.has(tab.value) ? (
+                        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                          <p>Generating {tab.title} theme...</p>
+                        </div>
+                      ) : generatedLogos[tab.value] ? (
+                        <div className="relative aspect-square w-full max-w-sm">
+                          <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
+                        </div>
+                      ) : (
+                        <div className="text-center text-muted-foreground">
+                          <p>Select this tab to generate the logo.</p>
+                        </div>
+                      )}
+                    </TabsContent>
+                  ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
+            <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+              <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
+            </Button>
+          </DialogFooter>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
