@@ -216,7 +216,7 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
               ))}
             </TabsList>
             
-            <div className="flex-grow mt-4 p-4 border rounded-lg bg-muted/50 flex items-center justify-center">
+            <div className="flex-grow mt-4 p-4 border rounded-lg bg-muted/50 flex items-center justify-center min-h-0">
               {designTabs.map(tab => (
                 <TabsContent key={tab.value} value={tab.value} className="w-full h-full m-0">
                   <div className="flex items-center justify-center w-full h-full">
@@ -238,14 +238,13 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
                 </TabsContent>
               ))}
             </div>
+             <DialogFooter className="mt-4">
+                <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                  <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
+                </Button>
+              </DialogFooter>
           </Tabs>
         </div>
-
-        <DialogFooter className="px-6 pb-6 pt-4 border-t mt-auto bg-background">
-          <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
-            <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
