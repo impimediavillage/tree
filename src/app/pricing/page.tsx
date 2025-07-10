@@ -22,36 +22,36 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[600px]">
-        <DialogHeader className="p-0 flex-shrink-0">
-          <div className="relative h-48 w-full">
-            <Image src="/images/cbd1.png" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-t-lg" data-ai-hint="wellness plant" />
-          </div>
-          <div className="p-6 pb-2">
-            <DialogTitle className="text-2xl font-bold text-primary">Join The Wellness Tree!</DialogTitle>
-            <DialogDescription className="mt-2 text-muted-foreground">
-              To purchase credits and unlock our powerful AI tools, you need to create a free Leaf User account.
-            </DialogDescription>
-          </div>
-        </DialogHeader>
-        <ScrollArea className="flex-grow px-6 pb-4 min-h-0">
-          <div className="space-y-4">
-            <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-              <h4 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-5 w-5 text-accent"/> Sticker & Promo Designer</h4>
-              <p className="text-sm text-muted-foreground mt-1">Unleash your creativity and design unique sticker sets for your favorite strains or products.</p>
+      <DialogContent className="sm:max-w-md p-0">
+        <ScrollArea className="max-h-[90vh]">
+          <div className="p-6">
+            <DialogHeader className="p-0 text-left">
+              <div className="relative h-48 w-full mb-4 rounded-lg overflow-hidden">
+                <Image src="/images/cbd1.png" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-lg" data-ai-hint="wellness plant" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-primary">Join The Wellness Tree!</DialogTitle>
+              <DialogDescription className="mt-2 text-muted-foreground">
+                To purchase credits and unlock our powerful AI tools, you need to create a free Leaf User account.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="my-6 space-y-4">
+              <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                <h4 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-5 w-5 text-accent"/> Sticker & Promo Designer</h4>
+                <p className="text-sm text-muted-foreground mt-1">Unleash your creativity and design unique sticker sets for your favorite strains or products.</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
+                <h4 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> AI Advisors</h4>
+                <p className="text-sm text-muted-foreground mt-1">Get personalized, expert-level advice on everything from gardening to traditional medicine.</p>
+              </div>
             </div>
-            <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-              <h4 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> AI Advisors</h4>
-              <p className="text-sm text-muted-foreground mt-1">Get personalized, expert-level advice on everything from gardening to traditional medicine.</p>
+            <div className="pt-4 border-t">
+                <Button size="lg" className="w-full text-lg" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
+                    <Leaf className="mr-2 h-5 w-5"/>
+                    Sign Up For Free
+                </Button>
             </div>
           </div>
         </ScrollArea>
-        <div className="px-6 pb-6 pt-4 border-t flex-shrink-0">
-            <Button size="lg" className="w-full text-lg" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
-                <Leaf className="mr-2 h-5 w-5"/>
-                Sign Up For Free
-            </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
