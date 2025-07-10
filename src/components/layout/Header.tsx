@@ -57,7 +57,7 @@ export function Header() {
 
         <nav className="flex items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
-            <Link href="/dashboard/leaf/credits">
+            <Link href="/pricing">
                 Pricing
             </Link>
           </Button>
