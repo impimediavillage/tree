@@ -232,34 +232,35 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
               </TabsList>
             </div>
             
-            <div className="flex-grow p-4 min-h-0">
-              <ScrollArea className="h-full">
+            <div className="flex-grow p-4 min-h-0 relative">
+              <div className="absolute inset-0 overflow-y-auto">
                   {designTabs.map(tab => (
-                    <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex-grow flex items-center justify-center h-full">
-                      {loadingThemes.has(tab.value) ? (
-                        <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                          <p>Generating {tab.title} theme...</p>
-                        </div>
-                      ) : generatedLogos[tab.value] ? (
-                        <div className="relative aspect-square w-full max-w-sm">
-                          <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
-                        </div>
-                      ) : (
-                        <div className="text-center text-muted-foreground">
-                          <p>Select this tab to generate the logo.</p>
-                        </div>
-                      )}
+                    <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex flex-col min-h-full">
+                      <div className="flex-grow flex items-center justify-center">
+                        {loadingThemes.has(tab.value) ? (
+                          <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            <p>Generating {tab.title} theme...</p>
+                          </div>
+                        ) : generatedLogos[tab.value] ? (
+                          <div className="relative aspect-square w-full max-w-xs">
+                            <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
+                          </div>
+                        ) : (
+                          <div className="text-center text-muted-foreground">
+                            <p>Select this tab to generate the logo.</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 pt-4">
+                        <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+                          <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
+                        </Button>
+                      </div>
                     </TabsContent>
                   ))}
-              </ScrollArea>
+              </div>
             </div>
-
-            <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background/80 backdrop-blur-sm">
-                <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                  <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
-                </Button>
-            </DialogFooter>
           </Tabs>
         </div>
       </DialogContent>
@@ -769,3 +770,5 @@ export default function WellnessStorePage() {
     </div>
   );
 }
+
+    
