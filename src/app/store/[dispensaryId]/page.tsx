@@ -109,14 +109,47 @@ interface DesignViewerDialogProps {
 }
 
 function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewerDialogProps) {
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
   const { toast } = useToast();
   
   const [loadingThemes, setLoadingThemes] = React.useState<Set<ThemeKey>>(new Set());
   const [generatedLogos, setGeneratedLogos] = React.useState<Partial<Record<ThemeKey, string>>>({});
   const [selectedTheme, setSelectedTheme] = React.useState<ThemeKey>('clay');
-  
+  const [activeTierCartItem, setActiveTierCartItem] = React.useState<CartItem | null>(null);
+
   const generationInitiated = React.useRef(false);
+
+  React.useEffect(() => {
+    if (isOpen && product && tier) {
+      const cartItemId = `design-${product.id}-${tier.unit}`;
+      const existingCartItem = cartItems.find(item => item.id === cartItemId);
+      setActiveTierCartItem(existingCartItem || null);
+
+      if (existingCartItem) {
+        // If this tier already has a design in cart, pre-populate it
+        const themeFromDesc = existingCartItem.category.replace('Digital Design (', '').replace(')', '') as ThemeKey;
+        setGeneratedLogos({ [themeFromDesc]: existingCartItem.imageUrl! });
+        setSelectedTheme(themeFromDesc);
+        setLoadingThemes(new Set());
+        generationInitiated.current = true;
+      } else {
+        // Normal generation flow for a new design
+        generationInitiated.current = true;
+        setLoadingThemes(new Set(['clay']));
+        setTimeout(() => generateLogoForTheme('clay'), 100);
+      }
+    } else if (!isOpen) {
+      // Reset state when dialog closes
+      setTimeout(() => {
+        setGeneratedLogos({});
+        setLoadingThemes(new Set());
+        generationInitiated.current = false;
+        setSelectedTheme('clay');
+        setActiveTierCartItem(null);
+      }, 300);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, product, tier, cartItems]);
 
   const generateLogoForTheme = React.useCallback(async (theme: ThemeKey) => {
     if (!product?.strain) return;
@@ -137,20 +170,6 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
       });
     }
   }, [product, toast]);
-
-  React.useEffect(() => {
-    if (isOpen && !generationInitiated.current) {
-      generationInitiated.current = true;
-      generateLogoForTheme('clay');
-    } else if (!isOpen) {
-      setTimeout(() => {
-        setGeneratedLogos({});
-        setLoadingThemes(new Set());
-        generationInitiated.current = false;
-        setSelectedTheme('clay');
-      }, 300);
-    }
-  }, [isOpen, generateLogoForTheme]);
   
   const handleTabChange = (newTab: string) => {
     const themeKey = newTab as ThemeKey;
@@ -175,13 +194,13 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     }
 
     const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
-
+    
     const designPackProduct: Product = {
       ...product,
       id: `design-${product.id}-${tier.unit}`,
       name: `Sticker Design: ${product.name}`,
       description: specialDescription,
-      category: 'Digital Design',
+      category: `Digital Design (${selectedTheme})`, // Store theme for re-opening
       imageUrl: activeLogoUrl,
       dispensaryId: product.dispensaryId,
       dispensaryName: product.dispensaryName,
@@ -196,7 +215,8 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     
     const designPackTier: PriceTier = {
         ...tier,
-        unit: 'Design Purchase',
+        unit: tier.unit,
+        price: 60.00, // Fixed price for designs
     };
     
     addToCart(designPackProduct, designPackTier, 1);
@@ -211,6 +231,10 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
     { value: 'farmstyle', title: 'Farmstyle' },
     { value: 'imaginative', title: 'Imaginative' },
   ];
+  
+  const visibleTabs = activeTierCartItem 
+    ? designTabs.filter(tab => tab.value === selectedTheme)
+    : designTabs;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -218,48 +242,52 @@ function DesignViewerDialog({ isOpen, onOpenChange, product, tier }: DesignViewe
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
           <DialogDescription>
-            Select a theme tab to generate a logo concept.
+            {activeTierCartItem 
+                ? 'You have already added a design for this product tier to your cart.'
+                : 'Select a theme tab to generate a logo concept.'
+            }
           </DialogDescription>
         </DialogHeader>
         
         <div className="flex-grow flex flex-col min-h-0">
-          <Tabs defaultValue="clay" className="w-full flex-grow flex flex-col min-h-0" onValueChange={handleTabChange}>
-            <div className="px-6 border-b flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
-                {designTabs.map(tab => (
-                  <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
+          <Tabs defaultValue={selectedTheme} value={selectedTheme} className="w-full flex-grow flex flex-col min-h-0" onValueChange={handleTabChange}>
+            {visibleTabs.length > 1 && (
+                 <div className="px-6 border-b flex-shrink-0">
+                    <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+                        {visibleTabs.map(tab => (
+                        <TabsTrigger key={tab.value} value={tab.value}>{tab.title}</TabsTrigger>
+                        ))}
+                    </TabsList>
+                </div>
+            )}
             
-            <div className="flex-grow p-4 min-h-0 relative">
-              <div className="absolute inset-0 overflow-y-auto">
-                  {designTabs.map(tab => (
-                    <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex flex-col min-h-full">
-                      <div className="flex-grow flex items-center justify-center">
-                        {loadingThemes.has(tab.value) ? (
-                          <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                            <p>Generating {tab.title} theme...</p>
-                          </div>
-                        ) : generatedLogos[tab.value] ? (
-                          <div className="relative aspect-square w-full max-w-xs">
-                            <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
-                          </div>
-                        ) : (
-                          <div className="text-center text-muted-foreground">
-                            <p>Select this tab to generate the logo.</p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-shrink-0 pt-4">
-                        <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
-                          <ShoppingCart className="mr-2 h-5 w-5" /> Add Design to Cart
-                        </Button>
-                      </div>
-                    </TabsContent>
-                  ))}
-              </div>
+            <div className="flex-grow flex flex-col p-4 min-h-0">
+                <ScrollArea className="flex-grow">
+                    {visibleTabs.map(tab => (
+                        <TabsContent key={tab.value} value={tab.value} className="w-full m-0 flex flex-col justify-center items-center flex-grow">
+                             {loadingThemes.has(tab.value) ? (
+                                <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground h-full">
+                                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                                    <p>Generating {tab.title} theme...</p>
+                                </div>
+                                ) : generatedLogos[tab.value] ? (
+                                <div className="relative aspect-square w-full max-w-xs">
+                                    <Image src={generatedLogos[tab.value]!} alt={`${tab.title} Logo`} fill className="object-contain"/>
+                                </div>
+                                ) : (
+                                <div className="text-center text-muted-foreground h-full flex items-center justify-center">
+                                    <p>Select this tab to generate the logo.</p>
+                                </div>
+                                )}
+                        </TabsContent>
+                    ))}
+                </ScrollArea>
+                <div className="flex-shrink-0 pt-4">
+                    <Button onClick={handleAddToCart} size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!!activeTierCartItem}>
+                    <ShoppingCart className="mr-2 h-5 w-5" /> 
+                    {activeTierCartItem ? 'Design already in cart' : 'Add this Design to Cart'}
+                    </Button>
+                </div>
             </div>
           </Tabs>
         </div>
