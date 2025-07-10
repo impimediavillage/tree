@@ -66,7 +66,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const tierStock = tier.quantityInStock ?? 0;
+    const tierStock = tier.quantityInStock ?? 999; // Assume high stock for items without explicit stock
     if (tierStock <= 0) {
       setTimeout(() => toast({ title: "Out of Stock", description: `${product.name} (${tier.unit}) is currently out of stock.`, variant: "destructive"}), 0);
       return;
@@ -112,7 +112,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             unit: tier.unit,
             quantity: finalQuantityToAdd,
             quantityInStock: tierStock,
-            imageUrl: product.imageUrls?.[0] ?? product.imageUrl ?? null,
+            imageUrl: product.imageUrl ?? null,
           };
           if (!toastMessage) {
               toastMessage = { title: `Added to Cart!`, description: `${newItem.name} (${newItem.unit}) has been added to your cart.`, variant: "default" };
@@ -209,3 +209,5 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
+
+    
