@@ -7,8 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
@@ -612,12 +611,12 @@ export default function AddProductPage() {
                        </Card>
                     )}
 
-                    <div className="flex gap-4 pt-4">
-                        <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
+                    <CardFooter>
+                        <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                             Add Product
                         </Button>
-                    </div>
+                    </CardFooter>
                 </div>
             )}
           </form>
@@ -632,5 +631,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
