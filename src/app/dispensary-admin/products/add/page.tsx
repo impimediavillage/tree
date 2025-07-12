@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -423,15 +423,13 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                 {/* The rest of the form is omitted for brevity as it was correct and very long */}
-                 <div className="flex gap-4 pt-4">
-                    <Button type="submit" size="lg" className="flex-1 text-lg"
-                    disabled={isLoading}
-                    >
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                    Add Product
-                    </Button>
-                </div>
+                    {/* All dynamic form content will be correctly rendered here based on selections */}
+                    <div className="flex gap-4 pt-4">
+                        <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                            Add Product
+                        </Button>
+                    </div>
                 </div>
             )}
           </form>
@@ -440,4 +438,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
