@@ -231,9 +231,16 @@ export default function AddProductPage() {
           if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            const categories = categoriesDoc.categoriesData as ProductCategory[];
-            setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
-            setMainCategoryOptions(categories.map(c => c.name).sort());
+            const categoriesData = categoriesDoc.categoriesData;
+            if (Array.isArray(categoriesData)) {
+              const categories = categoriesData as ProductCategory[];
+              setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
+              setMainCategoryOptions(categories.map(c => c.name).sort());
+            } else {
+              console.warn("Categories data is not an array:", categoriesData);
+              setCategoryStructureObject({});
+              setMainCategoryOptions([]);
+            }
           }
         }
       } else {
@@ -353,7 +360,7 @@ export default function AddProductPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            {isThcCbdSpecialType && (
+            {isThcCbdSpecialType && !selectedProductStream && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Select Product Stream *
@@ -400,3 +407,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
