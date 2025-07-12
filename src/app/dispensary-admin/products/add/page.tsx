@@ -37,11 +37,11 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 
-const apparelTypes = [ 
+const apparelTypes = [
   "Head Gear / Neck Wear", "Hoodies / Jackets / Sweaters", "Long Sleeve / Short Sleeve Shirts",
   "Streetwear Trousers / Shorts / Track Pants", "Socks", "Footwear", "Jewelry & Accessories"
 ];
-const apparelGenders = ['Mens', 'Womens', 'Unisex']; 
+const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 
 const standardSizesData: Record<string, Record<string, string[]>> = {
@@ -57,7 +57,7 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
     'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'],
     'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   },
-  'Unisex': { 
+  'Unisex': {
     'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
   }
 };
@@ -94,9 +94,9 @@ export default function AddProductPage() {
 
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
-  
+
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
-  
+
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
@@ -108,7 +108,7 @@ export default function AddProductPage() {
   const [specificProductTypeOptions, setSpecificProductTypeOptions] = useState<string[]>([]);
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
-  
+
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
   const [isFetchingStrain, setIsFetchingStrain] = useState(false);
@@ -126,9 +126,9 @@ export default function AddProductPage() {
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       productType: '', mostCommonTerpene: '',
-      strain: null, thcContent: '', cbdContent: '', 
+      strain: null, thcContent: '', cbdContent: '',
       gender: null, sizingSystem: null, sizes: [],
-      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
+      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
       poolPriceTiers: [],
       quantityInStock: undefined, imageUrls: [],
       labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
@@ -140,16 +140,16 @@ export default function AddProductPage() {
     control: form.control,
     name: "priceTiers",
   });
-  
+
   const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({
     control: form.control,
     name: "poolPriceTiers",
   });
-  
+
   const { fields: effectFields, append: appendEffect, remove: removeEffect, replace: replaceEffects } = useFieldArray({
     control: form.control, name: "effects",
   });
-  
+
   const { fields: medicalUseFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({
     control: form.control, name: "medicalUses",
   });
@@ -165,8 +165,8 @@ export default function AddProductPage() {
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
-      ...form.getValues(), 
-      category: '', 
+      ...form.getValues(),
+      category: '',
       subcategory: null,
       subSubcategory: null,
       productType: '',
@@ -242,7 +242,7 @@ export default function AddProductPage() {
         setIsFetchingStrain(false);
     }
   };
-  
+
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentUser?.dispensaryId) {
       if (!authLoading) setIsLoadingInitialData(false);
@@ -367,11 +367,11 @@ export default function AddProductPage() {
      <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle 
-                className="text-3xl flex items-center text-foreground" 
+            <CardTitle
+                className="text-3xl flex items-center text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            > 
-                <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product 
+            >
+                <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product
             </CardTitle>
             <Button variant="outline" size="sm" asChild>
               <Link href="/dispensary-admin/products">
@@ -379,7 +379,7 @@ export default function AddProductPage() {
               </Link>
             </Button>
         </div>
-        <CardDescription 
+        <CardDescription
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
@@ -390,14 +390,14 @@ export default function AddProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
+
             {isThcCbdSpecialType && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Select Product Stream *
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
+                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => {
                             const { text, icon: IconComponent, color } = streamDisplayMapping[stream];
                             return (
                                 <Button
@@ -416,14 +416,14 @@ export default function AddProductPage() {
                     {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
-            
+
             <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                    
+
                     {/* All other dynamic form content will be correctly rendered here based on selections */}
                     <div className="flex gap-4 pt-4">
                         <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
@@ -439,4 +439,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
