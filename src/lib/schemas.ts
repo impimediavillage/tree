@@ -225,6 +225,12 @@ const baseProductObjectSchema = z.object({
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
+  
+  // New field for Sticker Promo Sets
+  stickerDetails: z.object({
+      linkedStrainId: z.string().optional().nullable(),
+      theme: z.string().optional().nullable(),
+  }).optional().nullable(),
 });
 
 export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => {
