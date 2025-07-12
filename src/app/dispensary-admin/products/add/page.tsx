@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -37,11 +37,11 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 
-const apparelTypes = [
+const apparelTypes = [ 
   "Head Gear / Neck Wear", "Hoodies / Jackets / Sweaters", "Long Sleeve / Short Sleeve Shirts",
   "Streetwear Trousers / Shorts / Track Pants", "Socks", "Footwear", "Jewelry & Accessories"
 ];
-const apparelGenders = ['Mens', 'Womens', 'Unisex'];
+const apparelGenders = ['Mens', 'Womens', 'Unisex']; 
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 
 const standardSizesData: Record<string, Record<string, string[]>> = {
@@ -57,18 +57,19 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
     'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'],
     'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   },
-  'Unisex': {
+  'Unisex': { 
     'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'],
   }
 };
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
 
 const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string }> = {
     'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
     'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
+    'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Sparkles, color: 'text-yellow-500' },
 };
 
 const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "hungry", "talkative", "creative", "energetic", "focus", "giggly", "aroused", "tingly"];
@@ -93,9 +94,9 @@ export default function AddProductPage() {
 
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
-
+  
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
-
+  
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
@@ -107,7 +108,7 @@ export default function AddProductPage() {
   const [specificProductTypeOptions, setSpecificProductTypeOptions] = useState<string[]>([]);
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
-
+  
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
   const [isFetchingStrain, setIsFetchingStrain] = useState(false);
@@ -119,14 +120,15 @@ export default function AddProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
 
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       productType: '', mostCommonTerpene: '',
-      strain: null, thcContent: '', cbdContent: '',
+      strain: null, thcContent: '', cbdContent: '', 
       gender: null, sizingSystem: null, sizes: [],
-      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
+      currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
       poolPriceTiers: [],
       quantityInStock: undefined, imageUrls: [],
       labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
@@ -135,17 +137,19 @@ export default function AddProductPage() {
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({
-    control: form.control, name: "priceTiers",
+    control: form.control,
+    name: "priceTiers",
   });
-
+  
   const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({
-    control: form.control, name: "poolPriceTiers",
+    control: form.control,
+    name: "poolPriceTiers",
   });
-
+  
   const { fields: effectFields, append: appendEffect, remove: removeEffect, replace: replaceEffects } = useFieldArray({
     control: form.control, name: "effects",
   });
-
+  
   const { fields: medicalUseFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({
     control: form.control, name: "medicalUses",
   });
@@ -157,6 +161,11 @@ export default function AddProductPage() {
 
   useEffect(() => {
     if (!isThcCbdSpecialType) {
+      setShowProductDetailsForm(true);
+      return;
+    }
+  
+    if (selectedProductStream === 'Sticker Promo Set') {
       setShowProductDetailsForm(true);
       return;
     }
@@ -173,8 +182,8 @@ export default function AddProductPage() {
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
-      ...form.getValues(),
-      category: '',
+      ...form.getValues(), 
+      category: '', 
       subcategory: null,
       subSubcategory: null,
       productType: '',
@@ -207,21 +216,22 @@ export default function AddProductPage() {
   };
 
   const handleProductStreamSelect = (stream: StreamKey) => {
-    resetProductStreamSpecificFields();
-    setSelectedProductStream(stream);
+      resetProductStreamSpecificFields();
+      setSelectedProductStream(stream);
 
-    if (isThcCbdSpecialType) {
-        let categoryName = '';
-        switch(stream) {
-            case 'THC': categoryName = 'THC'; break;
-            case 'CBD': categoryName = 'CBD'; break;
-            case 'Apparel': categoryName = 'Apparel'; break;
-            case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
-        }
-        form.setValue('category', categoryName);
-        setSelectedMainCategoryName(categoryName);
-    }
-};
+      if (isThcCbdSpecialType) {
+          let categoryName = '';
+          switch(stream) {
+              case 'THC': categoryName = 'THC'; break;
+              case 'CBD': categoryName = 'CBD'; break;
+              case 'Apparel': categoryName = 'Apparel'; break;
+              case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
+              case 'Sticker Promo Set': categoryName = 'Sticker Promo Set'; break;
+          }
+          form.setValue('category', categoryName);
+          setSelectedMainCategoryName(categoryName);
+      }
+  };
 
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
@@ -249,7 +259,7 @@ export default function AddProductPage() {
         setIsFetchingStrain(false);
     }
   };
-
+  
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentUser?.dispensaryId) {
       if (!authLoading) setIsLoadingInitialData(false);
@@ -266,7 +276,9 @@ export default function AddProductPage() {
 
         const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         setIsThcCbdSpecialType(specialType);
-        setShowProductDetailsForm(!specialType);
+        if (!specialType) {
+            setShowProductDetailsForm(true);
+        }
 
         if (dispensaryData.dispensaryType) {
           const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
@@ -274,9 +286,14 @@ export default function AddProductPage() {
           if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            const categories = categoriesDoc.categoriesData as ProductCategory[];
-            setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
-            setMainCategoryOptions(categories.map(c => c.name).sort());
+            if (Array.isArray(categoriesDoc.categoriesData)) {
+              const categories = categoriesDoc.categoriesData as ProductCategory[];
+              setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
+              setMainCategoryOptions(categories.map(c => c.name).sort());
+            } else {
+              setCategoryStructureObject({});
+              setMainCategoryOptions([]);
+            }
           }
         }
       } else {
@@ -360,6 +377,7 @@ export default function AddProductPage() {
               <Skeleton className="h-24 w-full" />
               <Skeleton className="h-10 w-full" />
             </CardContent>
+            <CardFooter><Skeleton className="h-12 w-full" /></CardFooter>
           </Card>
       </div>
     );
@@ -369,11 +387,11 @@ export default function AddProductPage() {
      <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle
-                className="text-3xl flex items-center text-foreground"
+            <CardTitle 
+                className="text-3xl flex items-center text-foreground" 
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-                <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product
+            > 
+                <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product 
             </CardTitle>
             <Button variant="outline" size="sm" asChild>
               <Link href="/dispensary-admin/products">
@@ -381,7 +399,7 @@ export default function AddProductPage() {
               </Link>
             </Button>
         </div>
-        <CardDescription
+        <CardDescription 
             className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
@@ -392,14 +410,14 @@ export default function AddProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
+            
             {isThcCbdSpecialType && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Select Product Stream *
                     </FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
+                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
                             const { text, icon: IconComponent, color } = streamDisplayMapping[stream];
                             return (
                                 <Button
@@ -415,7 +433,7 @@ export default function AddProductPage() {
                             );
                         })}
                     </div>
-                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
+                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
 
