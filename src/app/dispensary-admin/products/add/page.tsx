@@ -417,7 +417,7 @@ export default function AddProductPage() {
                 </FormItem>
             )}
             
-            <Separator className="my-6" />
+            <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
@@ -439,3 +439,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
