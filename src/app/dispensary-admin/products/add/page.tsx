@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
@@ -29,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { Slider } from '@/components/ui/slider';
 
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -426,30 +428,29 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Pricing & Stock *</h2>
-                    {/* Price Tiers Logic Here */}
+                     {/* Dynamic form for price tiers will be rendered here */}
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Images & Tags</h2>
-                    {/* Image Dropzone and Tags Logic Here */}
-
-                    {/* DYNAMIC SECTIONS RENDERED HERE BASED ON selectedProductStream */}
+                     {/* Dynamic form for images and tags will be rendered here */}
+                    
                     {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Strain Details (Optional)</h2>
-                         {/* Strain Search, Sliders, Effects, Flavors, Medical Uses, Lab Test Logic */}
+                          {/* Dynamic form for strain details will be rendered here */}
                        </>
                     )}
 
                     {selectedProductStream === 'Apparel' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Apparel Details</h2>
-                           {/* Apparel Fields Logic Here */}
+                           {/* Dynamic form for apparel will be rendered here */}
                        </>
                     )}
 
                      {selectedProductStream === 'Sticker Promo Set' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Sticker Details</h2>
-                           {/* Sticker Details Fields Logic Here */}
+                           {/* Dynamic form for sticker details will be rendered here */}
                        </>
                     )}
 
@@ -473,3 +474,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
