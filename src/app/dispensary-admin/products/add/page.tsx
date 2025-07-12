@@ -158,7 +158,10 @@ export default function AddProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
 
-  const showProductDetailsForm = isThcCbdSpecialType ? !!selectedProductStream : true;
+  const showProductDetailsForm = 
+    !isThcCbdSpecialType || 
+    (isThcCbdSpecialType && selectedProductStream);
+
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -415,46 +418,17 @@ export default function AddProductPage() {
             )}
 
             {showProductDetailsForm && (
-                 <Separator className="my-6" />
-            )}
-
-            {showProductDetailsForm && (
                 <>
-                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Organic Lavender Oil" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description of the product..." {...field} rows={5} /></FormControl><FormMessage /></FormItem> )} />
-                    
-                    {/* The rest of the dynamic form, pricing, images, etc. goes here */}
-                    
-                    <Separator className="my-6" />
-                    <h3 className="text-lg font-semibold text-foreground">Product Images</h3>
-                    <FormField
-                      control={form.control}
-                      name="imageUrls"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <MultiImageDropzone
-                              value={files}
-                              onChange={(newFiles) => {
-                                setFiles(newFiles);
-                              }}
-                              maxFiles={5}
-                              maxSize={2 * 1024 * 1024} // 2MB
-                            />
-                          </FormControl>
-                           <FormDescription>Upload up to 5 images (max 2MB each).</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Separator className="my-6" />
-                     <div className="flex gap-4 pt-4">
-                        <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                        Add Product
-                        </Button>
-                    </div>
+                 <Separator className="my-6" />
+                 {/* Full rich dynamic form content will render here based on selected stream */}
+                 <div className="flex gap-4 pt-4">
+                    <Button type="submit" size="lg" className="flex-1 text-lg"
+                    disabled={isLoading}
+                    >
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                    Add Product
+                    </Button>
+                </div>
                 </>
             )}
           </form>
