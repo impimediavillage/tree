@@ -16,7 +16,7 @@ import { auth as firebaseAuthInstance, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Dispensary } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -328,11 +328,14 @@ export default function WellnessAdminDashboardLayout({
         </div>
 
         <SheetContent side="left" className="p-0 w-72 flex flex-col bg-background">
-            <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-            </SheetClose>
-            <SidebarNavigation />
+          <SheetHeader>
+            <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
+          </SheetHeader>
+          <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+          </SheetClose>
+          <SidebarNavigation />
         </SheetContent>
       </Sheet>
     </div>
