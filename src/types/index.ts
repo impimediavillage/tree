@@ -121,6 +121,11 @@ export interface Product {
   } | null;
   productType?: string | null;
   mostCommonTerpene?: string | null;
+  
+  stickerDetails?: {
+    linkedStrainId?: string | null;
+    theme?: string | null;
+  } | null;
 }
 
 export interface NoteData {
@@ -415,5 +420,3 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
-
-    
