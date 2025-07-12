@@ -30,8 +30,6 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -154,11 +152,11 @@ export default function AddProductPage() {
     control: form.control, name: "medicalUses",
   });
 
-  const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
+  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
   const showProductDetailsForm =
     !isThcCbdSpecialType ||
@@ -558,11 +556,11 @@ export default function AddProductPage() {
                             )}
                             {selectedStrainData && (<div className="p-3 bg-primary/10 rounded-md"><p className="font-semibold text-primary">Selected: {selectedStrainData.name}</p><p className="text-xs text-muted-foreground">{selectedStrainData.description}</p></div>)}
                             <div className="grid md:grid-cols-2 gap-4">
-                                <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><div className="flex items-center gap-2"><Slider defaultValue={[0]} max={100} step={1} onValueChange={(v) => field.onChange(String(v[0]))} /><Input className="w-20" {...field} /></div><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><div className="flex items-center gap-2"><Slider defaultValue={[0]} max={100} step={1} onValueChange={(v) => field.onChange(String(v[0]))} /><Input className="w-20" {...field} /></div><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                             </div>
                              <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800"} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
+                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
                             {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                          </div>
                        </>
@@ -590,7 +588,7 @@ export default function AddProductPage() {
                               <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem><FormLabel>Opt-in to Sticker Program? *</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes, I want to sell this as a design pack</SelectItem><SelectItem value="no">No, this is a standard product</SelectItem></SelectContent></Select><FormDescription>Allows customers to purchase a design pack based on this product, receiving a sample for free.</FormDescription><FormMessage /></FormItem>
                               )} />
-                              {watchedStickerProgramOptIn === 'yes' && (<div className="text-sm p-3 bg-primary/10 text-primary rounded-md">Great! This product will be flagged for the design generator. Ensure the name and description are compelling.</div>)}
+                              {watchStickerProgramOptIn === 'yes' && (<div className="text-sm p-3 bg-primary/10 text-primary rounded-md">Great! This product will be flagged for the design generator. Ensure the name and description are compelling.</div>)}
                             </div>
                        </>
                     )}
