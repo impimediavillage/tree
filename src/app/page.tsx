@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState, useCallback } from 'react';
@@ -462,7 +462,7 @@ export default function HolisticAiHubPage() {
               className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              <ImageIcon className="h-10 w-10 text-primary" /> Featured Sticker Sets
+              <ImageIconLucide className="h-10 w-10 text-primary" /> Featured Sticker Sets
             </h2>
             <p
               className="text-lg text-foreground max-w-2xl mx-auto mt-3"

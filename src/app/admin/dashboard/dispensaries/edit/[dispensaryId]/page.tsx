@@ -652,4 +652,3 @@ export default function AdminEditWellnessPage() {
     </Card>
   );
 }
-

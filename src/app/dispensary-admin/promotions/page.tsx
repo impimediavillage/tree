@@ -154,5 +154,3 @@ export default function PromoCollectionsPage() {
     </div>
   );
 }
-
-    

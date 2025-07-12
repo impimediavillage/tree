@@ -501,8 +501,7 @@ export default function WellnessSignupPage() {
                 </FormItem>)} />
             </div>
 
-            <FormField control={form.control} name="operatingDays" render={() => (
-              <FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+            <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
                 {weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {

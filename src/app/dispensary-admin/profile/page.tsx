@@ -21,6 +21,7 @@ import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ownerEditDispensarySchema, type OwnerEditDispensaryFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryType } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import Link from 'next/link';
 
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -309,7 +310,7 @@ export default function WellnessOwnerProfilePage() {
                                 </FormItem>
                             )} />
                         </div>
-                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
                         
                         <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Operations</h2>
                         <div className="grid md:grid-cols-2 gap-6">

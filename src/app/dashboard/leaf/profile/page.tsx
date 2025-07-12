@@ -224,5 +224,3 @@ export default function LeafProfilePage() {
     </div>
   );
 }
-
-
