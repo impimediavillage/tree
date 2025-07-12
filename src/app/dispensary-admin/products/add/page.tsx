@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -416,14 +416,15 @@ export default function AddProductPage() {
                     {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
-
-            {showProductDetailsForm && (
-                 <Separator className="my-6" />
-            )}
+            
+            <Separator className="my-6" />
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                    {/* All dynamic form content will be correctly rendered here based on selections */}
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                    {/* All other dynamic form content will be correctly rendered here based on selections */}
                     <div className="flex gap-4 pt-4">
                         <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
