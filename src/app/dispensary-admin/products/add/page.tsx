@@ -421,10 +421,44 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Basic Information</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
 
-                    {/* All other dynamic form content will be correctly rendered here based on selections */}
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Pricing & Stock *</h2>
+                    {/* Price Tiers Logic Here */}
+
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Images & Tags</h2>
+                    {/* Image Dropzone and Tags Logic Here */}
+
+                    {/* DYNAMIC SECTIONS RENDERED HERE BASED ON selectedProductStream */}
+                    {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
+                       <>
+                         <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Strain Details (Optional)</h2>
+                         {/* Strain Search, Sliders, Effects, Flavors, Medical Uses, Lab Test Logic */}
+                       </>
+                    )}
+
+                    {selectedProductStream === 'Apparel' && (
+                       <>
+                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Apparel Details</h2>
+                           {/* Apparel Fields Logic Here */}
+                       </>
+                    )}
+
+                     {selectedProductStream === 'Sticker Promo Set' && (
+                       <>
+                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Sticker Details</h2>
+                           {/* Sticker Details Fields Logic Here */}
+                       </>
+                    )}
+
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Final Step: Sharing & Visibility</h2>
+                    <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other wellness stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                    {watchIsAvailableForPool && (
+                       <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other wellness stores.</CardDescription></CardHeader><CardContent className="p-0">{/* Pool Price Tiers Logic Here */}</CardContent></Card>
+                    )}
+
                     <div className="flex gap-4 pt-4">
                         <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
