@@ -199,7 +199,7 @@ const baseProductObjectSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   category: z.string().min(1, "Category is required."),
   subcategory: z.string().optional().nullable(),
-  subSubCategory: z.string().optional().nullable(),
+  subSubcategory: z.string().optional().nullable(),
   
   productType: z.string().optional().nullable(),
   mostCommonTerpene: z.string().optional().nullable(),
@@ -500,7 +500,7 @@ export const poolIssueDbSchema = poolIssueSchema.extend({
   createdAt: z.any(),
   updatedAt: z.any(),
 });
-export type PoolIssue = z.infer<typeof poolIssueSchema>;
+export type PoolIssue = z.infer<typeof poolIssueDbSchema>;
 
 export const creditPackageDbSchema = creditPackageSchema.extend({
   id: z.string().optional(),
@@ -573,5 +573,3 @@ export const stickerSetSchema = z.object({
   createdAt: z.any(),
 });
 export type StickerSetDbData = z.infer<typeof stickerSetSchema>;
-
-    
