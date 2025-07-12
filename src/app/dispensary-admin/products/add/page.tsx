@@ -126,7 +126,7 @@ export default function AddProductPage() {
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       productType: '', mostCommonTerpene: '',
-      strain: null, thcContent: '', cbdContent: '', 
+      strain: null, thcContent: '0', cbdContent: '0', 
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }], 
       poolPriceTiers: [],
@@ -167,8 +167,8 @@ export default function AddProductPage() {
       productType: '',
       mostCommonTerpene: '',
       strain: null,
-      thcContent: '',
-      cbdContent: '',
+      thcContent: '0',
+      cbdContent: '0',
       effects: [],
       flavors: [],
       medicalUses: [],
@@ -426,10 +426,10 @@ export default function AddProductPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            {isThcCbdSpecialType && !selectedProductStream && (
+            {isThcCbdSpecialType && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
-                        Select Product Stream *
+                        1. Select Product Stream *
                     </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
@@ -455,33 +455,17 @@ export default function AddProductPage() {
                 <div className="space-y-6 animate-fade-in-scale-up">
                     <h3 className="text-xl font-semibold border-b pb-2 text-foreground">
                         {isThcCbdSpecialType 
-                            ? `Adding New Product: ${streamDisplayMapping[selectedProductStream!].text}` 
-                            : 'Product Details'
+                            ? `2. Adding New Product: ${streamDisplayMapping[selectedProductStream!].text}` 
+                            : '2. Product Details'
                         }
                     </h3>
-
-                    {/* All form fields here */}
+                    
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Product Name *</FormLabel> <FormControl><Input {...field} placeholder="e.g., Organic Lemon Haze" /></FormControl> <FormMessage /> </FormItem> )}/>
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description *</FormLabel> <FormControl><Textarea {...field} rows={4} placeholder="Detailed description of the product..."/></FormControl> <FormMessage /> </FormItem> )}/>
 
-                    {/* Dynamic categories will be added here based on selected stream */}
+                    {/* All other form fields will be rendered here based on stream selection */}
 
-                    {/* ... other shared fields */}
-                    <FormField control={form.control} name="tags" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tags</FormLabel>
-                          <FormControl>
-                            <MultiInputTags
-                              value={field.value || []}
-                              onChange={field.onChange}
-                              placeholder="Add tags and press Enter..."
-                            />
-                          </FormControl>
-                          <FormDescription>Help customers find your product with relevant tags (e.g., Sativa, Organic).</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                    )}/>
-                    
+                    <Separator />
                     <div className="flex gap-4 pt-4">
                         <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
@@ -496,3 +480,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
