@@ -81,7 +81,7 @@ const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthriti
 const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
 
 const toTitleCase = (str: string) => {
-  return str.replace(/wS*/g, (txt) => {
+  return str.replace(/\w\S*/g, (txt) => {
     return txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase();
   });
 };
@@ -238,7 +238,7 @@ export default function AddProductPage() {
         const q = firestoreQuery(
             collection(db, 'my-seeded-collection'),
             where('name', '>=', processedQuery),
-            where('name', '<=', processedQuery + 'uf8ff'),
+            where('name', '<=', processedQuery + '\uf8ff'),
             limit(10)
         );
         const querySnapshot = await getDocs(q);
@@ -583,4 +583,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
