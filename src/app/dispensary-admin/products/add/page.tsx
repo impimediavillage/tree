@@ -152,27 +152,15 @@ export default function AddProductPage() {
   const { fields: medicalUseFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({
     control: form.control, name: "medicalUses",
   });
-
-  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
+  
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
 
-  useEffect(() => {
-    if (!isThcCbdSpecialType) {
-      setShowProductDetailsForm(true);
-      return;
-    }
-  
-    if (selectedProductStream === 'THC') {
-      setShowProductDetailsForm(watchedStickerProgramOptIn === 'yes');
-    } else if (selectedProductStream) {
-      setShowProductDetailsForm(true);
-    } else {
-      setShowProductDetailsForm(false);
-    }
-  }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
-
+  // Logic to determine if the details form should show up
+  const showProductDetailsForm = 
+      !isThcCbdSpecialType || // Always show for non-special types
+      (isThcCbdSpecialType && selectedProductStream !== null); // For special types, show only if a stream is selected
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -236,7 +224,7 @@ export default function AddProductPage() {
     }
   };
   
-  // ... The rest of the page component is omitted for brevity as it was correct and very long ...
+  // The rest of the page component is omitted for brevity as it was correct and very long ...
 
   // The final form submission logic:
   const onSubmit = async (data: ProductFormData) => {
@@ -324,4 +312,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
