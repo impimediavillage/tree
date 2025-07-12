@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -71,7 +71,7 @@ const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.Elemen
     'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
-    'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Sparkles, color: 'text-yellow-500' },
+    'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Palette, color: 'text-yellow-500' },
 };
 
 const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "hungry", "talkative", "creative", "energetic", "focus", "giggly", "aroused", "tingly"];
@@ -128,7 +128,7 @@ export default function AddProductPage() {
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       productType: '', mostCommonTerpene: '',
-      strain: null, thcContent: '', cbdContent: '',
+      strain: null, thcContent: '0', cbdContent: '0',
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
       poolPriceTiers: [],
@@ -159,6 +159,8 @@ export default function AddProductPage() {
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
+  const watchSizingSystem = form.watch('sizingSystem');
+  const watchGender = form.watch('gender');
 
   const showProductDetailsForm =
     !isThcCbdSpecialType ||
@@ -174,8 +176,8 @@ export default function AddProductPage() {
       productType: '',
       mostCommonTerpene: '',
       strain: null,
-      thcContent: '',
-      cbdContent: '',
+      thcContent: '0',
+      cbdContent: '0',
       effects: [],
       flavors: [],
       medicalUses: [],
@@ -215,6 +217,13 @@ export default function AddProductPage() {
           }
           form.setValue('category', categoryName);
           setSelectedMainCategoryName(categoryName);
+
+          if (categoryStructureObject && categoryStructureObject[categoryName]) {
+              const mainCategoryData = categoryStructureObject[categoryName];
+              if(mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) {
+                 setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
+              }
+          }
       }
   };
 
@@ -292,6 +301,16 @@ export default function AddProductPage() {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+  
+  useEffect(() => {
+    const gender = form.getValues('gender');
+    const system = form.getValues('sizingSystem');
+    if (gender && system && standardSizesData[gender] && standardSizesData[gender][system]) {
+      setAvailableStandardSizes(standardSizesData[gender][system]);
+    } else {
+      setAvailableStandardSizes([]);
+    }
+  }, [watchGender, watchSizingSystem, form]);
 
   const onSubmit = async (data: ProductFormData) => {
     if (!wellnessData || !currentUser) {
@@ -426,6 +445,39 @@ export default function AddProductPage() {
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Basic Information</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                     <div className="grid md:grid-cols-2 gap-4">
+                        {!isThcCbdSpecialType && (
+                            <FormField control={form.control} name="category" render={({ field }) => (
+                                <FormItem><FormLabel>Main Category *</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
+                                    <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                        )}
+                        {/* Subcategory L1 */}
+                        {subCategoryL1Options.length > 0 && (
+                            <FormField control={form.control} name="subcategory" render={({ field }) => (
+                                <FormItem><FormLabel>Subcategory (Level 1)</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedSubCategoryL1Name(value); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger></FormControl>
+                                    <SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                        )}
+                        {/* Subcategory L2 */}
+                        {subCategoryL2Options.length > 0 && (
+                            <FormField control={form.control} name="subSubcategory" render={({ field }) => (
+                                <FormItem><FormLabel>Subcategory (Level 2)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory" /></SelectTrigger></FormControl>
+                                    <SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                        )}
+                    </div>
+                    
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Pricing & Stock *</h2>
                     <div className="space-y-4">
@@ -449,28 +501,65 @@ export default function AddProductPage() {
                     {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Strain Details (Optional)</h2>
-                          {/* Dynamic form for strain details will be rendered here */}
+                         <div className="p-4 border rounded-md space-y-4 bg-muted/30">
+                            <div className="flex items-center gap-2"><Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" /><Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin" /> : <SearchIcon />}</Button></div>
+                            {strainSearchResults.length > 0 && (
+                                <div className="space-y-2">{strainSearchResults.map(strain => (<Button key={strain.id} type="button" variant="secondary" className="w-full justify-start" onClick={() => { setSelectedStrainData(strain); setStrainSearchResults([]); }}>Select: {strain.name}</Button>))}</div>
+                            )}
+                            {selectedStrainData && (<div className="p-3 bg-primary/10 rounded-md"><p className="font-semibold text-primary">Selected: {selectedStrainData.name}</p><p className="text-xs text-muted-foreground">{selectedStrainData.description}</p></div>)}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><div className="flex items-center gap-2"><Slider defaultValue={[0]} max={100} step={1} onValueChange={(v) => field.onChange(String(v[0]))} /><Input className="w-20" {...field} /></div><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><div className="flex items-center gap-2"><Slider defaultValue={[0]} max={100} step={1} onValueChange={(v) => field.onChange(String(v[0]))} /><Input className="w-20" {...field} /></div><FormMessage /></FormItem>)} />
+                            </div>
+                             <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800"} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
+                            {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
+                         </div>
                        </>
                     )}
 
                     {selectedProductStream === 'Apparel' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Apparel Details</h2>
-                           {/* Dynamic form for apparel will be rendered here */}
+                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
+                              <FormField control={form.control} name="gender" render={({ field }) => (
+                                <FormItem><FormLabel>Gender *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                              )} />
+                              <FormField control={form.control} name="sizingSystem" render={({ field }) => (
+                                <FormItem><FormLabel>Sizing System *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                              )} />
+                               {availableStandardSizes.length > 0 && <FormField control={form.control} name="sizes" render={() => (<FormItem><FormLabel>Standard Sizes Available</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">{availableStandardSizes.map((size) => (<FormField key={size} control={form.control} name="sizes" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value?.includes(size)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), size]) : field.onChange(field.value?.filter((value) => value !== size))}} /></FormControl><FormLabel className="font-normal text-sm">{size}</FormLabel></FormItem>)} />))}</div><FormMessage /></FormItem>)}/>}
+                            </div>
                        </>
                     )}
 
                      {selectedProductStream === 'Sticker Promo Set' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Sticker Details</h2>
-                           {/* Dynamic form for sticker details will be rendered here */}
+                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
+                              <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                                <FormItem><FormLabel>Opt-in to Sticker Program? *</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes, I want to sell this as a design pack</SelectItem><SelectItem value="no">No, this is a standard product</SelectItem></SelectContent></Select><FormDescription>Allows customers to purchase a design pack based on this product, receiving a sample for free.</FormDescription><FormMessage /></FormItem>
+                              )} />
+                              {watchedStickerProgramOptIn === 'yes' && (<div className="text-sm p-3 bg-primary/10 text-primary rounded-md">Great! This product will be flagged for the design generator. Ensure the name and description are compelling.</div>)}
+                            </div>
                        </>
                     )}
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Final Step: Sharing & Visibility</h2>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other wellness stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
-                       <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other wellness stores.</CardDescription></CardHeader><CardContent className="p-0">{/* Pool Price Tiers Logic Here */}</CardContent></Card>
+                       <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other wellness stores.</CardDescription></CardHeader>
+                       <CardContent className="p-0 space-y-2">
+                        {poolPriceTierFields.map((field, index) => (
+                           <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
+                            <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                            {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                           </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any })}>Add Pool Price Tier</Button>
+                       </CardContent>
+                       </Card>
                     )}
 
                     <div className="flex gap-4 pt-4">
@@ -483,7 +572,14 @@ export default function AddProductPage() {
             )}
           </form>
         </Form>
+        <datalist id="regular-units-list">
+            {regularUnits.map(unit => <option key={unit} value={unit} />)}
+        </datalist>
+         <datalist id="pool-units-list">
+            {poolUnits.map(unit => <option key={unit} value={unit} />)}
+        </datalist>
       </CardContent>
     </Card>
   );
 }
+
