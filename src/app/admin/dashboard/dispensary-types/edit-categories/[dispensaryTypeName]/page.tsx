@@ -416,4 +416,3 @@ export default function EditWellnessTypeCategoriesPage() {
     </div>
   );
 }
-

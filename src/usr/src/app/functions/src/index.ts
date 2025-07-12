@@ -844,32 +844,12 @@ export const removeDuplicateStrains = onRequest(
  * This function is secured and can only be called by an authenticated admin user.
  */
 export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    // This function must be called by an authenticated user.
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
+    // Check if the user is authenticated and has the 'Super Admin' role or 'admin' claim.
+    const isSuperAdmin = request.auth?.token?.role === 'Super Admin';
+    const isAdminClaim = request.auth?.token?.admin === true;
 
-    const uid = request.auth.uid;
-    const token = request.auth.token;
-    let isAuthorized = token?.role === 'Super Admin';
-
-    // Fallback check in Firestore if claims are not yet propagated to the token.
-    if (!isAuthorized) {
-        logger.info(`User ${uid} not authorized by token claims. Performing Firestore fallback check.`);
-        try {
-            const userDoc = await db.collection('users').doc(uid).get();
-            if (userDoc.exists && userDoc.data()?.role === 'Super Admin') {
-                logger.info(`User ${uid} authorized via Firestore role. Consider re-logging to refresh auth token claims.`);
-                isAuthorized = true;
-            }
-        } catch (e) {
-            logger.error(`Firestore fallback check for user ${uid} failed:`, e);
-            // On error, we do not authorize.
-        }
-    }
-
-    if (!isAuthorized) {
-        // If both token and Firestore checks fail, deny permission.
+    if (!isSuperAdmin && !isAdminClaim) {
+        // Throw a specific error that the client can understand.
         throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
     }
 
