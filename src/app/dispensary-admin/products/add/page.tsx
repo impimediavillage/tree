@@ -158,7 +158,7 @@ export default function AddProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
 
-  const showProductDetailsForm = !isThcCbdSpecialType || !!selectedProductStream;
+  const showProductDetailsForm = isThcCbdSpecialType ? !!selectedProductStream : true;
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
