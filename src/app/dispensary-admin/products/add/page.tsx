@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { Slider } from '@/components/ui/slider';
 
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -194,7 +195,6 @@ export default function AddProductPage() {
     resetProductSpecificFields();
     setSelectedProductStream(stream);
     
-    // Set category based on stream for special dispensary type
     if (isThcCbdSpecialType) {
       const streamCategoryMap: Record<StreamKey, string> = {
         'THC': 'THC',
@@ -204,6 +204,7 @@ export default function AddProductPage() {
         'Sticker Promo Set': 'Sticker Promo Set',
       };
       form.setValue('category', streamCategoryMap[stream]);
+      setSelectedMainCategoryName(streamCategoryMap[stream]);
     }
   }, [form, resetProductSpecificFields, isThcCbdSpecialType]);
 
@@ -224,20 +225,19 @@ export default function AddProductPage() {
         const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         setIsThcCbdSpecialType(specialType);
         
-        // Fetch category structure
         if (dispensaryData.dispensaryType) {
           const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
           const querySnapshot = await getDocs(categoriesQuery);
           if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            const categoriesData = categoriesDoc.categoriesData;
-            if (Array.isArray(categoriesData)) {
-              const categories = categoriesData as ProductCategory[];
+            
+            if (Array.isArray(categoriesDoc.categoriesData)) {
+              const categories = categoriesDoc.categoriesData as ProductCategory[];
               setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
               setMainCategoryOptions(categories.map(c => c.name).sort());
             } else {
-              console.warn("Categories data is not an array:", categoriesData);
+              console.warn("Categories data is not an array:", categoriesDoc.categoriesData);
               setCategoryStructureObject({});
               setMainCategoryOptions([]);
             }
@@ -308,8 +308,74 @@ export default function AddProductPage() {
         setIsLoading(false);
     }
   };
+
+  const watchCategory = form.watch('category');
+  const watchSubCategory = form.watch('subcategory');
+  const watchGender = form.watch('gender');
+  const watchSizingSystem = form.watch('sizingSystem');
   
-   if (isLoadingInitialData) {
+  useEffect(() => {
+    if (watchCategory && categoryStructureObject) {
+      const subcategories = categoryStructureObject[watchCategory]?.subcategories || [];
+      setSubCategoryL1Options(subcategories.map((sc: ProductCategory) => sc.name).sort());
+      form.setValue('subcategory', null); // Reset subcategory when main changes
+      setSubCategoryL2Options([]);
+    }
+  }, [watchCategory, categoryStructureObject, form]);
+
+  useEffect(() => {
+    if (watchSubCategory && watchCategory && categoryStructureObject) {
+      const mainCat = categoryStructureObject[watchCategory];
+      const subCat = mainCat?.subcategories?.find((sc: ProductCategory) => sc.name === watchSubCategory);
+      setSubCategoryL2Options(subCat?.subcategories?.map((ssc: ProductCategory) => ssc.name).sort() || []);
+      form.setValue('subSubcategory', null); // Reset sub-subcategory
+    }
+  }, [watchSubCategory, watchCategory, categoryStructureObject, form]);
+
+  useEffect(() => {
+    if (watchSizingSystem && watchGender && standardSizesData[watchGender] && standardSizesData[watchGender][watchSizingSystem]) {
+      setAvailableStandardSizes(standardSizesData[watchGender][watchSizingSystem]);
+    } else {
+      setAvailableStandardSizes([]);
+    }
+  }, [watchGender, watchSizingSystem]);
+  
+  const searchStrains = useCallback(async () => {
+    if (strainQuery.length < 2) {
+      setStrainSearchResults([]);
+      return;
+    }
+    setIsFetchingStrain(true);
+    try {
+      const formattedQuery = toTitleCase(strainQuery.trim());
+      const q = firestoreQuery(
+        collection(db, "my-seeded-collection"),
+        where('name', '>=', formattedQuery),
+        where('name', '<=', formattedQuery + '\uf8ff'),
+        limit(10)
+      );
+      const querySnapshot = await getDocs(q);
+      const results = querySnapshot.docs.map(doc => doc.data());
+      setStrainSearchResults(results);
+    } catch (error) {
+      console.error("Error searching strains:", error);
+    } finally {
+      setIsFetchingStrain(false);
+    }
+  }, [strainQuery]);
+
+  const handleSelectStrain = (strain: any) => {
+    setSelectedStrainData(strain);
+    form.setValue('strain', strain.name);
+    form.setValue('flavors', strain.flavor || []);
+    const effectsWithPercentages = strain.effects.map((eff: any) => ({ name: eff.name, percentage: eff.percentage.toString() }));
+    const medicalWithPercentages = strain.medical.map((med: any) => ({ name: med.name, percentage: med.percentage.toString() }));
+    replaceEffects(effectsWithPercentages);
+    replaceMedicalUses(medicalWithPercentages);
+    setStrainSearchResults([]);
+  };
+
+  if (isLoadingInitialData) {
     return (
       <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
         <div className="flex items-center justify-between">
@@ -386,20 +452,43 @@ export default function AddProductPage() {
             )}
 
             {(selectedProductStream || !isThcCbdSpecialType) && (
-                <>
-                    {isThcCbdSpecialType && <Separator className="my-8" />}
-                    <div className="space-y-6 animate-fade-in-scale-up">
-                        {/* The rest of the form fields would be here... But are omitted for brevity. */}
-                        <div className="flex gap-4 pt-4">
-                            <Button type="submit" size="lg" className="flex-1 text-lg"
-                            disabled={isLoading}
-                            >
+                <div className="space-y-6 animate-fade-in-scale-up">
+                    <h3 className="text-xl font-semibold border-b pb-2 text-foreground">
+                        {isThcCbdSpecialType 
+                            ? `Adding New Product: ${streamDisplayMapping[selectedProductStream!].text}` 
+                            : 'Product Details'
+                        }
+                    </h3>
+
+                    {/* All form fields here */}
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Product Name *</FormLabel> <FormControl><Input {...field} placeholder="e.g., Organic Lemon Haze" /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem> <FormLabel>Description *</FormLabel> <FormControl><Textarea {...field} rows={4} placeholder="Detailed description of the product..."/></FormControl> <FormMessage /> </FormItem> )}/>
+
+                    {/* Dynamic categories will be added here based on selected stream */}
+
+                    {/* ... other shared fields */}
+                    <FormField control={form.control} name="tags" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tags</FormLabel>
+                          <FormControl>
+                            <MultiInputTags
+                              value={field.value || []}
+                              onChange={field.onChange}
+                              placeholder="Add tags and press Enter..."
+                            />
+                          </FormControl>
+                          <FormDescription>Help customers find your product with relevant tags (e.g., Sativa, Organic).</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                    )}/>
+                    
+                    <div className="flex gap-4 pt-4">
+                        <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                             Add Product
-                            </Button>
-                        </div>
+                        </Button>
                     </div>
-                </>
+                </div>
             )}
           </form>
         </Form>
@@ -407,4 +496,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
