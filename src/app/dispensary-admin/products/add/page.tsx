@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -155,9 +155,6 @@ export default function AddProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
 
-  // Logic to determine if the form should show up
-  const showProductDetailsForm = !isThcCbdSpecialType || selectedProductStream !== null;
-
   const resetProductSpecificFields = useCallback(() => {
     form.reset({
       ...form.getValues(),
@@ -194,8 +191,8 @@ export default function AddProductPage() {
   }, [form]);
 
   const handleProductStreamSelection = useCallback((stream: StreamKey) => {
-    setSelectedProductStream(stream);
     resetProductSpecificFields();
+    setSelectedProductStream(stream);
     
     // Set category based on stream for special dispensary type
     if (isThcCbdSpecialType) {
@@ -211,8 +208,8 @@ export default function AddProductPage() {
   }, [form, resetProductSpecificFields, isThcCbdSpecialType]);
 
   const fetchInitialData = useCallback(async () => {
-    if (!currentUser?.dispensaryId) {
-      setIsLoadingInitialData(false);
+    if (authLoading || !currentUser?.dispensaryId) {
+      if (!authLoading) setIsLoadingInitialData(false);
       return;
     }
     setIsLoadingInitialData(true);
@@ -248,13 +245,11 @@ export default function AddProductPage() {
     } finally {
       setIsLoadingInitialData(false);
     }
-  }, [currentUser?.dispensaryId, form, toast]);
+  }, [currentUser?.dispensaryId, form, toast, authLoading]);
 
   useEffect(() => {
-    if (!authLoading) {
-      fetchInitialData();
-    }
-  }, [authLoading, fetchInitialData]);
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const onSubmit = async (data: ProductFormData) => {
     if (!wellnessData || !currentUser) {
@@ -363,7 +358,7 @@ export default function AddProductPage() {
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Select Product Stream *
                     </FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
                             const { text, icon: IconComponent, color } = streamDisplayMapping[stream];
                             return (
@@ -383,20 +378,21 @@ export default function AddProductPage() {
                 </FormItem>
             )}
 
-            {showProductDetailsForm && isThcCbdSpecialType && <Separator className="my-8" />}
-
-            {showProductDetailsForm && (
-                <div className="space-y-6 animate-fade-in-scale-up">
-                 {/* The rest of the form fields would be here... But are omitted for brevity. */}
-                 <div className="flex gap-4 pt-4">
-                    <Button type="submit" size="lg" className="flex-1 text-lg"
-                    disabled={isLoading}
-                    >
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                    Add Product
-                    </Button>
-                </div>
-                </div>
+            {(selectedProductStream || !isThcCbdSpecialType) && (
+                <>
+                    {isThcCbdSpecialType && <Separator className="my-8" />}
+                    <div className="space-y-6 animate-fade-in-scale-up">
+                        {/* The rest of the form fields would be here... But are omitted for brevity. */}
+                        <div className="flex gap-4 pt-4">
+                            <Button type="submit" size="lg" className="flex-1 text-lg"
+                            disabled={isLoading}
+                            >
+                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                            Add Product
+                            </Button>
+                        </div>
+                    </div>
+                </>
             )}
           </form>
         </Form>
