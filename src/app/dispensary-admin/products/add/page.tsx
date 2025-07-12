@@ -12,7 +12,7 @@ import { httpsCallable } from 'firebase/functions';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, ProductAttribute } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,10 +33,8 @@ import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 
-
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
-
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 
@@ -77,7 +75,6 @@ const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.Elemen
 
 const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "hungry", "talkative", "creative", "energetic", "focus", "giggly", "aroused", "tingly"];
 const medicalKeys = ["add/adhd", "alzheimer's", "anorexia", "anxiety", "arthritis", "bipolar_disorder", "cancer", "cramps", "crohn's_disease", "depression", "epilepsy", "eye_pressure", "fatigue", "fibromyalgia", "gastrointestinal_disorder", "glaucoma", "headaches", "hiv/aids", "hypertension", "inflammation", "insomnia", "migraines", "multiple_sclerosis", "muscle_spasms", "muscular_dystrophy", "nausea", "pain", "paranoid", "parkinson's", "phantom_limb_pain", "pms", "ptsd", "seizures", "spasticity", "spinal_cord_injury", "stress", "tinnitus", "tourette's_syndrome"];
-
 const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
 
 const toTitleCase = (str: string) => {
@@ -171,6 +168,13 @@ export default function AddProductPage() {
   const resetProductStreamSpecificFields = () => {
     form.reset({
       ...form.getValues(),
+      name: form.getValues('name'), 
+      description: form.getValues('description'), 
+      priceTiers: form.getValues('priceTiers'),
+      poolPriceTiers: form.getValues('poolPriceTiers'),
+      isAvailableForPool: form.getValues('isAvailableForPool'),
+      tags: form.getValues('tags'),
+
       category: '',
       subcategory: null,
       subSubcategory: null,
@@ -312,6 +316,53 @@ export default function AddProductPage() {
       setAvailableStandardSizes([]);
     }
   }, [watchGender, watchSizingSystem, form]);
+
+  useEffect(() => {
+    if (categoryStructureObject && selectedMainCategoryName) {
+        const mainCategoryData = categoryStructureObject[selectedMainCategoryName];
+        if (mainCategoryData && mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) {
+            setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
+        } else {
+            setSubCategoryL1Options([]);
+        }
+        setSelectedSubCategoryL1Name(null);
+        form.setValue('subcategory', null);
+    }
+  }, [selectedMainCategoryName, categoryStructureObject, form]);
+
+  useEffect(() => {
+    if (categoryStructureObject && selectedMainCategoryName && selectedSubCategoryL1Name) {
+        const mainCategoryData = categoryStructureObject[selectedMainCategoryName];
+        const subCat1Data = mainCategoryData?.subcategories?.find((sc: any) => sc.name === selectedSubCategoryL1Name);
+        if (subCat1Data && subCat1Data.subcategories && subCat1Data.subcategories.length > 0) {
+            setSubCategoryL2Options(subCat1Data.subcategories.map((c: any) => c.name).sort());
+        } else {
+            setSubCategoryL2Options([]);
+        }
+        form.setValue('subSubcategory', null);
+    } else {
+      setSubCategoryL2Options([]);
+    }
+  }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form]);
+  
+  useEffect(() => {
+    if (selectedStrainData) {
+        form.setValue('name', selectedStrainData.name, { shouldValidate: true });
+        form.setValue('strain', selectedStrainData.name, { shouldValidate: true });
+        form.setValue('description', selectedStrainData.description || '', { shouldValidate: true });
+        form.setValue('thcContent', selectedStrainData.thc || '0', { shouldValidate: true });
+        form.setValue('cbdContent', selectedStrainData.cbd || '0', { shouldValidate: true });
+        
+        const flavorsArray = selectedStrainData.flavor || [];
+        form.setValue('flavors', flavorsArray, { shouldValidate: true });
+        
+        const effectsArray = selectedStrainData.effects || [];
+        replaceEffects(effectsArray);
+        
+        const medicalUsesArray = selectedStrainData.medical || [];
+        replaceMedicalUses(medicalUsesArray);
+    }
+  }, [selectedStrainData, form, replaceEffects, replaceMedicalUses]);
 
   const onSubmit = async (data: ProductFormData) => {
     if (!wellnessData || !currentUser) {
@@ -457,21 +508,19 @@ export default function AddProductPage() {
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
-                        {/* Subcategory L1 */}
                         {subCategoryL1Options.length > 0 && (
                             <FormField control={form.control} name="subcategory" render={({ field }) => (
                                 <FormItem><FormLabel>Subcategory (Level 1)</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setSelectedSubCategoryL1Name(value); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedSubCategoryL1Name(value); form.setValue('subSubcategory', null); }} value={field.value || ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger></FormControl>
                                     <SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
-                        {/* Subcategory L2 */}
                         {subCategoryL2Options.length > 0 && (
                             <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                                 <FormItem><FormLabel>Subcategory (Level 2)</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory" /></SelectTrigger></FormControl>
                                     <SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
@@ -583,3 +632,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
