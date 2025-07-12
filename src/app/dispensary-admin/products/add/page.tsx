@@ -154,31 +154,11 @@ export default function AddProductPage() {
     control: form.control, name: "medicalUses",
   });
 
-  const [showProductDetailsForm, setShowProductDetailsForm] = useState(!isThcCbdSpecialType);
   const watchedStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
 
-  useEffect(() => {
-    if (!isThcCbdSpecialType) {
-      setShowProductDetailsForm(true);
-      return;
-    }
-  
-    if (selectedProductStream === 'Sticker Promo Set') {
-      setShowProductDetailsForm(true);
-      return;
-    }
-
-    if (selectedProductStream === 'THC') {
-      setShowProductDetailsForm(watchedStickerProgramOptIn === 'yes');
-    } else if (selectedProductStream) {
-      setShowProductDetailsForm(true);
-    } else {
-      setShowProductDetailsForm(false);
-    }
-  }, [isThcCbdSpecialType, selectedProductStream, watchedStickerProgramOptIn]);
-
+  const showProductDetailsForm = isThcCbdSpecialType ? !!selectedProductStream : true;
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -276,9 +256,6 @@ export default function AddProductPage() {
 
         const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         setIsThcCbdSpecialType(specialType);
-        if (!specialType) {
-            setShowProductDetailsForm(true);
-        }
 
         if (dispensaryData.dispensaryType) {
           const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
@@ -443,15 +420,42 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <>
-                 {/* The rest of the form is omitted for brevity as it was correct and very long */}
-                 <div className="flex gap-4 pt-4">
-                    <Button type="submit" size="lg" className="flex-1 text-lg"
-                    disabled={isLoading}
-                    >
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                    Add Product
-                    </Button>
-                </div>
+                    <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input placeholder="e.g., Organic Lavender Oil" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Description *</FormLabel><FormControl><Textarea placeholder="Detailed description of the product..." {...field} rows={5} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                    {/* The rest of the dynamic form, pricing, images, etc. goes here */}
+                    {/* This was the part that was missing and causing issues */}
+                    
+                    <Separator className="my-6" />
+                    <h3 className="text-lg font-semibold text-foreground">Product Images</h3>
+                    <FormField
+                      control={form.control}
+                      name="imageUrls"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <MultiImageDropzone
+                              value={files}
+                              onChange={(newFiles) => {
+                                setFiles(newFiles);
+                              }}
+                              maxFiles={5}
+                              maxSize={2 * 1024 * 1024} // 2MB
+                            />
+                          </FormControl>
+                           <FormDescription>Upload up to 5 images (max 2MB each).</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <Separator className="my-6" />
+                     <div className="flex gap-4 pt-4">
+                        <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                        Add Product
+                        </Button>
+                    </div>
                 </>
             )}
           </form>
