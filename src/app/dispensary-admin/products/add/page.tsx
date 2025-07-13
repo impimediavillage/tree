@@ -378,7 +378,7 @@ export default function AddProductPage() {
         form.setValue('name', selectedStrainData.name, { shouldValidate: true });
         form.setValue('strain', selectedStrainData.name, { shouldValidate: true });
         form.setValue('description', selectedStrainData.description || '', { shouldValidate: true });
-        form.setValue('thcContent', selectedStrainData.thc || '0', { shouldValidate: true });
+        form.setValue('thcContent', (selectedStrainData.thc_level || '0%').replace('%',''), { shouldValidate: true });
         form.setValue('mostCommonTerpene', selectedStrainData.terpene, { shouldValidate: true });
         
         const flavorsFromDesc = selectedStrainData.description.toLowerCase().split(/\W+/).filter((word: string) => commonFlavors.includes(word));
@@ -531,7 +531,7 @@ export default function AddProductPage() {
                                     <FormItem className="space-y-3">
                                     <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
                                     <FormDescription className="text-orange-900/90 text-sm">
-                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack.  Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club.
+                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club.
                                     </FormDescription>
                                     <FormControl>
                                         <RadioGroup
@@ -606,16 +606,16 @@ export default function AddProductPage() {
                                     <CardContent className="p-0 text-sm space-y-4">
                                       <p className="text-muted-foreground">{selectedStrainData.description}</p>
                                        <div className="flex flex-wrap gap-2">
-                                          <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc || 'N/A'}%</Badge>
+                                          <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc_level || 'N/A'}</Badge>
                                           <Badge className={getBadgeColor('terpene', 0)}>Terpene: {selectedStrainData.terpene}</Badge>
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Effects</h4>
-                                        <div className="flex flex-wrap gap-2">{selectedStrainData.effects?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage})</Badge>)}</div>
+                                        <div className="flex flex-wrap gap-2">{selectedStrainData.effects?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage}%)</Badge>)}</div>
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Medical Uses</h4>
-                                        <div className="flex flex-wrap gap-2">{selectedStrainData.medical?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('medical', i))}>{item.name} ({item.percentage})</Badge>)}</div>
+                                        <div className="flex flex-wrap gap-2">{selectedStrainData.medical?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('medical', i))}>{item.name} ({item.percentage}%)</Badge>)}</div>
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Flavors</h4>
