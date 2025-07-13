@@ -384,12 +384,18 @@ export default function AddProductPage() {
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                     <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                        <div className="flex items-center gap-2">
-                            <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
-                            <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>
-                                {isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}
-                            </Button>
-                        </div>
+                        <FormItem>
+                            <FormLabel>Search for a strain (e.g., Blue Dream)</FormLabel>
+                            <div className="flex items-center gap-2">
+                                <FormControl>
+                                    <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search..." />
+                                </FormControl>
+                                <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>
+                                    {isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </FormItem>
+                        
                         {strainSearchResults.length > 0 && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                               {strainSearchResults.map(strain => (
