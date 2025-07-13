@@ -39,47 +39,6 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
 
-const AttributeEditor: React.FC<{
-  control: any;
-  name: "effects" | "medicalUses";
-  label: string;
-  placeholder: string;
-}> = ({ control, name, label, placeholder }) => {
-  const { fields, append, remove } = useFieldArray({ control, name });
-  const [newName, setNewName] = useState('');
-  const [newPercentage, setNewPercentage] = useState('');
-
-  const handleAdd = () => {
-    if (newName.trim() && newPercentage.trim()) {
-      append({ name: newName.trim(), percentage: newPercentage.trim() });
-      setNewName('');
-      setNewPercentage('');
-    }
-  };
-
-  return (
-    <FormItem>
-      <FormLabel>{label}</FormLabel>
-      <div className="space-y-2">
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex items-center gap-2">
-            <Badge variant="secondary" className="flex-grow justify-between">
-              <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)}%)</span>
-              <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
-            </Badge>
-          </div>
-        ))}
-         <div className="flex items-center gap-2">
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={placeholder} className="h-8"/>
-            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24"/>
-            <Button type="button" size="icon" variant="outline" onClick={handleAdd} className="h-8 w-8"><PackagePlus className="h-4 w-4"/></Button>
-        </div>
-      </div>
-      <FormMessage />
-    </FormItem>
-  );
-};
-
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 
@@ -117,14 +76,58 @@ const toTitleCase = (str: string) => {
   });
 };
 
-const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical', index: number): string => {
+const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'terpene' | 'thc', index: number): string => {
     const colors = {
         effect: ["bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800"],
         flavor: ["bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800"],
-        medical: ["bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800"]
+        medical: ["bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800"],
+        terpene: ["bg-orange-100 text-orange-800"],
+        thc: ["bg-red-100 text-red-800"],
     };
     return colors[itemType][index % colors[itemType].length];
 }
+
+const AttributeEditor: React.FC<{
+  control: any;
+  name: "effects" | "medicalUses";
+  label: string;
+  placeholder: string;
+  itemType: 'effect' | 'medical';
+}> = ({ control, name, label, placeholder, itemType }) => {
+  const { fields, append, remove } = useFieldArray({ control, name });
+  const [newName, setNewName] = useState('');
+  const [newPercentage, setNewPercentage] = useState('');
+
+  const handleAdd = () => {
+    if (newName.trim() && newPercentage.trim()) {
+      append({ name: newName.trim(), percentage: newPercentage.trim() });
+      setNewName('');
+      setNewPercentage('');
+    }
+  };
+
+  return (
+    <FormItem>
+      <FormLabel>{label}</FormLabel>
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-2">
+            {fields.map((field: { id: string }, index: number) => (
+              <Badge key={field.id} className={cn("flex-grow justify-between text-sm py-1.5", getBadgeColor(itemType, index))}>
+                <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)}%)</span>
+                <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
+              </Badge>
+            ))}
+        </div>
+         <div className="flex items-center gap-2">
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={placeholder} className="h-8"/>
+            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24"/>
+            <Button type="button" size="icon" variant="outline" onClick={handleAdd} className="h-8 w-8"><PackagePlus className="h-4 w-4"/></Button>
+        </div>
+      </div>
+      <FormMessage />
+    </FormItem>
+  );
+};
 
 
 export default function AddProductPage() {
@@ -563,25 +566,39 @@ export default function AddProductPage() {
                          <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                             <div className="flex items-center gap-2"><Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" /><Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin" /> : <SearchIcon />}</Button></div>
                             {strainSearchResults.length > 0 && (
-                                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">{strainSearchResults.map(strain => (<Button key={strain.id} type="button" variant="secondary" className="w-full justify-start" onClick={() => { setSelectedStrainData(strain); setStrainSearchResults([]); }}>Select: {strain.name}</Button>))}</div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                                  {strainSearchResults.map(strain => (
+                                    <Card key={strain.id} className="flex flex-col overflow-hidden">
+                                      <CardHeader className="p-0 relative aspect-video">
+                                        {strain.img_url && strain.img_url !== 'none' ? (
+                                          <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
+                                        ) : (
+                                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                                            <LeafIconLucide className="h-12 w-12 text-primary/50 animate-pulse-slow" />
+                                          </div>
+                                        )}
+                                      </CardHeader>
+                                      <CardContent className="p-3 flex-grow">
+                                        <h3 className="font-semibold truncate">{strain.name}</h3>
+                                      </CardContent>
+                                      <CardFooter className="p-3 pt-0">
+                                        <Button type="button" size="sm" className="w-full" onClick={() => { setSelectedStrainData(strain); setStrainSearchResults([]); }}>Select this strain</Button>
+                                      </CardFooter>
+                                    </Card>
+                                  ))}
+                                </div>
                             )}
                             {selectedStrainData && (
                                 <Card className="p-4 bg-background">
-                                    <CardHeader className="p-0 mb-3 flex flex-row items-center gap-4">
-                                       <div className="relative h-24 w-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                                            {selectedStrainData.img_url && selectedStrainData.img_url !== 'none' ? (
-                                                <Image src={selectedStrainData.img_url} alt={selectedStrainData.name} layout="fill" objectFit="cover" />
-                                            ) : (
-                                                <LeafIconLucide className="h-12 w-12 text-primary/50 animate-pulse-slow m-auto" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-lg text-primary">{selectedStrainData.name}</CardTitle>
-                                            <CardDescription>Most Common Terpene: <span className="font-semibold text-foreground">{selectedStrainData.terpene}</span></CardDescription>
-                                        </div>
+                                    <CardHeader className="p-0 mb-3">
+                                       <CardTitle className="text-lg text-primary">{selectedStrainData.name}</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="p-0 text-sm space-y-3">
+                                    <CardContent className="p-0 text-sm space-y-4">
                                       <p className="text-muted-foreground">{selectedStrainData.description}</p>
+                                       <div className="flex flex-wrap gap-2">
+                                          <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc || 'N/A'}%</Badge>
+                                          <Badge className={getBadgeColor('terpene', 0)}>Terpene: {selectedStrainData.terpene}</Badge>
+                                      </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Effects</h4>
                                         <div className="flex flex-wrap gap-2">{selectedStrainData.effects?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage})</Badge>)}</div>
@@ -638,9 +655,9 @@ export default function AddProductPage() {
                     {(selectedProductStream === 'THC') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                           <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                          <AttributeEditor control={form.control} name="effects" label="Effects" placeholder="e.g., Relaxed" />
-                          <AttributeEditor control={form.control} name="medicalUses" label="Medical Uses" placeholder="e.g., Pain Relief" />
-                          <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800"} /></FormControl><FormMessage /></FormItem>)} />
+                          <AttributeEditor control={form.control} name="effects" label="Effects" placeholder="e.g., Relaxed" itemType="effect" />
+                          <AttributeEditor control={form.control} name="medicalUses" label="Medical Uses" placeholder="e.g., Pain Relief" itemType="medical" />
+                          <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
                            {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
@@ -731,7 +748,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
-
-    
