@@ -394,7 +394,7 @@ export default function AddProductPage() {
                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                             <div className="flex items-center gap-2">
                                 <FormControl>
-                                    <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
+                                  <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
                                 </FormControl>
                                 <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}</Button>
                             </div>
