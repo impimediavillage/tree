@@ -127,38 +127,6 @@
         { "fieldPath": "isActive", "order": "ASCENDING" },
         { "fieldPath": "price", "order": "ASCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "stickersets",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "isPublic",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "stickersets",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "creatorUid",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
     }
   ],
   "fieldOverrides": []
