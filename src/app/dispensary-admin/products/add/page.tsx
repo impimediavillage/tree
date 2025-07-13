@@ -37,9 +37,11 @@ const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "1
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
-const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
+
 const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "creative", "energetic", "focused", "giggly", "tingly", "aroused", "hungry", "talkative"];
 const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
+const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
+
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
@@ -47,7 +49,7 @@ const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
   'Womens': { 'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'], 'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'], 'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'], 'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
-  'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'], }
+  'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
 type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
@@ -119,7 +121,6 @@ const AttributeEditor: React.FC<{
     </FormItem>
   );
 };
-
 
 export default function AddProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -304,16 +305,16 @@ export default function AddProductPage() {
         
         const effects = effectKeys
             .map(key => ({ name: toTitleCase(key), percentage: selectedStrainData[key] || '0%' }))
-            .filter(eff => eff.percentage !== '0%');
+            .filter(eff => parseInt(eff.percentage) > 0);
         replaceEffects(effects);
 
         const medical = medicalKeys
             .map(key => ({ name: toTitleCase(key), percentage: selectedStrainData[key] || '0%' }))
-            .filter(med => med.percentage !== '0%');
+            .filter(med => parseInt(med.percentage) > 0);
         replaceMedicalUses(medical);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStrainData, form, replaceEffects, replaceFlavors, replaceMedicalUses]);
+  }, [selectedStrainData, form]);
 
   const onSubmit = async (data: ProductFormData) => {
     if (!wellnessData || !currentUser) { toast({ title: "Error", description: "Cannot submit without wellness profile data.", variant: "destructive" }); return; }
@@ -372,13 +373,13 @@ export default function AddProductPage() {
              
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader> <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/> The Triple S (Strain-Sticker-Sample) club</CardTitle> </CardHeader>
+                    <CardHeader> <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) club</CardTitle> </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6 items-start">
                         <div className="space-y-4">
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
-                                <FormDescription className="text-orange-900/90 text-sm"> The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images </FormDescription>
+                                <FormDescription className="text-orange-900/90 text-sm">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images</FormDescription>
                                 <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
                                 </FormItem>
                             )} />
@@ -399,7 +400,10 @@ export default function AddProductPage() {
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                          <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                            <div className="flex items-center gap-2"><Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" /><Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin" /> : <SearchIcon />}</Button></div>
+                            <div className="flex items-center gap-2">
+                              <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
+                              <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin" /> : <SearchIcon />}</Button>
+                            </div>
                             {strainSearchResults.length > 0 && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                                   {strainSearchResults.map(strain => (
