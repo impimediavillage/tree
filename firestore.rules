@@ -1,102 +1,72 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.role == 'Super Admin';
-    }
-
-    function isDispensaryOwner(dispensaryId) {
-      return isSignedIn() && request.auth.token.role == 'DispensaryOwner' && request.auth.token.dispensaryId == dispensaryId;
-    }
-
-    function isDispensaryStaff(dispensaryId) {
-        return isSignedIn() && request.auth.token.role == 'DispensaryStaff' && request.auth.token.dispensaryId == dispensaryId;
-    }
     
-    function isOwnerOrStaffOfDispensary(dispensaryId) {
-        return isDispensaryOwner(dispensaryId) || isDispensaryStaff(dispensaryId);
-    }
-    
-    // PUBLIC COLLECTIONS
-    match /dispensaryTypes/{typeId} {
-        allow read: if true;
-        allow write: if isSuperAdmin();
-    }
-    
-    match /dispensaryTypeProductCategories/{typeId} {
-        allow read: if isSignedIn();
-        allow write: if isSuperAdmin();
-    }
-
+    // Allow public read of dispensary data for stores and listings
     match /dispensaries/{dispensaryId} {
-        // Public can read approved dispensaries, owners can read their own
-        allow read: if resource.data.status == 'Approved' || isOwnerOrStaffOfDispensary(dispensaryId) || isSuperAdmin();
-        // SuperAdmins can write anything
-        allow write: if isSuperAdmin();
-        // Owners can update their own dispensary
-        allow update: if isDispensaryOwner(dispensaryId);
-        // Public can apply
-        allow create: if true;
+      allow read: if true;
+      allow write: if request.auth != null && (
+        request.auth.token.role == 'Super Admin' || 
+        (request.auth.uid == resource.data.ownerUid && request.auth.token.role == 'DispensaryOwner')
+      );
     }
 
+    // Products can be read publicly, but only written by the owning dispensary or admin
     match /products/{productId} {
-        // Public can read any product
-        allow read: if true;
-        // Only owners/staff of the linked dispensary or super admins can create/update/delete
-        allow create, update, delete: if isOwnerOrStaffOfDispensary(request.resource.data.dispensaryId) || isSuperAdmin();
+      allow read: if true;
+      allow write: if request.auth != null && (
+        request.auth.token.role == 'Super Admin' ||
+        (exists(/databases/$(database)/documents/dispensaries/$(request.resource.data.dispensaryId)) &&
+         get(/databases/$(database)/documents/dispensaries/$(request.resource.data.dispensaryId)).data.ownerUid == request.auth.uid)
+      );
     }
 
+    // Users can only read/write their own document, Admins can read/write any.
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isSuperAdmin();
-      allow create: if true; // Public signup
-      allow update: if request.auth.uid == userId || isSuperAdmin();
-      allow delete: if isSuperAdmin();
+      allow read, write: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'Super Admin');
+    }
+    
+    // Allow authenticated users to read from the strain seed data collection
+    match /my-seeded-collection/{document=**} {
+      allow read: if request.auth != null;
     }
 
-    // Allow logged-in users to read from the seeded collection
-    match /my-seeded-collection/{strainId} {
-      allow read: if isSignedIn();
-    }
-
-    // AUTHENTICATED USER COLLECTIONS
-    match /productRequests/{requestId} {
-        allow read, update: if isSignedIn() && (request.auth.uid == resource.data.requesterUid || request.auth.uid == resource.data.ownerUid || isSuperAdmin());
-        allow create: if isSignedIn();
-    }
-
-    match /poolIssues/{issueId} {
-        allow read, update: if isSuperAdmin();
-        allow create: if isSignedIn(); // Only owners can create from client, but rule is general
-    }
-
+    // Notifications are private to the recipient
     match /notifications/{notificationId} {
-        allow read, update, delete: if isSignedIn() && request.auth.uid == resource.data.recipientUid;
-        allow create: if isSignedIn(); // Can be created by functions
-    }
-    
-    match /aiInteractionsLog/{logId} {
-        allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isSuperAdmin());
-        allow create: if isSignedIn(); // Can be created by functions
-    }
-    
-    match /creditPackages/{packageId} {
-        allow read: if true; // Publicly viewable
-        allow write: if isSuperAdmin();
-    }
-    
-    match /stickersets/{stickerSetId} {
-        allow read: if true; // Public can read
-        allow create: if isSignedIn();
-        allow update, delete: if isSignedIn() && request.auth.uid == resource.data.creatorUid;
+      allow read, write: if request.auth != null && request.resource.data.recipientUid == request.auth.uid;
     }
 
+    // Product requests can be read/written by the involved parties or an admin
+    match /productRequests/{requestId} {
+        allow read, write: if request.auth != null && (
+            request.auth.token.role == 'Super Admin' ||
+            request.resource.data.requesterDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId ||
+            request.resource.data.productOwnerDispensaryId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId
+        );
+    }
+    
+    // Pool Issues can be read/written by admins, and created by authenticated users.
+    match /poolIssues/{issueId} {
+      allow read, write: if request.auth.token.role == 'Super Admin';
+      allow create: if request.auth != null;
+    }
+
+    // Credit packages can be read by anyone, but only managed by admins.
+    match /creditPackages/{packageId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+    }
+
+    // Sticker sets can be read publicly if marked as public, but only written by their creator or an admin.
+    match /stickersets/{stickerId} {
+      allow read: if resource.data.isPublic == true;
+      allow write: if request.auth != null && (
+        request.auth.uid == resource.data.creatorUid ||
+        request.auth.token.role == 'Super Admin'
+      );
+       // Allow owner to read their own private sets
+      allow read: if request.auth != null && request.auth.uid == resource.data.creatorUid;
+    }
   }
 }
