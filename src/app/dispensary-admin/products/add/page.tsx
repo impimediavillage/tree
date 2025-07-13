@@ -7,8 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -73,7 +74,8 @@ const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'terpene' | '
         terpene: ["bg-orange-100 text-orange-800", "bg-red-200 text-red-900"],
         thc: ["bg-red-100 text-red-800", "bg-rose-100 text-rose-800"],
     };
-    return colors[itemType][index % colors[itemType].length];
+    const colorKey = itemType as keyof typeof colors;
+    return colors[colorKey][index % colors[colorKey].length];
 }
 
 const AttributeEditor: React.FC<{
