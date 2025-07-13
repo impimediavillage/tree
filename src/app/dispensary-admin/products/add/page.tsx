@@ -62,7 +62,7 @@ const toTitleCase = (str: string) => {
   return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substring(1).toLowerCase());
 };
 
-const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'terpene' | 'thc', index: number): string => {
+const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'thc' | 'terpene', index: number): string => {
     const colors = {
         effect: ["bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800"],
         flavor: ["bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800"],
@@ -74,68 +74,34 @@ const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'terpene' | '
     return colors[colorKey][index % colors[colorKey].length];
 }
 
-const AttributeEditor: React.FC<{
-  control: any;
-  name: "effects" | "medicalUses";
-  label: string;
-  placeholder: string;
-  itemType: 'effect' | 'medical';
-  fields: any[];
-  append: (obj: any) => void;
-  remove: (index: number) => void;
-}> = ({ control, name, label, placeholder, itemType, fields, append, remove }) => {
-  const [newName, setNewName] = useState('');
-  const [newPercentage, setNewPercentage] = useState('');
+const AddAttributeInputs = ({ onAdd }: { onAdd: (name: string, percentage: string) => void }) => {
+    const [name, setName] = useState('');
+    const [percentage, setPercentage] = useState('');
 
-  const handleAdd = () => {
-    if (newName.trim() && newPercentage.trim()) {
-      append({ name: toTitleCase(newName.trim()), percentage: newPercentage.trim() + '%' });
-      setNewName('');
-      setNewPercentage('');
-    }
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAdd();
-    }
-  };
+    const handleAdd = () => {
+        if (name.trim() && percentage.trim()) {
+            onAdd(name, percentage);
+            setName('');
+            setPercentage('');
+        }
+    };
 
-  return (
-    <FormItem>
-      <div className="flex justify-between items-end">
-        <FormLabel>{label}</FormLabel>
-        <div className="p-1 mb-1 rounded-md border border-dashed bg-muted/50 text-xs">
-            <p className="font-semibold text-muted-foreground">Key:</p>
-            <div className="flex flex-wrap gap-1.5 mt-1">
-                <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800 text-xs">Low (1-10%)</Badge>
-                <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800 text-xs">Medium (11-30%)</Badge>
-                <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800 text-xs">High (31% +)</Badge>
-            </div>
-        </div>
-      </div>
-      <div className="space-y-2">
-         <div className="flex items-center gap-2">
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={placeholder} className="h-8"/>
-            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24" onKeyDown={handleKeyDown}/>
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAdd();
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2">
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Relaxed" className="h-8"/>
+            <Input value={percentage} onChange={(e) => setPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24" onKeyDown={handleKeyDown}/>
             <Button type="button" size="icon" variant="outline" onClick={handleAdd} className="h-8 w-8 shrink-0">
                 <CornerDownLeft className="h-3.5 w-3.5" />
             </Button>
         </div>
-        <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
-            {fields.map((field, index) => (
-              <Badge key={field.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor(itemType, index))}>
-                <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)})</span>
-                <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
-              </Badge>
-            ))}
-            {fields.length === 0 && <p className="text-sm text-muted-foreground px-1">No {label.toLowerCase()} populated.</p>}
-        </div>
-      </div>
-      <FormMessage />
-    </FormItem>
-  );
+    );
 };
 
 
@@ -404,7 +370,7 @@ export default function AddProductPage() {
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
                                  <FormDescription className="text-orange-900/90 text-sm">
-                                  The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
+                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
                                 </FormDescription>
                                 <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
                                 </FormItem>
@@ -427,7 +393,9 @@ export default function AddProductPage() {
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                             <div className="flex items-center gap-2">
-                                <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
+                                <FormControl>
+                                    <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
+                                </FormControl>
                                 <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}</Button>
                             </div>
                             {strainSearchResults.length > 0 && (
@@ -514,9 +482,40 @@ export default function AddProductPage() {
                     {(selectedProductStream === 'THC') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                           <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                          <AttributeEditor control={form.control} name="effects" label="Effects" placeholder="e.g., Relaxed" itemType="effect" fields={effectsFields} append={appendEffect} remove={removeEffect}/>
-                          <AttributeEditor control={form.control} name="medicalUses" label="Medical Uses" placeholder="e.g., Pain Relief" itemType="medical" fields={medicalUsesFields} append={appendMedicalUse} remove={removeMedicalUse}/>
-                          <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
+                          
+                          <FormField control={form.control} name="effects" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Effects</FormLabel>
+                                  <AddAttributeInputs onAdd={(name, percentage) => appendEffect({ name: toTitleCase(name), percentage: percentage + '%' })} />
+                                  <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
+                                      {effectsFields.map((item, index) => (
+                                          <Badge key={item.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor('effect', index))}>
+                                              <span>{form.getValues(`effects.${index}.name`)} ({form.getValues(`effects.${index}.percentage`)})</span>
+                                              <button type="button" onClick={() => removeEffect(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
+                                          </Badge>
+                                      ))}
+                                  </div>
+                                  <FormMessage />
+                              </FormItem>
+                          )} />
+
+                          <FormField control={form.control} name="medicalUses" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Medical Uses</FormLabel>
+                                  <AddAttributeInputs onAdd={(name, percentage) => appendMedicalUse({ name: toTitleCase(name), percentage: percentage + '%' })} />
+                                  <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
+                                      {medicalUsesFields.map((item, index) => (
+                                          <Badge key={item.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor('medical', index))}>
+                                              <span>{form.getValues(`medicalUses.${index}.name`)} ({form.getValues(`medicalUses.${index}.percentage`)})</span>
+                                              <button type="button" onClick={() => removeMedicalUse(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
+                                          </Badge>
+                                      ))}
+                                  </div>
+                                  <FormMessage />
+                              </FormItem>
+                          )} />
+
+                           <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
                            {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
