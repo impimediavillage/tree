@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle, Star } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -81,8 +81,8 @@ const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'terpene' | '
         effect: ["bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800"],
         flavor: ["bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800"],
         medical: ["bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800"],
-        terpene: ["bg-orange-100 text-orange-800"],
-        thc: ["bg-red-100 text-red-800"],
+        terpene: ["bg-orange-100 text-orange-800", "bg-red-200 text-red-900"],
+        thc: ["bg-red-100 text-red-800", "bg-rose-100 text-rose-800"],
     };
     return colors[itemType][index % colors[itemType].length];
 }
@@ -112,7 +112,7 @@ const AttributeEditor: React.FC<{
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2">
             {fields.map((field: { id: string }, index: number) => (
-              <Badge key={field.id} className={cn("flex-grow justify-between text-sm py-1.5", getBadgeColor(itemType, index))}>
+              <Badge key={field.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor(itemType, index))}>
                 <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)}%)</span>
                 <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
               </Badge>
@@ -518,40 +518,50 @@ export default function AddProductPage() {
             )}
              
             {selectedProductStream === 'THC' && (
-                <Card className="bg-orange-50 border-orange-200">
+                <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-orange-800"><HelpCircle/> Sticker Promo Programme</CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/> The Triple S (Strain-Sticker-Sample) club</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <FormField
-                            control={form.control}
-                            name="stickerProgramOptIn"
-                            render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                <FormLabel className="text-base text-orange-900">Do you want to participate in this programme for this product?</FormLabel>
-                                <FormDescription className="text-orange-700">
-                                The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers. Cannabis home growers for personal use have a way to share and swap their garden ware's and public shoppers looking for cbd wellness products can engage with these free samples, design amazing stickers ready to print on shirts, caps, hoodies, and as actual round stickers, with multiple sticker style options including a hyper realistic 3dmodeling clay image of the strain, a Retro 420 look, an AI cosmic imaginitive Look, A comic 2 d look, and a farmstyle look to the sticker design - auto created by the magic of the Wellness tree AI image generation.  Wellness store owners and / or Cannabis enthusiasts who sign up as Cannibinoid Wellness store owners can also design their own Sticker range promoting their strain or Wellness store, and trade their Sticker designs for Extra usage credits. The Promo packs are way more adanced offering public purchasers the opportunity to buy round stickers, rectangular stickers, visualization on caps, tshirts, and hoodies, and 1 large 20cm x20cm circualr sticker ready for printing on apparel. The wellness store owner will earn 100 credits everytime one of their sticker promo sets are purchased by the public
-                                </FormDescription>
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value ?? undefined}
-                                    className="flex flex-col sm:flex-row gap-4"
-                                    >
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
+                    <CardContent className="grid md:grid-cols-2 gap-6 items-start">
+                        <div className="space-y-4">
+                            <FormField
+                                control={form.control}
+                                name="stickerProgramOptIn"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                    <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
+                                    <FormDescription className="text-orange-900/90 text-sm">
+                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack.  Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club.
+                                    </FormDescription>
+                                    <FormControl>
+                                        <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value ?? undefined}
+                                        className="flex flex-col sm:flex-row gap-4 pt-2"
+                                        >
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                            <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                            <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                            <FormControl><RadioGroupItem value="no" /></FormControl>
+                                            <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
+                                        </FormItem>
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
                                     </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                )}
+                            />
+                        </div>
+                         <div className="grid grid-cols-2 gap-3">
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md">
+                                <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/>
+                            </div>
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md">
+                                <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/>
+                            </div>
+                         </div>
                     </CardContent>
                 </Card>
             )}
