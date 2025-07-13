@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -84,7 +84,10 @@ const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical', index: number)
 }
 
 const AttributeEditor: React.FC<{
-  control: any; name: "effects" | "medicalUses"; label: string; placeholder: string;
+  control: any;
+  name: "effects" | "medicalUses";
+  label: string;
+  placeholder: string;
 }> = ({ control, name, label, placeholder }) => {
   const { fields, append, remove } = useFieldArray({ control, name });
   const [newName, setNewName] = useState('');
@@ -105,14 +108,14 @@ const AttributeEditor: React.FC<{
         {fields.map((field, index) => (
           <div key={field.id} className="flex items-center gap-2">
             <Badge variant="secondary" className="flex-grow justify-between">
-              <span>{form.getValues(`${name}.${index}.name`)} ({form.getValues(`${name}.${index}.percentage`})</span>
+              <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)}%)</span>
               <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
             </Badge>
           </div>
         ))}
          <div className="flex items-center gap-2">
             <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={placeholder} className="h-8"/>
-            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55%" className="h-8 w-24"/>
+            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24"/>
             <Button type="button" size="icon" variant="outline" onClick={handleAdd} className="h-8 w-8"><PackagePlus className="h-4 w-4"/></Button>
         </div>
       </div>
@@ -370,9 +373,11 @@ export default function AddProductPage() {
         form.setValue('strain', selectedStrainData.name, { shouldValidate: true });
         form.setValue('description', selectedStrainData.description || '', { shouldValidate: true });
         form.setValue('thcContent', selectedStrainData.thc || '0', { shouldValidate: true });
-        form.setValue('cbdContent', selectedStrainData.cbd || '0', { shouldValidate: true });
         
-        replaceFlavors(selectedStrainData.flavor || []);
+        const flavorsFromDesc = selectedStrainData.flavor?.join(' ') || '';
+        const allPossibleFlavors = [...new Set([...(selectedStrainData.flavor || []), ...flavorsFromDesc.split(/, | /).map(f => f.trim().toLowerCase()).filter(Boolean)])];
+        replaceFlavors(allPossibleFlavors);
+
         replaceEffects(selectedStrainData.effects || []);
         replaceMedicalUses(selectedStrainData.medical || []);
     }
@@ -508,7 +513,7 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                     {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
+                     {(selectedProductStream === 'THC') && (
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Strain Details (Optional)</h2>
                          <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -574,17 +579,12 @@ export default function AddProductPage() {
                         )}
                     </div>
                     
-                    {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
+                    {(selectedProductStream === 'THC') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                           <AttributeEditor control={form.control} name="effects" label="Effects" placeholder="e.g., Relaxed" />
                           <AttributeEditor control={form.control} name="medicalUses" label="Medical Uses" placeholder="e.g., Pain Relief" />
                           <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800"} /></FormControl><FormMessage /></FormItem>)} />
-                           {selectedProductStream === 'THC' && (
-                              <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                           )}
-                           {selectedProductStream === 'CBD' && (
-                              <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                           )}
+                           <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
                            {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                        </div>
