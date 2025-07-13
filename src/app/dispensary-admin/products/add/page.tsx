@@ -39,6 +39,46 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
 
+const AttributeEditor: React.FC<{
+  control: any;
+  name: "effects" | "medicalUses";
+  label: string;
+  placeholder: string;
+}> = ({ control, name, label, placeholder }) => {
+  const { fields, append, remove } = useFieldArray({ control, name });
+  const [newName, setNewName] = useState('');
+  const [newPercentage, setNewPercentage] = useState('');
+
+  const handleAdd = () => {
+    if (newName.trim() && newPercentage.trim()) {
+      append({ name: newName.trim(), percentage: newPercentage.trim() });
+      setNewName('');
+      setNewPercentage('');
+    }
+  };
+
+  return (
+    <FormItem>
+      <FormLabel>{label}</FormLabel>
+      <div className="space-y-2">
+        {fields.map((field, index) => (
+          <div key={field.id} className="flex items-center gap-2">
+            <Badge variant="secondary" className="flex-grow justify-between">
+              <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)}%)</span>
+              <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
+            </Badge>
+          </div>
+        ))}
+         <div className="flex items-center gap-2">
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={placeholder} className="h-8"/>
+            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24"/>
+            <Button type="button" size="icon" variant="outline" onClick={handleAdd} className="h-8 w-8"><PackagePlus className="h-4 w-4"/></Button>
+        </div>
+      </div>
+      <FormMessage />
+    </FormItem>
+  );
+};
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
@@ -85,47 +125,6 @@ const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical', index: number)
     };
     return colors[itemType][index % colors[itemType].length];
 }
-
-const AttributeEditor: React.FC<{
-  control: any;
-  name: "effects" | "medicalUses";
-  label: string;
-  placeholder: string;
-}> = ({ control, name, label, placeholder }) => {
-  const { fields, append, remove } = useFieldArray({ control, name });
-  const [newName, setNewName] = useState('');
-  const [newPercentage, setNewPercentage] = useState('');
-
-  const handleAdd = () => {
-    if (newName.trim() && newPercentage.trim()) {
-      append({ name: newName.trim(), percentage: newPercentage.trim() });
-      setNewName('');
-      setNewPercentage('');
-    }
-  };
-
-  return (
-    <FormItem>
-      <FormLabel>{label}</FormLabel>
-      <div className="space-y-2">
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex items-center gap-2">
-            <Badge variant="secondary" className="flex-grow justify-between">
-              <span>{control.getValues(`${name}.${index}.name`)} ({control.getValues(`${name}.${index}.percentage`)}%)</span>
-              <button type="button" onClick={() => remove(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
-            </Badge>
-          </div>
-        ))}
-         <div className="flex items-center gap-2">
-            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={placeholder} className="h-8"/>
-            <Input value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="e.g., 55" className="h-8 w-24"/>
-            <Button type="button" size="icon" variant="outline" onClick={handleAdd} className="h-8 w-8"><PackagePlus className="h-4 w-4"/></Button>
-        </div>
-      </div>
-      <FormMessage />
-    </FormItem>
-  );
-};
 
 
 export default function AddProductPage() {
@@ -527,7 +526,9 @@ export default function AddProductPage() {
                             render={({ field }) => (
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-base text-orange-900">Do you want to participate in this programme for this product?</FormLabel>
-                                <FormDescription className="text-orange-700">By selecting 'Yes', customers can purchase a sticker design based on this product and will receive a FREE sample of this product from you with their purchase. You will receive R25 for each sticker sold. See T&Cs for details.</FormDescription>
+                                <FormDescription className="text-orange-700">
+                                The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers. Cannabis home growers for personal use have a way to share and swap their garden ware's and public shoppers looking for cbd wellness products can engage with these free samples, design amazing stickers ready to print on shirts, caps, hoodies, and as actual round stickers, with multiple sticker style options including a hyper realistic 3dmodeling clay image of the strain, a Retro 420 look, an AI cosmic imaginitive Look, A comic 2 d look, and a farmstyle look to the sticker design - auto created by the magic of the Wellness tree AI image generation.  Wellness store owners and / or Cannabis enthusiasts who sign up as Cannibinoid Wellness store owners can also design their own Sticker range promoting their strain or Wellness store, and trade their Sticker designs for Extra usage credits. The Promo packs are way more adanced offering public purchasers the opportunity to buy round stickers, rectangular stickers, visualization on caps, tshirts, and hoodies, and 1 large 20cm x20cm circualr sticker ready for printing on apparel. The wellness store owner will earn 100 credits everytime one of their sticker promo sets are purchased by the public
+                                </FormDescription>
                                 <FormControl>
                                     <RadioGroup
                                     onValueChange={field.onChange}
@@ -730,5 +731,7 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
 
     
