@@ -7,8 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
@@ -22,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,6 +30,8 @@ import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -189,7 +190,8 @@ export default function AddProductPage() {
   const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
-  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream);
+  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
+
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -373,14 +375,16 @@ export default function AddProductPage() {
         form.setValue('strain', selectedStrainData.name, { shouldValidate: true });
         form.setValue('description', selectedStrainData.description || '', { shouldValidate: true });
         form.setValue('thcContent', selectedStrainData.thc || '0', { shouldValidate: true });
+        form.setValue('mostCommonTerpene', selectedStrainData.terpene, { shouldValidate: true });
         
-        const flavorsFromDesc = selectedStrainData.flavor?.join(' ') || '';
-        const allPossibleFlavors = [...new Set([...(selectedStrainData.flavor || []), ...flavorsFromDesc.split(/, | /).map(f => f.trim().toLowerCase()).filter(Boolean)])];
+        const flavorsFromDesc = selectedStrainData.description.toLowerCase().split(/\W+/).filter((word: string) => commonFlavors.includes(word));
+        const allPossibleFlavors = [...new Set([...(selectedStrainData.flavor || []), ...flavorsFromDesc])];
         replaceFlavors(allPossibleFlavors);
 
         replaceEffects(selectedStrainData.effects || []);
         replaceMedicalUses(selectedStrainData.medical || []);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedStrainData, form, replaceEffects, replaceFlavors, replaceMedicalUses]);
 
   const onSubmit = async (data: ProductFormData) => {
@@ -508,6 +512,43 @@ export default function AddProductPage() {
                     {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
+             
+            {selectedProductStream === 'THC' && (
+                <Card className="bg-orange-50 border-orange-200">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-orange-800"><HelpCircle/> Sticker Promo Programme</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FormField
+                            control={form.control}
+                            name="stickerProgramOptIn"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                <FormLabel className="text-base text-orange-900">Do you want to participate in this programme for this product?</FormLabel>
+                                <FormDescription className="text-orange-700">By selecting 'Yes', customers can purchase a sticker design based on this product and will receive a FREE sample of this product from you with their purchase. You will receive R25 for each sticker sold. See T&Cs for details.</FormDescription>
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value ?? undefined}
+                                    className="flex flex-col sm:flex-row gap-4"
+                                    >
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1">
+                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1">
+                                        <FormControl><RadioGroupItem value="no" /></FormControl>
+                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+            )}
 
             <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
 
@@ -515,7 +556,7 @@ export default function AddProductPage() {
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                      {(selectedProductStream === 'THC') && (
                        <>
-                         <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Strain Details (Optional)</h2>
+                         <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                          <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                             <div className="flex items-center gap-2"><Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" /><Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin" /> : <SearchIcon />}</Button></div>
                             {strainSearchResults.length > 0 && (
@@ -523,7 +564,19 @@ export default function AddProductPage() {
                             )}
                             {selectedStrainData && (
                                 <Card className="p-4 bg-background">
-                                    <CardHeader className="p-0 mb-3"><CardTitle className="text-lg text-primary">{selectedStrainData.name}</CardTitle></CardHeader>
+                                    <CardHeader className="p-0 mb-3 flex flex-row items-center gap-4">
+                                       <div className="relative h-24 w-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                                            {selectedStrainData.img_url && selectedStrainData.img_url !== 'none' ? (
+                                                <Image src={selectedStrainData.img_url} alt={selectedStrainData.name} layout="fill" objectFit="cover" />
+                                            ) : (
+                                                <LeafIconLucide className="h-12 w-12 text-primary/50 animate-pulse-slow m-auto" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <CardTitle className="text-lg text-primary">{selectedStrainData.name}</CardTitle>
+                                            <CardDescription>Most Common Terpene: <span className="font-semibold text-foreground">{selectedStrainData.terpene}</span></CardDescription>
+                                        </div>
+                                    </CardHeader>
                                     <CardContent className="p-0 text-sm space-y-3">
                                       <p className="text-muted-foreground">{selectedStrainData.description}</p>
                                       <div className="space-y-2">
@@ -545,7 +598,7 @@ export default function AddProductPage() {
                        </>
                     )}
                     
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Basic Information</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Product Details</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
@@ -581,6 +634,7 @@ export default function AddProductPage() {
                     
                     {(selectedProductStream === 'THC') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
+                          <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                           <AttributeEditor control={form.control} name="effects" label="Effects" placeholder="e.g., Relaxed" />
                           <AttributeEditor control={form.control} name="medicalUses" label="Medical Uses" placeholder="e.g., Pain Relief" />
                           <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800"} /></FormControl><FormMessage /></FormItem>)} />
