@@ -393,7 +393,7 @@ export default function AddProductPage() {
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
                                 <FormDescription className="text-orange-900/90 text-sm">
-                                The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack.  Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club.  Please add some modern ui styling to the section and add placeholders to add some promo images
+                                  The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People.
                                 </FormDescription>
                                 <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
                                 </FormItem>
@@ -416,7 +416,9 @@ export default function AddProductPage() {
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                          <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                             <div className="flex items-center gap-2">
-                                <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
+                                <FormControl>
+                                    <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
+                                </FormControl>
                                 <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>{isFetchingStrain ? <Loader2 className="animate-spin" /> : <SearchIcon />}</Button>
                             </div>
                             {strainSearchResults.length > 0 && (
@@ -580,3 +582,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
