@@ -133,7 +133,7 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
-  const [categoryStructureObject, setCategoryStructureObject] = useState<any>(null);
+  const [categoryStructureObject, setCategoryStructureObject] = useState<ProductCategory[]>([]);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   
   const [productTypeOptions, setProductTypeOptions] = useState<ProductCategory[]>([]);
@@ -201,21 +201,15 @@ export default function AddProductPage() {
     if (isThcCbdSpecialType && categoryStructureObject) {
         form.setValue('category', stream);
 
-        const mainCannibinoidCategory = categoryStructureObject.find((cat: any) => cat.name.includes("Cannibinoid"));
-        if (!mainCannibinoidCategory || !mainCannibinoidCategory.subcategories) {
-            setProductTypeOptions([]);
-            return;
-        }
+        const cannibinoidCategory = categoryStructureObject.find((cat) => cat.name.includes("Cannibinoid"));
+        if (!cannibinoidCategory || !cannibinoidCategory.subcategories) { setProductTypeOptions([]); return; }
+        
+        const streamCategory = cannibinoidCategory.subcategories.find((sc) => sc.name === stream);
+        if (!streamCategory || !streamCategory.subcategories) { setProductTypeOptions([]); return; }
 
-        const streamDataContainer = mainCannibinoidCategory.subcategories.find((sc: any) => sc.name === stream);
-        if (!streamDataContainer || !streamDataContainer.subcategories) {
-            setProductTypeOptions([]);
-            return;
-        }
-
-        const deliveryMethodsData = streamDataContainer.subcategories.find((sc: any) => sc.name === 'Delivery Methods');
-        if (deliveryMethodsData?.subcategories && deliveryMethodsData.subcategories.length > 0) {
-            setProductTypeOptions(deliveryMethodsData.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
+        const deliveryMethods = streamCategory.subcategories.find(sc => sc.name === 'Delivery Methods');
+        if (deliveryMethods?.subcategories) {
+            setProductTypeOptions(deliveryMethods.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
         } else {
             setProductTypeOptions([]);
         }
@@ -381,32 +375,32 @@ export default function AddProductPage() {
                     <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div className="space-y-4">
-                               <p className="text-orange-900/90 text-sm leading-relaxed">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products.</p><p className='text-orange-900/90 text-sm leading-relaxed'> The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People.</p><p className='text-orange-900/90 text-sm leading-relaxed'> The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images</p>
-                                <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                                    <FormItem className="space-y-2 pt-4 border-t border-orange-200">
-                                    <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select participation..." />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
-                                            <SelectItem value="no">No, this is a standard product</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                    </FormItem>
-                                )} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                            </div>
+                    <CardContent className="flex flex-col gap-6">
+                         <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                         </div>
+                        <div className="space-y-4">
+                            <p className="text-orange-900/90 text-sm leading-relaxed">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products.</p>
+                            <p className='text-orange-900/90 text-sm leading-relaxed'> The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. It's a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
+                            <p className='text-orange-900/90 text-sm leading-relaxed'>Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
+                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                                <FormItem className="space-y-2 pt-4 border-t border-orange-200">
+                                <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select participation..." />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
+                                        <SelectItem value="no">No, this is a standard product</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )} />
                         </div>
                     </CardContent>
                 </Card>
