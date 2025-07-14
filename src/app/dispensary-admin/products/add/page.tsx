@@ -206,20 +206,20 @@ export default function AddProductPage() {
     }
 
     if (isThcCbdSpecialType && categoryStructureObject) {
-        form.setValue('category', stream);
+      form.setValue('category', stream);
 
-        const cannibinoidCategory = categoryStructureObject.find((cat) => cat.name && cat.name.toLowerCase().includes("cannibinoid"));
-        if (!cannibinoidCategory || !cannibinoidCategory.subcategories) { setDeliveryMethodOptions([]); return; }
-        
-        const streamCategory = cannibinoidCategory.subcategories.find((sc) => sc.name === stream);
-        if (!streamCategory || !streamCategory.subcategories) { setDeliveryMethodOptions([]); return; }
-
-        const deliveryMethods = streamCategory.subcategories.find(sc => sc.name === 'Delivery Methods');
-        if (deliveryMethods?.subcategories) {
-            setDeliveryMethodOptions(deliveryMethods.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
-        } else {
-            setDeliveryMethodOptions([]);
-        }
+      const cannibinoidCategory = categoryStructureObject.find((cat) => cat.name && cat.name.toLowerCase().includes("cannibinoid"));
+      if (!cannibinoidCategory || !cannibinoidCategory.subcategories) { setDeliveryMethodOptions([]); return; }
+      
+      const streamCategory = cannibinoidCategory.subcategories.find((sc) => sc.name === stream);
+      if (!streamCategory || !streamCategory.subcategories) { setDeliveryMethodOptions([]); return; }
+      
+      const deliveryMethods = streamCategory.subcategories.find(sc => sc.name === 'Delivery Methods');
+      if (deliveryMethods?.subcategories) {
+          setDeliveryMethodOptions(deliveryMethods.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
+      } else {
+          setDeliveryMethodOptions([]);
+      }
     }
   };
 
