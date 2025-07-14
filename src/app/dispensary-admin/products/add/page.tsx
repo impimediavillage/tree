@@ -194,20 +194,22 @@ export default function AddProductPage() {
   };
 
   const handleProductStreamSelect = (stream: StreamKey) => {
-      resetProductStreamSpecificFields();
-      setSelectedProductStream(stream);
+    resetProductStreamSpecificFields();
+    setSelectedProductStream(stream);
 
-      if (isThcCbdSpecialType) {
-          form.setValue('category', stream);
-          if (stream === 'THC' || stream === 'CBD') {
-              const mainCategoryData = categoryStructureObject?.[stream];
-              if (mainCategoryData?.subcategories && mainCategoryData.subcategories.length > 0) {
-                  setDeliveryMethodOptions(mainCategoryData.subcategories.sort((a: any, b: any) => a.name.localeCompare(b.name)));
-              } else {
-                  setDeliveryMethodOptions([]);
-              }
-          }
-      }
+    if (isThcCbdSpecialType) {
+        form.setValue('category', stream);
+        if (stream === 'THC' || stream === 'CBD') {
+            const cannibinoidCategoryKey = Object.keys(categoryStructureObject || {}).find(k => k.toLowerCase().includes('cannibinoid'));
+            const mainCategoryData = cannibinoidCategoryKey ? categoryStructureObject?.[cannibinoidCategoryKey] : null;
+
+            if (mainCategoryData?.subcategories && mainCategoryData.subcategories.length > 0) {
+                setDeliveryMethodOptions(mainCategoryData.subcategories.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+            } else {
+                setDeliveryMethodOptions([]);
+            }
+        }
+    }
   };
 
   const handleFetchStrainInfo = async () => {
@@ -370,16 +372,16 @@ export default function AddProductPage() {
              
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader>
+                    <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-3 mb-4">
+                        <div className="grid md:grid-cols-2 gap-4 mb-4">
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                         </div>
                         <p className="text-orange-900/90 text-sm">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy.</p>
-                        <p className="text-orange-900/90 text-sm">It's a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
+                        <p className="text-orange-900/90 text-sm">It&apos;s a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
                         <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                             <FormItem className="space-y-2 pt-2">
                             <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
@@ -473,7 +475,7 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                      <div className="grid md:grid-cols-2 gap-4">
-                        {isThcCbdSpecialType ? (
+                         {isThcCbdSpecialType ? (
                             <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Delivery Method *</FormLabel>
@@ -485,12 +487,15 @@ export default function AddProductPage() {
                                 </FormItem>
                             )} />
                         ) : (
-                           <FormField control={form.control} name="category" render={({ field }) => (
-                                <FormItem><FormLabel>Main Category *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
-                                    <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                                </Select><FormMessage /></FormItem>
+                            <FormField control={form.control} name="category" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Main Category *</FormLabel>
+                                    <Select onValueChange={(value) => { field.onChange(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
+                                        <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
                             )} />
                         )}
 
