@@ -205,10 +205,10 @@ export default function AddProductPage() {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
 
-        if (isThcCbdSpecialType && categoryStructureDoc) {
+        if (isThcCbdSpecialType && categoryStructureDoc?.categoriesData) {
             try {
-                // Direct and safe traversal based on confirmed structure
-                const data = categoryStructureDoc.categoriesData as any;
+                // Correct Traversal Logic
+                const data = categoryStructureDoc.categoriesData as any; // Cast to any for easier traversal of the known structure
                 const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
                 if (Array.isArray(deliveryMethods)) {
@@ -261,13 +261,12 @@ export default function AddProductPage() {
         setIsThcCbdSpecialType(specialType);
 
         if (dispensaryData.dispensaryType) {
-            const docId = dispensaryData.dispensaryType;
-            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', docId);
+            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', "Cannibinoid store");
             const docSnap = await getDoc(categoriesDocRef);
             if (docSnap.exists()) {
                 setCategoryStructureDoc(docSnap.data() as DispensaryTypeProductCategoriesDoc);
             } else {
-                console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
+                console.warn(`No product category structure found for type: Cannibinoid store`);
             }
         }
 
