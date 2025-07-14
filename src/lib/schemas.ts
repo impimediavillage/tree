@@ -197,10 +197,16 @@ const attributeSchema = z.object({
 const baseProductObjectSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
-  category: z.string().min(1, "Category is required."),
-  subcategory: z.string().optional().nullable(),
-  subSubcategory: z.string().optional().nullable(),
   
+  // Generic category for non-special types
+  category: z.string().min(1, "Category is required."),
+  // subcategory: z.string().optional().nullable(), -> Replaced by specific fields
+  // subSubcategory: z.string().optional().nullable(), -> Not used
+
+  // Specific categories for THC/CBD type
+  deliveryMethod: z.string().optional().nullable(),
+  productSubCategory: z.string().optional().nullable(),
+
   productType: z.string().optional().nullable(),
   mostCommonTerpene: z.string().optional().nullable(),
 
@@ -232,7 +238,6 @@ const baseProductObjectSchema = z.object({
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
   
-  // New field for Sticker Promo Sets
   stickerDetails: z.object({
       linkedStrainId: z.string().optional().nullable(),
       theme: z.string().optional().nullable(),
