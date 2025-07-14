@@ -200,9 +200,7 @@ const baseProductObjectSchema = z.object({
   
   // Generic category for non-special types OR the stream name for special types
   category: z.string().min(1, "Category is required."),
-  // subcategory: z.string().optional().nullable(),
-  // subSubcategory: z.string().optional().nullable(),
-  productType: z.string().optional().nullable(),
+  deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
 
   mostCommonTerpene: z.string().optional().nullable(),
