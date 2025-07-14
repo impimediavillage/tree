@@ -207,17 +207,16 @@ export default function AddProductPage() {
         
         if (isThcCbdSpecialType && categoryStructureDoc?.categoriesData) {
             const data = categoryStructureDoc.categoriesData as any;
-            if (data && data.thcCbdProductCategories && data.thcCbdProductCategories.THC) {
-                const deliveryMethods = data.thcCbdProductCategories.THC['Delivery Methods'];
-                if (Array.isArray(deliveryMethods)) {
-                    setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
-                } else {
-                    setDeliveryMethodOptions([]);
-                    console.warn("'Delivery Methods' is not an array for THC category.");
-                }
+            
+            // Correct, direct traversal of the object structure
+            const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+
+            if (Array.isArray(deliveryMethods)) {
+                setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
             } else {
                 setDeliveryMethodOptions([]);
-                console.warn("Could not find 'thcCbdProductCategories' or 'THC' in the category data structure.");
+                console.warn("'Delivery Methods' is not an array or path is incorrect in the 'Cannibinoid store' document.");
+                toast({ title: "Config Warning", description: "Could not load product types for THC. Please check wellness type category configuration.", variant: "destructive" });
             }
         }
     }
@@ -254,6 +253,7 @@ export default function AddProductPage() {
         const dispensaryData = dispensarySnap.data() as Dispensary;
         setWellnessData(dispensaryData);
         form.setValue('currency', dispensaryData.currency || 'ZAR');
+        
         const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         setIsThcCbdSpecialType(specialType);
 
@@ -264,6 +264,8 @@ export default function AddProductPage() {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
             setCategoryStructureDoc(categoriesDoc);
+          } else {
+            console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
           }
         }
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
@@ -378,7 +380,7 @@ export default function AddProductPage() {
              
             {showTripleSOptIn && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                     <CardHeader className="pb-4">
+                    <CardHeader>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                             <div className="space-y-2">
                                 <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -492,7 +494,7 @@ export default function AddProductPage() {
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Select product type: *</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); form.setValue('productSubCategory', null); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
+                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
                                         <SelectContent>{deliveryMethodOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
                                     </Select>
@@ -642,3 +644,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
