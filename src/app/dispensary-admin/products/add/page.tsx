@@ -29,8 +29,6 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -359,7 +357,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-             <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-green-600 hover:bg-green-700 text-white">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
         </div>
@@ -374,43 +372,43 @@ export default function AddProductPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
-                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
+                    {form.formState.errors.category && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
              
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) club</CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-6 items-start">
-                        <div className="space-y-4">
-                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
-                                 <FormDescription className="text-orange-900/90 text-sm">
-                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
-                                </FormDescription>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                            <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                            <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                            <FormControl><RadioGroupItem value="no" /></FormControl>
-                                            <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
-                                        </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
-                         <div className="grid grid-cols-2 gap-3">
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3 mb-4">
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                         </div>
+                        </div>
+                         <p className="text-orange-900/90 text-sm">
+                            The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Triple S club offers enthusiasts the opportunity to share their home-grown flowers and extracts as samples attached to Strain Stickers that shoppers buy.
+                        </p>
+                        <p className="text-orange-900/90 text-sm">
+                            It&apos;s a great way to share the toke and strain you grow. The best part? The Sticker can represent your store, brand, or strain name.
+                        </p>
+                         <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                            <FormItem className="space-y-2 pt-2">
+                            <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select participation..." />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
+                                    <SelectItem value="no">No, I do not want to participate</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )} />
                     </CardContent>
                 </Card>
             )}
@@ -419,7 +417,7 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                     {selectedProductStream === 'THC' && watchStickerProgramOptIn !== 'no' && (
+                     {showStrainFetchUI && (
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -464,17 +462,18 @@ export default function AddProductPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Effects</h4>
+                                        <PercentageKeyInfo />
                                         <div className="flex flex-wrap gap-2">{form.getValues('effects')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage})</Badge>)}</div>
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Medical Uses</h4>
+                                         <PercentageKeyInfo />
                                         <div className="flex flex-wrap gap-2">{form.getValues('medicalUses')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('medical', i))}>{item.name} ({item.percentage})</Badge>)}</div>
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Flavors</h4>
                                         <div className="flex flex-wrap gap-2">{form.getValues('flavors')?.map((item: string, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('flavor', i))}>{item}</Badge>)}</div>
                                       </div>
-                                      <PercentageKeyInfo />
                                     </CardContent>
                                 </Card>
                             )}
@@ -571,7 +570,7 @@ export default function AddProductPage() {
 
                            <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                           <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
+                           <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
                            {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                        </div>
                     )}
@@ -624,7 +623,7 @@ export default function AddProductPage() {
                             {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                            </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any })}>Add Pool Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
                        </CardContent>
                        </Card>
                     )}

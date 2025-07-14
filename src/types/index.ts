@@ -92,7 +92,7 @@ export interface Product {
   strain?: string | null;
   strainType?: string | null; // New field for Sativa/Indica/Hybrid
   homeGrow?: string[] | null; // New field for grow method
-  feedingType?: string | null; // New field for feeding type
+  feedingType?: 'Organic feed in Pots' | 'Organic feed Hydro' | 'Chemical feed in Pots with flush' | 'Chemical feed hydro with flush' | 'Organic & Chemical in Pots Flushed' | 'Organic & Chemical hydro Flushed' | null;
   thcContent?: string | null;
   cbdContent?: string | null;
   effects?: ProductAttribute[] | null;
