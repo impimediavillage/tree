@@ -86,7 +86,7 @@ export interface Product {
   name: string;
   description: string;
   category: string; 
-  productType?: string | null;
+  deliveryMethod?: string | null;
   productSubCategory?: string | null;
   
   strain?: string | null;
