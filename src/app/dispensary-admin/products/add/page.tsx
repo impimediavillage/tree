@@ -158,8 +158,9 @@ export default function AddProductPage() {
   const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
-  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
   const showStrainFetchUI = isThcCbdSpecialType && selectedProductStream === 'THC' && watchStickerProgramOptIn === 'yes';
+  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
+
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -335,12 +336,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={() => router.push('/dispensary-admin/products')}
-              className="bg-primary text-primary-foreground"
-            > 
+            <Button variant="default" size="sm" onClick={() => router.push('/dispensary-admin/products')} className="bg-primary text-primary-foreground">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
         </div>
@@ -372,7 +368,19 @@ export default function AddProductPage() {
                                  <FormDescription className="text-orange-900/90 text-sm">
                                     The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
                                 </FormDescription>
-                                <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                            <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                            <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                            <FormControl><RadioGroupItem value="no" /></FormControl>
+                                            <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
+                                        </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
                                 </FormItem>
                             )} />
                         </div>
@@ -384,10 +392,11 @@ export default function AddProductPage() {
                 </Card>
             )}
 
+            <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
+
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                    <Separator className="my-6"/>
-                     {(selectedProductStream === 'THC') && (
+                     {showStrainFetchUI && (
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
