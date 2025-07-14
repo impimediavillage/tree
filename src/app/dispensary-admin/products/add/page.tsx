@@ -205,10 +205,10 @@ export default function AddProductPage() {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
 
-        if (isThcCbdSpecialType && categoryStructureDoc?.categoriesData) {
+        if (isThcCbdSpecialType && categoryStructureDoc) {
             try {
-                // Correct Traversal Logic
-                const data = categoryStructureDoc.categoriesData as any; // Cast to any for easier traversal of the known structure
+                // Corrected and safe data traversal
+                const data = categoryStructureDoc.categoriesData as any;
                 const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
                 if (Array.isArray(deliveryMethods)) {
