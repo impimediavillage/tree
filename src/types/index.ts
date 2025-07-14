@@ -90,6 +90,9 @@ export interface Product {
   subSubcategory?: string | null; 
   
   strain?: string | null;
+  strainType?: string | null; // New field for Sativa/Indica/Hybrid
+  homeGrow?: string[] | null; // New field for grow method
+  feedingType?: string | null; // New field for feeding type
   thcContent?: string | null;
   cbdContent?: string | null;
   effects?: ProductAttribute[] | null;

@@ -205,6 +205,12 @@ const baseProductObjectSchema = z.object({
   mostCommonTerpene: z.string().optional().nullable(),
 
   strain: z.string().optional().nullable(),
+  strainType: z.string().optional().nullable(),
+  homeGrow: z.array(z.string()).optional().nullable(),
+  feedingType: z.enum([
+    'Organic feed in Pots', 'Organic feed Hydro', 'Chemical feed in Pots with flush',
+    'Chemical feed hydro with flush', 'Organic & Chemical in Pots Flushed', 'Organic & Chemical hydro Flushed'
+  ]).optional().nullable(),
   thcContent: z.string().optional().nullable(),
   cbdContent: z.string().optional().nullable(),
   effects: z.array(attributeSchema).optional().nullable().default([]),
