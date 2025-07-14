@@ -41,6 +41,12 @@ const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 
+const feedingTypeOptions = [
+    'Organic feed in Pots', 'Organic feed Hydro', 'Chemical feed in Pots with flush',
+    'Chemical feed hydro with flush', 'Organic & Chemical in Pots Flushed', 'Organic & Chemical hydro Flushed'
+];
+
+
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
   'Womens': { 'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'], 'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'], 'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'], 'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
@@ -104,6 +110,21 @@ const AddAttributeInputs = ({ onAdd }: { onAdd: (name: string, percentage: strin
     );
 };
 
+const PercentageKeyInfo = () => (
+    <div className="p-2 mt-2 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+        <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+        <p className="text-muted-foreground leading-snug">
+            Indicates the reported likelihood of an effect or its potential as a medical aid.
+        </p>
+        <div className="flex flex-wrap gap-1.5 mt-2">
+            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+        </div>
+    </div>
+);
+
+
 export default function AddProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -136,7 +157,8 @@ export default function AddProductPage() {
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       productType: '', mostCommonTerpene: '',
-      strain: null, thcContent: '0', cbdContent: '0',
+      strain: null, strainType: null, homeGrow: [], feedingType: null,
+      thcContent: '0', cbdContent: '0',
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
       poolPriceTiers: [],
@@ -159,14 +181,14 @@ export default function AddProductPage() {
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
   const showStrainFetchUI = isThcCbdSpecialType && selectedProductStream === 'THC' && watchStickerProgramOptIn === 'yes';
-  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn !== 'no'));
+  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream);
 
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
       ...form.getValues(),
       name: form.getValues('name'), description: form.getValues('description'), priceTiers: form.getValues('priceTiers'), poolPriceTiers: form.getValues('poolPriceTiers'), isAvailableForPool: form.getValues('isAvailableForPool'), tags: form.getValues('tags'),
-      category: '', subcategory: null, subSubcategory: null, productType: '', mostCommonTerpene: '', strain: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
+      category: '', subcategory: null, subSubcategory: null, productType: '', mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
     });
     setLabTestFile(null); setSelectedMainCategoryName(null); setSubCategoryL1Options([]); setSelectedSubCategoryL1Name(null); setSubCategoryL2Options([]); setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
   };
@@ -280,6 +302,7 @@ export default function AddProductPage() {
         form.setValue('description', selectedStrainData.description || '', { shouldValidate: true });
         form.setValue('thcContent', (selectedStrainData.thc_level || '0').replace('%',''), { shouldValidate: true });
         form.setValue('mostCommonTerpene', selectedStrainData.most_common_terpene || selectedStrainData.terpene || 'N/A', { shouldValidate: true });
+        form.setValue('strainType', selectedStrainData.type || null, { shouldValidate: true });
         
         const flavorsFromDesc = (selectedStrainData.description || '').toLowerCase().split(/\W+/).filter((word: string) => commonFlavors.includes(word));
         const allPossibleFlavors = [...new Set([...(selectedStrainData.flavor || []), ...flavorsFromDesc])];
@@ -336,7 +359,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-primary text-primary-foreground">
+             <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-green-600 hover:bg-green-700 text-white">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
         </div>
@@ -396,16 +419,19 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                     {showStrainFetchUI && (
+                     {selectedProductStream === 'THC' && watchStickerProgramOptIn !== 'no' && (
                        <>
                          <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
                           <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                            <div className="flex items-center gap-2">
-                                <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search for a strain (e.g., Blue Dream)" />
-                                <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>
-                                    {isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}
-                                </Button>
-                            </div>
+                            <FormItem>
+                                <FormLabel>Search for a strain (e.g., Blue Dream)</FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search..." />
+                                    <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>
+                                        {isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                            </FormItem>
                             
                             {strainSearchResults.length > 0 && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
@@ -434,6 +460,7 @@ export default function AddProductPage() {
                                        <div className="flex flex-wrap gap-2">
                                           <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc_level || 'N/A'}</Badge>
                                           <Badge className={getBadgeColor('terpene', 0)}>Terpene: {selectedStrainData.most_common_terpene || selectedStrainData.terpene || 'N/A'}</Badge>
+                                          {selectedStrainData.type && <Badge variant="outline">Type: {selectedStrainData.type}</Badge>}
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Effects</h4>
@@ -447,6 +474,7 @@ export default function AddProductPage() {
                                         <h4 className="font-semibold text-foreground">Flavors</h4>
                                         <div className="flex flex-wrap gap-2">{form.getValues('flavors')?.map((item: string, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('flavor', i))}>{item}</Badge>)}</div>
                                       </div>
+                                      <PercentageKeyInfo />
                                     </CardContent>
                                 </Card>
                             )}
@@ -490,11 +518,27 @@ export default function AddProductPage() {
                     
                     {(selectedProductStream === 'THC') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
+                          <FormField control={form.control} name="strainType" render={({ field }) => ( <FormItem><FormLabel>Strain Type</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Sativa Dominant Hybrid" /></FormControl><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="homeGrow" render={({ field }) => (<FormItem><FormLabel>Home Grow Method</FormLabel><FormControl><MultiInputTags placeholder="e.g., Indoor, Outdoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
+                           <FormField control={form.control} name="feedingType" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Plant Feeding Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                  <FormControl><SelectTrigger className="bg-green-100 border-green-300 text-green-800"><SelectValue placeholder="Select feeding method" /></SelectTrigger></FormControl>
+                                  <SelectContent>
+                                    {feedingTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          <Separator/>
                           <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                           
                           <FormField control={form.control} name="effects" render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Effects</FormLabel>
+                                  <PercentageKeyInfo />
                                   <AddAttributeInputs onAdd={(name, percentage) => appendEffect({ name: toTitleCase(name), percentage: percentage + '%' })} />
                                   <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
                                       {effectsFields.map((item, index) => (
@@ -511,6 +555,7 @@ export default function AddProductPage() {
                           <FormField control={form.control} name="medicalUses" render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Medical Uses</FormLabel>
+                                  <PercentageKeyInfo />
                                   <AddAttributeInputs onAdd={(name, percentage) => appendMedicalUse({ name: toTitleCase(name), percentage: percentage + '%' })} />
                                   <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
                                       {medicalUsesFields.map((item, index) => (
