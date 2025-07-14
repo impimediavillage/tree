@@ -335,7 +335,14 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={() => router.push('/dispensary-admin/products')}
+              className="bg-primary text-primary-foreground"
+            > 
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+            </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {wellnessData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{wellnessData.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
@@ -377,72 +384,70 @@ export default function AddProductPage() {
                 </Card>
             )}
 
-            {showStrainFetchUI && (
-                <>
-                <Separator className="my-6" />
-                <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
-                    <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                        <div className="space-y-1">
-                            <Label htmlFor="strain-search-input">Search for a strain (e.g., Blue Dream)</Label>
-                            <div className="flex items-center gap-2">
-                                <Input id="strain-search-input" value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search..." />
-                                <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>
-                                    {isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        </div>
-                        
-                        {strainSearchResults.length > 0 && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                              {strainSearchResults.map(strain => (
-                                <Card key={strain.id} className="flex flex-col overflow-hidden">
-                                  <CardHeader className="p-0 relative aspect-video">
-                                    {strain.img_url && strain.img_url !== 'none' ? (
-                                      <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
-                                    ) : (
-                                      <div className="w-full h-full bg-muted flex items-center justify-center">
-                                        <LeafIconLucide className="h-12 w-12 text-primary/50 animate-pulse-slow" />
-                                      </div>
-                                    )}
-                                  </CardHeader>
-                                  <CardContent className="p-3 flex-grow"> <h3 className="font-semibold truncate">{strain.name}</h3> </CardContent>
-                                  <CardFooter className="p-3 pt-0"> <Button type="button" size="sm" className="w-full" onClick={() => { setSelectedStrainData(strain); setStrainSearchResults([]); }}>Select this strain</Button> </CardFooter>
-                                </Card>
-                              ))}
-                            </div>
-                        )}
-                        {selectedStrainData && (
-                            <Card className="p-4 bg-background">
-                                <CardHeader className="p-0 mb-3"> <CardTitle className="text-lg text-primary">{selectedStrainData.name}</CardTitle> </CardHeader>
-                                <CardContent className="p-0 text-sm space-y-4">
-                                  <p className="text-muted-foreground">{selectedStrainData.description}</p>
-                                   <div className="flex flex-wrap gap-2">
-                                      <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc_level || 'N/A'}</Badge>
-                                      <Badge className={getBadgeColor('terpene', 0)}>Terpene: {selectedStrainData.most_common_terpene || selectedStrainData.terpene || 'N/A'}</Badge>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <h4 className="font-semibold text-foreground">Effects</h4>
-                                    <div className="flex flex-wrap gap-2">{form.getValues('effects')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage})</Badge>)}</div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <h4 className="font-semibold text-foreground">Medical Uses</h4>
-                                    <div className="flex flex-wrap gap-2">{form.getValues('medicalUses')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('medical', i))}>{item.name} ({item.percentage})</Badge>)}</div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <h4 className="font-semibold text-foreground">Flavors</h4>
-                                    <div className="flex flex-wrap gap-2">{form.getValues('flavors')?.map((item: string, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('flavor', i))}>{item}</Badge>)}</div>
-                                  </div>
-                                </CardContent>
-                            </Card>
-                        )}
-                     </div>
-                </div>
-                </>
-            )}
-
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                    <Separator className="my-6"/>
+                     {(selectedProductStream === 'THC') && (
+                       <>
+                         <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Fetch Strain Information (Optional)</h2>
+                          <div className="p-4 border rounded-md space-y-4 bg-muted/30">
+                            <FormItem>
+                                <FormLabel>Search for a strain (e.g., Blue Dream)</FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <Input value={strainQuery} onChange={(e) => setStrainQuery(e.target.value)} placeholder="Search..." />
+                                    <Button type="button" onClick={handleFetchStrainInfo} disabled={isFetchingStrain}>
+                                        {isFetchingStrain ? <Loader2 className="animate-spin h-4 w-4" /> : <SearchIcon className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                            </FormItem>
+                            
+                            {strainSearchResults.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                                  {strainSearchResults.map(strain => (
+                                    <Card key={strain.id} className="flex flex-col overflow-hidden">
+                                      <CardHeader className="p-0 relative aspect-video">
+                                        {strain.img_url && strain.img_url !== 'none' ? (
+                                          <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
+                                        ) : (
+                                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                                            <LeafIconLucide className="h-12 w-12 text-primary/50 animate-pulse-slow" />
+                                          </div>
+                                        )}
+                                      </CardHeader>
+                                      <CardContent className="p-3 flex-grow"> <h3 className="font-semibold truncate">{strain.name}</h3> </CardContent>
+                                      <CardFooter className="p-3 pt-0"> <Button type="button" size="sm" className="w-full" onClick={() => { setSelectedStrainData(strain); setStrainSearchResults([]); }}>Select this strain</Button> </CardFooter>
+                                    </Card>
+                                  ))}
+                                </div>
+                            )}
+                            {selectedStrainData && (
+                                <Card className="p-4 bg-background">
+                                    <CardHeader className="p-0 mb-3"> <CardTitle className="text-lg text-primary">{selectedStrainData.name}</CardTitle> </CardHeader>
+                                    <CardContent className="p-0 text-sm space-y-4">
+                                      <p className="text-muted-foreground">{selectedStrainData.description}</p>
+                                       <div className="flex flex-wrap gap-2">
+                                          <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc_level || 'N/A'}</Badge>
+                                          <Badge className={getBadgeColor('terpene', 0)}>Terpene: {selectedStrainData.most_common_terpene || selectedStrainData.terpene || 'N/A'}</Badge>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <h4 className="font-semibold text-foreground">Effects</h4>
+                                        <div className="flex flex-wrap gap-2">{form.getValues('effects')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage})</Badge>)}</div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <h4 className="font-semibold text-foreground">Medical Uses</h4>
+                                        <div className="flex flex-wrap gap-2">{form.getValues('medicalUses')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('medical', i))}>{item.name} ({item.percentage})</Badge>)}</div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <h4 className="font-semibold text-foreground">Flavors</h4>
+                                        <div className="flex flex-wrap gap-2">{form.getValues('flavors')?.map((item: string, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('flavor', i))}>{item}</Badge>)}</div>
+                                      </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                         </div>
+                       </>
+                    )}
+                    
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Product Details</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
