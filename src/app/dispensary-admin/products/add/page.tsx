@@ -133,9 +133,8 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
-  const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
+  const [categoryStructureObject, setCategoryStructureObject] = useState<ProductCategory[] | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
-  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   
   const [productTypeOptions, setProductTypeOptions] = useState<ProductCategory[]>([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<ProductCategory[]>([]);
@@ -199,21 +198,18 @@ export default function AddProductPage() {
     resetProductStreamSpecificFields();
     setSelectedProductStream(stream);
 
-    if (isThcCbdSpecialType) {
+    if (isThcCbdSpecialType && categoryStructureObject) {
         form.setValue('category', stream);
-        
-        // Find the "Cannibinoid (other)" or similar category key
-        const cannibinoidMainCategoryKey = Object.keys(categoryStructureObject || {}).find(k => k.toLowerCase().includes('cannibinoid'));
-        if (!cannibinoidMainCategoryKey) return;
-        
-        const cannibinoidData = categoryStructureObject?.[cannibinoidMainCategoryKey];
-        const streamDataContainer = cannibinoidData?.subcategories?.find((sc: any) => sc.name === stream);
-        if (!streamDataContainer) return;
-        
-        const deliveryMethodsData = streamDataContainer.subcategories?.find((sc:any) => sc.name === 'Delivery Methods');
 
+        const cannibinoidCategory = categoryStructureObject.find(c => c.name.toLowerCase().includes('cannibinoid'));
+        if (!cannibinoidCategory) { setProductTypeOptions([]); return; }
+        
+        const streamDataContainer = cannibinoidCategory.subcategories?.find(sc => sc.name === stream);
+        if (!streamDataContainer) { setProductTypeOptions([]); return; }
+        
+        const deliveryMethodsData = streamDataContainer.subcategories?.find(sc => sc.name === 'Delivery Methods');
         if (deliveryMethodsData?.subcategories && deliveryMethodsData.subcategories.length > 0) {
-            setProductTypeOptions(deliveryMethodsData.subcategories.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+            setProductTypeOptions(deliveryMethodsData.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
         } else {
             setProductTypeOptions([]);
         }
@@ -260,12 +256,8 @@ export default function AddProductPage() {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
             if (Array.isArray(categoriesDoc.categoriesData)) {
-              const categories = categoriesDoc.categoriesData as ProductCategory[];
-              setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
-              if (!specialType) {
-                setMainCategoryOptions(categories.map(c => c.name).sort());
-              }
-            } else { setCategoryStructureObject({}); setMainCategoryOptions([]); }
+              setCategoryStructureObject(categoriesDoc.categoriesData as ProductCategory[]);
+            } else { setCategoryStructureObject([]); }
           }
         }
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
@@ -383,34 +375,28 @@ export default function AddProductPage() {
                     <CardHeader className="pb-4">
                         <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div className="space-y-4">
-                               <div className="grid grid-cols-2 gap-3">
-                                    <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                                    <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                                </div>
-                                <p className="text-orange-900/90 text-sm">The Wellness Tree complies fully with South African law regarding the sale of THC products. The Triple S Club offers enthusiasts a way to share their home-grown flowers and extracts as samples attached to collectible strain stickers.</p>
-                                <p className="text-orange-900/90 text-sm">It&apos;s a great way to share the toke, represent your brand, and connect with the community.</p>
-                            </div>
-                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                                <FormItem className="space-y-2">
-                                <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select participation..." />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
-                                        <SelectItem value="no">No, this is a standard product</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )} />
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                            <p className="text-orange-900/90 text-sm leading-relaxed">The Wellness Tree complies fully with South African law. The Triple S Club offers enthusiasts a way to share their home-grown flower samples attached to collectible strain stickers.<br/><br/>It's a great way to share the toke, represent your brand, and connect with the community.</p>
                         </div>
+                        <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                            <FormItem className="space-y-2 pt-4 border-t border-orange-200">
+                            <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select participation..." />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
+                                    <SelectItem value="no">No, this is a standard product</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )} />
                     </CardContent>
                 </Card>
             )}
@@ -503,7 +489,7 @@ export default function AddProductPage() {
                                 <FormItem><FormLabel>Main Category *</FormLabel>
                                 <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || undefined}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
-                                    <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                    <SelectContent>{(Object.keys(categoryStructureObject || {})).map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
