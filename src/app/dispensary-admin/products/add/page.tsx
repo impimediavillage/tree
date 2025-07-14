@@ -205,18 +205,17 @@ export default function AddProductPage() {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
         
-        if (isThcCbdSpecialType && categoryStructureDoc?.categoriesData) {
-            const data = categoryStructureDoc.categoriesData as any;
-            
-            // Correct, direct traversal of the object structure
+        if (isThcCbdSpecialType && categoryStructureDoc) {
+            const data = categoryStructureDoc.categoriesData as any; // Cast to any to navigate the specific structure
+            // Safely navigate the nested object structure
             const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
             if (Array.isArray(deliveryMethods)) {
                 setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
             } else {
                 setDeliveryMethodOptions([]);
-                console.warn("'Delivery Methods' is not an array or path is incorrect in the 'Cannibinoid store' document.");
-                toast({ title: "Config Warning", description: "Could not load product types for THC. Please check wellness type category configuration.", variant: "destructive" });
+                console.warn("'Delivery Methods' is not an array or path is incorrect in the 'Cannibinoid store' document:", deliveryMethods);
+                toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
             }
         }
     }
@@ -258,12 +257,10 @@ export default function AddProductPage() {
         setIsThcCbdSpecialType(specialType);
 
         if (dispensaryData.dispensaryType) {
-          const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
-          const querySnapshot = await getDocs(categoriesQuery);
-          if (!querySnapshot.empty) {
-            const docSnap = querySnapshot.docs[0];
-            const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            setCategoryStructureDoc(categoriesDoc);
+          const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryData.dispensaryType);
+          const docSnap = await getDoc(categoriesDocRef);
+          if (docSnap.exists()) {
+            setCategoryStructureDoc(docSnap.data() as DispensaryTypeProductCategoriesDoc);
           } else {
             console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
           }
@@ -380,19 +377,17 @@ export default function AddProductPage() {
              
             {showTripleSOptIn && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                            <div className="space-y-2">
-                                <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
-                                <p className='text-orange-900/90 text-sm leading-relaxed'>
-                                    Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
-                                </p>
-                            </div>
-                             <div className="grid grid-cols-2 gap-3">
-                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                            </div>
+                    <CardHeader className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div className="relative order-2 md:order-1 grid grid-cols-2 gap-3">
+                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                         </div>
+                        <div className="space-y-2 order-1 md:order-2">
+                           <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                           <p className='text-orange-900/90 text-sm leading-relaxed'>
+                                Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
+                           </p>
+                       </div>
                     </CardHeader>
                     <CardContent>
                          <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
@@ -644,4 +639,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
