@@ -206,16 +206,23 @@ export default function AddProductPage() {
     }
     
     if (isThcCbdSpecialType && categoryStructureDoc && stream === 'THC') {
-        form.setValue('category', stream);
+        form.setValue('category', 'THC');
 
         const data = categoryStructureDoc.categoriesData as any;
-        const cannibinoidData = data.thcCbdProductCategories.find((cat: any) => cat.name === 'THC');
-        const deliveryMethods = cannibinoidData?.['Delivery Methods'];
+        
+        // Corrected traversal logic
+        const cannibinoidCategories = data.thcCbdProductCategories;
+        if (Array.isArray(cannibinoidCategories)) {
+            const thcCategory = cannibinoidCategories.find((cat: any) => cat.name === 'THC');
+            const deliveryMethods = thcCategory?.['Delivery Methods'];
 
-        if (Array.isArray(deliveryMethods)) {
-            setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
+            if (Array.isArray(deliveryMethods)) {
+                setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
+            } else {
+                setDeliveryMethodOptions([]);
+            }
         } else {
-            setDeliveryMethodOptions([]);
+             setDeliveryMethodOptions([]);
         }
     }
   };
@@ -385,7 +392,7 @@ export default function AddProductPage() {
                         </div>
                         <div className="space-y-4">
                             <p className="text-orange-900/90 text-sm leading-relaxed">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products.</p>
-                            <p className='text-orange-900/90 text-sm leading-relaxed'>The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. It's a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
+                            <p className='text-orange-900/90 text-sm leading-relaxed'>The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. It&apos;s a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
                             <p className='text-orange-900/90 text-sm leading-relaxed'>Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem className="space-y-2 pt-4 border-t border-orange-200">
@@ -486,7 +493,7 @@ export default function AddProductPage() {
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Select product type: *</FormLabel>
-                                    <Select onValueChange={(value) => field.onChange(value)} value={field.value || ''} disabled={!selectedProductStream || deliveryMethodOptions.length === 0}>
+                                    <Select onValueChange={(value) => field.onChange(value)} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
                                         <SelectContent>{deliveryMethodOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
                                     </Select>
