@@ -86,8 +86,8 @@ export interface Product {
   name: string;
   description: string;
   category: string; 
-  deliveryMethod?: string | null; 
-  productSubCategory?: string | null; 
+  productType?: string | null;
+  productSubCategory?: string | null;
   
   strain?: string | null;
   strainType?: string | null;
@@ -122,7 +122,6 @@ export interface Product {
     latitude?: number | null;
     longitude?: number | null;
   } | null;
-  productType?: string | null;
   mostCommonTerpene?: string | null;
   
   stickerDetails?: {

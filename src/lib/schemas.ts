@@ -198,16 +198,13 @@ const baseProductObjectSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   
-  // Generic category for non-special types
+  // Generic category for non-special types OR the stream name for special types
   category: z.string().min(1, "Category is required."),
-  // subcategory: z.string().optional().nullable(), -> Replaced by specific fields
-  // subSubcategory: z.string().optional().nullable(), -> Not used
-
-  // Specific categories for THC/CBD type
-  deliveryMethod: z.string().optional().nullable(),
+  // subcategory: z.string().optional().nullable(),
+  // subSubcategory: z.string().optional().nullable(),
+  productType: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
 
-  productType: z.string().optional().nullable(),
   mostCommonTerpene: z.string().optional().nullable(),
 
   strain: z.string().optional().nullable(),
