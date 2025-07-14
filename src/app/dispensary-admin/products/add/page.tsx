@@ -204,22 +204,20 @@ export default function AddProductPage() {
     if (stream === 'THC') {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
-        
+
         if (isThcCbdSpecialType && categoryStructureDoc) {
-            const data = categoryStructureDoc as any;
-            const deliveryMethods = data?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+            const data = categoryStructureDoc.categoriesData as any;
+            const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
             if (Array.isArray(deliveryMethods)) {
-                setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
+                setDeliveryMethodOptions(deliveryMethods.sort((a, b) => a.name.localeCompare(b.name)));
             } else {
                 setDeliveryMethodOptions([]);
-                console.warn("'Delivery Methods' is not an array or path is incorrect. Path tried: doc.categoriesData.thcCbdProductCategories.THC['Delivery Methods']", deliveryMethods);
                 toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
             }
         }
     }
-  };
-
+};
 
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
@@ -256,14 +254,16 @@ export default function AddProductPage() {
         setIsThcCbdSpecialType(specialType);
 
         if (dispensaryData.dispensaryType) {
-          const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', "Cannibinoid store");
-          const docSnap = await getDoc(categoriesDocRef);
-          if (docSnap.exists()) {
-            setCategoryStructureDoc(docSnap.data() as DispensaryTypeProductCategoriesDoc);
-          } else {
-            console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
-          }
+            const docId = dispensaryData.dispensaryType; // Document ID is the name
+            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', docId);
+            const docSnap = await getDoc(categoriesDocRef);
+            if (docSnap.exists()) {
+                setCategoryStructureDoc(docSnap.data() as DispensaryTypeProductCategoriesDoc);
+            } else {
+                console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
+            }
         }
+
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -377,13 +377,13 @@ export default function AddProductPage() {
             {showTripleSOptIn && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                        <div className="order-1 md:order-2 space-y-2">
+                        <div className="order-2 md:order-1 space-y-2">
                            <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                            <p className='text-orange-900/90 text-sm leading-relaxed'>
                                 Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
                            </p>
                        </div>
-                       <div className="relative order-2 md:order-1 grid grid-cols-2 gap-3">
+                       <div className="relative order-1 md:order-2 grid grid-cols-2 gap-3">
                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                         </div>
@@ -483,7 +483,7 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                        {isThcCbdSpecialType ? (
+                       {isThcCbdSpecialType ? (
                            <>
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
