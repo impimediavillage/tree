@@ -206,18 +206,25 @@ export default function AddProductPage() {
         form.setValue('category', 'THC');
 
         if (isThcCbdSpecialType && categoryStructureDoc) {
-            const data = categoryStructureDoc.categoriesData as any;
-            const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+            try {
+                // Direct and safe traversal based on confirmed structure
+                const data = categoryStructureDoc.categoriesData as any;
+                const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
-            if (Array.isArray(deliveryMethods)) {
-                setDeliveryMethodOptions(deliveryMethods.sort((a, b) => a.name.localeCompare(b.name)));
-            } else {
-                setDeliveryMethodOptions([]);
-                toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
+                if (Array.isArray(deliveryMethods)) {
+                    setDeliveryMethodOptions(deliveryMethods.sort((a, b) => a.name.localeCompare(b.name)));
+                } else {
+                    setDeliveryMethodOptions([]);
+                    toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
+                }
+            } catch (e) {
+                 setDeliveryMethodOptions([]);
+                 toast({ title: "Config Error", description: "An error occurred while processing category data.", variant: "destructive" });
+                 console.error("Error processing category data:", e);
             }
         }
     }
-};
+  };
 
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
@@ -254,7 +261,7 @@ export default function AddProductPage() {
         setIsThcCbdSpecialType(specialType);
 
         if (dispensaryData.dispensaryType) {
-            const docId = dispensaryData.dispensaryType; // Document ID is the name
+            const docId = dispensaryData.dispensaryType;
             const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', docId);
             const docSnap = await getDoc(categoriesDocRef);
             if (docSnap.exists()) {
@@ -375,7 +382,7 @@ export default function AddProductPage() {
             )}
              
             {showTripleSOptIn && (
-                <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
+                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                         <div className="order-2 md:order-1 space-y-2">
                            <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
