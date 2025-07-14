@@ -198,7 +198,6 @@ const baseProductObjectSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   
-  // Generic category for non-special types OR the stream name for special types
   category: z.string().min(1, "Category is required."),
   deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
@@ -249,6 +248,8 @@ export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => 
     }
 });
 export type ProductFormData = z.infer<typeof productSchema>;
+export type ProductAttribute = z.infer<typeof attributeSchema>;
+
 
 export const productRequestSchema = z.object({
   productId: z.string(),
