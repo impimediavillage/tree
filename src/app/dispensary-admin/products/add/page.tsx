@@ -7,11 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
+import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -207,7 +209,6 @@ export default function AddProductPage() {
 
         if (isThcCbdSpecialType && categoryStructureDoc) {
             try {
-                // Corrected and safe data traversal
                 const data = categoryStructureDoc.categoriesData as any;
                 const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
@@ -644,3 +645,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
