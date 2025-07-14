@@ -138,8 +138,8 @@ export default function AddProductPage() {
   const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   
-  const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<ProductCategory[]>([]);
-  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<ProductCategory[]>([]);
+  const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
+  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<string[]>([]);
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   const [strainQuery, setStrainQuery] = useState('');
@@ -207,21 +207,18 @@ export default function AddProductPage() {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
 
-        if (isThcCbdSpecialType && categoryStructureDoc) {
-            try {
-                const data = categoryStructureDoc.categoriesData as any;
-                const deliveryMethods = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+        if (isThcCbdSpecialType && categoryStructureDoc?.categoriesData) {
+            const data = categoryStructureDoc.categoriesData as any; // Cast to any to navigate the map
+            // Safely traverse the nested object structure
+            const deliveryMethodsMap = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
-                if (Array.isArray(deliveryMethods)) {
-                    setDeliveryMethodOptions(deliveryMethods.sort((a, b) => a.name.localeCompare(b.name)));
-                } else {
-                    setDeliveryMethodOptions([]);
-                    toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
-                }
-            } catch (e) {
-                 setDeliveryMethodOptions([]);
-                 toast({ title: "Config Error", description: "An error occurred while processing category data.", variant: "destructive" });
-                 console.error("Error processing category data:", e);
+            if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
+                // It's a map, so we get the keys for the dropdown
+                const options = Object.keys(deliveryMethodsMap).sort();
+                setDeliveryMethodOptions(options);
+            } else {
+                setDeliveryMethodOptions([]);
+                toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
             }
         }
     }
@@ -287,9 +284,12 @@ export default function AddProductPage() {
 
   useEffect(() => {
     if (watchDeliveryMethod) {
-        const selectedMethod = deliveryMethodOptions.find(opt => opt.name === watchDeliveryMethod);
-        if (selectedMethod?.subcategories && selectedMethod.subcategories.length > 0) {
-            setProductSubCategoryOptions(selectedMethod.subcategories.sort((a,b) => a.name.localeCompare(b.name)));
+        const data = categoryStructureDoc?.categoriesData as any;
+        const deliveryMethodsMap = data?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+        const subcategories = deliveryMethodsMap?.[watchDeliveryMethod];
+
+        if (Array.isArray(subcategories) && subcategories.length > 0) {
+            setProductSubCategoryOptions(subcategories.sort());
         } else {
             setProductSubCategoryOptions([]);
         }
@@ -297,7 +297,7 @@ export default function AddProductPage() {
     } else {
         setProductSubCategoryOptions([]);
     }
-  }, [watchDeliveryMethod, deliveryMethodOptions, form]);
+  }, [watchDeliveryMethod, categoryStructureDoc, form]);
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -497,7 +497,7 @@ export default function AddProductPage() {
                                     <FormLabel>Select product type: *</FormLabel>
                                     <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{deliveryMethodOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{deliveryMethodOptions.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
@@ -507,7 +507,7 @@ export default function AddProductPage() {
                                     <FormItem><FormLabel>Product Sub Category</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
-                                        <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                     </Select><FormMessage /></FormItem>
                                 )} />
                             )}
@@ -645,5 +645,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
