@@ -207,16 +207,15 @@ export default function AddProductPage() {
     
     if (isThcCbdSpecialType && categoryStructureDoc && stream === 'THC') {
         form.setValue('category', stream);
-        const categoriesData = categoryStructureDoc.categoriesData;
-        if (Array.isArray(categoriesData)) {
-            const cannibinoidCategory = categoriesData.find(cat => cat.name === 'Cannibinoid (other)');
-            const thcCategory = cannibinoidCategory?.subcategories?.find(sc => sc.name === 'THC');
-            const deliveryMethods = thcCategory?.subcategories?.find(sc => sc.name === 'Delivery Methods');
-            if (deliveryMethods?.subcategories) {
-                setDeliveryMethodOptions(deliveryMethods.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
-            } else {
-                setDeliveryMethodOptions([]);
-            }
+
+        const data = categoryStructureDoc.categoriesData as any;
+        const cannibinoidData = data.thcCbdProductCategories.find((cat: any) => cat.name === 'THC');
+        const deliveryMethods = cannibinoidData?.['Delivery Methods'];
+
+        if (Array.isArray(deliveryMethods)) {
+            setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
+        } else {
+            setDeliveryMethodOptions([]);
         }
     }
   };
@@ -380,10 +379,10 @@ export default function AddProductPage() {
                         <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-6">
-                         <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="grid grid-cols-2 gap-3 mb-4">
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                         </div>
+                        </div>
                         <div className="space-y-4">
                             <p className="text-orange-900/90 text-sm leading-relaxed">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products.</p>
                             <p className='text-orange-900/90 text-sm leading-relaxed'>The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. It's a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
