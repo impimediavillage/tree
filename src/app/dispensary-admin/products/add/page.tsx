@@ -133,7 +133,7 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
-  const [categoryStructureObject, setCategoryStructureObject] = useState<ProductCategory[]>([]);
+  const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   
   const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<ProductCategory[]>([]);
@@ -204,24 +204,23 @@ export default function AddProductPage() {
     if (stream === 'THC') {
         setShowTripleSOptIn(true);
     }
-
-    if (isThcCbdSpecialType && categoryStructureObject) {
-      form.setValue('category', stream);
-
-      const cannibinoidCategory = categoryStructureObject.find((cat) => cat.name && cat.name.toLowerCase().includes("cannibinoid"));
-      if (!cannibinoidCategory || !cannibinoidCategory.subcategories) { setDeliveryMethodOptions([]); return; }
-      
-      const streamCategory = cannibinoidCategory.subcategories.find((sc) => sc.name === stream);
-      if (!streamCategory || !streamCategory.subcategories) { setDeliveryMethodOptions([]); return; }
-      
-      const deliveryMethods = streamCategory.subcategories.find(sc => sc.name === 'Delivery Methods');
-      if (deliveryMethods?.subcategories) {
-          setDeliveryMethodOptions(deliveryMethods.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
-      } else {
-          setDeliveryMethodOptions([]);
-      }
+    
+    if (isThcCbdSpecialType && categoryStructureDoc && stream === 'THC') {
+        form.setValue('category', stream);
+        const categoriesData = categoryStructureDoc.categoriesData;
+        if (Array.isArray(categoriesData)) {
+            const cannibinoidCategory = categoriesData.find(cat => cat.name === 'Cannibinoid (other)');
+            const thcCategory = cannibinoidCategory?.subcategories?.find(sc => sc.name === 'THC');
+            const deliveryMethods = thcCategory?.subcategories?.find(sc => sc.name === 'Delivery Methods');
+            if (deliveryMethods?.subcategories) {
+                setDeliveryMethodOptions(deliveryMethods.subcategories.sort((a, b) => a.name.localeCompare(b.name)));
+            } else {
+                setDeliveryMethodOptions([]);
+            }
+        }
     }
   };
+
 
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
@@ -262,9 +261,7 @@ export default function AddProductPage() {
           if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            if (Array.isArray(categoriesDoc.categoriesData)) {
-              setCategoryStructureObject(categoriesDoc.categoriesData as ProductCategory[]);
-            } else { setCategoryStructureObject([]); }
+            setCategoryStructureDoc(categoriesDoc);
           }
         }
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
@@ -508,11 +505,7 @@ export default function AddProductPage() {
                             )}
                            </>
                         ) : (
-                            <FormField control={form.control} name="category" render={({ field }) => (
-                                <FormItem><FormLabel>Main Category *</FormLabel><FormControl>
-                                <Input {...field} readOnly disabled />
-                                </FormControl><FormMessage /></FormItem>
-                            )} />
+                            <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         )}
                     </div>
                     
