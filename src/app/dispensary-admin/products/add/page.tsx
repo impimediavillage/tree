@@ -29,8 +29,6 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -136,10 +134,10 @@ export default function AddProductPage() {
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
-  const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
-  const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
-  const [selectedSubCategoryL1Name, setSelectedSubCategoryL1Name] = useState<string | null>(null);
-  const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
+  
+  const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<ProductCategory[]>([]);
+  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<ProductCategory[]>([]);
+
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
@@ -155,7 +153,7 @@ export default function AddProductPage() {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
+      name: '', description: '', category: '', deliveryMethod: null, productSubCategory: null,
       productType: '', mostCommonTerpene: '',
       strain: null, strainType: null, homeGrow: [], feedingType: null,
       thcContent: '0', cbdContent: '0',
@@ -179,18 +177,20 @@ export default function AddProductPage() {
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
+  const watchDeliveryMethod = form.watch('deliveryMethod');
 
+  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
   const showStrainFetchUI = isThcCbdSpecialType && selectedProductStream === 'THC' && watchStickerProgramOptIn === 'yes';
-  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream);
-
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
       ...form.getValues(),
       name: form.getValues('name'), description: form.getValues('description'), priceTiers: form.getValues('priceTiers'), poolPriceTiers: form.getValues('poolPriceTiers'), isAvailableForPool: form.getValues('isAvailableForPool'), tags: form.getValues('tags'),
-      category: '', subcategory: null, subSubcategory: null, productType: '', mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
+      category: '', deliveryMethod: null, productSubCategory: null,
+      productType: '', mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
     });
-    setLabTestFile(null); setSelectedMainCategoryName(null); setSubCategoryL1Options([]); setSelectedSubCategoryL1Name(null); setSubCategoryL2Options([]); setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
+    setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
+    setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
   };
 
   const handleProductStreamSelect = (stream: StreamKey) => {
@@ -198,11 +198,14 @@ export default function AddProductPage() {
       setSelectedProductStream(stream);
 
       if (isThcCbdSpecialType) {
-          const mainCategoryData = categoryStructureObject?.[stream];
-          if (mainCategoryData?.subcategories && mainCategoryData.subcategories.length > 0) {
-              setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
-          } else {
-              setSubCategoryL1Options([]);
+          form.setValue('category', stream);
+          if (stream === 'THC' || stream === 'CBD') {
+              const mainCategoryData = categoryStructureObject?.[stream];
+              if (mainCategoryData?.subcategories && mainCategoryData.subcategories.length > 0) {
+                  setDeliveryMethodOptions(mainCategoryData.subcategories.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+              } else {
+                  setDeliveryMethodOptions([]);
+              }
           }
       }
   };
@@ -270,21 +273,18 @@ export default function AddProductPage() {
   }, [watchGender, watchSizingSystem, form]);
 
   useEffect(() => {
-    if (categoryStructureObject && selectedMainCategoryName) {
-        const mainCategoryData = categoryStructureObject[selectedMainCategoryName];
-        if (mainCategoryData && mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) { setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort()); } else { setSubCategoryL1Options([]); }
-        setSelectedSubCategoryL1Name(null); form.setValue('subcategory', null);
+    if (watchDeliveryMethod) {
+        const selectedMethod = deliveryMethodOptions.find(opt => opt.name === watchDeliveryMethod);
+        if (selectedMethod?.subcategories && selectedMethod.subcategories.length > 0) {
+            setProductSubCategoryOptions(selectedMethod.subcategories.sort((a,b) => a.name.localeCompare(b.name)));
+        } else {
+            setProductSubCategoryOptions([]);
+        }
+        form.setValue('productSubCategory', null);
+    } else {
+        setProductSubCategoryOptions([]);
     }
-  }, [selectedMainCategoryName, categoryStructureObject, form]);
-
-  useEffect(() => {
-    if (categoryStructureObject && selectedMainCategoryName && selectedSubCategoryL1Name) {
-        const mainCategoryData = categoryStructureObject[selectedMainCategoryName];
-        const subCat1Data = mainCategoryData?.subcategories?.find((sc: any) => sc.name === selectedSubCategoryL1Name);
-        if (subCat1Data && subCat1Data.subcategories && subCat1Data.subcategories.length > 0) { setSubCategoryL2Options(subCat1Data.subcategories.map((c: any) => c.name).sort()); } else { setSubCategoryL2Options([]); }
-        form.setValue('subSubcategory', null);
-    } else { setSubCategoryL2Options([]); }
-  }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form]);
+  }, [watchDeliveryMethod, deliveryMethodOptions, form]);
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -378,13 +378,9 @@ export default function AddProductPage() {
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                         </div>
-                         <p className="text-orange-900/90 text-sm">
-                            The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy.
-                         </p>
-                         <p className="text-orange-900/90 text-sm">
-                            It&apos;s a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.
-                         </p>
-                         <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                        <p className="text-orange-900/90 text-sm">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy.</p>
+                        <p className="text-orange-900/90 text-sm">It's a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.</p>
+                        <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                             <FormItem className="space-y-2 pt-2">
                             <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? undefined}>
@@ -450,7 +446,6 @@ export default function AddProductPage() {
                                        <div className="flex flex-wrap gap-2">
                                           <Badge className={getBadgeColor('thc', 0)}>THC: {selectedStrainData.thc_level || 'N/A'}</Badge>
                                           <Badge className={getBadgeColor('terpene', 0)}>Terpene: {selectedStrainData.most_common_terpene || selectedStrainData.terpene || 'N/A'}</Badge>
-                                          {selectedStrainData.type && <Badge variant="outline">Type: {selectedStrainData.type}</Badge>}
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Effects</h4>
@@ -479,40 +474,32 @@ export default function AddProductPage() {
                     
                      <div className="grid md:grid-cols-2 gap-4">
                         {isThcCbdSpecialType ? (
-                           <FormField control={form.control} name="category" render={({ field }) => (
+                            <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Main Category *</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={!selectedProductStream}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select from stream..." /></SelectTrigger></FormControl>
-                                    <SelectContent>{selectedProductStream && categoryStructureObject?.[selectedProductStream]?.subcategories?.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
-                                </Select><FormMessage />
+                                    <FormLabel>Delivery Method *</FormLabel>
+                                    <Select onValueChange={(value) => { field.onChange(value); form.setValue('productSubCategory', null); }} value={field.value || ''} disabled={!selectedProductStream || deliveryMethodOptions.length === 0}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select delivery method..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{deliveryMethodOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
                                 </FormItem>
                             )} />
                         ) : (
                            <FormField control={form.control} name="category" render={({ field }) => (
                                 <FormItem><FormLabel>Main Category *</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''}>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
                                     <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
 
-                        {subCategoryL1Options.length > 0 && (
-                            <FormField control={form.control} name="subcategory" render={({ field }) => (
-                                <FormItem><FormLabel>Subcategory (Level 1)</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setSelectedSubCategoryL1Name(value); form.setValue('subSubcategory', null); }} value={field.value || ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger></FormControl>
-                                    <SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                                </Select><FormMessage /></FormItem>
-                            )} />
-                        )}
-                        {subCategoryL2Options.length > 0 && (
-                            <FormField control={form.control} name="subSubcategory" render={({ field }) => (
-                                <FormItem><FormLabel>Subcategory (Level 2)</FormLabel>
+                        {productSubCategoryOptions.length > 0 && (
+                            <FormField control={form.control} name="productSubCategory" render={({ field }) => (
+                                <FormItem><FormLabel>Product Sub-Category</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory" /></SelectTrigger></FormControl>
-                                    <SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
+                                    <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
