@@ -201,18 +201,21 @@ export default function AddProductPage() {
 
     if (isThcCbdSpecialType) {
         form.setValue('category', stream);
-        if (stream === 'THC' || stream === 'CBD') {
-            const cannibinoidCategoryKey = Object.keys(categoryStructureObject || {}).find(k => k.toLowerCase().includes('cannibinoid'));
-            const mainCategoryData = cannibinoidCategoryKey ? categoryStructureObject?.[cannibinoidCategoryKey] : null;
-            
-            // Find the THC/CBD specific data within the main "Cannibinoid" category
-            const streamSpecificData = mainCategoryData?.subcategories?.find((sc: any) => sc.name === stream);
+        
+        // Find the "Cannibinoid (other)" or similar category key
+        const cannibinoidMainCategoryKey = Object.keys(categoryStructureObject || {}).find(k => k.toLowerCase().includes('cannibinoid'));
+        if (!cannibinoidMainCategoryKey) return;
+        
+        const cannibinoidData = categoryStructureObject?.[cannibinoidMainCategoryKey];
+        const streamDataContainer = cannibinoidData?.subcategories?.find((sc: any) => sc.name === stream);
+        if (!streamDataContainer) return;
+        
+        const deliveryMethodsData = streamDataContainer.subcategories?.find((sc:any) => sc.name === 'Delivery Methods');
 
-            if (streamSpecificData?.subcategories && streamSpecificData.subcategories.length > 0) {
-                setProductTypeOptions(streamSpecificData.subcategories.sort((a: any, b: any) => a.name.localeCompare(b.name)));
-            } else {
-                setProductTypeOptions([]);
-            }
+        if (deliveryMethodsData?.subcategories && deliveryMethodsData.subcategories.length > 0) {
+            setProductTypeOptions(deliveryMethodsData.subcategories.sort((a: any, b: any) => a.name.localeCompare(b.name)));
+        } else {
+            setProductTypeOptions([]);
         }
     }
   };
@@ -382,12 +385,12 @@ export default function AddProductPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div>
-                                <div className="grid grid-cols-2 gap-3 mb-4">
+                            <div className="space-y-4">
+                               <div className="grid grid-cols-2 gap-3">
                                     <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                                     <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                                 </div>
-                                <p className="text-orange-900/90 text-sm mb-2">The Wellness Tree complies fully with South African law regarding the sale of THC products. The Triple S Club offers enthusiasts a way to share their home-grown flowers and extracts as samples attached to collectible strain stickers.</p>
+                                <p className="text-orange-900/90 text-sm">The Wellness Tree complies fully with South African law regarding the sale of THC products. The Triple S Club offers enthusiasts a way to share their home-grown flowers and extracts as samples attached to collectible strain stickers.</p>
                                 <p className="text-orange-900/90 text-sm">It&apos;s a great way to share the toke, represent your brand, and connect with the community.</p>
                             </div>
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
@@ -484,12 +487,12 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                      <div className="grid md:grid-cols-2 gap-4">
-                         {isThcCbdSpecialType ? (
+                        {isThcCbdSpecialType ? (
                             <FormField control={form.control} name="productType" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Product type: *</FormLabel>
                                     <Select onValueChange={(value) => field.onChange(value)} value={field.value || ''} disabled={!selectedProductStream || productTypeOptions.length === 0}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select delivery method..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
                                         <SelectContent>{productTypeOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -498,7 +501,7 @@ export default function AddProductPage() {
                         ) : (
                             <FormField control={form.control} name="category" render={({ field }) => (
                                 <FormItem><FormLabel>Main Category *</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || undefined}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
                                     <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
@@ -507,7 +510,7 @@ export default function AddProductPage() {
 
                         {productSubCategoryOptions.length > 0 && (
                             <FormField control={form.control} name="productSubCategory" render={({ field }) => (
-                                <FormItem><FormLabel>Product Sub-Category</FormLabel>
+                                <FormItem><FormLabel>Product Sub Category</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
                                     <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}</SelectContent>
