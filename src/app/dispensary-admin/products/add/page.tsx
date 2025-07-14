@@ -136,7 +136,7 @@ export default function AddProductPage() {
   const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   
-  const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<ProductCategory[]>([]);
+  const [productTypeOptions, setProductTypeOptions] = useState<ProductCategory[]>([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<ProductCategory[]>([]);
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
@@ -192,7 +192,7 @@ export default function AddProductPage() {
       category: '', deliveryMethod: null, productSubCategory: null,
       mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
     });
-    setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
+    setLabTestFile(null); setProductTypeOptions([]); setProductSubCategoryOptions([]);
     setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
     setShowTripleSOptIn(false);
   };
@@ -203,20 +203,18 @@ export default function AddProductPage() {
 
     if (stream === 'THC') {
         setShowTripleSOptIn(true);
-        // Correct logic to populate delivery methods for THC stream
-        if (isThcCbdSpecialType && categoryStructureDoc) {
-            form.setValue('category', 'THC');
-            
+        form.setValue('category', 'THC');
+        
+        if (isThcCbdSpecialType && categoryStructureDoc?.categoriesData) {
             const data = categoryStructureDoc.categoriesData as any;
-            if (data && Array.isArray(data.thcCbdProductCategories)) {
-                const cannibinoidData = data.thcCbdProductCategories.find((cat: any) => cat.name === 'THC');
-                const deliveryMethods = cannibinoidData?.['Delivery Methods'];
-                
-                if (Array.isArray(deliveryMethods)) {
-                    setDeliveryMethodOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
-                } else {
-                    setDeliveryMethodOptions([]);
-                }
+            const thcCategoryData = data?.thcCbdProductCategories?.find((cat: any) => cat.name === 'THC');
+            const deliveryMethods = thcCategoryData?.['Delivery Methods'];
+
+            if (Array.isArray(deliveryMethods)) {
+                setProductTypeOptions(deliveryMethods.sort((a,b) => a.name.localeCompare(b.name)));
+            } else {
+                setProductTypeOptions([]);
+                console.warn("Delivery Methods not found or not an array for THC category.");
             }
         }
     }
@@ -281,7 +279,7 @@ export default function AddProductPage() {
 
   useEffect(() => {
     if (watchDeliveryMethod) {
-        const selectedMethod = deliveryMethodOptions.find(opt => opt.name === watchDeliveryMethod);
+        const selectedMethod = productTypeOptions.find(opt => opt.name === watchDeliveryMethod);
         if (selectedMethod?.subcategories && selectedMethod.subcategories.length > 0) {
             setProductSubCategoryOptions(selectedMethod.subcategories.sort((a,b) => a.name.localeCompare(b.name)));
         } else {
@@ -291,7 +289,7 @@ export default function AddProductPage() {
     } else {
         setProductSubCategoryOptions([]);
     }
-  }, [watchDeliveryMethod, deliveryMethodOptions, form]);
+  }, [watchDeliveryMethod, productTypeOptions, form]);
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -378,34 +376,38 @@ export default function AddProductPage() {
             {showTripleSOptIn && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                            <div className="space-y-2">
+                                <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                                <p className='text-orange-900/90 text-sm leading-relaxed'>
+                                    Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
+                                </p>
+                            </div>
+                             <div className="grid grid-cols-2 gap-3">
+                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                            </div>
+                        </div>
                     </CardHeader>
-                    <CardContent className="flex flex-col gap-6">
-                        <div className="grid grid-cols-2 gap-3 mb-4">
-                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                        </div>
-                        <div className="space-y-4">
-                            <p className="text-orange-900/90 text-sm leading-relaxed">The Wellness Tree complies fully with South African law regarding the sale of T.H.C products.</p>
-                            <p className='text-orange-900/90 text-sm leading-relaxed'>Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
-                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                                <FormItem className="space-y-2 pt-4 border-t border-orange-200">
-                                <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select participation..." />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
-                                        <SelectItem value="no">No, this is a standard product</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
+                    <CardContent>
+                         <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                            <FormItem className="space-y-3 pt-4 border-t border-orange-200/50">
+                            <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                        <FormControl><RadioGroupItem value="no" /></FormControl>
+                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
+                                    </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )} />
                     </CardContent>
                 </Card>
             )}
@@ -482,14 +484,14 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                        {isThcCbdSpecialType ? (
+                        {(isThcCbdSpecialType && selectedProductStream) ? (
                            <>
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Select product type: *</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); form.setValue('productSubCategory', null); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
+                                    <Select onValueChange={(value) => { field.onChange(value); form.setValue('productSubCategory', null); }} value={field.value || ''} disabled={productTypeOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{deliveryMethodOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{productTypeOptions.map((c: ProductCategory) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
@@ -637,3 +639,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
