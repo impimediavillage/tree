@@ -29,6 +29,8 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -196,22 +198,11 @@ export default function AddProductPage() {
       setSelectedProductStream(stream);
 
       if (isThcCbdSpecialType) {
-          let categoryName = '';
-          switch(stream) {
-              case 'THC': categoryName = 'THC'; break;
-              case 'CBD': categoryName = 'CBD'; break;
-              case 'Apparel': categoryName = 'Apparel'; break;
-              case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
-              case 'Sticker Promo Set': categoryName = 'Sticker Promo Set'; break;
-          }
-          form.setValue('category', categoryName);
-          setSelectedMainCategoryName(categoryName);
-
-          if (categoryStructureObject && categoryStructureObject[categoryName]) {
-              const mainCategoryData = categoryStructureObject[categoryName];
-              if(mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) {
-                 setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
-              }
+          const mainCategoryData = categoryStructureObject?.[stream];
+          if (mainCategoryData?.subcategories && mainCategoryData.subcategories.length > 0) {
+              setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
+          } else {
+              setSubCategoryL1Options([]);
           }
       }
   };
@@ -258,7 +249,9 @@ export default function AddProductPage() {
             if (Array.isArray(categoriesDoc.categoriesData)) {
               const categories = categoriesDoc.categoriesData as ProductCategory[];
               setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
-              setMainCategoryOptions(categories.map(c => c.name).sort());
+              if (!specialType) {
+                setMainCategoryOptions(categories.map(c => c.name).sort());
+              }
             } else { setCategoryStructureObject({}); setMainCategoryOptions([]); }
           }
         }
@@ -357,7 +350,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
         </div>
@@ -372,7 +365,6 @@ export default function AddProductPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
-                    {form.formState.errors.category && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
              
@@ -382,16 +374,16 @@ export default function AddProductPage() {
                         <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="grid md:grid-cols-2 gap-3 mb-4">
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                         </div>
                          <p className="text-orange-900/90 text-sm">
-                            The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Triple S club offers enthusiasts the opportunity to share their home-grown flowers and extracts as samples attached to Strain Stickers that shoppers buy.
-                        </p>
-                        <p className="text-orange-900/90 text-sm">
-                            It&apos;s a great way to share the toke and strain you grow. The best part? The Sticker can represent your store, brand, or strain name.
-                        </p>
+                            The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy.
+                         </p>
+                         <p className="text-orange-900/90 text-sm">
+                            It&apos;s a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name.
+                         </p>
                          <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                             <FormItem className="space-y-2 pt-2">
                             <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
@@ -403,7 +395,7 @@ export default function AddProductPage() {
                                 </FormControl>
                                 <SelectContent>
                                     <SelectItem value="yes">Yes, I want to participate in Triple S</SelectItem>
-                                    <SelectItem value="no">No, I do not want to participate</SelectItem>
+                                    <SelectItem value="no">No, this is a standard product</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -486,15 +478,26 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                      <div className="grid md:grid-cols-2 gap-4">
-                        {!isThcCbdSpecialType && (
-                            <FormField control={form.control} name="category" render={({ field }) => (
+                        {isThcCbdSpecialType ? (
+                           <FormField control={form.control} name="category" render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Main Category *</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''} disabled={!selectedProductStream}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select from stream..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{selectedProductStream && categoryStructureObject?.[selectedProductStream]?.subcategories?.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage />
+                                </FormItem>
+                            )} />
+                        ) : (
+                           <FormField control={form.control} name="category" render={({ field }) => (
                                 <FormItem><FormLabel>Main Category *</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
                                     <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
+
                         {subCategoryL1Options.length > 0 && (
                             <FormField control={form.control} name="subcategory" render={({ field }) => (
                                 <FormItem><FormLabel>Subcategory (Level 1)</FormLabel>
