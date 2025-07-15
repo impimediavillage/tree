@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scrapeJustBrandCatalog = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onUserDocUpdate = exports.onLeafUserCreated = void 0;
+exports.updateStrainImageUrl = exports.scrapeJustBrandCatalog = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onUserDocUpdate = exports.onUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
@@ -72,8 +72,15 @@ const setClaimsFromDoc = async (userId, userData) => {
     try {
         const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
         const newClaims = { role: userData.role || null };
+        // NEW: Also add dispensaryId to claims if user is an owner or staff
+        if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
+            newClaims.dispensaryId = userData.dispensaryId;
+        }
+        else {
+            newClaims.dispensaryId = null; // Ensure it's cleared if role changes
+        }
         // Avoid unnecessary updates if claims are identical
-        if (currentClaims.role === newClaims.role) {
+        if (currentClaims.role === newClaims.role && currentClaims.dispensaryId === newClaims.dispensaryId) {
             logger.log(`Claims for user ${userId} are already up-to-date.`);
             return;
         }
@@ -149,10 +156,10 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
   `;
 }
 /**
- * Cloud Function triggered when a new Leaf User document is created.
- * Sends a "Welcome" email and syncs claims.
+ * Cloud Function triggered when a new User document is created.
+ * Sets claims and sends welcome emails.
  */
-exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", async (event) => {
+exports.onUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", async (event) => {
     const snapshot = event.data;
     if (!snapshot) {
         logger.error("No data associated with the user creation event.");
@@ -162,14 +169,14 @@ exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}",
     const userId = event.params.userId;
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
-    // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
+    // Welcome email logic for Leaf Users created via dispensary panels or other internal means
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
         logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
         const userDisplayName = userData.displayName || userData.email.split('@')[0];
         const subject = "Welcome to The Dispensary Tree!";
         const greeting = `Dear ${userDisplayName},`;
         const content = [
-            `Thank you for joining The Dispensary Tree! We're excited to have you as part of our community.`,
+            `An account has been created for you on The Dispensary Tree! We're excited to have you as part of our community.`,
             `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
             `You've received 10 free credits to get started with our AI advisors.`,
             `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
@@ -178,15 +185,12 @@ exports.onLeafUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}",
         const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
         await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
     }
-    else if (userData.role === 'LeafUser' && userData.signupSource === 'public') {
-        logger.log(`New Leaf User created via public signup (ID: ${userId}). Welcome email skipped.`);
-    }
     else {
-        logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+        logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
 });
 /**
- * NEW: Trigger to sync user roles from Firestore to Auth claims on document update.
+ * Trigger to sync user roles from Firestore to Auth claims on document update.
  */
 exports.onUserDocUpdate = (0, firestore_1.onDocumentUpdated)("users/{userId}", async (event) => {
     if (!event.data) {
@@ -713,11 +717,30 @@ exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (r
  * This function is secured and can only be called by an authenticated admin user.
  */
 exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    // Check if the user is authenticated and has the 'Super Admin' role or 'admin' claim.
-    const isSuperAdmin = request.auth?.token?.role === 'Super Admin';
-    const isAdminClaim = request.auth?.token?.admin === true;
-    if (!isSuperAdmin && !isAdminClaim) {
-        // Throw a specific error that the client can understand.
+    // This function must be called by an authenticated user.
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    const uid = request.auth.uid;
+    const token = request.auth.token;
+    let isAuthorized = token?.role === 'Super Admin';
+    // Fallback check in Firestore if claims are not yet propagated to the token.
+    if (!isAuthorized) {
+        logger.info(`User ${uid} not authorized by token claims. Performing Firestore fallback check.`);
+        try {
+            const userDoc = await db.collection('users').doc(uid).get();
+            if (userDoc.exists && userDoc.data()?.role === 'Super Admin') {
+                logger.info(`User ${uid} authorized via Firestore role. Consider re-logging to refresh auth token claims.`);
+                isAuthorized = true;
+            }
+        }
+        catch (e) {
+            logger.error(`Firestore fallback check for user ${uid} failed:`, e);
+            // On error, we do not authorize.
+        }
+    }
+    if (!isAuthorized) {
+        // If both token and Firestore checks fail, deny permission.
         throw new https_1.HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
     }
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
@@ -804,6 +827,29 @@ exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSe
         await logRef.update(finalLog);
         await historyRef.set(finalLog);
         throw new https_1.HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
+    }
+});
+/**
+ * Callable function to update the image URL for a strain in the seed data.
+ * This is triggered when a strain with a "none" image is viewed.
+ */
+exports.updateStrainImageUrl = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    const { strainId, imageUrl } = request.data;
+    if (!strainId || typeof strainId !== 'string' || !imageUrl || typeof imageUrl !== 'string') {
+        throw new https_1.HttpsError('invalid-argument', 'The function must be called with "strainId" and "imageUrl" arguments.');
+    }
+    try {
+        const strainRef = db.collection('my-seeded-collection').doc(strainId);
+        await strainRef.update({ img_url: imageUrl });
+        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}.`);
+        return { success: true, message: 'Image URL updated successfully.' };
+    }
+    catch (error) {
+        logger.error(`Error updating strain image URL for ${strainId}:`, error);
+        throw new https_1.HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
 //# sourceMappingURL=index.js.map
