@@ -5,15 +5,16 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, query, orderBy, where, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
-import type { Dispensary } from '@/types';
+import type { Dispensary, DispensaryType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Search, Filter, Loader2, Building } from 'lucide-react';
+import { PlusCircle, Search, Filter, Loader2, Building, Store } from 'lucide-react';
 import { DispensaryCard } from '@/components/admin/DispensaryCard';
 
 type WellnessStatusFilter = Dispensary['status'] | 'all';
+type WellnessTypeFilter = string | 'all';
 
 export default function AdminWellnessPage() {
   const [allWellnessEntities, setAllWellnessEntities] = useState<Dispensary[]>([]);
@@ -21,11 +22,24 @@ export default function AdminWellnessPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<WellnessStatusFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<WellnessTypeFilter>('all');
+  const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   const { toast } = useToast();
 
-  const fetchWellnessEntities = useCallback(async () => {
+  const fetchWellnessAndTypes = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Fetch wellness types first
+      const typesCollectionRef = collection(db, 'dispensaryTypes');
+      const typesQuery = query(typesCollectionRef, orderBy('name'));
+      const typesSnapshot = await getDocs(typesQuery);
+      const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      } as DispensaryType));
+      setWellnessTypes(fetchedTypes);
+
+      // Fetch all wellness entities
       const wellnessCollectionRef = collection(db, 'dispensaries');
       const q = query(wellnessCollectionRef, orderBy('dispensaryName', 'asc'));
       const querySnapshot = await getDocs(q);
@@ -43,23 +57,28 @@ export default function AdminWellnessPage() {
         } as Dispensary);
       });
       setAllWellnessEntities(fetchedWellness);
+
     } catch (error) {
-      console.error("Error fetching wellness profiles:", error);
-      toast({ title: "Error", description: "Could not fetch wellness profiles.", variant: "destructive" });
+      console.error("Error fetching data:", error);
+      toast({ title: "Error", description: "Could not fetch wellness profiles or types.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchWellnessEntities();
-  }, [fetchWellnessEntities]);
+    fetchWellnessAndTypes();
+  }, [fetchWellnessAndTypes]);
 
   useEffect(() => {
     let entitiesToFilter = allWellnessEntities;
 
     if (statusFilter !== 'all') {
       entitiesToFilter = entitiesToFilter.filter(d => d.status === statusFilter);
+    }
+    
+    if (typeFilter !== 'all') {
+      entitiesToFilter = entitiesToFilter.filter(d => d.dispensaryType === typeFilter);
     }
 
     if (searchTerm) {
@@ -71,7 +90,7 @@ export default function AdminWellnessPage() {
       );
     }
     setFilteredWellnessEntities(entitiesToFilter);
-  }, [searchTerm, statusFilter, allWellnessEntities]);
+  }, [searchTerm, statusFilter, typeFilter, allWellnessEntities]);
 
   const handleStatusToggle = async (wellnessId: string, currentStatus: Dispensary['status']) => {
     const newStatus = currentStatus === 'Approved' ? 'Suspended' : 'Approved';
@@ -90,7 +109,8 @@ export default function AdminWellnessPage() {
     try {
       await deleteDoc(doc(db, 'dispensaries', wellnessId));
       toast({ title: "Wellness Profile Deleted", description: `${wellnessName} has been removed.` });
-      fetchWellnessEntities(); 
+      // Re-fetch all data to ensure list is up-to-date
+      fetchWellnessAndTypes(); 
     } catch (error) {
       console.error("Error deleting wellness profile:", error);
       toast({ title: "Deletion Failed", description: "Could not delete wellness profile.", variant: "destructive" });
@@ -124,7 +144,7 @@ export default function AdminWellnessPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card shadow-sm">
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-1/2 md:w-1/3">
+        <div className="relative flex-grow sm:w-1/2 md:w-1/3 lg:flex-grow-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="text"
@@ -134,7 +154,7 @@ export default function AdminWellnessPage() {
             className="pl-10 w-full"
           />
         </div>
-        <div className="relative flex-grow sm:flex-grow-0 sm:w-auto">
+        <div className="flex-grow sm:flex-grow-0 relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
             <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WellnessStatusFilter)}>
               <SelectTrigger className="pl-10 w-full sm:w-[200px]">
@@ -143,6 +163,20 @@ export default function AdminWellnessPage() {
               <SelectContent>
                 {statusOptions.map(opt => (
                   <SelectItem key={opt} value={opt}>{opt === 'all' ? 'All Statuses' : opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+        </div>
+        <div className="flex-grow sm:flex-grow-0 relative">
+            <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+            <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as WellnessTypeFilter)}>
+              <SelectTrigger className="pl-10 w-full sm:w-[240px]">
+                <SelectValue placeholder="Filter by store type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Store Types</SelectItem>
+                {wellnessTypes.map(type => (
+                  <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -168,7 +202,7 @@ export default function AdminWellnessPage() {
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
               <Building className="mx-auto h-12 w-12 mb-3 text-orange-500" />
-              No wellness profiles found {searchTerm || statusFilter !== 'all' ? 'matching your criteria' : ''}.
+              No wellness profiles found {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' ? 'matching your criteria' : ''}.
             </div>
           )}
         </div>
