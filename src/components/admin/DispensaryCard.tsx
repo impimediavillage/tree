@@ -52,7 +52,7 @@ export function DispensaryCard({ dispensary: wellness, onStatusToggle, onDelete 
 
   return (
     <Card 
-      className="min-w-[320px] max-w-sm w-full flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card text-card-foreground animate-fade-in-scale-up"
+      className="w-full flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card text-card-foreground animate-fade-in-scale-up"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
@@ -134,4 +134,3 @@ export function DispensaryCard({ dispensary: wellness, onStatusToggle, onDelete 
     </Card>
   );
 }
-
