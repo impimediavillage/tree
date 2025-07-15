@@ -23,13 +23,10 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle, Star, Gift, CornerDownLeft, BookOpen } from 'lucide-react';
-import { MultiInputTags } from '@/components/ui/multi-input-tags';
+import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
-import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
@@ -256,7 +253,7 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                      {traditionalMedicineStreams.map((stream) => (
+                      {Array.isArray(traditionalMedicineStreams) && traditionalMedicineStreams.map((stream) => (
                         <Button key={stream.useCase} type="button" variant={selectedTradMedStream === stream.useCase ? 'default' : 'outline'} className={cn("h-auto p-4 text-left flex items-start gap-3 transform transition-all duration-200 hover:scale-105 shadow-md", selectedTradMedStream === stream.useCase && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleTradMedStreamSelect(stream.useCase)}> 
                           <BookOpen className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
                           <div className="flex flex-col">
