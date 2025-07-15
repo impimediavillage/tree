@@ -98,7 +98,7 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
             >
                 
                 <span className="bg-primary text-primary-foreground font-semibold text-lg px-4 py-2 rounded-md text-center">
-                    Browse Wellness Profiles
+                    View stores
                 </span>
             </Button>
         </div>
@@ -106,4 +106,3 @@ export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: Di
     </Card>
   );
 }
-
