@@ -206,10 +206,10 @@ export default function AddProductPage() {
     if (stream === 'THC') {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
-        
+
         const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.THC?.['Delivery Methods'];
 
-        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object') {
+        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
             const options = Object.keys(deliveryMethodsMap).sort();
             setDeliveryMethodOptions(options);
         } else {
@@ -379,7 +379,7 @@ export default function AddProductPage() {
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardContent className="p-6">
                         <div className="grid md:grid-cols-2 gap-6 items-center">
-                            <div className="md:order-1 space-y-4">
+                           <div className="md:order-1 space-y-4">
                                 <h3 className="text-2xl font-bold text-orange-800">The Triple S Canna Club</h3>
                                 <p className="text-lg italic text-orange-900/80">
                                     <span className="text-base">Your</span>{' '}
@@ -397,7 +397,7 @@ export default function AddProductPage() {
                                     <Image src="/images/2025-triple-s/t44.jpg" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design" />
                                 </div>
                                 <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md">
-                                    <Image src="/images/2025-triple-s/t19.jpg" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup" />
+                                    <Image src="/images/2025-triple-s/t42.jpg" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup" />
                                 </div>
                             </div>
                         </div>
