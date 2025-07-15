@@ -153,7 +153,7 @@ export default function AddProductPage() {
   const [tradMedTypeOptions, setTradMedTypeOptions] = useState<string[]>([]);
   const [tradMedSubtypeOptions, setTradMedSubtypeOptions] = useState<string[]>([]);
 
-  const [mushroomStreams, setMushroomStreams] = useState<any>({});
+  const [mushroomStreams, setMushroomStreams] = useState<any[]>([]);
   const [selectedMushroomStream, setSelectedMushroomStream] = useState<string | null>(null);
   const [mushroomTypeOptions, setMushroomTypeOptions] = useState<string[]>([]);
   const [mushroomSubtypeOptions, setMushroomSubtypeOptions] = useState<string[]>([]);
@@ -280,8 +280,9 @@ export default function AddProductPage() {
     form.setValue('productType', null);
     form.setValue('subSubcategory', null);
     
-    if (mushroomStreams && mushroomStreams[streamName]) {
-      const types = Object.keys(mushroomStreams[streamName]).sort();
+    const selectedStreamData = mushroomStreams.find((s: any) => s.category_name === streamName);
+    if (selectedStreamData && selectedStreamData.types) {
+      const types = Object.keys(selectedStreamData.types).sort();
       setMushroomTypeOptions(types);
     } else {
       setMushroomTypeOptions([]);
@@ -337,7 +338,7 @@ export default function AddProductPage() {
                 if (isTradMed && Array.isArray(docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories)) {
                   setTraditionalMedicineStreams(docData.categoriesData.traditionalMedicineCategories.traditionalMedicineCategories);
                 }
-                if (isMushroom && typeof docData.categoriesData?.mushroomProductCategories === 'object') {
+                if (isMushroom && Array.isArray(docData.categoriesData?.mushroomProductCategories)) {
                     setMushroomStreams(docData.categoriesData.mushroomProductCategories);
                 }
             } else {
@@ -383,7 +384,8 @@ export default function AddProductPage() {
   
   useEffect(() => {
     if(watchMushroomProductType && selectedMushroomStream && mushroomStreams) {
-        const subtypes = mushroomStreams[selectedMushroomStream]?.[watchMushroomProductType];
+        const selectedStreamData = mushroomStreams.find((s: any) => s.category_name === selectedMushroomStream);
+        const subtypes = selectedStreamData?.types?.[watchMushroomProductType];
         setMushroomSubtypeOptions(Array.isArray(subtypes) ? subtypes.sort() : []);
         form.setValue('subSubcategory', null);
     } else {
@@ -456,9 +458,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {wellnessData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{wellnessData.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
@@ -495,9 +495,9 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                      {Object.keys(mushroomStreams).map((streamName) => (
-                        <Button key={streamName} type="button" variant={selectedMushroomStream === streamName ? 'default' : 'outline'} className={cn("h-auto p-6 text-xl font-semibold transform transition-all duration-200 hover:scale-105 shadow-md", selectedMushroomStream === streamName && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleMushroomStreamSelect(streamName)}>
-                          <Brain className="mr-3 h-6 w-6"/> {streamName}
+                      {Array.isArray(mushroomStreams) && mushroomStreams.map((stream) => (
+                        <Button key={stream.category_name} type="button" variant={selectedMushroomStream === stream.category_name ? 'default' : 'outline'} className={cn("h-auto p-6 text-xl font-semibold transform transition-all duration-200 hover:scale-105 shadow-md", selectedMushroomStream === stream.category_name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleMushroomStreamSelect(stream.category_name)}>
+                          <Brain className="mr-3 h-6 w-6"/> {stream.category_name}
                         </Button>
                       ))}
                     </div>
@@ -530,11 +530,11 @@ export default function AddProductPage() {
             )}
 
             <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
-            
+
             {showProductDetailsForm && (
-                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                    {/* All form fields will be rendered here... */}
-                 </div>
+                <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                     {/* All form fields will be rendered here... */}
+                </div>
             )}
             
             <CardFooter>
