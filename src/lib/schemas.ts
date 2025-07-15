@@ -199,18 +199,12 @@ const baseProductObjectSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   
   category: z.string().min(1, "Category is required."),
+  
+  // Cannabinoid Specific
   deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
-
   mostCommonTerpene: z.string().optional().nullable(),
-
   strain: z.string().optional().nullable(),
-  strainType: z.string().optional().nullable(),
-  homeGrow: z.array(z.string()).optional().nullable(),
-  feedingType: z.enum([
-    'Organic feed in Pots', 'Organic feed Hydro', 'Chemical feed in Pots with flush',
-    'Chemical feed hydro with flush', 'Organic & Chemical in Pots Flushed', 'Organic & Chemical hydro Flushed'
-  ]).optional().nullable(),
   thcContent: z.string().optional().nullable(),
   cbdContent: z.string().optional().nullable(),
   effects: z.array(attributeSchema).optional().nullable().default([]),
@@ -218,10 +212,16 @@ const baseProductObjectSchema = z.object({
   medicalUses: z.array(attributeSchema).optional().nullable().default([]),
   stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), 
 
+  // Traditional Medicine Specific
+  productType: z.string().optional().nullable(),
+  subSubcategory: z.string().optional().nullable(),
+  
+  // Apparel Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
   sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other']).optional().nullable(),
   sizes: z.array(z.string()).optional().nullable().default([]),
   
+  // Generic / Core
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
@@ -231,12 +231,8 @@ const baseProductObjectSchema = z.object({
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
-  
-  stickerDetails: z.object({
-      linkedStrainId: z.string().optional().nullable(),
-      theme: z.string().optional().nullable(),
-  }).optional().nullable(),
 });
+
 
 export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => {
     if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {

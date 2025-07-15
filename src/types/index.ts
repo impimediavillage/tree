@@ -67,9 +67,13 @@ export interface DispensaryType {
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
   name?: string; 
-  categoriesData: ProductCategory[] | Record<string, any>; 
+  categoriesData: {
+    thcCbdProductCategories?: Record<string, any>;
+    traditionalMedicineCategories?: any[];
+  }; 
   updatedAt?: Timestamp | Date | string;
 }
+
 
 export interface ProductAttribute {
   name: string;
@@ -86,9 +90,16 @@ export interface Product {
   name: string;
   description: string;
   category: string; 
+  
+  // Cannabinoid Specific
   deliveryMethod?: string | null;
   productSubCategory?: string | null;
   
+  // Traditional Medicine Specific
+  productType?: string | null;
+  subSubcategory?: string | null;
+  
+  // Strain details (shared)
   strain?: string | null;
   strainType?: string | null;
   homeGrow?: string[] | null;
@@ -98,8 +109,11 @@ export interface Product {
   effects?: ProductAttribute[] | null;
   flavors?: string[] | null;
   medicalUses?: ProductAttribute[] | null;
+  mostCommonTerpene?: string | null;
+  
   stickerProgramOptIn?: 'yes' | 'no' | null; 
 
+  // Apparel Specific
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;
   sizingSystem?: 'UK/SA' | 'US' | 'EURO' | 'Alpha (XS-XXXL)' | 'Other' | null;
   sizes?: string[] | null;
@@ -122,13 +136,13 @@ export interface Product {
     latitude?: number | null;
     longitude?: number | null;
   } | null;
-  mostCommonTerpene?: string | null;
   
   stickerDetails?: {
     linkedStrainId?: string | null;
     theme?: string | null;
   } | null;
 }
+
 
 export interface NoteData {
   note: string;
@@ -367,6 +381,8 @@ export interface CartItem {
   strain?: string | null;
   dispensaryId: string;
   dispensaryName: string;
+  dispensaryType: string;
+  productOwnerEmail: string;
   currency: string;
   price: number;
   unit: string;
