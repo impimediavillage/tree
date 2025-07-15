@@ -203,19 +203,24 @@ export default function AddProductPage() {
     resetProductStreamSpecificFields();
     setSelectedProductStream(stream);
 
+    const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
+        
+    if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
+        const options = Object.keys(deliveryMethodsMap).sort();
+        setDeliveryMethodOptions(options);
+    } else {
+        setDeliveryMethodOptions([]);
+        if (stream === 'THC' || stream === 'CBD') {
+            toast({ title: "Config Warning", description: `Could not load types for ${stream}. Please check wellness type category configuration.`, variant: "destructive" });
+        }
+    }
+
     if (stream === 'THC') {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
-
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
-        
-        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
-            const options = Object.keys(deliveryMethodsMap).sort();
-            setDeliveryMethodOptions(options);
-        } else {
-            setDeliveryMethodOptions([]);
-            toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
-        }
+    } else if (stream === 'CBD') {
+        setShowTripleSOptIn(false);
+        form.setValue('category', 'CBD');
     }
   };
 
@@ -278,8 +283,8 @@ export default function AddProductPage() {
   }, [watchGender, watchSizingSystem, form]);
 
   useEffect(() => {
-    if (watchDeliveryMethod) {
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+    if (watchDeliveryMethod && selectedProductStream) {
+        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
         const subcategories = deliveryMethodsMap?.[watchDeliveryMethod];
 
         if (Array.isArray(subcategories) && subcategories.length > 0) {
@@ -291,7 +296,7 @@ export default function AddProductPage() {
     } else {
         setProductSubCategoryOptions([]);
     }
-  }, [watchDeliveryMethod, categoryStructureDoc, form]);
+  }, [watchDeliveryMethod, categoryStructureDoc, form, selectedProductStream]);
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -375,7 +380,7 @@ export default function AddProductPage() {
                 </FormItem>
             )}
              
-            {selectedProductStream === 'THC' && (
+            {showTripleSOptIn && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader className="p-6">
                        <div className="flex justify-center items-center h-full w-full mb-6">
@@ -520,7 +525,7 @@ export default function AddProductPage() {
                         )}
                     </div>
                     
-                    {(selectedProductStream === 'THC') && (
+                    {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                           <FormField control={form.control} name="strainType" render={({ field }) => ( <FormItem><FormLabel>Strain Type</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Sativa Dominant Hybrid" /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="homeGrow" render={({ field }) => (<FormItem><FormLabel>Home Grow Method</FormLabel><FormControl><MultiInputTags placeholder="e.g., Indoor, Outdoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
