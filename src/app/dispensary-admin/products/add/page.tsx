@@ -7,10 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
@@ -294,6 +293,13 @@ export default function AddProductPage() {
             setProductSubCategoryOptions([]);
         }
         form.setValue('productSubCategory', null);
+
+        // Reset strain-related fields if delivery method is not 'Smokables' for CBD stream
+        if (selectedProductStream === 'CBD' && watchDeliveryMethod !== 'Smokables') {
+            form.setValue('strainType', null);
+            form.setValue('homeGrow', []);
+            form.setValue('feedingType', null);
+        }
     } else {
         setProductSubCategoryOptions([]);
     }
@@ -524,7 +530,7 @@ export default function AddProductPage() {
                         )}
                     </div>
                     
-                    {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
+                    {(selectedProductStream === 'THC' || (selectedProductStream === 'CBD' && watchDeliveryMethod === 'Smokables')) && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                           <FormField control={form.control} name="strainType" render={({ field }) => ( <FormItem><FormLabel>Strain Type</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Sativa Dominant Hybrid" /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="homeGrow" render={({ field }) => (<FormItem><FormLabel>Home Grow Method</FormLabel><FormControl><MultiInputTags placeholder="e.g., Indoor, Outdoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
@@ -540,47 +546,48 @@ export default function AddProductPage() {
                                 <FormMessage />
                               </FormItem>
                             )} />
-                          <Separator/>
-                          <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                          
-                          <FormField control={form.control} name="effects" render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Effects</FormLabel>
-                                  <PercentageKeyInfo />
-                                  <AddAttributeInputs onAdd={(name, percentage) => appendEffect({ name: toTitleCase(name), percentage: percentage + '%' })} />
-                                  <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
-                                      {effectsFields.map((item, index) => (
-                                          <Badge key={item.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor('effect', index))}>
-                                              <span>{form.getValues(`effects.${index}.name`)} ({form.getValues(`effects.${index}.percentage`)})</span>
-                                              <button type="button" onClick={() => removeEffect(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
-                                          </Badge>
-                                      ))}
-                                  </div>
-                                  <FormMessage />
-                              </FormItem>
-                          )} />
-
-                          <FormField control={form.control} name="medicalUses" render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Medical Uses</FormLabel>
-                                  <PercentageKeyInfo />
-                                  <AddAttributeInputs onAdd={(name, percentage) => appendMedicalUse({ name: toTitleCase(name), percentage: percentage + '%' })} />
-                                  <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
-                                      {medicalUsesFields.map((item, index) => (
-                                          <Badge key={item.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor('medical', index))}>
-                                              <span>{form.getValues(`medicalUses.${index}.name`)} ({form.getValues(`medicalUses.${index}.percentage`)})</span>
-                                              <button type="button" onClick={() => removeMedicalUse(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
-                                          </Badge>
-                                      ))}
-                                  </div>
-                                  <FormMessage />
-                              </FormItem>
-                          )} />
-
-                           <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
-                           <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                           <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
-                           {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
+                           {selectedProductStream === 'THC' && (
+                           <>
+                             <Separator/>
+                             <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                             <FormField control={form.control} name="effects" render={({ field }) => (
+                                 <FormItem>
+                                     <FormLabel>Effects</FormLabel>
+                                     <PercentageKeyInfo />
+                                     <AddAttributeInputs onAdd={(name, percentage) => appendEffect({ name: toTitleCase(name), percentage: percentage + '%' })} />
+                                     <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
+                                         {effectsFields.map((item, index) => (
+                                             <Badge key={item.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor('effect', index))}>
+                                                 <span>{form.getValues(`effects.${index}.name`)} ({form.getValues(`effects.${index}.percentage`)})</span>
+                                                 <button type="button" onClick={() => removeEffect(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
+                                             </Badge>
+                                         ))}
+                                     </div>
+                                     <FormMessage />
+                                 </FormItem>
+                             )} />
+                             <FormField control={form.control} name="medicalUses" render={({ field }) => (
+                                 <FormItem>
+                                     <FormLabel>Medical Uses</FormLabel>
+                                     <PercentageKeyInfo />
+                                     <AddAttributeInputs onAdd={(name, percentage) => appendMedicalUse({ name: toTitleCase(name), percentage: percentage + '%' })} />
+                                     <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
+                                         {medicalUsesFields.map((item, index) => (
+                                             <Badge key={item.id} className={cn("flex items-center justify-between text-sm py-1.5", getBadgeColor('medical', index))}>
+                                                 <span>{form.getValues(`medicalUses.${index}.name`)} ({form.getValues(`medicalUses.${index}.percentage`)})</span>
+                                                 <button type="button" onClick={() => removeMedicalUse(index)} className="ml-2 rounded-full opacity-50 hover:opacity-100"><XIcon className="h-3 w-3"/></button>
+                                             </Badge>
+                                         ))}
+                                     </div>
+                                     <FormMessage />
+                                 </FormItem>
+                             )} />
+                              <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
+                              {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
+                           </>
+                           )}
                        </div>
                     )}
 
@@ -651,3 +658,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
