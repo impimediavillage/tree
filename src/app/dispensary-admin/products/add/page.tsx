@@ -195,7 +195,8 @@ export default function AddProductPage() {
   const watchDeliveryMethod = form.watch('deliveryMethod');
   const watchTradMedProductType = form.watch('productType');
 
-  const showProductDetailsForm = !isThcCbdSpecialType ||
+  const showProductDetailsForm = 
+    (!isThcCbdSpecialType && !isTraditionalMedicineType) ||
     (isThcCbdSpecialType && selectedCannabinoidStream && (selectedCannabinoidStream !== 'THC' || watchStickerProgramOptIn === 'yes')) || 
     (isTraditionalMedicineType && selectedTradMedStream);
 
@@ -213,6 +214,10 @@ export default function AddProductPage() {
     setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
     setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
     setShowTripleSOptIn(false);
+    setSelectedCannabinoidStream(null);
+    setSelectedTradMedStream(null);
+    setTradMedTypeOptions([]);
+    setTradMedSubtypeOptions([]);
   };
 
   const handleCannabinoidStreamSelect = (stream: StreamKey) => {
@@ -233,8 +238,9 @@ export default function AddProductPage() {
     }
     setShowTripleSOptIn(stream === 'THC');
   };
-
+  
   const handleTradMedStreamSelect = (useCaseName: string) => {
+    resetProductStreamSpecificFields();
     setSelectedTradMedStream(useCaseName);
     form.setValue('category', useCaseName);
     form.setValue('productType', null);
@@ -290,7 +296,7 @@ export default function AddProductPage() {
             if (docSnap.exists()) {
                 const docData = docSnap.data() as DispensaryTypeProductCategoriesDoc;
                 setCategoryStructureDoc(docData);
-                if (isTradMed && Array.isArray(docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories)) {
+                if (isTradMed && docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories) {
                   setTraditionalMedicineStreams(docData.categoriesData.traditionalMedicineCategories.traditionalMedicineCategories);
                 }
             } else {
@@ -434,7 +440,7 @@ export default function AddProductPage() {
             )}
              
             {showTripleSOptIn && (
-                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
+                <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader className="p-6">
                        <div className="grid grid-cols-2 gap-4 w-full max-w-lg mx-auto">
                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t44.jpg" alt="Sticker promo placeholder 1" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
@@ -452,7 +458,7 @@ export default function AddProductPage() {
                         </div>
                         <div className='space-y-3 text-orange-900/90 text-sm leading-relaxed max-w-2xl mx-auto pt-4'>
                             <p>Attach your garden delights to a sticker. Set your sticker design price and offer free samples to fellow cannabis enthusiasts.</p>
-                            <p>Shoppers can generate and purchase stickers for caps, hoodies, t-shirts and as standalone stickers.</p>
+                            <p>Shoppers can generate and purchase stickers for caps, hoodies, t-shirts and as standlone stickers.</p>
                             <p className='font-semibold'>Happy sharing your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
                         </div>
                          <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
@@ -672,7 +678,7 @@ export default function AddProductPage() {
                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' })}>Add Another Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Another Price Tier</Button>
                     </div>
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Images</h2>
@@ -709,7 +715,7 @@ export default function AddProductPage() {
                             {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                            </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
                        </CardContent>
                        </Card>
                     )}
