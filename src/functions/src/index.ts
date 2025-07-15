@@ -153,10 +153,10 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
 
 
 /**
- * Cloud Function triggered when a new Leaf User document is created.
- * Sends a "Welcome" email and syncs claims.
+ * Cloud Function triggered when a new User document is created.
+ * Sets claims and sends welcome emails.
  */
-export const onLeafUserCreated = onDocumentCreated(
+export const onUserCreated = onDocumentCreated(
   "users/{userId}",
   async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
     const snapshot = event.data;
@@ -170,33 +170,30 @@ export const onLeafUserCreated = onDocumentCreated(
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
 
-    // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
+    // Welcome email logic for Leaf Users created via dispensary panels or other internal means
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
       logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
-
       const userDisplayName = userData.displayName || userData.email.split('@')[0];
       const subject = "Welcome to The Dispensary Tree!";
       const greeting = `Dear ${userDisplayName},`;
       const content = [
-        `Thank you for joining The Dispensary Tree! We're excited to have you as part of our community.`,
+        `An account has been created for you on The Dispensary Tree! We're excited to have you as part of our community.`,
         `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
         `You've received 10 free credits to get started with our AI advisors.`,
         `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
       ];
       const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
       const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
-      
       await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
-    } else if (userData.role === 'LeafUser' && userData.signupSource === 'public') {
-        logger.log(`New Leaf User created via public signup (ID: ${userId}). Welcome email skipped.`);
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
 
+
 /**
- * NEW: Trigger to sync user roles from Firestore to Auth claims on document update.
+ * Trigger to sync user roles from Firestore to Auth claims on document update.
  */
 export const onUserDocUpdate = onDocumentUpdated("users/{userId}", async (event) => {
   if (!event.data) {
