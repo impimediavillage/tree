@@ -290,7 +290,7 @@ export default function AddProductPage() {
             if (docSnap.exists()) {
                 const docData = docSnap.data() as DispensaryTypeProductCategoriesDoc;
                 setCategoryStructureDoc(docData);
-                if (isTradMed && docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories) {
+                if (isTradMed && Array.isArray(docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories)) {
                   setTraditionalMedicineStreams(docData.categoriesData.traditionalMedicineCategories.traditionalMedicineCategories);
                 }
             } else {
@@ -600,21 +600,25 @@ export default function AddProductPage() {
                     
                     {(selectedCannabinoidStream === 'THC' || selectedCannabinoidStream === 'CBD') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                          <FormField control={form.control} name="strainType" render={({ field }) => ( <FormItem><FormLabel>Strain Type</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Sativa Dominant Hybrid" /></FormControl><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="homeGrow" render={({ field }) => (<FormItem><FormLabel>Home Grow Method</FormLabel><FormControl><MultiInputTags placeholder="e.g., Indoor, Outdoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
-                           <FormField control={form.control} name="feedingType" render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Plant Feeding Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                  <FormControl><SelectTrigger className="bg-green-100 border-green-300 text-green-800"><SelectValue placeholder="Select feeding method" /></SelectTrigger></FormControl>
-                                  <SelectContent>
-                                    {feedingTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )} />
-                          <Separator/>
+                           {watchDeliveryMethod === 'Smokables' && (
+                                <>
+                                  <FormField control={form.control} name="strainType" render={({ field }) => ( <FormItem><FormLabel>Strain Type</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Sativa Dominant Hybrid" /></FormControl><FormMessage /></FormItem> )} />
+                                  <FormField control={form.control} name="homeGrow" render={({ field }) => (<FormItem><FormLabel>Home Grow Method</FormLabel><FormControl><MultiInputTags placeholder="e.g., Indoor, Outdoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
+                                   <FormField control={form.control} name="feedingType" render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Plant Feeding Type</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                          <FormControl><SelectTrigger className="bg-green-100 border-green-300 text-green-800"><SelectValue placeholder="Select feeding method" /></SelectTrigger></FormControl>
+                                          <SelectContent>
+                                            {feedingTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                          </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )} />
+                                  <Separator/>
+                                </>
+                           )}
                           <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                           
                           <FormField control={form.control} name="effects" render={({ field }) => (
@@ -668,13 +672,13 @@ export default function AddProductPage() {
                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Another Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' })}>Add Another Price Tier</Button>
                     </div>
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Images</h2>
                      <FormField control={form.control} name="imageUrls" render={({ field }) => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     
-                    {selectedProductStream === 'Apparel' && (
+                    {selectedCannabinoidStream === 'Apparel' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>5. Apparel Details</h2>
                            <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -684,7 +688,7 @@ export default function AddProductPage() {
                             </div>
                        </>
                     )}
-                    {selectedProductStream === 'Sticker Promo Set' && (
+                    {selectedCannabinoidStream === 'Sticker Promo Set' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>5. Sticker Details</h2>
                            <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -705,7 +709,7 @@ export default function AddProductPage() {
                             {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                            </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: undefined as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
                        </CardContent>
                        </Card>
                     )}
