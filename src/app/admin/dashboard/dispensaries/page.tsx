@@ -27,7 +27,7 @@ export default function AdminWellnessPage() {
     setIsLoading(true);
     try {
       const wellnessCollectionRef = collection(db, 'dispensaries');
-      const q = query(wellnessCollectionRef, orderBy('dispensaryName', 'desc'));
+      const q = query(wellnessCollectionRef, orderBy('dispensaryName', 'asc'));
       const querySnapshot = await getDocs(q);
       const fetchedWellness: Dispensary[] = [];
       querySnapshot.forEach((docSnap) => {
