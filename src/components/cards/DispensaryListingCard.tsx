@@ -6,7 +6,7 @@ import Image from 'next/image';
 import type { Dispensary } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Eye } from 'lucide-react';
+import { MapPin, Trees } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const hardcodedTypeImages: Record<string, string> = {
@@ -84,13 +84,12 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: Dispen
         )}
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+        <Button asChild className="w-full bg-green-600 hover:bg-green-700 text-white">
           <Link href={`/store/${dispensary.id}`}>
-            <Eye className="mr-2 h-4 w-4" /> Visit Wellness Profile
+            <Trees className="mr-2 h-4 w-4" /> Climb this tree
           </Link>
         </Button>
       </CardFooter>
     </Card>
   );
 }
-
