@@ -512,32 +512,25 @@ export default function AddProductPage() {
             )}
              
             {showTripleSOptIn && (
-                <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader className="p-6">
-                       <div className="grid grid-cols-2 gap-4 w-full max-w-lg mx-auto">
-                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t44.jpg" alt="Sticker promo placeholder 1" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t42.jpg" alt="Sticker promo placeholder 2" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
+                    <CardHeader className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div className="order-2 md:order-1 space-y-2">
+                           <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                           <p className='text-orange-900/90 text-sm leading-relaxed'>
+                                Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
+                           </p>
                        </div>
+                       <div className="relative order-1 md:order-2 grid grid-cols-2 gap-3">
+                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                        </div>
                     </CardHeader>
-                    <CardContent className="px-6 pb-6 text-center">
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-bold text-orange-800">The Triple S Canna club</h3>
-                            <p className="text-lg italic text-orange-900/80">
-                                <span className="text-base">Your</span>{' '}
-                                <span className="font-bold text-xl not-italic">Strain-Sticker-Sample</span>{' '}
-                                <span className="text-base">club.</span>
-                            </p>
-                        </div>
-                        <div className='space-y-3 text-orange-900/90 text-sm leading-relaxed max-w-2xl mx-auto pt-4'>
-                            <p>Attach your garden delights to a sticker. Set your sticker design price and offer free samples to fellow cannabis enthusiasts.</p>
-                            <p>Shoppers can generate and purchase stickers for caps, hoodies, t-shirts and as standlone stickers.</p>
-                            <p className='font-semibold'>Happy sharing your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
-                        </div>
+                    <CardContent>
                          <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                            <FormItem className="space-y-3 pt-6 mt-6 border-t border-orange-200/50">
-                            <FormLabel className="text-base font-semibold text-gray-800 block text-center">Do you want to participate for this product?</FormLabel>
+                            <FormItem className="space-y-3 pt-4 border-t border-orange-200/50">
+                            <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
                             <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2 max-w-md mx-auto">
+                                <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
                                         <FormControl><RadioGroupItem value="yes" /></FormControl>
                                         <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
@@ -548,7 +541,7 @@ export default function AddProductPage() {
                                     </FormItem>
                                 </RadioGroup>
                             </FormControl>
-                            <FormMessage className="text-center" />
+                            <FormMessage />
                             </FormItem>
                         )} />
                     </CardContent>
@@ -622,34 +615,11 @@ export default function AddProductPage() {
                        </>
                     )}
                     
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Product Details</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Product Details</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                       {isThcCbdSpecialType && (
-                           <>
-                             <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Select product type: *</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{deliveryMethodOptions.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            {productSubCategoryOptions.length > 0 && (
-                                <FormField control={form.control} name="productSubCategory" render={({ field }) => (
-                                    <FormItem><FormLabel>Product Sub Category</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
-                                        <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                                    </Select><FormMessage /></FormItem>
-                                )} />
-                            )}
-                           </>
-                        )}
                         {isTraditionalMedicineType && (
                            <>
                              <FormField control={form.control} name="productType" render={({ field }) => (
@@ -764,7 +734,7 @@ export default function AddProductPage() {
                        </div>
                     )}
 
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Pricing & Stock *</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Pricing & Stock *</h2>
                     <div className="space-y-4">
                         {priceTierFields.map((field, index) => (
                             <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative">
@@ -777,10 +747,11 @@ export default function AddProductPage() {
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '', quantityInStock: '' })}>Add Another Price Tier</Button>
                     </div>
 
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Images</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Images & Tags</h2>
                      <FormField control={form.control} name="imageUrls" render={({ field }) => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     
-                    {selectedCannabinoidStream === 'Apparel' && (
+                    {(selectedCannabinoidStream === 'Apparel') && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>5. Apparel Details</h2>
                            <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -799,7 +770,7 @@ export default function AddProductPage() {
                             </div>
                        </>
                     )}
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Sharing & Visibility</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Final Step: Sharing & Visibility</h2>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other wellness stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
                        <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other wellness stores.</CardDescription></CardHeader>
@@ -817,8 +788,10 @@ export default function AddProductPage() {
                     )}
                     <CardFooter>
                         <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                            Add Product
+                            <span>
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                                Add Product
+                            </span>
                         </Button>
                     </CardFooter>
                 </div>
@@ -831,3 +804,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
