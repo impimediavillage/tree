@@ -377,27 +377,16 @@ export default function AddProductPage() {
              
             {showTripleSOptIn && (
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                            <div className="md:col-span-2 space-y-2">
-                               <CardTitle className="flex items-center gap-3 text-orange-800">
-                                   <Star className="text-yellow-500 fill-yellow-400 h-8 w-8"/>
-                                   <div className='flex flex-col'>
-                                       <span className='text-sm italic text-orange-900/80'>Your</span>
-                                       <span className='text-2xl font-extrabold italic'>Strain-Sticker-Sample</span>
-                                       <span className='text-sm italic text-orange-900/80'>club.</span>
-                                   </div>
-                               </CardTitle>
-                               <div className='space-y-2 text-orange-900/90 text-sm leading-relaxed pl-4 border-l-2 border-orange-200'>
-                                   <p>Attach your garden delights to a sticker. Set your sticker design price and offer free samples to fellow cannabis enthusiasts.</p>
-                                   <p>Shoppers can generate and purchase stickers for caps, hoodies, t-shirts and as standalone stickers.</p>
-                                   <p className='font-semibold'>Happy sharing your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
-                               </div>
-                           </div>
-                           <div className="relative grid grid-cols-2 gap-3">
-                               <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t44.jpg" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                               <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t48.jpg" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                            </div>
+                    <CardHeader className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div className="order-2 md:order-1 space-y-2">
+                           <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                           <p className='text-orange-900/90 text-sm leading-relaxed'>
+                                Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
+                           </p>
+                       </div>
+                       <div className="relative order-1 md:order-2 grid grid-cols-2 gap-3">
+                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -650,4 +639,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
