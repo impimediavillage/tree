@@ -40,6 +40,7 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 const TRADITIONAL_MEDICINE_WELLNESS_TYPE_NAME = "Traditional Medicine dispensary";
+const MUSHROOM_STORE_WELLNESS_TYPE_NAME = "Mushroom store";
 
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
@@ -136,8 +137,12 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
+  
+  // Type-specific flags
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [isTraditionalMedicineType, setIsTraditionalMedicineType] = useState(false);
+  const [isMushroomStoreType, setIsMushroomStoreType] = useState(false);
+
   const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
   
   // Cannabinoid state
@@ -152,6 +157,13 @@ export default function AddProductPage() {
   const [tradMedTypeOptions, setTradMedTypeOptions] = useState<string[]>([]);
   const [tradMedSubtypeOptions, setTradMedSubtypeOptions] = useState<string[]>([]);
 
+  // Mushroom Store state
+  const [mushroomStreams, setMushroomStreams] = useState<any>({});
+  const [selectedMushroomStream, setSelectedMushroomStream] = useState<string | null>(null);
+  const [mushroomTypeOptions, setMushroomTypeOptions] = useState<string[]>([]);
+  const [mushroomSubtypeOptions, setMushroomSubtypeOptions] = useState<string[]>([]);
+
+  // Shared state
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
@@ -173,7 +185,7 @@ export default function AddProductPage() {
       strain: null, strainType: null, homeGrow: [], feedingType: null,
       thcContent: '0', cbdContent: '0',
       gender: null, sizingSystem: null, sizes: [],
-      currency: 'ZAR', priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      currency: 'ZAR', priceTiers: [{ unit: '', price: '', quantityInStock: '' }],
       poolPriceTiers: [],
       quantityInStock: undefined, imageUrls: [],
       labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
@@ -194,12 +206,14 @@ export default function AddProductPage() {
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchDeliveryMethod = form.watch('deliveryMethod');
   const watchTradMedProductType = form.watch('productType');
+  const watchMushroomProductType = form.watch('productType');
+
 
   const showProductDetailsForm = 
-    (!isThcCbdSpecialType && !isTraditionalMedicineType) ||
+    (!isThcCbdSpecialType && !isTraditionalMedicineType && !isMushroomStoreType) ||
     (isThcCbdSpecialType && selectedCannabinoidStream && (selectedCannabinoidStream !== 'THC' || watchStickerProgramOptIn === 'yes')) || 
-    (isTraditionalMedicineType && selectedTradMedStream);
-
+    (isTraditionalMedicineType && selectedTradMedStream) ||
+    (isMushroomStoreType && selectedMushroomStream);
 
   const showStrainFetchUI = isThcCbdSpecialType && (selectedCannabinoidStream === 'THC' || selectedCannabinoidStream === 'CBD') && watchStickerProgramOptIn !== 'no';
 
@@ -211,13 +225,27 @@ export default function AddProductPage() {
       productType: null, subSubcategory: null,
       mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
     });
-    setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
-    setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
-    setShowTripleSOptIn(false);
+    setLabTestFile(null); 
+    setAvailableStandardSizes([]); 
+    setSelectedStrainData(null); 
+    setStrainQuery(''); 
+    setStrainSearchResults([]);
+    
+    // Cannabinoid
     setSelectedCannabinoidStream(null);
+    setDeliveryMethodOptions([]); 
+    setProductSubCategoryOptions([]);
+    setShowTripleSOptIn(false);
+
+    // Traditional Medicine
     setSelectedTradMedStream(null);
     setTradMedTypeOptions([]);
     setTradMedSubtypeOptions([]);
+
+    // Mushroom
+    setSelectedMushroomStream(null);
+    setMushroomTypeOptions([]);
+    setMushroomSubtypeOptions([]);
   };
 
   const handleCannabinoidStreamSelect = (stream: StreamKey) => {
@@ -254,6 +282,21 @@ export default function AddProductPage() {
     }
   };
 
+  const handleMushroomStreamSelect = (streamName: string) => {
+    resetProductStreamSpecificFields();
+    setSelectedMushroomStream(streamName);
+    form.setValue('category', streamName);
+    form.setValue('productType', null);
+    form.setValue('subSubcategory', null);
+    
+    if (mushroomStreams && mushroomStreams[streamName]) {
+      const types = Object.keys(mushroomStreams[streamName]).sort();
+      setMushroomTypeOptions(types);
+    } else {
+      setMushroomTypeOptions([]);
+    }
+  };
+
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
     setIsFetchingStrain(true); setStrainSearchResults([]); setSelectedStrainData(null);
@@ -287,8 +330,11 @@ export default function AddProductPage() {
         
         const isCannabinoid = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         const isTradMed = dispensaryData.dispensaryType === TRADITIONAL_MEDICINE_WELLNESS_TYPE_NAME;
+        const isMushroom = dispensaryData.dispensaryType === MUSHROOM_STORE_WELLNESS_TYPE_NAME;
+        
         setIsThcCbdSpecialType(isCannabinoid);
         setIsTraditionalMedicineType(isTradMed);
+        setIsMushroomStoreType(isMushroom);
 
         if (dispensaryData.dispensaryType) {
             const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryData.dispensaryType);
@@ -296,8 +342,12 @@ export default function AddProductPage() {
             if (docSnap.exists()) {
                 const docData = docSnap.data() as DispensaryTypeProductCategoriesDoc;
                 setCategoryStructureDoc(docData);
-                if (isTradMed && docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories) {
+
+                if (isTradMed && Array.isArray(docData.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories)) {
                   setTraditionalMedicineStreams(docData.categoriesData.traditionalMedicineCategories.traditionalMedicineCategories);
+                }
+                if (isMushroom && typeof docData.categoriesData?.mushroomProductCategories === 'object') {
+                    setMushroomStreams(docData.categoriesData.mushroomProductCategories);
                 }
             } else {
                 console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
@@ -339,6 +389,17 @@ export default function AddProductPage() {
         setTradMedSubtypeOptions([]);
     }
   }, [watchTradMedProductType, selectedTradMedStream, traditionalMedicineStreams, form]);
+  
+  useEffect(() => {
+    if(watchMushroomProductType && selectedMushroomStream && mushroomStreams) {
+        const subtypes = mushroomStreams[selectedMushroomStream]?.[watchMushroomProductType];
+        setMushroomSubtypeOptions(Array.isArray(subtypes) ? subtypes.sort() : []);
+        form.setValue('subSubcategory', null);
+    } else {
+        setMushroomSubtypeOptions([]);
+    }
+  }, [watchMushroomProductType, selectedMushroomStream, mushroomStreams, form]);
+
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -404,9 +465,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
-            </Button>
+            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {wellnessData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{wellnessData.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
@@ -422,7 +481,7 @@ export default function AddProductPage() {
                 </FormItem>
             )}
 
-             {isTraditionalMedicineType && (
+            {isTraditionalMedicineType && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
@@ -433,6 +492,19 @@ export default function AddProductPage() {
                             <span className="text-lg font-semibold">{stream.useCase}</span>
                             <span className="text-xs text-muted-foreground whitespace-normal">{stream.description}</span>
                           </div>
+                        </Button>
+                      ))}
+                    </div>
+                </FormItem>
+            )}
+
+            {isMushroomStoreType && (
+                <FormItem>
+                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+                      {Object.keys(mushroomStreams).map((streamName) => (
+                        <Button key={streamName} type="button" variant={selectedMushroomStream === streamName ? 'default' : 'outline'} className={cn("h-auto p-6 text-xl font-semibold transform transition-all duration-200 hover:scale-105 shadow-md", selectedMushroomStream === streamName && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleMushroomStreamSelect(streamName)}>
+                          <Brain className="mr-3 h-6 w-6"/> {streamName}
                         </Button>
                       ))}
                     </div>
@@ -602,6 +674,30 @@ export default function AddProductPage() {
                               )}
                            </>
                         )}
+                        {isMushroomStoreType && (
+                           <>
+                             <FormField control={form.control} name="productType" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Product Type *</FormLabel>
+                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={mushroomTypeOptions.length === 0}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select product type" /></SelectTrigger></FormControl>
+                                        <SelectContent>{mushroomTypeOptions.map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                    </Select><FormMessage />
+                                </FormItem>
+                              )} />
+                              {mushroomSubtypeOptions.length > 0 && (
+                                <FormField control={form.control} name="subSubcategory" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Sub-Type</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-type" /></SelectTrigger></FormControl>
+                                            <SelectContent>{mushroomSubtypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                        </Select><FormMessage />
+                                    </FormItem>
+                                )} />
+                              )}
+                           </>
+                        )}
                     </div>
                     
                     {(selectedCannabinoidStream === 'THC' || selectedCannabinoidStream === 'CBD') && (
@@ -678,7 +774,7 @@ export default function AddProductPage() {
                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Another Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '', quantityInStock: '' })}>Add Another Price Tier</Button>
                     </div>
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Images</h2>
@@ -715,7 +811,7 @@ export default function AddProductPage() {
                             {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                            </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '', quantityInStock: 0 })}>Add Pool Price Tier</Button>
                        </CardContent>
                        </Card>
                     )}
