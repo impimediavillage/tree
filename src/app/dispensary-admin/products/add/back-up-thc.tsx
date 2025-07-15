@@ -379,28 +379,28 @@ export default function AddProductPage() {
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader className="p-6">
                        <div className="flex justify-center items-center h-full w-full mb-6">
-                           <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
+                           <div className="grid grid-cols-2 gap-4 w-full max-w-md">
                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t44.jpg" alt="Sticker promo placeholder 1" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t42.jpg" alt="Sticker promo placeholder 2" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
                            </div>
                        </div>
-                       <div className="space-y-2 text-center">
-                           <h3 className="text-2xl font-bold text-orange-800">The Triple S Canna club</h3>
-                           <p className="text-lg italic text-orange-900/80">
-                               <span className="text-base">Your</span>{' '}
-                               <span className="font-bold text-xl not-italic">Strain-Sticker-Sample</span>{' '}
-                               <span className="text-base">club.</span>
-                           </p>
-                       </div>
                     </CardHeader>
-                    <CardContent className="px-6 pb-6">
-                        <div className='space-y-3 text-orange-900/90 text-sm leading-relaxed max-w-2xl mx-auto text-center mb-6'>
+                    <CardContent className="px-6 pb-6 text-center">
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-bold text-orange-800">The Triple S Canna club</h3>
+                            <p className="text-lg italic text-orange-900/80">
+                                <span className="text-base">Your</span>{' '}
+                                <span className="font-bold text-xl not-italic">Strain-Sticker-Sample</span>{' '}
+                                <span className="text-base">club.</span>
+                            </p>
+                        </div>
+                        <div className='space-y-3 text-orange-900/90 text-sm leading-relaxed max-w-2xl mx-auto pt-4'>
                             <p>Attach your garden delights to a sticker. Set your sticker design price and offer free samples to fellow cannabis enthusiasts.</p>
                             <p>Shoppers can generate and purchase stickers for caps, hoodies, t-shirts and as standalone stickers.</p>
                             <p className='font-semibold'>Happy sharing your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
                         </div>
                          <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                            <FormItem className="space-y-3 pt-6 border-t border-orange-200/50">
+                            <FormItem className="space-y-3 pt-6 mt-6 border-t border-orange-200/50">
                             <FormLabel className="text-base font-semibold text-gray-800 block text-center">Do you want to participate for this product?</FormLabel>
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2 max-w-md mx-auto">
