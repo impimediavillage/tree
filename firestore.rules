@@ -1,50 +1,76 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if a user is the owner of a specific dispensary
-    // This now checks the custom claim on the user's auth token, which is more secure and efficient.
+
     function isDispensaryOwner(dispensaryId) {
+      // Check if the user is authenticated and if their custom claim 'dispensaryId' matches the one in the document.
       return request.auth != null && request.auth.token.dispensaryId == dispensaryId;
     }
-
+    
     match /dispensaries/{dispensaryId} {
-      // Allow anyone to read dispensary listings
-      allow read: if true;
-      // Allow anyone to submit a new dispensary application
-      allow create: if true;
-      // Only allow updates/deletes by authenticated Super Admins
-      allow update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
-    }
-
-    match /dispensaryTypes/{typeId} {
-      // Allow anyone to read dispensary types
-      allow read: if true;
-      // Only allow Super Admins to create, update, or delete types
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+      allow read: if true; // Anyone can read store info
+      allow create: if true; // Anyone can submit an application
+      allow update: if isDispensaryOwner(dispensaryId);
+      allow delete: if request.auth != null && request.auth.token.role == 'Super Admin';
     }
 
     match /products/{productId} {
-      // Anyone can read products for the storefront
-      allow read: if true;
-      
-      // CREATE: Only the owner of the dispensary can create a product for it
+      allow read: if true; // Everyone can see products
+      // Allow create/update/delete only if the user's token dispensaryId matches the product's dispensaryId
       allow create: if isDispensaryOwner(request.resource.data.dispensaryId);
-      
-      // UPDATE: Only the owner of the dispensary can update their product
       allow update: if isDispensaryOwner(resource.data.dispensaryId);
-
-      // DELETE: Only the owner of the dispensary can delete their product
       allow delete: if isDispensaryOwner(resource.data.dispensaryId);
     }
     
-    // Allow users to manage their own document
-    match /users/{userId} {
-      allow read, update: if request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
-      allow create: if request.auth.uid == userId; // Users can create their own doc
+    // NEW RULE: Allow authenticated users to read the category definitions for all store types
+    match /dispensaryTypeProductCategories/{docId} {
+      allow read: if request.auth != null;
+      // Write access should be restricted to Super Admins
+      allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
     }
 
-    // Rules for other collections can be added here
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && (request.auth.uid == userId || request.auth.token.role == 'Super Admin');
+    }
+    
+    match /dispensaryTypes/{typeId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+    }
+    
+    match /productRequests/{requestId} {
+       allow write: if request.auth != null; // Simplified for now, can be tightened later
+       allow read: if request.auth != null;
+    }
+    
+    match /poolIssues/{issueId} {
+        allow write: if request.auth != null;
+        allow read: if request.auth != null;
+    }
+    
+    match /notifications/{notificationId} {
+        allow read, write: if request.auth != null;
+    }
+    
+    match /creditPackages/{packageId} {
+        allow read: if true;
+        allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+    }
+
+    match /aiInteractionsLog/{logId} {
+        allow read, write: if request.auth != null; // Should be tightened to user-only write
+    }
+
+    match /stickersets/{stickerId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.creatorUid;
+    }
+    
+    // Fallback for any other collection - deny all access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
