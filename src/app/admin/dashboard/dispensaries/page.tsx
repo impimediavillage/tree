@@ -155,7 +155,7 @@ export default function AdminWellnessPage() {
           <p className="ml-2 text-muted-foreground">Loading wellness profiles...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {filteredWellnessEntities.length > 0 ? (
             filteredWellnessEntities.map((wellness) => (
               <DispensaryCard
