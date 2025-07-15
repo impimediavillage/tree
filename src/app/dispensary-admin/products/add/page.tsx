@@ -185,7 +185,7 @@ export default function AddProductPage() {
       strain: null, strainType: null, homeGrow: [], feedingType: null,
       thcContent: '0', cbdContent: '0',
       gender: null, sizingSystem: null, sizes: [],
-      currency: 'ZAR', priceTiers: [{ unit: '', price: '', quantityInStock: '' }],
+      currency: 'ZAR', priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
       poolPriceTiers: [],
       quantityInStock: undefined, imageUrls: [],
       labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
@@ -513,37 +513,25 @@ export default function AddProductPage() {
              
             {showTripleSOptIn && (
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                        <div className="order-2 md:order-1 space-y-2">
-                           <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
-                           <p className='text-orange-900/90 text-sm leading-relaxed'>
-                                Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
-                           </p>
-                       </div>
-                       <div className="relative order-1 md:order-2 grid grid-cols-2 gap-3">
-                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                        </div>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                         <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                            <FormItem className="space-y-3 pt-4 border-t border-orange-200/50">
-                            <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )} />
+                    <CardContent className="grid md:grid-cols-2 gap-6 items-start">
+                        <div className="space-y-4">
+                            <p className='text-orange-900/90 text-sm leading-relaxed'>
+                                Happy sharing of your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove
+                            </p>
+                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                <FormLabel className="text-base font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
+                                <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+                         <div className="grid grid-cols-2 gap-3">
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                         </div>
                     </CardContent>
                 </Card>
             )}
@@ -620,48 +608,47 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                        {isTraditionalMedicineType && (
+                       {(selectedCannabinoidStream === 'THC' || selectedCannabinoidStream === 'CBD') && (
                            <>
-                             <FormField control={form.control} name="productType" render={({ field }) => (
+                             <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Product Type *</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={tradMedTypeOptions.length === 0}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select product type" /></SelectTrigger></FormControl>
-                                        <SelectContent>{tradMedTypeOptions.map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
-                                    </Select><FormMessage />
+                                    <FormLabel>Select product type: *</FormLabel>
+                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{deliveryMethodOptions.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                    <FormMessage />
                                 </FormItem>
-                              )} />
-                              {tradMedSubtypeOptions.length > 0 && (
-                                <FormField control={form.control} name="subSubcategory" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Sub-Type</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-type" /></SelectTrigger></FormControl>
-                                            <SelectContent>{tradMedSubtypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
-                                        </Select><FormMessage />
-                                    </FormItem>
+                            )} />
+                            {productSubCategoryOptions.length > 0 && (
+                                <FormField control={form.control} name="productSubCategory" render={({ field }) => (
+                                    <FormItem><FormLabel>Product Sub Category</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
+                                        <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                    </Select><FormMessage /></FormItem>
                                 )} />
-                              )}
+                            )}
                            </>
                         )}
-                        {isMushroomStoreType && (
+                        {(isTraditionalMedicineType || isMushroomStoreType) && (
                            <>
                              <FormField control={form.control} name="productType" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Product Type *</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={mushroomTypeOptions.length === 0}>
+                                    <Select onValueChange={field.onChange} value={field.value || ''} disabled={(isTraditionalMedicineType && tradMedTypeOptions.length === 0) || (isMushroomStoreType && mushroomTypeOptions.length === 0)}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select product type" /></SelectTrigger></FormControl>
-                                        <SelectContent>{mushroomTypeOptions.map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{(isTraditionalMedicineType ? tradMedTypeOptions : mushroomTypeOptions).map((opt) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                                     </Select><FormMessage />
                                 </FormItem>
                               )} />
-                              {mushroomSubtypeOptions.length > 0 && (
+                              {(tradMedSubtypeOptions.length > 0 || mushroomSubtypeOptions.length > 0) && (
                                 <FormField control={form.control} name="subSubcategory" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Sub-Type</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value || ''}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-type" /></SelectTrigger></FormControl>
-                                            <SelectContent>{mushroomSubtypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                            <SelectContent>{(isTraditionalMedicineType ? tradMedSubtypeOptions : mushroomSubtypeOptions).map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                                         </Select><FormMessage />
                                     </FormItem>
                                 )} />
@@ -744,14 +731,14 @@ export default function AddProductPage() {
                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '', quantityInStock: '' })}>Add Another Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Another Price Tier</Button>
                     </div>
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Images & Tags</h2>
                      <FormField control={form.control} name="imageUrls" render={({ field }) => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     
-                    {(selectedCannabinoidStream === 'Apparel') && (
+                    {(selectedProductStream === 'Apparel') && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>5. Apparel Details</h2>
                            <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -761,7 +748,7 @@ export default function AddProductPage() {
                             </div>
                        </>
                     )}
-                    {selectedCannabinoidStream === 'Sticker Promo Set' && (
+                    {selectedProductStream === 'Sticker Promo Set' && (
                        <>
                           <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>5. Sticker Details</h2>
                            <div className="p-4 border rounded-md space-y-4 bg-muted/30">
@@ -782,7 +769,7 @@ export default function AddProductPage() {
                             {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                            </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '', quantityInStock: 0 })}>Add Pool Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
                        </CardContent>
                        </Card>
                     )}
