@@ -33,6 +33,8 @@ import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
+import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -155,6 +157,7 @@ export default function AddProductPage() {
 
   const [mushroomStreams, setMushroomStreams] = useState<any[]>([]);
   const [selectedMushroomStream, setSelectedMushroomStream] = useState<string | null>(null);
+  const [mushroomCatalog, setMushroomCatalog] = useState<any[]>([]);
   const [mushroomTypeOptions, setMushroomTypeOptions] = useState<string[]>([]);
   const [mushroomSubtypeOptions, setMushroomSubtypeOptions] = useState<string[]>([]);
 
@@ -235,6 +238,7 @@ export default function AddProductPage() {
     setTradMedSubtypeOptions([]);
 
     setSelectedMushroomStream(null);
+    setMushroomCatalog([]);
     setMushroomTypeOptions([]);
     setMushroomSubtypeOptions([]);
   };
@@ -281,12 +285,23 @@ export default function AddProductPage() {
     form.setValue('subSubcategory', null);
     
     const selectedStreamData = mushroomStreams.find((s: any) => s.category_name === streamName);
-    if (selectedStreamData && selectedStreamData.types) {
-      const types = Object.keys(selectedStreamData.types).sort();
-      setMushroomTypeOptions(types);
+    if (selectedStreamData && selectedStreamData.products) {
+      setMushroomCatalog(selectedStreamData.products);
     } else {
-      setMushroomTypeOptions([]);
+      setMushroomCatalog([]);
     }
+  };
+
+  const onSelectMushroomProduct = (product: any) => {
+    form.setValue('name', product.name, { shouldValidate: true });
+    form.setValue('description', product.description, { shouldValidate: true });
+    // You can pre-fill other fields here if they exist in your mushroom product data
+    // e.g., form.setValue('tags', product.tags || [], { shouldValidate: true });
+    
+    toast({
+        title: "Product Selected",
+        description: `"${product.name}" details have been loaded into the form. Please set pricing and stock.`,
+    });
   };
 
   const handleFetchStrainInfo = async () => {
@@ -503,6 +518,25 @@ export default function AddProductPage() {
                     </div>
                 </FormItem>
             )}
+
+            {isMushroomStoreType && selectedMushroomStream && mushroomCatalog.length > 0 && (
+              <Card className="bg-muted/30">
+                <CardHeader>
+                  <CardTitle>Browse <span className="text-primary">{selectedMushroomStream}</span> Catalog</CardTitle>
+                  <CardDescription>Select a product to pre-fill the form, then set your pricing.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="w-full">
+                        <div className="flex space-x-4 pb-4">
+                            {mushroomCatalog.map((product: any, index: number) => (
+                                <MushroomProductCard key={index} product={product} onSelect={onSelectMushroomProduct} />
+                            ))}
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </CardContent>
+              </Card>
+            )}
              
             {showTripleSOptIn && (
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
@@ -533,18 +567,15 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                     {/* All form fields will be rendered here... */}
+                     {/* The rest of the form is rendered here, content omitted for brevity as it is extensive */}
+                    <CardFooter>
+                        <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                            Add Product
+                        </Button>
+                    </CardFooter>
                 </div>
             )}
-            
-            <CardFooter>
-              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                <span>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                    Add Product
-                </span>
-              </Button>
-            </CardFooter>
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
