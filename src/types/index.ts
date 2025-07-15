@@ -69,7 +69,10 @@ export interface DispensaryTypeProductCategoriesDoc {
   name?: string; 
   categoriesData: {
     thcCbdProductCategories?: Record<string, any>;
-    traditionalMedicineCategories?: any[];
+    traditionalMedicineCategories?: {
+        traditionalMedicineCategories?: any[]
+    };
+    mushroomProductCategories?: Record<string, any>;
   }; 
   updatedAt?: Timestamp | Date | string;
 }
@@ -95,7 +98,7 @@ export interface Product {
   deliveryMethod?: string | null;
   productSubCategory?: string | null;
   
-  // Traditional Medicine Specific
+  // Traditional Medicine & Mushroom Specific
   productType?: string | null;
   subSubcategory?: string | null;
   
