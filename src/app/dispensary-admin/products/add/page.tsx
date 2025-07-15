@@ -207,15 +207,14 @@ export default function AddProductPage() {
         setShowTripleSOptIn(true);
         form.setValue('category', 'THC');
 
-        if (categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods']) {
-            const deliveryMethodsMap = categoryStructureDoc.categoriesData.thcCbdProductCategories.THC['Delivery Methods'];
-            if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
-                const options = Object.keys(deliveryMethodsMap).sort();
-                setDeliveryMethodOptions(options);
-            } else {
-                setDeliveryMethodOptions([]);
-                toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
-            }
+        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+        
+        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
+            const options = Object.keys(deliveryMethodsMap).sort();
+            setDeliveryMethodOptions(options);
+        } else {
+            setDeliveryMethodOptions([]);
+            toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
         }
     }
   };
@@ -594,9 +593,8 @@ export default function AddProductPage() {
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Another Price Tier</Button>
                     </div>
 
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Images & Tags</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Images</h2>
                      <FormField control={form.control} name="imageUrls" render={({ field }) => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     
                     {selectedProductStream === 'Apparel' && (
                        <>
