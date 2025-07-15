@@ -54,10 +54,17 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
   
   try {
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
-    const newClaims = { role: userData.role || null };
+    const newClaims: { [key: string]: any } = { role: userData.role || null };
+    
+    // NEW: Also add dispensaryId to claims if user is an owner or staff
+    if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
+        newClaims.dispensaryId = userData.dispensaryId;
+    } else {
+        newClaims.dispensaryId = null; // Ensure it's cleared if role changes
+    }
 
     // Avoid unnecessary updates if claims are identical
-    if (currentClaims.role === newClaims.role) {
+    if (currentClaims.role === newClaims.role && currentClaims.dispensaryId === newClaims.dispensaryId) {
       logger.log(`Claims for user ${userId} are already up-to-date.`);
       return;
     }
