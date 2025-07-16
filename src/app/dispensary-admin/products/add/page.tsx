@@ -142,7 +142,8 @@ export default function AddProductPage() {
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [isMushroomStore, setIsMushroomStore] = useState(false);
   const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
-  const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
+  const [mushroomStreamOptions, setMushroomStreamOptions] = useState<string[]>([]);
+  const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
   
   const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<string[]>([]);
@@ -205,7 +206,7 @@ export default function AddProductPage() {
     setMushroomProducts([]); setIsLoadingMushrooms(false);
   };
 
-  const fetchMushroomProducts = async (type: 'Medicinal' | 'Gourmet' | 'Psychedelic') => {
+  const fetchMushroomProducts = async (type: string) => {
     setIsLoadingMushrooms(true);
     setMushroomProducts([]);
     try {
@@ -227,15 +228,14 @@ export default function AddProductPage() {
   const handleMushroomProductSelect = (product: any) => {
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
-    // You can populate more fields here if the mushroom catalog has them
     toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
   };
 
-  const handleProductStreamSelect = (stream: StreamKey) => {
+  const handleProductStreamSelect = (stream: string) => {
     resetProductStreamSpecificFields();
     setSelectedProductStream(stream);
 
-    if (stream === 'Medicinal' || stream === 'Gourmet' || stream === 'Psychedelic') {
+    if (isMushroomStore) {
         form.setValue('category', 'Mushrooms');
         form.setValue('productSubCategory', stream);
         fetchMushroomProducts(stream);
@@ -295,13 +295,21 @@ export default function AddProductPage() {
         setIsThcCbdSpecialType(isCbdStore);
         setIsMushroomStore(isMushStore);
 
-        if (isCbdStore && dispensaryData.dispensaryType) {
-            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', "Cannibinoid store");
+        if ((isCbdStore || isMushStore) && dispensaryData.dispensaryType) {
+            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryData.dispensaryType);
             const docSnap = await getDoc(categoriesDocRef);
             if (docSnap.exists()) {
-                setCategoryStructureDoc(docSnap.data() as DispensaryTypeProductCategoriesDoc);
+                const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
+                setCategoryStructureDoc(categoriesDoc);
+
+                if (isMushStore && Array.isArray(categoriesDoc.categoriesData?.mushroomProductCategories)) {
+                    const streams = categoriesDoc.categoriesData.mushroomProductCategories
+                        .map(cat => cat.category_name)
+                        .filter(Boolean);
+                    setMushroomStreamOptions(streams as string[]);
+                }
             } else {
-                console.warn(`No product category structure found for type: Cannibinoid store`);
+                console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
             }
         }
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
@@ -397,7 +405,6 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
-  const mushroomStreams: StreamKey[] = ['Medicinal', 'Gourmet', 'Psychedelic'];
   const cannibinoidStreams: StreamKey[] = ['THC', 'CBD', 'Apparel', 'Smoking Gear', 'Sticker Promo Set'];
 
   return (
@@ -429,7 +436,11 @@ export default function AddProductPage() {
                  <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {mushroomStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                        {mushroomStreamOptions.map((streamName) => { 
+                            const streamKey = Object.keys(streamDisplayMapping).find(key => streamDisplayMapping[key as StreamKey].text === streamName) as StreamKey | undefined;
+                            const { icon: IconComponent, color } = streamKey ? streamDisplayMapping[streamKey] : { icon: Brain, color: 'text-gray-500' };
+                            return ( <Button key={streamName} type="button" variant={selectedProductStream === streamName ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === streamName && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(streamName)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{streamName}</span> </Button> ); 
+                        })}
                     </div>
                 </FormItem>
             )}
