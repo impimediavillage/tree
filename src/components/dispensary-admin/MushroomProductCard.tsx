@@ -17,13 +17,14 @@ interface MushroomProductCardProps {
 
 export function MushroomProductCard({ product, onSelect }: MushroomProductCardProps) {
   const placeholderImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(product.name)}`;
+  const imageUrl = product.imageUrl || placeholderImage;
   
   return (
     <Card className="w-64 flex-shrink-0 snap-start flex flex-col shadow-lg">
         <CardHeader className="p-0">
             <div className="relative aspect-square w-full">
                 <Image
-                src={placeholderImage}
+                src={imageUrl}
                 alt={product.name}
                 layout="fill"
                 objectFit="cover"
