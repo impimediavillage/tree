@@ -483,21 +483,26 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {tradMedStreamOptions.map((stream) => { 
-                           const { icon: IconComponent, color } = streamDisplayMapping[stream.name] || { icon: Brain, color: 'text-gray-500' };
-                            return ( <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
-                                <Image
-                                    src={stream.imageUrl || `https://placehold.co/400x400.png?text=${encodeURIComponent(stream.name)}`}
-                                    alt={stream.name}
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className="transition-transform duration-300 group-hover:scale-110"
-                                    data-ai-hint={`traditional medicine ${stream.name}`}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                                <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
-                           </Button> );
-                        })}
+                        {tradMedStreamOptions.map((stream) => (
+                          <Button
+                            key={stream.name}
+                            type="button"
+                            variant={selectedProductStream === stream.name ? 'default' : 'outline'}
+                            className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                            onClick={() => handleProductStreamSelect(stream.name)}
+                          >
+                            <Image
+                              src={stream.imageUrl || `https://placehold.co/400x400.png?text=${encodeURIComponent(stream.name)}`}
+                              alt={stream.name}
+                              layout="fill"
+                              objectFit="cover"
+                              className="transition-transform duration-300 group-hover:scale-110"
+                              data-ai-hint={`traditional medicine ${stream.name}`}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                            <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
+                          </Button>
+                        ))}
                     </div>
                 </FormItem>
             )}
@@ -507,7 +512,6 @@ export default function AddProductPage() {
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                         {mushroomStreamOptions.map((stream) => {
-                             const { icon: IconComponent, color } = streamDisplayMapping[stream.name] || { icon: Brain, color: 'text-gray-500' };
                              const defaultImageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(stream.name)}`;
                              return (
                                 <Button
@@ -582,9 +586,6 @@ export default function AddProductPage() {
                                     <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
-                        )}
-                        {!isThcCbdSpecialType && !isMushroomStore && !isTraditionalMedicineStore && (
-                            <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         )}
                     </div>
                     
