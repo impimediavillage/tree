@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle, Star, Gift, CornerDownLeft, BookOpen } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle, Star, Gift, CornerDownLeft } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,7 +31,6 @@ import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -205,7 +204,6 @@ export default function AddProductPage() {
   const watchDeliveryMethod = form.watch('deliveryMethod');
   const watchTradMedProductType = form.watch('productType');
   const watchMushroomProductType = form.watch('productType');
-
 
   const showProductDetailsForm = 
     (!isThcCbdSpecialType && !isTraditionalMedicineType && !isMushroomStoreType) ||
@@ -505,7 +503,7 @@ export default function AddProductPage() {
                                  <FormDescription className="text-orange-900/90 text-sm">
                                     The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
                                 </FormDescription>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select participation..." />
@@ -532,14 +530,18 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                    {/* The rest of your form fields are omitted for brevity, but would go here */}
+                    {/* The main form content will be rendered here */}
+                    <div className="space-y-6">
+                        <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
+                        {/* All the form fields like Name, Description, Categories, Pricing etc. go here */}
+                    </div>
                 </div>
             )}
             
             {showProductDetailsForm && (
                 <CardFooter>
                     <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                         Add Product
                     </Button>
                 </CardFooter>
@@ -547,7 +549,7 @@ export default function AddProductPage() {
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
-        <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
+         <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
       </CardContent>
     </Card>
   );
