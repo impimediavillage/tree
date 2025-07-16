@@ -33,6 +33,8 @@ import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
+import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -144,6 +146,8 @@ export default function AddProductPage() {
   
   const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<string[]>([]);
+  const [mushroomProducts, setMushroomProducts] = useState<any[]>([]);
+  const [isLoadingMushrooms, setIsLoadingMushrooms] = useState(false);
 
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   const [strainQuery, setStrainQuery] = useState('');
@@ -198,15 +202,49 @@ export default function AddProductPage() {
     });
     setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
     setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
+    setMushroomProducts([]); setIsLoadingMushrooms(false);
+  };
+
+  const fetchMushroomProducts = async (type: 'Medicinal' | 'Gourmet' | 'Psychedelic') => {
+    setIsLoadingMushrooms(true);
+    setMushroomProducts([]);
+    try {
+        const productsQuery = query(
+            collection(db, 'mushroom_products'),
+            where('type', '==', type.toLowerCase())
+        );
+        const snapshot = await getDocs(productsQuery);
+        const products = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        setMushroomProducts(products);
+    } catch (error) {
+        console.error("Error fetching mushroom products:", error);
+        toast({title: "Error", description: "Could not fetch mushroom product catalog.", variant: "destructive"});
+    } finally {
+        setIsLoadingMushrooms(false);
+    }
+  };
+
+  const handleMushroomProductSelect = (product: any) => {
+    form.setValue('name', product.name, { shouldValidate: true });
+    form.setValue('description', product.description, { shouldValidate: true });
+    // You can populate more fields here if the mushroom catalog has them
+    toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
   };
 
   const handleProductStreamSelect = (stream: StreamKey) => {
     resetProductStreamSpecificFields();
     setSelectedProductStream(stream);
 
+    if (stream === 'Medicinal' || stream === 'Gourmet' || stream === 'Psychedelic') {
+        form.setValue('category', 'Mushrooms');
+        form.setValue('productSubCategory', stream);
+        fetchMushroomProducts(stream);
+        return;
+    }
+
     if (stream === 'THC' || stream === 'CBD') {
         form.setValue('category', stream);
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
+        const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
         
         if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
             const options = Object.keys(deliveryMethodsMap).sort();
@@ -215,9 +253,6 @@ export default function AddProductPage() {
             setDeliveryMethodOptions([]);
             toast({ title: "Config Warning", description: `Could not load product types for ${stream}. Please check category configuration.`, variant: "destructive" });
         }
-    } else if (stream === 'Medicinal' || stream === 'Gourmet' || stream === 'Psychedelic') {
-        form.setValue('category', 'Mushrooms');
-        form.setValue('productSubCategory', stream);
     } else {
       form.setValue('category', stream);
     }
@@ -269,7 +304,6 @@ export default function AddProductPage() {
                 console.warn(`No product category structure found for type: Cannibinoid store`);
             }
         }
-        // Can add mushroom category fetching logic here if needed in future
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -288,7 +322,7 @@ export default function AddProductPage() {
     if (watchDeliveryMethod && selectedProductStream) {
         let deliveryMethodsMap: Record<string, any> | undefined;
         if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
-            deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
+            deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
         }
         
         const subcategories = deliveryMethodsMap?.[watchDeliveryMethod];
@@ -399,6 +433,26 @@ export default function AddProductPage() {
                     </div>
                 </FormItem>
             )}
+
+            {isMushroomStore && selectedProductStream && (
+                <div className="space-y-4">
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Select a Base Product (Optional)</h2>
+                    {isLoadingMushrooms ? (
+                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : (
+                        <ScrollArea className="w-full whitespace-nowrap">
+                            <div className="flex space-x-4 p-4">
+                                {mushroomProducts.length > 0 ? (
+                                    mushroomProducts.map(prod => <MushroomProductCard key={prod.id} product={prod} onSelect={handleMushroomProductSelect} />)
+                                ) : (
+                                    <p className="text-muted-foreground">No pre-defined products found for this stream. Please add product details manually.</p>
+                                )}
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    )}
+                </div>
+            )}
              
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
@@ -410,9 +464,6 @@ export default function AddProductPage() {
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
-                                 <FormDescription className="text-orange-900/90 text-sm">
-                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
-                                </FormDescription>
                                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                     <FormControl>
                                     <SelectTrigger>
@@ -590,7 +641,7 @@ export default function AddProductPage() {
                            <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
-                           {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
+                           {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={() => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                        </div>
                     )}
 
@@ -664,3 +715,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
