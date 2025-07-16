@@ -31,7 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select as SelectComponent } from '@/components/ui/select';
 import Image from 'next/image';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -88,8 +88,8 @@ const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'thc' | 'terp
 }
 
 const AddAttributeInputs = ({ onAdd }: { onAdd: (name: string, percentage: string) => void }) => {
-    const [name, setName] = useState('');
-    const [percentage, setPercentage] = useState('');
+    const [name, setName] = React.useState('');
+    const [percentage, setPercentage] = React.useState('');
 
     const handleAdd = () => {
         if (name.trim() && percentage.trim()) {
@@ -136,27 +136,27 @@ export default function AddProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
-  const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
-  const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
-  const [isMushroomStore, setIsMushroomStore] = useState(false);
-  const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
-  const [mushroomStreamOptions, setMushroomStreamOptions] = useState<string[]>([]);
-  const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoadingInitialData, setIsLoadingInitialData] = React.useState(true);
+  const [wellnessData, setWellnessData] = React.useState<Dispensary | null>(null);
+  const [isThcCbdSpecialType, setIsThcCbdSpecialType] = React.useState(false);
+  const [isMushroomStore, setIsMushroomStore] = React.useState(false);
+  const [categoryStructureDoc, setCategoryStructureDoc] = React.useState<DispensaryTypeProductCategoriesDoc | null>(null);
+  const [mushroomStreamOptions, setMushroomStreamOptions] = React.useState<string[]>([]);
+  const [selectedProductStream, setSelectedProductStream] = React.useState<string | null>(null);
   
-  const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
-  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<string[]>([]);
-  const [mushroomProducts, setMushroomProducts] = useState<any[]>([]);
-  const [isLoadingMushrooms, setIsLoadingMushrooms] = useState(false);
+  const [deliveryMethodOptions, setDeliveryMethodOptions] = React.useState<string[]>([]);
+  const [productSubCategoryOptions, setProductSubCategoryOptions] = React.useState<string[]>([]);
+  const [mushroomProducts, setMushroomProducts] = React.useState<any[]>([]);
+  const [isLoadingMushrooms, setIsLoadingMushrooms] = React.useState(false);
 
-  const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
-  const [strainQuery, setStrainQuery] = useState('');
-  const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
-  const [isFetchingStrain, setIsFetchingStrain] = useState(false);
-  const [selectedStrainData, setSelectedStrainData] = useState<any | null>(null);
-  const [files, setFiles] = useState<File[]>([]);
-  const [labTestFile, setLabTestFile] = useState<File | null>(null);
+  const [availableStandardSizes, setAvailableStandardSizes] = React.useState<string[]>([]);
+  const [strainQuery, setStrainQuery] = React.useState('');
+  const [strainSearchResults, setStrainSearchResults] = React.useState<any[]>([]);
+  const [isFetchingStrain, setIsFetchingStrain] = React.useState(false);
+  const [selectedStrainData, setSelectedStrainData] = React.useState<any | null>(null);
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [labTestFile, setLabTestFile] = React.useState<File | null>(null);
   
   const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "creative", "energetic", "focused", "giggly", "tingly", "aroused", "hungry", "talkative"];
   const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
@@ -191,7 +191,7 @@ export default function AddProductPage() {
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchDeliveryMethod = form.watch('deliveryMethod');
 
-  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
+  const showProductDetailsForm = !isThcCbdSpecialType && !isMushroomStore || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes')) || (isMushroomStore && selectedProductStream);
   const showStrainFetchUI = isThcCbdSpecialType && (selectedProductStream === 'THC' || selectedProductStream === 'CBD') && watchStickerProgramOptIn !== 'no';
 
   const resetProductStreamSpecificFields = () => {
@@ -225,9 +225,10 @@ export default function AddProductPage() {
     }
   };
 
-  const handleMushroomProductSelect = (product: any) => {
+  const handleMushroomProductSelect = (product: any, format: string) => {
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
+    form.setValue('productType', format, { shouldValidate: true });
     toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
   };
 
@@ -319,14 +320,14 @@ export default function AddProductPage() {
     } finally { setIsLoadingInitialData(false); }
   }, [currentUser?.dispensaryId, form, toast, authLoading]);
 
-  useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+  React.useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
-  useEffect(() => {
+  React.useEffect(() => {
     const gender = form.getValues('gender'); const system = form.getValues('sizingSystem');
     if (gender && system && standardSizesData[gender] && standardSizesData[gender][system]) { setAvailableStandardSizes(standardSizesData[gender][system]); } else { setAvailableStandardSizes([]); }
   }, [watchGender, watchSizingSystem, form]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (watchDeliveryMethod && selectedProductStream) {
         let deliveryMethodsMap: Record<string, any> | undefined;
         if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
@@ -346,7 +347,7 @@ export default function AddProductPage() {
     }
   }, [watchDeliveryMethod, categoryStructureDoc, form, selectedProductStream]);
   
-  useEffect(() => {
+  React.useEffect(() => {
     if (selectedStrainData) {
         form.setValue('name', selectedStrainData.name, { shouldValidate: true });
         form.setValue('strain', selectedStrainData.name, { shouldValidate: true });
@@ -483,7 +484,7 @@ export default function AddProductPage() {
                                     </FormControl>
                                     <SelectContent>
                                     <SelectItem value="yes">I want to participate</SelectItem>
-                                    <SelectItem value="no">I don&apos;t want to participate</SelectItem>
+                                    <SelectItem value="no">I don't want to participate</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -604,12 +605,12 @@ export default function AddProductPage() {
                            <FormField control={form.control} name="feedingType" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Plant Feeding Type</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <SelectComponent onValueChange={field.onChange} value={field.value ?? undefined}>
                                   <FormControl><SelectTrigger className="bg-green-100 border-green-300 text-green-800"><SelectValue placeholder="Select feeding method" /></SelectTrigger></FormControl>
                                   <SelectContent>
                                     {feedingTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
                                   </SelectContent>
-                                </Select>
+                                </SelectComponent>
                                 <FormMessage />
                               </FormItem>
                             )} />
