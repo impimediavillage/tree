@@ -203,6 +203,13 @@ const baseProductObjectSchema = z.object({
   // Cannabinoid Specific
   deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
+  
+  // Traditional Medicine & Mushroom Specific
+  productType: z.string().optional().nullable(),
+  subSubcategory: z.string().optional().nullable(),
+  baseProductData: z.any().optional().nullable(), // For storing the selected mushroom base product
+  
+  // Strain details (shared)
   mostCommonTerpene: z.string().optional().nullable(),
   strain: z.string().optional().nullable(),
   strainType: z.string().optional().nullable(),
@@ -215,10 +222,6 @@ const baseProductObjectSchema = z.object({
   medicalUses: z.array(attributeSchema).optional().nullable().default([]),
   stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), 
 
-  // Traditional Medicine & Mushroom Specific
-  productType: z.string().optional().nullable(),
-  subSubcategory: z.string().optional().nullable(),
-  
   // Apparel Specific
   gender: z.enum(['Mens', 'Womens', 'Unisex']).optional().nullable(),
   sizingSystem: z.enum(['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other']).optional().nullable(),

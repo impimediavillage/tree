@@ -24,7 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle, Star, Gift, CornerDownLeft } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, Palette, Brain, Info, X as XIcon, HelpCircle, Star, Gift, CornerDownLeft, Check, AlertTriangle } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +37,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -146,6 +147,7 @@ export default function AddProductPage() {
   const [categoryStructureDoc, setCategoryStructureDoc] = React.useState<DispensaryTypeProductCategoriesDoc | null>(null);
   const [mushroomStreamOptions, setMushroomStreamOptions] = React.useState<any[]>([]);
   const [selectedProductStream, setSelectedProductStream] = React.useState<string | null>(null);
+  const [selectedMushroomBaseProduct, setSelectedMushroomBaseProduct] = React.useState<any | null>(null);
   
   const [deliveryMethodOptions, setDeliveryMethodOptions] = React.useState<string[]>([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = React.useState<string[]>([]);
@@ -176,6 +178,7 @@ export default function AddProductPage() {
       quantityInStock: undefined, imageUrls: [],
       labTested: false, labTestReportUrl: null, effects: [], flavors: [], medicalUses: [],
       isAvailableForPool: false, tags: [], stickerProgramOptIn: null,
+      baseProductData: null,
     },
   });
 
@@ -200,37 +203,20 @@ export default function AddProductPage() {
       ...form.getValues(),
       name: form.getValues('name'), description: form.getValues('description'), priceTiers: form.getValues('priceTiers'), poolPriceTiers: form.getValues('poolPriceTiers'), isAvailableForPool: form.getValues('isAvailableForPool'), tags: form.getValues('tags'),
       category: '', deliveryMethod: null, productSubCategory: null,
-      mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
+      mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null, baseProductData: null,
     });
     setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
     setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
-    setMushroomProducts([]);
+    setMushroomProducts([]); setSelectedMushroomBaseProduct(null);
   };
 
   const handleMushroomProductSelect = (product: any, format: string) => {
+    setSelectedMushroomBaseProduct(product);
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
     form.setValue('productType', format, { shouldValidate: true });
-    
-    // Convert benefits to the format expected by the form
-    form.setValue('effects', product.benefits?.map((b: string) => ({name: b, percentage: 'N/A'})) || [], { shouldValidate: true });
-    
-    // Capture flavors
-    form.setValue('flavors', product.nutritional_info?.bioactives || [], { shouldValidate: true });
-    
-    const additionalDataToSave = {
-      dosage: product.dosage,
-      legalDisclaimer: product.legal_disclaimer,
-      safetyWarnings: product.safety_warnings,
-      nutritionalInfo: product.nutritional_info
-    };
-    
-    // Store extra data in a structured way within tags or a dedicated field if schema is adapted
-    const existingTags = form.getValues('tags') || [];
-    const otherTags = existingTags.filter(tag => !tag.startsWith('mushroom_data:'));
-    form.setValue('tags', [...otherTags, `mushroom_data:${JSON.stringify(additionalDataToSave)}`]);
-
-    toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
+    form.setValue('baseProductData', product, { shouldValidate: true });
+    toast({ title: "Product Selected", description: `${product.name} details have been loaded into the form.`});
   };
 
   const handleProductStreamSelect = (stream: string) => {
@@ -445,17 +431,15 @@ export default function AddProductPage() {
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                         {mushroomStreamOptions.map((stream) => { 
-                            const streamKey = Object.keys(streamDisplayMapping).find(key => streamDisplayMapping[key as StreamKey].text === stream.name) as StreamKey | undefined;
-                            const { icon: IconComponent, color } = streamKey ? streamDisplayMapping[streamKey] : { icon: Brain, color: 'text-gray-500' };
                             return (
-                              <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
+                              <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
                                 {stream.imageUrl ? (
-                                  <div className="absolute inset-0">
-                                    <Image src={stream.imageUrl} alt={stream.name} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-110" />
+                                  <>
+                                    <Image src={stream.imageUrl} alt={stream.name} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-110" data-ai-hint={`mushroom type ${stream.name}`} />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                                  </div>
+                                  </>
                                 ) : (
-                                  <IconComponent className={cn("h-12 w-12 mb-2 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20", color)} />
+                                  <Brain className="h-12 w-12 mb-2 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 text-gray-500" />
                                 )}
                                 <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
                               </Button>
@@ -492,17 +476,17 @@ export default function AddProductPage() {
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
                                  <FormDescription className="text-orange-900/90 text-sm">
-                                    The Wellness Tree complies with South African law regarding T.H.C products. The Triple S Club lets enthusiasts share home-grown flowers as free samples with a purchased sticker. It's a great way to share your toke.
+                                    The Wellness Tree complies with South African law regarding T.H.C products. The Triple S Club lets enthusiasts share home-grown flowers as samples with a purchased sticker. It&apos;s a great way to share your toke.
                                 </FormDescription>
-                                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select participation..." />
                                     </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                    <SelectItem value="yes">I want to participate</SelectItem>
-                                    <SelectItem value="no">I don't want to participate</SelectItem>
+                                    <SelectItem value="yes">Yes, include my product</SelectItem>
+                                    <SelectItem value="no">No, this is a standard product</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
