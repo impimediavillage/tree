@@ -394,7 +394,7 @@ export default function AddProductPage() {
                         <div className="space-y-4">
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem className="space-y-3">
-                                <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
+                                <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
                                  <FormDescription className="text-orange-900/90 text-sm">
                                     The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
                                 </FormDescription>
@@ -520,7 +520,7 @@ export default function AddProductPage() {
                         )}
                     </div>
                     
-                    {(selectedProductStream === 'THC') && (
+                    {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                        <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                           <FormField control={form.control} name="strainType" render={({ field }) => ( <FormItem><FormLabel>Strain Type</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Sativa Dominant Hybrid" /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="homeGrow" render={({ field }) => (<FormItem><FormLabel>Home Grow Method</FormLabel><FormControl><MultiInputTags placeholder="e.g., Indoor, Outdoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
@@ -575,6 +575,7 @@ export default function AddProductPage() {
 
                            <FormField control={form.control} name="flavors" render={({ field }) => (<FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="Add flavor (e.g., Earthy, Pine)" value={field.value || []} onChange={field.onChange} getTagClassName={(_, index) => getBadgeColor('flavor', index)} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                           <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                            <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><Label htmlFor="lab-tested-check">Lab Tested?</Label></FormItem>)} />
                            {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                        </div>
@@ -632,12 +633,14 @@ export default function AddProductPage() {
                        </CardContent>
                        </Card>
                     )}
-                    <CardFooter>
-                        <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                            Add Product
-                        </Button>
-                    </CardFooter>
+                    {(!selectedProductStream || form.formState.isValid) && (
+                         <CardFooter>
+                            <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                                Add Product
+                            </Button>
+                        </CardFooter>
+                    )}
                 </div>
             )}
           </form>
