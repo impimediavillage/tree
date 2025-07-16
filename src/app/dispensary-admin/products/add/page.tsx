@@ -8,9 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
@@ -32,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Label } from '@/components/ui/label';
-import { Select as SelectComponent } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -143,13 +144,12 @@ export default function AddProductPage() {
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = React.useState(false);
   const [isMushroomStore, setIsMushroomStore] = React.useState(false);
   const [categoryStructureDoc, setCategoryStructureDoc] = React.useState<DispensaryTypeProductCategoriesDoc | null>(null);
-  const [mushroomStreamOptions, setMushroomStreamOptions] = React.useState<string[]>([]);
+  const [mushroomStreamOptions, setMushroomStreamOptions] = React.useState<any[]>([]);
   const [selectedProductStream, setSelectedProductStream] = React.useState<string | null>(null);
   
   const [deliveryMethodOptions, setDeliveryMethodOptions] = React.useState<string[]>([]);
   const [productSubCategoryOptions, setProductSubCategoryOptions] = React.useState<string[]>([]);
   const [mushroomProducts, setMushroomProducts] = React.useState<any[]>([]);
-  const [isLoadingMushrooms, setIsLoadingMushrooms] = React.useState(false);
 
   const [availableStandardSizes, setAvailableStandardSizes] = React.useState<string[]>([]);
   const [strainQuery, setStrainQuery] = React.useState('');
@@ -204,7 +204,7 @@ export default function AddProductPage() {
     });
     setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
     setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
-    setMushroomProducts([]); setIsLoadingMushrooms(false);
+    setMushroomProducts([]);
   };
 
   const handleMushroomProductSelect = (product: any, format: string) => {
@@ -213,8 +213,15 @@ export default function AddProductPage() {
     form.setValue('productType', format, { shouldValidate: true });
     form.setValue('effects', product.benefits?.map((b: string) => ({name: b, percentage: 'N/A'})) || [], { shouldValidate: true });
     form.setValue('flavors', product.nutritional_info?.bioactives || [], { shouldValidate: true });
-    // This is a simplified mapping. For a full solution, more fields in productSchema would be needed for dosage etc.
-    // For now, we store the full object in a temporary state or a non-schema field if needed.
+    
+    const additionalDataToSave = {
+      dosage: product.dosage,
+      legalDisclaimer: product.legal_disclaimer,
+      safetyWarnings: product.safety_warnings,
+      nutritionalInfo: product.nutritional_info
+    };
+    form.setValue('tags', [...(form.getValues('tags') || []), `mushroom_data:${JSON.stringify(additionalDataToSave)}`]);
+
     toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
   };
 
@@ -223,24 +230,16 @@ export default function AddProductPage() {
     setSelectedProductStream(stream);
 
     if (isMushroomStore) {
-        form.setValue('category', 'Mushrooms');
-        form.setValue('productSubCategory', stream);
-        
-        setIsLoadingMushrooms(true);
+      form.setValue('category', 'Mushrooms');
+      form.setValue('productSubCategory', stream);
+      const categories = (categoryStructureDoc?.categoriesData as any)?.mushroomProductCategories;
+      const selectedCategoryData = categories?.find((cat: any) => cat.category_name === stream);
+      if (selectedCategoryData && Array.isArray(selectedCategoryData.products)) {
+        setMushroomProducts(selectedCategoryData.products);
+      } else {
         setMushroomProducts([]);
-        try {
-            const categories = (categoryStructureDoc?.categoriesData as any)?.mushroomProductCategories;
-            const selectedCategoryData = categories?.find((cat: any) => cat.category_name === stream);
-            if (selectedCategoryData && selectedCategoryData.products) {
-                setMushroomProducts(selectedCategoryData.products);
-            }
-        } catch (e) {
-            console.error("Error setting mushroom products from doc", e);
-            toast({title: "Error", description: "Could not load products for this stream.", variant: "destructive"});
-        } finally {
-            setIsLoadingMushrooms(false);
-        }
-        return;
+      }
+      return;
     }
 
     if (stream === 'THC' || stream === 'CBD') {
@@ -305,9 +304,9 @@ export default function AddProductPage() {
 
                 if (isMushStore && Array.isArray((categoriesDoc.categoriesData as any)?.mushroomProductCategories)) {
                     const streams = (categoriesDoc.categoriesData as any).mushroomProductCategories
-                        .map((cat: any) => cat.category_name)
-                        .filter(Boolean);
-                    setMushroomStreamOptions(streams as string[]);
+                        .map((cat: any) => ({name: cat.category_name, imageUrl: cat.imageUrl}))
+                        .filter((cat: any) => cat.name);
+                    setMushroomStreamOptions(streams);
                 }
             } else {
                 console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
@@ -437,10 +436,21 @@ export default function AddProductPage() {
                  <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {mushroomStreamOptions.map((streamName) => { 
-                            const streamKey = Object.keys(streamDisplayMapping).find(key => streamDisplayMapping[key as StreamKey].text === streamName) as StreamKey | undefined;
+                        {mushroomStreamOptions.map((stream) => { 
+                            const streamKey = Object.keys(streamDisplayMapping).find(key => streamDisplayMapping[key as StreamKey].text === stream.name) as StreamKey | undefined;
                             const { icon: IconComponent, color } = streamKey ? streamDisplayMapping[streamKey] : { icon: Brain, color: 'text-gray-500' };
-                            return ( <Button key={streamName} type="button" variant={selectedProductStream === streamName ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === streamName && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(streamName)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{streamName}</span> </Button> ); 
+                            return (
+                              <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
+                                {stream.imageUrl ? (
+                                  <div className="relative h-12 w-12 mb-2">
+                                    <Image src={stream.imageUrl} alt={stream.name} layout="fill" objectFit="contain" />
+                                  </div>
+                                ) : (
+                                  <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} />
+                                )}
+                                <span className="text-lg sm:text-xl font-semibold">{stream.name}</span>
+                              </Button>
+                            ); 
                         })}
                     </div>
                 </FormItem>
@@ -449,19 +459,15 @@ export default function AddProductPage() {
             {isMushroomStore && selectedProductStream && (
                 <div className="space-y-4">
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Select a Base Product (Optional)</h2>
-                    {isLoadingMushrooms ? (
-                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : (
+                    {mushroomProducts.length > 0 ? (
                         <ScrollArea className="w-full whitespace-nowrap">
                             <div className="flex space-x-4 p-4">
-                                {mushroomProducts.length > 0 ? (
-                                    mushroomProducts.map(prod => <MushroomProductCard key={prod.name} product={prod} onSelect={handleMushroomProductSelect} />)
-                                ) : (
-                                    <p className="text-muted-foreground">No pre-defined products found for this stream. Please add product details manually.</p>
-                                )}
+                                {mushroomProducts.map(prod => <MushroomProductCard key={prod.name} product={prod} onSelect={handleMushroomProductSelect} />)}
                             </div>
                             <ScrollBar orientation="horizontal" />
                         </ScrollArea>
+                    ) : (
+                        <p className="text-muted-foreground">No pre-defined products found for this stream. Please add product details manually.</p>
                     )}
                 </div>
             )}
@@ -476,6 +482,9 @@ export default function AddProductPage() {
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
+                                 <FormDescription className="text-orange-900/90 text-sm">
+                                    The Wellness Tree complies with South African law regarding T.H.C products. The Triple S Club lets enthusiasts share home-grown flowers as free samples with a purchased sticker. It's a great way to share your toke.
+                                </FormDescription>
                                 <Select onValueChange={field.onChange} value={field.value || undefined}>
                                     <FormControl>
                                     <SelectTrigger>
@@ -571,7 +580,7 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                       {(isThcCbdSpecialType || isMushroomStore) ? (
+                       {isThcCbdSpecialType ? (
                            <>
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
@@ -605,12 +614,12 @@ export default function AddProductPage() {
                            <FormField control={form.control} name="feedingType" render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Plant Feeding Type</FormLabel>
-                                <SelectComponent onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                   <FormControl><SelectTrigger className="bg-green-100 border-green-300 text-green-800"><SelectValue placeholder="Select feeding method" /></SelectTrigger></FormControl>
                                   <SelectContent>
                                     {feedingTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
                                   </SelectContent>
-                                </SelectComponent>
+                                </Select>
                                 <FormMessage />
                               </FormItem>
                             )} />
