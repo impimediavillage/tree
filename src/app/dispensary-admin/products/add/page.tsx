@@ -485,7 +485,18 @@ export default function AddProductPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
                         {tradMedStreamOptions.map((stream) => { 
                            const { icon: IconComponent, color } = streamDisplayMapping[stream.name] || { icon: Brain, color: 'text-gray-500' };
-                            return ( <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{stream.name}</span> </Button> );
+                            return ( <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
+                                <Image
+                                    src={stream.imageUrl || `https://placehold.co/400x400.png?text=${encodeURIComponent(stream.name)}`}
+                                    alt={stream.name}
+                                    layout="fill"
+                                    objectFit="cover"
+                                    className="transition-transform duration-300 group-hover:scale-110"
+                                    data-ai-hint={`traditional medicine ${stream.name}`}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                                <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
+                           </Button> );
                         })}
                     </div>
                 </FormItem>
@@ -626,4 +637,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
