@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
@@ -118,9 +118,7 @@ const AddAttributeInputs = ({ onAdd }: { onAdd: (name: string, percentage: strin
 
 const PercentageKeyInfo = () => (
     <div className="p-2 mt-2 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-        <p className="font-semibold text-muted-foreground mb-1.5">
-            Percentage Key:
-        </p>
+        <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
         <p className="text-muted-foreground leading-snug">
             Indicates the reported likelihood of an effect or its potential as a medical aid.
         </p>
@@ -297,8 +295,6 @@ export default function AddProductPage() {
   const onSelectMushroomProduct = (product: any) => {
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
-    // You can pre-fill other fields here if they exist in your mushroom product data
-    // e.g., form.setValue('tags', product.tags || [], { shouldValidate: true });
     
     toast({
         title: "Product Selected",
@@ -475,7 +471,11 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
+            <Button variant="outline" size="sm" asChild>
+                <Link href="/dispensary-admin/products">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                </Link>
+            </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {wellnessData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{wellnessData.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
