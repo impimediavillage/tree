@@ -205,6 +205,9 @@ const baseProductObjectSchema = z.object({
   productSubCategory: z.string().optional().nullable(),
   mostCommonTerpene: z.string().optional().nullable(),
   strain: z.string().optional().nullable(),
+  strainType: z.string().optional().nullable(),
+  homeGrow: z.array(z.string()).optional().nullable().default([]),
+  feedingType: z.enum(['Organic feed in Pots', 'Organic feed Hydro', 'Chemical feed in Pots with flush', 'Chemical feed hydro with flush', 'Organic & Chemical in Pots Flushed', 'Organic & Chemical hydro Flushed']).optional().nullable(),
   thcContent: z.string().optional().nullable(),
   cbdContent: z.string().optional().nullable(),
   effects: z.array(attributeSchema).optional().nullable().default([]),
@@ -212,7 +215,7 @@ const baseProductObjectSchema = z.object({
   medicalUses: z.array(attributeSchema).optional().nullable().default([]),
   stickerProgramOptIn: z.enum(['yes', 'no']).optional().nullable(), 
 
-  // Traditional Medicine Specific
+  // Traditional Medicine & Mushroom Specific
   productType: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
   
