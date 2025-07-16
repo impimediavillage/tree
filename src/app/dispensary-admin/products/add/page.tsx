@@ -207,25 +207,6 @@ export default function AddProductPage() {
     setMushroomProducts([]); setIsLoadingMushrooms(false);
   };
 
-  const fetchMushroomProducts = async (type: string) => {
-    setIsLoadingMushrooms(true);
-    setMushroomProducts([]);
-    try {
-        const productsQuery = query(
-            collection(db, 'mushroom_products'),
-            where('type', '==', type.toLowerCase())
-        );
-        const snapshot = await getDocs(productsQuery);
-        const products = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-        setMushroomProducts(products);
-    } catch (error) {
-        console.error("Error fetching mushroom products:", error);
-        toast({title: "Error", description: "Could not fetch mushroom product catalog.", variant: "destructive"});
-    } finally {
-        setIsLoadingMushrooms(false);
-    }
-  };
-
   const handleMushroomProductSelect = (product: any, format: string) => {
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
@@ -240,7 +221,21 @@ export default function AddProductPage() {
     if (isMushroomStore) {
         form.setValue('category', 'Mushrooms');
         form.setValue('productSubCategory', stream);
-        fetchMushroomProducts(stream);
+        
+        setIsLoadingMushrooms(true);
+        setMushroomProducts([]);
+        try {
+            const categories = (categoryStructureDoc?.categoriesData as any)?.mushroomProductCategories;
+            const selectedCategoryData = categories?.find((cat: any) => cat.category_name === stream);
+            if (selectedCategoryData && selectedCategoryData.products) {
+                setMushroomProducts(selectedCategoryData.products);
+            }
+        } catch (e) {
+            console.error("Error setting mushroom products from doc", e);
+            toast({title: "Error", description: "Could not load products for this stream.", variant: "destructive"});
+        } finally {
+            setIsLoadingMushrooms(false);
+        }
         return;
     }
 
@@ -456,7 +451,7 @@ export default function AddProductPage() {
                         <ScrollArea className="w-full whitespace-nowrap">
                             <div className="flex space-x-4 p-4">
                                 {mushroomProducts.length > 0 ? (
-                                    mushroomProducts.map(prod => <MushroomProductCard key={prod.id} product={prod} onSelect={handleMushroomProductSelect} />)
+                                    mushroomProducts.map(prod => <MushroomProductCard key={prod.name} product={prod} onSelect={handleMushroomProductSelect} />)
                                 ) : (
                                     <p className="text-muted-foreground">No pre-defined products found for this stream. Please add product details manually.</p>
                                 )}
@@ -710,14 +705,12 @@ export default function AddProductPage() {
                        </CardContent>
                        </Card>
                     )}
-                    {(!selectedProductStream || form.formState.isValid) && (
-                         <CardFooter>
-                            <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                                Add Product
-                            </Button>
-                        </CardFooter>
-                    )}
+                    <CardFooter>
+                        <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                            Add Product
+                        </Button>
+                    </CardFooter>
                 </div>
             )}
           </form>
