@@ -258,7 +258,7 @@ export default function AddProductPage() {
     
     if (isTraditionalMedicineStore) {
         form.setValue('category', stream);
-        const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories;
+        const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
         const selectedCategoryData = categories?.find((cat: any) => cat.useCase === stream);
         if (selectedCategoryData && Array.isArray(selectedCategoryData.categories)) {
             setProductTypeOptions(selectedCategoryData.categories.map((c: any) => c.type).sort());
@@ -344,11 +344,11 @@ export default function AddProductPage() {
                     setMushroomStreamOptions(streams);
                 }
                 
-                if (isTradMedStore && Array.isArray((categoriesDoc.categoriesData as any)?.traditionalMedicineCategories)) {
-                    const streams = (categoriesDoc.categoriesData as any).traditionalMedicineCategories
-                        .map((cat: any) => ({ name: cat.useCase, imageUrl: cat.imageUrl }))
-                        .filter((cat: any) => cat.name);
-                    setTradMedStreamOptions(streams);
+                if (isTradMedStore && (categoriesDoc.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories) {
+                  const streams = (categoriesDoc.categoriesData as any).traditionalMedicineCategories.traditionalMedicineCategories
+                      .map((cat: any) => ({ name: cat.useCase, imageUrl: cat.imageUrl }))
+                      .filter((cat: any) => cat.name);
+                  setTradMedStreamOptions(streams);
                 }
 
             } else {
@@ -374,7 +374,7 @@ export default function AddProductPage() {
         let subcategories: string[] = [];
 
         if (isTraditionalMedicineStore && selectedProductStream) {
-            const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories;
+            const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
             const selectedCategoryData = categories?.find((cat: any) => cat.useCase === selectedProductStream);
             const selectedTypeData = selectedCategoryData?.categories?.find((c: any) => c.type === watchProductType);
             subcategories = selectedTypeData?.subtypes?.map((s: any) => s.type) || [];
