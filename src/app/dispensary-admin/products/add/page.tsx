@@ -211,7 +211,11 @@ export default function AddProductPage() {
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
     form.setValue('productType', format, { shouldValidate: true });
+    
+    // Convert benefits to the format expected by the form
     form.setValue('effects', product.benefits?.map((b: string) => ({name: b, percentage: 'N/A'})) || [], { shouldValidate: true });
+    
+    // Capture flavors
     form.setValue('flavors', product.nutritional_info?.bioactives || [], { shouldValidate: true });
     
     const additionalDataToSave = {
@@ -220,7 +224,11 @@ export default function AddProductPage() {
       safetyWarnings: product.safety_warnings,
       nutritionalInfo: product.nutritional_info
     };
-    form.setValue('tags', [...(form.getValues('tags') || []), `mushroom_data:${JSON.stringify(additionalDataToSave)}`]);
+    
+    // Store extra data in a structured way within tags or a dedicated field if schema is adapted
+    const existingTags = form.getValues('tags') || [];
+    const otherTags = existingTags.filter(tag => !tag.startsWith('mushroom_data:'));
+    form.setValue('tags', [...otherTags, `mushroom_data:${JSON.stringify(additionalDataToSave)}`]);
 
     toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
   };
@@ -427,7 +435,7 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                        {cannibinoidStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream as StreamKey)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                        {cannibinoidStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream as StreamKey]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream as StreamKey)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
                 </FormItem>
             )}
@@ -440,15 +448,16 @@ export default function AddProductPage() {
                             const streamKey = Object.keys(streamDisplayMapping).find(key => streamDisplayMapping[key as StreamKey].text === stream.name) as StreamKey | undefined;
                             const { icon: IconComponent, color } = streamKey ? streamDisplayMapping[streamKey] : { icon: Brain, color: 'text-gray-500' };
                             return (
-                              <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
+                              <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
                                 {stream.imageUrl ? (
-                                  <div className="relative h-12 w-12 mb-2">
-                                    <Image src={stream.imageUrl} alt={stream.name} layout="fill" objectFit="contain" />
+                                  <div className="absolute inset-0">
+                                    <Image src={stream.imageUrl} alt={stream.name} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-110" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
                                   </div>
                                 ) : (
-                                  <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} />
+                                  <IconComponent className={cn("h-12 w-12 mb-2 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20", color)} />
                                 )}
-                                <span className="text-lg sm:text-xl font-semibold">{stream.name}</span>
+                                <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
                               </Button>
                             ); 
                         })}
@@ -580,11 +589,11 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                       {isThcCbdSpecialType ? (
+                       {isThcCbdSpecialType && (
                            <>
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Select product type: *</FormLabel>
+                                    <FormLabel>Product Type *</FormLabel>
                                     <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
                                         <SelectContent>{deliveryMethodOptions.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
@@ -602,7 +611,8 @@ export default function AddProductPage() {
                                 )} />
                             )}
                            </>
-                        ) : (
+                        )}
+                        {!isThcCbdSpecialType && !isMushroomStore && (
                             <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         )}
                     </div>
