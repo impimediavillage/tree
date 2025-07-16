@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Check, Info } from 'lucide-react';
+import { Check, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 
@@ -44,6 +44,9 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
   };
 
   const nutritionalInfo = product.nutritional_info || {};
+  const dosageInfo = product.dosage;
+  const legalDisclaimer = product.legal_disclaimer;
+  const safetyWarnings = product.safety_warnings;
 
   return (
     <Card className="w-80 flex-shrink-0 snap-start flex flex-col shadow-lg bg-card text-card-foreground border border-border/50">
@@ -84,13 +87,19 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
                  <AccordionItem value="nutrition">
                     <AccordionTrigger className="text-sm font-medium">Nutritional Info</AccordionTrigger>
                     <AccordionContent className="space-y-4">
-                         {Array.isArray(nutritionalInfo.bioactives) && nutritionalInfo.bioactives.length > 0 && (
-                            <Select>
-                                <SelectTrigger className="w-full h-9 text-xs"><SelectValue placeholder="View Bioactives" /></SelectTrigger>
-                                <SelectContent>
-                                    {nutritionalInfo.bioactives.map((b: string) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                        {Array.isArray(nutritionalInfo.bioactives) && nutritionalInfo.bioactives.length > 0 && (
+                            <div className="pt-2">
+                                <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Bioactives</h4>
+                                <ul className="space-y-1.5 text-sm text-muted-foreground">
+                                {nutritionalInfo.bioactives.map((bioactive: string, index: number) => (
+                                    <li key={index} className="flex items-center gap-2">
+                                        <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                        <span>{bioactive}</span>
+                                    </li>
+                                ))}
+                                </ul>
+                                <Separator className="my-3"/>
+                            </div>
                         )}
                         <div className="grid grid-cols-2 gap-2">
                             <InfoBadge label="Calories" value={nutritionalInfo.calories_per_100g || 0} unit="/100g" className="bg-blue-50 border-blue-200" />
@@ -101,6 +110,39 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
                         </div>
                     </AccordionContent>
                 </AccordionItem>
+                 {dosageInfo && Object.keys(dosageInfo).length > 0 && (
+                    <AccordionItem value="dosage">
+                        <AccordionTrigger className="text-sm font-medium">View Dosage</AccordionTrigger>
+                        <AccordionContent className="space-y-2">
+                             <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Dosage:</h4>
+                             {Object.entries(dosageInfo).map(([key, value]) => (
+                                <div key={key} className="flex justify-between items-baseline text-sm">
+                                    <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>
+                                    <span className="font-bold text-lg text-green-600">{String(value)}</span>
+                                </div>
+                             ))}
+                        </AccordionContent>
+                    </AccordionItem>
+                )}
+                 {safetyWarnings && (
+                    <AccordionItem value="safety">
+                        <AccordionTrigger className="text-sm font-medium text-amber-600">Safety Warnings</AccordionTrigger>
+                        <AccordionContent>
+                           <div className="flex items-start gap-2 text-amber-700 text-sm p-2 bg-amber-50 border border-dashed border-amber-200 rounded-md">
+                             <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                             <p>{safetyWarnings}</p>
+                           </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                 )}
+                 {legalDisclaimer && (
+                    <AccordionItem value="legal">
+                        <AccordionTrigger className="text-sm font-medium">Legal Info</AccordionTrigger>
+                        <AccordionContent>
+                           <p className="text-xs text-muted-foreground">{legalDisclaimer}</p>
+                        </AccordionContent>
+                    </AccordionItem>
+                 )}
             </Accordion>
         </CardContent>
         <CardFooter className="p-4 pt-2 mt-auto flex-col space-y-2">
@@ -117,4 +159,3 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
     </Card>
   );
 }
-
