@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -303,9 +304,9 @@ export default function AddProductPage() {
                 const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
                 setCategoryStructureDoc(categoriesDoc);
 
-                if (isMushStore && Array.isArray(categoriesDoc.categoriesData?.mushroomProductCategories)) {
-                    const streams = categoriesDoc.categoriesData.mushroomProductCategories
-                        .map(cat => cat.category_name)
+                if (isMushStore && Array.isArray((categoriesDoc.categoriesData as any)?.mushroomProductCategories)) {
+                    const streams = (categoriesDoc.categoriesData as any).mushroomProductCategories
+                        .map((cat: any) => cat.category_name)
                         .filter(Boolean);
                     setMushroomStreamOptions(streams as string[]);
                 }
@@ -727,4 +728,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
