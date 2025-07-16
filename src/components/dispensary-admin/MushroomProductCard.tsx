@@ -44,32 +44,35 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
   };
 
   const nutritionalInfo = product.nutritional_info || {};
-  const hasNutritionalInfo = nutritionalInfo && Object.keys(nutritionalInfo).length > 0;
+  const hasNutritionalInfo = nutritionalInfo && Object.keys(nutritionalInfo).length > 0 && 
+                            (nutritionalInfo.bioactives?.length > 0 || nutritionalInfo.calories_per_100g || nutritionalInfo.protein_g);
+  
   const dosageInfo = product.dosage;
   const legalDisclaimer = product.legal_disclaimer;
   const safetyWarnings = product.safety_warnings;
 
   return (
-    <Card className="w-80 flex-shrink-0 snap-start flex flex-col shadow-lg bg-card text-card-foreground border border-border/50">
-        <CardHeader className="p-4">
-            <CardTitle className="text-xl font-bold truncate text-primary" title={product.name}>{product.name}</CardTitle>
-            <div className="relative aspect-video w-full mt-2">
-                <Image
+    <Card className="w-80 flex-shrink-0 snap-start flex flex-col shadow-lg bg-card text-card-foreground border border-border/50 group">
+        <CardHeader className="p-0 relative h-48 w-full overflow-hidden rounded-t-lg">
+            <Image
                 src={imageUrl}
                 alt={product.name}
                 layout="fill"
                 objectFit="cover"
-                className="rounded-lg"
+                className="transition-transform duration-300 group-hover:scale-105"
                 data-ai-hint={`mushroom ${product.name}`}
-                />
-            </div>
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+            <CardTitle className="absolute bottom-0 left-0 p-4 text-xl font-bold text-white z-10 w-full truncate" title={product.name}>
+                {product.name}
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 flex-grow flex flex-col">
              <div className="text-sm text-muted-foreground mt-2 space-y-1">
                 {product.scientific_name && <p><span className="font-semibold">Scientific Name:</span> {product.scientific_name}</p>}
                 {product.sub_category && <p><span className="font-semibold">Sub Category:</span> {product.sub_category}</p>}
             </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 flex-grow flex flex-col">
-            <Accordion type="single" collapsible className="w-full">
+            <Accordion type="single" collapsible className="w-full mt-2">
                 {Array.isArray(product.benefits) && product.benefits.length > 0 && (
                     <AccordionItem value="benefits">
                         <AccordionTrigger className="text-sm font-medium">View Benefits</AccordionTrigger>
