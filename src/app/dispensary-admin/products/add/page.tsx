@@ -38,6 +38,7 @@ const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "1
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
+const MUSHROOM_WELLNESS_TYPE_NAME = "Mushroom store";
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
@@ -54,7 +55,7 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Medicinal' | 'Gourmet' | 'Psychedelic';
 
 const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string }> = {
     'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
@@ -62,6 +63,9 @@ const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.Elemen
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
     'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
     'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Palette, color: 'text-yellow-500' },
+    'Medicinal': { text: 'Medicinal', icon: Brain, color: 'text-blue-500' },
+    'Gourmet': { text: 'Gourmet', icon: LeafIconLucide, color: 'text-orange-500' },
+    'Psychedelic': { text: 'Psychedelic', icon: Sparkles, color: 'text-indigo-500' },
 };
 
 const toTitleCase = (str: string) => {
@@ -134,6 +138,7 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
+  const [isMushroomStore, setIsMushroomStore] = useState(false);
   const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   
@@ -199,24 +204,22 @@ export default function AddProductPage() {
     resetProductStreamSpecificFields();
     setSelectedProductStream(stream);
 
-    let deliveryMethodsMap: Record<string, any> | undefined;
-
-    if (stream === 'THC') {
-        form.setValue('category', 'THC');
-        deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
-    } else if (stream === 'CBD') {
-        form.setValue('category', 'CBD');
-        deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.CBD?.['Delivery Methods'];
-    }
-    
-    if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
-        const options = Object.keys(deliveryMethodsMap).sort();
-        setDeliveryMethodOptions(options);
-    } else {
-        setDeliveryMethodOptions([]);
-        if (stream === 'THC' || stream === 'CBD') {
+    if (stream === 'THC' || stream === 'CBD') {
+        form.setValue('category', stream);
+        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
+        
+        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
+            const options = Object.keys(deliveryMethodsMap).sort();
+            setDeliveryMethodOptions(options);
+        } else {
+            setDeliveryMethodOptions([]);
             toast({ title: "Config Warning", description: `Could not load product types for ${stream}. Please check category configuration.`, variant: "destructive" });
         }
+    } else if (stream === 'Medicinal' || stream === 'Gourmet' || stream === 'Psychedelic') {
+        form.setValue('category', 'Mushrooms');
+        form.setValue('productSubCategory', stream);
+    } else {
+      form.setValue('category', stream);
     }
   };
 
@@ -251,10 +254,13 @@ export default function AddProductPage() {
         setWellnessData(dispensaryData);
         form.setValue('currency', dispensaryData.currency || 'ZAR');
         
-        const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
-        setIsThcCbdSpecialType(specialType);
+        const isCbdStore = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
+        const isMushStore = dispensaryData.dispensaryType === MUSHROOM_WELLNESS_TYPE_NAME;
+        
+        setIsThcCbdSpecialType(isCbdStore);
+        setIsMushroomStore(isMushStore);
 
-        if (dispensaryData.dispensaryType) {
+        if (isCbdStore && dispensaryData.dispensaryType) {
             const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', "Cannibinoid store");
             const docSnap = await getDoc(categoriesDocRef);
             if (docSnap.exists()) {
@@ -263,7 +269,7 @@ export default function AddProductPage() {
                 console.warn(`No product category structure found for type: Cannibinoid store`);
             }
         }
-
+        // Can add mushroom category fetching logic here if needed in future
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -281,12 +287,10 @@ export default function AddProductPage() {
   useEffect(() => {
     if (watchDeliveryMethod && selectedProductStream) {
         let deliveryMethodsMap: Record<string, any> | undefined;
-        if (selectedProductStream === 'THC') {
-            deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
-        } else if (selectedProductStream === 'CBD') {
-            deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.CBD?.['Delivery Methods'];
+        if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
+            deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
         }
-
+        
         const subcategories = deliveryMethodsMap?.[watchDeliveryMethod];
 
         if (Array.isArray(subcategories) && subcategories.length > 0) {
@@ -359,6 +363,9 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
+  const mushroomStreams: StreamKey[] = ['Medicinal', 'Gourmet', 'Psychedelic'];
+  const cannibinoidStreams: StreamKey[] = ['THC', 'CBD', 'Apparel', 'Smoking Gear', 'Sticker Promo Set'];
+
   return (
      <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
@@ -379,7 +386,16 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                        {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                        {cannibinoidStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                    </div>
+                </FormItem>
+            )}
+
+            {isMushroomStore && (
+                 <FormItem>
+                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                        {mushroomStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
                 </FormItem>
             )}
@@ -444,7 +460,7 @@ export default function AddProductPage() {
                                     <Card key={strain.id} className="flex flex-col overflow-hidden">
                                       <CardHeader className="p-0 relative aspect-video">
                                         {strain.img_url && strain.img_url !== 'none' ? (
-                                          <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
+                                          <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" data-ai-hint="cannabis strain" />
                                         ) : (
                                           <div className="w-full h-full bg-muted flex items-center justify-center">
                                             <LeafIconLucide className="h-12 w-12 text-primary/50 animate-pulse-slow" />
@@ -492,7 +508,7 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                       {isThcCbdSpecialType ? (
+                       {(isThcCbdSpecialType || isMushroomStore) ? (
                            <>
                              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                                 <FormItem>
@@ -592,7 +608,7 @@ export default function AddProductPage() {
                     </div>
 
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Images & Tags</h2>
-                     <FormField control={form.control} name="imageUrls" render={({ field }) => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     
                     {selectedProductStream === 'Apparel' && (
