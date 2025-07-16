@@ -208,8 +208,7 @@ export default function AddProductPage() {
         form.setValue('category', 'CBD');
         deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.CBD?.['Delivery Methods'];
     }
-    // Handle other streams if necessary
-
+    
     if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
         const options = Object.keys(deliveryMethodsMap).sort();
         setDeliveryMethodOptions(options);
@@ -542,7 +541,6 @@ export default function AddProductPage() {
                           <FormField control={form.control} name="effects" render={() => (
                             <FormItem>
                                 <FormLabel>Effects</FormLabel>
-                                <PercentageKeyInfo />
                                 <AddAttributeInputs onAdd={(name, percentage) => appendEffect({ name: toTitleCase(name), percentage: percentage + '%' })} />
                                 <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
                                     {effectsFields.map((item, index) => (
@@ -559,7 +557,6 @@ export default function AddProductPage() {
                           <FormField control={form.control} name="medicalUses" render={() => (
                             <FormItem>
                                 <FormLabel>Medical Uses</FormLabel>
-                                <PercentageKeyInfo />
                                 <AddAttributeInputs onAdd={(name, percentage) => appendMedicalUse({ name: toTitleCase(name), percentage: percentage + '%' })} />
                                 <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
                                     {medicalUsesFields.map((item, index) => (
