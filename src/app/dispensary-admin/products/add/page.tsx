@@ -490,55 +490,6 @@ export default function AddProductPage() {
                     </div>
                 </FormItem>
             )}
-
-            {isTraditionalMedicineType && (
-                <FormItem>
-                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                      {Array.isArray(traditionalMedicineStreams) && traditionalMedicineStreams.map((stream) => (
-                        <Button key={stream.useCase} type="button" variant={selectedTradMedStream === stream.useCase ? 'default' : 'outline'} className={cn("h-auto p-4 text-left flex items-start gap-3 transform transition-all duration-200 hover:scale-105 shadow-md", selectedTradMedStream === stream.useCase && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleTradMedStreamSelect(stream.useCase)}> 
-                          <BookOpen className="h-6 w-6 text-primary flex-shrink-0 mt-1" />
-                          <div className="flex flex-col">
-                            <span className="text-lg font-semibold">{stream.useCase}</span>
-                            <span className="text-xs text-muted-foreground whitespace-normal">{stream.description}</span>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                </FormItem>
-            )}
-
-            {isMushroomStoreType && (
-                <FormItem>
-                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                      {Array.isArray(mushroomStreams) && mushroomStreams.map((stream) => (
-                        <Button key={stream.category_name} type="button" variant={selectedMushroomStream === stream.category_name ? 'default' : 'outline'} className={cn("h-auto p-6 text-xl font-semibold transform transition-all duration-200 hover:scale-105 shadow-md", selectedMushroomStream === stream.category_name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleMushroomStreamSelect(stream.category_name)}>
-                          <Brain className="mr-3 h-6 w-6"/> {stream.category_name}
-                        </Button>
-                      ))}
-                    </div>
-                </FormItem>
-            )}
-
-            {isMushroomStoreType && selectedMushroomStream && mushroomCatalog.length > 0 && (
-              <Card className="bg-muted/30">
-                <CardHeader>
-                  <CardTitle>Browse <span className="text-primary">{selectedMushroomStream}</span> Catalog</CardTitle>
-                  <CardDescription>Select a product to pre-fill the form, then set your pricing.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ScrollArea className="w-full">
-                        <div className="flex space-x-4 pb-4">
-                            {mushroomCatalog.map((product: any, index: number) => (
-                                <MushroomProductCard key={index} product={product} onSelect={onSelectMushroomProduct} />
-                            ))}
-                        </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardContent>
-              </Card>
-            )}
              
             {showTripleSOptIn && (
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
@@ -586,5 +537,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
