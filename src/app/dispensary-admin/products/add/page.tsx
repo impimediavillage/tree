@@ -118,7 +118,9 @@ const AddAttributeInputs = ({ onAdd }: { onAdd: (name: string, percentage: strin
 
 const PercentageKeyInfo = () => (
     <div className="p-2 mt-2 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-        <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
+        <p className="font-semibold text-muted-foreground mb-1.5">
+            Percentage Key:
+        </p>
         <p className="text-muted-foreground leading-snug">
             Indicates the reported likelihood of an effect or its potential as a medical aid.
         </p>
@@ -473,7 +475,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Button>
+            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {wellnessData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{wellnessData.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
@@ -567,7 +569,7 @@ export default function AddProductPage() {
 
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                     {/* The rest of the form is rendered here, content omitted for brevity as it is extensive */}
+                     {/* The rest of the form is rendered here */}
                     <CardFooter>
                         <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
@@ -584,3 +586,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
