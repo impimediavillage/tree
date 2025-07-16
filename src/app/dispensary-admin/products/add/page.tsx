@@ -199,17 +199,24 @@ export default function AddProductPage() {
     resetProductStreamSpecificFields();
     setSelectedProductStream(stream);
 
+    let deliveryMethodsMap: Record<string, any> | undefined;
+
     if (stream === 'THC') {
         form.setValue('category', 'THC');
+        deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+    } else if (stream === 'CBD') {
+        form.setValue('category', 'CBD');
+        deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.CBD?.['Delivery Methods'];
+    }
+    // Handle other streams if necessary
 
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
-        
-        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
-            const options = Object.keys(deliveryMethodsMap).sort();
-            setDeliveryMethodOptions(options);
-        } else {
-            setDeliveryMethodOptions([]);
-            toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
+    if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
+        const options = Object.keys(deliveryMethodsMap).sort();
+        setDeliveryMethodOptions(options);
+    } else {
+        setDeliveryMethodOptions([]);
+        if (stream === 'THC' || stream === 'CBD') {
+            toast({ title: "Config Warning", description: `Could not load product types for ${stream}. Please check category configuration.`, variant: "destructive" });
         }
     }
   };
@@ -273,8 +280,14 @@ export default function AddProductPage() {
   }, [watchGender, watchSizingSystem, form]);
 
   useEffect(() => {
-    if (watchDeliveryMethod) {
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+    if (watchDeliveryMethod && selectedProductStream) {
+        let deliveryMethodsMap: Record<string, any> | undefined;
+        if (selectedProductStream === 'THC') {
+            deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
+        } else if (selectedProductStream === 'CBD') {
+            deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.CBD?.['Delivery Methods'];
+        }
+
         const subcategories = deliveryMethodsMap?.[watchDeliveryMethod];
 
         if (Array.isArray(subcategories) && subcategories.length > 0) {
@@ -286,7 +299,7 @@ export default function AddProductPage() {
     } else {
         setProductSubCategoryOptions([]);
     }
-  }, [watchDeliveryMethod, categoryStructureDoc, form]);
+  }, [watchDeliveryMethod, categoryStructureDoc, form, selectedProductStream]);
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -375,7 +388,7 @@ export default function AddProductPage() {
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) club</CardTitle>
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6 items-start">
                         <div className="space-y-4">
@@ -385,7 +398,7 @@ export default function AddProductPage() {
                                  <FormDescription className="text-orange-900/90 text-sm">
                                     The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
                                 </FormDescription>
-                                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select participation..." />
