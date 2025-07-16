@@ -211,6 +211,10 @@ export default function AddProductPage() {
     form.setValue('name', product.name, { shouldValidate: true });
     form.setValue('description', product.description, { shouldValidate: true });
     form.setValue('productType', format, { shouldValidate: true });
+    form.setValue('effects', product.benefits?.map((b: string) => ({name: b, percentage: 'N/A'})) || [], { shouldValidate: true });
+    form.setValue('flavors', product.nutritional_info?.bioactives || [], { shouldValidate: true });
+    // This is a simplified mapping. For a full solution, more fields in productSchema would be needed for dosage etc.
+    // For now, we store the full object in a temporary state or a non-schema field if needed.
     toast({ title: "Product Selected", description: `${product.name} details have been filled in.`});
   };
 
@@ -424,7 +428,7 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                        {cannibinoidStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                        {cannibinoidStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream as StreamKey)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
                 </FormItem>
             )}
@@ -472,7 +476,7 @@ export default function AddProductPage() {
                             <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
                                 <FormItem className="space-y-3">
                                 <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate for this product?</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <Select onValueChange={field.onChange} value={field.value || undefined}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select participation..." />

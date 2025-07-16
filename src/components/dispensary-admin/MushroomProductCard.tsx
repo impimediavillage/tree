@@ -44,6 +44,7 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
   };
 
   const nutritionalInfo = product.nutritional_info || {};
+  const hasNutritionalInfo = nutritionalInfo && Object.keys(nutritionalInfo).length > 0;
   const dosageInfo = product.dosage;
   const legalDisclaimer = product.legal_disclaimer;
   const safetyWarnings = product.safety_warnings;
@@ -84,32 +85,34 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
                         </AccordionContent>
                     </AccordionItem>
                 )}
-                 <AccordionItem value="nutrition">
-                    <AccordionTrigger className="text-sm font-medium">Nutritional Info</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                        {Array.isArray(nutritionalInfo.bioactives) && nutritionalInfo.bioactives.length > 0 && (
-                            <div className="pt-2">
-                                <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Bioactives</h4>
-                                <ul className="space-y-1.5 text-sm text-muted-foreground">
-                                {nutritionalInfo.bioactives.map((bioactive: string, index: number) => (
-                                    <li key={index} className="flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                        <span>{bioactive}</span>
-                                    </li>
-                                ))}
-                                </ul>
-                                <Separator className="my-3"/>
+                 {hasNutritionalInfo && (
+                    <AccordionItem value="nutrition">
+                        <AccordionTrigger className="text-sm font-medium">Nutritional Info</AccordionTrigger>
+                        <AccordionContent className="space-y-4">
+                            {Array.isArray(nutritionalInfo.bioactives) && nutritionalInfo.bioactives.length > 0 && (
+                                <div className="pt-2">
+                                    <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Bioactives</h4>
+                                    <ul className="space-y-1.5 text-sm text-muted-foreground">
+                                    {nutritionalInfo.bioactives.map((bioactive: string, index: number) => (
+                                        <li key={index} className="flex items-start gap-2">
+                                            <Check className="h-4 w-4 mt-0.5 text-green-500 flex-shrink-0" />
+                                            <span>{bioactive}</span>
+                                        </li>
+                                    ))}
+                                    </ul>
+                                    <Separator className="my-3"/>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-2">
+                                {nutritionalInfo.calories_per_100g && <InfoBadge label="Calories" value={nutritionalInfo.calories_per_100g} unit="/100g" className="bg-blue-50 border-blue-200" />}
+                                {nutritionalInfo.carbohydrates_g && <InfoBadge label="Carbs" value={nutritionalInfo.carbohydrates_g} unit="g" className="bg-orange-50 border-orange-200" />}
+                                {nutritionalInfo.fat_g && <InfoBadge label="Fat" value={nutritionalInfo.fat_g} unit="g" className="bg-yellow-50 border-yellow-200" />}
+                                {nutritionalInfo.fiber_g && <InfoBadge label="Fiber" value={nutritionalInfo.fiber_g} unit="g" className="bg-lime-50 border-lime-200" />}
+                                {nutritionalInfo.protein_g && <InfoBadge label="Protein" value={nutritionalInfo.protein_g} unit="g" className="bg-purple-50 border-purple-200" />}
                             </div>
-                        )}
-                        <div className="grid grid-cols-2 gap-2">
-                            <InfoBadge label="Calories" value={nutritionalInfo.calories_per_100g || 0} unit="/100g" className="bg-blue-50 border-blue-200" />
-                            <InfoBadge label="Carbs" value={nutritionalInfo.carbohydrates_g || 0} unit="g" className="bg-orange-50 border-orange-200" />
-                            <InfoBadge label="Fat" value={nutritionalInfo.fat_g || 0} unit="g" className="bg-yellow-50 border-yellow-200" />
-                            <InfoBadge label="Fiber" value={nutritionalInfo.fiber_g || 0} unit="g" className="bg-lime-50 border-lime-200" />
-                            <InfoBadge label="Protein" value={nutritionalInfo.protein_g || 0} unit="g" className="bg-purple-50 border-purple-200" />
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
+                        </AccordionContent>
+                    </AccordionItem>
+                 )}
                  {dosageInfo && Object.keys(dosageInfo).length > 0 && (
                     <AccordionItem value="dosage">
                         <AccordionTrigger className="text-sm font-medium">View Dosage</AccordionTrigger>
@@ -123,7 +126,7 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
                              ))}
                         </AccordionContent>
                     </AccordionItem>
-                )}
+                 )}
                  {safetyWarnings && (
                     <AccordionItem value="safety">
                         <AccordionTrigger className="text-sm font-medium text-amber-600">Safety Warnings</AccordionTrigger>
