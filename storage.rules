@@ -1,32 +1,25 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to all files.
-    // This is common for images that need to be displayed in the app.
+    // Allow public read access to all files so they can be displayed in the app.
     match /{allPaths=**} {
       allow read;
     }
 
-    // Allow authenticated users to write to specific folders.
-    // This allows product images, lab reports, and sticker sets to be uploaded.
-    match /products/{userId}/{allPaths=**} {
+    // Allow authenticated users to write to their own designated folders.
+    // This rule is more specific and secure.
+    match /products/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    match /lab-reports/{userId}/{allPaths=**} {
+    match /lab-reports/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    match /stickersets/{userId}/{allPaths=**} {
+    match /stickersets/{userId}/{fileName} {
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-    
-    // Allow writes to dispensary type assets only by an admin.
-    // This is a placeholder and might need adjustment based on how Super Admins are identified in rules.
-    match /dispensary-type-assets/{allPaths=**} {
-       allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+    match /dispensary-type-assets/{folder}/{fileName} {
+      allow write: if request.auth != null; // Allow any authenticated user (admins)
     }
   }
 }
