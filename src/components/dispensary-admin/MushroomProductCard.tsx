@@ -23,7 +23,7 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
         <CardHeader className="p-0">
             <div className="relative aspect-square w-full">
                 <Image
-                src={product.imageUrl || placeholderImage}
+                src={placeholderImage}
                 alt={product.name}
                 layout="fill"
                 objectFit="cover"
