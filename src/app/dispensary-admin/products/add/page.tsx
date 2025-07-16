@@ -270,7 +270,8 @@ export default function AddProductPage() {
 
     if (isThcCbdSpecialType) {
         let categoryName = '';
-        switch(stream) {
+        const streamKey = stream as StreamKey;
+        switch(streamKey) {
             case 'THC': categoryName = 'THC'; break;
             case 'CBD': categoryName = 'CBD'; break;
             case 'Apparel': categoryName = 'Apparel'; break;
@@ -279,7 +280,7 @@ export default function AddProductPage() {
         }
         form.setValue('category', categoryName);
 
-        const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
+        const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[streamKey]?.['Delivery Methods'];
         
         if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
             setProductTypeOptions(Object.keys(deliveryMethodsMap).sort());
@@ -378,7 +379,7 @@ export default function AddProductPage() {
             const selectedTypeData = selectedCategoryData?.categories?.find((c: any) => c.type === watchProductType);
             subcategories = selectedTypeData?.subtypes?.map((s: any) => s.type) || [];
         } else if (isThcCbdSpecialType && selectedProductStream) {
-            const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
+            const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[selectedProductStream as StreamKey]?.['Delivery Methods'];
             subcategories = deliveryMethodsMap?.[watchProductType] || [];
         }
         
@@ -553,6 +554,22 @@ export default function AddProductPage() {
                     ) : (
                         <p className="text-muted-foreground">No pre-defined products found for this stream. Please add product details manually.</p>
                     )}
+                     {selectedMushroomBaseProduct && (
+                        <Card className="mt-4 border-primary/30 bg-muted/30">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Check className="h-6 w-6 text-green-500"/>
+                                    Selected Base Product: {selectedMushroomBaseProduct.name}
+                                </CardTitle>
+                                <CardDescription>
+                                    The following details have been auto-populated. You can adjust them below.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm">{selectedMushroomBaseProduct.description}</p>
+                            </CardContent>
+                        </Card>
+                     )}
                 </div>
             )}
             
@@ -561,7 +578,7 @@ export default function AddProductPage() {
             {showProductDetailsForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>2. Product Details</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
@@ -589,7 +606,7 @@ export default function AddProductPage() {
                         )}
                     </div>
                     
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>3. Pricing & Stock *</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing & Stock *</h2>
                     <div className="space-y-4">
                         {priceTierFields.map((field, index) => (
                             <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative">
@@ -602,7 +619,7 @@ export default function AddProductPage() {
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Another Price Tier</Button>
                     </div>
 
-                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>4. Images & Tags</h2>
+                    <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Images & Tags</h2>
                      <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     
