@@ -165,6 +165,9 @@ export default function AddProductPage() {
   const [mushroomProducts, setMushroomProducts] = React.useState<any[]>([]);
   const [selectedMushroomBaseProduct, setSelectedMushroomBaseProduct] = React.useState<any | null>(null);
 
+  // State for Traditional Medicine Store workflow
+  const [tradMedStreamOptions, setTradMedStreamOptions] = React.useState<any[]>([]);
+
   // General form state
   const [availableStandardSizes, setAvailableStandardSizes] = React.useState<string[]>([]);
   const [strainQuery, setStrainQuery] = React.useState('');
@@ -255,9 +258,10 @@ export default function AddProductPage() {
     
     if (isTraditionalMedicineStore) {
         form.setValue('category', stream);
-        const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.[stream];
-        if (categories && typeof categories === 'object') {
-            setProductTypeOptions(Object.keys(categories).sort());
+        const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories;
+        const selectedCategoryData = categories?.find((cat: any) => cat.useCase === stream);
+        if (selectedCategoryData && Array.isArray(selectedCategoryData.categories)) {
+            setProductTypeOptions(selectedCategoryData.categories.map((c: any) => c.type).sort());
         } else {
             setProductTypeOptions([]);
         }
@@ -338,6 +342,14 @@ export default function AddProductPage() {
                         .filter((cat: any) => cat.name);
                     setMushroomStreamOptions(streams);
                 }
+                
+                if (isTradMedStore && Array.isArray((categoriesDoc.categoriesData as any)?.traditionalMedicineCategories)) {
+                    const streams = (categoriesDoc.categoriesData as any).traditionalMedicineCategories
+                        .map((cat: any) => ({ name: cat.useCase, imageUrl: cat.imageUrl }))
+                        .filter((cat: any) => cat.name);
+                    setTradMedStreamOptions(streams);
+                }
+
             } else {
                 console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
             }
@@ -357,12 +369,15 @@ export default function AddProductPage() {
   }, [watchGender, watchSizingSystem, form]);
 
   React.useEffect(() => {
-    if (watchProductType && selectedProductStream && (isTraditionalMedicineStore || isThcCbdSpecialType)) {
+    if (watchProductType) {
         let subcategories: string[] = [];
-        if (isTraditionalMedicineStore) {
-            const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.[selectedProductStream];
-            subcategories = categories?.[watchProductType] || [];
-        } else if (isThcCbdSpecialType) {
+
+        if (isTraditionalMedicineStore && selectedProductStream) {
+            const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories;
+            const selectedCategoryData = categories?.find((cat: any) => cat.useCase === selectedProductStream);
+            const selectedTypeData = selectedCategoryData?.categories?.find((c: any) => c.type === watchProductType);
+            subcategories = selectedTypeData?.subtypes?.map((s: any) => s.type) || [];
+        } else if (isThcCbdSpecialType && selectedProductStream) {
             const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
             subcategories = deliveryMethodsMap?.[watchProductType] || [];
         }
@@ -438,7 +453,6 @@ export default function AddProductPage() {
   }
 
   const cannibinoidStreams: StreamKey[] = ['THC', 'CBD', 'Apparel', 'Smoking Gear', 'Sticker Promo Set'];
-  const traditionalMedicineStreams: StreamKey[] = ['Plants', 'Animals', 'Spiritual'];
 
   return (
      <Card className="max-w-4xl mx-auto my-8 shadow-xl">
@@ -469,7 +483,10 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {traditionalMedicineStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream as StreamKey)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                        {tradMedStreamOptions.map((stream) => { 
+                           const { icon: IconComponent, color } = streamDisplayMapping[stream.name] || { icon: Brain, color: 'text-gray-500' };
+                            return ( <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{stream.name}</span> </Button> );
+                        })}
                     </div>
                 </FormItem>
             )}
@@ -478,21 +495,29 @@ export default function AddProductPage() {
                  <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {mushroomStreamOptions.map((stream) => { 
-                            const { icon: IconComponent, color } = streamDisplayMapping[stream.name] || { icon: Brain, color: 'text-gray-500' };
-                            return (
-                              <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}> 
-                                {stream.imageUrl ? (
-                                  <>
-                                    <Image src={stream.imageUrl} alt={stream.name} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-110" data-ai-hint={`mushroom type ${stream.name}`} />
+                        {mushroomStreamOptions.map((stream) => {
+                             const { icon: IconComponent, color } = streamDisplayMapping[stream.name] || { icon: Brain, color: 'text-gray-500' };
+                             const defaultImageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(stream.name)}`;
+                             return (
+                                <Button
+                                    key={stream.name}
+                                    type="button"
+                                    variant={selectedProductStream === stream.name ? 'default' : 'outline'}
+                                    className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                                    onClick={() => handleProductStreamSelect(stream.name)}
+                                >
+                                    <Image
+                                        src={stream.imageUrl || defaultImageUrl}
+                                        alt={stream.name}
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="transition-transform duration-300 group-hover:scale-110"
+                                        data-ai-hint={`mushroom type ${stream.name}`}
+                                    />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                                  </>
-                                ) : (
-                                  <IconComponent className="h-12 w-12 mb-2 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20 text-gray-500" />
-                                )}
-                                <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
-                              </Button>
-                            ); 
+                                    <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{stream.name}</span>
+                                </Button>
+                             );
                         })}
                     </div>
                 </FormItem>
@@ -601,3 +626,4 @@ export default function AddProductPage() {
     </Card>
   );
 }
+

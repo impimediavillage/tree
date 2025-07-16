@@ -70,8 +70,12 @@ export interface DispensaryTypeProductCategoriesDoc {
   categoriesData: {
     thcCbdProductCategories?: Record<string, any>;
     traditionalMedicineCategories?: {
-        traditionalMedicineCategories?: any[]
-    };
+        useCase: string;
+        categories: {
+            type: string;
+            subtypes?: { type: string }[];
+        }[];
+    }[];
     mushroomProductCategories?: Record<string, any>;
   }; 
   updatedAt?: Timestamp | Date | string;
@@ -101,6 +105,7 @@ export interface Product {
   // Traditional Medicine & Mushroom Specific
   productType?: string | null;
   subSubcategory?: string | null;
+  baseProductData?: any | null; // For storing the selected base product
   
   // Strain details (shared)
   strain?: string | null;
