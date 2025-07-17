@@ -505,7 +505,7 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                        {cannibinoidStreams.map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream as StreamKey)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
+                        {cannibinoidStreams.map((stream, index) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 shadow-md animate-fade-in-from-bottom", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }} onClick={() => handleProductStreamSelect(stream as StreamKey)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
                 </FormItem>
             )}
@@ -514,12 +514,13 @@ export default function AddProductPage() {
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {tradMedStreamOptions.map((stream) => (
+                        {tradMedStreamOptions.map((stream, index) => (
                           <Button
                             key={stream.name}
                             type="button"
                             variant={selectedProductStream === stream.name ? 'default' : 'outline'}
-                            className={cn("h-56 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                            className={cn("h-56 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 shadow-md overflow-hidden relative group animate-fade-in-from-bottom", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                            style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                             onClick={() => handleProductStreamSelect(stream.name)}
                           >
                             <Image
@@ -542,14 +543,15 @@ export default function AddProductPage() {
                  <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Mushroom Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {mushroomStreamOptions.map((stream) => {
+                        {mushroomStreamOptions.map((stream, index) => {
                              const defaultImageUrl = `https://placehold.co/400x400.png?text=${encodeURIComponent(stream.name)}`;
                              return (
                                 <Button
                                     key={stream.name}
                                     type="button"
                                     variant={selectedProductStream === stream.name ? 'default' : 'outline'}
-                                    className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                                    className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 shadow-md overflow-hidden relative group animate-fade-in-from-bottom", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                                    style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                                     onClick={() => handleProductStreamSelect(stream.name)}
                                 >
                                     <Image
@@ -577,11 +579,11 @@ export default function AddProductPage() {
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Type * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
                         {productTypeOptions.map((type, index) => (
-                          <div key={`${type.name}-${index}`} className="animate-fade-in-scale-up" style={{animationDuration: '0.3s'}}>
+                          <div key={`${type.name}-${index}`} className="animate-fade-in-from-bottom" style={{animationDelay: `${index * 50}ms`, animationFillMode: 'backwards'}}>
                             <Button
                                 type="button"
                                 variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
-                                className={cn("h-64 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
+                                className={cn("h-64 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
                                 onClick={() => handleProductTypeSelect(type)}
                             >
                                 <Image
@@ -651,7 +653,7 @@ export default function AddProductPage() {
             <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
 
             {showProductDetailsForm && (
-                <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                <div className="space-y-6 animate-fade-in-from-bottom" style={{animationDelay: `150ms`, animationFillMode: 'backwards'}}>
                     
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
