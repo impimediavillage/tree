@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -45,6 +44,7 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 const MUSHROOM_WELLNESS_TYPE_NAME = "Mushroom store";
 const TRADITIONAL_MEDICINE_WELLNESS_TYPE_NAME = "Traditional Medicine dispensary";
+const HOMEOPATHIC_STORE_TYPE_NAME = "Homeopathic store";
 
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
@@ -152,6 +152,7 @@ export default function AddProductPage() {
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = React.useState(false);
   const [isMushroomStore, setIsMushroomStore] = React.useState(false);
   const [isTraditionalMedicineStore, setIsTraditionalMedicineStore] = React.useState(false);
+  const [isHomeopathicStore, setIsHomeopathicStore] = React.useState(false);
 
   const [categoryStructureDoc, setCategoryStructureDoc] = React.useState<DispensaryTypeProductCategoriesDoc | null>(null);
   const [selectedProductStream, setSelectedProductStream] = React.useState<string | null>(null);
@@ -169,6 +170,9 @@ export default function AddProductPage() {
 
   // State for Traditional Medicine Store workflow
   const [tradMedStreamOptions, setTradMedStreamOptions] = React.useState<any[]>([]);
+
+  // State for Homeopathic Store workflow
+  const [homeopathicTypeOptions, setHomeopathicTypeOptions] = React.useState<any[]>([]);
 
   // General form state
   const [availableStandardSizes, setAvailableStandardSizes] = React.useState<string[]>([]);
@@ -213,10 +217,11 @@ export default function AddProductPage() {
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchProductType = form.watch('productType');
 
-  const showProductDetailsForm = !isThcCbdSpecialType && !isMushroomStore && !isTraditionalMedicineStore || 
+  const showProductDetailsForm = !isThcCbdSpecialType && !isMushroomStore && !isTraditionalMedicineStore && !isHomeopathicStore ||
                                 (isThcCbdSpecialType && selectedProductStream) ||
                                 (isMushroomStore && selectedProductStream) ||
-                                (isTraditionalMedicineStore && selectedProductStream);
+                                (isTraditionalMedicineStore && selectedProductType) || // This now depends on the second step
+                                (isHomeopathicStore && selectedProductType); // Also depends on second step
                                 
   const showStrainFetchUI = isThcCbdSpecialType && (selectedProductStream === 'THC' || selectedProductStream === 'CBD') && watchStickerProgramOptIn !== 'no';
 
@@ -312,9 +317,10 @@ export default function AddProductPage() {
       setSelectedProductType(type);
       form.setValue('productType', type.name, { shouldValidate: true });
       form.setValue('productSubCategory', null); // Reset subcategory when type changes
-      if (isTraditionalMedicineStore) {
+      
+      if (isTraditionalMedicineStore || isHomeopathicStore) {
         if (type.subtypes && Array.isArray(type.subtypes) && type.subtypes.length > 0) {
-            const subtypeNames = type.subtypes.map((s: any) => s).filter(Boolean);
+            const subtypeNames = type.subtypes.map((s: any) => (typeof s === 'object' && s.form) ? s.form : s).filter(Boolean);
             const uniqueSubtypes = [...new Set(subtypeNames)].sort();
             setSubCategoryL2Options(uniqueSubtypes);
         } else {
@@ -359,26 +365,37 @@ export default function AddProductPage() {
         const isCbdStore = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         const isMushStore = dispensaryData.dispensaryType === MUSHROOM_WELLNESS_TYPE_NAME;
         const isTradMedStore = dispensaryData.dispensaryType === TRADITIONAL_MEDICINE_WELLNESS_TYPE_NAME;
+        const isHomeoStore = dispensaryData.dispensaryType === HOMEOPATHIC_STORE_TYPE_NAME;
         
         setIsThcCbdSpecialType(isCbdStore);
         setIsMushroomStore(isMushStore);
         setIsTraditionalMedicineStore(isTradMedStore);
+        setIsHomeopathicStore(isHomeoStore);
 
-        if ((isCbdStore || isMushStore || isTradMedStore) && dispensaryData.dispensaryType) {
+        if ((isCbdStore || isMushStore || isTradMedStore || isHomeoStore) && dispensaryData.dispensaryType) {
             const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryData.dispensaryType);
             const docSnap = await getDoc(categoriesDocRef);
             if (docSnap.exists()) {
                 const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
                 setCategoryStructureDoc(categoriesDoc);
 
-                if (isMushStore && Array.isArray((categoriesDoc.categoriesData as any)?.mushroomProductCategories)) {
+                if (isHomeoStore) {
+                    const data = (categoriesDoc.categoriesData as any)?.homeopathicProducts?.homeopathicProducts;
+                    if (data && typeof data === 'object') {
+                        const types = Object.values(data).map((cat: any) => ({
+                            name: cat.type,
+                            imageUrl: cat.imageUrl || null,
+                            subtypes: cat.subtypes || cat.forms || cat.examples || [],
+                        }));
+                        setHomeopathicTypeOptions(types);
+                    }
+                } else if (isMushStore && Array.isArray((categoriesDoc.categoriesData as any)?.mushroomProductCategories)) {
                     const streams = (categoriesDoc.categoriesData as any).mushroomProductCategories
                         .map((cat: any) => ({name: cat.category_name, imageUrl: cat.imageUrl}))
                         .filter((cat: any) => cat.name);
                     setMushroomStreamOptions(streams);
                 }
-                
-                if (isTradMedStore && (categoriesDoc.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories) {
+                else if (isTradMedStore && (categoriesDoc.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories) {
                   const data = (categoriesDoc.categoriesData as any).traditionalMedicineCategories.traditionalMedicineCategories;
                   if (Array.isArray(data)) {
                     const streams = data
@@ -510,6 +527,49 @@ export default function AddProductPage() {
                 </FormItem>
             )}
 
+            {isHomeopathicStore && (
+              <FormItem>
+                <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Type * </FormLabel>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                  {homeopathicTypeOptions.map((type, index) => (
+                    <div key={type.name + index} className="animate-fade-in-from-bottom" style={{animationDelay: `${index * 50}ms`, animationFillMode: 'backwards'}}>
+                      <Button
+                          type="button"
+                          variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
+                          className={cn("h-64 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
+                          onClick={() => { handleProductTypeSelect(type); form.setValue('category', type.name); }}
+                      >
+                          <Image
+                          src={type.imageUrl || `https://placehold.co/600x600.png?text=${encodeURIComponent(type.name)}`}
+                          alt={type.name}
+                          layout="fill"
+                          objectFit="cover"
+                          className="transition-transform duration-300 group-hover:scale-110"
+                          data-ai-hint={`homeopathy ${type.name}`}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                          <span className="text-base font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{type.name}</span>
+                      </Button>
+                      
+                      {selectedProductType?.name === type.name && subCategoryL2Options.length > 0 && (
+                          <div className="mt-2 animate-accordion-down">
+                          <FormField control={form.control} name="productSubCategory" render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel className="sr-only">Sub-type for {type.name}</FormLabel>
+                                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                                      <FormControl><SelectTrigger><SelectValue placeholder="Select a Sub-type" /></SelectTrigger></FormControl>
+                                      <SelectContent>{subCategoryL2Options.map((cat, index) => <SelectItem key={`${cat}-${index}`} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                  </Select><FormMessage />
+                              </FormItem>
+                          )} />
+                          </div>
+                      )}
+                    </div>
+                  ))}
+                 </div>
+              </FormItem>
+            )}
+
             {isTraditionalMedicineStore && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
@@ -560,7 +620,7 @@ export default function AddProductPage() {
                                         fill
                                         sizes="(max-width: 640px) 90vw, 33vw"
                                         style={{ objectFit: 'cover' }}
-                                        className="transition-transform duration-300 group-hover:scale-110"
+                                        className="transition-transform duration-300 group-hover:scale-105"
                                         data-ai-hint={`mushroom type ${stream.name}`}
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
