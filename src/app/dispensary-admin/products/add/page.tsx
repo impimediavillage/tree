@@ -201,7 +201,7 @@ export default function AddProductPage() {
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
-  const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
+  const { fields: poolPriceTiers, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
   const { fields: effectsFields, append: appendEffect, remove: removeEffect, replace: replaceEffects } = useFieldArray({ control: form.control, name: "effects" });
   const { fields: medicalUsesFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({ control: form.control, name: "medicalUses" });
   const { replace: replaceFlavors } = useFieldArray({ control: form.control, name: "flavors" });
@@ -214,7 +214,7 @@ export default function AddProductPage() {
   const watchProductType = form.watch('productType');
 
   const showProductDetailsForm = !isThcCbdSpecialType && !isMushroomStore && !isTraditionalMedicineStore || 
-                                (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes')) || 
+                                (isThcCbdSpecialType && selectedProductStream) ||
                                 (isMushroomStore && selectedProductStream) ||
                                 (isTraditionalMedicineStore && selectedProductStream);
                                 
@@ -408,17 +408,15 @@ export default function AddProductPage() {
 
   React.useEffect(() => {
     if (watchProductType) {
-        let subcategories: string[] = [];
-        if (isThcCbdSpecialType && selectedProductStream) {
+        if(isThcCbdSpecialType) {
             const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[selectedProductStream as StreamKey]?.['Delivery Methods'];
-            subcategories = deliveryMethodsMap?.[watchProductType] || [];
-        }
-        
-        if (Array.isArray(subcategories) && subcategories.length > 0) {
-            const uniqueSubcategories = [...new Set(subcategories)];
-            setSubCategoryL2Options(uniqueSubcategories.sort());
-        } else {
-            setSubCategoryL2Options([]);
+            const subcategories = deliveryMethodsMap?.[watchProductType] || [];
+            if (Array.isArray(subcategories) && subcategories.length > 0) {
+                const uniqueSubcategories = [...new Set(subcategories)];
+                setSubCategoryL2Options(uniqueSubcategories.sort());
+            } else {
+                setSubCategoryL2Options([]);
+            }
         }
         form.setValue('productSubCategory', null);
     } else {
@@ -576,8 +574,8 @@ export default function AddProductPage() {
                 <div className="space-y-4">
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Type * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
-                        {productTypeOptions.map((type) => (
-                          <div key={type.name} className="animate-fade-in-scale-up" style={{animationDuration: '0.3s'}}>
+                        {productTypeOptions.map((type, index) => (
+                          <div key={`${type.name}-${index}`} className="animate-fade-in-scale-up" style={{animationDuration: '0.3s'}}>
                             <Button
                                 type="button"
                                 variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
@@ -657,8 +655,8 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
-                     <div className="grid md:grid-cols-2 gap-4">
-                        {isThcCbdSpecialType && (
+                     {isThcCbdSpecialType && (
+                        <div className="grid md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="productType" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Product Type *</FormLabel>
@@ -669,7 +667,6 @@ export default function AddProductPage() {
                                     <FormMessage />
                                 </FormItem>
                             )} />
-                        )}
                         {subCategoryL2Options.length > 0 && (
                             <FormField control={form.control} name="productSubCategory" render={({ field }) => (
                                 <FormItem><FormLabel>Product Sub Category</FormLabel>
@@ -679,7 +676,8 @@ export default function AddProductPage() {
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
-                    </div>
+                        </div>
+                    )}
                     
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing & Stock *</h2>
                     <div className="space-y-4">
