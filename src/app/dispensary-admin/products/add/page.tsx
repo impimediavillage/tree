@@ -86,8 +86,8 @@ const toTitleCase = (str: string) => {
 const getBadgeColor = (itemType: 'effect' | 'flavor' | 'medical' | 'thc' | 'terpene', index: number): string => {
     const colors = {
         effect: ["bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800"],
-        flavor: ["bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800"],
-        medical: ["bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800"],
+        flavor: ["bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800", "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"],
+        medical: ["bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800", "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"],
         terpene: ["bg-orange-100 text-orange-800", "bg-red-200 text-red-900"],
         thc: ["bg-red-100 text-red-800", "bg-rose-100 text-rose-800"],
     };
@@ -258,10 +258,11 @@ export default function AddProductPage() {
     
     if (isTraditionalMedicineStore) {
         form.setValue('category', stream);
-        const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
-        const selectedCategoryData = categories?.find((cat: any) => cat.useCase === stream);
+        const tradMedData = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
+        const selectedCategoryData = tradMedData?.find((cat: any) => cat.useCase === stream);
         if (selectedCategoryData && Array.isArray(selectedCategoryData.categories)) {
-            setProductTypeOptions(selectedCategoryData.categories.map((c: any) => c.type).sort());
+            const types = selectedCategoryData.categories.map((c: any) => c.type).filter(Boolean);
+            setProductTypeOptions([...new Set(types)].sort());
         } else {
             setProductTypeOptions([]);
         }
@@ -283,7 +284,8 @@ export default function AddProductPage() {
         const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[streamKey]?.['Delivery Methods'];
         
         if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
-            setProductTypeOptions(Object.keys(deliveryMethodsMap).sort());
+            const types = Object.keys(deliveryMethodsMap);
+            setProductTypeOptions([...new Set(types)].sort());
         } else {
             setProductTypeOptions([]);
             toast({ title: "Config Warning", description: `Could not load product types for ${stream}. Please check category configuration.`, variant: "destructive" });
@@ -374,8 +376,8 @@ export default function AddProductPage() {
         let subcategories: string[] = [];
 
         if (isTraditionalMedicineStore && selectedProductStream) {
-            const categories = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
-            const selectedCategoryData = categories?.find((cat: any) => cat.useCase === selectedProductStream);
+            const tradMedData = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
+            const selectedCategoryData = tradMedData?.find((cat: any) => cat.useCase === selectedProductStream);
             const selectedTypeData = selectedCategoryData?.categories?.find((c: any) => c.type === watchProductType);
             subcategories = selectedTypeData?.subtypes?.map((s: any) => s.type) || [];
         } else if (isThcCbdSpecialType && selectedProductStream) {
@@ -384,7 +386,7 @@ export default function AddProductPage() {
         }
         
         if (Array.isArray(subcategories) && subcategories.length > 0) {
-            setProductSubCategoryOptions(subcategories.sort());
+            setProductSubCategoryOptions([...new Set(subcategories)].sort());
         } else {
             setProductSubCategoryOptions([]);
         }
@@ -587,7 +589,7 @@ export default function AddProductPage() {
                                     <FormLabel>Product Type *</FormLabel>
                                     <Select onValueChange={(value) => { field.onChange(value); form.setValue('productSubCategory', null); }} value={field.value || ''} disabled={productTypeOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{productTypeOptions.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{productTypeOptions.map((opt, index) => <SelectItem key={`${opt}-${index}`} value={opt}>{opt}</SelectItem>)}</SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
