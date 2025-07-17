@@ -145,154 +145,94 @@ export default function WellnessSignupPage() {
   const watchDispensaryType = form.watch("dispensaryType");
 
   const initializeMapAndAutocomplete = useCallback(() => {
-    if (!window.google || !window.google.maps || !window.google.maps.places) {
-      console.warn("Google Maps API not fully loaded for signup page initialization.");
-      return;
-    }
-    if (!locationInputRef.current) {
-      console.warn("Location input ref is not available for Autocomplete on signup page.");
-      return;
-    }
-    if (!mapContainerRef.current) {
-      console.warn("Map container ref is not available for Map on signup page.");
-      return;
-    }
+    if (!window.google || !window.google.maps || !locationInputRef.current || !mapContainerRef.current) return;
 
+    // --- Initialize Autocomplete ---
     if (!autocompleteRef.current) {
-      const autocomplete = new window.google.maps.places.Autocomplete(
-        locationInputRef.current,
-        { fields: ["formatted_address", "geometry", "name", "address_components"], types: ["address"], componentRestrictions: { country: "za" } }
-      );
-      autocompleteRef.current = autocomplete;
-      autocomplete.addListener("place_changed", () => {
-        const place = autocomplete.getPlace();
-        if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-        if (place.geometry?.location) {
-          const loc = place.geometry.location;
-          form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-          form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-          if (mapInstanceRef.current && markerInstanceRef.current) {
-            mapInstanceRef.current.setCenter(loc);
-            mapInstanceRef.current.setZoom(17);
-            markerInstanceRef.current.setPosition(loc);
-          }
-        }
-        if (place.address_components) {
-          const countryComponent = place.address_components.find(component =>
-            component.types.includes("country")
-          );
-          if (countryComponent) {
-            const countryShortName = countryComponent.short_name;
-            const matchedCountry = countryCodes.find(cc => cc.shortName === countryShortName);
-            if (matchedCountry) {
-              setSelectedCountryCode(matchedCountry.value);
+        const autocomplete = new window.google.maps.places.Autocomplete(
+            locationInputRef.current,
+            { fields: ["formatted_address", "geometry", "name", "address_components"], types: ["address"], componentRestrictions: { country: "za" } }
+        );
+        autocompleteRef.current = autocomplete;
+        autocomplete.addListener("place_changed", () => {
+            const place = autocomplete.getPlace();
+            if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
+            if (place.geometry?.location) {
+                const loc = place.geometry.location;
+                form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+                if (mapInstanceRef.current && markerInstanceRef.current) {
+                    mapInstanceRef.current.setCenter(loc);
+                    mapInstanceRef.current.setZoom(17);
+                    markerInstanceRef.current.setPosition(loc);
+                }
             }
-          }
-        }
-      });
+            if (place.address_components) {
+                const countryComponent = place.address_components.find(c => c.types.includes("country"));
+                if (countryComponent) {
+                    const matchedCountry = countryCodes.find(cc => cc.shortName === countryComponent.short_name);
+                    if (matchedCountry) setSelectedCountryCode(matchedCountry.value);
+                }
+            }
+        });
     }
 
+    // --- Initialize Map ---
     if (!mapInstanceRef.current) {
-      const initialLat = form.getValues('latitude') ?? -29.8587;
-      const initialLng = form.getValues('longitude') ?? 31.0218;
-      const initialZoom = (form.getValues('latitude') && form.getValues('longitude')) ? 17 : 6;
+        const initialLat = -29.8587; // Default to Durban
+        const initialLng = 31.0218;
+        const map = new window.google.maps.Map(mapContainerRef.current, {
+            center: { lat: initialLat, lng: initialLng },
+            zoom: 6,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+        });
+        mapInstanceRef.current = map;
 
-      const currentTypeName = form.getValues('dispensaryType');
-      let initialIconUrl = wellnessTypeIcons.default;
-      if (currentTypeName) {
-          const selectedTypeObject = wellnessTypes.find(dt => dt.name === currentTypeName);
-          if (selectedTypeObject?.iconPath) {
-              initialIconUrl = selectedTypeObject.iconPath;
-          } else if (wellnessTypeIcons[currentTypeName]) {
-              initialIconUrl = wellnessTypeIcons[currentTypeName];
-          }
-      }
+        const marker = new window.google.maps.Marker({
+            position: { lat: initialLat, lng: initialLng },
+            map,
+            draggable: true,
+            icon: { url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
+        });
+        markerInstanceRef.current = marker;
 
-      const map = new window.google.maps.Map(mapContainerRef.current, {
-        center: { lat: initialLat, lng: initialLng }, zoom: initialZoom,
-        mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-      });
-      mapInstanceRef.current = map;
-
-      const marker = new window.google.maps.Marker({
-        position: { lat: initialLat, lng: initialLng }, map, draggable: true,
-        icon: { url: initialIconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
-      });
-      markerInstanceRef.current = marker;
-
-      if (form.getValues('latitude') && form.getValues('longitude')) {
-          marker.setPosition({lat: initialLat, lng: initialLng});
-          map.setCenter({lat: initialLat, lng: initialLng});
-      }
-
-      const geocoder = new window.google.maps.Geocoder();
-      const handleMapInteraction = (pos: google.maps.LatLng) => {
-        if (markerInstanceRef.current && mapInstanceRef.current) {
-            markerInstanceRef.current.setPosition(pos);
-            mapInstanceRef.current.panTo(pos);
+        const geocoder = new window.google.maps.Geocoder();
+        const handleMapInteraction = (pos: google.maps.LatLng) => {
+            marker.setPosition(pos);
+            map.panTo(pos);
             form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
             form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
             geocoder.geocode({ location: pos }, (results, status) => {
-                if (status === 'OK' && results && results[0]) {
+                if (status === 'OK' && results?.[0]) {
                     form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
-                    if (results[0].address_components) {
-                      const countryComponent = results[0].address_components.find(component =>
-                        component.types.includes("country")
-                      );
-                      if (countryComponent) {
-                        const countryShortName = countryComponent.short_name;
-                        const matchedCountry = countryCodes.find(cc => cc.shortName === countryShortName);
-                        if (matchedCountry) {
-                          setSelectedCountryCode(matchedCountry.value);
-                        }
-                      }
-                    }
-                } else {
-                    console.warn('Reverse geocoder failed or returned no results on signup:', status);
                 }
             });
-        }
-      };
+        };
 
-      map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
-      marker.addListener('dragend', () => markerInstanceRef.current?.getPosition() && handleMapInteraction(markerInstanceRef.current.getPosition()!));
+        map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+        marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
     }
-  }, [form, wellnessTypes]);
+  }, [form]);
+
+  useEffect(() => {
+    // This effect ensures map initialization happens only when the component is mounted and ready.
+    if (mapContainerRef.current) {
+        initializeMapAndAutocomplete();
+    }
+  }, [initializeMapAndAutocomplete]);
 
   useEffect(() => {
     if (markerInstanceRef.current && window.google && window.google.maps) {
       let iconUrl = wellnessTypeIcons.default;
       if (watchDispensaryType) {
           const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
-          if (selectedTypeObject?.iconPath) {
-              iconUrl = selectedTypeObject.iconPath;
-          } else if (wellnessTypeIcons[watchDispensaryType]) {
-              iconUrl = wellnessTypeIcons[watchDispensaryType];
-          }
+          iconUrl = selectedTypeObject?.iconPath || wellnessTypeIcons[watchDispensaryType] || wellnessTypeIcons.default;
       }
       markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
     }
   }, [watchDispensaryType, wellnessTypes]);
-
-  useEffect(() => {
-    let checkGoogleInterval: NodeJS.Timeout;
-    if (typeof window.google === 'undefined' || !window.google.maps || !window.google.maps.places) {
-      console.log("Google Maps API not loaded yet on signup, setting up interval check.");
-      checkGoogleInterval = setInterval(() => {
-        if (typeof window.google !== 'undefined' && window.google.maps && window.google.maps.places) {
-          clearInterval(checkGoogleInterval);
-          console.log("Google Maps API loaded on signup via interval, initializing.");
-          initializeMapAndAutocomplete();
-        }
-      }, 500);
-    } else {
-      console.log("Google Maps API already loaded on signup, initializing.");
-      initializeMapAndAutocomplete();
-    }
-    return () => {
-      if (checkGoogleInterval) clearInterval(checkGoogleInterval);
-    };
-  }, [initializeMapAndAutocomplete]);
 
   const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
     if (!hourStr || !minuteStr || !amPmStr) return '';
@@ -313,15 +253,11 @@ export default function WellnessSignupPage() {
   };
 
   useEffect(() => {
-    const formattedOpenTime = formatTo24Hour(openHour, openMinute, openAmPm);
-    if (formattedOpenTime) form.setValue('openTime', formattedOpenTime, { shouldValidate: true, shouldDirty: true });
-    else if (form.getValues('openTime') !== '') form.setValue('openTime', '', { shouldValidate: true, shouldDirty: true });
+    form.setValue('openTime', formatTo24Hour(openHour, openMinute, openAmPm), { shouldValidate: true, shouldDirty: true });
   }, [openHour, openMinute, openAmPm, form]);
 
   useEffect(() => {
-    const formattedCloseTime = formatTo24Hour(closeHour, closeMinute, closeAmPm);
-    if (formattedCloseTime) form.setValue('closeTime', formattedCloseTime, { shouldValidate: true, shouldDirty: true });
-    else if (form.getValues('closeTime') !== '') form.setValue('closeTime', '', { shouldValidate: true, shouldDirty: true });
+    form.setValue('closeTime', formatTo24Hour(closeHour, closeMinute, closeAmPm), { shouldValidate: true, shouldDirty: true });
   }, [closeHour, closeMinute, closeAmPm, form]);
 
   async function onSubmit(data: DispensarySignupFormData) {
@@ -344,13 +280,12 @@ export default function WellnessSignupPage() {
       setCloseHour(undefined); setCloseMinute(undefined); setCloseAmPm(undefined);
       setSelectedCountryCode(countryCodes[0].value);
       setNationalPhoneNumber('');
-      if (mapInstanceRef.current && markerInstanceRef.current && window.google && window.google.maps) {
+      if (mapInstanceRef.current && markerInstanceRef.current && window.google) {
         const defaultPos = { lat: -29.8587, lng: 31.0218 };
         mapInstanceRef.current.setCenter(defaultPos);
         mapInstanceRef.current.setZoom(6);
         markerInstanceRef.current.setPosition(defaultPos);
-        const defaultIcon = wellnessTypeIcons.default || '/icons/default-pin.png';
-        markerInstanceRef.current.setIcon({ url: defaultIcon, scaledSize: new window.google.maps.Size(40,40), anchor: new window.google.maps.Point(20,40)});
+        markerInstanceRef.current.setIcon({ url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40,40), anchor: new window.google.maps.Point(20,40)});
       }
     } catch (error) {
       console.error("Error submitting wellness application:", error);
@@ -391,7 +326,6 @@ export default function WellnessSignupPage() {
               )} />
             </div>
             
-
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Store Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="dispensaryName" render={({ field }) => (
@@ -523,7 +457,7 @@ export default function WellnessSignupPage() {
             </div>
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
               <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
-                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                <FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl>
                 <div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if your store only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>What type of orders will you fulfill?</FormLabel>

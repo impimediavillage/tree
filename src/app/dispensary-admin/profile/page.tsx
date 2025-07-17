@@ -117,32 +117,35 @@ export default function WellnessOwnerProfilePage() {
     }, [selectedCountryCode, nationalPhoneNumber, form]);
     
     const initializeMapAndAutocomplete = useCallback(() => {
-        if (!window.google || !window.google.maps || !window.google.maps.places || !wellnessProfile) return;
+        if (!window.google || !window.google.maps || !locationInputRef.current || !mapContainerRef.current || !wellnessProfile) return;
 
-        const lat = wellnessProfile.latitude ?? -29.8587;
-        const lng = wellnessProfile.longitude ?? 31.0218;
-        const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
-        let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
-        
-        if (!mapInstanceRef.current && mapContainerRef.current) {
-            mapInstanceRef.current = new window.google.maps.Map(mapContainerRef.current, { center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false });
-            markerInstanceRef.current = new window.google.maps.Marker({ position: { lat, lng }, map: mapInstanceRef.current, draggable: true, icon: { url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }});
+        if (!mapInstanceRef.current) {
+            const lat = wellnessProfile.latitude ?? -29.8587;
+            const lng = wellnessProfile.longitude ?? 31.0218;
+            const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
+            let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
+            
+            const map = new window.google.maps.Map(mapContainerRef.current, { center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false });
+            mapInstanceRef.current = map;
+
+            const marker = new window.google.maps.Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }});
+            markerInstanceRef.current = marker;
             
             const geocoder = new window.google.maps.Geocoder();
             const handleMapInteraction = (pos: google.maps.LatLng) => {
-                markerInstanceRef.current?.setPosition(pos);
-                mapInstanceRef.current?.panTo(pos);
+                marker.setPosition(pos);
+                map.panTo(pos);
                 form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
                 form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
                 geocoder.geocode({ location: pos }, (results, status) => {
                     if (status === 'OK' && results?.[0]) form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
                 });
             };
-            mapInstanceRef.current.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
-            markerInstanceRef.current.addListener('dragend', () => markerInstanceRef.current?.getPosition() && handleMapInteraction(markerInstanceRef.current.getPosition()!));
+            map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+            marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
         }
 
-        if (!autocompleteRef.current && locationInputRef.current) {
+        if (!autocompleteRef.current) {
             autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
             autocompleteRef.current.addListener("place_changed", () => {
                 const place = autocompleteRef.current!.getPlace();
@@ -151,9 +154,11 @@ export default function WellnessOwnerProfilePage() {
                     const loc = place.geometry.location;
                     form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
                     form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-                    mapInstanceRef.current?.setCenter(loc);
-                    mapInstanceRef.current?.setZoom(17);
-                    markerInstanceRef.current?.setPosition(loc);
+                    if (mapInstanceRef.current && markerInstanceRef.current) {
+                        mapInstanceRef.current.setCenter(loc);
+                        mapInstanceRef.current.setZoom(17);
+                        markerInstanceRef.current.setPosition(loc);
+                    }
                 }
             });
         }
@@ -175,7 +180,7 @@ export default function WellnessOwnerProfilePage() {
                 if (docSnap.exists()) {
                     const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
                     setWellnessProfile(data);
-
+                    
                     form.reset({
                         ...data,
                         latitude: data.latitude === null ? undefined : data.latitude,
@@ -185,6 +190,7 @@ export default function WellnessOwnerProfilePage() {
                     
                     const openTimeComps = parseTimeToComponents(data.openTime);
                     setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+                    
                     const closeTimeComps = parseTimeToComponents(data.closeTime);
                     setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
 
@@ -210,8 +216,10 @@ export default function WellnessOwnerProfilePage() {
     }, [currentUser, dispensaryId, authLoading, router, toast, form]);
     
     useEffect(() => {
-        if (wellnessProfile) initializeMapAndAutocomplete();
-    }, [wellnessProfile, initializeMapAndAutocomplete]);
+        if (!isFetchingData && wellnessProfile && mapContainerRef.current) {
+            initializeMapAndAutocomplete();
+        }
+    }, [isFetchingData, wellnessProfile, initializeMapAndAutocomplete]);
     
     const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
         if (!hourStr || !minuteStr || !amPmStr) return '';
