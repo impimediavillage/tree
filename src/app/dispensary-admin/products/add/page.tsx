@@ -201,7 +201,7 @@ export default function AddProductPage() {
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
-  const { fields: poolPriceTiers, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
+  const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
   const { fields: effectsFields, append: appendEffect, remove: removeEffect, replace: replaceEffects } = useFieldArray({ control: form.control, name: "effects" });
   const { fields: medicalUsesFields, append: appendMedicalUse, remove: removeMedicalUse, replace: replaceMedicalUses } = useFieldArray({ control: form.control, name: "medicalUses" });
   const { replace: replaceFlavors } = useFieldArray({ control: form.control, name: "flavors" });
@@ -517,7 +517,7 @@ export default function AddProductPage() {
                             key={stream.name}
                             type="button"
                             variant={selectedProductStream === stream.name ? 'default' : 'outline'}
-                            className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
+                            className={cn("h-56 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')}
                             onClick={() => handleProductStreamSelect(stream.name)}
                           >
                             <Image
@@ -554,7 +554,7 @@ export default function AddProductPage() {
                                         src={stream.imageUrl || defaultImageUrl}
                                         alt={stream.name}
                                         fill
-                                        sizes="(max-width: 640px) 100vw, 33vw"
+                                        sizes="(max-width: 640px) 90vw, 33vw"
                                         style={{objectFit: 'cover'}}
                                         className="transition-transform duration-300 group-hover:scale-110"
                                         data-ai-hint={`mushroom type ${stream.name}`}
@@ -579,7 +579,7 @@ export default function AddProductPage() {
                             <Button
                                 type="button"
                                 variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
-                                className={cn("h-40 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
+                                className={cn("h-56 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
                                 onClick={() => handleProductTypeSelect(type)}
                             >
                                 <Image
