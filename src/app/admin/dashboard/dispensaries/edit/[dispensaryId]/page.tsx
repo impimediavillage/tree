@@ -421,7 +421,6 @@ export default function AdminEditWellnessPage() {
         longitude: data.longitude === undefined ? null : data.longitude,
         lastActivityDate: serverTimestamp(),
       };
-      delete (updateData as any).applicationDate;
       await updateDoc(wellnessDocRef, updateData);
       toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
