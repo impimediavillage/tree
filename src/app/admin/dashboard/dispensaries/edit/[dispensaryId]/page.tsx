@@ -219,7 +219,7 @@ export default function AdminEditWellnessPage() {
           }
         } catch (error) {
           console.error("Error fetching wellness profile:", error);
-          toast({ title: "Error", description: "Failed to fetch wellness profile details.", variant: "destructive" });
+          toast({ title: "Error", description: "Failed to fetch your wellness profile details.", variant: "destructive" });
         } finally {
           setIsFetchingData(false);
         }
@@ -415,13 +415,17 @@ export default function AdminEditWellnessPage() {
     setIsSubmitting(true);
     try {
       const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-      const updateData = {
-        ...data,
+      
+      const { applicationDate, ...updateData } = data; // Exclude applicationDate
+      
+      const finalUpdateData = {
+        ...updateData,
         latitude: data.latitude === undefined ? null : data.latitude,
         longitude: data.longitude === undefined ? null : data.longitude,
         lastActivityDate: serverTimestamp(),
       };
-      await updateDoc(wellnessDocRef, updateData);
+
+      await updateDoc(wellnessDocRef, finalUpdateData);
       toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
@@ -628,7 +632,7 @@ export default function AdminEditWellnessPage() {
             </div>
 
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="orderType" render={({ field }) => (
               <FormItem><FormLabel>Order Types Fulfilled</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
