@@ -1,6 +1,6 @@
 
 'use server';
-import * as logger from "firebase-functions/logger";
+import * * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
 import {
@@ -1003,5 +1003,6 @@ export const updateStrainImageUrl = onCall(async (request) => {
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
+
 
     
