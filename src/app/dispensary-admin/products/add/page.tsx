@@ -157,8 +157,10 @@ export default function AddProductPage() {
   const [selectedProductStream, setSelectedProductStream] = React.useState<string | null>(null);
   
   // State for dynamic dropdowns
-  const [productTypeOptions, setProductTypeOptions] = React.useState<string[]>([]);
-  const [productSubCategoryOptions, setProductSubCategoryOptions] = React.useState<string[]>([]);
+  const [productTypeOptions, setProductTypeOptions] = React.useState<any[]>([]);
+  const [subCategoryL2Options, setSubCategoryL2Options] = React.useState<string[]>([]);
+  const [selectedProductType, setSelectedProductType] = React.useState<any | null>(null);
+
 
   // State for Mushroom Store workflow
   const [mushroomStreamOptions, setMushroomStreamOptions] = React.useState<any[]>([]);
@@ -225,9 +227,10 @@ export default function AddProductPage() {
       category: '', productType: null, productSubCategory: null,
       mostCommonTerpene: '', strain: null, strainType: null, homeGrow: [], feedingType: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null, baseProductData: null,
     });
-    setLabTestFile(null); setProductTypeOptions([]); setProductSubCategoryOptions([]);
+    setLabTestFile(null); setProductTypeOptions([]); setSubCategoryL2Options([]);
     setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
     setMushroomProducts([]); setSelectedMushroomBaseProduct(null);
+    setSelectedProductType(null);
   };
 
   const handleMushroomProductSelect = (product: any, format: string) => {
@@ -261,8 +264,9 @@ export default function AddProductPage() {
         const tradMedData = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
         const selectedCategoryData = tradMedData?.find((cat: any) => cat.useCase === stream);
         if (selectedCategoryData && Array.isArray(selectedCategoryData.categories)) {
-            const types = selectedCategoryData.categories.map((c: any) => c.type).filter(Boolean);
-            setProductTypeOptions([...new Set(types)].sort());
+            const types = selectedCategoryData.categories.map((c: any) => ({ name: c.type, imageUrl: c.imageUrl, subtypes: c.subtypes || [] })).filter(Boolean);
+            const uniqueTypes = Array.from(new Map(types.map(item => [item['name'], item])).values());
+            setProductTypeOptions(uniqueTypes);
         } else {
             setProductTypeOptions([]);
         }
@@ -285,13 +289,28 @@ export default function AddProductPage() {
         
         if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
             const types = Object.keys(deliveryMethodsMap);
-            setProductTypeOptions([...new Set(types)].sort());
+            setProductTypeOptions([...new Set(types)].sort().map(t => ({name: t}))); // Make it an object array
         } else {
             setProductTypeOptions([]);
             toast({ title: "Config Warning", description: `Could not load product types for ${stream}. Please check category configuration.`, variant: "destructive" });
         }
     }
   };
+  
+  const handleProductTypeSelect = (type: any) => {
+    setSelectedProductType(type);
+    form.setValue('productType', type.name, { shouldValidate: true });
+    form.setValue('productSubCategory', null);
+    if (isTraditionalMedicineStore) {
+        if (type.subtypes && Array.isArray(type.subtypes) && type.subtypes.length > 0) {
+            const subtypeNames = type.subtypes.map((s: any) => s.type).filter(Boolean);
+            setSubCategoryL2Options([...new Set(subtypeNames)].sort());
+        } else {
+            setSubCategoryL2Options([]);
+        }
+    }
+  };
+
 
   const handleFetchStrainInfo = async () => {
     if (!strainQuery.trim()) return;
@@ -374,27 +393,21 @@ export default function AddProductPage() {
   React.useEffect(() => {
     if (watchProductType) {
         let subcategories: string[] = [];
-
-        if (isTraditionalMedicineStore && selectedProductStream) {
-            const tradMedData = (categoryStructureDoc?.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories;
-            const selectedCategoryData = tradMedData?.find((cat: any) => cat.useCase === selectedProductStream);
-            const selectedTypeData = selectedCategoryData?.categories?.find((c: any) => c.type === watchProductType);
-            subcategories = selectedTypeData?.subtypes?.map((s: any) => s.type) || [];
-        } else if (isThcCbdSpecialType && selectedProductStream) {
+        if (isThcCbdSpecialType && selectedProductStream) {
             const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[selectedProductStream as StreamKey]?.['Delivery Methods'];
             subcategories = deliveryMethodsMap?.[watchProductType] || [];
         }
         
         if (Array.isArray(subcategories) && subcategories.length > 0) {
-            setProductSubCategoryOptions([...new Set(subcategories)].sort());
+            setSubCategoryL2Options([...new Set(subcategories)].sort());
         } else {
-            setProductSubCategoryOptions([]);
+            setSubCategoryL2Options([]);
         }
         form.setValue('productSubCategory', null);
     } else {
-        setProductSubCategoryOptions([]);
+        setSubCategoryL2Options([]);
     }
-  }, [watchProductType, categoryStructureDoc, form, selectedProductStream, isTraditionalMedicineStore, isThcCbdSpecialType]);
+  }, [watchProductType, categoryStructureDoc, form, selectedProductStream, isThcCbdSpecialType]);
   
   React.useEffect(() => {
     if (selectedStrainData) {
@@ -572,6 +585,44 @@ export default function AddProductPage() {
                      )}
                 </div>
             )}
+
+            {isTraditionalMedicineStore && selectedProductStream && (
+                <div className="space-y-4">
+                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Type * </FormLabel>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                        {productTypeOptions.map((type) => (
+                          <Button
+                            key={type.name}
+                            type="button"
+                            variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
+                            className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
+                            onClick={() => handleProductTypeSelect(type)}
+                          >
+                            <Image
+                              src={type.imageUrl || `https://placehold.co/400x400.png?text=${encodeURIComponent(type.name)}`}
+                              alt={type.name}
+                              layout="fill"
+                              objectFit="cover"
+                              className="transition-transform duration-300 group-hover:scale-110"
+                              data-ai-hint={`traditional medicine type ${type.name}`}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                            <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{type.name}</span>
+                          </Button>
+                        ))}
+                    </div>
+                    {selectedProductType && subCategoryL2Options.length > 0 && (
+                        <FormField control={form.control} name="productSubCategory" render={({ field }) => (
+                            <FormItem><FormLabel>Sub-type *</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-type" /></SelectTrigger></FormControl>
+                                    <SelectContent>{subCategoryL2Options.map((cat, index) => <SelectItem key={`${cat}-${index}`} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage />
+                            </FormItem>
+                        )} />
+                    )}
+                </div>
+            )}
             
             <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
 
@@ -583,24 +634,24 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                      <div className="grid md:grid-cols-2 gap-4">
-                        {(isTraditionalMedicineStore || isThcCbdSpecialType) && (
+                        {isThcCbdSpecialType && (
                             <FormField control={form.control} name="productType" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Product Type *</FormLabel>
                                     <Select onValueChange={(value) => { field.onChange(value); form.setValue('productSubCategory', null); }} value={field.value || ''} disabled={productTypeOptions.length === 0}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{productTypeOptions.map((opt, index) => <SelectItem key={`${opt}-${index}`} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{productTypeOptions.map((opt, index) => <SelectItem key={`${opt.name}-${index}`} value={opt.name}>{opt.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                     <FormMessage />
                                 </FormItem>
                             )} />
                         )}
-                        {productSubCategoryOptions.length > 0 && (
+                        {subCategoryL2Options.length > 0 && (
                             <FormField control={form.control} name="productSubCategory" render={({ field }) => (
                                 <FormItem><FormLabel>Product Sub Category</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ''}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
-                                    <SelectContent>{productSubCategoryOptions.map((cat, index) => <SelectItem key={`${cat}-${index}`} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                    <SelectContent>{subCategoryL2Options.map((cat, index) => <SelectItem key={`${cat}-${index}`} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                 </Select><FormMessage /></FormItem>
                             )} />
                         )}
