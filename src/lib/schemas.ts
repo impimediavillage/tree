@@ -84,7 +84,7 @@ export type AdminCreateDispensaryFormData = z.infer<typeof adminCreateDispensary
 
 export const editDispensarySchema = baseWellnessSchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
-  applicationDate: z.string().optional(),
+  applicationDate: z.any().optional(), // Allow any type for applicationDate
 }).superRefine((data, ctx) => {
   if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
     ctx.addIssue({
@@ -201,11 +201,10 @@ const baseProductObjectSchema = z.object({
   category: z.string().min(1, "Category is required."),
   
   // Cannabinoid Specific
-  deliveryMethod: z.string().optional().nullable(),
+  productType: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
   
   // Traditional Medicine & Mushroom Specific
-  productType: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
   baseProductData: z.any().optional().nullable(), // For storing the selected mushroom base product
   
