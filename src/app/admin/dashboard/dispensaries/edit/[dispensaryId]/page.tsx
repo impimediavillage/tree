@@ -128,6 +128,9 @@ export default function AdminEditWellnessPage() {
   const form = useForm<EditDispensaryFormData>({
     resolver: zodResolver(editDispensarySchema),
     mode: "onChange",
+    defaultValues: {
+        operatingDays: [], // Ensure it has a default
+    }
   });
 
   useEffect(() => {
@@ -182,15 +185,8 @@ export default function AdminEditWellnessPage() {
             const data = docSnap.data() as Dispensary;
             setWellnessProfile(data);
 
-            let appDateString = '';
-            if (data.applicationDate) {
-                const appDate = (data.applicationDate as Timestamp)?.toDate ? (data.applicationDate as Timestamp).toDate() : new Date(data.applicationDate as string);
-                appDateString = appDate.toISOString().split('T')[0];
-            }
-
             form.reset({
               ...data,
-              applicationDate: appDateString,
               operatingDays: data.operatingDays || [],
               latitude: data.latitude === null ? undefined : data.latitude,
               longitude: data.longitude === null ? undefined : data.longitude,
@@ -416,7 +412,7 @@ export default function AdminEditWellnessPage() {
     try {
       const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
       
-      const { applicationDate, ...updateData } = data; // Exclude applicationDate
+      const { ...updateData } = data;
       
       const finalUpdateData = {
         ...updateData,
@@ -425,7 +421,7 @@ export default function AdminEditWellnessPage() {
         lastActivityDate: serverTimestamp(),
       };
 
-      await updateDoc(wellnessDocRef, finalUpdateData);
+      await updateDoc(wellnessDocRef, finalUpdateData as any);
       toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
@@ -631,18 +627,12 @@ export default function AdminEditWellnessPage() {
                 <FormItem><FormLabel>Bulk Order Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
 
-            <FormField control={form.control} name="collectionOnly" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>
-            )} />
-            <FormField control={form.control} name="orderType" render={({ field }) => (
-              <FormItem><FormLabel>Order Types Fulfilled</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with wellness entities of the same type.</FormDescription><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="collectionOnly" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="orderType" render={({ field }) => (<FormItem><FormLabel>Order Types Fulfilled</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl><SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="participateSharing" render={({ field }) => (<FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl><SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select><FormDescription>Allows sharing products with wellness entities of the same type.</FormDescription><FormMessage /></FormItem>)} />
             {form.watch("participateSharing") === "yes" && (
-              <FormField control={form.control} name="leadTime" render={({ field }) => (
-                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
-            <FormField control={form.control} name="message" render={({ field }) => (
-              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="leadTime" render={({ field }) => (<FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
+            <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
              <div className="flex gap-4 pt-4">
                 <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData || (form.formState.isSubmitted && !form.formState.isValid)}>
                   {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
