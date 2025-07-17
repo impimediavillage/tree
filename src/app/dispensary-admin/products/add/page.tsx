@@ -289,7 +289,8 @@ export default function AddProductPage() {
         
         if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
             const types = Object.keys(deliveryMethodsMap);
-            setProductTypeOptions([...new Set(types)].sort().map(t => ({name: t}))); // Make it an object array
+            const uniqueTypes = [...new Set(types)].sort();
+            setProductTypeOptions(uniqueTypes.map(t => ({name: t}))); // Make it an object array
         } else {
             setProductTypeOptions([]);
             toast({ title: "Config Warning", description: `Could not load product types for ${stream}. Please check category configuration.`, variant: "destructive" });
@@ -298,16 +299,26 @@ export default function AddProductPage() {
   };
   
   const handleProductTypeSelect = (type: any) => {
-    setSelectedProductType(type);
-    form.setValue('productType', type.name, { shouldValidate: true });
-    form.setValue('productSubCategory', null);
-    if (isTraditionalMedicineStore) {
+    if (selectedProductType?.name === type.name) {
+      // Toggle off if the same button is clicked
+      setSelectedProductType(null);
+      form.setValue('productType', null);
+      form.setValue('productSubCategory', null);
+      setSubCategoryL2Options([]);
+    } else {
+      // Select new type
+      setSelectedProductType(type);
+      form.setValue('productType', type.name, { shouldValidate: true });
+      form.setValue('productSubCategory', null); // Reset subcategory when type changes
+      if (isTraditionalMedicineStore) {
         if (type.subtypes && Array.isArray(type.subtypes) && type.subtypes.length > 0) {
-            const subtypeNames = type.subtypes.map((s: any) => s.type).filter(Boolean);
-            setSubCategoryL2Options([...new Set(subtypeNames)].sort());
+            const subtypeNames = type.subtypes.map((s: any) => s).filter(Boolean);
+            const uniqueSubtypes = [...new Set(subtypeNames)].sort();
+            setSubCategoryL2Options(uniqueSubtypes);
         } else {
             setSubCategoryL2Options([]);
         }
+      }
     }
   };
 
@@ -366,10 +377,15 @@ export default function AddProductPage() {
                 }
                 
                 if (isTradMedStore && (categoriesDoc.categoriesData as any)?.traditionalMedicineCategories?.traditionalMedicineCategories) {
-                  const streams = (categoriesDoc.categoriesData as any).traditionalMedicineCategories.traditionalMedicineCategories
-                      .map((cat: any) => ({ name: cat.useCase, imageUrl: cat.imageUrl }))
-                      .filter((cat: any) => cat.name);
-                  setTradMedStreamOptions(streams);
+                  const data = (categoriesDoc.categoriesData as any).traditionalMedicineCategories.traditionalMedicineCategories;
+                  if (Array.isArray(data)) {
+                    const streams = data
+                        .map((cat: any) => ({ name: cat.useCase, imageUrl: cat.imageUrl }))
+                        .filter((cat: any) => cat.name);
+                    setTradMedStreamOptions(streams);
+                  } else {
+                    console.warn("traditionalMedicineCategories is not an array as expected.");
+                  }
                 }
 
             } else {
@@ -399,7 +415,8 @@ export default function AddProductPage() {
         }
         
         if (Array.isArray(subcategories) && subcategories.length > 0) {
-            setSubCategoryL2Options([...new Set(subcategories)].sort());
+            const uniqueSubcategories = [...new Set(subcategories)];
+            setSubCategoryL2Options(uniqueSubcategories.sort());
         } else {
             setSubCategoryL2Options([]);
         }
@@ -538,8 +555,9 @@ export default function AddProductPage() {
                                     <Image
                                         src={stream.imageUrl || defaultImageUrl}
                                         alt={stream.name}
-                                        layout="fill"
-                                        objectFit="cover"
+                                        fill
+                                        sizes="(max-width: 640px) 100vw, 33vw"
+                                        style={{objectFit: 'cover'}}
                                         className="transition-transform duration-300 group-hover:scale-110"
                                         data-ai-hint={`mushroom type ${stream.name}`}
                                     />
@@ -554,6 +572,50 @@ export default function AddProductPage() {
             
             <Separator className={cn("my-6", !selectedProductStream && 'hidden')} />
             
+            {isTraditionalMedicineStore && selectedProductStream && (
+                <div className="space-y-4">
+                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Type * </FormLabel>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
+                        {productTypeOptions.map((type) => (
+                          <div key={type.name} className="animate-fade-in-scale-up" style={{animationDuration: '0.3s'}}>
+                            <Button
+                                type="button"
+                                variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
+                                className={cn("h-40 p-0 text-left flex flex-col w-full items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
+                                onClick={() => handleProductTypeSelect(type)}
+                            >
+                                <Image
+                                src={type.imageUrl || `https://placehold.co/400x400.png?text=${encodeURIComponent(type.name)}`}
+                                alt={type.name}
+                                layout="fill"
+                                objectFit="cover"
+                                className="transition-transform duration-300 group-hover:scale-110"
+                                data-ai-hint={`traditional medicine type ${type.name}`}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                                <span className="text-base font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{type.name}</span>
+                            </Button>
+                            
+                            {selectedProductType?.name === type.name && subCategoryL2Options.length > 0 && (
+                                <div className="mt-2 animate-accordion-down">
+                                <FormField control={form.control} name="productSubCategory" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="sr-only">Sub-type for {type.name}</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select a Sub-type" /></SelectTrigger></FormControl>
+                                            <SelectContent>{subCategoryL2Options.map((cat, index) => <SelectItem key={`${cat}-${index}`} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                        </Select><FormMessage />
+                                    </FormItem>
+                                )} />
+                                </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+
             {isMushroomStore && selectedProductStream && (
                 <div className="space-y-4">
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>1. Select a Base Product (Optional)</h2>
@@ -583,44 +645,6 @@ export default function AddProductPage() {
                             </CardContent>
                         </Card>
                      )}
-                </div>
-            )}
-
-            {isTraditionalMedicineStore && selectedProductStream && (
-                <div className="space-y-4">
-                    <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Type * </FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
-                        {productTypeOptions.map((type) => (
-                          <Button
-                            key={type.name}
-                            type="button"
-                            variant={selectedProductType?.name === type.name ? 'default' : 'outline'}
-                            className={cn("h-40 p-0 text-left flex flex-col items-center justify-end space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md overflow-hidden relative group", selectedProductType?.name === type.name && 'ring-2 ring-primary ring-offset-2')}
-                            onClick={() => handleProductTypeSelect(type)}
-                          >
-                            <Image
-                              src={type.imageUrl || `https://placehold.co/400x400.png?text=${encodeURIComponent(type.name)}`}
-                              alt={type.name}
-                              layout="fill"
-                              objectFit="cover"
-                              className="transition-transform duration-300 group-hover:scale-110"
-                              data-ai-hint={`traditional medicine type ${type.name}`}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                            <span className="text-lg sm:text-xl font-semibold z-10 text-white p-2 text-center bg-black/50 w-full">{type.name}</span>
-                          </Button>
-                        ))}
-                    </div>
-                    {selectedProductType && subCategoryL2Options.length > 0 && (
-                        <FormField control={form.control} name="productSubCategory" render={({ field }) => (
-                            <FormItem><FormLabel>Sub-type *</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value || ''}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-type" /></SelectTrigger></FormControl>
-                                    <SelectContent>{subCategoryL2Options.map((cat, index) => <SelectItem key={`${cat}-${index}`} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                                </Select><FormMessage />
-                            </FormItem>
-                        )} />
-                    )}
                 </div>
             )}
             
