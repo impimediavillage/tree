@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription as CardDescriptionComponent, CardFoo
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, CheckCircle, XCircle, PlusCircleIcon, Gift } from 'lucide-react'; // DollarSign removed
+import { Edit, Trash2, CheckCircle, XCircle, PlusCircleIcon, Gift } from 'lucide-react';
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -165,7 +165,7 @@ interface CreditPackageCardProps {
 export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDelete }: CreditPackageCardProps) {
   return (
     <Card 
-      className="min-w-[300px] max-w-sm w-full flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up"
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
@@ -183,7 +183,7 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
       <CardContent className="flex-grow space-y-3">
         <div className="flex items-center justify-between text-lg">
             <span className="flex items-center text-foreground">
-                 {/* DollarSign icon removed here */} Price:
+                 Price:
             </span>
             <span className="font-semibold text-accent">
                 {creditPackage.price.toFixed(2)} {creditPackage.currency}
