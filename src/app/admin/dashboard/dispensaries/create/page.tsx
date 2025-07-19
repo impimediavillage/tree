@@ -320,8 +320,11 @@ export default function AdminCreateWellnessPage() {
       const wellnessData = {
         ...data,
         applicationDate: Timestamp.fromDate(new Date()),
-        latitude: data.latitude === undefined ? null : data.latitude,
-        longitude: data.longitude === undefined ? null : data.longitude,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
+        orderType: data.orderType ?? null,
+        participateSharing: data.participateSharing ?? null,
+        leadTime: data.leadTime ?? null,
       };
       await addDoc(collection(db, 'dispensaries'), wellnessData);
       toast({

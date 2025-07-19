@@ -269,6 +269,9 @@ export default function WellnessSignupPage() {
         status: 'Pending Approval',
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
+        orderType: data.orderType ?? null, // Ensure undefined becomes null
+        participateSharing: data.participateSharing ?? null,
+        leadTime: data.leadTime ?? null,
       };
       await addDoc(collection(db, 'dispensaries'), wellnessData);
       toast({
