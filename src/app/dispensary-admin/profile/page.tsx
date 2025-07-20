@@ -40,7 +40,7 @@ const deliveryRadiusOptions = [
 
 const bulkDeliveryRadiusOptions = [
   { value: "none", label: "None" }, { value: "national", label: "Nationwide" },
-  { value: "global", label: "Global" }, { value: "off-planet", label: "Off Planet (My products are strong!)" },
+  { value: "global", label: "Global" }, { value: "off-planet", label: "My products are strong!)" },
 ];
 
 const leadTimeOptions = [
@@ -117,11 +117,19 @@ export default function WellnessOwnerProfilePage() {
     
     const initializeMap = useCallback(async () => {
         if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
+
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+            console.error("Google Maps API key is missing.");
+            toast({ title: "Map Error", description: "Google Maps API key is not configured.", variant: "destructive"});
+            return;
+        }
+
         mapInitialized.current = true;
     
         try {
             const loader = new Loader({
-                apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+                apiKey: apiKey,
                 version: 'weekly',
                 libraries: ['places'],
             });
@@ -129,16 +137,15 @@ export default function WellnessOwnerProfilePage() {
             const google = await loader.load();
             const { Map } = google.maps;
             const { Marker } = google.maps;
-            const { Autocomplete } = google.maps.places;
     
             const lat = wellnessProfile.latitude ?? -29.8587;
             const lng = wellnessProfile.longitude ?? 31.0218;
             const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
             let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
     
-            const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false });
+            const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapId: 'b39f3f8b7139051d', mapTypeControl: false, streetViewControl: false });
             const marker = new Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) } });
-            const autocomplete = new Autocomplete(locationInputRef.current!, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
+            const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
     
             autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
