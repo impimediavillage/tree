@@ -171,6 +171,7 @@ export default function AdminEditWellnessPage() {
                         latitude: data.latitude === null ? undefined : data.latitude,
                         longitude: data.longitude === null ? undefined : data.longitude,
                         operatingDays: data.operatingDays || [],
+                        applicationDate: (data.applicationDate as any)?.toDate ? (data.applicationDate as any).toDate() : new Date(data.applicationDate as string),
                     });
 
                     const openTimeComps = parseTimeToComponents(data.openTime);
@@ -202,11 +203,10 @@ export default function AdminEditWellnessPage() {
     fetchAllData();
   }, [dispensaryId, authLoading, currentUser, router, toast, form, fetchWellnessTypes]);
   
-  // Map initialization effect
-  useEffect(() => {
-    if (isFetchingData || !wellnessProfile || mapInstanceRef.current) return;
-    
-    if (window.google && mapContainerRef.current) {
+  const initializeMapAndAutocomplete = useCallback(() => {
+    if (!window.google || !window.google.maps || !locationInputRef.current || !mapContainerRef.current || !wellnessProfile) return;
+
+    if (!mapInstanceRef.current) {
         const lat = wellnessProfile.latitude ?? -29.8587;
         const lng = wellnessProfile.longitude ?? 31.0218;
         const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
@@ -241,29 +241,36 @@ export default function AdminEditWellnessPage() {
         
         if (mapInstanceRef.current) mapInstanceRef.current.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
         if (markerInstanceRef.current) markerInstanceRef.current.addListener('dragend', () => markerInstanceRef.current?.getPosition() && handleMapInteraction(markerInstanceRef.current.getPosition()!));
-
-        if (locationInputRef.current) {
-            autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-                fields: ["formatted_address", "geometry.location"],
-                types: ["address"]
-            });
-            autocompleteRef.current.addListener("place_changed", () => {
-                const place = autocompleteRef.current!.getPlace();
-                if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                if (place.geometry?.location) {
-                    const loc = place.geometry.location;
-                    form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-                    form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-                    if (mapInstanceRef.current && markerInstanceRef.current) {
-                        mapInstanceRef.current.setCenter(loc);
-                        mapInstanceRef.current.setZoom(17);
-                        markerInstanceRef.current.setPosition(loc);
-                    }
-                }
-            });
-        }
     }
-  }, [isFetchingData, wellnessProfile, form]);
+    
+    if (!autocompleteRef.current && locationInputRef.current) {
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+            fields: ["formatted_address", "geometry.location"],
+            types: ["address"]
+        });
+        autocompleteRef.current.addListener("place_changed", () => {
+            const place = autocompleteRef.current!.getPlace();
+            if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
+            if (place.geometry?.location) {
+                const loc = place.geometry.location;
+                form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+                if (mapInstanceRef.current && markerInstanceRef.current) {
+                    mapInstanceRef.current.setCenter(loc);
+                    mapInstanceRef.current.setZoom(17);
+                    markerInstanceRef.current.setPosition(loc);
+                }
+            }
+        });
+    }
+  }, [wellnessProfile, form]);
+
+  // Map initialization effect
+  useEffect(() => {
+    if (!isFetchingData && wellnessProfile) {
+      initializeMapAndAutocomplete();
+    }
+  }, [isFetchingData, wellnessProfile, initializeMapAndAutocomplete]);
 
 
   const watchDispensaryType = form.watch("dispensaryType");
@@ -307,7 +314,7 @@ export default function AdminEditWellnessPage() {
         lastActivityDate: serverTimestamp(),
       };
       
-      delete (updateData as any).applicationDate; // Do not update this field
+      delete (updateData as any).applicationDate;
 
       await updateDoc(wellnessDocRef, updateData as any);
       toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
