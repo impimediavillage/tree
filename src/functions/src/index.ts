@@ -857,29 +857,11 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-
-    const uid = request.auth.uid;
-    const token = request.auth.token;
-    let isAuthorized = token?.role === 'Super Admin';
-
-    // Fallback check in Firestore if claims are not yet propagated to the token.
-    if (!isAuthorized) {
-        logger.info(`User ${uid} not authorized by token claims. Performing Firestore fallback check.`);
-        try {
-            const userDoc = await db.collection('users').doc(uid).get();
-            if (userDoc.exists && userDoc.data()?.role === 'Super Admin') {
-                logger.info(`User ${uid} authorized via Firestore role. Consider re-logging to refresh auth token claims.`);
-                isAuthorized = true;
-            }
-        } catch (e) {
-            logger.error(`Firestore fallback check for user ${uid} failed:`, e);
-            // On error, we do not authorize.
-        }
-    }
-
-    if (!isAuthorized) {
-        // If both token and Firestore checks fail, deny permission.
-        throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
+    
+    // Authorization check
+    const isSuperAdmin = request.auth.token.role === 'Super Admin';
+    if (!isSuperAdmin) {
+        throw new HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
     }
 
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
