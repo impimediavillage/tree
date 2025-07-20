@@ -35,8 +35,10 @@ class HttpError extends Error {
   }
 }
 
-// Initialize Firebase Admin SDK
-admin.initializeApp();
+// Initialize Firebase Admin SDK, but only if it hasn't been initialized yet.
+if (admin.apps.length === 0) {
+    admin.initializeApp();
+}
 const db = admin.firestore();
 
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
@@ -318,7 +320,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
       try {
         const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
-        const firestoreUserDataUpdate: Partial<UserDocData> = {
+        const firestoreUserData: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
             photoURL: userRecord.photoURL || null,
@@ -327,13 +329,16 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
-            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
-            (firestoreUserDataUpdate as UserDocData).credits = 100; // Default credits for new owner
+            (firestoreUserData as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
+            (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
         }
         
-        // Setting the user doc will trigger onUserDocCreate or onUserDocUpdate to set the claims
-        await userDocRef.set(firestoreUserDataUpdate, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by trigger.`);
+        await userDocRef.set(firestoreUserData, { merge: true });
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+        
+        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
+        // This ensures the role is immediately reflected in the user's auth token.
+        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -852,29 +857,11 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-
-    const uid = request.auth.uid;
-    const token = request.auth.token;
-    let isAuthorized = token?.role === 'Super Admin';
-
-    // Fallback check in Firestore if claims are not yet propagated to the token.
-    if (!isAuthorized) {
-        logger.info(`User ${uid} not authorized by token claims. Performing Firestore fallback check.`);
-        try {
-            const userDoc = await db.collection('users').doc(uid).get();
-            if (userDoc.exists && userDoc.data()?.role === 'Super Admin') {
-                logger.info(`User ${uid} authorized via Firestore role. Consider re-logging to refresh auth token claims.`);
-                isAuthorized = true;
-            }
-        } catch (e) {
-            logger.error(`Firestore fallback check for user ${uid} failed:`, e);
-            // On error, we do not authorize.
-        }
-    }
-
-    if (!isAuthorized) {
-        // If both token and Firestore checks fail, deny permission.
-        throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
+    
+    // Authorization check
+    const isSuperAdmin = request.auth.token.role === 'Super Admin';
+    if (!isSuperAdmin) {
+        throw new HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
     }
 
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
