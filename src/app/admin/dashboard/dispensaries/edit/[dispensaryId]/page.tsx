@@ -216,15 +216,21 @@ export default function AdminEditWellnessPage() {
   useEffect(() => {
     if (authLoading) return; // Wait for authentication state to resolve
 
-    if (!currentUser || currentUser.role !== 'Super Admin') {
+    if (!currentUser) {
+      toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (currentUser.role !== 'Super Admin') {
       toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
     }
   }, [authLoading, currentUser, router, toast]);
 
-  // Effect to fetch all necessary data once user is confirmed to be an admin
+  // Effect to fetch all necessary data *after* user is confirmed to be an admin
   useEffect(() => {
-    if (authLoading || !currentUser || currentUser.role !== 'Super Admin') {
+    if (authLoading || !currentUser || currentUser.role !== 'Super Admin' || !dispensaryId) {
       return;
     }
 
@@ -232,44 +238,39 @@ export default function AdminEditWellnessPage() {
       setIsFetchingData(true);
       await fetchWellnessTypes(); // Fetch types first
 
-      if (dispensaryId) {
-        try {
-          const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-          const docSnap = await getDoc(wellnessDocRef);
-          if (docSnap.exists()) {
-            const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-            setWellnessProfile(data);
-            form.reset({
-              ...data,
-              latitude: data.latitude === null ? undefined : data.latitude,
-              longitude: data.longitude === null ? undefined : data.longitude,
-              operatingDays: data.operatingDays || [],
-            });
-            const openTimeComps = parseTimeToComponents(data.openTime);
-            setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-            const closeTimeComps = parseTimeToComponents(data.closeTime);
-            setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-            if (data.phone) {
-              const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-              if (foundCountry) {
-                setSelectedCountryCode(foundCountry.value);
-                setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
-              } else {
-                setNationalPhoneNumber(data.phone);
-              }
+      try {
+        const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+        const docSnap = await getDoc(wellnessDocRef);
+        if (docSnap.exists()) {
+          const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
+          setWellnessProfile(data);
+          form.reset({
+            ...data,
+            latitude: data.latitude === null ? undefined : data.latitude,
+            longitude: data.longitude === null ? undefined : data.longitude,
+            operatingDays: data.operatingDays || [],
+          });
+          const openTimeComps = parseTimeToComponents(data.openTime);
+          setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+          const closeTimeComps = parseTimeToComponents(data.closeTime);
+          setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+          if (data.phone) {
+            const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
+            if (foundCountry) {
+              setSelectedCountryCode(foundCountry.value);
+              setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+            } else {
+              setNationalPhoneNumber(data.phone);
             }
-          } else {
-            toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
-            router.push('/admin/dashboard/dispensaries');
           }
-        } catch (error) {
-          toast({ title: "Error", description: "Failed to fetch wellness profile.", variant: "destructive" });
-        } finally {
-          setIsFetchingData(false);
+        } else {
+          toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
+          router.push('/admin/dashboard/dispensaries');
         }
-      } else {
-        toast({ title: "Error", description: "No Dispensary ID provided.", variant: "destructive" });
-        router.push('/admin/dashboard/dispensaries');
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to fetch wellness profile.", variant: "destructive" });
+        console.error("Fetch profile error:", error);
+      } finally {
         setIsFetchingData(false);
       }
     };
