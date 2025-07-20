@@ -22,6 +22,7 @@ import { ownerEditDispensarySchema, type OwnerEditDispensaryFormData } from '@/l
 import type { Dispensary, DispensaryType } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { Loader } from '@googlemaps/js-api-loader';
 
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -101,10 +102,8 @@ export default function WellnessOwnerProfilePage() {
     const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
     const locationInputRef = useRef<HTMLInputElement>(null);
-    const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
-    const mapInstanceRef = useRef<google.maps.Map | null>(null);
-    const markerInstanceRef = useRef<google.maps.Marker | null>(null);
+    const mapInitialized = useRef(false);
     
     const form = useForm<OwnerEditDispensaryFormData>({
         resolver: zodResolver(ownerEditDispensarySchema),
@@ -116,54 +115,65 @@ export default function WellnessOwnerProfilePage() {
         form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
     }, [selectedCountryCode, nationalPhoneNumber, form]);
     
-    const initializeMapAndAutocomplete = useCallback(() => {
-        if (!window.google?.maps || !locationInputRef.current || !mapContainerRef.current || !wellnessProfile) return;
-
-        if (mapInstanceRef.current) return;
-
-        const lat = wellnessProfile.latitude ?? -29.8587;
-        const lng = wellnessProfile.longitude ?? 31.0218;
-        const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
-        let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
-        
-        const map = new window.google.maps.Map(mapContainerRef.current, { center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false });
-        mapInstanceRef.current = map;
-
-        const marker = new window.google.maps.Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }});
-        markerInstanceRef.current = marker;
-        
-        if (autocompleteRef.current) return;
-
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
-        autocompleteRef.current.addListener("place_changed", () => {
-            const place = autocompleteRef.current!.getPlace();
-            if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-            if (place.geometry?.location) {
-                const loc = place.geometry.location;
-                form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-                form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-                if (mapInstanceRef.current && markerInstanceRef.current) {
-                    mapInstanceRef.current.setCenter(loc);
-                    mapInstanceRef.current.setZoom(17);
-                    markerInstanceRef.current.setPosition(loc);
-                }
-            }
-        });
-
-        const geocoder = new window.google.maps.Geocoder();
-        const handleMapInteraction = (pos: google.maps.LatLng) => {
-            if (markerInstanceRef.current) markerInstanceRef.current.setPosition(pos);
-            if (mapInstanceRef.current) mapInstanceRef.current.panTo(pos);
-            form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
-            form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
-            geocoder.geocode({ location: pos }, (results, status) => {
-                if (status === 'OK' && results?.[0]) form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+    const initializeMap = useCallback(async () => {
+        if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
+        mapInitialized.current = true;
+    
+        try {
+            const loader = new Loader({
+                apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+                version: 'weekly',
+                libraries: ['places'],
             });
-        };
-        
-        map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
-        marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
-    }, [wellnessProfile, form]);
+    
+            const google = await loader.load();
+            const { Map } = google.maps;
+            const { Marker } = google.maps;
+            const { Autocomplete } = google.maps.places;
+    
+            const lat = wellnessProfile.latitude ?? -29.8587;
+            const lng = wellnessProfile.longitude ?? 31.0218;
+            const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
+            let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
+    
+            const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false });
+            const marker = new Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) } });
+            const autocomplete = new Autocomplete(locationInputRef.current!, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
+    
+            autocomplete.addListener("place_changed", () => {
+                const place = autocomplete.getPlace();
+                if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
+                if (place.geometry?.location) {
+                    const loc = place.geometry.location;
+                    form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+                    form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+                    map.setCenter(loc);
+                    map.setZoom(17);
+                    marker.setPosition(loc);
+                }
+            });
+    
+            const geocoder = new google.maps.Geocoder();
+            const handleMapInteraction = (pos: google.maps.LatLng) => {
+                marker.setPosition(pos);
+                map.panTo(pos);
+                form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
+                geocoder.geocode({ location: pos }, (results, status) => {
+                    if (status === 'OK' && results?.[0]) {
+                        form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+                    }
+                });
+            };
+    
+            map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+            marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
+    
+        } catch (e) {
+          console.error('Error loading Google Maps:', e);
+          toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
+        }
+    }, [wellnessProfile, form, toast]);
 
     useEffect(() => {
         if (authLoading) return;
@@ -217,10 +227,10 @@ export default function WellnessOwnerProfilePage() {
     }, [currentUser, dispensaryId, authLoading, router, toast, form]);
     
     useEffect(() => {
-        if (!isFetchingData && wellnessProfile && mapContainerRef.current) {
-            initializeMapAndAutocomplete();
+        if (!isFetchingData && wellnessProfile) {
+            initializeMap();
         }
-    }, [isFetchingData, wellnessProfile, initializeMapAndAutocomplete]);
+      }, [isFetchingData, wellnessProfile, initializeMap]);
     
     const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
         if (!hourStr || !minuteStr || !amPmStr) return '';
@@ -301,7 +311,7 @@ export default function WellnessOwnerProfilePage() {
 
                         <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Hours</h2>
                         <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input {...field} ref={locationInputRef} /></FormControl><FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage /></FormItem> )} />
-                        <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm" />
+                        <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
                         <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
                         <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
                         

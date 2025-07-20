@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
 import type { DispensaryType } from '@/types';
+import { Loader } from '@googlemaps/js-api-loader';
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; 
 
@@ -94,10 +95,8 @@ export default function WellnessSignupPage() {
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
   const locationInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerInstanceRef = useRef<google.maps.Marker | null>(null);
+  const mapInitialized = useRef(false);
 
   const form = useForm<DispensarySignupFormData>({
     resolver: zodResolver(dispensarySignupSchema),
@@ -144,92 +143,91 @@ export default function WellnessSignupPage() {
 
   const watchDispensaryType = form.watch("dispensaryType");
 
-  const initializeMapAndAutocomplete = useCallback(() => {
-    if (!window.google?.maps || !locationInputRef.current || !mapContainerRef.current) {
-        return;
-    }
-    
-    if (mapInstanceRef.current) return;
+  const initializeMap = useCallback(async () => {
+    if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
+    mapInitialized.current = true;
 
-    const initialLat = -29.8587;
-    const initialLng = 31.0218;
-    const map = new window.google.maps.Map(mapContainerRef.current, {
-        center: { lat: initialLat, lng: initialLng },
-        zoom: 6,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-    });
-    mapInstanceRef.current = map;
-    
-    const marker = new window.google.maps.Marker({
-        position: { lat: initialLat, lng: initialLng },
-        map,
-        draggable: true,
-        icon: { url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
-    });
-    markerInstanceRef.current = marker;
+    try {
+        const loader = new Loader({
+            apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+            version: 'weekly',
+            libraries: ['places'],
+        });
 
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-        fields: ["formatted_address", "geometry", "name", "address_components"],
-        types: ["address"],
-        componentRestrictions: { country: "za" },
-    });
+        const google = await loader.load();
+        const { Map } = google.maps;
+        const { Marker } = google.maps;
+        const { Autocomplete } = google.maps.places;
 
-    const geocoder = new window.google.maps.Geocoder();
-    const handleMapInteraction = (pos: google.maps.LatLng) => {
-        marker.setPosition(pos);
-        map.panTo(pos);
-        form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
-        form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
-        geocoder.geocode({ location: pos }, (results, status) => {
-            if (status === 'OK' && results?.[0]) {
-                form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+        const initialLat = -29.8587;
+        const initialLng = 31.0218;
+
+        const map = new Map(mapContainerRef.current!, {
+            center: { lat: initialLat, lng: initialLng },
+            zoom: 6,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+        });
+
+        const marker = new Marker({
+            position: { lat: initialLat, lng: initialLng },
+            map,
+            draggable: true,
+            icon: { url: wellnessTypeIcons.default, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) }
+        });
+
+        const autocomplete = new Autocomplete(locationInputRef.current!, {
+            fields: ["formatted_address", "geometry", "name", "address_components"],
+            types: ["address"],
+            componentRestrictions: { country: "za" },
+        });
+
+        autocomplete.addListener("place_changed", () => {
+            const place = autocomplete.getPlace();
+            if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
+            if (place.geometry?.location) {
+                const loc = place.geometry.location;
+                form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+                map.setCenter(loc);
+                map.setZoom(17);
+                marker.setPosition(loc);
             }
         });
-    };
-    
-    map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
-    marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
+        
+        const geocoder = new google.maps.Geocoder();
+        const handleMapInteraction = (pos: google.maps.LatLng) => {
+            marker.setPosition(pos);
+            map.panTo(pos);
+            form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
+            form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
+            geocoder.geocode({ location: pos }, (results, status) => {
+                if (status === 'OK' && results?.[0]) {
+                    form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+                }
+            });
+        };
+        
+        map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+        marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
 
-    autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current!.getPlace();
-        if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-        if (place.geometry?.location) {
-            const loc = place.geometry.location;
-            form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-            form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-            if (mapInstanceRef.current && markerInstanceRef.current) {
-                mapInstanceRef.current.setCenter(loc);
-                mapInstanceRef.current.setZoom(17);
-                markerInstanceRef.current.setPosition(loc);
-            }
-        }
-    });
+        const iconUrl = wellnessTypeIcons[watchDispensaryType] || wellnessTypeIcons.default;
+        marker.setIcon({ url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) });
 
-  }, [form]);
-
-  useEffect(() => {
-    if (mapContainerRef.current && window.google?.maps) {
-        initializeMapAndAutocomplete();
+    } catch (e) {
+      console.error('Error loading Google Maps:', e);
+      toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
     }
-  }, [initializeMapAndAutocomplete]);
+  }, [form, toast, watchDispensaryType]);
 
 
   useEffect(() => {
-    if (markerInstanceRef.current && window.google?.maps) {
-      let iconUrl = wellnessTypeIcons.default;
-      if (watchDispensaryType) {
-          const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
-          if (selectedTypeObject?.iconPath) {
-              iconUrl = selectedTypeObject.iconPath;
-          } else if (wellnessTypeIcons[watchDispensaryType]) {
-              iconUrl = wellnessTypeIcons[watchDispensaryType];
-          }
-      }
-      markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
+    if (mapContainerRef.current && !mapInitialized.current) {
+        initializeMap();
     }
-  }, [watchDispensaryType, wellnessTypes]);
+  }, [initializeMap]);
+  
 
   const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
     if (!hourStr || !minuteStr || !amPmStr) return '';
@@ -280,13 +278,8 @@ export default function WellnessSignupPage() {
       setCloseHour(undefined); setCloseMinute(undefined); setCloseAmPm(undefined);
       setSelectedCountryCode(countryCodes[0].value);
       setNationalPhoneNumber('');
-      if (mapInstanceRef.current && markerInstanceRef.current && window.google) {
-        const defaultPos = { lat: -29.8587, lng: 31.0218 };
-        mapInstanceRef.current.setCenter(defaultPos);
-        mapInstanceRef.current.setZoom(6);
-        markerInstanceRef.current.setPosition(defaultPos);
-        markerInstanceRef.current.setIcon({ url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40,40), anchor: new window.google.maps.Point(20,40)});
-      }
+      mapInitialized.current = false;
+      initializeMap();
     } catch (error) {
       console.error("Error submitting wellness application:", error);
       toast({
@@ -358,7 +351,7 @@ export default function WellnessSignupPage() {
                 <FormDescription>Start typing your address. Select from suggestions to pinpoint on map.</FormDescription><FormMessage />
               </FormItem>
             )} />
-            <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm" />
+            <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
             <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with store type.</FormDescription>
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
@@ -405,8 +398,7 @@ export default function WellnessSignupPage() {
             <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="openTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
-                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}>
-                    <PopoverTrigger asChild><FormControl>
+                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl>
                         <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
                             <Clock className="mr-2 h-4 w-4 opacity-50" />
                             {field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}
@@ -420,8 +412,7 @@ export default function WellnessSignupPage() {
                 </FormItem>)} />
                 <FormField control={form.control} name="closeTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
-                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}>
-                    <PopoverTrigger asChild><FormControl>
+                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl>
                         <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
                             <Clock className="mr-2 h-4 w-4 opacity-50" />
                             {field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}

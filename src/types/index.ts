@@ -97,6 +97,8 @@ export interface Product {
   name: string;
   description: string;
   category: string; 
+  subcategory?: string | null;
+  subSubcategory?: string | null;
   
   // Cannabinoid Specific
   deliveryMethod?: string | null;
@@ -104,7 +106,6 @@ export interface Product {
   
   // Traditional Medicine & Mushroom Specific
   productType?: string | null;
-  subSubcategory?: string | null;
   baseProductData?: any | null; // For storing the selected base product
   
   // Strain details (shared)

@@ -20,6 +20,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
 import { adminCreateDispensarySchema, type AdminCreateDispensaryFormData } from '@/lib/schemas';
 import type { DispensaryType, User as AppUser } from '@/types';
+import { Loader } from '@googlemaps/js-api-loader';
 
 const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -98,10 +99,8 @@ export default function AdminCreateWellnessPage() {
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
   const locationInputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerInstanceRef = useRef<google.maps.Marker | null>(null);
+  const mapInitialized = useRef(false);
 
   const form = useForm<AdminCreateDispensaryFormData>({
     resolver: zodResolver(adminCreateDispensarySchema),
@@ -210,88 +209,91 @@ export default function AdminCreateWellnessPage() {
 
   const watchDispensaryType = form.watch("dispensaryType");
 
-  const initializeMapAndAutocomplete = useCallback(() => {
-    if (!window.google || !window.google.maps || !locationInputRef.current || !mapContainerRef.current) return;
+  const initializeMap = useCallback(async () => {
+    if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
+    mapInitialized.current = true;
 
-    if (mapInstanceRef.current) return; // Already initialized
+    try {
+        const loader = new Loader({
+            apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+            version: 'weekly',
+            libraries: ['places'],
+        });
 
-    const initialLat = -29.8587;
-    const initialLng = 31.0218;
-    const map = new window.google.maps.Map(mapContainerRef.current, {
-        center: { lat: initialLat, lng: initialLng },
-        zoom: 6,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-    });
-    mapInstanceRef.current = map;
-    const marker = new window.google.maps.Marker({
-        position: { lat: initialLat, lng: initialLng },
-        map,
-        draggable: true,
-        icon: { url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
-    });
-    markerInstanceRef.current = marker;
+        const google = await loader.load();
+        const { Map } = google.maps;
+        const { Marker } = google.maps;
+        const { Autocomplete } = google.maps.places;
 
-    if (autocompleteRef.current) return; // Already initialized
+        const initialLat = -29.8587;
+        const initialLng = 31.0218;
 
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-        fields: ["formatted_address", "geometry", "name", "address_components"],
-        types: ["address"],
-        componentRestrictions: { country: "za" },
-    });
-    autocompleteRef.current.addListener("place_changed", () => {
-        const place = autocompleteRef.current!.getPlace();
-        if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-        if (place.geometry?.location) {
-            const loc = place.geometry.location;
-            form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-            form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-            if (mapInstanceRef.current && markerInstanceRef.current) {
-                mapInstanceRef.current.setCenter(loc);
-                mapInstanceRef.current.setZoom(17);
-                markerInstanceRef.current.setPosition(loc);
-            }
-        }
-    });
+        const map = new Map(mapContainerRef.current!, {
+            center: { lat: initialLat, lng: initialLng },
+            zoom: 6,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+        });
 
-    const geocoder = new window.google.maps.Geocoder();
-    const handleMapInteraction = (pos: google.maps.LatLng) => {
-        marker.setPosition(pos);
-        map.panTo(pos);
-        form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
-        form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
-        geocoder.geocode({ location: pos }, (results, status) => {
-            if (status === 'OK' && results?.[0]) {
-                form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+        const marker = new Marker({
+            position: { lat: initialLat, lng: initialLng },
+            map,
+            draggable: true,
+            icon: { url: wellnessTypeIcons.default, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) }
+        });
+
+        const autocomplete = new Autocomplete(locationInputRef.current!, {
+            fields: ["formatted_address", "geometry", "name", "address_components"],
+            types: ["address"],
+            componentRestrictions: { country: "za" },
+        });
+
+        autocomplete.addListener("place_changed", () => {
+            const place = autocomplete.getPlace();
+            if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
+            if (place.geometry?.location) {
+                const loc = place.geometry.location;
+                form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+                map.setCenter(loc);
+                map.setZoom(17);
+                marker.setPosition(loc);
             }
         });
-    };
-    map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
-    marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
-  }, [form]);
+        
+        const geocoder = new google.maps.Geocoder();
+        const handleMapInteraction = (pos: google.maps.LatLng) => {
+            marker.setPosition(pos);
+            map.panTo(pos);
+            form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
+            form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
+            geocoder.geocode({ location: pos }, (results, status) => {
+                if (status === 'OK' && results?.[0]) {
+                    form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+                }
+            });
+        };
+        
+        map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+        marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
+
+        const iconUrl = wellnessTypeIcons[watchDispensaryType] || wellnessTypeIcons.default;
+        marker.setIcon({ url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) });
+
+    } catch (e) {
+      console.error('Error loading Google Maps:', e);
+      toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
+    }
+  }, [form, toast, watchDispensaryType]);
+
 
   useEffect(() => {
-    if (mapContainerRef.current && window.google?.maps) {
-        initializeMapAndAutocomplete();
+    if (mapContainerRef.current && !mapInitialized.current) {
+        initializeMap();
     }
-  }, [initializeMapAndAutocomplete]);
+  }, [initializeMap]);
 
-
-  useEffect(() => {
-    if (markerInstanceRef.current && window.google && window.google.maps) {
-      let iconUrl = wellnessTypeIcons.default;
-      if (watchDispensaryType) {
-          const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
-          if (selectedTypeObject?.iconPath) {
-              iconUrl = selectedTypeObject.iconPath;
-          } else if (wellnessTypeIcons[watchDispensaryType]) {
-              iconUrl = wellnessTypeIcons[watchDispensaryType];
-          }
-      }
-      markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
-    }
-  }, [watchDispensaryType, wellnessTypes]);
 
   const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
     if (!hourStr || !minuteStr || !amPmStr) return '';
@@ -464,7 +466,7 @@ export default function AdminCreateWellnessPage() {
                 <FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage />
               </FormItem>
             )} />
-            <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm" />
+            <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             
@@ -601,15 +603,10 @@ export default function AdminCreateWellnessPage() {
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
 
               <div className="flex gap-4 pt-4">
-                <Button type="submit" size="lg" className="flex-1 text-lg"
-                  disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}
-                >
+                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}>
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                   Create Wellness Profile
                 </Button>
-                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior>
-                  <Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isLoading}>Cancel</Button>
-                </Link>
               </div>
           </form>
         </Form>
