@@ -215,7 +215,7 @@ export default function AdminEditWellnessPage() {
   useEffect(() => {
     if (authLoading) return;
     if (!currentUser || currentUser.role !== 'Super Admin') {
-        toast({ title: "Access Denied", description: "Only Super Admins can edit.", variant: "destructive" });
+        toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
         router.push('/admin/dashboard');
         return;
     }
@@ -275,7 +275,40 @@ export default function AdminEditWellnessPage() {
 
   const handleAddNewWellnessType = async () => {
      if (!currentUser || currentUser.role !== 'Super Admin') return;
-     // ... (rest of the function is the same, omitted for brevity)
+     if (!newWellnessTypeName.trim()) {
+        toast({ title: "Validation Error", description: "New wellness type name cannot be empty.", variant: "destructive" });
+        return;
+      }
+      if (wellnessTypes.some(type => type.name.toLowerCase() === newWellnessTypeName.trim().toLowerCase())) {
+        toast({ title: "Duplicate Error", description: "This wellness type already exists.", variant: "destructive" });
+        return;
+      }
+  
+      const defaultIcon = `/icons/${newWellnessTypeName.trim().toLowerCase().replace(/\s+/g, '-')}.png`;
+      const defaultImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(newWellnessTypeName.trim())}`;
+  
+      const newTypeData = {
+        name: newWellnessTypeName.trim(),
+        iconPath: newWellnessTypeIconPath.trim() || defaultIcon,
+        image: newWellnessTypeImage.trim() || defaultImage
+      };
+  
+      try {
+        const newTypeRef = await addDoc(collection(db, 'dispensaryTypes'), newTypeData);
+        toast({ title: "Success", description: `Wellness type "${newWellnessTypeName.trim()}" added.` });
+  
+        const newType = { id: newTypeRef.id, ...newTypeData };
+        const updatedTypes = [...wellnessTypes, newType].sort((a,b) => a.name.localeCompare(b.name));
+        setWellnessTypes(updatedTypes);
+        form.setValue('dispensaryType', newType.name, {shouldValidate: true});
+        setNewWellnessTypeName('');
+        setNewWellnessTypeIconPath('');
+        setNewWellnessTypeImage('');
+        setIsAddTypeDialogOpen(false);
+      } catch (error) {
+        console.error("Error adding new wellness type:", error);
+        toast({ title: "Error", description: "Failed to add new wellness type.", variant: "destructive" });
+      }
   };
   
   const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
@@ -300,13 +333,10 @@ export default function AdminEditWellnessPage() {
     try {
       const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
       
-      // Create a mutable copy of the data to modify
       const updateData = { ...data };
 
-      // Explicitly remove the read-only applicationDate from the update payload
       delete (updateData as any).applicationDate;
 
-      // Add the server timestamp for the update
       const finalUpdateData = {
         ...updateData,
         lastActivityDate: serverTimestamp(),
