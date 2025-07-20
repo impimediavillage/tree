@@ -147,15 +147,14 @@ export default function WellnessSignupPage() {
   const initializeMapAndAutocomplete = useCallback(() => {
     if (!window.google || !window.google.maps || !locationInputRef.current || !mapContainerRef.current) return;
 
-    // --- Initialize Autocomplete ---
     if (!autocompleteRef.current) {
-        const autocomplete = new window.google.maps.places.Autocomplete(
-            locationInputRef.current,
-            { fields: ["formatted_address", "geometry", "name", "address_components"], types: ["address"], componentRestrictions: { country: "za" } }
-        );
-        autocompleteRef.current = autocomplete;
-        autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
+        autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+            fields: ["formatted_address", "geometry", "name", "address_components"],
+            types: ["address"],
+            componentRestrictions: { country: "za" },
+        });
+        autocompleteRef.current.addListener("place_changed", () => {
+            const place = autocompleteRef.current!.getPlace();
             if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
             if (place.geometry?.location) {
                 const loc = place.geometry.location;
@@ -167,19 +166,11 @@ export default function WellnessSignupPage() {
                     markerInstanceRef.current.setPosition(loc);
                 }
             }
-            if (place.address_components) {
-                const countryComponent = place.address_components.find(c => c.types.includes("country"));
-                if (countryComponent) {
-                    const matchedCountry = countryCodes.find(cc => cc.shortName === countryComponent.short_name);
-                    if (matchedCountry) setSelectedCountryCode(matchedCountry.value);
-                }
-            }
         });
     }
-
-    // --- Initialize Map ---
+    
     if (!mapInstanceRef.current) {
-        const initialLat = -29.8587; // Default to Durban
+        const initialLat = -29.8587;
         const initialLng = 31.0218;
         const map = new window.google.maps.Map(mapContainerRef.current, {
             center: { lat: initialLat, lng: initialLng },
@@ -189,7 +180,6 @@ export default function WellnessSignupPage() {
             fullscreenControl: false,
         });
         mapInstanceRef.current = map;
-
         const marker = new window.google.maps.Marker({
             position: { lat: initialLat, lng: initialLng },
             map,
@@ -210,14 +200,13 @@ export default function WellnessSignupPage() {
                 }
             });
         };
-
         map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
         marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
     }
   }, [form]);
 
   useEffect(() => {
-    // This effect ensures map initialization happens only when the component is mounted and ready.
+    // Ensures map initializes only when the container is ready
     if (mapContainerRef.current) {
         initializeMapAndAutocomplete();
     }
@@ -228,7 +217,11 @@ export default function WellnessSignupPage() {
       let iconUrl = wellnessTypeIcons.default;
       if (watchDispensaryType) {
           const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
-          iconUrl = selectedTypeObject?.iconPath || wellnessTypeIcons[watchDispensaryType] || wellnessTypeIcons.default;
+          if (selectedTypeObject?.iconPath) {
+              iconUrl = selectedTypeObject.iconPath;
+          } else if (wellnessTypeIcons[watchDispensaryType]) {
+              iconUrl = wellnessTypeIcons[watchDispensaryType];
+          }
       }
       markerInstanceRef.current.setIcon({ url: iconUrl, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) });
     }
@@ -269,7 +262,7 @@ export default function WellnessSignupPage() {
         status: 'Pending Approval',
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
-        orderType: data.orderType ?? null, // Ensure undefined becomes null
+        orderType: data.orderType ?? null, 
         participateSharing: data.participateSharing ?? null,
         leadTime: data.leadTime ?? null,
       };

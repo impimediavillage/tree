@@ -133,8 +133,8 @@ export default function WellnessOwnerProfilePage() {
             
             const geocoder = new window.google.maps.Geocoder();
             const handleMapInteraction = (pos: google.maps.LatLng) => {
-                marker.setPosition(pos);
-                map.panTo(pos);
+                if (markerInstanceRef.current) markerInstanceRef.current.setPosition(pos);
+                if (mapInstanceRef.current) mapInstanceRef.current.panTo(pos);
                 form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
                 form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
                 geocoder.geocode({ location: pos }, (results, status) => {
@@ -216,7 +216,7 @@ export default function WellnessOwnerProfilePage() {
     }, [currentUser, dispensaryId, authLoading, router, toast, form]);
     
     useEffect(() => {
-        if (!isFetchingData && wellnessProfile && mapContainerRef.current) {
+        if (!isFetchingData && wellnessProfile) {
             initializeMapAndAutocomplete();
         }
     }, [isFetchingData, wellnessProfile, initializeMapAndAutocomplete]);
@@ -247,6 +247,16 @@ export default function WellnessOwnerProfilePage() {
             setIsSubmitting(false);
         }
     }
+
+     const formatTo12HourDisplay = (time24?: string): string => {
+        if (!time24 || !time24.match(/^([01]\d|2[0-3]):([0-5]\d)$/)) return "Select Time";
+        const [hour24Str, minuteStr] = time24.split(':');
+        let hour24 = parseInt(hour24Str, 10);
+        const amPm = hour24 >= 12 ? 'PM' : 'AM';
+        let hour12 = hour24 % 12;
+        if (hour12 === 0) hour12 = 12;
+        return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
+    };
     
     if (authLoading || isFetchingData) {
         return <div className="max-w-3xl mx-auto my-8 p-6 space-y-6"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-8 w-2/3" /><Skeleton className="h-96 w-full mt-4" /><Skeleton className="h-12 w-full mt-4" /></div>;
@@ -297,7 +307,7 @@ export default function WellnessOwnerProfilePage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="openTime" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
-                                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? parseTimeToComponents(field.value).hour ? `${parseTimeToComponents(field.value).hour}:${parseTimeToComponents(field.value).minute} ${parseTimeToComponents(field.value).amPm}` : 'Select Time' : 'Select Time'}</Button></FormControl></PopoverTrigger>
+                                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : 'Select Time'}</Button></FormControl></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
                                             <Select value={openHour} onValueChange={setOpenHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
                                             <Select value={openMinute} onValueChange={setOpenMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
@@ -308,7 +318,7 @@ export default function WellnessOwnerProfilePage() {
                             )} />
                              <FormField control={form.control} name="closeTime" render={({ field }) => (
                                 <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
-                                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? parseTimeToComponents(field.value).hour ? `${parseTimeToComponents(field.value).hour}:${parseTimeToComponents(field.value).minute} ${parseTimeToComponents(field.value).amPm}` : 'Select Time' : 'Select Time'}</Button></FormControl></PopoverTrigger>
+                                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : 'Select Time'}</Button></FormControl></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
                                             <Select value={closeHour} onValueChange={setCloseHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
                                             <Select value={closeMinute} onValueChange={setCloseMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
