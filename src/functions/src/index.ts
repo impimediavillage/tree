@@ -35,7 +35,7 @@ class HttpError extends Error {
   }
 }
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK, but only if it hasn't been initialized yet.
 if (admin.apps.length === 0) {
     admin.initializeApp();
 }
@@ -1008,7 +1008,3 @@ export const updateStrainImageUrl = onCall(async (request) => {
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
-
-    
-
-      
