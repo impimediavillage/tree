@@ -214,7 +214,7 @@ export default function AdminEditWellnessPage() {
 
   // Effect to handle role check and redirection
   useEffect(() => {
-    if (authLoading) return; // Wait for authentication state to resolve
+    if (authLoading) return;
 
     if (!currentUser) {
       toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
