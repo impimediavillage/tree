@@ -6,7 +6,6 @@ import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Toaster } from "@/components/ui/toaster";
-import Script from 'next/script';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext'; // Import CartProvider
 import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
@@ -37,13 +36,6 @@ export default function RootLayout({
             <Footer />
             <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
             <Toaster />
-            {process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
-              <Script
-                src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-                strategy="afterInteractive"
-                async
-              />
-            )}
           </CartProvider>
         </AuthProvider>
       </body>
