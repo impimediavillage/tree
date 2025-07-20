@@ -1,6 +1,6 @@
 
 'use server';
-import * * as logger from "firebase-functions/logger";
+import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import sgMail from "@sendgrid/mail";
 import {
@@ -36,7 +36,9 @@ class HttpError extends Error {
 }
 
 // Initialize Firebase Admin SDK
-admin.initializeApp();
+if (admin.apps.length === 0) {
+    admin.initializeApp();
+}
 const db = admin.firestore();
 
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
@@ -318,7 +320,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
       try {
         const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
-        const firestoreUserDataUpdate: Partial<UserDocData> = {
+        const firestoreUserData: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
             photoURL: userRecord.photoURL || null,
@@ -327,13 +329,16 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
-            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
-            (firestoreUserDataUpdate as UserDocData).credits = 100; // Default credits for new owner
+            (firestoreUserData as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
+            (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
         }
         
-        // Setting the user doc will trigger onUserDocCreate or onUserDocUpdate to set the claims
-        await userDocRef.set(firestoreUserDataUpdate, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by trigger.`);
+        await userDocRef.set(firestoreUserData, { merge: true });
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+        
+        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
+        // This ensures the role is immediately reflected in the user's auth token.
+        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -1003,6 +1008,5 @@ export const updateStrainImageUrl = onCall(async (request) => {
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
-
 
     
