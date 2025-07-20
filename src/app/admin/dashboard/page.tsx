@@ -55,6 +55,30 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
   </Card>
 );
 
+interface QuickActionCardProps {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    link: string;
+    buttonText: string;
+    disabled?: boolean;
+}
+
+const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, buttonText, disabled }) => (
+    <Card className="hover:shadow-lg transition-shadow bg-card">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-xl text-card-foreground">
+          <Icon className="text-accent h-6 w-6" /> {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground mb-4">{description}</p>
+        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={disabled}>
+          <Link href={disabled ? '#' : link}>{buttonText}</Link>
+        </Button>
+      </CardContent>
+    </Card>
+);
 
 export default function AdminDashboardOverviewPage() {
   const [stats, setStats] = useState({
@@ -183,72 +207,48 @@ export default function AdminDashboardOverviewPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Building className="text-accent h-6 w-6" /> Manage Wellness Profiles</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Approve, view, edit, or suspend wellness applications.</p>
-            <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/dispensaries">Go to Wellness Profiles</Link>
-            </Button>
-          </CardContent>
-        </Card>
-         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Users className="text-accent h-6 w-6" /> Manage Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">View user details, manage roles, and oversee user activity.</p>
-            <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/users">Go to Users</Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ListChecks className="text-accent h-6 w-6" /> Wellness Types</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Create and manage the types of wellness entities available.</p>
-            <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/dispensary-types">Manage Types</Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CreditCard className="text-accent h-6 w-6" /> Credit System</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Configure credit packages and monitor transactions.</p>
-            <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/credits">Credit Admin</Link>
-            </Button>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><ShieldAlert className="text-accent h-6 w-6" /> Pool Issues</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Review and resolve reported issues in the product sharing pool.</p>
-            <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/pool-issues">View Issues</Link>
-            </Button>
-          </CardContent>
-        </Card>
-         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Bell className="text-accent h-6 w-6" /> Notifications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Manage and send platform-wide notifications.</p>
-            <Button asChild className="w-full bg-primary text-primary-foreground">
-              <Link href="/admin/dashboard/notifications">Manage Notifications</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <QuickActionCard
+            title="Manage Wellness Profiles"
+            description="Approve, view, edit, or suspend wellness applications."
+            icon={Building}
+            link="/admin/dashboard/dispensaries"
+            buttonText="Go to Wellness Profiles"
+        />
+         <QuickActionCard
+            title="Manage Users"
+            description="View user details, manage roles, and oversee user activity."
+            icon={Users}
+            link="/admin/dashboard/users"
+            buttonText="Go to Users"
+        />
+        <QuickActionCard
+            title="Wellness Types"
+            description="Create and manage the types of wellness entities available."
+            icon={ListChecks}
+            link="/admin/dashboard/dispensary-types"
+            buttonText="Manage Types"
+        />
+        <QuickActionCard
+            title="Credit System"
+            description="Configure credit packages and monitor transactions."
+            icon={CreditCard}
+            link="/admin/dashboard/credits"
+            buttonText="Credit Admin"
+        />
+        <QuickActionCard
+            title="Pool Issues"
+            description="Review and resolve reported issues in the product sharing pool."
+            icon={ShieldAlert}
+            link="/admin/dashboard/pool-issues"
+            buttonText="View Issues"
+        />
+         <QuickActionCard
+            title="Notifications"
+            description="Manage and send platform-wide notifications."
+            icon={Bell}
+            link="/admin/dashboard/notifications"
+            buttonText="Manage Notifications"
+        />
       </div>
 
        <Card className="hover:shadow-lg transition-shadow col-span-1 md:col-span-2 lg:col-span-3">
