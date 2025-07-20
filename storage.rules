@@ -1,57 +1,47 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Helper function to check for Super Admin role
-    function isSuperAdmin() {
-      return request.auth != null && request.auth.token.role == 'Super Admin';
-    }
-
-    // Helper function to check if the user is the owner
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
-
-    // --- Product Images ---
-    // Path: /products/{userId}/{imageName}
-    // Anyone can read product images.
-    // Only the authenticated user (Dispensary Owner) can write to their own folder.
-    match /products/{userId}/{imageName} {
-      allow read: if true;
-      allow write: if isOwner(userId);
+    // Helper function for auth check
+    function isSignedIn() {
+      return request.auth != null;
     }
     
-    // --- Lab Reports ---
-    // Path: /lab-reports/{userId}/{fileName}
-    // Only the owner of the lab report can read it.
-    // Only the owner can write it.
-    match /lab-reports/{userId}/{fileName} {
-      allow read, write: if isOwner(userId);
+    // Helper function for Super Admin check
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.role == 'Super Admin';
     }
 
-    // --- Dispensary Type Assets (Icons, Banners) ---
-    // Path: /dispensary-type-assets/{assetType}/{fileName}
-    // Anyone can read these public assets.
-    // Only Super Admins can write/upload new assets.
-    match /dispensary-type-assets/{assetType}/{fileName} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
-    }
-
-    // --- Sticker Set Assets ---
-    // Path: /stickersets/{userId}/{fileName}
-    // Anyone can read these public assets.
-    // Only the creator can write/upload new assets.
-    match /stickersets/{userId}/{fileName} {
-      allow read: if true;
-      allow write: if isOwner(userId);
-    }
-
-    // Default deny all other paths
+    // Allow public read access to all files by default.
+    // This simplifies serving images for products, dispensary types, etc., to all users.
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if true;
+    }
+
+    // Secure write access. Only authenticated users can upload files.
+    // We can add more specific rules for paths if needed.
+    // Example: allow write: if isSignedIn() && request.resource.size < 5 * 1024 * 1024;
+    
+    // Allow any authenticated user to write to the 'products' folder.
+    // Further security (e.g., matching dispensaryId) should be handled by your backend code.
+    match /products/{userId}/{fileName} {
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Allow any authenticated user to write to 'lab-reports'.
+    match /lab-reports/{userId}/{fileName} {
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Allow any authenticated user to write to 'stickersets'.
+    match /stickersets/{userId}/{fileName} {
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Only Super Admins can write to 'dispensary-type-assets'.
+    match /dispensary-type-assets/{folder}/{fileName} {
+      allow write: if isSuperAdmin();
     }
   }
 }
