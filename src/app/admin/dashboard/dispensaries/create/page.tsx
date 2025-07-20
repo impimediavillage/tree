@@ -213,67 +213,66 @@ export default function AdminCreateWellnessPage() {
   const initializeMapAndAutocomplete = useCallback(() => {
     if (!window.google || !window.google.maps || !locationInputRef.current || !mapContainerRef.current) return;
 
-    if (!autocompleteRef.current) {
-        autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-            fields: ["formatted_address", "geometry", "name", "address_components"],
-            types: ["address"],
-            componentRestrictions: { country: "za" },
-        });
-        autocompleteRef.current.addListener("place_changed", () => {
-            const place = autocompleteRef.current!.getPlace();
-            if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-            if (place.geometry?.location) {
-                const loc = place.geometry.location;
-                form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-                form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-                if (mapInstanceRef.current && markerInstanceRef.current) {
-                    mapInstanceRef.current.setCenter(loc);
-                    mapInstanceRef.current.setZoom(17);
-                    markerInstanceRef.current.setPosition(loc);
-                }
+    if (mapInstanceRef.current) return; // Already initialized
+
+    const initialLat = -29.8587;
+    const initialLng = 31.0218;
+    const map = new window.google.maps.Map(mapContainerRef.current, {
+        center: { lat: initialLat, lng: initialLng },
+        zoom: 6,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+    });
+    mapInstanceRef.current = map;
+    const marker = new window.google.maps.Marker({
+        position: { lat: initialLat, lng: initialLng },
+        map,
+        draggable: true,
+        icon: { url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
+    });
+    markerInstanceRef.current = marker;
+
+    if (autocompleteRef.current) return; // Already initialized
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(locationInputRef.current, {
+        fields: ["formatted_address", "geometry", "name", "address_components"],
+        types: ["address"],
+        componentRestrictions: { country: "za" },
+    });
+    autocompleteRef.current.addListener("place_changed", () => {
+        const place = autocompleteRef.current!.getPlace();
+        if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
+        if (place.geometry?.location) {
+            const loc = place.geometry.location;
+            form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+            form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+            if (mapInstanceRef.current && markerInstanceRef.current) {
+                mapInstanceRef.current.setCenter(loc);
+                mapInstanceRef.current.setZoom(17);
+                markerInstanceRef.current.setPosition(loc);
+            }
+        }
+    });
+
+    const geocoder = new window.google.maps.Geocoder();
+    const handleMapInteraction = (pos: google.maps.LatLng) => {
+        marker.setPosition(pos);
+        map.panTo(pos);
+        form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
+        form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
+        geocoder.geocode({ location: pos }, (results, status) => {
+            if (status === 'OK' && results?.[0]) {
+                form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
             }
         });
-    }
-    
-    if (!mapInstanceRef.current) {
-        const initialLat = -29.8587;
-        const initialLng = 31.0218;
-        const map = new window.google.maps.Map(mapContainerRef.current, {
-            center: { lat: initialLat, lng: initialLng },
-            zoom: 6,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-        });
-        mapInstanceRef.current = map;
-        const marker = new window.google.maps.Marker({
-            position: { lat: initialLat, lng: initialLng },
-            map,
-            draggable: true,
-            icon: { url: wellnessTypeIcons.default, scaledSize: new window.google.maps.Size(40, 40), anchor: new window.google.maps.Point(20, 40) }
-        });
-        markerInstanceRef.current = marker;
-
-        const geocoder = new window.google.maps.Geocoder();
-        const handleMapInteraction = (pos: google.maps.LatLng) => {
-            marker.setPosition(pos);
-            map.panTo(pos);
-            form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
-            form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
-            geocoder.geocode({ location: pos }, (results, status) => {
-                if (status === 'OK' && results?.[0]) {
-                    form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
-                }
-            });
-        };
-        map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
-        marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
-    }
+    };
+    map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+    marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
   }, [form]);
 
   useEffect(() => {
-    // Ensures map initializes only when the container is ready
-    if (mapContainerRef.current) {
+    if (mapContainerRef.current && window.google?.maps) {
         initializeMapAndAutocomplete();
     }
   }, [initializeMapAndAutocomplete]);

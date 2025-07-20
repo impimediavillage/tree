@@ -146,12 +146,10 @@ export default function WellnessSignupPage() {
 
   const initializeMapAndAutocomplete = useCallback(() => {
     if (!window.google?.maps || !locationInputRef.current || !mapContainerRef.current) {
-        // If Google Maps API is not loaded yet, or refs are not ready, do nothing.
-        // It will be re-attempted by the useEffect hook.
         return;
     }
     
-    if (mapInstanceRef.current) return; // Already initialized
+    if (mapInstanceRef.current) return;
 
     const initialLat = -29.8587;
     const initialLng = 31.0218;
@@ -212,15 +210,9 @@ export default function WellnessSignupPage() {
   }, [form]);
 
   useEffect(() => {
-    // Attempt to initialize map on mount and if google object becomes available
-    const interval = setInterval(() => {
-      if (window.google?.maps && mapContainerRef.current) {
+    if (mapContainerRef.current && window.google?.maps) {
         initializeMapAndAutocomplete();
-        clearInterval(interval);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
+    }
   }, [initializeMapAndAutocomplete]);
 
 
