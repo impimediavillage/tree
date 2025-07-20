@@ -40,7 +40,7 @@ console.log(JSON.stringify(loggableConfig, null, 2));
 let missingVars = false;
 for (const key in firebaseConfig) {
   if (!firebaseConfig[key]) {
-    console.error(`ERROR: Missing Firebase configuration variable: ${key}`);
+    console.error(`ERROR: Missing Firebase configuration variable: NEXT_PUBLIC_${key.replace(/([A-Z])/g, '_$1').toUpperCase()}`);
     missingVars = true;
   }
 }
