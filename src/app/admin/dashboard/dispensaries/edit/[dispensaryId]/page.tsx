@@ -212,21 +212,26 @@ export default function AdminEditWellnessPage() {
     }
   }, [wellnessProfile, form, toast]);
 
+  // Effect to handle role check and redirection
   useEffect(() => {
-    if (authLoading) {
-      return; // Wait until authentication state is resolved
-    }
+    if (authLoading) return; // Wait for authentication state to resolve
 
-    // This is the critical change: check permissions *after* loading is complete
     if (!currentUser || currentUser.role !== 'Super Admin') {
       toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
+    }
+  }, [authLoading, currentUser, router, toast]);
+
+  // Effect to fetch all necessary data once user is confirmed to be an admin
+  useEffect(() => {
+    if (authLoading || !currentUser || currentUser.role !== 'Super Admin') {
       return;
     }
 
     const fetchAllData = async () => {
       setIsFetchingData(true);
-      await fetchWellnessTypes(); 
+      await fetchWellnessTypes(); // Fetch types first
+
       if (dispensaryId) {
         try {
           const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
@@ -234,20 +239,16 @@ export default function AdminEditWellnessPage() {
           if (docSnap.exists()) {
             const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
             setWellnessProfile(data);
-            
             form.reset({
               ...data,
               latitude: data.latitude === null ? undefined : data.latitude,
               longitude: data.longitude === null ? undefined : data.longitude,
               operatingDays: data.operatingDays || [],
             });
-
             const openTimeComps = parseTimeToComponents(data.openTime);
             setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-            
             const closeTimeComps = parseTimeToComponents(data.closeTime);
             setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-
             if (data.phone) {
               const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
               if (foundCountry) {
@@ -264,12 +265,12 @@ export default function AdminEditWellnessPage() {
         } catch (error) {
           toast({ title: "Error", description: "Failed to fetch wellness profile.", variant: "destructive" });
         } finally {
-          setIsFetchingData(false); 
+          setIsFetchingData(false);
         }
       } else {
-         toast({ title: "Error", description: "No Dispensary ID provided.", variant: "destructive" });
-         router.push('/admin/dashboard/dispensaries');
-         setIsFetchingData(false);
+        toast({ title: "Error", description: "No Dispensary ID provided.", variant: "destructive" });
+        router.push('/admin/dashboard/dispensaries');
+        setIsFetchingData(false);
       }
     };
     fetchAllData();
