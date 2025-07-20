@@ -7,7 +7,7 @@ import { getFunctions, type Functions } from 'firebase/functions'; // Import Fun
 // import { getAnalytics, type Analytics } from "firebase/analytics"; // Optional: if you need analytics
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, // Use the maps key for all services
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
@@ -19,7 +19,7 @@ const firebaseConfig = {
 // --- Temporary Diagnostic Log ---
 if (typeof window !== 'undefined') { // Only log on client-side
     console.log("Firebase Config from env:", {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? "Exists" : "MISSING",
+        apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? "Exists" : "MISSING",
         authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? "Exists" : "MISSING",
         projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? "Exists" : "MISSING",
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ? "Exists" : "MISSING",
@@ -29,7 +29,7 @@ if (typeof window !== 'undefined') { // Only log on client-side
 }
 // Check for any undefined essential variables
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error("CRITICAL: Firebase apiKey or projectId is missing from environment variables (NEXT_PUBLIC_FIREBASE_...). Please check your .env.local file and ensure the Next.js development server was restarted after changes.");
+  console.error("CRITICAL: Firebase apiKey or projectId is missing from environment variables (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY, NEXT_PUBLIC_FIREBASE_PROJECT_ID...). Please check your .env.local file and ensure the Next.js development server was restarted after changes.");
 }
 // --- End Temporary Diagnostic Log ---
 
