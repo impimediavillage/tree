@@ -56,8 +56,10 @@ class HttpError extends Error {
         this.name = 'HttpError';
     }
 }
-// Initialize Firebase Admin SDK
-admin.initializeApp();
+// Initialize Firebase Admin SDK, but only if it hasn't been initialized yet.
+if (admin.apps.length === 0) {
+    admin.initializeApp();
+}
 const db = admin.firestore();
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
 mail_1.default.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
@@ -295,7 +297,7 @@ exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{d
         const userId = userRecord.uid;
         try {
             const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
-            const firestoreUserDataUpdate = {
+            const firestoreUserData = {
                 uid: userId, email: ownerEmail, displayName: ownerDisplayName,
                 role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
                 photoURL: userRecord.photoURL || null,
@@ -303,12 +305,14 @@ exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{d
             };
             const userDocSnap = await userDocRef.get();
             if (!userDocSnap.exists) {
-                firestoreUserDataUpdate.createdAt = admin.firestore.FieldValue.serverTimestamp();
-                firestoreUserDataUpdate.credits = 100; // Default credits for new owner
+                firestoreUserData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+                firestoreUserData.credits = 100; // Default credits for new owner
             }
-            // Setting the user doc will trigger onUserDocCreate or onUserDocUpdate to set the claims
-            await userDocRef.set(firestoreUserDataUpdate, { merge: true });
-            logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by trigger.`);
+            await userDocRef.set(firestoreUserData, { merge: true });
+            logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+            // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
+            // This ensures the role is immediately reflected in the user's auth token.
+            await setClaimsFromDoc(userId, firestoreUserData);
             const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
             await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
             logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
@@ -721,27 +725,10 @@ exports.scrapeJustBrandCatalog = (0, https_1.onCall)({ memory: '1GiB', timeoutSe
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const uid = request.auth.uid;
-    const token = request.auth.token;
-    let isAuthorized = token?.role === 'Super Admin';
-    // Fallback check in Firestore if claims are not yet propagated to the token.
-    if (!isAuthorized) {
-        logger.info(`User ${uid} not authorized by token claims. Performing Firestore fallback check.`);
-        try {
-            const userDoc = await db.collection('users').doc(uid).get();
-            if (userDoc.exists && userDoc.data()?.role === 'Super Admin') {
-                logger.info(`User ${uid} authorized via Firestore role. Consider re-logging to refresh auth token claims.`);
-                isAuthorized = true;
-            }
-        }
-        catch (e) {
-            logger.error(`Firestore fallback check for user ${uid} failed:`, e);
-            // On error, we do not authorize.
-        }
-    }
-    if (!isAuthorized) {
-        // If both token and Firestore checks fail, deny permission.
-        throw new https_1.HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
+    // Authorization check
+    const isSuperAdmin = request.auth.token.role === 'Super Admin';
+    if (!isSuperAdmin) {
+        throw new https_1.HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
     }
     const runId = new Date().toISOString().replace(/[:.]/g, '-');
     const logRef = db.collection('scrapeLogs').doc(runId);
