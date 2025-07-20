@@ -38,7 +38,7 @@ const deliveryRadiusOptions = [
 
 const bulkDeliveryRadiusOptions = [
   { value: "none", label: "None" }, { value: "national", label: "Nationwide" },
-  { value: "global", label: "Global" }, { value: "off-planet", label: "Off Planet (My products are strong!)" },
+  { value: "global", label: "Global" }, { value: "off-planet", label: "My products are strong!)" },
 ];
 
 const leadTimeOptions = [
@@ -145,11 +145,19 @@ export default function WellnessSignupPage() {
 
   const initializeMap = useCallback(async () => {
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
+    
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.error("Google Maps API key is missing.");
+      toast({ title: "Map Error", description: "Google Maps API key is not configured.", variant: "destructive"});
+      return;
+    }
+    
     mapInitialized.current = true;
 
     try {
         const loader = new Loader({
-            apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+            apiKey: apiKey,
             version: 'weekly',
             libraries: ['places'],
         });
@@ -157,14 +165,14 @@ export default function WellnessSignupPage() {
         const google = await loader.load();
         const { Map } = google.maps;
         const { Marker } = google.maps;
-        const { Autocomplete } = google.maps.places;
-
+        
         const initialLat = -29.8587;
         const initialLng = 31.0218;
 
         const map = new Map(mapContainerRef.current!, {
             center: { lat: initialLat, lng: initialLng },
             zoom: 6,
+            mapId: 'b39f3f8b7139051d', 
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
@@ -177,7 +185,7 @@ export default function WellnessSignupPage() {
             icon: { url: wellnessTypeIcons.default, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) }
         });
 
-        const autocomplete = new Autocomplete(locationInputRef.current!, {
+        const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, {
             fields: ["formatted_address", "geometry", "name", "address_components"],
             types: ["address"],
             componentRestrictions: { country: "za" },

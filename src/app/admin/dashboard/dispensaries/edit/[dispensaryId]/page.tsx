@@ -17,7 +17,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, updateDoc, Timestamp, getDocs, query as firestoreQuery, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, updateDoc, serverTimestamp, getDocs, query as firestoreQuery, orderBy, addDoc } from 'firebase/firestore';
 import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryType } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -40,7 +40,7 @@ const deliveryRadiusOptions = [
 
 const bulkDeliveryRadiusOptions = [
   { value: "none", label: "None" }, { value: "national", label: "Nationwide" },
-  { value: "global", label: "Global" }, { value: "off-planet", label: "Off Planet (My products are strong!)" },
+  { value: "global", label: "Global" }, { value: "off-planet", label: "My products are strong!)" },
 ];
 
 const leadTimeOptions = [
@@ -147,11 +147,19 @@ export default function AdminEditWellnessPage() {
   
   const initializeMap = useCallback(async () => {
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+        console.error("Google Maps API key is missing.");
+        toast({ title: "Map Error", description: "Google Maps API key is not configured.", variant: "destructive"});
+        return;
+    }
+
     mapInitialized.current = true;
   
     try {
         const loader = new Loader({
-            apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+            apiKey: apiKey,
             version: 'weekly',
             libraries: ['places'],
         });
@@ -159,16 +167,15 @@ export default function AdminEditWellnessPage() {
         const google = await loader.load();
         const { Map } = google.maps;
         const { Marker } = google.maps;
-        const { Autocomplete } = google.maps.places;
   
         const lat = wellnessProfile.latitude ?? -29.8587;
         const lng = wellnessProfile.longitude ?? 31.0218;
         const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
         let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
   
-        const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapTypeControl: false, streetViewControl: false });
+        const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapId: 'b39f3f8b7139051d', mapTypeControl: false, streetViewControl: false });
         const marker = new Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) } });
-        const autocomplete = new Autocomplete(locationInputRef.current!, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
+        const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
   
         autocomplete.addListener("place_changed", () => {
             const place = autocomplete.getPlace();
@@ -199,16 +206,11 @@ export default function AdminEditWellnessPage() {
         map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
         marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
   
-        const watchDispensaryType = form.getValues("dispensaryType");
-        const selectedTypeObject = wellnessTypes.find(dt => dt.name === watchDispensaryType);
-        const newIconUrl = selectedTypeObject?.iconPath || wellnessTypeIcons[watchDispensaryType] || wellnessTypeIcons.default;
-        marker.setIcon({ url: newIconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) });
-  
     } catch (e) {
       console.error('Error loading Google Maps:', e);
       toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
     }
-  }, [wellnessProfile, form, toast, wellnessTypes]);
+  }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -258,7 +260,7 @@ export default function AdminEditWellnessPage() {
             } catch (error) {
                 toast({ title: "Error", description: "Failed to fetch wellness profile.", variant: "destructive" });
             } finally {
-                setIsFetchingData(false); // This will now trigger the map initialization useEffect
+                setIsFetchingData(false); 
             }
         }
     };
@@ -297,14 +299,20 @@ export default function AdminEditWellnessPage() {
     setIsSubmitting(true);
     try {
       const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-      const updateData = {
-        ...data,
+      
+      // Create a mutable copy of the data to modify
+      const updateData = { ...data };
+
+      // Explicitly remove the read-only applicationDate from the update payload
+      delete (updateData as any).applicationDate;
+
+      // Add the server timestamp for the update
+      const finalUpdateData = {
+        ...updateData,
         lastActivityDate: serverTimestamp(),
       };
       
-      delete (updateData as any).applicationDate;
-
-      await updateDoc(wellnessDocRef, updateData as any);
+      await updateDoc(wellnessDocRef, finalUpdateData as any);
       toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
@@ -475,8 +483,7 @@ export default function AdminEditWellnessPage() {
             <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="openTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
-                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}>
-                    <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}</Button></FormControl></PopoverTrigger>
+                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : 'Select Time'}</Button></FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
                         <Select value={openHour} onValueChange={setOpenHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
                         <Select value={openMinute} onValueChange={setOpenMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
@@ -486,8 +493,7 @@ export default function AdminEditWellnessPage() {
                 </FormItem>)} />
                 <FormField control={form.control} name="closeTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
-                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}>
-                    <PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}</Button></FormControl></PopoverTrigger>
+                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : 'Select Time'}</Button></FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
                         <Select value={closeHour} onValueChange={setCloseHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
                         <Select value={closeMinute} onValueChange={setCloseMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
@@ -504,10 +510,8 @@ export default function AdminEditWellnessPage() {
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
             <div className="grid md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
-                <FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="bulkDeliveryRadius" render={({ field }) => (
-                <FormItem><FormLabel>Bulk Order Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="bulkDeliveryRadius" render={({ field }) => (<FormItem><FormLabel>Bulk Order Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
 
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
