@@ -93,7 +93,7 @@ export default function AdminEditWellnessPage() {
   const dispensaryId = params.dispensaryId as string;
   const { currentUser, loading: authLoading, isSuperAdmin } = useAuth();
 
-  const [isFetchingData, setIsFetchingData] = useState(true);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
 
@@ -124,30 +124,25 @@ export default function AdminEditWellnessPage() {
     resolver: zodResolver(editDispensarySchema),
     mode: "onChange",
   });
-
-  useEffect(() => {
-    const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
-    form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
-  }, [selectedCountryCode, nationalPhoneNumber, form]);
   
+  // Refactored data fetching logic
   useEffect(() => {
-    // This is the main data loading and permission check effect.
-    // It only runs when the authentication state changes.
-    const loadPageData = async () => {
-        // First, wait for authentication to be fully loaded.
-        if (authLoading) {
-            return;
-        }
+    // 1. Wait for authentication to resolve
+    if (authLoading) {
+        setIsLoadingData(true);
+        return;
+    }
 
-        // AFTER auth is loaded, check for Super Admin role.
-        if (!isSuperAdmin) {
-            toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
-            router.push('/admin/dashboard');
-            return;
-        }
+    // 2. Once auth is resolved, check permissions
+    if (!isSuperAdmin) {
+        toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
+        router.push('/admin/dashboard');
+        return;
+    }
 
-        // If checks pass, proceed to fetch all necessary data.
-        setIsFetchingData(true);
+    // 3. If permissions are correct, fetch all necessary data
+    const fetchPageData = async () => {
+        setIsLoadingData(true);
         try {
             // Fetch wellness types
             const typesCollectionRef = collection(db, 'dispensaryTypes');
@@ -189,19 +184,26 @@ export default function AdminEditWellnessPage() {
                 }
             } else {
                 toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
-                router.push('/admin/dashboard/dispensaries');
+                setWellnessProfile(null); // Explicitly set to null on failure
             }
         } catch (error) {
             console.error("Error fetching page data:", error);
             toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
+            setWellnessProfile(null);
         } finally {
-            setIsFetchingData(false);
+            setIsLoadingData(false);
         }
     };
     
-    loadPageData();
+    fetchPageData();
 
   }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
+
+
+  useEffect(() => {
+    const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
+    form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
+  }, [selectedCountryCode, nationalPhoneNumber, form]);
 
   const initializeMap = useCallback(async () => {
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
@@ -271,10 +273,10 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
   
   useEffect(() => {
-    if (!isFetchingData && wellnessProfile) {
+    if (!isLoadingData && wellnessProfile) {
       initializeMap();
     }
-  }, [isFetchingData, wellnessProfile, initializeMap]);
+  }, [isLoadingData, wellnessProfile, initializeMap]);
 
   const handleAddNewWellnessType = async () => {
      if (!isSuperAdmin) return;
@@ -366,7 +368,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (authLoading || isFetchingData) {
+  if (authLoading || isLoadingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
@@ -563,10 +565,10 @@ export default function AdminEditWellnessPage() {
               <FormField control={form.control} name="leadTime" render={({ field }) => (<FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
             <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
              <div className="flex gap-4 pt-4">
-                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData || (form.formState.isSubmitted && !form.formState.isValid)}>
+                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isLoadingData || (form.formState.isSubmitted && !form.formState.isValid)}>
                   {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
                 </Button>
-                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData}>Cancel</Button></Link>
+                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isLoadingData}>Cancel</Button></Link>
               </div>
           </form>
         </Form>
