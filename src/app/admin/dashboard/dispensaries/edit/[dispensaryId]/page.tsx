@@ -213,7 +213,7 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth state to be determined
+    if (authLoading) return;
 
     if (!currentUser) {
       toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
@@ -226,8 +226,7 @@ export default function AdminEditWellnessPage() {
       router.push('/admin/dashboard');
       return;
     }
-    
-    // Only fetch data if auth is loaded and user is Super Admin
+
     const fetchAllData = async () => {
       setIsFetchingData(true);
       try {
