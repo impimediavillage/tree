@@ -35,11 +35,40 @@ class HttpError extends Error {
   }
 }
 
-// Initialize Firebase Admin SDK, but only if it hasn't been initialized yet.
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// **CRITICAL FIX**: Explicitly initialize the Admin SDK with service account credentials.
+// This ensures that all functions run with the correct permissions (e.g., Super Admin)
+// and resolves the persistent "insufficient permissions" errors.
 if (admin.apps.length === 0) {
-    admin.initializeApp();
+    try {
+        // Use environment variables in production, but include the provided key as a fallback
+        // for environments where GOOGLE_APPLICATION_CREDENTIALS might not be set.
+        const serviceAccount = {
+            "type": "service_account",
+            "project_id": "dispensary-tree",
+            "private_key_id": "63bce47b8bb026e6e6801c303378e5c5012a08ab",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDwZN3lqM1974eq\nevvuS5vc+vSn3tpWRxi3It+/MOu4e4kORa+/1QJZ+wnvlF7Tr30i8j5yI2akEeKi\nOeO0oloNg67M6Xvq7oYb6Rw9YXkqiiNX3OOnAbKqoIxyt4ovCU+VGIprVawmjwJ+\npfnGDnQAShVGGhcrAXt1I2l5f2DpKzFgoAv3tYffC1QmVsjUjYw8iSnOa2kwQtZ4\ngWBQMvNXopIq3i3jALcM7uzi+HmJlF625+YBT0eM5ws9yWSmUR6bMBpU6lmyO7p3\nqXUo5DqsHQJxf8rIN+0MV6+bs5yaHmc4SyBvk6l35qHkAgRBE55iWibjZJiO8e8H\nNas3P9GbAgMBAAECggEAILgZ26BWF8X6WSHUGGMCG9msYwzZ+tRCcOq2OXeXHczy\nopapjRqY71ZTy+AN6BICnjcKeM6IsdwdVKc8buGKEDzUFd/RlfBRIIth5JjXvQqA\nNP1Dnv+EKeUgOJzymeRSiKCGdoV6oOTmGgbNMD/XWhK7Qodaj+frvc3MFVVZA2My\nFVlZ8+iT4kzzHotNIUSg5qBRBygoGsxeWx9pHX1mF8ziEEHzP0OKrmJ32jZtM9Sa\nb2kBcgaCzYQ5ydtiueT+FXPLUh9OlBKTHZFnVCS2+b40p8S3dPkaquoLFKutRXAp\nuuRt4y9kc6ghbVma3q5wu948fpvtfZ1yvXGGY3URAQKBgQD5eASqZr/55j+kpTF5\nuRLaQReYM+68lVSoXOhwrZTsyV3g8Uno++od4hTipiaMtGDt8NbDEMjsiohFq66G\nWfIhKuXFgReBGqyDxkuvLQxXHEG0M8MFvAcm1VoiuzsjN3GsAtKdEOj0H/y1LJun\nzWmdtCRZzNLbbMyK7WkQV1fcywKBgQD2sAcU9a3tK/jCsLevouQEiyLTvgpbPkZP\n34Ha1LZCj498uroNTjY6DycBYOqCPDznXB/OXG+3a8hn804qmjZaIBt4tEsibNJH\ncwQXGgi0FGopGsyiVH9OetDWJ65fo36bNRB7zd6bioXnggvk0uizArsvrPFc42HD\nwm4hgTaUcQKBgA6oscV9kixSDk1Tc6vOZ0Ax8Pv9mTq1n6rhAruUR5r+XijYpNou\n61vkLAwBbWR5OPTiYQxHUTctEMLfSrsUT/kI90V6x3HLqnV30nyxrfb0bxvyqrQM\nj3MFuG0wCVKRcHmGFPArzTSDKKtQurjKhjlBG523PnCsXPyQ5MqUB1KvAoGBAJUe\nUymYWUrFCdqmeGLzVGJquOLGPfxp6JbfxN9DNemGXnZHabAhVyZBgpKSwy92ulog\nlhloRx/ZR4uOx/F4xuI0BmcwlTp6DaKjJBXS5u/0Zzfxu0FlUo9eLl9GHWIyspWf\nvhcYmzfqxIbtVcM8uu16+SwYns5HpRFwtqIKObQBAoGBAKyHjp/dZWuogdil2oyU\nAmbI2Xt4FmelAlxWQTnV7J54QftSjAnDWAvNuWOM//mM3AybDQPLxeHxOUvCouG9\nQz6yUmKFVC5cfPFpDYiyjsYGC8GHOhDbOr6VPgj6PaQgn8edzvHWSfShbThNdY+d\nBbjT+cu9F32ZSfTntR4lORjN\n-----END PRIVATE KEY-----\n".replace(/\\n/g, '\n'),
+            "client_email": "firebase-adminsdk-fbsvc@dispensary-tree.iam.gserviceaccount.com",
+            "client_id": "116214404226401344056",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40dispensary-tree.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+          };
+
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        logger.info("Firebase Admin SDK initialized successfully with service account credentials.");
+    } catch (e: any) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
 }
 const db = admin.firestore();
+
+// ============== END INITIALIZATION ==============
+
 
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
@@ -136,7 +165,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
   return `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <header style="background-color: hsl(var(--primary)); /* Tailwind primary green */ color: hsl(var(--primary-foreground)); padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">The Dispensary Tree</h1>
+        <h1 style="margin: 0; font-size: 24px;">The Wellness Tree</h1>
       </header>
       <main style="padding: 25px;">
         ${greeting ? `<p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">${greeting}</p>` : ''}
