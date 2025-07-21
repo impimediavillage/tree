@@ -129,22 +129,80 @@ export default function AdminEditWellnessPage() {
     const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
-
-  const fetchWellnessTypes = useCallback(async () => {
-    try {
-      const typesCollectionRef = collection(db, 'dispensaryTypes');
-      const q = firestoreQuery(typesCollectionRef, orderBy('name'));
-      const querySnapshot = await getDocs(q);
-      const fetchedTypes: DispensaryType[] = querySnapshot.docs.map(docSnap => ({
-        id: docSnap.id, ...docSnap.data()
-      } as DispensaryType));
-      setWellnessTypes(fetchedTypes);
-    } catch (error) {
-      console.error("Error fetching wellness types for admin edit:", error);
-      toast({ title: "Error", description: "Failed to fetch wellness types.", variant: "destructive" });
-    }
-  }, [toast]);
   
+  useEffect(() => {
+    // This is the main data loading and permission check effect.
+    // It only runs when the authentication state changes.
+    const loadPageData = async () => {
+        // First, wait for authentication to be fully loaded.
+        if (authLoading) {
+            return;
+        }
+
+        // AFTER auth is loaded, check for Super Admin role.
+        if (!isSuperAdmin) {
+            toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
+            router.push('/admin/dashboard');
+            return;
+        }
+
+        // If checks pass, proceed to fetch all necessary data.
+        setIsFetchingData(true);
+        try {
+            // Fetch wellness types
+            const typesCollectionRef = collection(db, 'dispensaryTypes');
+            const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
+            const typesSnapshot = await getDocs(typesQuery);
+            const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
+            setWellnessTypes(fetchedTypes);
+
+            // Fetch the specific dispensary document
+            const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+            const docSnap = await getDoc(wellnessDocRef);
+
+            if (docSnap.exists()) {
+                const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
+                setWellnessProfile(data);
+                
+                // Populate the form with the fetched data
+                form.reset({
+                    ...data,
+                    latitude: data.latitude === null ? undefined : data.latitude,
+                    longitude: data.longitude === null ? undefined : data.longitude,
+                    operatingDays: data.operatingDays || [],
+                });
+
+                const openTimeComps = parseTimeToComponents(data.openTime);
+                setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+                
+                const closeTimeComps = parseTimeToComponents(data.closeTime);
+                setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+
+                if (data.phone) {
+                    const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
+                    if (foundCountry) {
+                        setSelectedCountryCode(foundCountry.value);
+                        setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+                    } else {
+                        setNationalPhoneNumber(data.phone);
+                    }
+                }
+            } else {
+                toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
+                router.push('/admin/dashboard/dispensaries');
+            }
+        } catch (error) {
+            console.error("Error fetching page data:", error);
+            toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
+        } finally {
+            setIsFetchingData(false);
+        }
+    };
+    
+    loadPageData();
+
+  }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
+
   const initializeMap = useCallback(async () => {
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
 
@@ -211,63 +269,6 @@ export default function AdminEditWellnessPage() {
       toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
     }
   }, [wellnessProfile, form, toast]);
-
-  useEffect(() => {
-    if (authLoading) {
-      return; 
-    }
-    if (!isSuperAdmin) {
-      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
-      router.push('/admin/dashboard');
-      return;
-    }
-    
-    // Only proceed to fetch data after auth is loaded and permissions are checked.
-    const fetchAllData = async () => {
-      setIsFetchingData(true);
-      try {
-        await fetchWellnessTypes();
-
-        const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-        const docSnap = await getDoc(wellnessDocRef);
-
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-          setWellnessProfile(data);
-          form.reset({
-            ...data,
-            latitude: data.latitude === null ? undefined : data.latitude,
-            longitude: data.longitude === null ? undefined : data.longitude,
-            operatingDays: data.operatingDays || [],
-          });
-          const openTimeComps = parseTimeToComponents(data.openTime);
-          setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-          const closeTimeComps = parseTimeToComponents(data.closeTime);
-          setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-          
-          if (data.phone) {
-            const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-            if (foundCountry) {
-              setSelectedCountryCode(foundCountry.value);
-              setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
-            } else {
-              setNationalPhoneNumber(data.phone);
-            }
-          }
-        } else {
-          toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
-          router.push('/admin/dashboard/dispensaries');
-        }
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
-        console.error("Fetch profile error:", error);
-      } finally {
-        setIsFetchingData(false);
-      }
-    };
-
-    fetchAllData();
-  }, [dispensaryId, authLoading, isSuperAdmin, router, toast, form, fetchWellnessTypes]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -377,22 +378,17 @@ export default function AdminEditWellnessPage() {
     );
   }
 
-  if (!isSuperAdmin) {
-    // This part should now be reliably protected by the useEffect hook above.
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-                <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
-                <p className="mt-2 text-muted-foreground">You do not have permission to view this page.</p>
-                <Button onClick={() => router.push('/admin/dashboard')} className="mt-6">Go to Dashboard</Button>
-            </div>
-        </div>
-    );
-  }
-
   if (!wellnessProfile) {
-    return <div className="text-center py-10 flex flex-col items-center gap-4 text-destructive"><AlertTriangle className="h-10 w-10" />Wellness profile not found or failed to load.</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+              <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+              <h2 className="mt-4 text-2xl font-bold">Wellness Profile Not Found</h2>
+              <p className="mt-2 text-muted-foreground">The requested wellness profile could not be loaded or does not exist.</p>
+              <Button onClick={() => router.push('/admin/dashboard/dispensaries')} className="mt-6">Back to List</Button>
+          </div>
+      </div>
+    );
   }
    
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
