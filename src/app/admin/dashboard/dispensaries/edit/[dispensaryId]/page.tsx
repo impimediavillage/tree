@@ -212,35 +212,35 @@ export default function AdminEditWellnessPage() {
     }
   }, [wellnessProfile, form, toast]);
 
-  // Effect to handle role check and redirection
+  // Combined effect for loading all data
   useEffect(() => {
-    if (authLoading) return;
-
+    if (authLoading) {
+      return; 
+    }
+    
     if (!currentUser) {
       toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
       router.push('/auth/signin');
+      setIsFetchingData(false);
       return;
     }
 
     if (!isSuperAdmin) {
       toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
-    }
-  }, [authLoading, currentUser, isSuperAdmin, router, toast]);
-
-  // Effect to fetch all necessary data *after* user is confirmed to be an admin
-  useEffect(() => {
-    if (authLoading || !isSuperAdmin || !dispensaryId) {
+      setIsFetchingData(false);
       return;
     }
 
+    // Now that permissions are confirmed, fetch all data
     const fetchAllData = async () => {
       setIsFetchingData(true);
-      await fetchWellnessTypes(); // Fetch types first
-
       try {
+        await fetchWellnessTypes();
+
         const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
         const docSnap = await getDoc(wellnessDocRef);
+
         if (docSnap.exists()) {
           const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
           setWellnessProfile(data);
@@ -254,6 +254,7 @@ export default function AdminEditWellnessPage() {
           setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
           const closeTimeComps = parseTimeToComponents(data.closeTime);
           setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+          
           if (data.phone) {
             const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
             if (foundCountry) {
@@ -268,14 +269,15 @@ export default function AdminEditWellnessPage() {
           router.push('/admin/dashboard/dispensaries');
         }
       } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch wellness profile.", variant: "destructive" });
+        toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
         console.error("Fetch profile error:", error);
       } finally {
         setIsFetchingData(false);
       }
     };
+
     fetchAllData();
-  }, [dispensaryId, authLoading, isSuperAdmin, router, toast, form, fetchWellnessTypes]);
+  }, [dispensaryId, authLoading, currentUser, isSuperAdmin, router, toast, form, fetchWellnessTypes]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
