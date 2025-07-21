@@ -12,7 +12,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, Save, PlusCircle, ArrowLeft, Building } from 'lucide-react';
+import { Loader2, Clock, Save, PlusCircle, ArrowLeft, Building, AlertTriangle } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -91,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading, isSuperAdmin } = useAuth();
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -222,15 +222,15 @@ export default function AdminEditWellnessPage() {
       return;
     }
 
-    if (currentUser.role !== 'Super Admin') {
+    if (!isSuperAdmin) {
       toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
     }
-  }, [authLoading, currentUser, router, toast]);
+  }, [authLoading, currentUser, isSuperAdmin, router, toast]);
 
   // Effect to fetch all necessary data *after* user is confirmed to be an admin
   useEffect(() => {
-    if (authLoading || !currentUser || currentUser.role !== 'Super Admin' || !dispensaryId) {
+    if (authLoading || !isSuperAdmin || !dispensaryId) {
       return;
     }
 
@@ -275,7 +275,7 @@ export default function AdminEditWellnessPage() {
       }
     };
     fetchAllData();
-  }, [dispensaryId, authLoading, currentUser, router, toast, form, fetchWellnessTypes]);
+  }, [dispensaryId, authLoading, isSuperAdmin, router, toast, form, fetchWellnessTypes]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -284,7 +284,7 @@ export default function AdminEditWellnessPage() {
   }, [isFetchingData, wellnessProfile, initializeMap]);
 
   const handleAddNewWellnessType = async () => {
-     if (!currentUser || currentUser.role !== 'Super Admin') return;
+     if (!isSuperAdmin) return;
      if (!newWellnessTypeName.trim()) {
         toast({ title: "Validation Error", description: "New wellness type name cannot be empty.", variant: "destructive" });
         return;
@@ -338,7 +338,7 @@ export default function AdminEditWellnessPage() {
   }, [closeHour, closeMinute, closeAmPm, form]);
 
   async function onSubmit(data: EditDispensaryFormData) {
-    if (!dispensaryId || !currentUser || currentUser.role !== 'Super Admin') return;
+    if (!dispensaryId || !isSuperAdmin) return;
     setIsSubmitting(true);
     try {
       const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
@@ -385,8 +385,11 @@ export default function AdminEditWellnessPage() {
     );
   }
 
-  if (!wellnessProfile || (currentUser && currentUser.role !== 'Super Admin')) {
-    return <div className="text-center py-10">Wellness profile not found, failed to load, or access denied.</div>;
+  if (!wellnessProfile) {
+    return <div className="text-center py-10 flex flex-col items-center gap-4 text-destructive"><AlertTriangle className="h-10 w-10" />Wellness profile not found or failed to load.</div>;
+  }
+   if (!isSuperAdmin) {
+    return <div className="text-center py-10 flex flex-col items-center gap-4 text-destructive"><AlertTriangle className="h-10 w-10" />Access Denied.</div>;
   }
 
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
@@ -438,7 +441,7 @@ export default function AdminEditWellnessPage() {
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                         <SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent>
                         </Select>
-                        {currentUser && currentUser.role === 'Super Admin' && (
+                        {isSuperAdmin && (
                             <Dialog open={isAddTypeDialogOpen} onOpenChange={setIsAddTypeDialogOpen}>
                                 <DialogTrigger asChild><Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button></DialogTrigger>
                                 <DialogContent>
