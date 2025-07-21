@@ -38,9 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(null);
       setCurrentDispensaryStatus(null);
+      setLoading(true); // Always set loading to true on auth state change
       
       if (firebaseUser) {
-        setLoading(true); // Ensure loading is true while we fetch Firestore data
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
         unsubscribeUserSnapshot = onSnapshot(userDocRef, (userDocSnap) => {
