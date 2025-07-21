@@ -1,3 +1,3 @@
-// This file is intentionally left blank.
-// All type definitions have been consolidated into `functions/src/types.ts`
-// to resolve TypeScript compilation issues.
+
+// This file is a duplicate and was causing conflicts. It has been removed.
+// The primary Cloud Functions source is located at /functions/src/types/index.ts.

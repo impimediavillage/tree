@@ -35,23 +35,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Clean up previous listeners when auth state changes
       if (unsubscribeUserSnapshot) unsubscribeUserSnapshot();
       if (unsubscribeDispensarySnapshot) unsubscribeDispensarySnapshot();
+      
       setCurrentUser(null);
       setCurrentDispensaryStatus(null);
       
       if (firebaseUser) {
-        setLoading(true); // Set loading to true while we fetch Firestore data
+        setLoading(true); // Ensure loading is true while we fetch Firestore data
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
         unsubscribeUserSnapshot = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
-            const appUser = {
+            const appUser: AppUser = {
               uid: firebaseUser.uid,
               email: firebaseUser.email || '',
-              displayName: firebaseUser.displayName || userData?.displayName,
-              photoURL: firebaseUser.photoURL || userData?.photoURL,
-              ...userData,
-            } as AppUser;
+              displayName: firebaseUser.displayName || userData?.displayName || '',
+              photoURL: firebaseUser.photoURL || userData?.photoURL || null,
+              role: userData?.role || 'User', // Fallback role
+              dispensaryId: userData?.dispensaryId || null,
+              credits: userData?.credits || 0,
+              status: userData?.status || 'Active',
+              // Add other fields from userData as needed
+            };
             
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
