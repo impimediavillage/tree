@@ -213,20 +213,16 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!currentUser) {
-      toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
-      router.push('/auth/signin');
-      return;
+    if (authLoading) {
+      return; 
     }
-
     if (!isSuperAdmin) {
       toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
       return;
     }
-
+    
+    // Only proceed to fetch data after auth is loaded and permissions are checked.
     const fetchAllData = async () => {
       setIsFetchingData(true);
       try {
@@ -271,7 +267,7 @@ export default function AdminEditWellnessPage() {
     };
 
     fetchAllData();
-  }, [dispensaryId, authLoading, currentUser, isSuperAdmin, router, toast, form, fetchWellnessTypes]);
+  }, [dispensaryId, authLoading, isSuperAdmin, router, toast, form, fetchWellnessTypes]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -381,13 +377,24 @@ export default function AdminEditWellnessPage() {
     );
   }
 
+  if (!isSuperAdmin) {
+    // This part should now be reliably protected by the useEffect hook above.
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+                <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+                <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
+                <p className="mt-2 text-muted-foreground">You do not have permission to view this page.</p>
+                <Button onClick={() => router.push('/admin/dashboard')} className="mt-6">Go to Dashboard</Button>
+            </div>
+        </div>
+    );
+  }
+
   if (!wellnessProfile) {
     return <div className="text-center py-10 flex flex-col items-center gap-4 text-destructive"><AlertTriangle className="h-10 w-10" />Wellness profile not found or failed to load.</div>;
   }
-   if (!isSuperAdmin) {
-    return <div className="text-center py-10 flex flex-col items-center gap-4 text-destructive"><AlertTriangle className="h-10 w-10" />Access Denied.</div>;
-  }
-
+   
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
 
   return (
