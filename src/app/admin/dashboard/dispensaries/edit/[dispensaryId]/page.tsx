@@ -212,27 +212,22 @@ export default function AdminEditWellnessPage() {
     }
   }, [wellnessProfile, form, toast]);
 
-  // Combined effect for loading all data
   useEffect(() => {
-    if (authLoading) {
-      return; 
-    }
-    
+    if (authLoading) return; // Wait for auth state to be determined
+
     if (!currentUser) {
       toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
       router.push('/auth/signin');
-      setIsFetchingData(false);
       return;
     }
 
     if (!isSuperAdmin) {
       toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
       router.push('/admin/dashboard');
-      setIsFetchingData(false);
       return;
     }
-
-    // Now that permissions are confirmed, fetch all data
+    
+    // Only fetch data if auth is loaded and user is Super Admin
     const fetchAllData = async () => {
       setIsFetchingData(true);
       try {
