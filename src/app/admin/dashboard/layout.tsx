@@ -29,6 +29,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import React from 'react';
 
 interface NavItem {
   title: string;
@@ -70,7 +71,7 @@ export default function AdminDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading, isSuperAdmin } = useAuth();
 
   // This layout now acts as a Protected Route.
   // It checks for auth and role status once, for all child pages.
@@ -84,7 +85,7 @@ export default function AdminDashboardLayout({
   }
 
   // If loading is finished and there's no user or the user is not a Super Admin, redirect.
-  if (!currentUser || currentUser.role !== 'Super Admin') {
+  if (!isSuperAdmin) {
     // We use a useEffect to avoid triggering a redirect during the initial render cycle
     // which can cause issues with Next.js navigation.
     React.useEffect(() => {
@@ -123,6 +124,13 @@ export default function AdminDashboardLayout({
     if (pathname.includes('/admin/dashboard/dispensary-types/edit-categories')) return 'Manage Categories';
     return 'Admin Panel';
   };
+  
+  const isNavItemActive = (itemHref: string) => {
+    if (itemHref === '/admin/dashboard') {
+      return pathname === itemHref;
+    }
+    return pathname.startsWith(itemHref);
+  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -144,10 +152,10 @@ export default function AdminDashboardLayout({
                     <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
                       <SidebarMenuButton
                         tooltip={item.title}
-                        isActive={pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))}
+                        isActive={isNavItemActive(item.href)}
                         disabled={item.disabled}
                         className={cn(
-                          (pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href)))
+                          isNavItemActive(item.href)
                             ? 'bg-primary/10 text-primary hover:bg-primary/20'
                             : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                           item.disabled && 'opacity-50 cursor-not-allowed'
@@ -171,10 +179,10 @@ export default function AdminDashboardLayout({
                      <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
                       <SidebarMenuButton
                         tooltip={item.title}
-                        isActive={pathname.startsWith(item.href)}
+                        isActive={isNavItemActive(item.href)}
                         disabled={item.disabled}
                          className={cn(
-                          pathname.startsWith(item.href)
+                          isNavItemActive(item.href)
                             ? 'bg-primary/10 text-primary hover:bg-primary/20'
                             : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                           item.disabled && 'opacity-50 cursor-not-allowed'
@@ -196,23 +204,23 @@ export default function AdminDashboardLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-auto p-2 hover:bg-muted/50">
                   <Avatar className="h-9 w-9 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
-                    <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || 'Admin'} />
+                    <AvatarImage src={currentUser?.photoURL || undefined} alt={currentUser?.displayName || 'Admin'} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials(currentUser.displayName, 'SA')}
+                      {getInitials(currentUser?.displayName, 'SA')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="ml-2 group-data-[collapsible=icon]:hidden text-left">
                     <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
-                      {currentUser.displayName || currentUser.email?.split('@')[0]}
+                      {currentUser?.displayName || currentUser?.email?.split('@')[0]}
                     </p>
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                      {currentUser.role}
+                      {currentUser?.role}
                     </p>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="right" align="start" className="w-56">
-                <DropdownMenuLabel>{currentUser.displayName || 'Admin Profile'}</DropdownMenuLabel>
+                <DropdownMenuLabel>{currentUser?.displayName || 'Admin Profile'}</DropdownMenuLabel>
                 <DropdownMenuSeparatorComponent />
                 <DropdownMenuItem onClick={() => router.push('/')}>
                   <LayoutDashboard className="mr-2 h-4 w-4" />

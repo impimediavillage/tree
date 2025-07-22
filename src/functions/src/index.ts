@@ -34,9 +34,6 @@ class HttpError extends Error {
 }
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
-// **CRITICAL FIX**: Explicitly initialize the Admin SDK with service account credentials.
-// This ensures that all functions run with the correct permissions (e.g., Super Admin)
-// and resolves the persistent "insufficient permissions" errors.
 if (admin.apps.length === 0) {
     try {
         const serviceAccount = {
