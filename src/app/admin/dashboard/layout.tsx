@@ -110,6 +110,17 @@ export default function AdminDashboardLayout({
     }
   };
 
+  const getPageTitle = () => {
+    const allItems = [...mainSidebarNavItems, ...managementSidebarNavItems];
+    const activeItem = allItems.find(item => pathname.startsWith(item.href) && item.href !== '/admin/dashboard');
+    if (pathname === '/admin/dashboard') return 'Overview';
+    if (activeItem) return activeItem.title;
+    // Fallback for nested pages like edit pages
+    if (pathname.includes('/admin/dashboard/dispensaries/edit')) return 'Edit Store';
+    if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
+    return 'Admin Panel';
+  };
+
   if (isLoadingUser || !currentUser) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -139,10 +150,10 @@ export default function AdminDashboardLayout({
                     <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
                       <SidebarMenuButton
                         tooltip={item.title}
-                        isActive={pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/admin/dashboard')}
+                        isActive={pathname === item.href}
                         disabled={item.disabled}
                         className={cn(
-                          (pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/admin/dashboard'))
+                          pathname === item.href
                             ? 'bg-primary/10 text-primary hover:bg-primary/20'
                             : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                           item.disabled && 'opacity-50 cursor-not-allowed'
@@ -236,9 +247,7 @@ export default function AdminDashboardLayout({
                 className="text-lg font-semibold text-foreground"
                 style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
               >
-                {mainSidebarNavItems.find(item => pathname.startsWith(item.href))?.title || 
-                 managementSidebarNavItems.find(item => pathname.startsWith(item.href))?.title ||
-                 'Admin'}
+                {getPageTitle()}
               </h1>
             </div>
           </header>
