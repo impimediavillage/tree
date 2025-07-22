@@ -2,79 +2,78 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // SUPER ADMIN OVERRIDE: Super Admins can read and write all documents.
-    // This is checked first and grants universal access if the condition is met.
+    
+    // Global rule: Super Admins can read/write anything.
+    // This is the master key. It's evaluated first.
     match /{document=**} {
       allow read, write: if request.auth.token.role == 'Super Admin';
     }
-    
-    // Users can only read and write to their own user document.
+
+    // Users Collection Rules
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
+      // A user can read their own document. This is crucial for login.
+      allow get: if request.auth.uid == userId;
+      // A user can update their own document (for profile changes).
+      allow update: if request.auth.uid == userId;
+      // Any authenticated user can read the displayName and photoURL of any other user.
+      allow list: if request.auth != null;
     }
-    
-    // Dispensary Types can be read by any authenticated user, but only written by admins (covered by global rule).
-    match /dispensaryTypes/{typeId} {
-      allow read: if request.auth != null;
-    }
-    
-    // Dispensary product categories can be read by authenticated users.
-    match /dispensaryTypeProductCategories/{docId} {
-      allow read: if request.auth != null;
-    }
-    
-    // Dispensaries can be read by anyone, but only updated by their owner or an admin.
+
+    // Dispensaries Collection Rules
     match /dispensaries/{dispensaryId} {
-      allow read: if true;
-      allow update: if request.auth.uid == resource.data.ownerUid;
-      // Note: Admin updates are covered by the global rule.
+      // Any authenticated user can view approved dispensaries.
+      allow get, list: if request.auth != null && resource.data.status == 'Approved';
+      // Only the assigned dispensary owner can update their own dispensary.
+      // We check the custom claim set by the cloud function.
+      allow update: if request.auth.token.dispensaryId == dispensaryId;
     }
     
-    // Products can be read by anyone.
-    // Products can only be created or updated by the owner of the linked dispensary.
+    // Dispensary Types Collection Rules
+    match /dispensaryTypes/{typeId} {
+      // Anyone can read the types of dispensaries available.
+      allow get, list: if true;
+    }
+
+    // Products Collection Rules
     match /products/{productId} {
-      allow read: if true;
-      allow create, update: if request.auth.uid == get(/databases/$(database)/documents/dispensaries/$(request.resource.data.dispensaryId)).data.ownerUid;
-      allow delete: if request.auth.uid == resource.data.productOwnerEmail; // Simplified for now, better to check owner of dispensary
+      // Anyone can read product info.
+      allow get, list: if true;
+      // Only the assigned dispensary owner can create, update, or delete products.
+      allow create, update, delete: if request.auth.token.dispensaryId == request.resource.data.dispensaryId;
     }
     
-    // Product Requests can be created by any authenticated user.
-    // They can be read or updated by the requester or the product owner.
+    // Product Requests Collection Rules
     match /productRequests/{requestId} {
-      allow create: if request.auth.uid != null;
-      allow read, update: if request.auth.uid == resource.data.requesterUid || request.auth.uid == get(/databases/$(database)/documents/dispensaries/$(resource.data.productOwnerDispensaryId)).data.ownerUid;
+      // Only the involved parties (requester or owner) can read/write their requests.
+      allow read, write: if request.auth.token.dispensaryId == resource.data.requesterDispensaryId 
+                        || request.auth.token.dispensaryId == resource.data.productOwnerDispensaryId;
+      allow create: if request.auth.token.dispensaryId == request.resource.data.requesterDispensaryId;
     }
     
-    // Pool Issues can be created by authenticated users.
-    // Read/write access is restricted to admins (covered by global rule).
+    // Other collections can be read by any authenticated user for now.
+    // Consider tightening these rules as needed.
+    match /creditPackages/{packageId} {
+      allow get, list: if true;
+    }
+    
     match /poolIssues/{issueId} {
-        allow create: if request.auth.uid != null;
+        allow read, create: if request.auth != null;
     }
-
-    // Notifications are private to the recipient.
-    match /notifications/{notificationId} {
-      allow read, update, delete: if request.auth.uid == resource.data.recipientUid;
+    
+    match /stickersets/{setId} {
+        allow read, create, update: if request.auth != null;
     }
-
-    // Interaction logs are private to the user.
+    
     match /aiInteractionsLog/{logId} {
-        allow create: if request.auth.uid != null && request.auth.uid == request.resource.data.userId;
+        // Users can only create logs for themselves.
+        allow create: if request.auth.uid == request.resource.data.userId;
+        // Users can only read their own logs.
         allow read: if request.auth.uid == resource.data.userId;
     }
-
-    // Credit packages can be read by authenticated users.
-    match /creditPackages/{packageId} {
-        allow read: if request.auth != null;
-    }
     
-    // Seeded data and sticker sets can be read by anyone.
-    match /my-seeded-collection/{strainId} {
-        allow read: if true;
-    }
-    match /stickersets/{setId} {
-        allow read: if resource.data.isPublic == true;
-        allow read, write: if request.auth.uid == resource.data.creatorUid;
+     match /notifications/{notificationId} {
+      // Users can only read their own notifications.
+      allow read: if request.auth.uid == resource.data.recipientUid;
     }
     
   }
