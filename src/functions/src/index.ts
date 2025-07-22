@@ -34,10 +34,29 @@ class HttpError extends Error {
 }
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// **CRITICAL FIX**: Explicitly initialize the Admin SDK with service account credentials.
+// This ensures that all functions run with the correct permissions (e.g., Super Admin)
+// and resolves the persistent "insufficient permissions" errors.
 if (admin.apps.length === 0) {
     try {
-        admin.initializeApp();
-        logger.info("Firebase Admin SDK initialized successfully.");
+        const serviceAccount = {
+            "type": "service_account",
+            "project_id": "dispensary-tree",
+            "private_key_id": "63bce47b8bb026e6e6801c303378e5c5012a08ab",
+            "private_key": process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            "client_email": "firebase-adminsdk-fbsvc@dispensary-tree.iam.gserviceaccount.com",
+            "client_id": "116214404226401344056",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40dispensary-tree.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+          };
+
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount as any)
+        });
+        logger.info("Firebase Admin SDK initialized successfully with service account credentials.");
     } catch (e: any) {
         logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
     }
@@ -64,7 +83,7 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
     const newClaims: { [key: string]: any } = { role: userData.role || null };
     
-    // Also add dispensaryId to claims if user is an owner or staff
+    // NEW: Also add dispensaryId to claims if user is an owner or staff
     if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
         newClaims.dispensaryId = userData.dispensaryId;
     } else {
@@ -342,7 +361,9 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await userDocRef.set(firestoreUserData, { merge: true });
         logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
-        // This will trigger onUserDocUpdate or onUserCreated to set the claims correctly.
+        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
+        // This ensures the role is immediately reflected in the user's auth token.
+        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
