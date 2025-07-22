@@ -39,7 +39,7 @@ class HttpError extends Error {
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
-        logger.info("Firebase Admin SDK initialized successfully.");
+        logger.info("Firebase Admin SDK initialized successfully using default application credentials.");
     } catch (e: any) {
         logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
     }
@@ -337,10 +337,8 @@ export const onDispensaryUpdate = onDocumentUpdated(
             (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
         }
         
-        // This will trigger onUserDocCreate or onUserDocUpdate which handles setting claims.
-        // This is the correct, decoupled way to handle this.
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by the dedicated trigger.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. onUserDocUpdate will handle claims.`);
         
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -876,6 +874,7 @@ export const updateStrainImageUrl = onCall(async (request) => {
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
+
 
 /**
  * Sets the 'Super Admin' role for a specific user and ensures their user document exists.

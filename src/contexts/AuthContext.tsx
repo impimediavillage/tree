@@ -3,7 +3,7 @@
 
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { ReactNode} from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { db, auth as firebaseAuth } from '@/lib/firebase';
@@ -31,21 +31,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (firebaseUser: FirebaseUser | null) => {
-      let userSnapshotUnsubscribe: Unsubscribe | undefined;
-      let dispensarySnapshotUnsubscribe: Unsubscribe | undefined;
-
-      const cleanup = () => {
-        if (userSnapshotUnsubscribe) userSnapshotUnsubscribe();
-        if (dispensarySnapshotUnsubscribe) dispensarySnapshotUnsubscribe();
-      };
-      
-      cleanup();
-
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        
-        userSnapshotUnsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
+        try {
+          // **THE FIX**: Use a one-time getDoc call *after* auth state is confirmed.
+          // This prevents the race condition where Firestore is queried before the token is ready.
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             const appUser: AppUser = {
@@ -62,36 +55,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
             
-            if (dispensarySnapshotUnsubscribe) dispensarySnapshotUnsubscribe();
-
             if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
               const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-              dispensarySnapshotUnsubscribe = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
-                if (dispensaryDocSnap.exists()) {
-                  setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
-                } else {
-                  console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
-                  setCurrentDispensaryStatus(null);
-                }
-                setLoading(false);
-              }, (error) => {
-                console.error("Error on dispensary snapshot:", error);
+              const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+              if (dispensaryDocSnap.exists()) {
+                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
+              } else {
                 setCurrentDispensaryStatus(null);
-                setLoading(false);
-              });
+                console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
+              }
             } else {
               setCurrentDispensaryStatus(null);
-              setLoading(false);
             }
 
           } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out for safety.`);
+            console.warn(`User document not found for UID: ${firebaseUser.uid}. This might be a new account pending document creation, or an error state. Logging out for safety.`);
             firebaseAuth.signOut(); 
           }
-        }, (error) => {
-            console.error("Error on user snapshot:", error);
-            firebaseAuth.signOut(); 
-        });
+        } catch (error) {
+            console.error("Error fetching user document:", error);
+            // This catch is important for permission errors during the getDoc call itself
+            firebaseAuth.signOut();
+        } finally {
+            setLoading(false);
+        }
 
       } else { 
         localStorage.removeItem('currentUserHolisticAI');
