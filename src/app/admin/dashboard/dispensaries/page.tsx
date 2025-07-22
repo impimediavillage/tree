@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Search, Filter, Loader2, Building, Store } from 'lucide-react';
+import { PlusCircle, Search, Filter, Loader2, Building, Store, CheckCheck } from 'lucide-react';
 import { DispensaryCard } from '@/components/admin/DispensaryCard';
 import { EditDispensaryDialog } from '@/components/admin/EditDispensaryDialog';
 import { useAuth } from '@/contexts/AuthContext';
@@ -98,18 +98,6 @@ export default function AdminWellnessPage() {
     setFilteredWellnessEntities(entitiesToFilter);
   }, [searchTerm, statusFilter, typeFilter, allWellnessEntities]);
 
-  const handleStatusUpdate = async (wellnessId: string, newStatus: Dispensary['status']) => {
-    try {
-      const wellnessDocRef = doc(db, 'dispensaries', wellnessId);
-      await updateDoc(wellnessDocRef, { status: newStatus, lastActivityDate: serverTimestamp() });
-      toast({ title: "Status Updated", description: `Wellness profile status changed to ${newStatus}.` });
-      fetchWellnessAndTypes(); // Refetch all data to ensure consistency
-    } catch (error) {
-      console.error("Error updating wellness status:", error);
-      toast({ title: "Update Failed", description: "Could not update wellness status.", variant: "destructive" });
-    }
-  };
-
   const handleEditDispensary = (dispensary: Dispensary) => {
     setEditingDispensary(dispensary);
     setIsEditDialogOpen(true);
@@ -178,6 +166,19 @@ export default function AdminWellnessPage() {
                 </SelectContent>
               </Select>
           </div>
+          <div className="flex-grow sm:flex-grow-0 relative">
+              <CheckCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WellnessStatusFilter)}>
+                <SelectTrigger className="pl-10 w-full sm:w-[240px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map(opt => (
+                     <SelectItem key={opt} value={opt}>{opt === 'all' ? 'All Statuses' : opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+          </div>
         </div>
 
         {isLoading ? (
@@ -193,7 +194,6 @@ export default function AdminWellnessPage() {
                   key={wellness.id}
                   dispensary={wellness} 
                   onEdit={() => handleEditDispensary(wellness)}
-                  onStatusUpdate={handleStatusUpdate}
                   onDelete={handleDeleteWellness}
                 />
               ))
