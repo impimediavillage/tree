@@ -4,101 +4,93 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ======== HELPER FUNCTIONS ========
-    function isSignedIn() {
-      return request.auth != null;
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
     
-    function isSuperAdmin() {
-      // Use exists() to prevent errors if the user doc doesn't exist yet.
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     function isDispensaryOwner(dispensaryId) {
-      // Use exists() for safety.
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userDoc.role == 'DispensaryOwner' && userDoc.dispensaryId == dispensaryId;
     }
-    
+
     // ======== GLOBAL SUPER ADMIN OVERRIDE ========
-    // This rule ensures a Super Admin can read/write ANYTHING, bypassing all other rules.
+    // This rule must be evaluated FIRST. If the user is a Super Admin,
+    // they get full access to everything, and no other rules are checked.
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
 
     // ======== COLLECTION-SPECIFIC RULES ========
+    // These rules are only evaluated if the user is NOT a Super Admin.
 
+    // Dispensaries: Public can read approved ones. Owners can update their own.
     match /dispensaries/{dispensaryId} {
-      // Anyone can read a dispensary ONLY if its status is 'Approved'.
-      // Super Admins can read any, due to the global override above.
       allow read: if resource.data.status == 'Approved';
-      // Only Super Admins can create or update dispensaries.
-      allow write: if isSuperAdmin();
+      allow update: if isDispensaryOwner(dispensaryId);
+      // Create is handled by a backend function, not directly by users.
+      // Delete is Super Admin only (covered by global rule).
     }
 
+    // Anyone can read these public configuration collections.
     match /dispensaryTypes/{typeId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
     }
-    
     match /dispensaryTypeProductCategories/{docId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
     }
-    
     match /creditPackages/{packageId} {
       allow read: if true;
-      allow write: if isSuperAdmin();
     }
-    
-    match /stickersets/{setId} {
-      allow read: if resource.data.isPublic == true || isOwner(resource.data.creatorUid) || isSuperAdmin();
-      allow create: if isSignedIn();
-      allow update: if isOwner(resource.data.creatorUid) || isSuperAdmin();
-      allow delete: if isOwner(resource.data.creatorUid) || isSuperAdmin();
+     match /mushroom_products/{productId} {
+      allow read: if true;
+    }
+    match /my-seeded-collection/{strainId} {
+      allow read: if true;
     }
 
+    // Products: Public can read. Owners can create/update/delete for their own store.
     match /products/{productId} {
-      // Anyone can read a product if its associated dispensary is approved.
-      allow read: if exists(/databases/$(database)/documents/dispensaries/$(resource.data.dispensaryId)) &&
-                   get(/databases/$(database)/documents/dispensaries/$(resource.data.dispensaryId)).data.status == 'Approved';
-                   
-      // A dispensary owner can create a product for their own dispensary. Admins can create any.
-      allow create: if isDispensaryOwner(request.resource.data.dispensaryId) || isSuperAdmin();
-      
-      // A dispensary owner can update/delete their own products. Admins can manage any.
-      allow update, delete: if isDispensaryOwner(resource.data.dispensaryId) || isSuperAdmin();
+      allow read: if true;
+      allow create: if isDispensaryOwner(request.resource.data.dispensaryId);
+      allow update, delete: if isDispensaryOwner(resource.data.dispensaryId);
+    }
+    
+    // Sticker Sets: Public can read. Signed-in users can create. Owners can manage their own.
+    match /stickersets/{setId} {
+      allow read: if true; 
+      allow create: if isSignedIn();
+      allow update, delete: if isOwner(resource.data.creatorUid);
+    }
+    
+    // Users: Can only manage their own document.
+    match /users/{userId} {
+      allow read, update: if isOwner(userId);
+      // Create is handled by auth triggers. List/Delete is Super Admin only.
     }
 
-    match /users/{userId} {
-      // A user can manage their own document. An admin can manage any.
-      allow read, update: if isOwner(userId) || isSuperAdmin();
-      // Anyone can create a user account (signup).
-      allow create: if true;
-      // Only admins can list or delete users.
-      allow list, delete: if isSuperAdmin();
-    }
-    
+    // Requests: Any signed-in user can create/update their own requests.
     match /productRequests/{requestId} {
-      allow read, create, update: if isSignedIn();
-      allow delete: if isSuperAdmin();
+      allow read, update: if isSignedIn() && (isOwner(resource.data.requesterEmail) || isOwner(resource.data.productOwnerEmail));
+      allow create: if isSignedIn();
     }
-    
+
+    // Issues: Any signed-in user can create issues.
     match /poolIssues/{issueId} {
       allow read, create: if isSignedIn();
-      allow update, delete: if isSuperAdmin();
     }
     
+    // Logs: Users can only manage their own logs.
     match /aiInteractionsLog/{logId} {
-      allow read: if isOwner(resource.data.userId) || isSuperAdmin();
+      allow read: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
-    
-    // Default deny for any collections not explicitly matched
   }
 }
