@@ -1,3 +1,4 @@
+
 'use client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -90,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { isSuperAdmin, loading: authLoading } = useAuth(); // Relies on the layout's protection
+  const { loading: authLoading, isSuperAdmin } = useAuth();
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -197,8 +198,8 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    // This effect now relies on the parent layout to handle auth and role checks.
-    // It proceeds directly to fetching data once auth is confirmed not to be loading.
+    // Parent layout now handles auth and role checks.
+    // This effect can now focus solely on fetching data.
     if (authLoading) return;
 
     const fetchPageData = async () => {
@@ -249,8 +250,11 @@ export default function AdminEditWellnessPage() {
         }
     };
     
-    fetchPageData();
-
+    // Only fetch data if auth is confirmed and user is an admin
+    if (isSuperAdmin) {
+      fetchPageData();
+    }
+    
   }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
   
   useEffect(() => {
