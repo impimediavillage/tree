@@ -20,8 +20,10 @@ import type {
   UserDocData,
   DeductCreditsRequestBody,
   NotificationData,
-  NoteDataCloud
+  NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -644,7 +646,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "admin1@tree.com"; 
+    const superAdminEmail = "impimediavillage@gmail.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
@@ -898,7 +900,7 @@ export const setSuperAdmin = onCall(async (request) => {
             displayName: user.displayName || 'Super Admin',
             role: 'Super Admin',
             status: 'Active',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: serverTimestamp(),
         }, { merge: true });
 
         // Set the custom claim. This is the source of truth for security rules.
