@@ -6,7 +6,7 @@ import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getFunctions, type Functions } from 'firebase/functions';
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY, // Use the dedicated Firebase key
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
@@ -19,6 +19,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authD
   console.error("CRITICAL: A Firebase configuration value (apiKey, projectId, or authDomain) is missing. Please check your .env.local file and ensure the Next.js development server was restarted after changes.");
 }
 
+// Singleton pattern to ensure Firebase is initialized only once.
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
@@ -35,5 +36,6 @@ auth = getAuth(app);
 db = getFirestore(app);
 storage = getStorage(app);
 functions = getFunctions(app, 'us-central1');
+
 
 export { app, auth, db, storage, functions };
