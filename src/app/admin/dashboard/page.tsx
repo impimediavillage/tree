@@ -88,7 +88,6 @@ export default function AdminDashboardOverviewPage() {
     activeProducts: 0, 
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [isScraping, setIsScraping] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -119,32 +118,6 @@ export default function AdminDashboardOverviewPage() {
     };
     fetchStats();
   }, []);
-
-  const handleScrape = async () => {
-    setIsScraping(true);
-    toast({ title: 'Scraping Initiated', description: 'This may take several minutes. Please do not navigate away.' });
-    try {
-        const scrapeJustBrandCatalog = httpsCallable(functions, 'scrapeJustBrandCatalog');
-        const result = await scrapeJustBrandCatalog();
-        const data = result.data as { success: boolean; message: string };
-        if (data.success) {
-            toast({ title: 'Scrape Successful', description: data.message, duration: 8000 });
-        } else {
-            throw new Error(data.message || 'Scraping failed with an unknown error.');
-        }
-    } catch (error: any) {
-        console.error("Error calling scrape function:", error);
-        toast({
-            title: 'Scrape Failed',
-            description: error.message || 'An unexpected error occurred. Check the function logs.',
-            variant: 'destructive',
-            duration: 8000
-        });
-    } finally {
-        setIsScraping(false);
-    }
-  };
-
 
   return (
     <div className="space-y-6">
@@ -250,19 +223,6 @@ export default function AdminDashboardOverviewPage() {
             buttonText="Manage Notifications"
         />
       </div>
-
-       <Card className="hover:shadow-lg transition-shadow col-span-1 md:col-span-2 lg:col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><DownloadCloud className="text-accent h-6 w-6" /> Data Tools</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Run manual data import and management jobs. These can take several minutes to complete.</p>
-            <Button onClick={handleScrape} disabled={isScraping} className="w-full bg-primary text-primary-foreground">
-              {isScraping ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DownloadCloud className="mr-2 h-4 w-4" />}
-              {isScraping ? 'Scraping in progress...' : 'Scrape JustBrand Catalog'}
-            </Button>
-          </CardContent>
-        </Card>
 
     </div>
   );
