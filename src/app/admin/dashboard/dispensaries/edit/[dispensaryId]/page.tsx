@@ -91,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { isSuperAdmin, loading: authLoading } = useAuth(); // Relies on the layout's protection
+  const { isSuperAdmin } = useAuth(); // Relies on the layout's protection
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,10 +198,7 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    // Because the layout now protects the route, we can be confident the user is a super admin
-    // if they reach this page and authLoading is false.
-    if (authLoading) return;
-
+    // The parent layout now protects this route, so we can assume the user is a Super Admin.
     const fetchPageData = async () => {
       setIsFetchingData(true);
       try {
@@ -251,7 +248,7 @@ export default function AdminEditWellnessPage() {
     };
 
     fetchPageData();
-  }, [dispensaryId, authLoading, router, toast, form]);
+  }, [dispensaryId, router, toast, form]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -349,7 +346,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (authLoading || isFetchingData) {
+  if (isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
