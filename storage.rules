@@ -1,49 +1,43 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper functions
+
+    // HELPER FUNCTIONS
     function isSuperAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
-    }
-    
-    function isDispensaryOwner(dispensaryId) {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner'
-             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
+      // Check if the user has the 'Super Admin' role in their Firestore user document.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
-    // Default deny all reads and writes
+    function isOwner(userId) {
+      // Check if the currently authenticated user's ID matches the provided userId.
+      return request.auth.uid == userId;
+    }
+    
+    // GENERAL RULE: By default, allow public read access for all files.
+    // This is necessary so that images can be displayed in the app to any visitor.
+    // Writes are denied unless explicitly allowed by a more specific rule below.
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if false; 
+    }
+
+    // USER-SPECIFIC WRITES: Allow users to write only to folders named with their own UID.
+    // This is the core security rule for uploads.
+    // e.g., /products/{userId}/{imageName}, /lab-reports/{userId}/{reportName}
+    match /{path}/{userId}/{allSubPaths=**} {
+      // Users can only write to their own directory. Admins can write anywhere.
+      allow write: if isOwner(userId) || isSuperAdmin();
+
+      // Basic validation: ensure uploaded files are not excessively large (e.g., max 5MB).
+      // This helps prevent storage abuse.
+      allow create: if (isOwner(userId) || isSuperAdmin()) && request.resource.size < 5 * 1024 * 1024;
     }
     
-    // PUBLIC READ: Allow anyone to read images from these folders.
-    match /dispensary-type-assets/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && (isSuperAdmin());
-    }
-    
-    match /products/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    match /lab-reports/{userId}/{allPaths=**} {
-      allow read: if true; // Or restrict to involved parties if needed
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // SECURED WRITE: Only allow authenticated users (the owner) to write to their own sticker sets folder. Public read.
-    match /stickersets/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Allow Super Admin to write anywhere if needed for maintenance
-    match /{allPaths=**} {
-        allow write: if isSuperAdmin();
+    // ASSET-SPECIFIC WRITES: For assets that may not be tied to a specific user UID path,
+    // like dispensary type icons, only allow Super Admins to write.
+    match /dispensary-type-assets/{allSubPaths=**} {
+      allow write: if isSuperAdmin();
     }
   }
 }
