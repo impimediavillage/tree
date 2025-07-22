@@ -644,7 +644,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "impimediavillage@gmail.com"; 
+    const superAdminEmail = "admin1@tree.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
@@ -874,24 +874,24 @@ export const updateStrainImageUrl = onCall(async (request) => {
 });
 
 /**
- * Sets the 'Super Admin' role for a specific user.
- * This is a utility function intended for one-time setup.
+ * Sets the 'Super Admin' role for a specific user and ensures their user document exists.
+ * This is a utility function intended for one-time setup or recovery.
+ * ONLY an existing Super Admin can call this.
  */
 export const setSuperAdmin = onCall(async (request) => {
-    if (!request.auth || request.auth.token.role !== 'Super Admin') {
-        // To be extra safe, only let an existing admin run this.
-        // The first time, this check might need to be temporarily commented out from the client-side call
-        // if no admin exists yet.
+    // Authenticated check is already done by onCall wrapper.
+    // Now, we do an authorization check based on the caller's custom claims.
+    if (request.auth?.token?.role !== 'Super Admin') {
         throw new HttpsError('permission-denied', 'You must be a Super Admin to run this function.');
     }
 
-    const emailToMakeAdmin = 'impimediavillage@gmail.com'; // Hardcoded for security
+    const emailToMakeAdmin = 'admin1@tree.com'; // Use the correct email
 
     try {
         const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
         const userDocRef = db.collection('users').doc(user.uid);
-
-        // Also ensure the Firestore document reflects this role
+        
+        // Ensure the Firestore document exists for this user.
         await userDocRef.set({ 
             uid: user.uid,
             email: user.email,
@@ -901,7 +901,7 @@ export const setSuperAdmin = onCall(async (request) => {
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
 
-        // Set the custom claim
+        // Set the custom claim. This is the source of truth for security rules.
         await admin.auth().setCustomUserClaims(user.uid, { role: 'Super Admin' });
         
         logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin} and ensured user document exists.`);
