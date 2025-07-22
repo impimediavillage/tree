@@ -4,8 +4,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, query, orderBy, where, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
-import type { Dispensary, DispensaryType, User } from '@/types';
+import { collection, getDocs, doc, updateDoc, query, orderBy, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import type { Dispensary, DispensaryType } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,7 +19,7 @@ type WellnessStatusFilter = Dispensary['status'] | 'all';
 type WellnessTypeFilter = string | 'all';
 
 export default function AdminWellnessPage() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, loading: authLoading } = useAuth();
   const [allWellnessEntities, setAllWellnessEntities] = useState<Dispensary[]>([]);
   const [filteredWellnessEntities, setFilteredWellnessEntities] = useState<Dispensary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,8 +71,10 @@ export default function AdminWellnessPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchWellnessAndTypes();
-  }, [fetchWellnessAndTypes]);
+    if (!authLoading) {
+        fetchWellnessAndTypes();
+    }
+  }, [authLoading, fetchWellnessAndTypes]);
 
   useEffect(() => {
     let entitiesToFilter = allWellnessEntities;
@@ -96,13 +98,12 @@ export default function AdminWellnessPage() {
     setFilteredWellnessEntities(entitiesToFilter);
   }, [searchTerm, statusFilter, typeFilter, allWellnessEntities]);
 
-  const handleStatusToggle = async (wellnessId: string, currentStatus: Dispensary['status']) => {
-    const newStatus = currentStatus === 'Approved' ? 'Suspended' : 'Approved';
+  const handleStatusUpdate = async (wellnessId: string, newStatus: Dispensary['status']) => {
     try {
       const wellnessDocRef = doc(db, 'dispensaries', wellnessId);
       await updateDoc(wellnessDocRef, { status: newStatus, lastActivityDate: serverTimestamp() });
       toast({ title: "Status Updated", description: `Wellness profile status changed to ${newStatus}.` });
-      fetchWellnessAndTypes();
+      fetchWellnessAndTypes(); // Refetch all data to ensure consistency
     } catch (error) {
       console.error("Error updating wellness status:", error);
       toast({ title: "Update Failed", description: "Could not update wellness status.", variant: "destructive" });
@@ -205,7 +206,7 @@ export default function AdminWellnessPage() {
                   key={wellness.id}
                   dispensary={wellness} 
                   onEdit={() => handleEditDispensary(wellness)}
-                  onStatusToggle={handleStatusToggle}
+                  onStatusUpdate={handleStatusUpdate}
                   onDelete={handleDeleteWellness}
                 />
               ))
@@ -225,7 +226,7 @@ export default function AdminWellnessPage() {
             onOpenChange={setIsEditDialogOpen}
             onDispensaryUpdate={fetchWellnessAndTypes}
             allDispensaryTypes={wellnessTypes}
-            isSuperAdmin={isSuperAdmin}
+            isSuperAdmin={!!isSuperAdmin}
         />
       )}
     </>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Clock, Save, PlusCircle, ArrowLeft, Building } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -134,6 +134,11 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
   
   useEffect(() => { form.setValue('openTime', formatTo24Hour(openHour, openMinute, openAmPm), { shouldValidate: true, shouldDirty: true }); }, [openHour, openMinute, openAmPm, form]);
   useEffect(() => { form.setValue('closeTime', formatTo24Hour(closeHour, closeMinute, closeAmPm), { shouldValidate: true, shouldDirty: true }); }, [closeHour, closeMinute, closeAmPm, form]);
+
+  useEffect(() => {
+    const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
+    form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
+  }, [selectedCountryCode, nationalPhoneNumber, form]);
 
   async function onSubmit(data: EditDispensaryFormData) {
     if (!dispensary.id || !isSuperAdmin) return;
@@ -314,7 +319,7 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
             </Form>
             <DialogFooter className="mt-6 pt-4 border-t">
                 <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-                <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting || !form.formState.isValid}>
+                <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting || (form.formState.isSubmitted && !form.formState.isValid)}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save Changes
                 </Button>
@@ -323,4 +328,3 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
     </Dialog>
   );
 }
-

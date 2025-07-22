@@ -76,35 +76,29 @@ export default function AdminDashboardLayout({
 
   // This layout now acts as a Protected Route.
   // It checks for auth and role status once, for all child pages.
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-muted-foreground">Verifying Admin Access...</p>
-      </div>
-    );
-  }
-
-  // If loading is finished and there's no user or the user is not a Super Admin, redirect.
-  if (!isSuperAdmin) {
-    // We use a useEffect to avoid triggering a redirect during the initial render cycle
-    // which can cause issues with Next.js navigation.
-    React.useEffect(() => {
+  React.useEffect(() => {
+    if (authLoading) {
+      return; // Do nothing while loading
+    }
+    // After loading, if there's no user or the user is not a Super Admin, redirect.
+    if (!isSuperAdmin) {
       toast({
         title: "Access Denied",
         description: "You do not have permission to access the admin dashboard.",
         variant: "destructive",
       });
       router.replace('/auth/signin');
-    }, [router, toast]);
+    }
+  }, [authLoading, isSuperAdmin, router, toast]);
 
-    // Render a fallback loading state while redirecting
+
+  if (authLoading || !isSuperAdmin) {
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
-            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-            <h2 className="text-2xl font-bold">Access Denied</h2>
-            <p className="mt-2 text-muted-foreground">You are not authorized to view this page. Redirecting...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h2 className="text-2xl font-bold">Verifying Admin Access...</h2>
+        <p className="mt-2 text-muted-foreground">Please wait while we confirm your permissions.</p>
+      </div>
     );
   }
 
@@ -113,7 +107,7 @@ export default function AdminDashboardLayout({
   const handleLogout = async () => {
     try {
         await firebaseAuthInstance.signOut();
-        localStorage.removeItem('currentUserHolisticAI');
+        // The onAuthStateChanged listener in AuthContext will handle clearing user state.
         toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/auth/signin');
       } catch (error) {
@@ -124,13 +118,16 @@ export default function AdminDashboardLayout({
 
   const getPageTitle = () => {
     const allItems = [...mainSidebarNavItems, ...managementSidebarNavItems];
-    const activeItem = allItems.find(item => pathname.startsWith(item.href) && item.href !== '/admin/dashboard');
-    if (pathname === '/admin/dashboard') return 'Overview';
+    // Find the most specific match first
+    const activeItem = allItems
+        .filter(item => pathname.startsWith(item.href))
+        .sort((a,b) => b.href.length - a.href.length)[0];
+
     if (activeItem) return activeItem.title;
-    // Fallback for nested pages
-    if (pathname.includes('/admin/dashboard/dispensaries/edit')) return 'Edit Store';
-    if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
+    
+    // Fallback for nested pages not in nav
     if (pathname.includes('/admin/dashboard/dispensary-types/edit-categories')) return 'Manage Categories';
+    if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
     return 'Admin Panel';
   };
   

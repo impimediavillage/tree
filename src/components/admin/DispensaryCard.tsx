@@ -6,15 +6,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Trash2, Building, Mail, MapPin, Tag, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DispensaryCardProps {
   dispensary: Dispensary;
   onEdit: () => void;
-  onStatusToggle: (wellnessId: string, currentStatus: Dispensary['status']) => Promise<void>;
+  onStatusUpdate: (wellnessId: string, newStatus: Dispensary['status']) => Promise<void>;
   onDelete: (wellnessId: string, wellnessName: string) => Promise<void>;
 }
 
@@ -33,12 +32,11 @@ const getStatusProps = (status: Dispensary['status']) => {
   }
 };
 
-export function DispensaryCard({ dispensary: wellness, onEdit, onStatusToggle, onDelete }: DispensaryCardProps) {
+const statusOptions: Dispensary['status'][] = ['Approved', 'Suspended', 'Pending Approval', 'Rejected'];
+
+export function DispensaryCard({ dispensary: wellness, onEdit, onStatusUpdate, onDelete }: DispensaryCardProps) {
   const StatusIcon = getStatusProps(wellness.status).VFC;
   const statusBadgeClass = getStatusProps(wellness.status).badgeClass;
-
-  const canToggleStatus = wellness.status === 'Approved' || wellness.status === 'Suspended';
-  const isToggleChecked = wellness.status === 'Approved';
 
   const formatDate = (dateInput: any): string => {
     if (!dateInput) return 'N/A';
@@ -59,7 +57,7 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onStatusToggle, o
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold text-primary flex items-center gap-2">
             <Building className="h-6 w-6" />
-            {wellness.dispensaryName}
+            <span className="truncate" title={wellness.dispensaryName}>{wellness.dispensaryName}</span>
           </CardTitle>
           <Badge className={statusBadgeClass}>
             <StatusIcon className="mr-1.5 h-4 w-4" />
@@ -89,22 +87,22 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onStatusToggle, o
         </div>
       </CardContent>
       <CardFooter className="flex flex-col gap-3 border-t pt-4 mt-auto">
-        {canToggleStatus && (
-          <div className="flex items-center justify-between w-full">
-            <Label htmlFor={`status-toggle-${wellness.id}`} className="text-sm font-medium">
-              {isToggleChecked ? 'Approved' : 'Suspended'}
-            </Label>
-            <Switch
-              id={`status-toggle-${wellness.id}`}
-              checked={isToggleChecked}
-              onCheckedChange={() => onStatusToggle(wellness.id!, wellness.status)}
-              aria-label={`Toggle status to ${isToggleChecked ? 'Suspended' : 'Approved'}`}
-            />
-          </div>
-        )}
+        <div className="flex items-center justify-between w-full">
+            <span className="text-sm font-medium">Status:</span>
+            <Select value={wellness.status} onValueChange={(newStatus) => onStatusUpdate(wellness.id!, newStatus as Dispensary['status'])}>
+                <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Change status..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {statusOptions.map(opt => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
         <div className="flex gap-2 w-full">
           <Button variant="outline" className="w-full" onClick={onEdit}>
-            <Edit className="mr-2 h-4 w-4" /> Edit
+            <Edit className="mr-2 h-4 w-4" /> Edit Details
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
