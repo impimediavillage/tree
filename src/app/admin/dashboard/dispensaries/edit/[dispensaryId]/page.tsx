@@ -91,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { loading: authLoading, isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useAuth();
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,10 +198,8 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    // Parent layout now handles auth and role checks.
-    // This effect can now focus solely on fetching data.
-    if (authLoading) return;
-
+    // The Admin Dashboard Layout now acts as a gatekeeper, so we can assume
+    // the user is a Super Admin if they reach this page. We just fetch the data.
     const fetchPageData = async () => {
         setIsFetchingData(true);
         try {
@@ -250,12 +248,9 @@ export default function AdminEditWellnessPage() {
         }
     };
     
-    // Only fetch data if auth is confirmed and user is an admin
-    if (isSuperAdmin) {
-      fetchPageData();
-    }
+    fetchPageData();
     
-  }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
+  }, [dispensaryId, router, toast, form]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -353,7 +348,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (authLoading || isFetchingData) {
+  if (isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
