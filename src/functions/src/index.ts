@@ -741,6 +741,13 @@ export const deductCreditsAndLogInteraction = onRequest(
     }
 
     const userRef = db.collection("users").doc(userId);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+        res.status(404).send({ error: "User not found." });
+        return;
+    }
+    const userData = userSnap.data() as UserDocData;
+
 
     try {
       let newCreditBalance = 0;
@@ -773,6 +780,7 @@ export const deductCreditsAndLogInteraction = onRequest(
 
       const logEntry = {
         userId,
+        dispensaryId: userData.dispensaryId || null, // Include dispensaryId in the log
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
         timestamp: admin.firestore.Timestamp.now() as any,
