@@ -891,13 +891,20 @@ export const setSuperAdmin = onCall(async (request) => {
         const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
         const userDocRef = db.collection('users').doc(user.uid);
 
+        // Also ensure the Firestore document reflects this role
+        await userDocRef.set({ 
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || 'Super Admin',
+            role: 'Super Admin',
+            status: 'Active',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
         // Set the custom claim
         await admin.auth().setCustomUserClaims(user.uid, { role: 'Super Admin' });
         
-        // Also ensure the Firestore document reflects this role
-        await userDocRef.set({ role: 'Super Admin' }, { merge: true });
-
-        logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin}`);
+        logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin} and ensured user document exists.`);
         return { success: true, message: `Super Admin role set for ${emailToMakeAdmin}.` };
     } catch (error) {
         logger.error(`Error setting Super Admin role for ${emailToMakeAdmin}:`, error);
