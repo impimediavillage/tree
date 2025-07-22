@@ -178,7 +178,7 @@ export const onUserCreated = onDocumentCreated(
       const subject = "Welcome to The Wellness Tree!";
       const greeting = `Dear ${userDisplayName},`;
       const content = [
-        `An account has been created for you on The Dispensary Tree! We're excited to have you as part of our community.`,
+        `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
         `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
         `You've received 10 free credits to get started with our AI advisors.`,
         `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
@@ -345,7 +345,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
-          `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Dispensary Tree.`,
+          `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Wellness Tree.`,
           `We are thrilled to have you join our community. You are now part of a platform dedicated to quality organic, authentic, original wellness products.`,
           `Your public e-store is now available at: <a href="${publicStoreUrl}" target="_blank">${publicStoreUrl}</a>`,
         ];
