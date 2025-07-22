@@ -91,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { isSuperAdmin } = useAuth(); // We can rely on the layout for protection
+  const { isSuperAdmin, loading: authLoading } = useAuth(); // Relies on the layout's protection
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,7 +131,6 @@ export default function AdminEditWellnessPage() {
   }, [selectedCountryCode, nationalPhoneNumber, form]);
   
   const initializeMap = useCallback(async () => {
-    // Initialization logic remains the same
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -198,8 +197,11 @@ export default function AdminEditWellnessPage() {
     }
   }, [wellnessProfile, form, toast]);
 
-  // This is now simplified because the layout handles role protection.
   useEffect(() => {
+    // Because the layout now protects the route, we can be confident the user is a super admin
+    // if they reach this page and authLoading is false.
+    if (authLoading) return;
+
     const fetchPageData = async () => {
       setIsFetchingData(true);
       try {
@@ -249,7 +251,7 @@ export default function AdminEditWellnessPage() {
     };
 
     fetchPageData();
-  }, [dispensaryId, router, toast, form]);
+  }, [dispensaryId, authLoading, router, toast, form]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -347,7 +349,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (isFetchingData) {
+  if (authLoading || isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
