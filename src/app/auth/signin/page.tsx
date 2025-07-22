@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -16,13 +16,10 @@ import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { useAuth } from '@/contexts/AuthContext';
-
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -33,27 +30,11 @@ export default function SignInPage() {
     },
   });
 
-  // This effect will run when currentUser changes after a successful login.
-  // The AuthContext is now the source of truth for redirection.
-  useEffect(() => {
-    if (currentUser) {
-        if (currentUser.role === 'Super Admin') {
-            router.push('/admin/dashboard');
-        } else if (currentUser.role === 'DispensaryOwner') {
-            router.push('/dispensary-admin/dashboard');
-        } else {
-            router.push('/dashboard/leaf');
-        }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
-
-
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
-      // The only job of this function is to sign the user in.
-      // The onAuthStateChanged listener in AuthContext will handle everything else.
+      // The onAuthStateChanged listener in AuthContext will handle everything else,
+      // including setting user state and redirection.
       await signInWithEmailAndPassword(auth, data.email, data.password);
       
       toast({
@@ -61,7 +42,7 @@ export default function SignInPage() {
         description: 'Welcome back! Redirecting you now...',
       });
 
-      // Redirection is now handled by the useEffect watching currentUser.
+      // No manual redirection here. AuthContext handles it.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
