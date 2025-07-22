@@ -165,19 +165,6 @@ export default function AdminWellnessPage() {
             />
           </div>
           <div className="flex-grow sm:flex-grow-0 relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WellnessStatusFilter)}>
-                <SelectTrigger className="pl-10 w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map(opt => (
-                    <SelectItem key={opt} value={opt}>{opt === 'all' ? 'All Statuses' : opt}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-          </div>
-          <div className="flex-grow sm:flex-grow-0 relative">
               <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
               <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as WellnessTypeFilter)}>
                 <SelectTrigger className="pl-10 w-full sm:w-[240px]">
