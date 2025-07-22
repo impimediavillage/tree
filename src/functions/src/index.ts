@@ -1,3 +1,4 @@
+
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -33,29 +34,11 @@ class HttpError extends Error {
 }
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// Initialize with no arguments. It will automatically use the service account
+// credentials of the Cloud Function runtime environment.
 if (admin.apps.length === 0) {
-    try {
-        const serviceAccount = {
-            "type": "service_account",
-            "project_id": "dispensary-tree",
-            "private_key_id": "63bce47b8bb026e6e6801c303378e5c5012a08ab",
-            "private_key": process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            "client_email": "firebase-adminsdk-fbsvc@dispensary-tree.iam.gserviceaccount.com",
-            "client_id": "116214404226401344056",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40dispensary-tree.iam.gserviceaccount.com",
-            "universe_domain": "googleapis.com"
-          };
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount as any)
-        });
-        logger.info("Firebase Admin SDK initialized successfully with service account credentials.");
-    } catch (e: any) {
-        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
-    }
+    admin.initializeApp();
+    logger.info("Firebase Admin SDK initialized successfully.");
 }
 const db = admin.firestore();
 
@@ -79,7 +62,7 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
     const newClaims: { [key: string]: any } = { role: userData.role || null };
     
-    // NEW: Also add dispensaryId to claims if user is an owner or staff
+    // Also add dispensaryId to claims if user is an owner or staff
     if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
         newClaims.dispensaryId = userData.dispensaryId;
     } else {
@@ -741,13 +724,6 @@ export const deductCreditsAndLogInteraction = onRequest(
     }
 
     const userRef = db.collection("users").doc(userId);
-    const userSnap = await userRef.get();
-    if (!userSnap.exists) {
-        res.status(404).send({ error: "User not found." });
-        return;
-    }
-    const userData = userSnap.data() as UserDocData;
-
 
     try {
       let newCreditBalance = 0;
@@ -780,7 +756,6 @@ export const deductCreditsAndLogInteraction = onRequest(
 
       const logEntry = {
         userId,
-        dispensaryId: userData.dispensaryId || null, // Include dispensaryId in the log
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
         timestamp: admin.firestore.Timestamp.now() as any,
