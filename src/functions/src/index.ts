@@ -21,9 +21,7 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
-  ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -36,29 +34,10 @@ class HttpError extends Error {
 }
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
-// **CRITICAL FIX**: Explicitly initialize the Admin SDK with service account credentials.
-// This ensures that all functions run with the correct permissions (e.g., Super Admin)
-// and resolves the persistent "insufficient permissions" errors.
 if (admin.apps.length === 0) {
     try {
-        const serviceAccount = {
-            "type": "service_account",
-            "project_id": "dispensary-tree",
-            "private_key_id": "63bce47b8bb026e6e6801c303378e5c5012a08ab",
-            "private_key": process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
-            "client_email": "firebase-adminsdk-fbsvc@dispensary-tree.iam.gserviceaccount.com",
-            "client_id": "116214404226401344056",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40dispensary-tree.iam.gserviceaccount.com",
-            "universe_domain": "googleapis.com"
-          };
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount)
-        });
-        logger.info("Firebase Admin SDK initialized successfully with service account credentials.");
+        admin.initializeApp();
+        logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
         logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
     }
@@ -85,7 +64,7 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
     const newClaims: { [key: string]: any } = { role: userData.role || null };
     
-    // NEW: Also add dispensaryId to claims if user is an owner or staff
+    // Also add dispensaryId to claims if user is an owner or staff
     if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
         newClaims.dispensaryId = userData.dispensaryId;
     } else {
@@ -163,7 +142,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
   return `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <header style="background-color: hsl(var(--primary)); /* Tailwind primary green */ color: hsl(var(--primary-foreground)); padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">The Wellness Tree</h1>
+        <h1 style="margin: 0; font-size: 24px;">The Dispensary Tree</h1>
       </header>
       <main style="padding: 25px;">
         ${greeting ? `<p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">${greeting}</p>` : ''}
@@ -363,9 +342,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await userDocRef.set(firestoreUserData, { merge: true });
         logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
-        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
-        // This ensures the role is immediately reflected in the user's auth token.
-        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
+        // This will trigger onUserDocUpdate or onUserCreated to set the claims correctly.
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -874,122 +851,6 @@ export const removeDuplicateStrains = onRequest(
     }
   }
 );
-
-/**
- * Callable function to scrape the JustBrand.co.za catalog.
- * This function is secured and can only be called by an authenticated admin user.
- */
-export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    // This function must be called by an authenticated user.
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-    
-    // Authorization check
-    const isSuperAdmin = request.auth.token.role === 'Super Admin';
-    if (!isSuperAdmin) {
-        throw new HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
-    }
-
-    const runId = new Date().toISOString().replace(/[:.]/g, '-');
-    const logRef = db.collection('scrapeLogs').doc(runId);
-    // Corrected historyRef path
-    const historyRef = db.collection('importsHistory').doc(runId);
-
-    const logMessages: string[] = [];
-    const log = (message: string) => {
-        logger.info(`[${runId}] ${message}`);
-        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
-    };
-
-    try {
-        log('ScrapeJustBrandCatalog function triggered by admin.');
-        await logRef.set({
-            status: 'started',
-            startTime: admin.firestore.FieldValue.serverTimestamp(),
-            messages: logMessages,
-            itemCount: 0,
-            successCount: 0,
-            failCount: 0,
-        } as ScrapeLog);
-
-        const catalog = await runScraper(log);
-
-        let totalProducts = 0;
-        let batch = db.batch();
-        let operationCount = 0;
-        const MAX_OPS_PER_BATCH = 499;
-
-        for (const category of catalog) {
-            totalProducts += category.products.length;
-            
-            // Create a document for the category itself (without the products array)
-            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
-            const { products, ...categoryData } = category;
-            batch.set(categoryRef, { ...categoryData, productCount: products.length });
-            operationCount++;
-
-            if (operationCount >= MAX_OPS_PER_BATCH) {
-                await batch.commit();
-                log(`Committed batch of ${operationCount} operations.`);
-                batch = db.batch();
-                operationCount = 0;
-            }
-
-            // Create a document for each product in a subcollection
-            for (const product of products) {
-                if (product.handle) {
-                    const productRef = categoryRef.collection('products').doc(product.handle);
-                    batch.set(productRef, product);
-                    operationCount++;
-
-                    if (operationCount >= MAX_OPS_PER_BATCH) {
-                        await batch.commit();
-                        log(`Committed batch of ${operationCount} operations.`);
-                        batch = db.batch();
-                        operationCount = 0;
-                    }
-                } else {
-                    log(`Skipping product with no handle in category: ${category.name}`);
-                }
-            }
-        }
-
-        if (operationCount > 0) {
-            await batch.commit();
-            log(`Committed final batch of ${operationCount} operations.`);
-        }
-        
-        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
-        
-        const finalLog: Partial<ScrapeLog> = {
-            status: 'completed',
-            endTime: admin.firestore.FieldValue.serverTimestamp(),
-            itemCount: totalProducts,
-            successCount: totalProducts,
-            failCount: 0,
-            messages: logMessages,
-        };
-        await logRef.update(finalLog);
-        await historyRef.set(finalLog);
-        
-        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
-
-    } catch (error: any) {
-        logger.error(`[${runId}] Scraping failed:`, error);
-        log(`FATAL ERROR: ${error.message}`);
-        const finalLog: Partial<ScrapeLog> = {
-            status: 'failed',
-            endTime: admin.firestore.FieldValue.serverTimestamp(),
-            error: error.message,
-            messages: logMessages,
-        };
-        await logRef.update(finalLog);
-        await historyRef.set(finalLog);
-
-        throw new HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
-    }
-});
 
 
 /**

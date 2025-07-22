@@ -131,15 +131,30 @@ export default function AdminEditWellnessPage() {
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
   useEffect(() => {
+    // Wait for auth context to be fully loaded
+    if (authLoading) {
+      return;
+    }
+
+    // Check permissions AFTER auth is loaded
+    if (!isSuperAdmin) {
+      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
+      router.push('/admin/dashboard');
+      return;
+    }
+    
+    // Now that we know user is Super Admin, fetch all data
     const fetchPageData = async () => {
       setIsFetchingData(true);
       try {
+        // Fetch wellness types
         const typesCollectionRef = collection(db, 'dispensaryTypes');
         const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
         const typesSnapshot = await getDocs(typesQuery);
         const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
         setWellnessTypes(fetchedTypes);
 
+        // Fetch the specific wellness profile
         const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
         const docSnap = await getDoc(wellnessDocRef);
 
@@ -177,16 +192,9 @@ export default function AdminEditWellnessPage() {
       }
     };
     
-    if (authLoading) {
-      return;
-    }
-    if (!isSuperAdmin) {
-      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
-      router.push('/admin/dashboard');
-      return;
-    }
-    fetchPageData();
-  }, [dispensaryId, authLoading, isSuperAdmin, router, toast, form]);
+    fetchAllData();
+
+  }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
   
   const initializeMap = useCallback(async () => {
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
