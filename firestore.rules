@@ -3,79 +3,85 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // =================================================================
-    //  MASTER RULE: Super Admins have universal read/write access.
-    //  This rule is checked first and provides a "master key".
-    // =================================================================
+    // Global rule: Super Admins have unrestricted access to all documents.
+    // This rule is checked first and provides a "master key" override.
     match /{document=**} {
       allow read, write: if request.auth.token.role == 'Super Admin';
     }
 
-    // =================================================================
-    //  USER PROFILES (`/users/{userId}`)
-    // =================================================================
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // CREATE: Any authenticated user can create their own user document.
+      // Any authenticated user can create their own user document during signup.
       allow create: if request.auth != null;
 
-      // READ, UPDATE: A user can read or update their own document.
-      // This is essential for the application to function after login.
+      // Users can read and update their own document.
       allow read, update: if request.auth.uid == userId;
     }
 
-    // =================================================================
-    //  DISPENSARIES (`/dispensaries/{dispensaryId}`)
-    // =================================================================
+    // Rules for the 'dispensaries' collection
     match /dispensaries/{dispensaryId} {
-      // READ: Anyone can read approved dispensary profiles.
-      allow read: if resource.data.status == 'Approved';
-
-      // CREATE: Anyone can create a new dispensary application.
-      allow create: if request.auth != null;
-
-      // UPDATE: Only the owner of the dispensary can update it.
-      allow update: if request.auth.uid == resource.data.ownerUid; 
-    }
-
-    // =================================================================
-    //  PRODUCTS (`/products/{productId}`)
-    // =================================================================
-    match /products/{productId} {
-      // READ: Anyone can read product information.
-      allow read: true;
+      // Anyone can submit a dispensary application (create).
+      allow create: if true;
       
-      // CREATE, UPDATE, DELETE: Only the owner of the associated dispensary can manage products.
-      allow create, update, delete: if get(/databases/$(database)/documents/dispensaries/$(request.resource.data.dispensaryId)).data.ownerUid == request.auth.uid;
+      // Any authenticated user can read approved dispensaries.
+      allow read: if resource.data.status == 'Approved';
+      
+      // Only the assigned dispensary owner can update their own dispensary profile.
+      allow update: if request.auth.uid == resource.data.ownerId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
     }
 
-    // =================================================================
-    //  OTHER COLLECTIONS (Secure by default)
-    //  These collections are only accessible via the Super Admin rule
-    //  or by specific rules below if needed.
-    // =================================================================
+    // Rules for the 'products' collection
+    match /products/{productId} {
+      // Allow anyone to read products.
+      allow read: if true;
+      
+      // Allow the linked dispensary owner to create, update, and delete products.
+      allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.dispensaryId;
+    }
+    
+    // Rules for dispensaryTypes
     match /dispensaryTypes/{typeId} {
-      allow read: true;
-    }
-    
-    match /creditPackages/{packageId} {
-        allow read: if resource.data.isActive == true;
+        allow read: if true; // Everyone can read the types of dispensaries available.
     }
 
-    match /stickersets/{setId} {
-        allow read: if resource.data.isPublic == true;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth.uid == resource.data.creatorUid;
+    // Rules for creditPackages
+    match /creditPackages/{packageId} {
+        allow read: if resource.data.isActive == true; // Anyone can see active packages.
     }
-    
+
+    // Rules for productRequests
     match /productRequests/{requestId} {
-      allow read, write: if request.auth != null; // Simplified for now, relies on backend logic.
+      // Allow authenticated users to create requests
+      allow create: if request.auth != null;
+      // Allow involved parties (requester or owner) to read/update.
+      allow read, update: if request.auth.uid == resource.data.requesterUid || request.auth.uid == resource.data.productOwnerUid;
     }
-    
+
+    // Rules for poolIssues
     match /poolIssues/{issueId} {
-        allow read, write: if request.auth != null; // Simplified for now.
+        // Allow involved parties to create/read/update
+        allow create, read, update: if request.auth.uid == resource.data.reporterUid || request.auth.uid == resource.data.reportedUid;
+    }
+
+    // Rules for aiInteractionsLog
+    match /aiInteractionsLog/{logId} {
+        // Users can only create and read their own logs.
+        allow create, read: if request.auth.uid == request.resource.data.userId;
+    }
+
+    // Rules for notifications
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications.
+      allow read, update: if request.auth.uid == resource.data.recipientUid;
     }
     
-    // Add other collection rules here as the app grows.
+    // Rules for sticker sets
+    match /stickersets/{stickerSetId} {
+      // Anyone can read public sticker sets
+      allow read: if resource.data.isPublic == true;
+      // The creator can write (create, update, delete) their own sets
+      allow write: if request.auth.uid == resource.data.creatorUid;
+    }
+
   }
 }
