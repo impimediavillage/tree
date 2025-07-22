@@ -198,7 +198,7 @@ export default function AdminEditWellnessPage() {
     }
   }, [wellnessProfile, form, toast]);
 
-  // Simplified fetching effect. No longer needs to check for roles.
+  // This is now simplified because the layout handles role protection.
   useEffect(() => {
     const fetchPageData = async () => {
       setIsFetchingData(true);
@@ -248,7 +248,7 @@ export default function AdminEditWellnessPage() {
       }
     };
 
-    fetchAllData();
+    fetchPageData();
   }, [dispensaryId, router, toast, form]);
   
   useEffect(() => {
