@@ -9,11 +9,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Edit, Trash2, Building, Mail, MapPin, Tag, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
 import { format } from 'date-fns';
 
 interface DispensaryCardProps {
   dispensary: Dispensary;
+  onEdit: () => void;
   onStatusToggle: (wellnessId: string, currentStatus: Dispensary['status']) => Promise<void>;
   onDelete: (wellnessId: string, wellnessName: string) => Promise<void>;
 }
@@ -33,7 +33,7 @@ const getStatusProps = (status: Dispensary['status']) => {
   }
 };
 
-export function DispensaryCard({ dispensary: wellness, onStatusToggle, onDelete }: DispensaryCardProps) {
+export function DispensaryCard({ dispensary: wellness, onEdit, onStatusToggle, onDelete }: DispensaryCardProps) {
   const StatusIcon = getStatusProps(wellness.status).VFC;
   const statusBadgeClass = getStatusProps(wellness.status).badgeClass;
 
@@ -103,10 +103,8 @@ export function DispensaryCard({ dispensary: wellness, onStatusToggle, onDelete 
           </div>
         )}
         <div className="flex gap-2 w-full">
-          <Button variant="outline" className="w-full" asChild>
-            <Link href={`/admin/dashboard/dispensaries/edit/${wellness.id}`}>
-              <Edit className="mr-2 h-4 w-4" /> Edit
-            </Link>
+          <Button variant="outline" className="w-full" onClick={onEdit}>
+            <Edit className="mr-2 h-4 w-4" /> Edit
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
