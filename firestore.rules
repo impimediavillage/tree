@@ -1,45 +1,50 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ======== HELPER FUNCTIONS ========
+    // =================================
+    //  HELPER FUNCTIONS
+    // =================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
-    function isSignedIn() {
-      return request.auth != null;
-    }
 
     function isDispensaryOwner(dispensaryId) {
       let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return userDoc.role == 'DispensaryOwner' && userDoc.dispensaryId == dispensaryId;
+      return isSignedIn() && userDoc.role == 'DispensaryOwner' && userDoc.dispensaryId == dispensaryId;
     }
 
-    // ======== GLOBAL SUPER ADMIN OVERRIDE ========
-    // This rule must be evaluated FIRST. If the user is a Super Admin,
-    // they get full access to everything, and no other rules are checked.
+    // =================================
+    //  GLOBAL SUPER ADMIN OVERRIDE
+    // =================================
+    // This is the master rule. If this is true, access is granted,
+    // and no other rules below are evaluated for the matched path.
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
 
-    // ======== COLLECTION-SPECIFIC RULES ========
-    // These rules are only evaluated if the user is NOT a Super Admin.
+    // =================================
+    //  COLLECTION-SPECIFIC RULES
+    // =================================
 
-    // Dispensaries: Public can read approved ones. Owners can update their own.
+    // Dispensaries: Public can read approved. Owners can update (but not status).
     match /dispensaries/{dispensaryId} {
       allow read: if resource.data.status == 'Approved';
-      allow update: if isDispensaryOwner(dispensaryId);
-      // Create is handled by a backend function, not directly by users.
-      // Delete is Super Admin only (covered by global rule).
+      allow update: if isDispensaryOwner(dispensaryId) && request.resource.data.status == resource.data.status;
+      // Note: Write (create, delete) is handled by the global Super Admin rule.
     }
 
-    // Anyone can read these public configuration collections.
+    // Publicly readable static data
     match /dispensaryTypes/{typeId} {
       allow read: if true;
     }
@@ -49,48 +54,50 @@ service cloud.firestore {
     match /creditPackages/{packageId} {
       allow read: if true;
     }
-     match /mushroom_products/{productId} {
-      allow read: if true;
-    }
     match /my-seeded-collection/{strainId} {
       allow read: if true;
     }
 
-    // Products: Public can read. Owners can create/update/delete for their own store.
+    // Products: Public can read. Owners can create/update/delete their own.
     match /products/{productId} {
       allow read: if true;
       allow create: if isDispensaryOwner(request.resource.data.dispensaryId);
       allow update, delete: if isDispensaryOwner(resource.data.dispensaryId);
     }
     
-    // Sticker Sets: Public can read. Signed-in users can create. Owners can manage their own.
+    // StickerSets: Public can read. Signed-in users can create. Owners can manage their own.
     match /stickersets/{setId} {
-      allow read: if true; 
+      allow read: if true;
       allow create: if isSignedIn();
       allow update, delete: if isOwner(resource.data.creatorUid);
     }
-    
-    // Users: Can only manage their own document.
+
+    // Users: Can only be read/updated by themselves.
+    // List/Create/Delete is handled by Admin rule or auth triggers.
     match /users/{userId} {
       allow read, update: if isOwner(userId);
-      // Create is handled by auth triggers. List/Delete is Super Admin only.
     }
 
-    // Requests: Any signed-in user can create/update their own requests.
+    // Product Requests: Only involved parties can interact.
     match /productRequests/{requestId} {
-      allow read, update: if isSignedIn() && (isOwner(resource.data.requesterEmail) || isOwner(resource.data.productOwnerEmail));
-      allow create: if isSignedIn();
+      allow read, update: if isSignedIn() && (isDispensaryOwner(resource.data.requesterDispensaryId) || isDispensaryOwner(resource.data.productOwnerDispensaryId));
+      allow create: if isSignedIn() && isDispensaryOwner(request.resource.data.requesterDispensaryId);
     }
 
-    // Issues: Any signed-in user can create issues.
+    // Pool Issues: Can be created by signed-in users.
     match /poolIssues/{issueId} {
       allow read, create: if isSignedIn();
     }
-    
-    // Logs: Users can only manage their own logs.
+
+    // Interaction Logs: Users can create their own logs and read them.
     match /aiInteractionsLog/{logId} {
       allow read: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
+    }
+    
+    // Notifications: Users can read their own notifications.
+    match /notifications/{notificationId} {
+        allow read, update: if isOwner(resource.data.recipientUid);
     }
   }
 }
