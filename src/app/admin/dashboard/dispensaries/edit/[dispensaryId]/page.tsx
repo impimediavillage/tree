@@ -1,4 +1,3 @@
-
 'use client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -91,7 +90,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { isSuperAdmin } = useAuth(); // Relies on the layout's protection
+  const { isSuperAdmin, loading: authLoading } = useAuth(); // Relies on the layout's protection
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,57 +197,61 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    // The parent layout now protects this route, so we can assume the user is a Super Admin.
+    // This effect now relies on the parent layout to handle auth and role checks.
+    // It proceeds directly to fetching data once auth is confirmed not to be loading.
+    if (authLoading) return;
+
     const fetchPageData = async () => {
-      setIsFetchingData(true);
-      try {
-        // Fetch wellness types
-        const typesCollectionRef = collection(db, 'dispensaryTypes');
-        const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
-        const typesSnapshot = await getDocs(typesQuery);
-        const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
-        setWellnessTypes(fetchedTypes);
+        setIsFetchingData(true);
+        try {
+            // Fetch wellness types
+            const typesCollectionRef = collection(db, 'dispensaryTypes');
+            const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
+            const typesSnapshot = await getDocs(typesQuery);
+            const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
+            setWellnessTypes(fetchedTypes);
 
-        // Fetch the specific wellness profile
-        const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-        const docSnap = await getDoc(wellnessDocRef);
+            // Fetch the specific wellness profile
+            const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+            const docSnap = await getDoc(wellnessDocRef);
 
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-          setWellnessProfile(data);
-          form.reset({
-            ...data,
-            latitude: data.latitude === null ? undefined : data.latitude,
-            longitude: data.longitude === null ? undefined : data.longitude,
-            operatingDays: data.operatingDays || [],
-          });
-          const openTimeComps = parseTimeToComponents(data.openTime);
-          setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-          const closeTimeComps = parseTimeToComponents(data.closeTime);
-          setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-          if (data.phone) {
-            const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-            if (foundCountry) {
-              setSelectedCountryCode(foundCountry.value);
-              setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+            if (docSnap.exists()) {
+              const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
+              setWellnessProfile(data);
+              form.reset({
+                ...data,
+                latitude: data.latitude === null ? undefined : data.latitude,
+                longitude: data.longitude === null ? undefined : data.longitude,
+                operatingDays: data.operatingDays || [],
+              });
+              const openTimeComps = parseTimeToComponents(data.openTime);
+              setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+              const closeTimeComps = parseTimeToComponents(data.closeTime);
+              setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+              if (data.phone) {
+                const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
+                if (foundCountry) {
+                  setSelectedCountryCode(foundCountry.value);
+                  setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+                } else {
+                  setNationalPhoneNumber(data.phone);
+                }
+              }
             } else {
-              setNationalPhoneNumber(data.phone);
+              toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
+              router.push('/admin/dashboard/dispensaries');
             }
-          }
-        } else {
-          toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
-          router.push('/admin/dashboard/dispensaries');
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
+            console.error("Fetch profile error:", error);
+        } finally {
+            setIsFetchingData(false);
         }
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
-        console.error("Fetch profile error:", error);
-      } finally {
-        setIsFetchingData(false);
-      }
     };
-
+    
     fetchPageData();
-  }, [dispensaryId, router, toast, form]);
+
+  }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -346,7 +349,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (isFetchingData) {
+  if (authLoading || isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
