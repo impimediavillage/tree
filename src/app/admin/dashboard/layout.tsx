@@ -5,15 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Building, ListChecks, Package,
-  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2
+  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { User } from '@/types';
-import { useEffect, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
   SidebarProvider,
@@ -31,6 +27,8 @@ import {
   SidebarSeparator
 } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 interface NavItem {
   title: string;
@@ -72,42 +70,46 @@ export default function AdminDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const { currentUser, loading: authLoading } = useAuth();
 
-  useEffect(() => {
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        const user = JSON.parse(storedUserString) as User;
-        if (user.role !== 'Super Admin') {
-          toast({ title: "Access Denied", description: "You do not have permission to access this area.", variant: "destructive" });
-          router.push('/');
-        } else {
-          setCurrentUser(user);
-        }
-      } catch (e) {
-        console.error("Error parsing current user from localStorage", e);
-        toast({ title: "Authentication Error", description: "Please log in again.", variant: "destructive" });
-        router.push('/auth/signin');
-      }
-    } else {
-      toast({ title: "Not Authenticated", description: "Please log in to access the admin dashboard.", variant: "destructive" });
-      router.push('/auth/signin');
-    }
-    setIsLoadingUser(false);
-  }, [router, toast]);
+  // This layout now acts as a Protected Route.
+  // It checks for auth and role status once, for all child pages.
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-4 text-lg text-muted-foreground">Verifying Admin Access...</p>
+      </div>
+    );
+  }
+
+  // If loading is finished and there's no user or the user is not a Super Admin, redirect.
+  if (!currentUser || currentUser.role !== 'Super Admin') {
+    // We use a useEffect to avoid triggering a redirect during the initial render cycle
+    // which can cause issues with Next.js navigation.
+    React.useEffect(() => {
+      toast({
+        title: "Access Denied",
+        description: "You do not have permission to access the admin dashboard.",
+        variant: "destructive",
+      });
+      router.replace('/auth/signin');
+    }, [router, toast]);
+
+    // Render a fallback loading state while redirecting
+    return (
+        <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
+            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+            <h2 className="text-2xl font-bold">Access Denied</h2>
+            <p className="mt-2 text-muted-foreground">You are not authorized to view this page. Redirecting...</p>
+        </div>
+    );
+  }
+
+  // If we reach this point, the user is a confirmed Super Admin.
 
   const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      localStorage.removeItem('currentUserHolisticAI');
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/auth/signin');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
-    }
+    // Logout logic from useAuth context can be used here if needed
   };
 
   const getPageTitle = () => {
@@ -115,20 +117,12 @@ export default function AdminDashboardLayout({
     const activeItem = allItems.find(item => pathname.startsWith(item.href) && item.href !== '/admin/dashboard');
     if (pathname === '/admin/dashboard') return 'Overview';
     if (activeItem) return activeItem.title;
-    // Fallback for nested pages like edit pages
+    // Fallback for nested pages
     if (pathname.includes('/admin/dashboard/dispensaries/edit')) return 'Edit Store';
     if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
+    if (pathname.includes('/admin/dashboard/dispensary-types/edit-categories')) return 'Manage Categories';
     return 'Admin Panel';
   };
-
-  if (isLoadingUser || !currentUser) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4 text-lg text-muted-foreground">Loading Admin Dashboard...</p>
-      </div>
-    );
-  }
 
   return (
     <SidebarProvider defaultOpen>
@@ -150,10 +144,10 @@ export default function AdminDashboardLayout({
                     <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
                       <SidebarMenuButton
                         tooltip={item.title}
-                        isActive={pathname === item.href}
+                        isActive={pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href))}
                         disabled={item.disabled}
                         className={cn(
-                          pathname === item.href
+                          (pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href)))
                             ? 'bg-primary/10 text-primary hover:bg-primary/20'
                             : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                           item.disabled && 'opacity-50 cursor-not-allowed'
