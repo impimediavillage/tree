@@ -20,7 +20,7 @@ import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas
 import type { Dispensary, DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 
-const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" }, { value: "USD", label: "💵 USD (US Dollar)" },
