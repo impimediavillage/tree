@@ -19,13 +19,13 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authD
   console.error("CRITICAL: A Firebase configuration value (apiKey, projectId, or authDomain) is missing. Please check your .env.local file and ensure the Next.js development server was restarted after changes.");
 }
 
-// Singleton pattern to ensure Firebase is initialized only once.
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 let functions: Functions;
 
+// Singleton pattern to ensure Firebase is initialized only once.
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
 } else {

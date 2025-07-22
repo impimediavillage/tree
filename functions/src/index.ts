@@ -1,4 +1,3 @@
-
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -887,7 +886,7 @@ export const setSuperAdmin = onCall(async (request) => {
         throw new HttpsError('permission-denied', 'You must be a Super Admin to run this function.');
     }
 
-    const emailToMakeAdmin = 'admin1@tree.com'; // Use the correct email
+    const emailToMakeAdmin = 'admin1@tree.com'; 
 
     try {
         const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
@@ -900,7 +899,7 @@ export const setSuperAdmin = onCall(async (request) => {
             displayName: user.displayName || 'Super Admin',
             role: 'Super Admin',
             status: 'Active',
-            createdAt: serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
 
         // Set the custom claim. This is the source of truth for security rules.

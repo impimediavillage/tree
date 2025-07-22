@@ -43,8 +43,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       cleanup();
 
       if (firebaseUser) {
-        // Force refresh the token to get the latest custom claims immediately after login.
-        await firebaseUser.getIdToken(true); 
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
         userSnapshotUnsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
