@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
       let userSnapshotUnsubscribe: Unsubscribe | undefined;
       let dispensarySnapshotUnsubscribe: Unsubscribe | undefined;
 
@@ -40,9 +40,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (dispensarySnapshotUnsubscribe) dispensarySnapshotUnsubscribe();
       };
       
-      cleanup(); // Clean up previous listeners on any auth change.
+      cleanup();
 
       if (firebaseUser) {
+        // **FIX:** Force refresh the token to get the latest custom claims immediately after login.
+        await firebaseUser.getIdToken(true);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         
         userSnapshotUnsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
