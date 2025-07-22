@@ -23,7 +23,6 @@ import type {
   NoteDataCloud,
   ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -340,10 +339,6 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await userDocRef.set(firestoreUserData, { merge: true });
         logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
-        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
-        // This ensures the role is immediately reflected in the user's auth token.
-        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
-
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
         logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
