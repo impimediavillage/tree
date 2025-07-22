@@ -8,6 +8,7 @@ import type { ReactNode} from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { db, auth as firebaseAuth } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -26,6 +27,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentDispensaryStatus, setCurrentDispensaryStatus] = useState<Dispensary['status'] | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (firebaseUser: FirebaseUser | null) => {
@@ -56,7 +59,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               status: userData?.status || 'Active',
             };
             
-            // This is a crucial update. We set the user state and THEN handle dispensary status.
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
             
@@ -84,14 +86,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
           } else {
             console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
-            firebaseAuth.signOut(); // This will trigger the `else` block below
+            firebaseAuth.signOut(); 
           }
         }, (error) => {
             console.error("Error on user snapshot:", error);
-            firebaseAuth.signOut(); // Log out on error
+            firebaseAuth.signOut(); 
         });
 
-      } else { // No firebaseUser
+      } else { 
         localStorage.removeItem('currentUserHolisticAI');
         setCurrentUser(null);
         setCurrentDispensaryStatus(null);
@@ -101,6 +103,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribeAuth();
   }, []);
+
+  // Centralized redirection logic
+  useEffect(() => {
+    if (!loading && currentUser) {
+        const authPages = ['/auth/signin', '/auth/signup'];
+        if(authPages.includes(pathname)) {
+            if (currentUser.role === 'Super Admin') {
+                router.push('/admin/dashboard');
+            } else if (currentUser.role === 'DispensaryOwner') {
+                router.push('/dispensary-admin/dashboard');
+            } else {
+                router.push('/dashboard/leaf');
+            }
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, loading, pathname]);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';

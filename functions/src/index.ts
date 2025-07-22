@@ -156,7 +156,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
  * Cloud Function triggered when a new User document is created.
  * Sets claims and sends welcome emails.
  */
-export const onUserCreated = onDocumentCreated(
+export const onUserDocCreate = onDocumentCreated(
   "users/{userId}",
   async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
     const snapshot = event.data;
