@@ -1,4 +1,3 @@
-
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -21,9 +20,7 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
-  ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -36,9 +33,6 @@ class HttpError extends Error {
 }
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
-// **CRITICAL FIX**: Explicitly initialize the Admin SDK with service account credentials.
-// This ensures that all functions run with the correct permissions (e.g., Super Admin)
-// and resolves the persistent "insufficient permissions" errors.
 if (admin.apps.length === 0) {
     try {
         const serviceAccount = {
