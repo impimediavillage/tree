@@ -3,7 +3,7 @@
 
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { ReactNode} from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { db, auth as firebaseAuth } from '@/lib/firebase';
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (firebaseUser: FirebaseUser | null) => {
       let userSnapshotUnsubscribe: Unsubscribe | undefined;
       let dispensarySnapshotUnsubscribe: Unsubscribe | undefined;
 
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
 
           } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
+            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out for safety.`);
             firebaseAuth.signOut(); 
           }
         }, (error) => {

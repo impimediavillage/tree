@@ -1,3 +1,4 @@
+
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -161,7 +162,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
  * Cloud Function triggered when a new User document is created.
  * Sets claims and sends welcome emails.
  */
-export const onUserDocCreate = onDocumentCreated(
+export const onUserCreated = onDocumentCreated(
   "users/{userId}",
   async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
     const snapshot = event.data;
@@ -336,8 +337,10 @@ export const onDispensaryUpdate = onDocumentUpdated(
             (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
         }
         
+        // This will trigger onUserDocCreate or onUserDocUpdate which handles setting claims.
+        // This is the correct, decoupled way to handle this.
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. onUserDocUpdate will handle claims.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by the dedicated trigger.`);
         
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
