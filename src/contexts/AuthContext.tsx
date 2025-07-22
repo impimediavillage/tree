@@ -31,56 +31,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
+    // This listener only sets the basic Firebase user or logs them out.
+    // It triggers the second useEffect to fetch detailed data.
+    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, (firebaseUser) => {
       if (firebaseUser) {
-        try {
-          // **THE FIX**: Use a one-time getDoc call *after* auth state is confirmed.
-          // This prevents the race condition where Firestore is queried before the token is ready.
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            const appUser: AppUser = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              displayName: userData?.displayName || firebaseUser.displayName || '',
-              photoURL: userData?.photoURL || firebaseUser.photoURL || null,
-              role: userData?.role || 'User',
-              dispensaryId: userData?.dispensaryId || null,
-              credits: userData?.credits || 0,
-              status: userData?.status || 'Active',
-            };
-            
-            setCurrentUser(appUser);
-            localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-            
-            if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-              const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-              const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-              if (dispensaryDocSnap.exists()) {
-                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
-              } else {
-                setCurrentDispensaryStatus(null);
-                console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
-              }
-            } else {
-              setCurrentDispensaryStatus(null);
-            }
-
-          } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. This might be a new account pending document creation, or an error state. Logging out for safety.`);
-            firebaseAuth.signOut(); 
-          }
-        } catch (error) {
-            console.error("Error fetching user document:", error);
-            // This catch is important for permission errors during the getDoc call itself
-            firebaseAuth.signOut();
-        } finally {
-            setLoading(false);
-        }
-
-      } else { 
+        // At this point, we know the user is authenticated with Firebase,
+        // but we don't have their custom data yet.
+        // We set a temporary state to trigger the data fetching effect.
+        const basicUser: AppUser = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            role: 'User', // Default role until fetched
+            credits: 0,
+            status: 'PendingApproval'
+        };
+        setCurrentUser(basicUser);
+      } else {
         localStorage.removeItem('currentUserHolisticAI');
         setCurrentUser(null);
         setCurrentDispensaryStatus(null);
@@ -90,6 +58,78 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribeAuth();
   }, []);
+
+  // This effect runs *after* the currentUser state has been updated by the auth listener.
+  // This ensures the auth token is ready before we query Firestore.
+  useEffect(() => {
+    if (!currentUser || !currentUser.uid) {
+      // If there's no user, we're done loading.
+      if (!loading) setLoading(false);
+      return;
+    }
+
+    // A flag to prevent setting state on an unmounted component
+    let isMounted = true;
+    
+    // Create a real-time listener for the user's document
+    const userDocRef = doc(db, 'users', currentUser.uid);
+    const unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
+      if (!isMounted) return;
+
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const appUser: AppUser = {
+          ...currentUser, // Keep basic info from auth
+          role: userData?.role || 'User',
+          dispensaryId: userData?.dispensaryId || null,
+          credits: userData?.credits || 0,
+          status: userData?.status || 'Active',
+          displayName: userData?.displayName || currentUser.displayName,
+          photoURL: userData?.photoURL || currentUser.photoURL,
+        };
+        setCurrentUser(appUser);
+        localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+      } else {
+        console.warn(`User document not found for UID: ${currentUser.uid}. Logging out.`);
+        firebaseAuth.signOut();
+      }
+    }, (error) => {
+      console.error("Error on user snapshot:", error);
+      // This is where "Missing or insufficient permissions" will be caught.
+      // We log out the user as they can't even read their own profile.
+      firebaseAuth.signOut();
+    });
+
+    // Create a listener for the dispensary status if applicable
+    let unsubscribeDispensary: Unsubscribe | undefined;
+    if (currentUser.dispensaryId) {
+        const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId);
+        unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
+            if (!isMounted) return;
+            if (dispensaryDocSnap.exists()) {
+                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
+            } else {
+                setCurrentDispensaryStatus(null);
+            }
+        });
+    } else {
+        setCurrentDispensaryStatus(null);
+    }
+    
+    // We are done with the initial loading process.
+    setLoading(false);
+    
+    return () => {
+      isMounted = false;
+      unsubscribeUser();
+      if (unsubscribeDispensary) {
+        unsubscribeDispensary();
+      }
+    };
+  // We only re-run this ENTIRE effect if the user's UID changes (login/logout).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.uid]);
+
 
   // Centralized redirection logic
   useEffect(() => {
