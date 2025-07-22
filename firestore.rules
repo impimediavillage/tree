@@ -1,102 +1,128 @@
 rules_version = '2';
 
+// NOTE: THIS FILE IS THE SINGLE SOURCE OF TRUTH FOR FIRESTORE SECURITY.
+// ALL OTHER RULES ARE OVERRIDDEN BY THE GLOBAL SUPER ADMIN RULE.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // HELPER FUNCTIONS
+    
+    // ==================================================================
+    // Helper Functions
+    // ==================================================================
+    
+    // Checks if the requesting user is a Super Admin via custom claims.
+    // This is the most secure and efficient way to check for admin privileges.
     function isSuperAdmin() {
       return request.auth.token.role == 'Super Admin';
     }
 
+    // Checks if the user is the owner of a given document.
     function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
+      return request.auth.token.uid == userId;
     }
     
-    function isDispensaryOwner(dispensaryId) {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return userDoc.role == 'DispensaryOwner' && userDoc.dispensaryId == dispensaryId;
+    // Checks if a user is an owner or staff of a specific dispensary.
+    function isDispensaryMember(dispensaryId) {
+        return request.auth.token.dispensaryId == dispensaryId;
     }
-
-    // SUPER ADMIN OVERRIDE: Grants Super Admins unconditional access to all documents.
-    // This rule is checked first and bypasses all other specific rules for Super Admins.
+    
+    // ==================================================================
+    // Global Read/Write Access Rules
+    // ==================================================================
+    
+    // SUPER ADMIN OVERRIDE:
+    // If a user is a Super Admin, they can read and write ANY document
+    // in the entire database. This rule is checked first and provides
+    // a "master key" for all administrative actions. No other rule
+    // can block a Super Admin if this is true.
     match /{document=**} {
       allow read, write: if isSuperAdmin();
     }
-
-    // DISPENSARIES
-    match /dispensaries/{dispensaryId} {
-      // Public users can only read approved dispensaries.
-      allow read: if resource.data.status == 'Approved';
-      // Only owners can update their own dispensary, but cannot change the status.
-      allow update: if isDispensaryOwner(dispensaryId) && request.resource.data.status == resource.data.status;
-      // Creation is handled by the application sign-up. Direct creation is denied.
-      allow create, delete: if false;
-    }
-
-    // USERS
+    
+    // ==================================================================
+    // Collection-Specific Rules (for non-admins)
+    // ==================================================================
+    
     match /users/{userId} {
+      // Any authenticated user can create their own user document.
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Users can only read and update their own document.
       allow read, update: if isOwner(userId);
-      // Public signup and function-based creation is allowed.
-      allow create: if true;
-      allow list, delete: if isSuperAdmin(); // Covered by global rule, but explicit for clarity
+      // No one can delete a user document from the client.
+      allow delete: if false;
+    }
+    
+    match /dispensaries/{dispensaryId} {
+      // Anyone can submit a new dispensary application.
+      allow create: if request.auth != null;
+      // Public can read approved dispensaries. Owners can read their own.
+      allow read: if resource.data.status == 'Approved' || isDispensaryMember(dispensaryId);
+      // Owners can update their own dispensary, but CANNOT change the status.
+      // Status changes are reserved for Super Admins (handled by the global rule).
+      allow update: if isDispensaryMember(dispensaryId) && request.resource.data.status == resource.data.status;
+      // No client-side deletes for dispensaries.
+      allow delete: if false;
     }
 
-    // PRODUCTS
     match /products/{productId} {
-      allow read: if true;
-      allow create: if isDispensaryOwner(request.resource.data.dispensaryId);
-      allow update, delete: if isDispensaryOwner(resource.data.dispensaryId);
+        // Only a member of the dispensary that owns the product can create/update/delete it.
+        allow create, update, delete: if isDispensaryMember(request.resource.data.dispensaryId);
+        // Anyone can read any product.
+        allow read: if true;
     }
     
-    // PRODUCT REQUESTS (Pool)
     match /productRequests/{requestId} {
-      allow read, create, update: if isSignedIn();
-      allow delete: if isSuperAdmin(); // Covered by global rule
-    }
-    
-    // POOL ISSUES
-    match /poolIssues/{issueId} {
-      allow read, create: if isSignedIn();
-      allow update, delete: if isSuperAdmin(); // Covered by global rule
+        // Authenticated users can read and write requests.
+        // More specific logic (e.g., only involved parties) can be added here if needed.
+        allow read, write: if request.auth != null;
     }
 
-    // Publicly readable collections
-    match /dispensaryTypes/{typeId} {
-      allow read: if true;
-      allow write: if isSuperAdmin(); // Covered by global rule
+    match /poolIssues/{issueId} {
+        // Authenticated users can read and write issues.
+        allow read, write: if request.auth != null;
+    }
+
+    match /notifications/{notificationId} {
+        // Only the recipient can read, update (mark as read), or delete their own notification.
+        allow read, update, delete: if isOwner(resource.data.recipientUid);
+        // Any authenticated user can create a notification (e.g., by triggering a function).
+        allow create: if request.auth != null;
     }
     
-    match /dispensaryTypeProductCategories/{docId} {
-      allow read: if true;
-      allow write: if isSuperAdmin(); // Covered by global rule
+    match /aiInteractionsLog/{logId} {
+      // Only the user who owns the log can read it.
+      allow read: if isOwner(resource.data.userId);
+      // Only backend functions can create logs.
+      allow write: if false;
     }
     
     match /creditPackages/{packageId} {
+        // Anyone can read active credit packages.
+        allow read: if resource.data.isActive == true;
+        // Only admins can create/update/delete packages.
+        allow write: if false; // Handled by global admin rule
+    }
+
+    match /dispensaryTypes/{typeId} {
+      // Anyone can read dispensary types.
       allow read: if true;
-      allow write: if isSuperAdmin(); // Covered by global rule
+      // Only admins can change types.
+      allow write: if false; // Handled by global admin rule
     }
-
-    match /stickersets/{setId} {
-      allow read: if true;
-      allow create: if isSignedIn();
-      allow update, delete: if isOwner(resource.data.creatorUid);
+    
+     match /stickersets/{setId} {
+      // Anyone can read public sticker sets
+      allow read: if resource.data.isPublic == true;
+      // Users can only create/update/delete their own sets
+      allow create, update, delete: if isOwner(request.resource.data.creatorUid);
     }
-
-    match /aiInteractionsLog/{logId} {
-      allow read: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+    
+    // Deny all access to log collections from the client.
+    match /scrapeLogs/{logId} {
+      allow read, write: if false;
     }
-
-    // Read-only seeded data collections
-    match /mushroom_products/{productId} { allow read: if true; allow write: if isSuperAdmin(); }
-    match /my-seeded-collection/{strainId} { allow read: if true; allow write: if isSuperAdmin(); }
-    match /justbrand_catalog/{docId} { allow read: if true; allow write: if isSuperAdmin(); }
-    match /justbrand_catalog/{docId}/{subcollection}/{subdocId} { allow read: if true; allow write: if isSuperAdmin(); }
-    match /scrapeLogs/{logId} { allow read: if true; allow write: if isSuperAdmin(); }
-    match /importsHistory/{historyId} { allow read: if true; allow write: if isSuperAdmin(); }
+     match /importsHistory/{historyId} {
+      allow read, write: if false;
+    }
   }
 }
