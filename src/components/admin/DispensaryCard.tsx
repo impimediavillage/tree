@@ -6,14 +6,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Trash2, Building, Mail, MapPin, Tag, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DispensaryCardProps {
   dispensary: Dispensary;
   onEdit: () => void;
-  onStatusUpdate: (wellnessId: string, newStatus: Dispensary['status']) => Promise<void>;
   onDelete: (wellnessId: string, wellnessName: string) => Promise<void>;
 }
 
@@ -32,9 +30,7 @@ const getStatusProps = (status: Dispensary['status']) => {
   }
 };
 
-const statusOptions: Dispensary['status'][] = ['Approved', 'Suspended', 'Pending Approval', 'Rejected'];
-
-export function DispensaryCard({ dispensary: wellness, onEdit, onStatusUpdate, onDelete }: DispensaryCardProps) {
+export function DispensaryCard({ dispensary: wellness, onEdit, onDelete }: DispensaryCardProps) {
   const StatusIcon = getStatusProps(wellness.status).VFC;
   const statusBadgeClass = getStatusProps(wellness.status).badgeClass;
 
@@ -86,46 +82,31 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onStatusUpdate, o
           <span>Applied: {formatDate(wellness.applicationDate)}</span>
         </div>
       </CardContent>
-      <CardFooter className="flex flex-col gap-3 border-t pt-4 mt-auto">
-        <div className="flex items-center justify-between w-full">
-            <span className="text-sm font-medium">Status:</span>
-            <Select value={wellness.status} onValueChange={(newStatus) => onStatusUpdate(wellness.id!, newStatus as Dispensary['status'])}>
-                <SelectTrigger className="w-[180px] h-9">
-                    <SelectValue placeholder="Change status..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {statusOptions.map(opt => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
-        <div className="flex gap-2 w-full">
-          <Button variant="outline" className="w-full" onClick={onEdit}>
+      <CardFooter className="flex gap-2 border-t pt-4 mt-auto">
+        <Button variant="outline" className="w-full" onClick={onEdit}>
             <Edit className="mr-2 h-4 w-4" /> Edit Details
-          </Button>
-          <AlertDialog>
+        </Button>
+        <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full">
+            <Button variant="destructive" className="w-full">
                 <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </Button>
+            </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
-              <AlertDialogHeader>
+            <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the wellness profile &quot;{wellness.dispensaryName}&quot; and all its associated data.
+                This action cannot be undone. This will permanently delete the wellness profile &quot;{wellness.dispensaryName}&quot; and all its associated data.
                 </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => onDelete(wellness.id!, wellness.dispensaryName)}>
-                  Yes, delete wellness profile
+                Yes, delete wellness profile
                 </AlertDialogAction>
-              </AlertDialogFooter>
+            </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        </AlertDialog>
       </CardFooter>
     </Card>
   );
