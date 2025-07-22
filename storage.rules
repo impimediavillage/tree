@@ -2,41 +2,44 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Helper function to check for Super Admin role via custom claims
+    
+    // Helper function to check for Super Admin role from auth token
     function isSuperAdmin() {
       return request.auth.token.role == 'Super Admin';
     }
     
-    // Allow anyone to read public assets like dispensary type icons and images
-    match /dispensary-type-assets/{allPaths=**} {
-      allow read: if true;
+    // Global rule: Super Admins can read/write anything.
+    match /{allPaths=**} {
+      allow read, write: if isSuperAdmin();
     }
 
-    // Allow anyone to read product images and sticker set assets
-    match /products/{userId}/{allPaths=**} {
-      allow read: if true;
+    // Lab Reports: Allow users to upload their lab reports.
+    // The path should include the user's UID for security.
+    match /lab-reports/{userId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    match /stickersets/{userId}/{allPaths=**} {
+
+    // Product Images: Allow authenticated users to upload product images.
+    // The path should include the user's UID.
+    match /products/{userId}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Dispensary Type Assets: Icons and images for types should be publicly readable.
+    // Writing should be restricted to Super Admins (covered by the global rule).
+    match /dispensary-type-assets/{path=**} {
         allow read: if true;
     }
 
-    // Users can only manage their own profile pictures in a folder named after their UID.
-    match /user-profiles/{userId}/{fileName} {
+    // Sticker Sets: Allow users to create their own sticker sets.
+    // Reading is public, writing is restricted to the creator.
+    match /stickersets/{userId}/{fileName} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
-
-    // Users can only upload their own lab reports. Reading should be restricted.
-    match /lab-reports/{userId}/{fileName} {
-        allow create: if request.auth != null && request.auth.uid == userId;
-        // Add read rule if lab reports should be publicly viewable, otherwise they are private
-        // allow read: if true; 
-    }
     
-    // By default, deny all other reads and writes
-    match /{allPaths=**} {
-      allow read, write: if isSuperAdmin(); // Super Admin can access everything
-    }
+    // Default deny: Disallow read/write on any other paths.
+    // This is implicitly handled by not having a matching rule,
+    // but can be made explicit for clarity if desired.
   }
 }

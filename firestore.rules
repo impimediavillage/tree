@@ -1,90 +1,123 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functions
+    function isSuperAdmin() {
+      return request.auth.token.role == 'Super Admin';
+    }
+
+    function isDispensaryOwner(dispensaryId) {
+      return request.auth.token.role == 'DispensaryOwner' && request.auth.token.dispensaryId == dispensaryId;
+    }
     
-    // Global rule for Super Admins
-    // This allows any user with the 'Super Admin' custom claim to read/write any document.
+    function isDispensaryStaff(dispensaryId) {
+       return request.auth.token.role == 'DispensaryStaff' && request.auth.token.dispensaryId == dispensaryId;
+    }
+
+    function isOwnerOrStaff(dispensaryId) {
+      return isDispensaryOwner(dispensaryId) || isDispensaryStaff(dispensaryId);
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwnerOf(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Global rule: Super Admins have universal access. This is checked first.
     match /{document=**} {
-      allow read, write: if request.auth.token.role == 'Super Admin';
+      allow read, write: if isSuperAdmin();
     }
 
-    // Rules for the 'users' collection
+    // USERS collection
     match /users/{userId} {
-      // Allow users to read and update their own document
-      allow read, update: if request.auth.uid == userId;
-      // Super Admins can create and delete user documents
-      allow create, delete: if request.auth.token.role == 'Super Admin';
+      // Any authenticated user can read their own profile data.
+      // A Super Admin can read/write any user profile (covered by global rule).
+      allow read, update: if isSignedIn() && isOwnerOf(userId);
+      // Allow creation by anyone (for signup)
+      allow create: if isSignedIn();
     }
 
-    // Rules for the 'dispensaries' collection
+    // DISPENSARIES collection
     match /dispensaries/{dispensaryId} {
-      // Anyone can read approved dispensaries
+      // Anyone can create a dispensary (application)
+      allow create: if true;
+      // Approved dispensaries can be read by anyone
       allow read: if resource.data.status == 'Approved';
-      // Only dispensary owners can update their own dispensary document
-      allow update: if request.auth.token.dispensaryId == dispensaryId;
-      // Super Admins can create and delete dispensary documents
-      allow create, delete: if request.auth.token.role == 'Super Admin';
-    }
-
-    // Rules for dispensary types
-    match /dispensaryTypes/{typeId} {
-      // Anyone can read the list of available dispensary types
-      allow read: if true;
-      // Only Super Admins can create, update, or delete them
-      allow write: if request.auth.token.role == 'Super Admin';
-    }
-
-    // Rules for products
-    match /products/{productId} {
-      // Anyone can read products
-      allow read: if true;
-      // Only the assigned dispensary owner can create or update their own products
-      allow create, update: if request.auth.token.dispensaryId == request.resource.data.dispensaryId;
-      // Only the dispensary owner or a super admin can delete a product
-      allow delete: if request.auth.token.dispensaryId == resource.data.dispensaryId || request.auth.token.role == 'Super Admin';
-    }
-
-    // Rules for product requests
-    match /productRequests/{requestId} {
-      // Only involved parties (requester or owner) or super admins can read
-      allow read: if request.auth.token.dispensaryId == resource.data.requesterDispensaryId || request.auth.token.dispensaryId == resource.data.productOwnerDispensaryId || request.auth.token.role == 'Super Admin';
-      // Only the requester can create a request
-      allow create: if request.auth.token.dispensaryId == request.resource.data.requesterDispensaryId;
-      // Only involved parties can update (add notes, change status)
-      allow update: if request.auth.token.dispensaryId == resource.data.requesterDispensaryId || request.auth.token.dispensaryId == resource.data.productOwnerDispensaryId;
+      // Only the owner can update their own dispensary profile
+      allow update: if isOwnerOrStaff(dispensaryId);
     }
     
-    // Rules for sticker sets
-    match /stickersets/{stickerId} {
-      // Anyone can read public sticker sets
-      allow read: if resource.data.isPublic == true;
-      // Authenticated users can create sticker sets
-      allow create: if request.auth != null;
-      // Only the creator or a Super Admin can update/delete
-      allow update, delete: if request.auth.uid == resource.data.creatorUid || request.auth.token.role == 'Super Admin';
-    }
-
-    // Rules for credit packages - anyone can read them to purchase
-    match /creditPackages/{packageId} {
+    // DISPENSARY TYPES collection
+    match /dispensaryTypes/{typeId} {
+        // Anyone can read the types of dispensaries available
         allow read: if true;
-        allow write: if request.auth.token.role == 'Super Admin';
+        // Only Super Admins can create/update/delete types (covered by global rule)
+    }
+    
+    // DISPENSARY TYPE CATEGORIES collection
+    match /dispensaryTypeProductCategories/{docId} {
+        // Anyone can read the product categories for a type
+        allow read: if true;
     }
 
-    // Rules for interaction logs - only the user can read their own logs
-    match /aiInteractionsLog/{logId} {
-        allow read, create: if request.auth.uid == request.resource.data.userId;
-        allow write: if request.auth.token.role == 'Super Admin';
+    // PRODUCTS collection
+    match /products/{productId} {
+      // Any owner/staff can create a product for their own dispensary
+      allow create: if isOwnerOrStaff(request.resource.data.dispensaryId);
+      // Anyone can read any product
+      allow read: if true;
+      // Only the owner/staff of that dispensary can update/delete their own products
+      allow update, delete: if isOwnerOrStaff(resource.data.dispensaryId);
     }
 
-    // Rules for notifications - users can read/update their own
+    // PRODUCT REQUESTS collection
+    match /productRequests/{requestId} {
+      // An authenticated user can create a request
+      allow create: if isSignedIn();
+      // The product owner/staff OR the requester/staff can read the request
+      allow read, update: if isOwnerOrStaff(resource.data.productOwnerDispensaryId) || isOwnerOrStaff(resource.data.requesterDispensaryId);
+    }
+    
+    // NOTIFICATIONS collection
     match /notifications/{notificationId} {
-      allow read, update: if request.auth.uid == resource.data.recipientUid;
-      allow create, delete: if request.auth.token.role == 'Super Admin';
+        // Only the recipient can read/update/delete their own notifications
+        allow read, update, delete: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
     }
-
-    // Fallback for any other collections - deny all access by default
+    
+    // AI INTERACTIONS LOG collection
+    match /aiInteractionsLog/{logId} {
+        // Only the user who made the interaction can read it
+        allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+        // Creation is handled by backend functions
+    }
+    
+    // CREDIT PACKAGES collection
+    match /creditPackages/{packageId} {
+        // Anyone can read active credit packages
+        allow read: if resource.data.isActive == true;
+        // Creation/updates handled by Super Admin (covered by global rule)
+    }
+    
+    // POOL ISSUES collection
+    match /poolIssues/{issueId} {
+        allow create: if isSignedIn();
+        // Only involved parties can read, Super Admin can manage (covered by global rule)
+        allow read: if isSignedIn() && (resource.data.reporterEmail == request.auth.email || resource.data.reportedDispensaryEmail == request.auth.email);
+    }
+    
+    // STICKERSETS collection
+    match /stickersets/{setId} {
+        allow create: if isSignedIn();
+        allow read: if resource.data.isPublic == true;
+        allow update, delete: if isSignedIn() && resource.data.creatorUid == request.auth.uid;
+    }
+    
+    // Catch-all for any other collections - deny by default
     match /{path=**} {
       allow read, write: if false;
     }
