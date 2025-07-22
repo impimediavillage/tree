@@ -14,14 +14,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import type { User as AppUser } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -32,67 +33,35 @@ export default function SignInPage() {
     },
   });
 
+  // This effect will run when currentUser changes after a successful login.
+  // The AuthContext is now the source of truth for redirection.
+  useEffect(() => {
+    if (currentUser) {
+        if (currentUser.role === 'Super Admin') {
+            router.push('/admin/dashboard');
+        } else if (currentUser.role === 'DispensaryOwner') {
+            router.push('/dispensary-admin/dashboard');
+        } else {
+            router.push('/dashboard/leaf');
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
-
-    // Normal Firebase Authentication flow
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-      const firebaseUser = userCredential.user;
-
-      let userRole: AppUser['role'] = 'User'; // Default role
-      let dispensaryId: string | undefined = undefined;
-      let userCredits = 0;
-      let userDisplayName = firebaseUser.email?.split('@')[0] || 'User';
-      let userPhotoURL = firebaseUser.photoURL || '';
-      let userStatus: AppUser['status'] = 'Active';
-
-
-      if (firebaseUser) {
-        try {
-          const userDocRef = doc(db, "users", firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data() as AppUser; // Type assertion
-            userRole = userData.role || 'User';
-            dispensaryId = userData.dispensaryId;
-            userCredits = userData.credits || 0;
-            userDisplayName = userData.displayName || firebaseUser.displayName || userDisplayName;
-            userPhotoURL = userData.photoURL || userPhotoURL;
-            userStatus = userData.status || 'Active';
-
-          } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. Defaulting role and data. Consider creating a user document on signup.`);
-          }
-        } catch (firestoreError) {
-          console.error("Error fetching user role from Firestore:", firestoreError);
-        }
-
-        const currentUser: AppUser = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email || '',
-          displayName: userDisplayName,
-          photoURL: userPhotoURL,
-          role: userRole,
-          dispensaryId: dispensaryId,
-          credits: userCredits,
-          status: userStatus,
-        };
-        localStorage.setItem('currentUserHolisticAI', JSON.stringify(currentUser));
-      }
+      // The only job of this function is to sign the user in.
+      // The onAuthStateChanged listener in AuthContext will handle everything else.
+      await signInWithEmailAndPassword(auth, data.email, data.password);
       
       toast({
         title: 'Login Successful',
-        description: 'Welcome back!',
+        description: 'Welcome back! Redirecting you now...',
       });
 
-      if (userRole === 'Super Admin') {
-        router.push('/admin/dashboard');
-      } else if (userRole === 'DispensaryOwner' && dispensaryId) {
-        router.push('/dispensary-admin/dashboard');
-      } else {
-        router.push('/'); 
-      }
+      // Redirection is now handled by the useEffect watching currentUser.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";

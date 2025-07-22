@@ -56,11 +56,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               status: userData?.status || 'Active',
             };
             
+            // This is a crucial update. We set the user state and THEN handle dispensary status.
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
             
-            // Now, handle dispensary status if applicable
-            if (dispensarySnapshotUnsubscribe) dispensarySnapshotUnsubscribe(); // Clean up old dispensary listener
+            if (dispensarySnapshotUnsubscribe) dispensarySnapshotUnsubscribe();
 
             if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
               const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
                   setCurrentDispensaryStatus(null);
                 }
-                setLoading(false); // Finished loading dispensary data
+                setLoading(false);
               }, (error) => {
                 console.error("Error on dispensary snapshot:", error);
                 setCurrentDispensaryStatus(null);
@@ -79,18 +79,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               });
             } else {
               setCurrentDispensaryStatus(null);
-              setLoading(false); // Finished loading, no dispensary to check
+              setLoading(false);
             }
 
           } else {
             console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
-            firebaseAuth.signOut();
-            setLoading(false);
+            firebaseAuth.signOut(); // This will trigger the `else` block below
           }
         }, (error) => {
             console.error("Error on user snapshot:", error);
-            firebaseAuth.signOut();
-            setLoading(false);
+            firebaseAuth.signOut(); // Log out on error
         });
 
       } else { // No firebaseUser
@@ -101,10 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => {
-      unsubscribeAuth();
-      // The individual snapshot listeners are cleaned up within the auth listener
-    };
+    return () => unsubscribeAuth();
   }, []);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
