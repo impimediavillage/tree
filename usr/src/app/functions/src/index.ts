@@ -35,9 +35,21 @@ class HttpError extends Error {
   }
 }
 
-// Initialize Firebase Admin SDK
-admin.initializeApp();
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// **CRITICAL FIX**: Rely on the default credentials provided by the Google Cloud environment.
+// This is the standard and recommended way to initialize the Admin SDK in Cloud Functions.
+if (admin.apps.length === 0) {
+    try {
+        admin.initializeApp();
+        logger.info("Firebase Admin SDK initialized successfully using default application credentials.");
+    } catch (e: any) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
+}
 const db = admin.firestore();
+
+// ============== END INITIALIZATION ==============
+
 
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
@@ -54,10 +66,13 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
   
   try {
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
-    const newClaims = { role: userData.role || null };
-
+    const newClaims: { [key: string]: any } = { 
+        role: userData.role || null,
+        dispensaryId: userData.dispensaryId || null,
+    };
+    
     // Avoid unnecessary updates if claims are identical
-    if (currentClaims.role === newClaims.role) {
+    if (currentClaims.role === newClaims.role && currentClaims.dispensaryId === newClaims.dispensaryId) {
       logger.log(`Claims for user ${userId} are already up-to-date.`);
       return;
     }
@@ -90,7 +105,7 @@ async function sendDispensaryNotificationEmail(
     logger.info(`Simulating Sending Email (HTML) to: ${toEmail}`);
     logger.info(`Subject: ${subject}`);
     logger.info(`HTML Body:\n${htmlBody}`);
-    logger.info(`(Related Entity: ${dispensaryName || 'The Dispensary Tree Platform'})`); // Generic log message
+    logger.info(`(Related Entity: ${dispensaryName || 'The Wellness Tree Platform'})`); // Generic log message
     return;
   }
 
@@ -98,7 +113,7 @@ async function sendDispensaryNotificationEmail(
     to: toEmail,
     from: {
       email: SENDGRID_FROM_EMAIL,
-      name: "The Dispensary Tree" // Sender name
+      name: "The Wellness Tree" // Sender name
     },
     subject: subject,
     html: htmlBody,
@@ -127,7 +142,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
   return `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <header style="background-color: hsl(var(--primary)); /* Tailwind primary green */ color: hsl(var(--primary-foreground)); padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">The Dispensary Tree</h1>
+        <h1 style="margin: 0; font-size: 24px;">The Wellness Tree</h1>
       </header>
       <main style="padding: 25px;">
         ${greeting ? `<p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">${greeting}</p>` : ''}
@@ -137,7 +152,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
         <p style="font-size: 16px; margin-top: 15px;">Sincerely,<br>The Dispensary Tree Team</p>
       </main>
       <footer style="background-color: #f7f7f7; color: #777; padding: 15px; text-align: center; font-size: 12px;">
-        <p>&copy; ${new Date().getFullYear()} The Dispensary Tree. All rights reserved.</p>
+        <p>&copy; ${new Date().getFullYear()} The Wellness Tree. All rights reserved.</p>
         <p>This is an automated message. Please do not reply directly to this email.</p>
       </footer>
     </div>
@@ -146,10 +161,10 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
 
 
 /**
- * Cloud Function triggered when a new Leaf User document is created.
- * Sends a "Welcome" email and syncs claims.
+ * Cloud Function triggered when a new User document is created.
+ * Sets claims and sends welcome emails.
  */
-export const onLeafUserCreated = onDocumentCreated(
+export const onUserCreated = onDocumentCreated(
   "users/{userId}",
   async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
     const snapshot = event.data;
@@ -163,33 +178,30 @@ export const onLeafUserCreated = onDocumentCreated(
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
 
-    // Only send email if role is LeafUser AND signupSource is NOT 'public' (or signupSource is undefined)
+    // Welcome email logic for Leaf Users created via dispensary panels or other internal means
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
       logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
-
       const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Dispensary Tree!";
+      const subject = "Welcome to The Wellness Tree!";
       const greeting = `Dear ${userDisplayName},`;
       const content = [
-        `Thank you for joining The Dispensary Tree! We're excited to have you as part of our community.`,
+        `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
         `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
         `You've received 10 free credits to get started with our AI advisors.`,
         `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
       ];
       const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
-      
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
-    } else if (userData.role === 'LeafUser' && userData.signupSource === 'public') {
-        logger.log(`New Leaf User created via public signup (ID: ${userId}). Welcome email skipped.`);
+      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
 
+
 /**
- * NEW: Trigger to sync user roles from Firestore to Auth claims on document update.
+ * Trigger to sync user roles from Firestore to Auth claims on document update.
  */
 export const onUserDocUpdate = onDocumentUpdated("users/{userId}", async (event) => {
   if (!event.data) {
@@ -314,7 +326,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
       try {
         const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
-        const firestoreUserDataUpdate: Partial<UserDocData> = {
+        const firestoreUserData: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
             photoURL: userRecord.photoURL || null,
@@ -323,21 +335,22 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
-            (firestoreUserDataUpdate as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
-            (firestoreUserDataUpdate as UserDocData).credits = 100; // Default credits for new owner
+            (firestoreUserData as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
+            (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
         }
         
-        // Setting the user doc will trigger onUserDocCreate or onUserDocUpdate to set the claims
-        await userDocRef.set(firestoreUserDataUpdate, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by trigger.`);
-
+        // This will trigger onUserDocCreate or onUserDocUpdate which handles setting claims.
+        // This is the correct, decoupled way to handle this.
+        await userDocRef.set(firestoreUserData, { merge: true });
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by the dedicated trigger.`);
+        
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
         logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
-          `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Dispensary Tree.`,
+          `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Wellness Tree.`,
           `We are thrilled to have you join our community. You are now part of a platform dedicated to quality organic, authentic, original wellness products.`,
           `Your public e-store is now available at: <a href="${publicStoreUrl}" target="_blank">${publicStoreUrl}</a>`,
         ];
@@ -351,7 +364,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dispensary-admin/dashboard` };
 
       } catch (claimOrFirestoreError) {
-        logger.error(`Error setting claims, updating Firestore user doc, or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
+        logger.error(`Error updating Firestore user doc or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
         return null;
       }
     }
@@ -839,116 +852,67 @@ export const removeDuplicateStrains = onRequest(
   }
 );
 
-/**
- * Callable function to scrape the JustBrand.co.za catalog.
- * This function is secured and can only be called by an authenticated admin user.
- */
-export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    // Check if the user is authenticated and has the 'Super Admin' role or 'admin' claim.
-    const isSuperAdmin = request.auth?.token?.role === 'Super Admin';
-    const isAdminClaim = request.auth?.token?.admin === true;
 
-    if (!isSuperAdmin && !isAdminClaim) {
-        // Throw a specific error that the client can understand.
-        throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
+/**
+ * Callable function to update the image URL for a strain in the seed data.
+ * This is triggered when a strain with a "none" image is viewed.
+ */
+export const updateStrainImageUrl = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
 
-    const runId = new Date().toISOString().replace(/[:.]/g, '-');
-    const logRef = db.collection('scrapeLogs').doc(runId);
-    // Corrected historyRef path
-    const historyRef = db.collection('importsHistory').doc(runId);
+    const { strainId, imageUrl } = request.data;
 
-    const logMessages: string[] = [];
-    const log = (message: string) => {
-        logger.info(`[${runId}] ${message}`);
-        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
-    };
+    if (!strainId || typeof strainId !== 'string' || !imageUrl || typeof imageUrl !== 'string') {
+        throw new HttpsError('invalid-argument', 'The function must be called with "strainId" and "imageUrl" arguments.');
+    }
 
     try {
-        log('ScrapeJustBrandCatalog function triggered by admin.');
-        await logRef.set({
-            status: 'started',
-            startTime: admin.firestore.FieldValue.serverTimestamp(),
-            messages: logMessages,
-            itemCount: 0,
-            successCount: 0,
-            failCount: 0,
-        } as ScrapeLog);
-
-        const catalog = await runScraper(log);
-
-        let totalProducts = 0;
-        let batch = db.batch();
-        let operationCount = 0;
-        const MAX_OPS_PER_BATCH = 499;
-
-        for (const category of catalog) {
-            totalProducts += category.products.length;
-            
-            // Create a document for the category itself (without the products array)
-            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
-            const { products, ...categoryData } = category;
-            batch.set(categoryRef, { ...categoryData, productCount: products.length });
-            operationCount++;
-
-            if (operationCount >= MAX_OPS_PER_BATCH) {
-                await batch.commit();
-                log(`Committed batch of ${operationCount} operations.`);
-                batch = db.batch();
-                operationCount = 0;
-            }
-
-            // Create a document for each product in a subcollection
-            for (const product of products) {
-                if (product.handle) {
-                    const productRef = categoryRef.collection('products').doc(product.handle);
-                    batch.set(productRef, product);
-                    operationCount++;
-
-                    if (operationCount >= MAX_OPS_PER_BATCH) {
-                        await batch.commit();
-                        log(`Committed batch of ${operationCount} operations.`);
-                        batch = db.batch();
-                        operationCount = 0;
-                    }
-                } else {
-                    log(`Skipping product with no handle in category: ${category.name}`);
-                }
-            }
-        }
-
-        if (operationCount > 0) {
-            await batch.commit();
-            log(`Committed final batch of ${operationCount} operations.`);
-        }
-        
-        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
-        
-        const finalLog: Partial<ScrapeLog> = {
-            status: 'completed',
-            endTime: admin.firestore.FieldValue.serverTimestamp(),
-            itemCount: totalProducts,
-            successCount: totalProducts,
-            failCount: 0,
-            messages: logMessages,
-        };
-        await logRef.update(finalLog);
-        await historyRef.set(finalLog);
-        
-        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
-
+        const strainRef = db.collection('my-seeded-collection').doc(strainId);
+        await strainRef.update({ img_url: imageUrl });
+        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}.`);
+        return { success: true, message: 'Image URL updated successfully.' };
     } catch (error: any) {
-        logger.error(`[${runId}] Scraping failed:`, error);
-        log(`FATAL ERROR: ${error.message}`);
-        const finalLog: Partial<ScrapeLog> = {
-            status: 'failed',
-            endTime: admin.firestore.FieldValue.serverTimestamp(),
-            error: error.message,
-            messages: logMessages,
-        };
-        await logRef.update(finalLog);
-        await historyRef.set(finalLog);
+        logger.error(`Error updating strain image URL for ${strainId}:`, error);
+        throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
+    }
+});
 
-        throw new HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
+
+/**
+ * Sets the 'Super Admin' role for a specific user and ensures their user document exists.
+ * This is a utility function intended for one-time setup or recovery.
+ * ONLY an existing Super Admin can call this.
+ */
+export const setSuperAdmin = onCall(async (request) => {
+    if (request.auth?.token?.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'You must be a Super Admin to run this function.');
+    }
+
+    const emailToMakeAdmin = 'admin1@tree.com'; 
+
+    try {
+        const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
+        const userDocRef = db.collection('users').doc(user.uid);
+        
+        // Ensure the Firestore document exists for this user.
+        await userDocRef.set({ 
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || 'Super Admin',
+            role: 'Super Admin',
+            status: 'Active',
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        // Set the custom claim. This is the source of truth for security rules.
+        await admin.auth().setCustomUserClaims(user.uid, { role: 'Super Admin' });
+        
+        logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin} and ensured user document exists.`);
+        return { success: true, message: `Super Admin role set for ${emailToMakeAdmin}.` };
+    } catch (error) {
+        logger.error(`Error setting Super Admin role for ${emailToMakeAdmin}:`, error);
+        throw new HttpsError('internal', 'An error occurred while setting the admin role.');
     }
 });
