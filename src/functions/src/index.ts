@@ -874,3 +874,36 @@ export const updateStrainImageUrl = onCall(async (request) => {
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
     }
 });
+
+
+/**
+ * Sets the 'Super Admin' role for a specific user.
+ * This is a utility function intended for one-time setup or recovery.
+ * ONLY an existing Super Admin can call this.
+ */
+export const setSuperAdmin = onCall(async (request) => {
+    // Authenticated check is already done by onCall wrapper.
+    // Now, we do an authorization check based on the caller's custom claims.
+    if (request.auth?.token?.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'You must be a Super Admin to run this function.');
+    }
+
+    const emailToMakeAdmin = 'impimediavillage@gmail.com'; // Hardcoded for security
+
+    try {
+        const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
+        const userDocRef = db.collection('users').doc(user.uid);
+
+        // Set the custom claim. This is the source of truth for security rules.
+        await admin.auth().setCustomUserClaims(user.uid, { role: 'Super Admin' });
+        
+        // Also ensure the Firestore document reflects this role for consistency in the app UI.
+        await userDocRef.set({ role: 'Super Admin', status: 'Active' }, { merge: true });
+
+        logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin}`);
+        return { success: true, message: `Super Admin role set for ${emailToMakeAdmin}.` };
+    } catch (error) {
+        logger.error(`Error setting Super Admin role for ${emailToMakeAdmin}:`, error);
+        throw new HttpsError('internal', 'An error occurred while setting the admin role.');
+    }
+});
