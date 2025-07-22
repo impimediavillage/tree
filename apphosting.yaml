@@ -7,7 +7,7 @@
 # If you don't specify a version, App Hosting uses an older version by default.
 # We'll notify you before we stop supporting a version of the platform.
 # The current latest version is 0.2.0
-# apiVersion: 0.2.0
+apiVersion: 0.2.0
 
 # Specifies the commands for building and running your app.
 # If you don't specify `bundleCommand` and `startCommand`, App Hosting
