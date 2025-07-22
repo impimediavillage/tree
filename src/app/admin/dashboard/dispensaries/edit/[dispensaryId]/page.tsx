@@ -91,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { isSuperAdmin } = useAuth();
+  const { authLoading, isSuperAdmin } = useAuth();
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -198,8 +198,19 @@ export default function AdminEditWellnessPage() {
   }, [wellnessProfile, form, toast]);
 
   useEffect(() => {
-    // The Admin Dashboard Layout now acts as a gatekeeper, so we can assume
-    // the user is a Super Admin if they reach this page. We just fetch the data.
+    // This effect now depends on authLoading and isSuperAdmin from the layout's context
+    if (authLoading) {
+      return; // Wait until auth state is determined
+    }
+
+    if (!isSuperAdmin) {
+      // This check is redundant if the layout already redirects, but acts as a failsafe.
+      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
+      router.push('/admin/dashboard');
+      return;
+    }
+    
+    // Auth is loaded and user is Super Admin, proceed to fetch data.
     const fetchPageData = async () => {
         setIsFetchingData(true);
         try {
@@ -250,7 +261,7 @@ export default function AdminEditWellnessPage() {
     
     fetchPageData();
     
-  }, [dispensaryId, router, toast, form]);
+  }, [dispensaryId, router, toast, form, authLoading, isSuperAdmin]);
   
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
@@ -348,7 +359,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (isFetchingData) {
+  if (authLoading || isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />

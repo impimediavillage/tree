@@ -34,8 +34,6 @@ class HttpError extends Error {
 }
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
-// Initialize with no arguments. It will automatically use the service account
-// credentials of the Cloud Function runtime environment.
 if (admin.apps.length === 0) {
     admin.initializeApp();
     logger.info("Firebase Admin SDK initialized successfully.");
