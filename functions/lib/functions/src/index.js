@@ -56,11 +56,13 @@ class HttpError extends Error {
         this.name = 'HttpError';
     }
 }
-// Initialize Firebase Admin SDK, but only if it hasn't been initialized yet.
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     admin.initializeApp();
+    logger.info("Firebase Admin SDK initialized successfully.");
 }
 const db = admin.firestore();
+// ============== END INITIALIZATION ==============
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
 mail_1.default.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || "noreply@example.com";
@@ -73,14 +75,10 @@ const setClaimsFromDoc = async (userId, userData) => {
     }
     try {
         const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
-        const newClaims = { role: userData.role || null };
-        // NEW: Also add dispensaryId to claims if user is an owner or staff
-        if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
-            newClaims.dispensaryId = userData.dispensaryId;
-        }
-        else {
-            newClaims.dispensaryId = null; // Ensure it's cleared if role changes
-        }
+        const newClaims = {
+            role: userData.role || null,
+            dispensaryId: userData.dispensaryId || null,
+        };
         // Avoid unnecessary updates if claims are identical
         if (currentClaims.role === newClaims.role && currentClaims.dispensaryId === newClaims.dispensaryId) {
             logger.log(`Claims for user ${userId} are already up-to-date.`);
@@ -107,14 +105,14 @@ async function sendDispensaryNotificationEmail(toEmail, subject, htmlBody, dispe
         logger.info(`Simulating Sending Email (HTML) to: ${toEmail}`);
         logger.info(`Subject: ${subject}`);
         logger.info(`HTML Body:\n${htmlBody}`);
-        logger.info(`(Related Entity: ${dispensaryName || 'The Dispensary Tree Platform'})`); // Generic log message
+        logger.info(`(Related Entity: ${dispensaryName || 'The Wellness Tree Platform'})`); // Generic log message
         return;
     }
     const msg = {
         to: toEmail,
         from: {
             email: SENDGRID_FROM_EMAIL,
-            name: "The Dispensary Tree" // Sender name
+            name: "The Wellness Tree" // Sender name
         },
         subject: subject,
         html: htmlBody,
@@ -141,7 +139,7 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
     return `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <header style="background-color: hsl(var(--primary)); /* Tailwind primary green */ color: hsl(var(--primary-foreground)); padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">The Dispensary Tree</h1>
+        <h1 style="margin: 0; font-size: 24px;">The Wellness Tree</h1>
       </header>
       <main style="padding: 25px;">
         ${greeting ? `<p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">${greeting}</p>` : ''}
@@ -151,7 +149,7 @@ function generateHtmlEmail(title, contentLines, greeting, closing, actionButton)
         <p style="font-size: 16px; margin-top: 15px;">Sincerely,<br>The Dispensary Tree Team</p>
       </main>
       <footer style="background-color: #f7f7f7; color: #777; padding: 15px; text-align: center; font-size: 12px;">
-        <p>&copy; ${new Date().getFullYear()} The Dispensary Tree. All rights reserved.</p>
+        <p>&copy; ${new Date().getFullYear()} The Wellness Tree. All rights reserved.</p>
         <p>This is an automated message. Please do not reply directly to this email.</p>
       </footer>
     </div>
@@ -175,17 +173,17 @@ exports.onUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", asy
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
         logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
         const userDisplayName = userData.displayName || userData.email.split('@')[0];
-        const subject = "Welcome to The Dispensary Tree!";
+        const subject = "Welcome to The Wellness Tree!";
         const greeting = `Dear ${userDisplayName},`;
         const content = [
-            `An account has been created for you on The Dispensary Tree! We're excited to have you as part of our community.`,
+            `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
             `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
             `You've received 10 free credits to get started with our AI advisors.`,
             `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
         ];
         const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-        const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
-        await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
+        const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+        await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     }
     else {
         logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
@@ -318,7 +316,7 @@ exports.onDispensaryUpdate = (0, firestore_1.onDocumentUpdated)("dispensaries/{d
             logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
             subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
             contentLines = [
-                `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Dispensary Tree.`,
+                `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Wellness Tree.`,
                 `We are thrilled to have you join our community. You are now part of a platform dedicated to quality organic, authentic, original wellness products.`,
                 `Your public e-store is now available at: <a href="${publicStoreUrl}" target="_blank">${publicStoreUrl}</a>`,
             ];
