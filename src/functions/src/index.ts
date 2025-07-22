@@ -37,8 +37,12 @@ class HttpError extends Error {
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
-    admin.initializeApp();
-    logger.info("Firebase Admin SDK initialized successfully.");
+    try {
+        admin.initializeApp();
+        logger.info("Firebase Admin SDK initialized successfully.");
+    } catch (e: any) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
 }
 const db = admin.firestore();
 
@@ -60,15 +64,11 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
   
   try {
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
-    const newClaims: { [key: string]: any } = { role: userData.role || null };
+    const newClaims: { [key: string]: any } = { 
+        role: userData.role || null,
+        dispensaryId: userData.dispensaryId || null,
+    };
     
-    // NEW: Also add dispensaryId to claims if user is an owner or staff
-    if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
-        newClaims.dispensaryId = userData.dispensaryId;
-    } else {
-        newClaims.dispensaryId = null; // Ensure it's cleared if role changes
-    }
-
     // Avoid unnecessary updates if claims are identical
     if (currentClaims.role === newClaims.role && currentClaims.dispensaryId === newClaims.dispensaryId) {
       logger.log(`Claims for user ${userId} are already up-to-date.`);
@@ -103,7 +103,7 @@ async function sendDispensaryNotificationEmail(
     logger.info(`Simulating Sending Email (HTML) to: ${toEmail}`);
     logger.info(`Subject: ${subject}`);
     logger.info(`HTML Body:\n${htmlBody}`);
-    logger.info(`(Related Entity: ${dispensaryName || 'The Dispensary Tree Platform'})`); // Generic log message
+    logger.info(`(Related Entity: ${dispensaryName || 'The Wellness Tree Platform'})`); // Generic log message
     return;
   }
 
@@ -111,7 +111,7 @@ async function sendDispensaryNotificationEmail(
     to: toEmail,
     from: {
       email: SENDGRID_FROM_EMAIL,
-      name: "The Dispensary Tree" // Sender name
+      name: "The Wellness Tree" // Sender name
     },
     subject: subject,
     html: htmlBody,
@@ -140,7 +140,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
   return `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <header style="background-color: hsl(var(--primary)); /* Tailwind primary green */ color: hsl(var(--primary-foreground)); padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">The Dispensary Tree</h1>
+        <h1 style="margin: 0; font-size: 24px;">The Wellness Tree</h1>
       </header>
       <main style="padding: 25px;">
         ${greeting ? `<p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">${greeting}</p>` : ''}
@@ -150,7 +150,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
         <p style="font-size: 16px; margin-top: 15px;">Sincerely,<br>The Dispensary Tree Team</p>
       </main>
       <footer style="background-color: #f7f7f7; color: #777; padding: 15px; text-align: center; font-size: 12px;">
-        <p>&copy; ${new Date().getFullYear()} The Dispensary Tree. All rights reserved.</p>
+        <p>&copy; ${new Date().getFullYear()} The Wellness Tree. All rights reserved.</p>
         <p>This is an automated message. Please do not reply directly to this email.</p>
       </footer>
     </div>
@@ -162,7 +162,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
  * Cloud Function triggered when a new User document is created.
  * Sets claims and sends welcome emails.
  */
-export const onUserCreated = onDocumentCreated(
+export const onUserDocCreate = onDocumentCreated(
   "users/{userId}",
   async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
     const snapshot = event.data;
@@ -183,14 +183,14 @@ export const onUserCreated = onDocumentCreated(
       const subject = "Welcome to The Wellness Tree!";
       const greeting = `Dear ${userDisplayName},`;
       const content = [
-        `An account has been created for you on The Dispensary Tree! We're excited to have you as part of our community.`,
+        `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
         `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
         `You've received 10 free credits to get started with our AI advisors.`,
         `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
       ];
       const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Dispensary Tree!", content, greeting, undefined, actionButton);
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Dispensary Tree Platform");
+      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
       logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
@@ -338,19 +338,15 @@ export const onDispensaryUpdate = onDocumentUpdated(
         }
         
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. onUserDocUpdate will handle claims.`);
         
-        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
-        // This ensures the role is immediately reflected in the user's auth token.
-        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
-
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
         logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
-          `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Dispensary Tree.`,
+          `Great news! Your dispensary, "<strong>${dispensaryName}</strong>", has been approved and is now live on The Wellness Tree.`,
           `We are thrilled to have you join our community. You are now part of a platform dedicated to quality organic, authentic, original wellness products.`,
           `Your public e-store is now available at: <a href="${publicStoreUrl}" target="_blank">${publicStoreUrl}</a>`,
         ];
@@ -364,7 +360,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dispensary-admin/dashboard` };
 
       } catch (claimOrFirestoreError) {
-        logger.error(`Error setting claims, updating Firestore user doc, or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
+        logger.error(`Error updating Firestore user doc or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
         return null;
       }
     }
@@ -851,122 +847,6 @@ export const removeDuplicateStrains = onRequest(
     }
   }
 );
-
-/**
- * Callable function to scrape the JustBrand.co.za catalog.
- * This function is secured and can only be called by an authenticated admin user.
- */
-export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
-    // This function must be called by an authenticated user.
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-    
-    // Authorization check
-    const isSuperAdmin = request.auth.token.role === 'Super Admin';
-    if (!isSuperAdmin) {
-        throw new HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
-    }
-
-    const runId = new Date().toISOString().replace(/[:.]/g, '-');
-    const logRef = db.collection('scrapeLogs').doc(runId);
-    // Corrected historyRef path
-    const historyRef = db.collection('importsHistory').doc(runId);
-
-    const logMessages: string[] = [];
-    const log = (message: string) => {
-        logger.info(`[${runId}] ${message}`);
-        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
-    };
-
-    try {
-        log('ScrapeJustBrandCatalog function triggered by admin.');
-        await logRef.set({
-            status: 'started',
-            startTime: admin.firestore.FieldValue.serverTimestamp(),
-            messages: logMessages,
-            itemCount: 0,
-            successCount: 0,
-            failCount: 0,
-        } as ScrapeLog);
-
-        const catalog = await runScraper(log);
-
-        let totalProducts = 0;
-        let batch = db.batch();
-        let operationCount = 0;
-        const MAX_OPS_PER_BATCH = 499;
-
-        for (const category of catalog) {
-            totalProducts += category.products.length;
-            
-            // Create a document for the category itself (without the products array)
-            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
-            const { products, ...categoryData } = category;
-            batch.set(categoryRef, { ...categoryData, productCount: products.length });
-            operationCount++;
-
-            if (operationCount >= MAX_OPS_PER_BATCH) {
-                await batch.commit();
-                log(`Committed batch of ${operationCount} operations.`);
-                batch = db.batch();
-                operationCount = 0;
-            }
-
-            // Create a document for each product in a subcollection
-            for (const product of products) {
-                if (product.handle) {
-                    const productRef = categoryRef.collection('products').doc(product.handle);
-                    batch.set(productRef, product);
-                    operationCount++;
-
-                    if (operationCount >= MAX_OPS_PER_BATCH) {
-                        await batch.commit();
-                        log(`Committed batch of ${operationCount} operations.`);
-                        batch = db.batch();
-                        operationCount = 0;
-                    }
-                } else {
-                    log(`Skipping product with no handle in category: ${category.name}`);
-                }
-            }
-        }
-
-        if (operationCount > 0) {
-            await batch.commit();
-            log(`Committed final batch of ${operationCount} operations.`);
-        }
-        
-        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
-        
-        const finalLog: Partial<ScrapeLog> = {
-            status: 'completed',
-            endTime: admin.firestore.FieldValue.serverTimestamp(),
-            itemCount: totalProducts,
-            successCount: totalProducts,
-            failCount: 0,
-            messages: logMessages,
-        };
-        await logRef.update(finalLog);
-        await historyRef.set(finalLog);
-        
-        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
-
-    } catch (error: any) {
-        logger.error(`[${runId}] Scraping failed:`, error);
-        log(`FATAL ERROR: ${error.message}`);
-        const finalLog: Partial<ScrapeLog> = {
-            status: 'failed',
-            endTime: admin.firestore.FieldValue.serverTimestamp(),
-            error: error.message,
-            messages: logMessages,
-        };
-        await logRef.update(finalLog);
-        await historyRef.set(finalLog);
-
-        throw new HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
-    }
-});
 
 
 /**
