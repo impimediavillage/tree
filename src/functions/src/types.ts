@@ -1,3 +1,4 @@
+
 // This file can be used to share type definitions between your main app and Cloud Functions
 import type { firestore } from 'firebase-admin';
 
@@ -98,42 +99,4 @@ export interface NotificationData {
   read: boolean;
   createdAt: firestore.Timestamp;
   // Consider adding type and severity if needed by functions
-}
-
-// Scraper-related types
-export interface JustBrandVariant {
-  title: string;
-  sku: string | null;
-  price: number;
-  image: string | null;
-}
-
-export interface JustBrandProduct {
-  title: string;
-  handle: string;
-  productUrl: string;
-  description: string;
-  price: number;
-  priceMin: number;
-  priceMax: number;
-  images: string[];
-  variants: JustBrandVariant[];
-}
-
-export interface JustBrandCategory {
-  name: string;
-  slug: string;
-  url: string;
-  products: JustBrandProduct[];
-}
-
-export interface ScrapeLog {
-  status: 'started' | 'completed' | 'failed';
-  startTime: any;
-  endTime?: any;
-  itemCount: number;
-  successCount: number;
-  failCount: number;
-  error?: string;
-  messages: string[];
 }
