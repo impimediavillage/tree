@@ -35,11 +35,38 @@ class HttpError extends Error {
   }
 }
 
-// Initialize Firebase Admin SDK, but only if it hasn't been initialized yet.
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// **CRITICAL FIX**: Explicitly initialize the Admin SDK with service account credentials.
+// This ensures that all functions run with the correct permissions (e.g., Super Admin)
+// and resolves the persistent "insufficient permissions" errors.
 if (admin.apps.length === 0) {
-    admin.initializeApp();
+    try {
+        const serviceAccount = {
+            "type": "service_account",
+            "project_id": "dispensary-tree",
+            "private_key_id": "63bce47b8bb026e6e6801c303378e5c5012a08ab",
+            "private_key": process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+            "client_email": "firebase-adminsdk-fbsvc@dispensary-tree.iam.gserviceaccount.com",
+            "client_id": "116214404226401344056",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40dispensary-tree.iam.gserviceaccount.com",
+            "universe_domain": "googleapis.com"
+          };
+
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+        logger.info("Firebase Admin SDK initialized successfully with service account credentials.");
+    } catch (e: any) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
 }
 const db = admin.firestore();
+
+// ============== END INITIALIZATION ==============
+
 
 // Configure SendGrid - IMPORTANT: Set these environment variables in your Firebase Functions config
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || "YOUR_SENDGRID_API_KEY_PLACEHOLDER");
@@ -136,7 +163,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
   return `
     <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
       <header style="background-color: hsl(var(--primary)); /* Tailwind primary green */ color: hsl(var(--primary-foreground)); padding: 20px; text-align: center;">
-        <h1 style="margin: 0; font-size: 24px;">The Dispensary Tree</h1>
+        <h1 style="margin: 0; font-size: 24px;">The Wellness Tree</h1>
       </header>
       <main style="padding: 25px;">
         ${greeting ? `<p style="font-size: 18px; font-weight: bold; margin-bottom: 20px;">${greeting}</p>` : ''}

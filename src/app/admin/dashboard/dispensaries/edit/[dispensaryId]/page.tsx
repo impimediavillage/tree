@@ -125,9 +125,9 @@ export default function AdminEditWellnessPage() {
     mode: "onChange",
   });
   
-  // Refactored data fetching logic
+  // Refactored data fetching logic to eliminate race conditions
   useEffect(() => {
-    // 1. Wait for authentication to resolve
+    // 1. Wait for authentication context to be fully resolved
     if (authLoading) {
         setIsLoadingData(true);
         return;
@@ -137,7 +137,7 @@ export default function AdminEditWellnessPage() {
     if (!isSuperAdmin) {
         toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
         router.push('/admin/dashboard');
-        return;
+        return; // Important: Stop execution if not authorized
     }
 
     // 3. If permissions are correct, fetch all necessary data
@@ -185,6 +185,7 @@ export default function AdminEditWellnessPage() {
             } else {
                 toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
                 setWellnessProfile(null); // Explicitly set to null on failure
+                 router.push('/admin/dashboard/dispensaries');
             }
         } catch (error) {
             console.error("Error fetching page data:", error);
@@ -195,7 +196,7 @@ export default function AdminEditWellnessPage() {
         }
     };
     
-    fetchPageData();
+    fetchAllData();
 
   }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
 
@@ -565,10 +566,10 @@ export default function AdminEditWellnessPage() {
               <FormField control={form.control} name="leadTime" render={({ field }) => (<FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
             <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
              <div className="flex gap-4 pt-4">
-                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isLoadingData || (form.formState.isSubmitted && !form.formState.isValid)}>
+                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData || (form.formState.isSubmitted && !form.formState.isValid)}>
                   {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
                 </Button>
-                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isLoadingData}>Cancel</Button></Link>
+                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData}>Cancel</Button></Link>
               </div>
           </form>
         </Form>
