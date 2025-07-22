@@ -91,7 +91,7 @@ export default function AdminEditWellnessPage() {
   const router = useRouter();
   const params = useParams();
   const dispensaryId = params.dispensaryId as string;
-  const { currentUser, loading: authLoading, isSuperAdmin } = useAuth();
+  const { isSuperAdmin } = useAuth(); // We can rely on the layout for protection
 
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,74 +129,9 @@ export default function AdminEditWellnessPage() {
     const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
-
-  useEffect(() => {
-    // Wait for auth context to be fully loaded
-    if (authLoading) {
-      return;
-    }
-
-    // Check permissions AFTER auth is loaded
-    if (!isSuperAdmin) {
-      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
-      router.push('/admin/dashboard');
-      return;
-    }
-    
-    // Now that we know user is Super Admin, fetch all data
-    const fetchPageData = async () => {
-      setIsFetchingData(true);
-      try {
-        // Fetch wellness types
-        const typesCollectionRef = collection(db, 'dispensaryTypes');
-        const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
-        const typesSnapshot = await getDocs(typesQuery);
-        const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
-        setWellnessTypes(fetchedTypes);
-
-        // Fetch the specific wellness profile
-        const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-        const docSnap = await getDoc(wellnessDocRef);
-
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-          setWellnessProfile(data);
-          form.reset({
-            ...data,
-            latitude: data.latitude === null ? undefined : data.latitude,
-            longitude: data.longitude === null ? undefined : data.longitude,
-            operatingDays: data.operatingDays || [],
-          });
-          const openTimeComps = parseTimeToComponents(data.openTime);
-          setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-          const closeTimeComps = parseTimeToComponents(data.closeTime);
-          setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-          if (data.phone) {
-            const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-            if (foundCountry) {
-              setSelectedCountryCode(foundCountry.value);
-              setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
-            } else {
-              setNationalPhoneNumber(data.phone);
-            }
-          }
-        } else {
-          toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
-          router.push('/admin/dashboard/dispensaries');
-        }
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
-        console.error("Fetch profile error:", error);
-      } finally {
-        setIsFetchingData(false);
-      }
-    };
-    
-    fetchAllData();
-
-  }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
   
   const initializeMap = useCallback(async () => {
+    // Initialization logic remains the same
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -263,6 +198,59 @@ export default function AdminEditWellnessPage() {
     }
   }, [wellnessProfile, form, toast]);
 
+  // Simplified fetching effect. No longer needs to check for roles.
+  useEffect(() => {
+    const fetchPageData = async () => {
+      setIsFetchingData(true);
+      try {
+        // Fetch wellness types
+        const typesCollectionRef = collection(db, 'dispensaryTypes');
+        const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
+        const typesSnapshot = await getDocs(typesQuery);
+        const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
+        setWellnessTypes(fetchedTypes);
+
+        // Fetch the specific wellness profile
+        const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+        const docSnap = await getDoc(wellnessDocRef);
+
+        if (docSnap.exists()) {
+          const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
+          setWellnessProfile(data);
+          form.reset({
+            ...data,
+            latitude: data.latitude === null ? undefined : data.latitude,
+            longitude: data.longitude === null ? undefined : data.longitude,
+            operatingDays: data.operatingDays || [],
+          });
+          const openTimeComps = parseTimeToComponents(data.openTime);
+          setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+          const closeTimeComps = parseTimeToComponents(data.closeTime);
+          setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+          if (data.phone) {
+            const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
+            if (foundCountry) {
+              setSelectedCountryCode(foundCountry.value);
+              setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+            } else {
+              setNationalPhoneNumber(data.phone);
+            }
+          }
+        } else {
+          toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
+          router.push('/admin/dashboard/dispensaries');
+        }
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
+        console.error("Fetch profile error:", error);
+      } finally {
+        setIsFetchingData(false);
+      }
+    };
+
+    fetchAllData();
+  }, [dispensaryId, router, toast, form]);
+  
   useEffect(() => {
     if (!isFetchingData && wellnessProfile) {
       initializeMap();
@@ -359,7 +347,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (authLoading || isFetchingData) {
+  if (isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
@@ -368,19 +356,6 @@ export default function AdminEditWellnessPage() {
           <Skeleton className="h-96 w-full" /> <Skeleton className="h-12 w-full" />
         </div>
       </div>
-    );
-  }
-
-  if (!isSuperAdmin) {
-    return (
-        <div className="flex items-center justify-center h-screen">
-            <div className="text-center">
-                <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
-                <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
-                <p className="mt-2 text-muted-foreground">You do not have permission to view this page.</p>
-                <Button onClick={() => router.push('/admin/dashboard')} className="mt-6">Go to Dashboard</Button>
-            </div>
-        </div>
     );
   }
 
