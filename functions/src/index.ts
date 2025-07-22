@@ -20,8 +20,7 @@ import type {
   UserDocData,
   DeductCreditsRequestBody,
   NotificationData,
-  NoteDataCloud,
-  ScrapeLog
+  NoteDataCloud
 } from "./types";
 
 /**
@@ -337,7 +336,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         }
         
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. onUserDocUpdate will handle claims.`);
         
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -359,7 +358,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dispensary-admin/dashboard` };
 
       } catch (claimOrFirestoreError) {
-        logger.error(`Error setting claims, updating Firestore user doc, or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
+        logger.error(`Error updating Firestore user doc or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
         return null;
       }
     }
@@ -871,5 +870,37 @@ export const updateStrainImageUrl = onCall(async (request) => {
     } catch (error: any) {
         logger.error(`Error updating strain image URL for ${strainId}:`, error);
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
+    }
+});
+
+/**
+ * Sets the 'Super Admin' role for a specific user.
+ * This is a utility function intended for one-time setup.
+ */
+export const setSuperAdmin = onCall(async (request) => {
+    if (!request.auth || request.auth.token.role !== 'Super Admin') {
+        // To be extra safe, only let an existing admin run this.
+        // The first time, this check might need to be temporarily commented out from the client-side call
+        // if no admin exists yet.
+        throw new HttpsError('permission-denied', 'You must be a Super Admin to run this function.');
+    }
+
+    const emailToMakeAdmin = 'impimediavillage@gmail.com'; // Hardcoded for security
+
+    try {
+        const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
+        const userDocRef = db.collection('users').doc(user.uid);
+
+        // Set the custom claim
+        await admin.auth().setCustomUserClaims(user.uid, { role: 'Super Admin' });
+        
+        // Also ensure the Firestore document reflects this role
+        await userDocRef.set({ role: 'Super Admin' }, { merge: true });
+
+        logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin}`);
+        return { success: true, message: `Super Admin role set for ${emailToMakeAdmin}.` };
+    } catch (error) {
+        logger.error(`Error setting Super Admin role for ${emailToMakeAdmin}:`, error);
+        throw new HttpsError('internal', 'An error occurred while setting the admin role.');
     }
 });
