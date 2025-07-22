@@ -104,6 +104,10 @@ export default function AdminWellnessPage() {
   };
 
   const handleDeleteWellness = async (wellnessId: string, wellnessName: string) => {
+    if (!isSuperAdmin) {
+      toast({ title: "Permission Denied", description: "You are not authorized to delete profiles.", variant: "destructive" });
+      return;
+    }
     try {
       await deleteDoc(doc(db, 'dispensaries', wellnessId));
       toast({ title: "Wellness Profile Deleted", description: `${wellnessName} has been removed.` });
