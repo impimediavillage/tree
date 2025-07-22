@@ -21,7 +21,9 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -60,7 +62,7 @@ const setClaimsFromDoc = async (userId: string, userData: UserDocData | undefine
     const currentClaims = (await admin.auth().getUser(userId)).customClaims || {};
     const newClaims: { [key: string]: any } = { role: userData.role || null };
     
-    // Also add dispensaryId to claims if user is an owner or staff
+    // NEW: Also add dispensaryId to claims if user is an owner or staff
     if ((userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') && userData.dispensaryId) {
         newClaims.dispensaryId = userData.dispensaryId;
     } else {
@@ -178,7 +180,7 @@ export const onUserCreated = onDocumentCreated(
     if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
       logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
       const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Dispensary Tree!";
+      const subject = "Welcome to The Wellness Tree!";
       const greeting = `Dear ${userDisplayName},`;
       const content = [
         `An account has been created for you on The Dispensary Tree! We're excited to have you as part of our community.`,
@@ -849,6 +851,122 @@ export const removeDuplicateStrains = onRequest(
     }
   }
 );
+
+/**
+ * Callable function to scrape the JustBrand.co.za catalog.
+ * This function is secured and can only be called by an authenticated admin user.
+ */
+export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
+    // This function must be called by an authenticated user.
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    
+    // Authorization check
+    const isSuperAdmin = request.auth.token.role === 'Super Admin';
+    if (!isSuperAdmin) {
+        throw new HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
+    }
+
+    const runId = new Date().toISOString().replace(/[:.]/g, '-');
+    const logRef = db.collection('scrapeLogs').doc(runId);
+    // Corrected historyRef path
+    const historyRef = db.collection('importsHistory').doc(runId);
+
+    const logMessages: string[] = [];
+    const log = (message: string) => {
+        logger.info(`[${runId}] ${message}`);
+        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    };
+
+    try {
+        log('ScrapeJustBrandCatalog function triggered by admin.');
+        await logRef.set({
+            status: 'started',
+            startTime: admin.firestore.FieldValue.serverTimestamp(),
+            messages: logMessages,
+            itemCount: 0,
+            successCount: 0,
+            failCount: 0,
+        } as ScrapeLog);
+
+        const catalog = await runScraper(log);
+
+        let totalProducts = 0;
+        let batch = db.batch();
+        let operationCount = 0;
+        const MAX_OPS_PER_BATCH = 499;
+
+        for (const category of catalog) {
+            totalProducts += category.products.length;
+            
+            // Create a document for the category itself (without the products array)
+            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
+            const { products, ...categoryData } = category;
+            batch.set(categoryRef, { ...categoryData, productCount: products.length });
+            operationCount++;
+
+            if (operationCount >= MAX_OPS_PER_BATCH) {
+                await batch.commit();
+                log(`Committed batch of ${operationCount} operations.`);
+                batch = db.batch();
+                operationCount = 0;
+            }
+
+            // Create a document for each product in a subcollection
+            for (const product of products) {
+                if (product.handle) {
+                    const productRef = categoryRef.collection('products').doc(product.handle);
+                    batch.set(productRef, product);
+                    operationCount++;
+
+                    if (operationCount >= MAX_OPS_PER_BATCH) {
+                        await batch.commit();
+                        log(`Committed batch of ${operationCount} operations.`);
+                        batch = db.batch();
+                        operationCount = 0;
+                    }
+                } else {
+                    log(`Skipping product with no handle in category: ${category.name}`);
+                }
+            }
+        }
+
+        if (operationCount > 0) {
+            await batch.commit();
+            log(`Committed final batch of ${operationCount} operations.`);
+        }
+        
+        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products to Firestore.`);
+        
+        const finalLog: Partial<ScrapeLog> = {
+            status: 'completed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            itemCount: totalProducts,
+            successCount: totalProducts,
+            failCount: 0,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+        
+        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
+
+    } catch (error: any) {
+        logger.error(`[${runId}] Scraping failed:`, error);
+        log(`FATAL ERROR: ${error.message}`);
+        const finalLog: Partial<ScrapeLog> = {
+            status: 'failed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            error: error.message,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+
+        throw new HttpsError('internal', 'An error occurred during the scraping process. Check the logs.', { runId });
+    }
+});
 
 
 /**
