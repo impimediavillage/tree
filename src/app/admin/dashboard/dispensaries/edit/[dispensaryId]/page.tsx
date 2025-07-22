@@ -93,7 +93,7 @@ export default function AdminEditWellnessPage() {
   const dispensaryId = params.dispensaryId as string;
   const { currentUser, loading: authLoading, isSuperAdmin } = useAuth();
 
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isFetchingData, setIsFetchingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
 
@@ -124,88 +124,70 @@ export default function AdminEditWellnessPage() {
     resolver: zodResolver(editDispensarySchema),
     mode: "onChange",
   });
-  
-  // Refactored data fetching logic to eliminate race conditions
-  useEffect(() => {
-    // 1. Wait for authentication context to be fully resolved
-    if (authLoading) {
-        setIsLoadingData(true);
-        return;
-    }
-
-    // 2. Once auth is resolved, check permissions
-    if (!isSuperAdmin) {
-        toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
-        router.push('/admin/dashboard');
-        return; // Important: Stop execution if not authorized
-    }
-
-    // 3. If permissions are correct, fetch all necessary data
-    const fetchPageData = async () => {
-        setIsLoadingData(true);
-        try {
-            // Fetch wellness types
-            const typesCollectionRef = collection(db, 'dispensaryTypes');
-            const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
-            const typesSnapshot = await getDocs(typesQuery);
-            const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
-            setWellnessTypes(fetchedTypes);
-
-            // Fetch the specific dispensary document
-            const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-            const docSnap = await getDoc(wellnessDocRef);
-
-            if (docSnap.exists()) {
-                const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-                setWellnessProfile(data);
-                
-                // Populate the form with the fetched data
-                form.reset({
-                    ...data,
-                    latitude: data.latitude === null ? undefined : data.latitude,
-                    longitude: data.longitude === null ? undefined : data.longitude,
-                    operatingDays: data.operatingDays || [],
-                });
-
-                const openTimeComps = parseTimeToComponents(data.openTime);
-                setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-                
-                const closeTimeComps = parseTimeToComponents(data.closeTime);
-                setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-
-                if (data.phone) {
-                    const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-                    if (foundCountry) {
-                        setSelectedCountryCode(foundCountry.value);
-                        setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
-                    } else {
-                        setNationalPhoneNumber(data.phone);
-                    }
-                }
-            } else {
-                toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
-                setWellnessProfile(null); // Explicitly set to null on failure
-                 router.push('/admin/dashboard/dispensaries');
-            }
-        } catch (error) {
-            console.error("Error fetching page data:", error);
-            toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
-            setWellnessProfile(null);
-        } finally {
-            setIsLoadingData(false);
-        }
-    };
-    
-    fetchPageData();
-
-  }, [authLoading, isSuperAdmin, dispensaryId, router, toast, form]);
-
 
   useEffect(() => {
     const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
+  useEffect(() => {
+    const fetchPageData = async () => {
+      setIsFetchingData(true);
+      try {
+        const typesCollectionRef = collection(db, 'dispensaryTypes');
+        const typesQuery = firestoreQuery(typesCollectionRef, orderBy('name'));
+        const typesSnapshot = await getDocs(typesQuery);
+        const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
+        setWellnessTypes(fetchedTypes);
+
+        const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+        const docSnap = await getDoc(wellnessDocRef);
+
+        if (docSnap.exists()) {
+          const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
+          setWellnessProfile(data);
+          form.reset({
+            ...data,
+            latitude: data.latitude === null ? undefined : data.latitude,
+            longitude: data.longitude === null ? undefined : data.longitude,
+            operatingDays: data.operatingDays || [],
+          });
+          const openTimeComps = parseTimeToComponents(data.openTime);
+          setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+          const closeTimeComps = parseTimeToComponents(data.closeTime);
+          setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
+          if (data.phone) {
+            const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
+            if (foundCountry) {
+              setSelectedCountryCode(foundCountry.value);
+              setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
+            } else {
+              setNationalPhoneNumber(data.phone);
+            }
+          }
+        } else {
+          toast({ title: "Not Found", description: "Wellness profile not found.", variant: "destructive" });
+          router.push('/admin/dashboard/dispensaries');
+        }
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to fetch wellness profile data.", variant: "destructive" });
+        console.error("Fetch profile error:", error);
+      } finally {
+        setIsFetchingData(false);
+      }
+    };
+    
+    if (authLoading) {
+      return;
+    }
+    if (!isSuperAdmin) {
+      toast({ title: "Access Denied", description: "Only Super Admins can edit wellness profiles.", variant: "destructive" });
+      router.push('/admin/dashboard');
+      return;
+    }
+    fetchPageData();
+  }, [dispensaryId, authLoading, isSuperAdmin, router, toast, form]);
+  
   const initializeMap = useCallback(async () => {
     if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
 
@@ -272,12 +254,12 @@ export default function AdminEditWellnessPage() {
       toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
     }
   }, [wellnessProfile, form, toast]);
-  
+
   useEffect(() => {
-    if (!isLoadingData && wellnessProfile) {
+    if (!isFetchingData && wellnessProfile) {
       initializeMap();
     }
-  }, [isLoadingData, wellnessProfile, initializeMap]);
+  }, [isFetchingData, wellnessProfile, initializeMap]);
 
   const handleAddNewWellnessType = async () => {
      if (!isSuperAdmin) return;
@@ -369,7 +351,7 @@ export default function AdminEditWellnessPage() {
     return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
   };
 
-  if (authLoading || isLoadingData) {
+  if (authLoading || isFetchingData) {
     return (
       <div className="max-w-3xl mx-auto my-8 p-6 space-y-6">
         <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-8 w-1/2" />
@@ -378,6 +360,19 @@ export default function AdminEditWellnessPage() {
           <Skeleton className="h-96 w-full" /> <Skeleton className="h-12 w-full" />
         </div>
       </div>
+    );
+  }
+
+  if (!isSuperAdmin) {
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <div className="text-center">
+                <AlertTriangle className="mx-auto h-12 w-12 text-destructive" />
+                <h2 className="mt-4 text-2xl font-bold">Access Denied</h2>
+                <p className="mt-2 text-muted-foreground">You do not have permission to view this page.</p>
+                <Button onClick={() => router.push('/admin/dashboard')} className="mt-6">Go to Dashboard</Button>
+            </div>
+        </div>
     );
   }
 
@@ -566,10 +561,10 @@ export default function AdminEditWellnessPage() {
               <FormField control={form.control} name="leadTime" render={({ field }) => (<FormItem><FormLabel>Lead Time for Product Transfers</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl><SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
             <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
              <div className="flex gap-4 pt-4">
-                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isLoadingData || (form.formState.isSubmitted && !form.formState.isValid)}>
+                <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData || (form.formState.isSubmitted && !form.formState.isValid)}>
                   {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
                 </Button>
-                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isLoadingData}>Cancel</Button></Link>
+                <Link href="/admin/dashboard/dispensaries" passHref legacyBehavior><Button type="button" variant="outline" size="lg" className="flex-1 text-lg" disabled={isSubmitting || isFetchingData}>Cancel</Button></Link>
               </div>
           </form>
         </Form>
