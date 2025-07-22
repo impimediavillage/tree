@@ -30,6 +30,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import React from 'react';
+import { auth as firebaseAuthInstance } from '@/lib/firebase';
 
 interface NavItem {
   title: string;
@@ -110,7 +111,15 @@ export default function AdminDashboardLayout({
   // If we reach this point, the user is a confirmed Super Admin.
 
   const handleLogout = async () => {
-    // Logout logic from useAuth context can be used here if needed
+    try {
+        await firebaseAuthInstance.signOut();
+        localStorage.removeItem('currentUserHolisticAI');
+        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+        router.push('/auth/signin');
+      } catch (error) {
+        console.error('Logout error:', error);
+        toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
+      }
   };
 
   const getPageTitle = () => {
