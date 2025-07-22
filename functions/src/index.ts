@@ -858,9 +858,8 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
     
-    // Authorization check
-    const isSuperAdmin = request.auth.token.role === 'Super Admin';
-    if (!isSuperAdmin) {
+    // Authorization check using the token's role claim.
+    if (request.auth.token.role !== 'Super Admin') {
         throw new HttpsError('permission-denied', 'Permission denied. You must be a Super Admin to run this operation.');
     }
 
