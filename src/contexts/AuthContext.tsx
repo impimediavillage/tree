@@ -34,36 +34,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      if (!user) {
-        // Clear all state on logout
-        setCurrentUser(null);
-        setCurrentDispensaryStatus(null);
-        localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
-      }
     });
-
     return () => unsubscribeAuth();
   }, []);
 
   useEffect(() => {
-    if (!firebaseUser) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    let unsubscribeDispensary: Unsubscribe | undefined;
-
-    const fetchUserDocument = async () => {
-      try {
-        // Force refresh the token to ensure it's up-to-date before any Firestore call.
-        // This is the key fix for the race condition.
-        await firebaseUser.getIdToken(true); 
-        
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           const appUser: AppUser = {
@@ -79,40 +57,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             welcomeCreditsAwarded: userData?.welcomeCreditsAwarded || false,
             signupSource: userData?.signupSource || 'public',
           };
-
           setCurrentUser(appUser);
           localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-          
-          if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-            const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-            unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
-              if (dispensaryDocSnap.exists()) {
-                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
-              } else {
-                setCurrentDispensaryStatus(null);
-              }
-            });
-          } else {
-            setCurrentDispensaryStatus(null);
-          }
         } else {
-          console.error(`User document not found for UID: ${firebaseUser.uid}. Forcing logout.`);
-          await auth.signOut();
+          console.error(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
+          auth.signOut();
         }
-      } catch (error) {
-        console.error("Error fetching user document:", error);
-        await auth.signOut();
-      } finally {
         setLoading(false);
-      }
-    };
+      }, (error) => {
+        console.error("Error on user snapshot:", error);
+        setLoading(false);
+      });
 
-    fetchUserDocument();
-
-    return () => {
-      if (unsubscribeDispensary) unsubscribeDispensary();
-    };
+      return () => unsubscribeUser();
+    } else {
+      setCurrentUser(null);
+      setCurrentDispensaryStatus(null);
+      localStorage.removeItem('currentUserHolisticAI');
+      setLoading(false);
+    }
   }, [firebaseUser]);
+
+  useEffect(() => {
+    if (currentUser?.role === 'DispensaryOwner' && currentUser.dispensaryId) {
+      const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId);
+      const unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
+        if (dispensaryDocSnap.exists()) {
+          setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
+        } else {
+          setCurrentDispensaryStatus(null);
+        }
+      });
+      return () => unsubscribeDispensary();
+    } else {
+      setCurrentDispensaryStatus(null);
+    }
+  }, [currentUser]);
+
 
   useEffect(() => {
     if (!loading && currentUser) {
@@ -132,16 +113,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';
   const canAccessDispensaryPanel = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';
-  const isLeafUser = currentUser?.role === 'LeafUser' || currentUser?.role === 'User';
+  const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
 
   return (
-    <AuthContext.Provider value={{ 
+    <AuthContext.Provider value={{
         currentUser,
-        setCurrentUser, 
-        loading, 
-        isSuperAdmin, 
-        isDispensaryOwner, 
-        canAccessDispensaryPanel, 
+        setCurrentUser,
+        loading,
+        isSuperAdmin,
+        isDispensaryOwner,
+        canAccessDispensaryPanel,
         isLeafUser,
         currentDispensaryStatus
     }}>
