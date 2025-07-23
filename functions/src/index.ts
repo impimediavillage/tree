@@ -199,19 +199,6 @@ export const onUserCreated = onDocumentCreated(
 
 
 /**
- * Trigger to sync user roles from Firestore to Auth claims on document update.
- */
-export const onUserDocUpdate = onDocumentUpdated("users/{userId}", async (event) => {
-  if (!event.data) {
-    logger.warn(`No data in user update event for ${event.params.userId}`);
-    return;
-  }
-  logger.log(`User document updated for ${event.params.userId}. Re-syncing claims.`);
-  await setClaimsFromDoc(event.params.userId, event.data.after.data() as UserDocData);
-});
-
-
-/**
  * Cloud Function triggered when a new dispensary document is created.
  * Sends an "Application Received" email to the owner.
  */
@@ -323,7 +310,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
       const userId = userRecord.uid;
 
       try {
-        const userDocRef = db.collection("users").doc(userId); 
+        const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
         const firestoreUserData: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
@@ -650,7 +637,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "admin1@tree.com"; 
+    const superAdminEmail = "impimediavillage@gmail.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
