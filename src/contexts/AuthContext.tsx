@@ -15,8 +15,8 @@ interface AuthContextType {
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
   loading: boolean;
   isSuperAdmin: boolean;
-  isDispensaryOwner: boolean; // True if role is DispensaryOwner AND dispensary is Approved
-  canAccessDispensaryPanel: boolean; // Explicit flag for panel access
+  isDispensaryOwner: boolean;
+  canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
 }
@@ -40,8 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (unsubscribeDispensary) unsubscribeDispensary();
 
       if (firebaseUser) {
+        setLoading(true);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-
+        
         unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
@@ -59,16 +60,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
 
-            // If they are a dispensary owner, set up a listener for their dispensary status
             if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-              if (unsubscribeDispensary) unsubscribeDispensary(); // Clean up old one just in case
+              if (unsubscribeDispensary) unsubscribeDispensary(); 
               const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
               unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
                 if (dispensaryDocSnap.exists()) {
                   setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
                 } else {
                   setCurrentDispensaryStatus(null);
-                  console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
                 }
               });
             } else {
@@ -77,13 +76,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             setLoading(false);
           } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out for safety.`);
+            console.error(`User document not found for UID: ${firebaseUser.uid}. Logging out for safety.`);
             auth.signOut();
+            setLoading(false);
           }
         }, (error) => {
           console.error("Error on user snapshot:", error);
           auth.signOut();
+          setLoading(false);
         });
+
       } else { 
         localStorage.removeItem('currentUserHolisticAI');
         setCurrentUser(null);
