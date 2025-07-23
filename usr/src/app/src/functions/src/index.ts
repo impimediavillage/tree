@@ -21,9 +21,7 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
-  ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -337,10 +335,8 @@ export const onDispensaryUpdate = onDocumentUpdated(
             (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
         }
         
-        // This will trigger onUserDocCreate or onUserDocUpdate which handles setting claims.
-        // This is the correct, decoupled way to handle this.
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by the dedicated trigger.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. onUserDocUpdate will handle claims.`);
         
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
@@ -648,7 +644,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "impimediavillage@gmail.com"; 
+    const superAdminEmail = "admin1@tree.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
