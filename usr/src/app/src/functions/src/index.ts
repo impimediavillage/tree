@@ -800,7 +800,7 @@ export const updateStrainImageUrl = onCall(async (request) => {
  * NEW: Callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
-export const getUserProfile = onCall(async (request) => {
+export const getUserProfile = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
@@ -824,11 +824,12 @@ export const getUserProfile = onCall(async (request) => {
                 dispensaryStatus = dispensaryDocSnap.data()?.status || null;
             }
         }
-
-        const toISO = (date: any) => {
+        
+        const toISO = (date: any): string | null => {
             if (!date) return null;
             if (typeof date.toDate === 'function') return date.toDate().toISOString();
             if (date instanceof Date) return date.toISOString();
+            if (typeof date === 'string') return date;
             return null;
         };
         
