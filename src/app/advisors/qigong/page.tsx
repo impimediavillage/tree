@@ -11,8 +11,8 @@ import { getQigongAdvice, type QigongAdviceInput, type QigongAdviceOutput } from
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'qigong-advisor';
 const CREDITS_TO_DEDUCT = 2;
@@ -46,12 +46,9 @@ export default function QigongAdvisorPage() {
     setError(null);
     
     try {
-      const deductCreditsAndLog = httpsCallable(functions, 'deductCreditsAndLogInteraction');
-      await deductCreditsAndLog({ 
-          userId: currentUser.uid, 
-          advisorSlug: ADVISOR_SLUG, 
-          creditsToDeduct: CREDITS_TO_DEDUCT, 
-          wasFreeInteraction: false 
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, {
+          credits: increment(-CREDITS_TO_DEDUCT)
       });
       
       const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
@@ -66,7 +63,7 @@ export default function QigongAdvisorPage() {
 
     } catch (e: any) {
       setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits may not have been charged.', variant: "destructive" });
+      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
