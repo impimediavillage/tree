@@ -82,6 +82,7 @@ export interface UserDocData {
   lastLoginAt?: firestore.Timestamp | firestore.FieldValue | null;
   signupSource?: string; // Added to match User type
   welcomeCreditsAwarded?: boolean; // Added to fix the deployment error
+  preferredDispensaryTypes?: string[];
   // Add other fields if accessed by functions
 }
 
