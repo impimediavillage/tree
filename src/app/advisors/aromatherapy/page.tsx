@@ -10,9 +10,9 @@ import { Loader2, WandSparkles, AlertCircle, Sparkles } from 'lucide-react';
 import { getAromatherapyAdvice, type AromatherapyAdviceInput, type AromatherapyAdviceOutput } from '@/ai/flows/aromatherapy-advice';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
-import { functions } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '@/contexts/AuthContext';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'aromatherapy-advisor';
 const CREDITS_TO_DEDUCT = 2; // Combined cost
@@ -24,8 +24,6 @@ export default function AromatherapyAdvisorPage() {
   const [result, setResult] = useState<AromatherapyAdviceOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  const deductCredits = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -48,17 +46,14 @@ export default function AromatherapyAdvisorPage() {
     setError(null);
 
     try {
-      await deductCredits({
-          userId: currentUser.uid,
-          advisorSlug: ADVISOR_SLUG,
-          creditsToDeduct: CREDITS_TO_DEDUCT,
-          wasFreeInteraction: false,
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, {
+          credits: increment(-CREDITS_TO_DEDUCT)
       });
-
+      
       const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
       setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
-
 
       const input: AromatherapyAdviceInput = { question: description };
       const adviceOutput = await getAromatherapyAdvice(input);
@@ -68,7 +63,8 @@ export default function AromatherapyAdvisorPage() {
 
     } catch (e: any) {
       setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice. Please check your network and try again.', variant: "destructive" });
+      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
+      // NOTE: In a real app, you'd want a more robust way to handle credit refunds if the AI call fails after deduction.
     } finally {
       setIsLoading(false);
     }

@@ -9,8 +9,7 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onRequest, Request, onCall, HttpsError } from "firebase-functions/v2/https";
-import type { Response } from "express";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 // Import types
 import type {
@@ -19,20 +18,9 @@ import type {
   ProductRequestDocData,
   PoolIssueDocData,
   UserDocData,
-  DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
 } from "./types";
-
-/**
- * Custom error class for HTTP functions to propagate status codes.
- */
-class HttpError extends Error {
-  constructor(public httpStatus: number, public message: string, public code: string) {
-    super(message);
-    this.name = 'HttpError';
-  }
-}
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -677,97 +665,6 @@ export const onPoolIssueCreated = onDocumentCreated(
   });
 
 /**
- * HTTP-callable function to deduct credits and log AI interaction.
- */
-export const deductCreditsAndLogInteraction = onRequest(
-  { cors: true }, // Gen 2 CORS configuration
-  async (req: Request, res: Response) => {
-    if (req.method !== "POST") {
-      res.status(405).send({ error: "Method Not Allowed" });
-      return;
-    }
-
-    const {
-      userId,
-      advisorSlug,
-      creditsToDeduct,
-      wasFreeInteraction,
-    } = req.body as DeductCreditsRequestBody;
-
-    if (
-      !userId ||
-      !advisorSlug ||
-      creditsToDeduct === undefined ||
-      wasFreeInteraction === undefined
-    ) {
-      res.status(400).send({
-        error:
-          "Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction",
-      });
-      return;
-    }
-
-    const userRef = db.collection("users").doc(userId);
-
-    try {
-      let newCreditBalance = 0;
-      if (!wasFreeInteraction) {
-        await db.runTransaction(async (transaction) => {
-          const userDoc = await transaction.get(userRef);
-          if (!userDoc.exists) {
-            throw new HttpError(404, "User not found.", "not-found");
-          }
-          const currentCredits = (userDoc.data() as UserDocData)?.credits || 0;
-          if (currentCredits < creditsToDeduct) {
-            throw new HttpError(400, "Insufficient credits.", "failed-precondition");
-          }
-          newCreditBalance = currentCredits - creditsToDeduct;
-          transaction.update(userRef, { credits: newCreditBalance });
-        });
-        logger.info(
-          `Successfully deducted ${creditsToDeduct} credits for user ${userId}. New balance: ${newCreditBalance}`
-        );
-      } else {
-        const userDoc = await userRef.get();
-        if (!userDoc.exists) {
-          throw new HttpError(404, "User not found for free interaction logging.", "not-found");
-        }
-        newCreditBalance = (userDoc.data() as UserDocData)?.credits || 0;
-        logger.info(
-          `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
-        );
-      }
-
-      const logEntry = {
-        userId,
-        advisorSlug,
-        creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
-        timestamp: admin.firestore.Timestamp.now() as any,
-        wasFreeInteraction,
-      };
-      await db.collection("aiInteractionsLog").add(logEntry);
-      logger.info(
-        `Logged AI interaction for user ${userId}, advisor ${advisorSlug}.`
-      );
-
-      res.status(200).send({
-        success: true,
-        message: "Credits updated and interaction logged successfully.",
-        newCredits: newCreditBalance,
-      });
-    } catch (error: any) {
-      logger.error("Error in deductCreditsAndLogInteraction:", error);
-      if (error instanceof HttpError) {
-        res.status(error.httpStatus).send({ error: error.message, code: error.code });
-      } else {
-        res.status(500).send({ error: "Internal server error." });
-      }
-    }
-  }
-);
-
-
-/**
  * Callable function to update the image URL for a strain in the seed data.
  * This is triggered when a strain with a "none" image is viewed.
  */
@@ -790,67 +687,5 @@ export const updateStrainImageUrl = onCall(async (request) => {
     } catch (error: any) {
         logger.error(`Error updating strain image URL for ${strainId}:`, error);
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
-    }
-});
-
-
-/**
- * NEW: Callable function to securely fetch a user's profile data.
- * This is called by the client after authentication to prevent race conditions.
- */
-export const getUserProfile = onCall({ cors: true }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
-    }
-    const uid = request.auth.uid;
-    try {
-        const userDocRef = db.collection('users').doc(uid);
-        const userDocSnap = await userDocRef.get();
-
-        if (!userDocSnap.exists) {
-            logger.error(`User document not found for authenticated user: ${uid}`);
-            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
-        }
-        
-        const userData = userDocSnap.data() as UserDocData;
-        
-        let dispensaryStatus: Dispensary['status'] | null = null;
-        if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-            const dispensaryDocSnap = await dispensaryDocRef.get();
-            if(dispensaryDocSnap.exists()) {
-                dispensaryStatus = dispensaryDocSnap.data()?.status || null;
-            }
-        }
-        
-        const toISO = (date: any): string | null => {
-            if (!date) return null;
-            if (typeof date.toDate === 'function') return date.toDate().toISOString();
-            if (date instanceof Date) return date.toISOString();
-            if (typeof date === 'string') return date;
-            return null;
-        };
-        
-        // Return a client-safe AppUser object
-        return {
-            uid: uid,
-            email: userData.email,
-            displayName: userData.displayName,
-            photoURL: userData.photoURL,
-            role: userData.role,
-            dispensaryId: userData.dispensaryId,
-            credits: userData.credits,
-            status: userData.status,
-            createdAt: toISO(userData.createdAt),
-            lastLoginAt: toISO(userData.lastLoginAt),
-            dispensaryStatus: dispensaryStatus, // Include dispensary status
-            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
-            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
-            signupSource: userData.signupSource || 'public',
-        };
-
-    } catch (error) {
-        logger.error(`Error fetching user profile for ${uid}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
     }
 });

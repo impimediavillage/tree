@@ -12,8 +12,8 @@ import { traditionalMedicineAdvice, type TraditionalMedicineAdviceInput, type Tr
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/lib/firebase';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'traditional-medicine-advisor';
 const CREDITS_TO_DEDUCT = 6;
@@ -27,8 +27,6 @@ export default function TraditionalMedicineAdvisorPage() {
   const [result, setResult] = useState<TraditionalMedicineAdviceOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const deductCredits = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -51,11 +49,9 @@ export default function TraditionalMedicineAdvisorPage() {
     setError(null);
 
     try {
-      await deductCredits({
-          userId: currentUser.uid,
-          advisorSlug: ADVISOR_SLUG,
-          creditsToDeduct: CREDITS_TO_DEDUCT,
-          wasFreeInteraction: false,
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userDocRef, {
+          credits: increment(-CREDITS_TO_DEDUCT)
       });
       
       const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
