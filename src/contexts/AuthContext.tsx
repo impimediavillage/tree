@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { ReactNode} from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { db, auth as firebaseAuth } from '@/lib/firebase';
+import { db, auth as getAuthInstance } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -31,13 +31,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // User is authenticated with Firebase. Now, fetch their data from Firestore.
-        try {
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
+    const auth = getAuthInstance(); // Get auth instance
+    let unsubscribeUser: Unsubscribe | undefined;
+    let unsubscribeDispensary: Unsubscribe | undefined;
 
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      // Clean up previous listeners
+      if (unsubscribeUser) unsubscribeUser();
+      if (unsubscribeDispensary) unsubscribeDispensary();
+
+      if (firebaseUser) {
+        const userDocRef = doc(db(), 'users', firebaseUser.uid);
+
+        unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             const appUser: AppUser = {
@@ -47,42 +53,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               photoURL: userData?.photoURL || firebaseUser.photoURL || null,
               role: userData?.role || 'User',
               dispensaryId: userData?.dispensaryId || null,
-              credits: userData?.credits || 0,
+              credits: userData?.credits ?? 0,
               status: userData?.status || 'Active',
             };
             
-            // Set user data first
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-            
-            // If they are a dispensary owner, fetch their dispensary status
+
+            // If they are a dispensary owner, set up a listener for their dispensary status
             if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-              const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-              const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-              if (dispensaryDocSnap.exists()) {
-                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
-              } else {
-                setCurrentDispensaryStatus(null);
-                console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
-              }
+              if (unsubscribeDispensary) unsubscribeDispensary(); // Clean up old one just in case
+              const dispensaryDocRef = doc(db(), 'dispensaries', appUser.dispensaryId);
+              unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
+                if (dispensaryDocSnap.exists()) {
+                  setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
+                } else {
+                  setCurrentDispensaryStatus(null);
+                  console.warn(`Dispensary document ${appUser.dispensaryId} not found.`);
+                }
+              });
             } else {
+              if (unsubscribeDispensary) unsubscribeDispensary();
               setCurrentDispensaryStatus(null);
             }
-
-          } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. This might be a new account pending document creation, or an error state. Logging out for safety.`);
-            firebaseAuth.signOut(); 
-          }
-        } catch (error) {
-            console.error("Error fetching user document:", error);
-            // This catch is important for permission errors during the getDoc call itself
-            firebaseAuth.signOut();
-        } finally {
             setLoading(false);
-        }
-
+          } else {
+            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
+            auth.signOut();
+          }
+        }, (error) => {
+          console.error("Error on user snapshot:", error);
+          auth.signOut();
+        });
       } else { 
-        // User is not logged in
         localStorage.removeItem('currentUserHolisticAI');
         setCurrentUser(null);
         setCurrentDispensaryStatus(null);
@@ -90,7 +93,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUser) unsubscribeUser();
+      if (unsubscribeDispensary) unsubscribeDispensary();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Centralized redirection logic

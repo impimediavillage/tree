@@ -162,7 +162,7 @@ function generateHtmlEmail(title: string, contentLines: string[], greeting?: str
  * Cloud Function triggered when a new User document is created.
  * Sets claims and sends welcome emails.
  */
-export const onUserDocCreate = onDocumentCreated(
+export const onUserCreated = onDocumentCreated(
   "users/{userId}",
   async (event: FirestoreEvent<admin.firestore.QueryDocumentSnapshot | undefined, { userId: string }>) => {
     const snapshot = event.data;
@@ -780,76 +780,6 @@ export const deductCreditsAndLogInteraction = onRequest(
 
 
 /**
- * Removes duplicate documents from the 'my-seeded-collection' based on the 'name' field.
- * Keeps the first encountered document for each unique name and deletes the rest.
- */
-export const removeDuplicateStrains = onRequest(
-  { cors: true },
-  async (req: Request, res: Response) => {
-    try {
-      const collectionRef = db.collection('my-seeded-collection');
-      const snapshot = await collectionRef.get();
-
-      if (snapshot.empty) {
-        res.status(200).send({ success: true, message: 'Collection is empty, no duplicates to remove.' });
-        return;
-      }
-
-      const seenNames = new Map<string, string>(); // Map<name, docId>
-      const docsToDelete: string[] = [];
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const name = data.name;
-
-        if (name && typeof name === 'string') {
-          if (seenNames.has(name)) {
-            // This is a duplicate
-            docsToDelete.push(doc.id);
-          } else {
-            // First time seeing this name, keep it
-            seenNames.set(name, doc.id);
-          }
-        }
-      });
-
-      if (docsToDelete.length === 0) {
-        res.status(200).send({ success: true, message: 'No duplicate names found.' });
-        return;
-      }
-
-      // Firestore allows a maximum of 500 operations in a single batch.
-      const batchSize = 499; // Keep it slightly under 500 to be safe
-      let totalDeleted = 0;
-
-      for (let i = 0; i < docsToDelete.length; i += batchSize) {
-        const batchDocs = docsToDelete.slice(i, i + batchSize);
-        const batch = db.batch();
-        batchDocs.forEach(docId => {
-          batch.delete(collectionRef.doc(docId));
-        });
-        await batch.commit();
-        totalDeleted += batchDocs.length;
-        logger.info(`Committed a batch of ${batchDocs.length} deletions.`);
-      }
-
-
-      logger.info(`Successfully removed ${totalDeleted} duplicate documents.`);
-      res.status(200).send({
-        success: true,
-        message: `Successfully removed ${totalDeleted} duplicate documents.`,
-        deletedIds: docsToDelete,
-      });
-
-    } catch (error: any) {
-      logger.error("Error removing duplicate strains:", error);
-      res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
-    }
-  }
-);
-
-
-/**
  * Callable function to update the image URL for a strain in the seed data.
  * This is triggered when a strain with a "none" image is viewed.
  */
@@ -872,38 +802,5 @@ export const updateStrainImageUrl = onCall(async (request) => {
     } catch (error: any) {
         logger.error(`Error updating strain image URL for ${strainId}:`, error);
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
-    }
-});
-
-
-/**
- * Sets the 'Super Admin' role for a specific user.
- * This is a utility function intended for one-time setup or recovery.
- * ONLY an existing Super Admin can call this.
- */
-export const setSuperAdmin = onCall(async (request) => {
-    // Authenticated check is already done by onCall wrapper.
-    // Now, we do an authorization check based on the caller's custom claims.
-    if (request.auth?.token?.role !== 'Super Admin') {
-        throw new HttpsError('permission-denied', 'You must be a Super Admin to run this function.');
-    }
-
-    const emailToMakeAdmin = 'impimediavillage@gmail.com'; // Hardcoded for security
-
-    try {
-        const user = await admin.auth().getUserByEmail(emailToMakeAdmin);
-        const userDocRef = db.collection('users').doc(user.uid);
-
-        // Set the custom claim. This is the source of truth for security rules.
-        await admin.auth().setCustomUserClaims(user.uid, { role: 'Super Admin' });
-        
-        // Also ensure the Firestore document reflects this role for consistency in the app UI.
-        await userDocRef.set({ role: 'Super Admin', status: 'Active' }, { merge: true });
-
-        logger.info(`Successfully set Super Admin role for ${emailToMakeAdmin}`);
-        return { success: true, message: `Super Admin role set for ${emailToMakeAdmin}.` };
-    } catch (error) {
-        logger.error(`Error setting Super Admin role for ${emailToMakeAdmin}:`, error);
-        throw new HttpsError('internal', 'An error occurred while setting the admin role.');
     }
 });
