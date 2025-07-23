@@ -74,6 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               } else {
                 setCurrentDispensaryStatus(null);
               }
+            }, (error) => {
+              console.error("Error on dispensary snapshot:", error);
             });
           } else {
             setCurrentDispensaryStatus(null);
