@@ -20,7 +20,8 @@ import type {
   UserDocData,
   DeductCreditsRequestBody,
   NotificationData,
-  NoteDataCloud
+  NoteDataCloud,
+  ScrapeLog
 } from "./types";
 import { runScraper } from './scrapers/justbrand-scraper';
 
@@ -645,7 +646,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "impimediavillage@gmail.com"; 
+    const superAdminEmail = "admin1@tree.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
