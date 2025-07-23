@@ -21,7 +21,9 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -321,7 +323,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
       const userId = userRecord.uid;
 
       try {
-        const userDocRef = db.collection("users").doc(userId); // Corrected Firestore doc reference
+        const userDocRef = db.collection("users").doc(userId);
         const firestoreUserData: Partial<UserDocData> = {
             uid: userId, email: ownerEmail, displayName: ownerDisplayName,
             role: "DispensaryOwner", dispensaryId: dispensaryId, status: "Active",
@@ -332,14 +334,15 @@ export const onDispensaryUpdate = onDocumentUpdated(
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
             (firestoreUserData as UserDocData).createdAt = admin.firestore.FieldValue.serverTimestamp();
-            (firestoreUserData as UserDocData).credits = 100; // Default credits for new owner
+            (firestoreUserData as UserDocData).credits = 100;
         }
         
-        // This will trigger onUserDocCreate or onUserDocUpdate which handles setting claims.
-        // This is the correct, decoupled way to handle this.
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. Claims will be synced by the dedicated trigger.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
+        // Explicitly set claims right after creating/updating the user doc.
+        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
+
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
         logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
@@ -360,7 +363,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dispensary-admin/dashboard` };
 
       } catch (claimOrFirestoreError) {
-        logger.error(`Error updating Firestore user doc or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
+        logger.error(`Error setting claims, updating Firestore user doc, or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
         return null;
       }
     }
@@ -646,7 +649,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "impimediavillage@gmail.com"; 
+    const superAdminEmail = "admin1@tree.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
