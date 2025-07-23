@@ -249,8 +249,8 @@ export interface User {
   dispensaryId?: string | null;
   dispensaryStatus?: Dispensary['status'] | null;
   credits: number;
-  createdAt?: string | null; // Changed to string to match serialized format
-  lastLoginAt?: string | null; // Changed to string
+  createdAt?: string | null; 
+  lastLoginAt?: string | null;
   status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
@@ -366,18 +366,6 @@ export type NotificationData = Omit<Notification, 'id' | 'createdAt'> & {
 export type NoteDataCloud = Omit<NoteData, 'timestamp'> & {
   timestamp: Timestamp;
 };
-
-export interface ScrapeLog {
-  status: 'started' | 'completed' | 'failed';
-  startTime: any;
-  endTime?: any;
-  itemCount: number;
-  successCount: number;
-  failCount: number;
-  error?: string;
-  messages: string[];
-}
-
 
 // Generic Firestore Document with ID
 export interface FirestoreDocument {
