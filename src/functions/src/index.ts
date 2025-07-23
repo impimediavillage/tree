@@ -10,7 +10,6 @@ import {
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import type { Request, Response } from "express";
 
 // Import types
 import type {
@@ -23,16 +22,6 @@ import type {
   NotificationData,
   NoteDataCloud,
 } from "./types";
-
-/**
- * Custom error class for HTTP functions to propagate status codes.
- */
-class HttpError extends Error {
-  constructor(public httpStatus: number, public message: string, public code: string) {
-    super(message);
-    this.name = 'HttpError';
-  }
-}
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -677,7 +666,8 @@ export const onPoolIssueCreated = onDocumentCreated(
   });
 
 /**
- * HTTP-callable function to deduct credits and log AI interaction.
+ * Callable function to deduct credits and log AI interaction.
+ * This is the standard, secure way to handle client-callable functions.
  */
 export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (request) => {
     if (!request.auth) {

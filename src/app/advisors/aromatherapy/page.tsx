@@ -10,10 +10,13 @@ import { Loader2, WandSparkles, AlertCircle, Sparkles } from 'lucide-react';
 import { getAromatherapyAdvice, type AromatherapyAdviceInput, type AromatherapyAdviceOutput } from '@/ai/flows/aromatherapy-advice';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
+import { functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 const ADVISOR_SLUG = 'aromatherapy-advisor';
 const CREDITS_PER_QUESTION = 1;
 const CREDITS_PER_RESPONSE = 1;
+const deductCreditsAndLogInteraction = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
 export default function AromatherapyAdvisorPage() {
   const [description, setDescription] = useState('');
@@ -46,35 +49,26 @@ export default function AromatherapyAdvisorPage() {
       toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
       return false;
     }
-    const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
-    if (!functionUrl) {
-      console.error("Deduct credits function URL is not configured.");
-      toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
-      return false;
-    }
+    
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const response: any = await deductCreditsAndLogInteraction({
           userId: currentUser.uid,
           advisorSlug: ADVISOR_SLUG,
           creditsToDeduct,
           wasFreeInteraction: false,
-        }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || `Failed to deduct credits (status: ${response.status})`);
+      if(response.data.success){
+        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
+        const updatedUser = { ...currentUser, credits: response.data.newCredits };
+        setCurrentUser(updatedUser);
+        localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
+        return true;
+      } else {
+        throw new Error(response.data.error || "Failed to deduct credits.");
       }
-      toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
-      const updatedUser = { ...currentUser, credits: data.newCredits };
-      setCurrentUser(updatedUser);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
-      return true;
     } catch (e: any) {
       console.error("Error deducting credits:", e);
-      toast({ title: "Credit Deduction Failed", description: e.message || "Could not deduct credits.", variant: "destructive" });
+      toast({ title: "Credit Deduction Failed", description: e.message || "An unknown error occurred.", variant: "destructive" });
       return false;
     }
   };
