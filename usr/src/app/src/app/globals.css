@@ -27,86 +27,107 @@ body {
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 151 83% 42%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 346.8 77.2% 49.8%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --input-custom-background: 210 40% 96.1%;
-    --input-hover-bg: 210 40% 94%;
-    --ring: 151 83% 42%;
+    --background: 40 50% 98%;
+    --foreground: 30 35% 25%; /* Dark Earthy Brown */
+    
+    --card: 40 45% 98%; /* Very Light Off-White Beige for cards */
+    --card-foreground: 30 35% 25%;
+    
+    --popover: 40 50% 98%;
+    --popover-foreground: 30 35% 25%;
+    
+    --primary: 120 60% 45%; /* Vibrant Green */
+    --primary-foreground: 120 20% 97%; /* Off-white for text on primary green */
+    
+    --secondary: 100 45% 68%; /* Lighter, Leafy Green */
+    --secondary-foreground: 100 30% 20%; /* Darker green for text on secondary */
+    
+    --muted: 40 35% 94%; /* Light, muted beige/tan */
+    --muted-foreground: 30 30% 35%; /* Darker Brown */
+    
+    --accent: 30 65% 55%; /* Warm Terracotta/Earthy Orange */
+    --accent-foreground: 30 25% 97%; /* Off-white for text on accent */
+    
+    --destructive: 0 70% 50%; 
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 35 30% 88%; /* Subtle earthy border */
+    --input: 35 30% 91.4%;
+    --input-custom-background: 40 40% 95%; /* Slightly darker background for inputs */
+    --input-hover-bg: 40 40% 92%; /* Darker hover for inputs */
+    
+    --ring: 120 60% 45%; /* Primary green for focus rings */
+    
     --radius: 0.5rem;
 
-    --chart-1: 151 70% 50%;
-    --chart-2: 346 70% 50%;
-    --chart-3: 40 70% 50%;
-    --chart-4: 210 70% 50%;
-    --chart-5: 280 70% 50%;
+    --chart-1: 120 60% 45%;   /* Primary Green */
+    --chart-2: 30 65% 55%;   /* Accent Terracotta */
+    --chart-3: 100 45% 68%;   /* Secondary Green */
+    --chart-4: 40 35% 80%;   /* Muted Beige */
+    --chart-5: 30 35% 25%;   /* Foreground Dark Brown */
 
-    --sidebar-background: 215 30% 95%;
-    --sidebar-foreground: 222.2 84% 4.9%;
-    --sidebar-primary: 151 83% 42%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 346.8 77.2% 49.8%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 151 83% 42%;
+    /* Sidebar specific colors */
+    --sidebar-background: 40 40% 94%; 
+    --sidebar-foreground: 30 30% 20%;
+    --sidebar-primary: 120 55% 40%;
+    --sidebar-primary-foreground: 120 20% 95%;
+    --sidebar-accent: 30 60% 50%;
+    --sidebar-accent-foreground: 30 25% 95%;
+    --sidebar-border: 35 25% 80%;
+    --sidebar-ring: 120 55% 40%;
 
-    --select-item-background: 0 0% 100%;
+    --select-item-background: 40 40% 95%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 151 83% 42%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 346.8 77.2% 49.8%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --input-custom-background: 217.2 32.6% 20%;
-    --input-hover-bg: 217.2 32.6% 22%;
-    --ring: 151 83% 42%;
-
-    --chart-1: 151 70% 50%;
-    --chart-2: 346 70% 50%;
-    --chart-3: 40 70% 50%;
-    --chart-4: 210 70% 50%;
-    --chart-5: 280 70% 50%;
-
-    --sidebar-background: 222.2 84% 4.9%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 151 83% 42%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 346.8 77.2% 49.8%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 151 83% 42%;
+    --background: 30 20% 10%; /* Dark Earthy Brown */
+    --foreground: 40 30% 88%; /* Light Beige/Tan */
     
-    --select-item-background: 217.2 32.6% 17.5%;
+    --card: 30 20% 12%; /* Slightly darker brown for cards */
+    --card-foreground: 40 30% 88%;
+    
+    --popover: 30 20% 10%;
+    --popover-foreground: 40 30% 88%;
+    
+    --primary: 110 55% 55%; /* Slightly brighter green for dark mode */
+    --primary-foreground: 110 20% 10%; /* Very dark green for text on primary */
+    
+    --secondary: 90 35% 40%; /* Muted Olive Green */
+    --secondary-foreground: 90 30% 85%; /* Light green for text on secondary */
+    
+    --muted: 30 15% 25%; /* Darker muted brown */
+    --muted-foreground: 35 25% 60%; /* Darker muted brown for dark theme text */
+    
+    --accent: 25 55% 50%; /* Darker Terracotta */
+    --accent-foreground: 25 20% 92%; /* Off-white for text on accent */
+    
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 30 15% 30%; /* Dark earthy border */
+    --input: 30 15% 30%; /* Border color for inputs - matches general border */
+    --input-custom-background: 30 18% 18%; /* Slightly darker background for inputs in dark mode */
+    --input-hover-bg: 30 15% 22%; /* Darker hover for inputs in dark mode */
+
+    --ring: 110 55% 55%; /* Primary green for focus rings */
+
+    --chart-1: 110 55% 55%;
+    --chart-2: 25 55% 50%;
+    --chart-3: 90 35% 40%;
+    --chart-4: 30 15% 55%;
+    --chart-5: 40 30% 88%;
+
+    /* Sidebar specific colors for dark theme */
+    --sidebar-background: 30 18% 15%; 
+    --sidebar-foreground: 40 30% 80%;
+    --sidebar-primary: 110 50% 50%;
+    --sidebar-primary-foreground: 110 20% 8%;
+    --sidebar-accent: 25 50% 45%;
+    --sidebar-accent-foreground: 25 20% 90%;
+    --sidebar-border: 30 15% 25%;
+    --sidebar-ring: 110 50% 50%;
+
+    --select-item-background: 30 15% 22%;
   }
 }
 

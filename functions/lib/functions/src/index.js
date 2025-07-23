@@ -37,7 +37,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateStrainImageUrl = exports.removeDuplicateStrains = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onUserDocUpdate = exports.onUserCreated = void 0;
+exports.updateStrainImageUrl = exports.deductCreditsAndLogInteraction = exports.onPoolIssueCreated = exports.onProductRequestUpdated = exports.onProductRequestCreated = exports.onDispensaryUpdate = exports.onDispensaryCreated = exports.onUserCreated = void 0;
 const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
 const mail_1 = __importDefault(require("@sendgrid/mail"));
@@ -57,8 +57,13 @@ class HttpError extends Error {
 }
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
-    admin.initializeApp();
-    logger.info("Firebase Admin SDK initialized successfully.");
+    try {
+        admin.initializeApp();
+        logger.info("Firebase Admin SDK initialized successfully.");
+    }
+    catch (e) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
 }
 const db = admin.firestore();
 // ============== END INITIALIZATION ==============
@@ -187,17 +192,6 @@ exports.onUserCreated = (0, firestore_1.onDocumentCreated)("users/{userId}", asy
     else {
         logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
-});
-/**
- * Trigger to sync user roles from Firestore to Auth claims on document update.
- */
-exports.onUserDocUpdate = (0, firestore_1.onDocumentUpdated)("users/{userId}", async (event) => {
-    if (!event.data) {
-        logger.warn(`No data in user update event for ${event.params.userId}`);
-        return;
-    }
-    logger.log(`User document updated for ${event.params.userId}. Re-syncing claims.`);
-    await setClaimsFromDoc(event.params.userId, event.data.after.data());
 });
 /**
  * Cloud Function triggered when a new dispensary document is created.
@@ -654,63 +648,6 @@ async (req, res) => {
         else {
             res.status(500).send({ error: "Internal server error." });
         }
-    }
-});
-/**
- * Removes duplicate documents from the 'my-seeded-collection' based on the 'name' field.
- * Keeps the first encountered document for each unique name and deletes the rest.
- */
-exports.removeDuplicateStrains = (0, https_1.onRequest)({ cors: true }, async (req, res) => {
-    try {
-        const collectionRef = db.collection('my-seeded-collection');
-        const snapshot = await collectionRef.get();
-        if (snapshot.empty) {
-            res.status(200).send({ success: true, message: 'Collection is empty, no duplicates to remove.' });
-            return;
-        }
-        const seenNames = new Map(); // Map<name, docId>
-        const docsToDelete = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const name = data.name;
-            if (name && typeof name === 'string') {
-                if (seenNames.has(name)) {
-                    // This is a duplicate
-                    docsToDelete.push(doc.id);
-                }
-                else {
-                    // First time seeing this name, keep it
-                    seenNames.set(name, doc.id);
-                }
-            }
-        });
-        if (docsToDelete.length === 0) {
-            res.status(200).send({ success: true, message: 'No duplicate names found.' });
-            return;
-        }
-        // Firestore allows a maximum of 500 operations in a single batch.
-        const batchSize = 499; // Keep it slightly under 500 to be safe
-        let totalDeleted = 0;
-        for (let i = 0; i < docsToDelete.length; i += batchSize) {
-            const batchDocs = docsToDelete.slice(i, i + batchSize);
-            const batch = db.batch();
-            batchDocs.forEach(docId => {
-                batch.delete(collectionRef.doc(docId));
-            });
-            await batch.commit();
-            totalDeleted += batchDocs.length;
-            logger.info(`Committed a batch of ${batchDocs.length} deletions.`);
-        }
-        logger.info(`Successfully removed ${totalDeleted} duplicate documents.`);
-        res.status(200).send({
-            success: true,
-            message: `Successfully removed ${totalDeleted} duplicate documents.`,
-            deletedIds: docsToDelete,
-        });
-    }
-    catch (error) {
-        logger.error("Error removing duplicate strains:", error);
-        res.status(500).send({ success: false, message: 'An error occurred while removing duplicates.', error: error.message });
     }
 });
 /**
