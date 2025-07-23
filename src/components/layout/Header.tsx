@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { auth as firebaseAuthInstance } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +30,7 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      await firebaseAuthInstance.signOut();
+      await auth.signOut();
       // Clearing currentUser from AuthContext will be handled by onAuthStateChanged listener
       localStorage.removeItem('currentUserHolisticAI'); // Also explicitly clear localStorage
       toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
