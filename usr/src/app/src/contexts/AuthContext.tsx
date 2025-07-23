@@ -3,7 +3,7 @@
 
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import type { ReactNode} from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { db, auth as firebaseAuth } from '@/lib/firebase';
@@ -34,8 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribeAuth = onAuthStateChanged(firebaseAuth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
         try {
-          // **THE FIX**: Use a one-time getDoc call *after* auth state is confirmed.
-          // This prevents the race condition where Firestore is queried before the token is ready.
           const userDocRef = doc(db, 'users', firebaseUser.uid);
           const userDocSnap = await getDoc(userDocRef);
 
@@ -73,8 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             firebaseAuth.signOut(); 
           }
         } catch (error) {
-            console.error("Error fetching user document:", error);
-            // This catch is important for permission errors during the getDoc call itself
+            console.error("Error on user snapshot:", error);
             firebaseAuth.signOut();
         } finally {
             setLoading(false);
