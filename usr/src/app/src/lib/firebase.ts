@@ -14,21 +14,18 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
-let functions: Functions;
+// Singleton pattern to initialize Firebase app only once
+const getApp = (): FirebaseApp => {
+    if (getApps().length === 0) {
+        return initializeApp(firebaseConfig);
+    }
+    return getApps()[0]!;
+};
 
-if (getApps().length === 0) {
-    app = initializeApp(firebaseConfig);
-} else {
-    app = getApps()[0]!;
-}
-
-auth = getAuth(app);
-db = getFirestore(app);
-storage = getStorage(app);
-functions = getFunctions(app, 'us-central1');
+const app: FirebaseApp = getApp();
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
+const storage: FirebaseStorage = getStorage(app);
+const functions: Functions = getFunctions(app, 'us-central1');
 
 export { app, auth, db, storage, functions };

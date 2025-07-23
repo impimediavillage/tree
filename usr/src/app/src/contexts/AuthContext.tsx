@@ -3,10 +3,10 @@
 
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { db, auth } from '@/lib/firebase';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { functions, auth } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -23,84 +23,51 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Define the callable function
+const getUserProfile = httpsCallable(functions, 'getUserProfile');
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [currentDispensaryStatus, setCurrentDispensaryStatus] = useState<Dispensary['status'] | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is signed in. Fetch their profile from the backend function.
+        try {
+          // Force refresh the token to ensure it's up-to-date before calling the function.
+          await user.getIdToken(true); 
+          const result = await getUserProfile({ uid: user.uid });
+          const appUser = result.data as AppUser;
+
+          if (appUser) {
+            setCurrentUser(appUser);
+            localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+          } else {
+            // Handle case where user exists in Auth but not in Firestore.
+            throw new Error("User profile not found in database.");
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          // If fetching fails, log them out to prevent being in a broken state.
+          await auth.signOut();
+          setCurrentUser(null);
+          localStorage.removeItem('currentUserHolisticAI');
+        }
+      } else {
+        // User is signed out.
+        setCurrentUser(null);
+        localStorage.removeItem('currentUserHolisticAI');
+      }
+      setLoading(false);
     });
+
     return () => unsubscribeAuth();
   }, []);
-
-  useEffect(() => {
-    let unsubscribeUser: Unsubscribe | undefined;
-    let unsubscribeDispensary: Unsubscribe | undefined;
-
-    const setupListeners = (user: FirebaseUser) => {
-      const userDocRef = doc(db, 'users', user.uid);
-      
-      unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          const appUser: AppUser = {
-            uid: user.uid,
-            email: user.email || '',
-            displayName: userData?.displayName || user.displayName || '',
-            photoURL: userData?.photoURL || user.photoURL || null,
-            role: userData?.role || 'User',
-            dispensaryId: userData?.dispensaryId || null,
-            credits: userData?.credits ?? 0,
-            status: userData?.status || 'Active',
-            preferredDispensaryTypes: userData?.preferredDispensaryTypes || [],
-            welcomeCreditsAwarded: userData?.welcomeCreditsAwarded || false,
-            signupSource: userData?.signupSource || 'public',
-          };
-          setCurrentUser(appUser);
-          localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-          
-          if (unsubscribeDispensary) unsubscribeDispensary(); // Clear previous dispensary listener
-
-          if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-            const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-            unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
-              setCurrentDispensaryStatus(dispensaryDocSnap.exists() ? dispensaryDocSnap.data()?.status as Dispensary['status'] : null);
-            });
-          } else {
-            setCurrentDispensaryStatus(null);
-          }
-        } else {
-          console.error(`User document not found for UID: ${user.uid}. Logging out.`);
-          auth.signOut();
-        }
-        setLoading(false);
-      }, (error) => {
-        console.error("Error on user snapshot:", error);
-        setLoading(false);
-      });
-    };
   
-    if (firebaseUser) {
-      setupListeners(firebaseUser);
-    } else {
-      setCurrentUser(null);
-      setCurrentDispensaryStatus(null);
-      localStorage.removeItem('currentUserHolisticAI');
-      setLoading(false);
-    }
-  
-    return () => {
-      if (unsubscribeUser) unsubscribeUser();
-      if (unsubscribeDispensary) unsubscribeDispensary();
-    };
-  }, [firebaseUser]);
-  
-
+  // This effect handles redirection after login
   useEffect(() => {
     if (!loading && currentUser) {
         const authPages = ['/auth/signin', '/auth/signup'];
@@ -116,10 +83,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentUser, loading, pathname, router]);
 
+
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
-  const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
+  const canAccessDispensaryPanel = isDispensaryOwner && currentUser?.dispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
+  const currentDispensaryStatus = currentUser?.dispensaryStatus || null;
 
   return (
     <AuthContext.Provider value={{
