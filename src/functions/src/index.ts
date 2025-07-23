@@ -9,7 +9,7 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import type { Request, Response } from "express";
 
 // Import types
@@ -679,12 +679,9 @@ export const onPoolIssueCreated = onDocumentCreated(
 /**
  * HTTP-callable function to deduct credits and log AI interaction.
  */
-export const deductCreditsAndLogInteraction = onRequest(
-  { cors: true }, // Gen 2 CORS configuration
-  async (req: Request, res: Response) => {
-    if (req.method !== "POST") {
-      res.status(405).send({ error: "Method Not Allowed" });
-      return;
+export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
 
     const {
@@ -692,7 +689,11 @@ export const deductCreditsAndLogInteraction = onRequest(
       advisorSlug,
       creditsToDeduct,
       wasFreeInteraction,
-    } = req.body as DeductCreditsRequestBody;
+    } = request.data as DeductCreditsRequestBody;
+    
+    if (request.auth.uid !== userId) {
+        throw new HttpsError('permission-denied', 'You can only deduct credits from your own account.');
+    }
 
     if (
       !userId ||
@@ -700,11 +701,7 @@ export const deductCreditsAndLogInteraction = onRequest(
       creditsToDeduct === undefined ||
       wasFreeInteraction === undefined
     ) {
-      res.status(400).send({
-        error:
-          "Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction",
-      });
-      return;
+      throw new HttpsError('invalid-argument', 'Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction');
     }
 
     const userRef = db.collection("users").doc(userId);
@@ -715,11 +712,11 @@ export const deductCreditsAndLogInteraction = onRequest(
         await db.runTransaction(async (transaction) => {
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists) {
-            throw new HttpError(404, "User not found.", "not-found");
+            throw new HttpsError('not-found', "User not found.");
           }
           const currentCredits = (userDoc.data() as UserDocData)?.credits || 0;
           if (currentCredits < creditsToDeduct) {
-            throw new HttpError(400, "Insufficient credits.", "failed-precondition");
+            throw new HttpsError('failed-precondition', "Insufficient credits.");
           }
           newCreditBalance = currentCredits - creditsToDeduct;
           transaction.update(userRef, { credits: newCreditBalance });
@@ -730,19 +727,22 @@ export const deductCreditsAndLogInteraction = onRequest(
       } else {
         const userDoc = await userRef.get();
         if (!userDoc.exists) {
-          throw new HttpError(404, "User not found for free interaction logging.", "not-found");
+          throw new HttpsError('not-found', "User not found for free interaction logging.");
         }
         newCreditBalance = (userDoc.data() as UserDocData)?.credits || 0;
         logger.info(
           `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
         );
       }
+      
+      const userDocData = (await userRef.get()).data() as UserDocData | undefined;
 
       const logEntry = {
         userId,
+        dispensaryId: userDocData?.dispensaryId || null,
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
-        timestamp: admin.firestore.Timestamp.now() as any,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
         wasFreeInteraction,
       };
       await db.collection("aiInteractionsLog").add(logEntry);
@@ -750,21 +750,20 @@ export const deductCreditsAndLogInteraction = onRequest(
         `Logged AI interaction for user ${userId}, advisor ${advisorSlug}.`
       );
 
-      res.status(200).send({
+      return {
         success: true,
         message: "Credits updated and interaction logged successfully.",
         newCredits: newCreditBalance,
-      });
+      };
     } catch (error: any) {
-      logger.error("Error in deductCreditsAndLogInteraction:", error);
-      if (error instanceof HttpError) {
-        res.status(error.httpStatus).send({ error: error.message, code: error.code });
-      } else {
-        res.status(500).send({ error: "Internal server error." });
-      }
+        logger.error("Error in deductCreditsAndLogInteraction:", error);
+        if (error instanceof HttpsError) {
+          throw error;
+        } else {
+          throw new HttpsError('internal', 'An unexpected error occurred while processing your request.');
+        }
     }
-  }
-);
+});
 
 
 /**
@@ -795,49 +794,30 @@ export const updateStrainImageUrl = onCall(async (request) => {
 
 
 /**
- * NEW: Callable function to securely fetch a user's profile data.
- * This is called by the client after authentication to prevent race conditions.
+ * Callable function to securely fetch a user's profile data.
+ * This is the single source of truth for the client after authentication.
  */
-export const getUserProfile = onRequest({ cors: true }, async (req: Request, res: Response) => {
-    // Manually handle preflight OPTIONS request for CORS
-    if (req.method === 'OPTIONS') {
-        res.set('Access-Control-Allow-Origin', '*');
-        res.set('Access-Control-Allow-Methods', 'POST');
-        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        res.status(204).send('');
-        return;
+export const getUserProfile = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
-    
-    // Check for authorization header
-    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
-        logger.error('No authorization token was provided.');
-        res.status(403).send({ message: 'Unauthorized' });
-        return;
-    }
-
-    const idToken = req.headers.authorization.split('Bearer ')[1];
-    
+    const uid = request.auth.uid;
     try {
-        // Verify the ID token to get the user's UID. This is a secure way to identify the user.
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const uid = decodedToken.uid;
-        
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
             logger.error(`User document not found for authenticated user: ${uid}`);
-            res.status(404).send({ message: 'User profile could not be found in the database.'});
-            return;
+            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
         }
         
         const userData = userDocSnap.data() as UserDocData;
         
         let dispensaryStatus: Dispensary['status'] | null = null;
-        if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
             const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
             const dispensaryDocSnap = await dispensaryDocRef.get();
-            if(dispensaryDocSnap.exists) {
+            if (dispensaryDocSnap.exists) {
                 dispensaryStatus = dispensaryDocSnap.data()?.status || null;
             }
         }
@@ -851,7 +831,7 @@ export const getUserProfile = onRequest({ cors: true }, async (req: Request, res
         };
         
         // Return a client-safe AppUser object
-        const userProfile = {
+        return {
             uid: uid,
             email: userData.email,
             displayName: userData.displayName,
@@ -867,16 +847,9 @@ export const getUserProfile = onRequest({ cors: true }, async (req: Request, res
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
         };
-        
-        res.status(200).send(userProfile);
 
-    } catch (error: any) {
-        if (error.code === 'auth/id-token-expired') {
-            logger.error('Authentication token expired.');
-            res.status(401).send({ message: 'Token expired, please re-authenticate.' });
-        } else {
-            logger.error(`Error fetching user profile for token:`, error);
-            res.status(500).send({ message: 'An internal error occurred while fetching your profile.' });
-        }
+    } catch (error) {
+        logger.error(`Error fetching user profile for ${uid}:`, error);
+        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
     }
 });
