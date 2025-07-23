@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Building, ListChecks, CreditCard, ShieldAlert, Bell, Settings, Package, Loader2, Hourglass, DownloadCloud } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { db, functions } from '@/lib/firebase';
-import { collection, getDocs, query, where, CollectionReference, DocumentData } from 'firebase/firestore';
-import type { Dispensary } from '@/types';
-import { httpsCallable } from 'firebase/functions';
+import { collection, getDocs, query, where, CollectionReference, DocumentData, doc, getDoc } from 'firebase/firestore';
+import type { Dispensary, ScrapeLog } from '@/types';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
-
+import { formatDistanceToNow } from 'date-fns';
 
 interface StatCardProps {
   title: string;
@@ -59,26 +59,35 @@ interface QuickActionCardProps {
     title: string;
     description: string;
     icon: React.ElementType;
-    link: string;
+    link?: string;
+    onClick?: () => void;
     buttonText: string;
     disabled?: boolean;
 }
 
-const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, buttonText, disabled }) => (
-    <Card className="hover:shadow-lg transition-shadow bg-card">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl text-card-foreground">
-          <Icon className="text-accent h-6 w-6" /> {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground mb-4">{description}</p>
-        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={disabled}>
-          <Link href={disabled ? '#' : link}>{buttonText}</Link>
-        </Button>
-      </CardContent>
-    </Card>
-);
+const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, onClick, buttonText, disabled }) => {
+    const content = link ? (
+        <Link href={link}>{buttonText}</Link>
+    ) : (
+        <button onClick={onClick} className="w-full h-full flex items-center justify-center">{buttonText}</button>
+    );
+
+    return (
+        <Card className="hover:shadow-lg transition-shadow bg-card">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-xl text-card-foreground">
+            <Icon className="text-accent h-6 w-6" /> {title}
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            <p className="text-muted-foreground mb-4">{description}</p>
+            <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={disabled}>
+                {link ? <Link href={link}>{buttonText}</Link> : <span onClick={onClick}>{buttonText}</span>}
+            </Button>
+        </CardContent>
+        </Card>
+    );
+};
 
 export default function AdminDashboardOverviewPage() {
   const [stats, setStats] = useState({
@@ -88,21 +97,25 @@ export default function AdminDashboardOverviewPage() {
     activeProducts: 0, 
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isScraping, setIsScraping] = useState(false);
+  const [lastScrape, setLastScrape] = useState<ScrapeLog | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
       setIsLoadingStats(true);
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
-        
         const wellnessCollection = collection(db, "dispensaries") as CollectionReference<Dispensary, DocumentData>;
         const wellnessSnapshot = await getDocs(wellnessCollection);
-        
         const pendingWellnessQuery = query(wellnessCollection, where("status", "==", "Pending Approval"));
         const pendingWellnessSnapshot = await getDocs(pendingWellnessQuery);
-        
         const productsSnapshot = await getDocs(collection(db, "products")); 
+
+        const lastScrapeQuery = query(collection(db, "importsHistory"), orderBy('endTime', 'desc'), limit(1));
+        const lastScrapeSnapshot = await getDocs(lastScrapeQuery);
+        if (!lastScrapeSnapshot.empty) {
+            setLastScrape(lastScrapeSnapshot.docs[0].data() as ScrapeLog);
+        }
 
         setStats({
           totalUsers: usersSnapshot.size,
@@ -115,9 +128,42 @@ export default function AdminDashboardOverviewPage() {
       } finally {
         setIsLoadingStats(false);
       }
-    };
+    }, []);
+
+  useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
+
+  const handleScrape = async () => {
+    setIsScraping(true);
+    toast({
+        title: 'Scraping Initiated',
+        description: 'The product catalog scraping process has started. This may take several minutes.',
+        duration: 10000,
+    });
+    try {
+        const scrapeFunction = httpsCallable(functions, 'scrapeJustBrandCatalog');
+        const result = await scrapeFunction();
+        toast({
+            title: 'Scraping Successful',
+            description: (result.data as any)?.message || 'Catalog has been updated.',
+        });
+        fetchStats(); // Re-fetch stats to reflect any changes
+    } catch (error) {
+        console.error('Error triggering scrape function:', error);
+        let description = 'An unknown error occurred.';
+        if (error instanceof FunctionsError) {
+            description = error.message;
+        }
+        toast({
+            title: 'Scraping Failed',
+            description: description,
+            variant: 'destructive',
+        });
+    } finally {
+        setIsScraping(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -215,15 +261,15 @@ export default function AdminDashboardOverviewPage() {
             link="/admin/dashboard/pool-issues"
             buttonText="View Issues"
         />
-         <QuickActionCard
-            title="Notifications"
-            description="Manage and send platform-wide notifications."
-            icon={Bell}
-            link="/admin/dashboard/notifications"
-            buttonText="Manage Notifications"
+        <QuickActionCard
+            title="JustBrand Catalog Import"
+            description={`Import the latest product catalog from JustBrand. Last run: ${lastScrape ? formatDistanceToNow(new Date((lastScrape.endTime as any).toDate()), { addSuffix: true }) : 'never'}`}
+            icon={DownloadCloud}
+            onClick={handleScrape}
+            buttonText={isScraping ? "Scraping..." : "Run Scraper"}
+            disabled={isScraping}
         />
       </div>
-
     </div>
   );
 }

@@ -251,7 +251,7 @@ export interface User {
   credits: number;
   createdAt?: Timestamp | Date | string;
   lastLoginAt?: Timestamp | Date | string | null;
-  status?: 'Active' | 'Suspended' | 'PendingApproval';
+  status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
@@ -343,8 +343,8 @@ export type PoolIssueDocData = Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'>
 export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> & {
   uid: string;
   email: string;
-  createdAt?: Timestamp;
-  lastLoginAt?: Timestamp | null;
+  createdAt?: Timestamp | firestore.FieldValue;
+  lastLoginAt?: Timestamp | firestore.FieldValue | null;
   dispensaryStatus?: Dispensary['status'] | null;
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
@@ -365,6 +365,17 @@ export type NotificationData = Omit<Notification, 'id' | 'createdAt'> & {
 export type NoteDataCloud = Omit<NoteData, 'timestamp'> & {
   timestamp: Timestamp;
 };
+
+export interface ScrapeLog {
+  status: 'started' | 'completed' | 'failed';
+  startTime: any;
+  endTime?: any;
+  itemCount: number;
+  successCount: number;
+  failCount: number;
+  error?: string;
+  messages: string[];
+}
 
 
 // Generic Firestore Document with ID
