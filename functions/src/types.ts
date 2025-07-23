@@ -1,5 +1,6 @@
 
 
+
 import type { firestore } from 'firebase-admin/firestore';
 
 // This file can be used to share type definitions between your main app and Cloud Functions

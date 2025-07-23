@@ -64,7 +64,6 @@ export default function AromatherapyAdvisorPage() {
     } catch (e: any) {
       setError(e.message || 'Failed to get advice. Please try again.');
       toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
-      // NOTE: In a real app, you'd want a more robust way to handle credit refunds if the AI call fails after deduction.
     } finally {
       setIsLoading(false);
     }
