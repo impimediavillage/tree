@@ -21,7 +21,9 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -197,19 +199,6 @@ export const onUserCreated = onDocumentCreated(
 
 
 /**
- * Trigger to sync user roles from Firestore to Auth claims on document update.
- */
-export const onUserDocUpdate = onDocumentUpdated("users/{userId}", async (event) => {
-  if (!event.data) {
-    logger.warn(`No data in user update event for ${event.params.userId}`);
-    return;
-  }
-  logger.log(`User document updated for ${event.params.userId}. Re-syncing claims.`);
-  await setClaimsFromDoc(event.params.userId, event.data.after.data() as UserDocData);
-});
-
-
-/**
  * Cloud Function triggered when a new dispensary document is created.
  * Sends an "Application Received" email to the owner.
  */
@@ -336,8 +325,12 @@ export const onDispensaryUpdate = onDocumentUpdated(
         }
         
         await userDocRef.set(firestoreUserData, { merge: true });
-        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner. onUserDocUpdate will handle claims.`);
+        logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
+        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
+        // This ensures the role is immediately reflected in the user's auth token.
+        await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
+
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
         logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
@@ -358,7 +351,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dispensary-admin/dashboard` };
 
       } catch (claimOrFirestoreError) {
-        logger.error(`Error updating Firestore user doc or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
+        logger.error(`Error setting claims, updating Firestore user doc, or preparing email for ${userId} (Dispensary ${dispensaryId}):`, claimOrFirestoreError);
         return null;
       }
     }
@@ -644,7 +637,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "admin1@tree.com"; 
+    const superAdminEmail = "impimediavillage@gmail.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
