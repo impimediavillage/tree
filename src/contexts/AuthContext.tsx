@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { ReactNode} from 'react';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { db, auth as getAuthInstance } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -31,17 +31,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
   useEffect(() => {
-    const auth = getAuthInstance(); // Get auth instance
     let unsubscribeUser: Unsubscribe | undefined;
     let unsubscribeDispensary: Unsubscribe | undefined;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
       // Clean up previous listeners
       if (unsubscribeUser) unsubscribeUser();
       if (unsubscribeDispensary) unsubscribeDispensary();
 
       if (firebaseUser) {
-        const userDocRef = doc(db(), 'users', firebaseUser.uid);
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
 
         unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
@@ -63,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // If they are a dispensary owner, set up a listener for their dispensary status
             if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
               if (unsubscribeDispensary) unsubscribeDispensary(); // Clean up old one just in case
-              const dispensaryDocRef = doc(db(), 'dispensaries', appUser.dispensaryId);
+              const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
               unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
                 if (dispensaryDocSnap.exists()) {
                   setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
@@ -78,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
             setLoading(false);
           } else {
-            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
+            console.warn(`User document not found for UID: ${firebaseUser.uid}. Logging out for safety.`);
             auth.signOut();
           }
         }, (error) => {
@@ -98,7 +97,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (unsubscribeUser) unsubscribeUser();
       if (unsubscribeDispensary) unsubscribeDispensary();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Centralized redirection logic
