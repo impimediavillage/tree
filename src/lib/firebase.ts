@@ -16,10 +16,7 @@ const firebaseConfig = {
 
 // Singleton pattern to initialize Firebase app only once
 const getApp = (): FirebaseApp => {
-    if (getApps().length === 0) {
-        return initializeApp(firebaseConfig);
-    }
-    return getApps()[0]!;
+    return getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
 };
 
 // Export initialized services directly
