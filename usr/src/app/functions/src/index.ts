@@ -818,7 +818,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
             const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
             const dispensaryDocSnap = await dispensaryDocRef.get();
-            if(dispensaryDocSnap.exists()) {
+            if(dispensaryDocSnap.exists) {
                 dispensaryStatus = dispensaryDocSnap.data()?.status || null;
             }
         }

@@ -1,8 +1,6 @@
 
 // This file can be used to share type definitions between your main app and Cloud Functions
 import type { firestore } from 'firebase-admin';
-import { Timestamp } from 'firebase-admin/firestore';
-
 
 // Re-export comprehensive types from the main application for use in seed functions, etc.
 export type { Dispensary, User } from '../../src/types'; 
@@ -85,6 +83,7 @@ export interface UserDocData {
   signupSource?: string; // Added to match User type
   welcomeCreditsAwarded?: boolean; // Added to fix the deployment error
   preferredDispensaryTypes?: string[];
+  // Add other fields if accessed by functions
 }
 
 export interface DeductCreditsRequestBody {
