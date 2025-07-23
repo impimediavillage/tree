@@ -14,6 +14,7 @@ import type { Response } from "express";
 
 // Import types
 import type {
+  Dispensary,
   DispensaryDocData,
   ProductRequestDocData,
   PoolIssueDocData,
@@ -21,9 +22,7 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
-  ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -199,19 +198,6 @@ export const onUserCreated = onDocumentCreated(
 
 
 /**
- * Trigger to sync user roles from Firestore to Auth claims on document update.
- */
-export const onUserDocUpdate = onDocumentUpdated("users/{userId}", async (event) => {
-  if (!event.data) {
-    logger.warn(`No data in user update event for ${event.params.userId}`);
-    return;
-  }
-  logger.log(`User document updated for ${event.params.userId}. Re-syncing claims.`);
-  await setClaimsFromDoc(event.params.userId, event.data.after.data() as UserDocData);
-});
-
-
-/**
  * Cloud Function triggered when a new dispensary document is created.
  * Sends an "Application Received" email to the owner.
  */
@@ -340,7 +326,6 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await userDocRef.set(firestoreUserData, { merge: true });
         logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
-        // Explicitly set claims right after creating/updating the user doc.
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
@@ -649,7 +634,7 @@ export const onPoolIssueCreated = onDocumentCreated(
       `New pool issue ${issueId} reported by ${issue?.reporterDispensaryName || 'Unknown Reporter'} against ${issue?.reportedDispensaryName || 'Unknown Reported Party'}.`
     );
 
-    const superAdminEmail = "admin1@tree.com"; 
+    const superAdminEmail = "impimediavillage@gmail.com"; 
     if (!superAdminEmail) {
       logger.error(
         "Super Admin email is not configured. Cannot send notification for pool issue."
@@ -805,5 +790,67 @@ export const updateStrainImageUrl = onCall(async (request) => {
     } catch (error: any) {
         logger.error(`Error updating strain image URL for ${strainId}:`, error);
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
+    }
+});
+
+
+/**
+ * NEW: Callable function to securely fetch a user's profile data.
+ * This is called by the client after authentication to prevent race conditions.
+ */
+export const getUserProfile = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
+    }
+    const uid = request.auth.uid;
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDocSnap = await userDocRef.get();
+
+        if (!userDocSnap.exists) {
+            logger.error(`User document not found for authenticated user: ${uid}`);
+            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
+        }
+        
+        const userData = userDocSnap.data() as UserDocData;
+        
+        let dispensaryStatus: Dispensary['status'] | null = null;
+        if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+            const dispensaryDocSnap = await dispensaryDocRef.get();
+            if(dispensaryDocSnap.exists()) {
+                dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+            }
+        }
+        
+        const toISO = (date: any): string | null => {
+            if (!date) return null;
+            if (typeof date.toDate === 'function') return date.toDate().toISOString();
+            if (date instanceof Date) return date.toISOString();
+            if (typeof date === 'string') return date;
+            return null;
+        };
+        
+        // Return a client-safe AppUser object
+        return {
+            uid: uid,
+            email: userData.email,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            role: userData.role,
+            dispensaryId: userData.dispensaryId,
+            credits: userData.credits,
+            status: userData.status,
+            createdAt: toISO(userData.createdAt),
+            lastLoginAt: toISO(userData.lastLoginAt),
+            dispensaryStatus: dispensaryStatus, // Include dispensary status
+            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+            signupSource: userData.signupSource || 'public',
+        };
+
+    } catch (error) {
+        logger.error(`Error fetching user profile for ${uid}:`, error);
+        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
     }
 });
