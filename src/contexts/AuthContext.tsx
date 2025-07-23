@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { functions, auth } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -22,8 +23,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// **NEW**: URL for the getUserProfile function. This should be in an env file in a real project.
-const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
+const getUserProfile = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -34,43 +34,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in. Fetch their profile from the backend function.
         try {
           // Force refresh the token to ensure it's up-to-date before calling the function.
-          const idToken = await user.getIdToken(true); 
-          
-          const response = await fetch(GET_USER_PROFILE_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`,
-            },
-            body: JSON.stringify({ uid: user.uid }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-             throw new Error(errorData.message || `Server responded with status ${response.status}`);
-          }
-
-          const appUser = await response.json() as AppUser;
+          await user.getIdToken(true); 
+          const result = await getUserProfile({ uid: user.uid });
+          const appUser = result.data as AppUser;
 
           if (appUser) {
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
           } else {
-            // Handle case where user exists in Auth but not in Firestore.
             throw new Error("User profile not found in database.");
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error("Error fetching user profile:", error);
-          // If fetching fails, log them out to prevent being in a broken state.
           await auth.signOut();
           setCurrentUser(null);
           localStorage.removeItem('currentUserHolisticAI');
         }
       } else {
-        // User is signed out.
         setCurrentUser(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
@@ -80,7 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribeAuth();
   }, []);
   
-  // This effect handles redirection after login
   useEffect(() => {
     if (!loading && currentUser) {
         const authPages = ['/auth/signin', '/auth/signup'];
