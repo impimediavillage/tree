@@ -249,8 +249,8 @@ export interface User {
   dispensaryId?: string | null;
   dispensaryStatus?: Dispensary['status'] | null;
   credits: number;
-  createdAt?: string | null; 
-  lastLoginAt?: string | null;
+  createdAt?: Timestamp | Date | string;
+  lastLoginAt?: Timestamp | Date | string | null;
   status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
@@ -319,52 +319,6 @@ export interface AIAdvisorConfig {
   dataAiHint?: string | null;
 }
 
-// For Cloud Functions that might deal with raw document data before type casting
-export type DispensaryDocData = Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> & {
-  fullName?: string;
-  dispensaryName?: string; 
-  applicationDate: Timestamp;
-  approvedDate?: Timestamp;
-  lastActivityDate?: Timestamp;
-  publicStoreUrl?: string | null;
-};
-
-export type ProductRequestDocData = Omit<ProductRequest, 'id' | 'createdAt' | 'updatedAt' | 'notes'> & {
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  notes?: Array<Omit<NoteData, 'timestamp'> & { timestamp: Timestamp }>;
-};
-
-export type PoolIssueDocData = Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'> & {
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-};
-
-export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> & {
-  uid: string;
-  email: string;
-  createdAt?: Timestamp | admin.firestore.FieldValue;
-  lastLoginAt?: Timestamp | admin.firestore.FieldValue | null;
-  dispensaryStatus?: Dispensary['status'] | null;
-  preferredDispensaryTypes?: string[];
-  welcomeCreditsAwarded?: boolean;
-  signupSource?: string;
-};
-
-export type DeductCreditsRequestBody = {
-  userId: string;
-  advisorSlug: string;
-  creditsToDeduct: number;
-  wasFreeInteraction: boolean;
-};
-
-export type NotificationData = Omit<Notification, 'id' | 'createdAt'> & {
-  createdAt: Timestamp;
-};
-
-export type NoteDataCloud = Omit<NoteData, 'timestamp'> & {
-  timestamp: Timestamp;
-};
 
 // Generic Firestore Document with ID
 export interface FirestoreDocument {
