@@ -9,11 +9,12 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onRequest, Request, onCall, HttpsError } from "firebase-functions/v2/https";
-import type { Response } from "express";
+import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
+import type { Request, Response } from "express";
 
 // Import types
 import type {
+  Dispensary,
   DispensaryDocData,
   ProductRequestDocData,
   PoolIssueDocData,
@@ -21,9 +22,7 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
-  ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -799,18 +798,37 @@ export const updateStrainImageUrl = onCall(async (request) => {
  * NEW: Callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
-export const getUserProfile = onCall(async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
+export const getUserProfile = onRequest({ cors: true }, async (req: Request, res: Response) => {
+    // Manually handle preflight OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+        res.set('Access-Control-Allow-Origin', '*');
+        res.set('Access-Control-Allow-Methods', 'POST');
+        res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        res.status(204).send('');
+        return;
     }
-    const uid = request.auth.uid;
+    
+    // Check for authorization header
+    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+        logger.error('No authorization token was provided.');
+        res.status(403).send({ message: 'Unauthorized' });
+        return;
+    }
+
+    const idToken = req.headers.authorization.split('Bearer ')[1];
+    
     try {
+        // Verify the ID token to get the user's UID. This is a secure way to identify the user.
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const uid = decodedToken.uid;
+        
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
             logger.error(`User document not found for authenticated user: ${uid}`);
-            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
+            res.status(404).send({ message: 'User profile could not be found in the database.'});
+            return;
         }
         
         const userData = userDocSnap.data() as UserDocData;
@@ -819,13 +837,21 @@ export const getUserProfile = onCall(async (request) => {
         if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
             const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
             const dispensaryDocSnap = await dispensaryDocRef.get();
-            if(dispensaryDocSnap.exists()) {
+            if(dispensaryDocSnap.exists) {
                 dispensaryStatus = dispensaryDocSnap.data()?.status || null;
             }
         }
         
+        const toISO = (date: any): string | null => {
+            if (!date) return null;
+            if (typeof date.toDate === 'function') return date.toDate().toISOString();
+            if (date instanceof Date) return date.toISOString();
+            if (typeof date === 'string') return date;
+            return null;
+        };
+        
         // Return a client-safe AppUser object
-        return {
+        const userProfile = {
             uid: uid,
             email: userData.email,
             displayName: userData.displayName,
@@ -834,14 +860,23 @@ export const getUserProfile = onCall(async (request) => {
             dispensaryId: userData.dispensaryId,
             credits: userData.credits,
             status: userData.status,
+            createdAt: toISO(userData.createdAt),
+            lastLoginAt: toISO(userData.lastLoginAt),
             dispensaryStatus: dispensaryStatus, // Include dispensary status
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
         };
+        
+        res.status(200).send(userProfile);
 
-    } catch (error) {
-        logger.error(`Error fetching user profile for ${uid}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
+    } catch (error: any) {
+        if (error.code === 'auth/id-token-expired') {
+            logger.error('Authentication token expired.');
+            res.status(401).send({ message: 'Token expired, please re-authenticate.' });
+        } else {
+            logger.error(`Error fetching user profile for token:`, error);
+            res.status(500).send({ message: 'An internal error occurred while fetching your profile.' });
+        }
     }
 });

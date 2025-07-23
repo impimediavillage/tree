@@ -6,7 +6,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { functions, auth } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -23,8 +22,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the callable function
-const getUserProfile = httpsCallable(functions, 'getUserProfile');
+// **NEW**: URL for the getUserProfile function. This should be in an env file in a real project.
+const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -38,9 +37,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // User is signed in. Fetch their profile from the backend function.
         try {
           // Force refresh the token to ensure it's up-to-date before calling the function.
-          await user.getIdToken(true); 
-          const result = await getUserProfile({ uid: user.uid });
-          const appUser = result.data as AppUser;
+          const idToken = await user.getIdToken(true); 
+          
+          const response = await fetch(GET_USER_PROFILE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({ uid: user.uid }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+             throw new Error(errorData.message || `Server responded with status ${response.status}`);
+          }
+
+          const appUser = await response.json() as AppUser;
 
           if (appUser) {
             setCurrentUser(appUser);
@@ -49,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // Handle case where user exists in Auth but not in Firestore.
             throw new Error("User profile not found in database.");
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error fetching user profile:", error);
           // If fetching fails, log them out to prevent being in a broken state.
           await auth.signOut();
@@ -86,11 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
-  // Simplified logic for panel access. The role is the main driver. Status can be checked on the dashboard page.
-  const canAccessDispensaryPanel = currentUser?.role === 'DispensaryOwner'; 
+  const canAccessDispensaryPanel = isDispensaryOwner && currentUser?.dispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
-  // currentDispensaryStatus can be derived where needed from the user's dispensaryId if they are an owner.
-  // This simplifies the core auth context.
   const currentDispensaryStatus = currentUser?.dispensaryStatus || null;
 
   return (
