@@ -678,6 +678,100 @@ export const onPoolIssueCreated = onDocumentCreated(
 
 
 /**
+ * HTTP-callable function to deduct credits and log AI interaction.
+ */
+export const deductCreditsAndLogInteraction = onCall(
+  { cors: true },
+  async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+
+    const {
+      userId,
+      advisorSlug,
+      creditsToDeduct,
+      wasFreeInteraction,
+    } = request.data as DeductCreditsRequestBody;
+    
+    // Security: Ensure the user ID from the request matches the authenticated user's ID
+    if (request.auth.uid !== userId) {
+        throw new HttpsError('permission-denied', 'You can only deduct credits from your own account.');
+    }
+
+    if (
+      !userId ||
+      !advisorSlug ||
+      creditsToDeduct === undefined ||
+      wasFreeInteraction === undefined
+    ) {
+      throw new HttpsError('invalid-argument', 'Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction');
+    }
+
+    const userRef = db.collection("users").doc(userId);
+
+    try {
+      let newCreditBalance = 0;
+      if (!wasFreeInteraction) {
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          if (!userDoc.exists) {
+            throw new HttpsError('not-found', "User not found.");
+          }
+          const currentCredits = (userDoc.data() as UserDocData)?.credits || 0;
+          if (currentCredits < creditsToDeduct) {
+            throw new HttpsError('failed-precondition', "Insufficient credits.");
+          }
+          newCreditBalance = currentCredits - creditsToDeduct;
+          transaction.update(userRef, { credits: newCreditBalance });
+        });
+        logger.info(
+          `Successfully deducted ${creditsToDeduct} credits for user ${userId}. New balance: ${newCreditBalance}`
+        );
+      } else {
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) {
+          throw new HttpsError('not-found', "User not found for free interaction logging.");
+        }
+        newCreditBalance = (userDoc.data() as UserDocData)?.credits || 0;
+        logger.info(
+          `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
+        );
+      }
+      
+      const userDoc = (await userRef.get()).data() as UserDocData;
+
+      const logEntry = {
+        userId,
+        dispensaryId: userDoc.dispensaryId || null,
+        advisorSlug,
+        creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        wasFreeInteraction,
+      };
+      await db.collection("aiInteractionsLog").add(logEntry);
+      logger.info(
+        `Logged AI interaction for user ${userId}, advisor ${advisorSlug}.`
+      );
+
+      return {
+        success: true,
+        message: "Credits updated and interaction logged successfully.",
+        newCredits: newCreditBalance,
+      };
+    } catch (error: any) {
+        logger.error("Error in deductCreditsAndLogInteraction:", error);
+        if (error instanceof HttpsError) {
+          throw error;
+        } else {
+          throw new HttpsError('internal', 'An unexpected error occurred while processing your request.');
+        }
+    }
+  }
+);
+
+
+/**
  * Callable function to update the image URL for a strain in the seed data.
  * This is triggered when a strain with a "none" image is viewed.
  */
