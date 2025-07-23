@@ -85,6 +85,13 @@ export interface UserDocData {
   // Add other fields if accessed by functions
 }
 
+export interface DeductCreditsRequestBody {
+  userId: string;
+  advisorSlug: string;
+  creditsToDeduct: number;
+  wasFreeInteraction: boolean;
+}
+
 export interface NotificationData {
   recipientUid: string;
   message: string;
