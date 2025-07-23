@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // User is signed in. Fetch their profile from Firestore.
         try {
           const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await userDocRef.get();
+          const userDocSnap = await getDoc(userDocRef);
 
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data() as AppUser;
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             let dispensaryStatus: Dispensary['status'] | null = null;
             if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
                 const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
-                const dispensaryDocSnap = await dispensaryDocRef.get();
+                const dispensaryDocSnap = await getDoc(dispensaryDocRef);
                 if (dispensaryDocSnap.exists()) {
                     dispensaryStatus = dispensaryDocSnap.data().status || null;
                 }
