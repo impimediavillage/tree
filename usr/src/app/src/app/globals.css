@@ -1,0 +1,118 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  color: hsl(var(--foreground)); /* Ensure body text color is set */
+  background-color: hsl(var(--background)); /* Base background color */
+  position: relative; /* Ensure z-index stacking context for pseudo-element */
+}
+
+.background-video {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  z-index: -100;
+  object-fit: cover;
+  background-size: cover;
+}
+
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 151 83% 42%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 346.8 77.2% 49.8%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --input-custom-background: 210 40% 96.1%;
+    --input-hover-bg: 210 40% 94%;
+    --ring: 151 83% 42%;
+    --radius: 0.5rem;
+
+    --chart-1: 151 70% 50%;
+    --chart-2: 346 70% 50%;
+    --chart-3: 40 70% 50%;
+    --chart-4: 210 70% 50%;
+    --chart-5: 280 70% 50%;
+
+    --sidebar-background: 215 30% 95%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 151 83% 42%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 346.8 77.2% 49.8%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 151 83% 42%;
+
+    --select-item-background: 0 0% 100%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 151 83% 42%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 346.8 77.2% 49.8%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --input-custom-background: 217.2 32.6% 20%;
+    --input-hover-bg: 217.2 32.6% 22%;
+    --ring: 151 83% 42%;
+
+    --chart-1: 151 70% 50%;
+    --chart-2: 346 70% 50%;
+    --chart-3: 40 70% 50%;
+    --chart-4: 210 70% 50%;
+    --chart-5: 280 70% 50%;
+
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 151 83% 42%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 346.8 77.2% 49.8%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 151 83% 42%;
+    
+    --select-item-background: 217.2 32.6% 17.5%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  /* body already styled with background image and base text color */
+}
