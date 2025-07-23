@@ -131,7 +131,7 @@ export interface Product {
   priceTiers: PriceTier[]; 
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
-  imageUrls?: (string | null)[] | null;
+  imageUrls?: string[] | null;
   imageUrl?: string | null;
   labTested?: boolean;
   labTestReportUrl?: string | null;
@@ -318,7 +318,6 @@ export interface AIAdvisorConfig {
   isEnabled: boolean;
   dataAiHint?: string | null;
 }
-
 
 // For Cloud Functions that might deal with raw document data before type casting
 export type DispensaryDocData = Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> & {
