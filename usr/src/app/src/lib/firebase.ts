@@ -15,14 +15,13 @@ const firebaseConfig = {
 };
 
 // Singleton pattern to initialize Firebase app only once
-const getApp = (): FirebaseApp => {
-    if (getApps().length === 0) {
-        return initializeApp(firebaseConfig);
-    }
-    return getApps()[0]!;
-};
+let app: FirebaseApp;
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0]!;
+}
 
-const app: FirebaseApp = getApp();
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
