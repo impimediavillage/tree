@@ -21,9 +21,7 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
-  ScrapeLog
 } from "./types";
-import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -197,6 +195,7 @@ export const onUserCreated = onDocumentCreated(
   }
 );
 
+
 /**
  * Cloud Function triggered when a new dispensary document is created.
  * Sends an "Application Received" email to the owner.
@@ -326,8 +325,6 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await userDocRef.set(firestoreUserData, { merge: true });
         logger.info(`User document ${userId} in Firestore updated/created for dispensary owner.`);
         
-        // **CRITICAL FIX**: Explicitly set claims right after creating/updating the user doc.
-        // This ensures the role is immediately reflected in the user's auth token.
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
@@ -767,6 +764,7 @@ export const deductCreditsAndLogInteraction = onRequest(
     }
   }
 );
+
 
 /**
  * Callable function to update the image URL for a strain in the seed data.

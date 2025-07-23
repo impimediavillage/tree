@@ -33,16 +33,13 @@ export default function SignInPage() {
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
-      // The onAuthStateChanged listener in AuthContext will handle everything else,
-      // including setting user state and redirection.
+      // The onAuthStateChanged listener in AuthContext handles redirection.
       await signInWithEmailAndPassword(auth, data.email, data.password);
       
       toast({
         title: 'Login Successful',
         description: 'Welcome back! Redirecting you now...',
       });
-
-      // No manual redirection here. AuthContext handles it.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";

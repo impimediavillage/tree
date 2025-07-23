@@ -34,25 +34,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-    });
-    return () => unsubscribeAuth();
-  }, []);
-
-  useEffect(() => {
-    let unsubscribeDispensary: Unsubscribe | undefined;
-
-    const fetchUserData = async () => {
-      if (!firebaseUser) {
+      if (!user) {
+        // Clear all state on logout
         setCurrentUser(null);
         setCurrentDispensaryStatus(null);
         localStorage.removeItem('currentUserHolisticAI');
         setLoading(false);
-        return;
       }
+    });
 
-      setLoading(true);
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!firebaseUser) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    let unsubscribeDispensary: Unsubscribe | undefined;
+
+    const fetchUserDocument = async () => {
       try {
-        await firebaseUser.getIdToken(true); // Force refresh of the token
+        // Force refresh the token to ensure it's up-to-date before any Firestore call.
+        // This is the key fix for the race condition.
+        await firebaseUser.getIdToken(true); 
+        
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDocSnap = await getDoc(userDocRef);
 
@@ -67,6 +75,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             dispensaryId: userData?.dispensaryId || null,
             credits: userData?.credits ?? 0,
             status: userData?.status || 'Active',
+            preferredDispensaryTypes: userData?.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData?.welcomeCreditsAwarded || false,
+            signupSource: userData?.signupSource || 'public',
           };
 
           setCurrentUser(appUser);
@@ -75,24 +86,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
             const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
             unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
-              setCurrentDispensaryStatus(dispensaryDocSnap.exists() ? (dispensaryDocSnap.data()?.status as Dispensary['status']) : null);
+              if (dispensaryDocSnap.exists()) {
+                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
+              } else {
+                setCurrentDispensaryStatus(null);
+              }
             });
           } else {
             setCurrentDispensaryStatus(null);
           }
         } else {
-          console.error(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
-          auth.signOut();
+          console.error(`User document not found for UID: ${firebaseUser.uid}. Forcing logout.`);
+          await auth.signOut();
         }
       } catch (error) {
         console.error("Error fetching user document:", error);
-        auth.signOut();
+        await auth.signOut();
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
+    fetchUserDocument();
 
     return () => {
       if (unsubscribeDispensary) unsubscribeDispensary();
