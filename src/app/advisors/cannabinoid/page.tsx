@@ -11,72 +11,23 @@ import { Loader2, WandSparkles, AlertCircle } from 'lucide-react';
 import { cannabinoidAdvice, type CannabinoidAdviceInput, type CannabinoidAdviceOutput } from '@/ai/flows/cannabinoid-advice';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
-import { functions } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'cannabinoid-advisor';
-const CREDITS_PER_QUESTION = 3;
-const CREDITS_PER_RESPONSE = 3;
-const deductCreditsAndLogInteraction = httpsCallable(functions, 'deductCreditsAndLogInteraction');
+const CREDITS_TO_DEDUCT = 6; 
 
 export default function CannabinoidAdvisorPage() {
   const [issueType, setIssueType] = useState('');
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingCredits, setIsLoadingCredits] = useState(true);
+  const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
   const [result, setResult] = useState<CannabinoidAdviceOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    setIsLoadingCredits(true);
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        const user = JSON.parse(storedUserString) as User;
-        setCurrentUser(user);
-      } catch (e) {
-        console.error("Error parsing current user:", e);
-        toast({ title: "Error", description: "Could not load user data. Please try logging in again.", variant: "destructive" });
-      }
-    } else {
-       toast({ title: "Authentication Required", description: "Please log in to use the advisors.", variant: "destructive" });
-    }
-    setIsLoadingCredits(false);
-  }, [toast]);
-
-  const deductCredits = async (creditsToDeduct: number): Promise<boolean> => {
-    if (!currentUser || !currentUser.uid) {
-      toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
-      return false;
-    }
-
-    try {
-      const response: any = await deductCreditsAndLogInteraction({
-          userId: currentUser.uid,
-          advisorSlug: ADVISOR_SLUG,
-          creditsToDeduct,
-          wasFreeInteraction: false,
-      });
-
-      if(response.data.success){
-        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
-        const updatedUser = { ...currentUser, credits: response.data.newCredits };
-        setCurrentUser(updatedUser);
-        localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
-        return true;
-      } else {
-        throw new Error(response.data.error || "Failed to deduct credits.");
-      }
-    } catch (e: any) {
-      console.error("Error deducting credits:", e);
-      toast({ title: "Credit Deduction Failed", description: e.message || "An unknown error occurred.", variant: "destructive" });
-      return false;
-    }
-  };
-
+  const deductCredits = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -88,13 +39,9 @@ export default function CannabinoidAdvisorPage() {
       toast({ title: "Not Logged In", description: "Please log in to get advice.", variant: "destructive" });
       return;
     }
-    if (isLoadingCredits) {
-      toast({ title: "Please wait", description: "Loading user credit information...", variant: "default" });
-      return;
-    }
-
-    if ((currentUser.credits ?? 0) < CREDITS_PER_QUESTION) {
-      toast({ title: "Insufficient Credits", description: `You need at least ${CREDITS_PER_QUESTION} credits to ask a question. You have ${currentUser.credits ?? 0}.`, variant: "destructive" });
+    
+    if ((currentUser.credits ?? 0) < CREDITS_TO_DEDUCT) {
+      toast({ title: "Insufficient Credits", description: `You need ${CREDITS_TO_DEDUCT} credits for this advisor.`, variant: "destructive" });
       return;
     }
 
@@ -102,36 +49,28 @@ export default function CannabinoidAdvisorPage() {
     setResult(null);
     setError(null);
 
-    const questionCreditsDeducted = await deductCredits(CREDITS_PER_QUESTION);
-    if (!questionCreditsDeducted) {
-      setIsLoading(false);
-      return; 
-    }
-    
-    // Refresh user from state before next check
-    const refreshedUser = JSON.parse(localStorage.getItem('currentUserHolisticAI') || '{}');
-
-     if ((refreshedUser.credits ?? 0) < CREDITS_PER_RESPONSE) {
-      toast({ title: "Insufficient Credits for Response", description: `You need ${CREDITS_PER_RESPONSE} more credits for the AI to generate a response. Your current balance is ${refreshedUser.credits ?? 0}.`, variant: "destructive" });
-      setIsLoading(false);
-      return;
-    }
-
-
     try {
+      await deductCredits({
+          userId: currentUser.uid,
+          advisorSlug: ADVISOR_SLUG,
+          creditsToDeduct: CREDITS_TO_DEDUCT,
+          wasFreeInteraction: false,
+      });
+
+      const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
+      setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
+
+
       const input: CannabinoidAdviceInput = { issueType, description };
       const adviceOutput = await cannabinoidAdvice(input);
       setResult(adviceOutput);
 
-      const responseCreditsDeducted = await deductCredits(CREDITS_PER_RESPONSE);
-      if (!responseCreditsDeducted) {
-        toast({title: "Warning", description: "Response received, but there was an issue deducting credits for the response.", variant: "default"});
-      }
+      toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
 
     } catch (e: any) {
-      console.error("Error getting cannabinoid advice:", e);
       setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice.', variant: "destructive" });
+      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -147,14 +86,14 @@ export default function CannabinoidAdvisorPage() {
               <CardTitle className="text-3xl">Cannabinoid Advisor</CardTitle>
               <CardDescription className="text-md">
                 Get personalized advice on THC & CBD for health and wellness, based on medical knowledge.
-                Each query (question + response) costs {CREDITS_PER_QUESTION + CREDITS_PER_RESPONSE} credits.
+                Each query costs {CREDITS_TO_DEDUCT} credits.
               </CardDescription>
-               {currentUser && !isLoadingCredits && (
+               {currentUser && !authLoading && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Your credits: <span className="font-semibold text-primary">{currentUser.credits ?? 'N/A'}</span>
                 </p>
               )}
-              {isLoadingCredits && <p className="text-sm text-muted-foreground mt-1">Loading credits...</p>}
+              {authLoading && <p className="text-sm text-muted-foreground mt-1">Loading credits...</p>}
             </div>
           </div>
         </CardHeader>
@@ -168,7 +107,7 @@ export default function CannabinoidAdvisorPage() {
                 onChange={(e) => setIssueType(e.target.value)}
                 placeholder="e.g., Chronic Pain, Anxiety, Insomnia"
                 className="text-base"
-                disabled={isLoading || isLoadingCredits}
+                disabled={isLoading || authLoading}
               />
             </div>
             <div className="space-y-2">
@@ -180,7 +119,7 @@ export default function CannabinoidAdvisorPage() {
                 placeholder="Include symptoms, duration, severity, any current treatments, etc."
                 rows={6}
                 className="text-base"
-                disabled={isLoading || isLoadingCredits}
+                disabled={isLoading || authLoading}
               />
             </div>
             {error && (
@@ -189,7 +128,7 @@ export default function CannabinoidAdvisorPage() {
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-3" disabled={isLoading || isLoadingCredits || !currentUser}>
+            <Button type="submit" className="w-full text-lg py-3" disabled={isLoading || authLoading || !currentUser}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (

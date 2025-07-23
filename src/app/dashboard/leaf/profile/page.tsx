@@ -12,30 +12,30 @@ import { useEffect, useState } from 'react';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { updateProfile, updateEmail, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 const profileFormSchema = z.object({
   displayName: z.string().min(2, "Display name must be at least 2 characters.").optional(),
-  email: z.string().email("Invalid email address.").optional(),
-  currentPassword: z.string().optional(), // Required if changing email or password
+  currentPassword: z.string().optional(),
   newPassword: z.string().min(6, "New password must be at least 6 characters.").optional(),
   confirmNewPassword: z.string().optional(),
 }).refine(data => {
-  if (data.newPassword && !data.confirmNewPassword) return false; // Confirm required if new is set
+  if (data.newPassword && !data.confirmNewPassword) return false;
   return data.newPassword === data.confirmNewPassword;
 }, {
   message: "New passwords don't match.",
   path: ['confirmNewPassword'],
 }).refine(data => {
-    // If email or newPassword is being changed, currentPassword is required
-    if ((data.email && data.email !== auth.currentUser?.email) || data.newPassword) {
+    if (data.newPassword) {
         return !!data.currentPassword;
     }
     return true;
 }, {
-    message: "Current password is required to change email or password.",
+    message: "Current password is required to change your password.",
     path: ["currentPassword"],
 });
 
@@ -44,15 +44,13 @@ type ProfileFormData = z.infer<typeof profileFormSchema>;
 
 export default function LeafProfilePage() {
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       displayName: '',
-      email: '',
       currentPassword: '',
       newPassword: '',
       confirmNewPassword: '',
@@ -60,22 +58,12 @@ export default function LeafProfilePage() {
   });
 
   useEffect(() => {
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        const user = JSON.parse(storedUserString) as User;
-        setCurrentUser(user);
+    if (currentUser) {
         form.reset({
-          displayName: user.displayName || '',
-          email: user.email || '',
+          displayName: currentUser.displayName || '',
         });
-      } catch (e) {
-        console.error("Error parsing current user from localStorage", e);
-        toast({ title: "Error", description: "Could not load your profile data.", variant: "destructive" });
-      }
     }
-    setIsLoadingUser(false);
-  }, [form, toast]);
+  }, [currentUser, form]);
 
   const onSubmit = async (data: ProfileFormData) => {
     setIsLoading(true);
@@ -87,74 +75,48 @@ export default function LeafProfilePage() {
 
     try {
       const firebaseUser = auth.currentUser;
-      let needsReauth = false;
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      let somethingChanged = false;
 
-      // Check if email or password is being changed
-      if ((data.email && data.email !== firebaseUser.email) || data.newPassword) {
-        if (!data.currentPassword) {
-          form.setError("currentPassword", { type: "manual", message: "Current password is required to change email or password." });
-          setIsLoading(false);
-          return;
-        }
-        needsReauth = true;
-      }
-      
-      if (needsReauth && data.currentPassword) {
-        const credential = EmailAuthProvider.credential(firebaseUser.email!, data.currentPassword);
-        try {
-          await reauthenticateWithCredential(firebaseUser, credential);
-        } catch (reauthError: any) {
-          toast({ title: "Re-authentication Failed", description: "Incorrect current password.", variant: "destructive" });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Update display name
-      if (data.displayName && data.displayName !== firebaseUser.displayName) {
+      // Update display name if it has changed
+      if (data.displayName && data.displayName !== currentUser?.displayName) {
         await updateProfile(firebaseUser, { displayName: data.displayName });
-        await updateDoc(doc(db, "users", firebaseUser.uid), { displayName: data.displayName });
-        toast({ title: "Success", description: "Display name updated." });
+        await updateDoc(userDocRef, { displayName: data.displayName });
+        
         setCurrentUser(prev => prev ? { ...prev, displayName: data.displayName } : null);
-         if (currentUser) {
-            const updatedUserForStorage = { ...currentUser, displayName: data.displayName };
-            localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUserForStorage));
-        }
-      }
-
-      // Update email
-      if (data.email && data.email !== firebaseUser.email) {
-        await updateEmail(firebaseUser, data.email);
-        await updateDoc(doc(db, "users", firebaseUser.uid), { email: data.email });
-        toast({ title: "Success", description: "Email updated. You may need to log in again." });
-         setCurrentUser(prev => prev ? { ...prev, email: data.email! } : null);
-         if (currentUser) {
-            const updatedUserForStorage = { ...currentUser, email: data.email! };
-            localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUserForStorage));
-        }
-      }
-
-      // Update password
-      if (data.newPassword) {
-        // The actual password change should be handled by a Firebase Function or a dedicated password change flow in Firebase Auth
-        // For client-side, we re-authenticate then update password if possible, but this is less common directly for security
-        // This part is tricky from client-side if not using `updatePassword` directly after re-auth.
-        // For simplicity, we assume re-auth handles the password update.
-        // If using `updatePassword`, it would be like: await updatePassword(firebaseUser, data.newPassword);
-        toast({ title: "Password Change", description: "Password updated successfully (if re-authentication passed).", variant: "default" });
+        somethingChanged = true;
       }
       
-      form.reset({ ...form.getValues(), currentPassword: '', newPassword: '', confirmNewPassword: '' });
+      // Update password if new password is provided
+      if (data.newPassword && data.currentPassword) {
+        const credential = EmailAuthProvider.credential(firebaseUser.email!, data.currentPassword);
+        await reauthenticateWithCredential(firebaseUser, credential);
+        await updatePassword(firebaseUser, data.newPassword);
+        somethingChanged = true;
+      }
+      
+      if(somethingChanged) {
+        toast({ title: "Success", description: "Your profile has been updated." });
+        form.reset({ ...form.getValues(), currentPassword: '', newPassword: '', confirmNewPassword: '' });
+      } else {
+        toast({ title: "No Changes", description: "You did not make any changes to your profile.", variant: "default" });
+      }
 
     } catch (error: any) {
       console.error("Profile update error:", error);
-      toast({ title: "Update Failed", description: error.message || "Could not update profile.", variant: "destructive" });
+      let description = "Could not update profile.";
+      if (error.code === 'auth/wrong-password') {
+          description = "The current password you entered is incorrect.";
+      } else if (error.message) {
+          description = error.message;
+      }
+      toast({ title: "Update Failed", description: description, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
   
-  if (isLoadingUser) {
+  if (authLoading) {
     return <p>Loading profile...</p>;
   }
 
@@ -186,8 +148,8 @@ export default function LeafProfilePage() {
             </div>
             <div>
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" {...form.register("email")} />
-              {form.formState.errors.email && <p className="text-sm text-destructive mt-1">{form.formState.errors.email.message}</p>}
+              <Input id="email" type="email" value={currentUser.email} disabled readOnly />
+               <p className="text-xs text-muted-foreground mt-1">Email cannot be changed.</p>
             </div>
             
             <CardTitle 
@@ -200,7 +162,7 @@ export default function LeafProfilePage() {
             >Leave password fields blank if you do not want to change your password.</CardDescription>
             
             <div>
-              <Label htmlFor="currentPassword">Current Password (required to change email or password)</Label>
+              <Label htmlFor="currentPassword">Current Password</Label>
               <Input id="currentPassword" type="password" {...form.register("currentPassword")} />
               {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.currentPassword.message}</p>}
             </div>
