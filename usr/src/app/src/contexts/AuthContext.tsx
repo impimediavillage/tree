@@ -31,38 +31,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Step 1: Listen only for Firebase Auth user changes
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      if (!user) {
-        // Clear all state on logout
-        setCurrentUser(null);
-        setCurrentDispensaryStatus(null);
-        localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
-      }
     });
-
     return () => unsubscribeAuth();
   }, []);
 
-  // Step 2: Fetch Firestore data only after Firebase Auth user is confirmed
   useEffect(() => {
-    if (!firebaseUser) {
-      // If there's no firebase user, we're done loading.
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    let unsubscribeDispensary: Unsubscribe | undefined;
-
-    const fetchUserDocument = async () => {
-      try {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
+    if (firebaseUser) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
         if (userDocSnap.exists()) {
           const userData = userDocSnap.data();
           const appUser: AppUser = {
@@ -74,45 +53,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             dispensaryId: userData?.dispensaryId || null,
             credits: userData?.credits ?? 0,
             status: userData?.status || 'Active',
+            preferredDispensaryTypes: userData?.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData?.welcomeCreditsAwarded || false,
+            signupSource: userData?.signupSource || 'public',
           };
-
           setCurrentUser(appUser);
           localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-          
-          // If they are a dispensary owner, set up a listener for their dispensary status
-          if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-            const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-            unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
-              if (dispensaryDocSnap.exists()) {
-                setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
-              } else {
-                setCurrentDispensaryStatus(null);
-              }
-            });
-          } else {
-            setCurrentDispensaryStatus(null);
-          }
-
         } else {
           console.error(`User document not found for UID: ${firebaseUser.uid}. Logging out.`);
           auth.signOut();
         }
-      } catch (error) {
-        console.error("Error fetching user document:", error);
-        auth.signOut();
-      } finally {
         setLoading(false);
-      }
-    };
+      }, (error) => {
+        console.error("Error on user snapshot:", error);
+        setLoading(false);
+      });
 
-    fetchUserDocument();
-
-    return () => {
-      if (unsubscribeDispensary) unsubscribeDispensary();
-    };
+      return () => unsubscribeUser();
+    } else {
+      setCurrentUser(null);
+      setCurrentDispensaryStatus(null);
+      localStorage.removeItem('currentUserHolisticAI');
+      setLoading(false);
+    }
   }, [firebaseUser]);
 
-   // Centralized redirection logic
+  useEffect(() => {
+    if (currentUser?.role === 'DispensaryOwner' && currentUser.dispensaryId) {
+      const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId);
+      const unsubscribeDispensary = onSnapshot(dispensaryDocRef, (dispensaryDocSnap) => {
+        if (dispensaryDocSnap.exists()) {
+          setCurrentDispensaryStatus(dispensaryDocSnap.data()?.status as Dispensary['status']);
+        } else {
+          setCurrentDispensaryStatus(null);
+        }
+      });
+      return () => unsubscribeDispensary();
+    } else {
+      setCurrentDispensaryStatus(null);
+    }
+  }, [currentUser]);
+
+
   useEffect(() => {
     if (!loading && currentUser) {
         const authPages = ['/auth/signin', '/auth/signup'];
@@ -126,22 +108,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, loading, pathname]);
+  }, [currentUser, loading, pathname, router]);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';
   const canAccessDispensaryPanel = currentUser?.role === 'DispensaryOwner' && currentDispensaryStatus === 'Approved';
-  const isLeafUser = currentUser?.role === 'LeafUser' || currentUser?.role === 'User';
+  const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
 
   return (
-    <AuthContext.Provider value={{ 
+    <AuthContext.Provider value={{
         currentUser,
-        setCurrentUser, 
-        loading, 
-        isSuperAdmin, 
-        isDispensaryOwner, 
-        canAccessDispensaryPanel, 
+        setCurrentUser,
+        loading,
+        isSuperAdmin,
+        isDispensaryOwner,
+        canAccessDispensaryPanel,
         isLeafUser,
         currentDispensaryStatus
     }}>
