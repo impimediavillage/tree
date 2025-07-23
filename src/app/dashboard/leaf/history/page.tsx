@@ -9,59 +9,49 @@ import type { AIInteractionLog, User } from '@/types'; // Ensure AIInteractionLo
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LeafHistoryPage() {
   const [interactions, setInteractions] = useState<AIInteractionLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { currentUser, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        const user = JSON.parse(storedUserString) as User;
-        setCurrentUser(user);
-      } catch (e) {
-        console.error("Error parsing current user from localStorage", e);
+    if (authLoading) return;
+    if (!currentUser?.uid) {
         setIsLoading(false);
-      }
-    } else {
-      setIsLoading(false);
+        return;
     }
-  }, []);
 
-  useEffect(() => {
-    if (currentUser?.uid) {
-      const fetchHistory = async () => {
-        setIsLoading(true);
-        try {
-          const logsCollectionRef = collection(db, 'aiInteractionsLog');
-          const q = query(
-            logsCollectionRef, 
-            where('userId', '==', currentUser.uid),
-            orderBy('timestamp', 'desc')
-          );
-          const querySnapshot = await getDocs(q);
-          const fetchedLogs: AIInteractionLog[] = [];
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            fetchedLogs.push({
-              id: doc.id,
-              ...data,
-              timestamp: (data.timestamp as Timestamp).toDate(), // Convert Firestore Timestamp to JS Date
-            } as AIInteractionLog);
-          });
-          setInteractions(fetchedLogs);
-        } catch (error) {
-          console.error("Error fetching interaction history:", error);
-          // Handle error display to user if necessary
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchHistory();
+    const fetchHistory = async () => {
+    setIsLoading(true);
+    try {
+        const logsCollectionRef = collection(db, 'aiInteractionsLog');
+        const q = query(
+        logsCollectionRef, 
+        where('userId', '==', currentUser.uid),
+        orderBy('timestamp', 'desc')
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedLogs: AIInteractionLog[] = [];
+        querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        fetchedLogs.push({
+            id: doc.id,
+            ...data,
+            timestamp: (data.timestamp as Timestamp).toDate(), // Convert Firestore Timestamp to JS Date
+        } as AIInteractionLog);
+        });
+        setInteractions(fetchedLogs);
+    } catch (error) {
+        console.error("Error fetching interaction history:", error);
+        // Handle error display to user if necessary
+    } finally {
+        setIsLoading(false);
     }
-  }, [currentUser]);
+    };
+    fetchHistory();
+  }, [currentUser, authLoading]);
 
   return (
     <div className="space-y-6">
@@ -97,7 +87,7 @@ export default function LeafHistoryPage() {
                 {interactions.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell>
-                      {log.timestamp ? format(new Date(log.timestamp), 'PPpp') : 'N/A'}
+                      {log.timestamp ? format(new Date(log.timestamp.toString()), 'PPpp') : 'N/A'}
                     </TableCell>
                     <TableCell>{log.advisorSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</TableCell>
                     <TableCell className="text-right">{log.creditsUsed}</TableCell>

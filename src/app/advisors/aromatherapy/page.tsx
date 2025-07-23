@@ -12,66 +12,20 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { functions } from '@/lib/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ADVISOR_SLUG = 'aromatherapy-advisor';
-const CREDITS_PER_QUESTION = 1;
-const CREDITS_PER_RESPONSE = 1;
-const deductCreditsAndLogInteraction = httpsCallable(functions, 'deductCreditsAndLogInteraction');
+const CREDITS_TO_DEDUCT = 2; // Combined cost
 
 export default function AromatherapyAdvisorPage() {
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingCredits, setIsLoadingCredits] = useState(true);
+  const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
   const [result, setResult] = useState<AromatherapyAdviceOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    setIsLoadingCredits(true);
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        const user = JSON.parse(storedUserString) as User;
-        setCurrentUser(user);
-      } catch (e) {
-        console.error("Error parsing current user:", e);
-        toast({ title: "Error", description: "Could not load user data. Please try logging in again.", variant: "destructive" });
-      }
-    } else {
-      toast({ title: "Authentication Required", description: "Please log in to use the advisors.", variant: "destructive" });
-    }
-    setIsLoadingCredits(false);
-  }, [toast]);
-
-  const deductCredits = async (creditsToDeduct: number): Promise<boolean> => {
-    if (!currentUser || !currentUser.uid) {
-      toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
-      return false;
-    }
-    
-    try {
-      const response: any = await deductCreditsAndLogInteraction({
-          userId: currentUser.uid,
-          advisorSlug: ADVISOR_SLUG,
-          creditsToDeduct,
-          wasFreeInteraction: false,
-      });
-      if(response.data.success){
-        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
-        const updatedUser = { ...currentUser, credits: response.data.newCredits };
-        setCurrentUser(updatedUser);
-        localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
-        return true;
-      } else {
-        throw new Error(response.data.error || "Failed to deduct credits.");
-      }
-    } catch (e: any) {
-      console.error("Error deducting credits:", e);
-      toast({ title: "Credit Deduction Failed", description: e.message || "An unknown error occurred.", variant: "destructive" });
-      return false;
-    }
-  };
+  
+  const deductCredits = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -83,27 +37,38 @@ export default function AromatherapyAdvisorPage() {
       toast({ title: "Not Logged In", description: "Please log in to get advice.", variant: "destructive" });
       return;
     }
-    const totalCreditsNeeded = CREDITS_PER_QUESTION + CREDITS_PER_RESPONSE;
-    if ((currentUser.credits ?? 0) < totalCreditsNeeded) {
-      toast({ title: "Insufficient Credits", description: `You need ${totalCreditsNeeded} credits for a full interaction.`, variant: "destructive" });
+
+    if ((currentUser.credits ?? 0) < CREDITS_TO_DEDUCT) {
+      toast({ title: "Insufficient Credits", description: `You need ${CREDITS_TO_DEDUCT} credits for this advisor.`, variant: "destructive" });
       return;
     }
+    
     setIsLoading(true);
     setResult(null);
     setError(null);
-    const questionCreditsDeducted = await deductCredits(CREDITS_PER_QUESTION);
-    if (!questionCreditsDeducted) {
-      setIsLoading(false);
-      return;
-    }
+
     try {
+      await deductCredits({
+          userId: currentUser.uid,
+          advisorSlug: ADVISOR_SLUG,
+          creditsToDeduct: CREDITS_TO_DEDUCT,
+          wasFreeInteraction: false,
+      });
+
+      const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
+      setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
+
+
       const input: AromatherapyAdviceInput = { question: description };
       const adviceOutput = await getAromatherapyAdvice(input);
       setResult(adviceOutput);
-      await deductCredits(CREDITS_PER_RESPONSE);
+
+      toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
+
     } catch (e: any) {
       setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice.', variant: "destructive" });
+      toast({ title: "Error", description: e.message || 'Failed to get advice. Please check your network and try again.', variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -119,14 +84,14 @@ export default function AromatherapyAdvisorPage() {
               <CardTitle className="text-3xl">Aromatherapy AI</CardTitle>
               <CardDescription className="text-md">
                 Find the perfect essential oil blends for your mood, health, and home environment.
-                Each query costs {CREDITS_PER_QUESTION + CREDITS_PER_RESPONSE} credits.
+                Each query costs {CREDITS_TO_DEDUCT} credits.
               </CardDescription>
-              {currentUser && !isLoadingCredits && (
+              {currentUser && !authLoading && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Your credits: <span className="font-semibold text-primary">{currentUser.credits ?? 'N/A'}</span>
                 </p>
               )}
-              {isLoadingCredits && <p className="text-sm text-muted-foreground mt-1">Loading credits...</p>}
+              {authLoading && <p className="text-sm text-muted-foreground mt-1">Loading credits...</p>}
             </div>
           </div>
         </CardHeader>
@@ -141,7 +106,7 @@ export default function AromatherapyAdvisorPage() {
                 placeholder="e.g., I need a blend to help me relax before sleep, or what are the benefits of lavender oil?"
                 rows={6}
                 className="text-base"
-                disabled={isLoading || isLoadingCredits}
+                disabled={isLoading || authLoading}
               />
             </div>
             {error && (
@@ -150,7 +115,7 @@ export default function AromatherapyAdvisorPage() {
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-3" disabled={isLoading || isLoadingCredits || !currentUser}>
+            <Button type="submit" className="w-full text-lg py-3" disabled={isLoading || authLoading || !currentUser}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (

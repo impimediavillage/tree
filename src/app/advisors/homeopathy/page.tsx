@@ -12,10 +12,12 @@ import { Loader2, WandSparkles, AlertCircle } from 'lucide-react';
 import { getHomeopathicProductAdvice, type HomeopathicProductAdviceInput, type HomeopathicProductAdviceOutput } from '@/ai/flows/homeopathic-product-advice';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'homeopathic-advisor';
-const CREDITS_PER_QUESTION = 3;
-const CREDITS_PER_RESPONSE = 3;
+const CREDITS_TO_DEDUCT = 6;
 
 export default function HomeopathicAdvisorPage() {
   const [issueType, setIssueType] = useState('');
@@ -26,66 +28,12 @@ export default function HomeopathicAdvisorPage() {
   const [location, setLocation] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingCredits, setIsLoadingCredits] = useState(true);
+  const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
   const [result, setResult] = useState<HomeopathicProductAdviceOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    setIsLoadingCredits(true);
-    const storedUserString = localStorage.getItem('currentUserHolisticAI');
-    if (storedUserString) {
-      try {
-        const user = JSON.parse(storedUserString) as User;
-        setCurrentUser(user);
-      } catch (e) {
-        console.error("Error parsing current user:", e);
-        toast({ title: "Error", description: "Could not load user data. Please try logging in again.", variant: "destructive" });
-      }
-    } else {
-       toast({ title: "Authentication Required", description: "Please log in to use the advisors.", variant: "destructive" });
-    }
-    setIsLoadingCredits(false);
-  }, [toast]);
-
-  const deductCredits = async (creditsToDeduct: number): Promise<boolean> => {
-    if (!currentUser || !currentUser.uid) {
-      toast({ title: "Authentication Error", description: "User not found. Please log in.", variant: "destructive" });
-      return false;
-    }
-    const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
-    if (!functionUrl) {
-      console.error("Deduct credits function URL is not configured.");
-      toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
-      return false;
-    }
-    try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.uid,
-          advisorSlug: ADVISOR_SLUG,
-          creditsToDeduct,
-          wasFreeInteraction: false,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || `Failed to deduct credits (status: ${response.status})`);
-      }
-      toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
-      const updatedUser = { ...currentUser, credits: data.newCredits };
-      setCurrentUser(updatedUser);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
-      return true;
-    } catch (e: any) {
-      console.error("Error deducting credits:", e);
-      toast({ title: "Credit Deduction Failed", description: e.message || "Could not deduct credits.", variant: "destructive" });
-      return false;
-    }
-  };
+  const deductCredits = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -97,17 +45,9 @@ export default function HomeopathicAdvisorPage() {
       toast({ title: "Not Logged In", description: "Please log in to get advice.", variant: "destructive" });
       return;
     }
-    if (isLoadingCredits) {
-      toast({ title: "Please wait", description: "Loading user credit information...", variant: "default" });
-      return;
-    }
-    if ((currentUser.credits ?? 0) < CREDITS_PER_QUESTION) {
-      toast({ title: "Insufficient Credits", description: `You need at least ${CREDITS_PER_QUESTION} credits to ask. You have ${currentUser.credits ?? 0}.`, variant: "destructive" });
-      return;
-    }
-    const totalCreditsNeeded = CREDITS_PER_QUESTION + CREDITS_PER_RESPONSE;
-    if ((currentUser.credits ?? 0) < totalCreditsNeeded) {
-      toast({ title: "Insufficient Credits", description: `You need ${totalCreditsNeeded} credits for a full interaction. You have ${currentUser.credits ?? 0}.`, variant: "destructive" });
+    
+    if ((currentUser.credits ?? 0) < CREDITS_TO_DEDUCT) {
+      toast({ title: "Insufficient Credits", description: `You need ${CREDITS_TO_DEDUCT} credits for this advisor.`, variant: "destructive" });
       return;
     }
 
@@ -115,29 +55,27 @@ export default function HomeopathicAdvisorPage() {
     setResult(null);
     setError(null);
 
-    const questionCreditsDeducted = await deductCredits(CREDITS_PER_QUESTION);
-    if (!questionCreditsDeducted) {
-      setIsLoading(false);
-      return;
-    }
-    if (currentUser && (currentUser.credits ?? 0) < CREDITS_PER_RESPONSE) {
-        toast({ title: "Insufficient Credits for Response", description: `Need ${CREDITS_PER_RESPONSE} more for the response. Balance: ${currentUser.credits ?? 0}.`, variant: "destructive" });
-        setIsLoading(false);
-        return;
-    }
-
     try {
+      await deductCredits({
+          userId: currentUser.uid,
+          advisorSlug: ADVISOR_SLUG,
+          creditsToDeduct: CREDITS_TO_DEDUCT,
+          wasFreeInteraction: false,
+      });
+
+      const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
+      setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
+
       const input: HomeopathicProductAdviceInput = { issueType, description, age, gender, diet, location };
       const adviceOutput = await getHomeopathicProductAdvice(input);
       setResult(adviceOutput);
-      const responseCreditsDeducted = await deductCredits(CREDITS_PER_RESPONSE);
-      if (!responseCreditsDeducted) {
-        toast({title: "Warning", description: "Response received, credit deduction issue for response.", variant: "default"});
-      }
+
+      toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
+
     } catch (e: any) {
-      console.error("Error getting homeopathic advice:", e);
       setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice.', variant: "destructive" });
+      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -153,14 +91,14 @@ export default function HomeopathicAdvisorPage() {
               <CardTitle className="text-3xl">Homeopathic Advisor</CardTitle>
               <CardDescription className="text-md">
                 Gentle homeopathic remedies, dosage, and reputable sources.
-                Each query costs {CREDITS_PER_QUESTION + CREDITS_PER_RESPONSE} credits.
+                Each query costs {CREDITS_TO_DEDUCT} credits.
               </CardDescription>
-              {currentUser && !isLoadingCredits && (
+              {currentUser && !authLoading && (
                 <p className="text-sm text-muted-foreground mt-1">
                   Your credits: <span className="font-semibold text-primary">{currentUser.credits ?? 'N/A'}</span>
                 </p>
               )}
-              {isLoadingCredits && <p className="text-sm text-muted-foreground mt-1">Loading credits...</p>}
+              {authLoading && <p className="text-sm text-muted-foreground mt-1">Loading credits...</p>}
             </div>
           </div>
         </CardHeader>
@@ -169,21 +107,21 @@ export default function HomeopathicAdvisorPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="issueType" className="text-base">Ailment/Condition Type</Label>
-                <Input id="issueType" value={issueType} onChange={(e) => setIssueType(e.target.value)} placeholder="e.g., Cold, Headache, Skin Rash" disabled={isLoading || isLoadingCredits} />
+                <Input id="issueType" value={issueType} onChange={(e) => setIssueType(e.target.value)} placeholder="e.g., Cold, Headache, Skin Rash" disabled={isLoading || authLoading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="age" className="text-base">Age</Label>
-                <Input id="age" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g., 35 years, 6 months" disabled={isLoading || isLoadingCredits} />
+                <Input id="age" value={age} onChange={(e) => setAge(e.target.value)} placeholder="e.g., 35 years, 6 months" disabled={isLoading || authLoading} />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description" className="text-base">Detailed Description of Ailment & Symptoms</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Include onset, specific sensations, what makes it better or worse, etc." rows={5} disabled={isLoading || isLoadingCredits} />
+              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Include onset, specific sensations, what makes it better or worse, etc." rows={5} disabled={isLoading || authLoading} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="gender" className="text-base">Gender</Label>
-                <Select value={gender} onValueChange={setGender} disabled={isLoading || isLoadingCredits}>
+                <Select value={gender} onValueChange={setGender} disabled={isLoading || authLoading}>
                   <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="male">Male</SelectItem>
@@ -195,11 +133,11 @@ export default function HomeopathicAdvisorPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="diet" className="text-base">Diet</Label>
-                <Input id="diet" value={diet} onChange={(e) => setDiet(e.target.value)} placeholder="e.g., Vegetarian, Omnivore, Specific restrictions" disabled={isLoading || isLoadingCredits} />
+                <Input id="diet" value={diet} onChange={(e) => setDiet(e.target.value)} placeholder="e.g., Vegetarian, Omnivore, Specific restrictions" disabled={isLoading || authLoading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="location" className="text-base">Location (City/Region)</Label>
-                <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g., Cape Town, South Africa" disabled={isLoading || isLoadingCredits} />
+                <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g., Cape Town, South Africa" disabled={isLoading || authLoading} />
               </div>
             </div>
 
@@ -209,7 +147,7 @@ export default function HomeopathicAdvisorPage() {
                 <p className="text-sm">{error}</p>
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-3" disabled={isLoading || isLoadingCredits || !currentUser}>
+            <Button type="submit" className="w-full text-lg py-3" disabled={isLoading || authLoading || !currentUser}>
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <WandSparkles className="mr-2 h-5 w-5" />}
               Get Homeopathic Advice
             </Button>
