@@ -131,7 +131,7 @@ export interface Product {
   priceTiers: PriceTier[]; 
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
-  imageUrls?: string[] | null;
+  imageUrls?: (string | null)[] | null;
   imageUrl?: string | null;
   labTested?: boolean;
   labTestReportUrl?: string | null;
