@@ -10,11 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, WandSparkles, AlertCircle } from 'lucide-react';
 import { cannabinoidAdvice, type CannabinoidAdviceInput, type CannabinoidAdviceOutput } from '@/ai/flows/cannabinoid-advice';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/types'; // Assuming User type is defined with id and credits
+import type { User } from '@/types';
+import { functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 const ADVISOR_SLUG = 'cannabinoid-advisor';
 const CREDITS_PER_QUESTION = 3;
 const CREDITS_PER_RESPONSE = 3;
+const deductCreditsAndLogInteraction = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
 export default function CannabinoidAdvisorPage() {
   const [issueType, setIssueType] = useState('');
@@ -26,7 +29,7 @@ export default function CannabinoidAdvisorPage() {
   const { toast } = useToast();
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  // This would typically come from an auth context
+
   useEffect(() => {
     setIsLoadingCredits(true);
     const storedUserString = localStorage.getItem('currentUserHolisticAI');
@@ -50,43 +53,26 @@ export default function CannabinoidAdvisorPage() {
       return false;
     }
 
-    const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
-    if (!functionUrl) {
-      console.error("Deduct credits function URL is not configured.");
-      toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
-      return false;
-    }
-
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const response: any = await deductCreditsAndLogInteraction({
           userId: currentUser.uid,
           advisorSlug: ADVISOR_SLUG,
           creditsToDeduct,
-          wasFreeInteraction: false, // Assuming paid interaction for now
-        }),
+          wasFreeInteraction: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Failed to deduct credits (status: ${response.status})`);
-      }
-
-      toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
-      // Update local user credit count
-      setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: data.newCredits } : null);
-      // Update localStorage too
-       if (currentUser) {
-        const updatedUser = { ...currentUser, credits: data.newCredits };
+      if(response.data.success){
+        toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used.` });
+        const updatedUser = { ...currentUser, credits: response.data.newCredits };
+        setCurrentUser(updatedUser);
         localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
+        return true;
+      } else {
+        throw new Error(response.data.error || "Failed to deduct credits.");
       }
-      return true;
     } catch (e: any) {
       console.error("Error deducting credits:", e);
-      toast({ title: "Credit Deduction Failed", description: e.message || "Could not deduct credits.", variant: "destructive" });
+      toast({ title: "Credit Deduction Failed", description: e.message || "An unknown error occurred.", variant: "destructive" });
       return false;
     }
   };
@@ -107,7 +93,6 @@ export default function CannabinoidAdvisorPage() {
       return;
     }
 
-    // Check credits for question
     if ((currentUser.credits ?? 0) < CREDITS_PER_QUESTION) {
       toast({ title: "Insufficient Credits", description: `You need at least ${CREDITS_PER_QUESTION} credits to ask a question. You have ${currentUser.credits ?? 0}.`, variant: "destructive" });
       return;
@@ -117,19 +102,17 @@ export default function CannabinoidAdvisorPage() {
     setResult(null);
     setError(null);
 
-    // Deduct credits for asking the question
     const questionCreditsDeducted = await deductCredits(CREDITS_PER_QUESTION);
     if (!questionCreditsDeducted) {
       setIsLoading(false);
-      return; // Stop if deduction failed
+      return; 
     }
     
-    // Check credits for response (important if deduction for question succeeded but user is now out of credits)
-     if (currentUser && (currentUser.credits ?? 0) < CREDITS_PER_RESPONSE) {
-      toast({ title: "Insufficient Credits for Response", description: `You need ${CREDITS_PER_RESPONSE} more credits for the AI to generate a response. Your current balance is ${currentUser.credits ?? 0}.`, variant: "destructive" });
-      // Optional: Refund question credits if response cannot be processed. This adds complexity.
-      // For simplicity now, we'll assume if question deduction passed, they had enough for response too, or it's handled by a subsequent check.
-      // A better flow might be to pre-authorize total credits.
+    // Refresh user from state before next check
+    const refreshedUser = JSON.parse(localStorage.getItem('currentUserHolisticAI') || '{}');
+
+     if ((refreshedUser.credits ?? 0) < CREDITS_PER_RESPONSE) {
+      toast({ title: "Insufficient Credits for Response", description: `You need ${CREDITS_PER_RESPONSE} more credits for the AI to generate a response. Your current balance is ${refreshedUser.credits ?? 0}.`, variant: "destructive" });
       setIsLoading(false);
       return;
     }
@@ -140,10 +123,8 @@ export default function CannabinoidAdvisorPage() {
       const adviceOutput = await cannabinoidAdvice(input);
       setResult(adviceOutput);
 
-      // Deduct credits for receiving the response
       const responseCreditsDeducted = await deductCredits(CREDITS_PER_RESPONSE);
       if (!responseCreditsDeducted) {
-        // Handle this scenario - e.g., show response but with a warning about credit issue.
         toast({title: "Warning", description: "Response received, but there was an issue deducting credits for the response.", variant: "default"});
       }
 

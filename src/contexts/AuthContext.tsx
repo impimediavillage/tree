@@ -23,7 +23,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfile = httpsCallable(functions, 'getUserProfile');
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -35,9 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          // Force refresh the token to ensure it's up-to-date before calling the function.
           await user.getIdToken(true); 
-          const result = await getUserProfile({ uid: user.uid });
+          const result = await getUserProfileCallable({ uid: user.uid });
           const appUser = result.data as AppUser;
 
           if (appUser) {
