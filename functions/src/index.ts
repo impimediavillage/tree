@@ -9,7 +9,8 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onRequest, Request, onCall, HttpsError } from "firebase-functions/v2/https";
+import type { Response } from "express";
 
 // Import types
 import type {
@@ -18,9 +19,20 @@ import type {
   ProductRequestDocData,
   PoolIssueDocData,
   UserDocData,
+  DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
 } from "./types";
+
+/**
+ * Custom error class for HTTP functions to propagate status codes.
+ */
+class HttpError extends Error {
+  constructor(public httpStatus: number, public message: string, public code: string) {
+    super(message);
+    this.name = 'HttpError';
+  }
+}
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -663,6 +675,97 @@ export const onPoolIssueCreated = onDocumentCreated(
     }
     return null;
   });
+
+/**
+ * HTTP-callable function to deduct credits and log AI interaction.
+ */
+export const deductCreditsAndLogInteraction = onRequest(
+  { cors: true }, // Gen 2 CORS configuration
+  async (req: Request, res: Response) => {
+    if (req.method !== "POST") {
+      res.status(405).send({ error: "Method Not Allowed" });
+      return;
+    }
+
+    const {
+      userId,
+      advisorSlug,
+      creditsToDeduct,
+      wasFreeInteraction,
+    } = req.body as DeductCreditsRequestBody;
+
+    if (
+      !userId ||
+      !advisorSlug ||
+      creditsToDeduct === undefined ||
+      wasFreeInteraction === undefined
+    ) {
+      res.status(400).send({
+        error:
+          "Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction",
+      });
+      return;
+    }
+
+    const userRef = db.collection("users").doc(userId);
+
+    try {
+      let newCreditBalance = 0;
+      if (!wasFreeInteraction) {
+        await db.runTransaction(async (transaction) => {
+          const userDoc = await transaction.get(userRef);
+          if (!userDoc.exists) {
+            throw new HttpError(404, "User not found.", "not-found");
+          }
+          const currentCredits = (userDoc.data() as UserDocData)?.credits || 0;
+          if (currentCredits < creditsToDeduct) {
+            throw new HttpError(400, "Insufficient credits.", "failed-precondition");
+          }
+          newCreditBalance = currentCredits - creditsToDeduct;
+          transaction.update(userRef, { credits: newCreditBalance });
+        });
+        logger.info(
+          `Successfully deducted ${creditsToDeduct} credits for user ${userId}. New balance: ${newCreditBalance}`
+        );
+      } else {
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) {
+          throw new HttpError(404, "User not found for free interaction logging.", "not-found");
+        }
+        newCreditBalance = (userDoc.data() as UserDocData)?.credits || 0;
+        logger.info(
+          `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
+        );
+      }
+
+      const logEntry = {
+        userId,
+        advisorSlug,
+        creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
+        timestamp: admin.firestore.Timestamp.now() as any,
+        wasFreeInteraction,
+      };
+      await db.collection("aiInteractionsLog").add(logEntry);
+      logger.info(
+        `Logged AI interaction for user ${userId}, advisor ${advisorSlug}.`
+      );
+
+      res.status(200).send({
+        success: true,
+        message: "Credits updated and interaction logged successfully.",
+        newCredits: newCreditBalance,
+      });
+    } catch (error: any) {
+      logger.error("Error in deductCreditsAndLogInteraction:", error);
+      if (error instanceof HttpError) {
+        res.status(error.httpStatus).send({ error: error.message, code: error.code });
+      } else {
+        res.status(500).send({ error: "Internal server error." });
+      }
+    }
+  }
+);
+
 
 /**
  * Callable function to update the image URL for a strain in the seed data.

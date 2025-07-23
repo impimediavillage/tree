@@ -11,8 +11,8 @@ import { getFlowerPowerAdvice, type FlowerPowerAdviceInput, type FlowerPowerAdvi
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'flower-power-advisor';
 const CREDITS_TO_DEDUCT = 2;
@@ -45,15 +45,17 @@ export default function FlowerPowerAdvisorPage() {
     setError(null);
     
     try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
-          credits: increment(-CREDITS_TO_DEDUCT)
+      const deductCreditsAndLog = httpsCallable(functions, 'deductCreditsAndLogInteraction');
+      await deductCreditsAndLog({ 
+          userId: currentUser.uid, 
+          advisorSlug: ADVISOR_SLUG, 
+          creditsToDeduct: CREDITS_TO_DEDUCT, 
+          wasFreeInteraction: false 
       });
       
       const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
       setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
-
 
       const input: FlowerPowerAdviceInput = { question: description };
       const adviceOutput = await getFlowerPowerAdvice(input);
@@ -63,7 +65,7 @@ export default function FlowerPowerAdvisorPage() {
 
     } catch (e: any) {
       setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
+      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits may not have been charged.', variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
