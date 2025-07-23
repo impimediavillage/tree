@@ -19,23 +19,54 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authD
   console.error("CRITICAL: A Firebase configuration value (apiKey, projectId, or authDomain) is missing. Please check your .env.local file and ensure the Next.js development server was restarted after changes.");
 }
 
+// Singleton pattern to ensure Firebase is initialized only once.
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 let functions: Functions;
 
-// Singleton pattern to ensure Firebase is initialized only once.
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
 } else {
   app = getApps()[0]!;
 }
 
-auth = getAuth(app);
-db = getFirestore(app);
-storage = getStorage(app);
-functions = getFunctions(app, 'us-central1');
+// Functions to get instances, initializing them only once.
+const getDbInstance = () => {
+    if (!db) {
+        db = getFirestore(app);
+    }
+    return db;
+};
+
+const getAuthInstance = () => {
+    if (!auth) {
+        auth = getAuth(app);
+    }
+    return auth;
+};
+
+const getStorageInstance = () => {
+    if (!storage) {
+        storage = getStorage(app);
+    }
+    return storage;
+};
+
+const getFunctionsInstance = () => {
+    if (!functions) {
+        functions = getFunctions(app, 'us-central1');
+    }
+    return functions;
+};
 
 
-export { app, auth, db, storage, functions };
+// Export the getter functions
+export { 
+    app, 
+    getAuthInstance as auth, 
+    getDbInstance as db, 
+    getStorageInstance as storage, 
+    getFunctionsInstance as functions 
+};
