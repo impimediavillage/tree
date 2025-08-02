@@ -4,7 +4,7 @@
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
@@ -59,12 +59,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
           } else {
-            // Handle case where user exists in Auth but not in Firestore.
-            throw new Error("User profile not found in database.");
+            // This can happen if a user is created in Auth but their Firestore doc creation fails.
+            // It's a "ghost user" state. Logging them out is the safest recovery.
+            console.error(`User profile not found in database for UID: ${user.uid}. Logging out.`);
+            await auth.signOut();
+            setCurrentUser(null);
+            localStorage.removeItem('currentUserHolisticAI');
           }
         } catch (error) {
-          console.error("Error fetching user profile:", error);
-          // If fetching fails, log them out to prevent being in a broken state.
+          console.error("Error fetching user profile during auth state change:", error);
+          // If fetching fails for other reasons (e.g., network), log them out to prevent a broken state.
           await auth.signOut();
           setCurrentUser(null);
           localStorage.removeItem('currentUserHolisticAI');
@@ -80,16 +84,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribeAuth();
   }, []);
   
-  // This effect handles redirection after login
+  // This effect handles redirection after login based on user role
   useEffect(() => {
     if (!loading && currentUser) {
         const authPages = ['/auth/signin', '/auth/signup'];
         if(authPages.includes(pathname)) {
             if (currentUser.role === 'Super Admin') {
                 router.push('/admin/dashboard');
-            } else if (currentUser.role === 'DispensaryOwner') {
+            } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
                 router.push('/dispensary-admin/dashboard');
-            } else {
+            } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
+                router.push('/'); // Or a dedicated "pending approval" page
+            } else { // LeafUser or other roles
                 router.push('/dashboard/leaf');
             }
         }
