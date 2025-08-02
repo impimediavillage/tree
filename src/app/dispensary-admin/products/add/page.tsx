@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -7,10 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
@@ -281,16 +281,8 @@ export default function AddProductPage() {
     }
 
     if (isThcCbdSpecialType) {
-        let categoryName = '';
         const streamKey = stream as StreamKey;
-        switch(streamKey) {
-            case 'THC': categoryName = 'THC'; break;
-            case 'CBD': categoryName = 'CBD'; break;
-            case 'Apparel': categoryName = 'Apparel'; break;
-            case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
-            case 'Sticker Promo Set': categoryName = 'Sticker Promo Set'; break;
-        }
-        form.setValue('category', categoryName);
+        form.setValue('category', streamKey);
 
         const deliveryMethodsMap = (categoryStructureDoc?.categoriesData as any)?.thcCbdProductCategories?.[streamKey]?.['Delivery Methods'];
         
@@ -373,10 +365,11 @@ export default function AddProductPage() {
         setIsHomeopathicStore(isHomeoStore);
 
         if ((isCbdStore || isMushStore || isTradMedStore || isHomeoStore) && dispensaryData.dispensaryType) {
-            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', dispensaryData.dispensaryType);
-            const docSnap = await getDoc(categoriesDocRef);
-            if (docSnap.exists()) {
-                const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
+            const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
+            const querySnapshot = await getDocs(categoriesQuery);
+            
+            if (!querySnapshot.empty) {
+                const categoriesDoc = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
                 setCategoryStructureDoc(categoriesDoc);
 
                 if (isHomeoStore) {
@@ -406,7 +399,6 @@ export default function AddProductPage() {
                     console.warn("traditionalMedicineCategories is not an array as expected.");
                   }
                 }
-
             } else {
                 console.warn(`No product category structure found for type: ${dispensaryData.dispensaryType}`);
             }
