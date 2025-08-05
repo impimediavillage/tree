@@ -201,11 +201,13 @@ const baseProductObjectSchema = z.object({
   category: z.string().min(1, "Category is required."),
   
   // Cannabinoid Specific
-  productType: z.string().optional().nullable(),
+  deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
   
   // Traditional Medicine & Mushroom Specific
+  subcategory: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
+  productType: z.string().optional().nullable(),
   baseProductData: z.any().optional().nullable(), // For storing the selected mushroom base product
   
   // Strain details (shared)
