@@ -7,8 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
@@ -30,9 +31,9 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
-import { Label } from '@/components/ui/label';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -41,12 +42,6 @@ const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
-
-const feedingTypeOptions = [
-    'Organic feed in Pots', 'Organic feed Hydro', 'Chemical feed in Pots with flush',
-    'Chemical feed hydro with flush', 'Organic & Chemical in Pots Flushed', 'Organic & Chemical hydro Flushed'
-];
-
 
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
@@ -134,12 +129,13 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
   const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
-  const [categoryStructureDoc, setCategoryStructureDoc] = useState<DispensaryTypeProductCategoriesDoc | null>(null);
+  const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
-  
-  const [deliveryMethodOptions, setDeliveryMethodOptions] = useState<string[]>([]);
-  const [productSubCategoryOptions, setProductSubCategoryOptions] = useState<string[]>([]);
-
+  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
+  const [selectedMainCategoryName, setSelectedMainCategoryName] = useState<string | null>(null);
+  const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
+  const [selectedSubCategoryL1Name, setSelectedSubCategoryL1Name] = useState<string | null>(null);
+  const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   const [strainQuery, setStrainQuery] = useState('');
   const [strainSearchResults, setStrainSearchResults] = useState<any[]>([]);
@@ -148,8 +144,6 @@ export default function AddProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
-  const [showTripleSOptIn, setShowTripleSOptIn] = useState(false);
-  
   const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "creative", "energetic", "focused", "giggly", "tingly", "aroused", "hungry", "talkative"];
   const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
   const commonFlavors = [ "earthy", "sweet", "citrus", "pungent", "pine", "woody", "flowery", "spicy", "herbal", "pepper", "berry", "tropical", "lemon", "lime", "orange", "grape", "diesel", "chemical", "ammonia", "cheese", "skunk", "coffee", "nutty", "vanilla", "mint", "menthol", "blueberry", "mango", "strawberry", "pineapple", "lavender", "rose", "tar", "grapefruit", "apple", "apricot", "chestnut", "honey", "plum" ];
@@ -157,10 +151,9 @@ export default function AddProductPage() {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '', description: '', category: '', deliveryMethod: null, productSubCategory: null,
-      mostCommonTerpene: '',
-      strain: null,
-      thcContent: '0', cbdContent: '0',
+      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
+      productType: '', mostCommonTerpene: '',
+      strain: null, thcContent: '0', cbdContent: '0',
       gender: null, sizingSystem: null, sizes: [],
       currency: 'ZAR', priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
       poolPriceTiers: [],
@@ -181,7 +174,6 @@ export default function AddProductPage() {
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
-  const watchDeliveryMethod = form.watch('deliveryMethod');
 
   const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
   const showStrainFetchUI = isThcCbdSpecialType && selectedProductStream === 'THC' && watchStickerProgramOptIn === 'yes';
@@ -190,32 +182,34 @@ export default function AddProductPage() {
     form.reset({
       ...form.getValues(),
       name: form.getValues('name'), description: form.getValues('description'), priceTiers: form.getValues('priceTiers'), poolPriceTiers: form.getValues('poolPriceTiers'), isAvailableForPool: form.getValues('isAvailableForPool'), tags: form.getValues('tags'),
-      category: '', deliveryMethod: null, productSubCategory: null,
-      mostCommonTerpene: '', strain: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
+      category: '', subcategory: null, subSubcategory: null, productType: '', mostCommonTerpene: '', strain: null, thcContent: '0', cbdContent: '0', effects: [], flavors: [], medicalUses: [], gender: null, sizingSystem: null, sizes: [], stickerProgramOptIn: null, labTested: false, labTestReportUrl: null,
     });
-    setLabTestFile(null); setDeliveryMethodOptions([]); setProductSubCategoryOptions([]);
-    setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
-    setShowTripleSOptIn(false);
+    setLabTestFile(null); setSelectedMainCategoryName(null); setSubCategoryL1Options([]); setSelectedSubCategoryL1Name(null); setSubCategoryL2Options([]); setAvailableStandardSizes([]); setSelectedStrainData(null); setStrainQuery(''); setStrainSearchResults([]);
   };
 
   const handleProductStreamSelect = (stream: StreamKey) => {
-    resetProductStreamSpecificFields();
-    setSelectedProductStream(stream);
+      resetProductStreamSpecificFields();
+      setSelectedProductStream(stream);
 
-    if (stream === 'THC') {
-        setShowTripleSOptIn(true);
-        form.setValue('category', 'THC');
+      if (isThcCbdSpecialType) {
+          let categoryName = '';
+          switch(stream) {
+              case 'THC': categoryName = 'THC'; break;
+              case 'CBD': categoryName = 'CBD'; break;
+              case 'Apparel': categoryName = 'Apparel'; break;
+              case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
+              case 'Sticker Promo Set': categoryName = 'Sticker Promo Set'; break;
+          }
+          form.setValue('category', categoryName);
+          setSelectedMainCategoryName(categoryName);
 
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
-        
-        if (deliveryMethodsMap && typeof deliveryMethodsMap === 'object' && !Array.isArray(deliveryMethodsMap)) {
-            const options = Object.keys(deliveryMethodsMap).sort();
-            setDeliveryMethodOptions(options);
-        } else {
-            setDeliveryMethodOptions([]);
-            toast({ title: "Config Warning", description: "Could not load types for THC. Please check wellness type category configuration.", variant: "destructive" });
-        }
-    }
+          if (categoryStructureObject && categoryStructureObject[categoryName]) {
+              const mainCategoryData = categoryStructureObject[categoryName];
+              if(mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) {
+                 setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
+              }
+          }
+      }
   };
 
   const handleFetchStrainInfo = async () => {
@@ -248,20 +242,22 @@ export default function AddProductPage() {
         const dispensaryData = dispensarySnap.data() as Dispensary;
         setWellnessData(dispensaryData);
         form.setValue('currency', dispensaryData.currency || 'ZAR');
-        
         const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
         setIsThcCbdSpecialType(specialType);
 
         if (dispensaryData.dispensaryType) {
-            const categoriesDocRef = doc(db, 'dispensaryTypeProductCategories', "Cannibinoid store");
-            const docSnap = await getDoc(categoriesDocRef);
-            if (docSnap.exists()) {
-                setCategoryStructureDoc(docSnap.data() as DispensaryTypeProductCategoriesDoc);
-            } else {
-                console.warn(`No product category structure found for type: Cannibinoid store`);
-            }
+          const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
+          const querySnapshot = await getDocs(categoriesQuery);
+          if (!querySnapshot.empty) {
+            const docSnap = querySnapshot.docs[0];
+            const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
+            if (Array.isArray(categoriesDoc.categoriesData)) {
+              const categories = categoriesDoc.categoriesData as ProductCategory[];
+              setCategoryStructureObject(categories.reduce((acc, cat) => ({ ...acc, [cat.name]: cat }), {}));
+              setMainCategoryOptions(categories.map(c => c.name).sort());
+            } else { setCategoryStructureObject({}); setMainCategoryOptions([]); }
+          }
         }
-
       } else { toast({ title: "Error", description: "Your wellness profile data could not be found.", variant: "destructive" }); }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -277,20 +273,21 @@ export default function AddProductPage() {
   }, [watchGender, watchSizingSystem, form]);
 
   useEffect(() => {
-    if (watchDeliveryMethod) {
-        const deliveryMethodsMap = categoryStructureDoc?.categoriesData?.thcCbdProductCategories?.THC?.['Delivery Methods'];
-        const subcategories = deliveryMethodsMap?.[watchDeliveryMethod];
-
-        if (Array.isArray(subcategories) && subcategories.length > 0) {
-            setProductSubCategoryOptions(subcategories.sort());
-        } else {
-            setProductSubCategoryOptions([]);
-        }
-        form.setValue('productSubCategory', null);
-    } else {
-        setProductSubCategoryOptions([]);
+    if (categoryStructureObject && selectedMainCategoryName) {
+        const mainCategoryData = categoryStructureObject[selectedMainCategoryName];
+        if (mainCategoryData && mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) { setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort()); } else { setSubCategoryL1Options([]); }
+        setSelectedSubCategoryL1Name(null); form.setValue('subcategory', null);
     }
-  }, [watchDeliveryMethod, categoryStructureDoc, form]);
+  }, [selectedMainCategoryName, categoryStructureObject, form]);
+
+  useEffect(() => {
+    if (categoryStructureObject && selectedMainCategoryName && selectedSubCategoryL1Name) {
+        const mainCategoryData = categoryStructureObject[selectedMainCategoryName];
+        const subCat1Data = mainCategoryData?.subcategories?.find((sc: any) => sc.name === selectedSubCategoryL1Name);
+        if (subCat1Data && subCat1Data.subcategories && subCat1Data.subcategories.length > 0) { setSubCategoryL2Options(subCat1Data.subcategories.map((c: any) => c.name).sort()); } else { setSubCategoryL2Options([]); }
+        form.setValue('subSubcategory', null);
+    } else { setSubCategoryL2Options([]); }
+  }, [selectedSubCategoryL1Name, selectedMainCategoryName, categoryStructureObject, form]);
   
   useEffect(() => {
     if (selectedStrainData) {
@@ -355,9 +352,7 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="default" onClick={() => router.push('/dispensary-admin/products')} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
-            </Button>
+            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {wellnessData?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{wellnessData.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
@@ -370,49 +365,31 @@ export default function AddProductPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
+                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
             )}
              
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader className="p-6">
-                       <div className="grid grid-cols-2 gap-4 w-full max-w-lg mx-auto">
-                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t44.jpg" alt="Sticker promo placeholder 1" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                           <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="/images/2025-triple-s/t42.jpg" alt="Sticker promo placeholder 2" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                       </div>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-3 text-orange-800"><Star className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) club</CardTitle>
                     </CardHeader>
-                    <CardContent className="px-6 pb-6 text-center">
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-bold text-orange-800">The Triple S Canna club</h3>
-                            <p className="text-lg italic text-orange-900/80">
-                                <span className="text-base">Your</span>{' '}
-                                <span className="font-bold text-xl not-italic">Strain-Sticker-Sample</span>{' '}
-                                <span className="text-base">club.</span>
-                            </p>
+                    <CardContent className="grid md:grid-cols-2 gap-6 items-start">
+                        <div className="space-y-4">
+                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
+                                <FormItem className="space-y-3">
+                                <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
+                                 <FormDescription className="text-orange-900/90 text-sm">
+                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
+                                </FormDescription>
+                                <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
+                                </FormItem>
+                            )} />
                         </div>
-                        <div className='space-y-3 text-orange-900/90 text-sm leading-relaxed max-w-2xl mx-auto pt-4'>
-                            <p>Attach your garden delights to a sticker. Set your sticker design price and offer free samples to fellow cannabis enthusiasts.</p>
-                            <p>Shoppers can generate and purchase stickers for caps, hoodies, t-shirts and as standalone stickers.</p>
-                            <p className='font-semibold'>Happy sharing your free samples, and awesome on the fly AI strain sticker designs with fellow cannabis enthusiasts. OneLove</p>
-                        </div>
-                         <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                            <FormItem className="space-y-3 pt-6 mt-6 border-t border-orange-200/50">
-                            <FormLabel className="text-base font-semibold text-gray-800 block text-center">Do you want to participate for this product?</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2 max-w-md mx-auto">
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage className="text-center" />
-                            </FormItem>
-                        )} />
+                         <div className="grid grid-cols-2 gap-3">
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                         </div>
                     </CardContent>
                 </Card>
             )}
@@ -488,31 +465,33 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
-                    <div className="grid md:grid-cols-2 gap-4">
-                       {isThcCbdSpecialType ? (
-                           <>
-                             <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Select product type: *</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); }} value={field.value || ''} disabled={deliveryMethodOptions.length === 0}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a product type..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{deliveryMethodOptions.map((opt: string) => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                     <div className="grid md:grid-cols-2 gap-4">
+                        {!isThcCbdSpecialType && (
+                            <FormField control={form.control} name="category" render={({ field }) => (
+                                <FormItem><FormLabel>Main Category *</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
+                                    <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage /></FormItem>
                             )} />
-                            {productSubCategoryOptions.length > 0 && (
-                                <FormField control={form.control} name="productSubCategory" render={({ field }) => (
-                                    <FormItem><FormLabel>Product Sub Category</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger></FormControl>
-                                        <SelectContent>{productSubCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                                    </Select><FormMessage /></FormItem>
-                                )} />
-                            )}
-                           </>
-                        ) : (
-                            <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        )}
+                        {subCategoryL1Options.length > 0 && (
+                            <FormField control={form.control} name="subcategory" render={({ field }) => (
+                                <FormItem><FormLabel>Subcategory (Level 1)</FormLabel>
+                                <Select onValueChange={(value) => { field.onChange(value); setSelectedSubCategoryL1Name(value); form.setValue('subSubcategory', null); }} value={field.value || ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger></FormControl>
+                                    <SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
+                        )}
+                        {subCategoryL2Options.length > 0 && (
+                            <FormField control={form.control} name="subSubcategory" render={({ field }) => (
+                                <FormItem><FormLabel>Subcategory (Level 2)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || ''}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory" /></SelectTrigger></FormControl>
+                                    <SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                                </Select><FormMessage /></FormItem>
+                            )} />
                         )}
                     </div>
                     
