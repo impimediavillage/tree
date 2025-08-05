@@ -329,7 +329,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
-        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
+        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp(), ownerId: userId });
         logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
@@ -396,7 +396,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
     else if (previousValue && newValue.status === previousValue.status) {
       const beforeDataForCompare = { ...previousValue };
       const afterDataForCompare = { ...newValue };
-      const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount'];
+      const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount', 'ownerId'];
       fieldsToIgnore.forEach(field => {
         delete (beforeDataForCompare as any)[field];
         delete (afterDataForCompare as any)[field];

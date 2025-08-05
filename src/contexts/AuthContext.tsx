@@ -4,7 +4,7 @@
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
@@ -30,17 +30,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // User is signed in. Fetch their profile from Firestore.
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
+  const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
+    try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-          if (userDocSnap.exists()) {
+        if (userDocSnap.exists()) {
             const userData = userDocSnap.data() as AppUser;
-
+            
             let dispensaryStatus: Dispensary['status'] | null = null;
             if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
                 const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
@@ -58,23 +55,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             setCurrentUser(appUser);
             localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-          } else {
-            // This can happen if a user is created in Auth but their Firestore doc creation fails.
-            // It's a "ghost user" state. Logging them out is the safest recovery.
+            return appUser;
+        } else {
             console.error(`User profile not found in database for UID: ${user.uid}. Logging out.`);
-            await auth.signOut();
-            setCurrentUser(null);
-            localStorage.removeItem('currentUserHolisticAI');
-          }
-        } catch (error) {
-          console.error("Error fetching user profile during auth state change:", error);
-          // If fetching fails for other reasons (e.g., network), log them out to prevent a broken state.
-          await auth.signOut();
-          setCurrentUser(null);
-          localStorage.removeItem('currentUserHolisticAI');
+            throw new Error("User profile not found.");
         }
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        await auth.signOut();
+        setCurrentUser(null);
+        localStorage.removeItem('currentUserHolisticAI');
+        return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await fetchUserProfile(user);
       } else {
-        // User is signed out.
         setCurrentUser(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
@@ -82,9 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribeAuth();
-  }, []);
+  }, [fetchUserProfile]);
   
-  // This effect handles redirection after login based on user role
+  // This effect handles redirection after login
   useEffect(() => {
     if (!loading && currentUser) {
         const authPages = ['/auth/signin', '/auth/signup'];
