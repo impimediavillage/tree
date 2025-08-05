@@ -442,12 +442,10 @@ export default function AddProductPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Effects</h4>
-                                        <PercentageKeyInfo />
                                         <div className="flex flex-wrap gap-2">{form.getValues('effects')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('effect', i))}>{item.name} ({item.percentage})</Badge>)}</div>
                                       </div>
                                       <div className="space-y-2">
                                         <h4 className="font-semibold text-foreground">Medical Uses</h4>
-                                         <PercentageKeyInfo />
                                         <div className="flex flex-wrap gap-2">{form.getValues('medicalUses')?.map((item: ProductAttribute, i: number) => <Badge key={i} className={cn("text-sm", getBadgeColor('medical', i))}>{item.name} ({item.percentage})</Badge>)}</div>
                                       </div>
                                       <div className="space-y-2">
@@ -502,7 +500,6 @@ export default function AddProductPage() {
                           <FormField control={form.control} name="effects" render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Effects</FormLabel>
-                                  <PercentageKeyInfo />
                                   <AddAttributeInputs onAdd={(name, percentage) => appendEffect({ name: toTitleCase(name), percentage: percentage + '%' })} />
                                   <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
                                       {effectsFields.map((item, index) => (
@@ -519,7 +516,6 @@ export default function AddProductPage() {
                           <FormField control={form.control} name="medicalUses" render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Medical Uses</FormLabel>
-                                  <PercentageKeyInfo />
                                   <AddAttributeInputs onAdd={(name, percentage) => appendMedicalUse({ name: toTitleCase(name), percentage: percentage + '%' })} />
                                   <div className="flex flex-wrap gap-2 min-h-[34px] p-2 border rounded-md bg-background">
                                       {medicalUsesFields.map((item, index) => (
