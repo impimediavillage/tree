@@ -1,10 +1,12 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDispensaryData } from '@/contexts/DispensaryDataContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { StickerSet } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +16,6 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
-import Link from 'next/link';
 
 const themeDisplay: Record<StickerSet['theme'], string> = {
   clay: '3D Clay',
@@ -26,46 +27,15 @@ const themeDisplay: Record<StickerSet['theme'], string> = {
 
 export default function PromoCollectionsPage() {
   const { currentUser, loading: authLoading } = useAuth();
+  const { stickerSets, isLoading, fetchDispensaryData } = useDispensaryData();
   const { toast } = useToast();
-  const [stickerSets, setStickerSets] = useState<StickerSet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchStickerSets = useCallback(async () => {
-    if (!currentUser?.uid) return;
-    setIsLoading(true);
-    try {
-      const setsQuery = query(
-        collection(db, 'stickersets'),
-        where('creatorUid', '==', currentUser.uid),
-        orderBy('createdAt', 'desc')
-      );
-      const querySnapshot = await getDocs(setsQuery);
-      const sets = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: (doc.data().createdAt as any).toDate(),
-      } as StickerSet));
-      setStickerSets(sets);
-    } catch (error) {
-      console.error("Error fetching sticker sets:", error);
-      toast({ title: "Error", description: "Could not load your sticker sets.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser?.uid, toast]);
-
-  useEffect(() => {
-    if (!authLoading) {
-      fetchStickerSets();
-    }
-  }, [authLoading, fetchStickerSets]);
 
   const handleTogglePublic = async (set: StickerSet) => {
     if (!set.id) return;
     const newStatus = !set.isPublic;
     try {
       await updateDoc(doc(db, 'stickersets', set.id), { isPublic: newStatus });
-      setStickerSets(prev => prev.map(s => s.id === set.id ? { ...s, isPublic: newStatus } : s));
+      await fetchDispensaryData();
       toast({ title: "Visibility Updated", description: `${set.name} is now ${newStatus ? 'public' : 'private'}.` });
     } catch (error) {
       console.error("Error toggling public status:", error);
@@ -77,7 +47,7 @@ export default function PromoCollectionsPage() {
     if (!set.id) return;
     try {
       await deleteDoc(doc(db, 'stickersets', set.id));
-      setStickerSets(prev => prev.filter(s => s.id !== set.id));
+      await fetchDispensaryData();
       toast({ title: "Set Deleted", description: `${set.name} has been permanently deleted.` });
     } catch (error) {
       console.error("Error deleting set:", error);
