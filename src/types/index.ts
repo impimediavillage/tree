@@ -311,27 +311,27 @@ export interface AIAdvisorConfig {
 }
 
 // For Cloud Functions that might deal with raw document data before type casting
-export type DispensaryDocData = Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> & {
+export interface DispensaryDocData extends Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> {
   fullName?: string;
   dispensaryName?: string; 
   applicationDate: Timestamp;
   approvedDate?: Timestamp;
   lastActivityDate?: Timestamp;
   publicStoreUrl?: string | null;
-};
+}
 
-export type ProductRequestDocData = Omit<ProductRequest, 'id' | 'createdAt' | 'updatedAt' | 'notes'> & {
+export interface ProductRequestDocData extends Omit<ProductRequest, 'id' | 'createdAt' | 'updatedAt' | 'notes'> {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   notes?: Array<Omit<NoteData, 'timestamp'> & { timestamp: Timestamp }>;
-};
+}
 
-export type PoolIssueDocData = Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'> & {
+export interface PoolIssueDocData extends Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'> {
   createdAt: Timestamp;
   updatedAt: Timestamp;
-};
+}
 
-export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> & {
+export interface UserDocData extends Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> {
   uid: string;
   email: string;
   createdAt?: Timestamp | import('firebase-admin/firestore').FieldValue;
@@ -340,22 +340,22 @@ export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispe
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
   signupSource?: string;
-};
+}
 
-export type DeductCreditsRequestBody = {
+export interface DeductCreditsRequestBody {
   userId: string;
   advisorSlug: string;
   creditsToDeduct: number;
   wasFreeInteraction: boolean;
-};
+}
 
-export type NotificationData = Omit<Notification, 'id' | 'createdAt'> & {
+export interface NotificationData extends Omit<Notification, 'id' | 'createdAt'> {
   createdAt: Timestamp;
-};
+}
 
-export type NoteDataCloud = Omit<NoteData, 'timestamp'> & {
+export interface NoteDataCloud extends Omit<NoteData, 'timestamp'> {
   timestamp: Timestamp;
-};
+}
 
 export interface ScrapeLog {
   status: 'started' | 'completed' | 'failed';
@@ -448,4 +448,17 @@ export interface StickerSet {
   salesCount: number;
   viewCount: number;
   createdAt: Timestamp | Date | string;
+}
+
+// Add dispensary to AuthContextType
+export interface AuthContextType {
+  currentUser: User | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  currentDispensary: Dispensary | null;
+  loading: boolean;
+  isSuperAdmin: boolean;
+  isDispensaryOwner: boolean;
+  canAccessDispensaryPanel: boolean;
+  isLeafUser: boolean;
+  currentDispensaryStatus: Dispensary['status'] | null;
 }

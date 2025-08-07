@@ -13,6 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 interface AuthContextType {
   currentUser: AppUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
+  currentDispensary: Dispensary | null; // Add dispensary to the context
   loading: boolean;
   isSuperAdmin: boolean;
   isDispensaryOwner: boolean;
@@ -26,6 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -39,11 +41,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userData = userDocSnap.data() as AppUser;
             
             let dispensaryStatus: Dispensary['status'] | null = null;
+            let dispensaryData: Dispensary | null = null;
+
             if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
                 const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
                 const dispensaryDocSnap = await getDoc(dispensaryDocRef);
                 if (dispensaryDocSnap.exists()) {
-                    dispensaryStatus = dispensaryDocSnap.data().status || null;
+                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data()} as Dispensary;
+                    dispensaryStatus = dispensaryData.status || null;
+                    setCurrentDispensary(dispensaryData);
                 }
             }
             
@@ -64,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error fetching user profile:", error);
         await auth.signOut();
         setCurrentUser(null);
+        setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
         return null;
     }
@@ -75,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await fetchUserProfile(user);
       } else {
         setCurrentUser(null);
+        setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
       setLoading(false);
@@ -112,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
         currentUser,
         setCurrentUser,
+        currentDispensary,
         loading,
         isSuperAdmin,
         isDispensaryOwner,
