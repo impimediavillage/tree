@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, WandSparkles, AlertCircle, Brain } from 'lucide-react';
 import { mushroomRecommendation, type MushroomRecommendationInput, type MushroomRecommendationOutput } from '@/ai/flows/mushroom-recommendation';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'mushroom-advisor';
 const CREDITS_TO_DEDUCT = 6;
+
+const deductCreditsAndLog = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
 export default function MushroomAdvisorPage() {
   const [issueType, setIssueType] = useState('');
@@ -48,12 +49,16 @@ export default function MushroomAdvisorPage() {
     setError(null);
 
     try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
-          credits: increment(-CREDITS_TO_DEDUCT)
+      const creditResult = await deductCreditsAndLog({ 
+        userId: currentUser.uid, 
+        advisorSlug: ADVISOR_SLUG, 
+        creditsToDeduct: CREDITS_TO_DEDUCT, 
+        wasFreeInteraction: false 
       });
+
+      const { success, newCredits, message } = creditResult.data as { success: boolean; newCredits: number; message?: string; };
+      if (!success) { throw new Error(message || "Credit deduction failed."); }
       
-      const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
       setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
       
@@ -64,8 +69,9 @@ export default function MushroomAdvisorPage() {
       toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
 
     } catch (e: any) {
-      setError(e.message || 'Failed to get recommendation. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get recommendation. Your credits were not charged.', variant: "destructive" });
+      const errorMessage = e.message || 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

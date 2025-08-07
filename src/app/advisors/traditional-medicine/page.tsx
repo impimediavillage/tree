@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,13 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, WandSparkles, AlertCircle, HandHelping } from 'lucide-react';
 import { traditionalMedicineAdvice, type TraditionalMedicineAdviceInput, type TraditionalMedicineAdviceOutput } from '@/ai/flows/traditional-medicine-advice';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'traditional-medicine-advisor';
 const CREDITS_TO_DEDUCT = 6;
+
+const deductCreditsAndLog = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
 export default function TraditionalMedicineAdvisorPage() {
   const [issueType, setIssueType] = useState('');
@@ -49,12 +50,16 @@ export default function TraditionalMedicineAdvisorPage() {
     setError(null);
 
     try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
-          credits: increment(-CREDITS_TO_DEDUCT)
+      const creditResult = await deductCreditsAndLog({ 
+        userId: currentUser.uid, 
+        advisorSlug: ADVISOR_SLUG, 
+        creditsToDeduct: CREDITS_TO_DEDUCT, 
+        wasFreeInteraction: false 
       });
 
-      const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
+      const { success, newCredits, message } = creditResult.data as { success: boolean; newCredits: number; message?: string; };
+      if (!success) { throw new Error(message || "Credit deduction failed."); }
+      
       setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
 
@@ -66,8 +71,9 @@ export default function TraditionalMedicineAdvisorPage() {
       toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
 
     } catch (e: any) {
-      setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
+      const errorMessage = e.message || 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }

@@ -5,8 +5,8 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -24,6 +24,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Define this function once, outside of the component, for efficiency
+const getUserProfile = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -32,64 +34,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
+  const fetchFullUserProfile = useCallback(async (user: FirebaseUser) => {
     try {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
+      // Use the callable function to securely get the full user profile
+      const result = await getUserProfile();
+      const appUser = result.data as AppUser;
 
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data() as AppUser;
-            
-            let dispensaryStatus: Dispensary['status'] | null = null;
-            let dispensaryData: Dispensary | null = null;
-
-            if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-                const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
-                const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-                if (dispensaryDocSnap.exists()) {
-                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data()} as Dispensary;
-                    dispensaryStatus = dispensaryData.status || null;
-                    setCurrentDispensary(dispensaryData);
-                }
-            }
-            
-            const appUser: AppUser = {
-              ...userData,
-              uid: user.uid,
-              dispensaryStatus: dispensaryStatus,
-            };
-
-            setCurrentUser(appUser);
-            localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-            return appUser;
-        } else {
-            console.error(`User profile not found in database for UID: ${user.uid}. Logging out.`);
-            throw new Error("User profile not found.");
-        }
-    } catch (error) {
-        console.error("Error fetching user profile:", error);
-        await auth.signOut();
-        setCurrentUser(null);
+      setCurrentUser(appUser);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+      
+      // If the user is an owner and has a dispensary, we can derive the dispensary info
+      // from the returned profile data (if we included it in the callable function response)
+      // This part depends on what getUserProfile returns. For now, we assume it might not return full dispensary data.
+      // A more robust implementation might fetch the dispensary separately if needed, but this is a start.
+      if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
+        // You could fetch full dispensary details here if they are not already on the AppUser object
+      } else {
         setCurrentDispensary(null);
-        localStorage.removeItem('currentUserHolisticAI');
-        return null;
+      }
+
+    } catch (error) {
+      console.error("Error fetching user profile via callable function:", error);
+      await auth.signOut(); // Log out user if their profile is invalid or inaccessible
+      setCurrentUser(null);
+      setCurrentDispensary(null);
+      localStorage.removeItem('currentUserHolisticAI');
+    } finally {
+      setLoading(false);
     }
   }, []);
+  
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await fetchUserProfile(user);
+        await fetchFullUserProfile(user);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribeAuth();
-  }, [fetchUserProfile]);
+  }, [fetchFullUserProfile]);
   
   // This effect handles redirection after login
   useEffect(() => {

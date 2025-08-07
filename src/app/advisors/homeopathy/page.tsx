@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,13 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, WandSparkles, AlertCircle } from 'lucide-react';
 import { getHomeopathicProductAdvice, type HomeopathicProductAdviceInput, type HomeopathicProductAdviceOutput } from '@/ai/flows/homeopathic-product-advice';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, updateDoc, increment } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'homeopathic-advisor';
 const CREDITS_TO_DEDUCT = 6;
+
+const deductCreditsAndLog = httpsCallable(functions, 'deductCreditsAndLogInteraction');
 
 export default function HomeopathicAdvisorPage() {
   const [issueType, setIssueType] = useState('');
@@ -54,12 +55,16 @@ export default function HomeopathicAdvisorPage() {
     setError(null);
 
     try {
-      const userDocRef = doc(db, 'users', currentUser.uid);
-      await updateDoc(userDocRef, {
-          credits: increment(-CREDITS_TO_DEDUCT)
+      const creditResult = await deductCreditsAndLog({ 
+        userId: currentUser.uid, 
+        advisorSlug: ADVISOR_SLUG, 
+        creditsToDeduct: CREDITS_TO_DEDUCT, 
+        wasFreeInteraction: false 
       });
+
+      const { success, newCredits, message } = creditResult.data as { success: boolean; newCredits: number; message?: string; };
+      if (!success) { throw new Error(message || "Credit deduction failed."); }
       
-      const newCredits = (currentUser.credits ?? 0) - CREDITS_TO_DEDUCT;
       setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
 
@@ -70,8 +75,9 @@ export default function HomeopathicAdvisorPage() {
       toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
 
     } catch (e: any) {
-      setError(e.message || 'Failed to get advice. Please try again.');
-      toast({ title: "Error", description: e.message || 'Failed to get advice. Your credits were not charged.', variant: "destructive" });
+      const errorMessage = e.message || 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
