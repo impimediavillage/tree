@@ -1,11 +1,12 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { db, storage } from '@/lib/firebase';
-import { collection, query, where, orderBy, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, where, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
-import type { Product, Dispensary } from '@/types';
+import type { Product, DispensaryType, Dispensary } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,6 @@ import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PRODUCTS_PER_PAGE = 24;
-const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 
 export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -26,27 +26,16 @@ export default function WellnessProductsPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [currentDispensaryType, setCurrentDispensaryType] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchWellnessTypeAndProducts = useCallback(async () => {
+  const fetchProductsForDispensary = useCallback(async () => {
     if (!currentUser?.dispensaryId) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
     try {
-      // Fetch wellness store type
-      const dispensaryDocRef = doc(db, 'dispensaries', currentUser.dispensaryId);
-      const dispensarySnap = await getDoc(dispensaryDocRef);
-      if (dispensarySnap.exists()) {
-        const dispensaryData = dispensarySnap.data() as Dispensary;
-        setCurrentDispensaryType(dispensaryData.dispensaryType);
-      } else {
-        toast({ title: "Error", description: "Your wellness store details could not be found.", variant: "destructive" });
-      }
-
-      // Fetch products
       const productsCollectionRef = collection(db, 'products');
       const q = query(
         productsCollectionRef,
@@ -55,11 +44,14 @@ export default function WellnessProductsPage() {
       );
       const querySnapshot = await getDocs(q);
       const fetchedProducts: Product[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+      
       setAllProducts(fetchedProducts);
+      const uniqueCategories = Array.from(new Set(fetchedProducts.map(p => p.category).filter(Boolean)));
+      setCategories(['all', ...uniqueCategories.sort()]);
 
     } catch (error) {
-      console.error("Error fetching data:", error);
-      toast({ title: "Error", description: "Could not fetch your products or wellness store type.", variant: "destructive" });
+      console.error("Error fetching products:", error);
+      toast({ title: "Error", description: "Could not fetch your products.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -67,33 +59,20 @@ export default function WellnessProductsPage() {
 
   useEffect(() => {
     if (!authLoading && currentUser) {
-      fetchWellnessTypeAndProducts();
+      fetchProductsForDispensary();
     }
-  }, [authLoading, currentUser, fetchWellnessTypeAndProducts]);
-
-  const categoryFilterOptions = useMemo(() => {
-    if (currentDispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME) {
-      return ['all', 'THC', 'CBD', 'Apparel', 'Smoking Gear'];
-    }
-    const uniqueCategories = Array.from(new Set(allProducts.map(p => p.category).filter(Boolean)));
-    return ['all', ...uniqueCategories.sort()];
-  }, [allProducts, currentDispensaryType]);
-
+  }, [authLoading, currentUser, fetchProductsForDispensary]);
+  
   const displayableProductVariants = useMemo(() => {
     return allProducts.flatMap(product => {
-      // If there are price tiers, create a card for each.
       if (product.priceTiers && product.priceTiers.length > 0) {
         return product.priceTiers.map((tier, index) => ({
           ...product,
-          // Create a unique ID for this specific variant for React keys
           __variant_key__: `${product.id}-${tier.unit}-${index}`,
-          // Override priceTiers to only contain the current one for this card
           priceTiers: [tier],
-          // Override quantityInStock to reflect the tier's stock for this card
           quantityInStock: tier.quantityInStock ?? 0,
         }));
       }
-      // If a product has no tiers, show it as a single card.
       return [{ ...product, __variant_key__: product.id! }];
     });
   }, [allProducts]);
@@ -126,13 +105,11 @@ export default function WellnessProductsPage() {
 
   const handleDeleteProduct = async (productId: string, productName: string, imageUrls?: (string | null)[] | null) => {
     try {
-      // Delete all images from storage
       if (imageUrls && imageUrls.length > 0) {
         const deletePromises = imageUrls.map(url => {
           if (url && url.startsWith('https://firebasestorage.googleapis.com')) {
             const imageStorageRef = storageRef(storage, url);
             return deleteObject(imageStorageRef).catch(error => {
-              // Log error but don't block deletion of product doc
               if (error.code !== 'storage/object-not-found') {
                 console.warn(`Failed to delete image ${url}:`, error);
               }
@@ -146,14 +123,11 @@ export default function WellnessProductsPage() {
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
       setAllProducts(prev => prev.filter(p => p.id !== productId));
-      if (currentPage > 1 && paginatedProducts.length === 1 && filteredAndSortedProducts.length > PRODUCTS_PER_PAGE) {
-        setCurrentPage(prev => Math.max(1, prev -1));
-      } else if (currentPage > totalPages && totalPages > 0) {
-        setCurrentPage(totalPages);
-      } else if (filteredAndSortedProducts.length <= (currentPage - 1) * PRODUCTS_PER_PAGE && currentPage > 1) {
-         setCurrentPage(prev => Math.max(1, prev -1));
+      
+      if (paginatedProducts.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
       }
-
+      
     } catch (error) {
       console.error("Error deleting product document:", error);
       toast({ title: "Deletion Failed", description: "Could not delete product.", variant: "destructive" });
@@ -226,7 +200,7 @@ export default function WellnessProductsPage() {
                 <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-                {categoryFilterOptions.map(category => (
+                {categories.map(category => (
                     <SelectItem key={category} value={category}>
                         {category === 'all' ? 'All Categories' : category}
                     </SelectItem>
