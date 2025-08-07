@@ -310,64 +310,12 @@ export interface AIAdvisorConfig {
   dataAiHint?: string | null;
 }
 
-// For Cloud Functions that might deal with raw document data before type casting
-export interface DispensaryDocData extends Omit<Dispensary, 'id' | 'applicationDate' | 'approvedDate' | 'lastActivityDate' | 'publicStoreUrl'> {
-  fullName?: string;
-  dispensaryName?: string; 
-  applicationDate: Timestamp;
-  approvedDate?: Timestamp;
-  lastActivityDate?: Timestamp;
-  publicStoreUrl?: string | null;
-}
-
-export interface ProductRequestDocData extends Omit<ProductRequest, 'id' | 'createdAt' | 'updatedAt' | 'notes'> {
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  notes?: Array<Omit<NoteData, 'timestamp'> & { timestamp: Timestamp }>;
-}
-
-export interface PoolIssueDocData extends Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'> {
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export interface UserDocData extends Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> {
-  uid: string;
-  email: string;
-  createdAt?: Timestamp | import('firebase-admin/firestore').FieldValue;
-  lastLoginAt?: Timestamp | import('firebase-admin/firestore').FieldValue | null;
-  dispensaryStatus?: Dispensary['status'] | null;
-  preferredDispensaryTypes?: string[];
-  welcomeCreditsAwarded?: boolean;
-  signupSource?: string;
-}
-
 export interface DeductCreditsRequestBody {
   userId: string;
   advisorSlug: string;
   creditsToDeduct: number;
   wasFreeInteraction: boolean;
 }
-
-export interface NotificationData extends Omit<Notification, 'id' | 'createdAt'> {
-  createdAt: Timestamp;
-}
-
-export interface NoteDataCloud extends Omit<NoteData, 'timestamp'> {
-  timestamp: Timestamp;
-}
-
-export interface ScrapeLog {
-  status: 'started' | 'completed' | 'failed';
-  startTime: any;
-  endTime?: any;
-  itemCount: number;
-  successCount: number;
-  failCount: number;
-  error?: string;
-  messages: string[];
-}
-
 
 // Generic Firestore Document with ID
 export interface FirestoreDocument {

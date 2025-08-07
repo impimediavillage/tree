@@ -7,13 +7,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
-import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,8 +35,6 @@ import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
-
-const THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME = "Cannibinoid store";
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
@@ -106,21 +102,6 @@ const AddAttributeInputs = ({ onAdd }: { onAdd: (name: string, percentage: strin
     );
 };
 
-const PercentageKeyInfo = () => (
-    <div className="p-2 mt-2 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-        <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
-        <p className="text-muted-foreground leading-snug">
-            Indicates the reported likelihood of an effect or its potential as a medical aid.
-        </p>
-        <div className="flex flex-wrap gap-1.5 mt-2">
-            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-        </div>
-    </div>
-);
-
-
 export default function AddProductPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -128,7 +109,6 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   const [wellnessData, setWellnessData] = useState<Dispensary | null>(null);
-  const [isThcCbdSpecialType, setIsThcCbdSpecialType] = useState(false);
   const [categoryStructureObject, setCategoryStructureObject] = useState<Record<string, any> | null>(null);
   const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
@@ -175,8 +155,7 @@ export default function AddProductPage() {
   const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
-  const showProductDetailsForm = !isThcCbdSpecialType || (isThcCbdSpecialType && selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes'));
-  const showStrainFetchUI = isThcCbdSpecialType && selectedProductStream === 'THC' && watchStickerProgramOptIn === 'yes';
+  const showProductDetailsForm = selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'yes');
 
   const resetProductStreamSpecificFields = () => {
     form.reset({
@@ -191,23 +170,21 @@ export default function AddProductPage() {
       resetProductStreamSpecificFields();
       setSelectedProductStream(stream);
 
-      if (isThcCbdSpecialType) {
-          let categoryName = '';
-          switch(stream) {
-              case 'THC': categoryName = 'THC'; break;
-              case 'CBD': categoryName = 'CBD'; break;
-              case 'Apparel': categoryName = 'Apparel'; break;
-              case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
-              case 'Sticker Promo Set': categoryName = 'Sticker Promo Set'; break;
-          }
-          form.setValue('category', categoryName);
-          setSelectedMainCategoryName(categoryName);
+      let categoryName = '';
+      switch(stream) {
+          case 'THC': categoryName = 'THC'; break;
+          case 'CBD': categoryName = 'CBD'; break;
+          case 'Apparel': categoryName = 'Apparel'; break;
+          case 'Smoking Gear': categoryName = 'Smoking Gear'; break;
+          case 'Sticker Promo Set': categoryName = 'Sticker Promo Set'; break;
+      }
+      form.setValue('category', categoryName);
+      setSelectedMainCategoryName(categoryName);
 
-          if (categoryStructureObject && categoryStructureObject[categoryName]) {
-              const mainCategoryData = categoryStructureObject[categoryName];
-              if(mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) {
-                 setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
-              }
+      if (categoryStructureObject && categoryStructureObject[categoryName]) {
+          const mainCategoryData = categoryStructureObject[categoryName];
+          if(mainCategoryData.subcategories && mainCategoryData.subcategories.length > 0) {
+             setSubCategoryL1Options(mainCategoryData.subcategories.map((c: any) => c.name).sort());
           }
       }
   };
@@ -242,9 +219,7 @@ export default function AddProductPage() {
         const dispensaryData = dispensarySnap.data() as Dispensary;
         setWellnessData(dispensaryData);
         form.setValue('currency', dispensaryData.currency || 'ZAR');
-        const specialType = dispensaryData.dispensaryType === THC_CBD_MUSHROOM_WELLNESS_TYPE_NAME;
-        setIsThcCbdSpecialType(specialType);
-
+        
         if (dispensaryData.dispensaryType) {
           const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', dispensaryData.dispensaryType), limit(1));
           const querySnapshot = await getDocs(categoriesQuery);
@@ -359,16 +334,13 @@ export default function AddProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {isThcCbdSpecialType && (
                 <FormItem>
                     <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                         {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; return ( <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}> <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2", color)} /> <span className="text-lg sm:text-xl font-semibold">{text}</span> </Button> ); })}
                     </div>
-                    {form.formState.errors.category && (selectedProductStream !== 'Apparel' && selectedProductStream !== 'Smoking Gear' && selectedProductStream !== 'Sticker Promo Set') && <FormMessage>{form.formState.errors.category.message}</FormMessage>}
                 </FormItem>
-            )}
-             
+            
             {selectedProductStream === 'THC' && (
                 <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader>
@@ -464,15 +436,14 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                     
                      <div className="grid md:grid-cols-2 gap-4">
-                        {!isThcCbdSpecialType && (
-                            <FormField control={form.control} name="category" render={({ field }) => (
-                                <FormItem><FormLabel>Main Category *</FormLabel>
-                                <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
-                                    <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                                </Select><FormMessage /></FormItem>
-                            )} />
-                        )}
+                        <FormField control={form.control} name="category" render={({ field }) => (
+                            <FormItem><FormLabel>Main Category *</FormLabel>
+                            <Select onValueChange={(value) => { field.onChange(value); setSelectedMainCategoryName(value); form.setValue('subcategory', null); form.setValue('subSubcategory', null); }} value={field.value || undefined} disabled={!!selectedProductStream}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select a main category" /></SelectTrigger></FormControl>
+                                <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                            </Select><FormMessage /></FormItem>
+                        )} />
+                        
                         {subCategoryL1Options.length > 0 && (
                             <FormField control={form.control} name="subcategory" render={({ field }) => (
                                 <FormItem><FormLabel>Subcategory (Level 1)</FormLabel>

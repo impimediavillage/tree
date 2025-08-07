@@ -100,3 +100,40 @@ export interface NotificationData {
   createdAt: firestore.Timestamp;
   // Consider adding type and severity if needed by functions
 }
+
+export interface JustBrandVariant {
+    title: string;
+    sku: string | null;
+    price: number;
+    image: string | null;
+}
+
+export interface JustBrandProduct {
+    title: string;
+    handle: string;
+    productUrl: string;
+    description: string;
+    price: number;
+    priceMin: number;
+    priceMax: number;
+    images: string[];
+    variants: JustBrandVariant[];
+}
+
+export interface JustBrandCategory {
+    name: string;
+    slug: string;
+    url: string;
+    products: JustBrandProduct[];
+}
+
+export interface ScrapeLog {
+    status: 'started' | 'completed' | 'failed';
+    startTime: any; // Using `any` for FieldValue
+    endTime?: any;
+    itemCount: number;
+    successCount: number;
+    failCount: number;
+    error?: string;
+    messages: string[];
+}
