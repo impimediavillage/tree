@@ -6,10 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Package, Users, Settings, Store, ShoppingBasket, ListOrdered, BarChart3, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import type { Dispensary, Product, ProductRequest } from '@/types';
+import { useDispensaryData } from '@/contexts/DispensaryDataContext'; // Import the new context
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface StatCardProps {
@@ -45,77 +42,12 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
 );
 
 export default function WellnessAdminOverviewPage() {
-  const { currentUser, loading: authLoading } = useAuth();
-  const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    pendingRequests: 0, 
-    activePoolItems: 0, 
-  });
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  const { currentDispensary } = useAuth();
+  const { products, incomingRequests, isLoading } = useDispensaryData();
 
-  useEffect(() => {
-    if (authLoading || !currentUser || !currentUser.dispensaryId) {
-      if (!authLoading && !currentUser) setIsLoadingData(false); 
-      return;
-    }
-
-    const fetchData = async () => {
-      setIsLoadingData(true);
-      try {
-        const wellnessDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
-        const wellnessSnap = await getDoc(wellnessDocRef);
-        if (wellnessSnap.exists()) {
-          setWellnessProfile({ id: wellnessSnap.id, ...wellnessSnap.data() } as Dispensary);
-        } else {
-          console.error("Wellness profile data not found for current user.");
-          setIsLoadingData(false);
-          return;
-        }
-
-        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentUser.dispensaryId));
-        const productsSnapshot = await getDocs(productsQuery);
-        const activePoolItemsCount = productsSnapshot.docs.filter(doc => (doc.data() as Product).isAvailableForPool).length;
-        
-        const requestsQuery = query(
-          collection(db, "productRequests"),
-          where("productOwnerDispensaryId", "==", currentUser.dispensaryId),
-          where("requestStatus", "==", "pending_owner_approval")
-        );
-        const requestsSnapshot = await getDocs(requestsQuery);
-
-        setStats({
-          totalProducts: productsSnapshot.size,
-          pendingRequests: requestsSnapshot.size,
-          activePoolItems: activePoolItemsCount,
-        });
-      } catch (error) {
-        console.error("Error fetching wellness dashboard data:", error);
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
-
-    fetchData();
-  }, [currentUser, authLoading]);
-
-  if (authLoading) {
-    return <div className="p-4"><Skeleton className="h-12 w-1/2 mb-4" /><Skeleton className="h-64 w-full" /></div>;
-  }
-  
-  if (!currentUser) {
-    return <div className="p-4 text-center text-destructive">You are not logged in. Please log in to access your dashboard.</div>;
-  }
-  if (currentUser.role !== 'DispensaryOwner') {
-      return <div className="p-4 text-center text-destructive">Access Denied. This dashboard is for Wellness Owners only.</div>;
-  }
-  if (isLoadingData && !wellnessProfile) { 
-     return <div className="p-4"><Skeleton className="h-12 w-1/2 mb-4" /><Skeleton className="h-64 w-full" /></div>;
-  }
-   if (!wellnessProfile && !isLoadingData) { 
-    return <div className="p-4 text-center text-destructive">Could not load wellness profile data. Please contact support.</div>;
-  }
-
+  const totalProducts = products.length;
+  const activePoolItems = products.filter(p => p.isAvailableForPool).length;
+  const pendingRequests = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
 
   return (
     <div className="space-y-8">
@@ -125,7 +57,7 @@ export default function WellnessAdminOverviewPage() {
             className="text-3xl font-bold text-foreground flex items-center"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Store className="mr-3 h-8 w-8 text-primary" /> {wellnessProfile?.dispensaryName || "Your Wellness Profile"}
+            <Store className="mr-3 h-8 w-8 text-primary" /> {currentDispensary?.dispensaryName || "Your Wellness Profile"}
           </CardTitle>
           <CardDescription 
             className="text-md text-foreground"
@@ -139,30 +71,30 @@ export default function WellnessAdminOverviewPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StatCard 
           title="Total Products" 
-          value={stats.totalProducts} 
+          value={totalProducts} 
           icon={Package} 
           description="Products currently listed by your wellness profile."
           link="/dispensary-admin/products"
           linkText="Manage Products"
-          isLoading={isLoadingData}
+          isLoading={isLoading}
         />
         <StatCard 
           title="Pending Requests" 
-          value={stats.pendingRequests} 
+          value={pendingRequests} 
           icon={ListOrdered} 
           description="Incoming product requests needing your approval."
           link="/dispensary-admin/pool?tab=incoming-requests"
           linkText="View Requests"
-          isLoading={isLoadingData}
+          isLoading={isLoading}
         />
         <StatCard 
           title="Active in Pool" 
-          value={stats.activePoolItems}
+          value={activePoolItems}
           icon={ShoppingBasket}
           description="Products you've made available to the sharing pool."
           link="/dispensary-admin/products?filter=pool" 
           linkText="Manage Pool Items"
-          isLoading={isLoadingData}
+          isLoading={isLoading}
         />
       </div>
 

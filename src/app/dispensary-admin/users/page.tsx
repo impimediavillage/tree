@@ -1,30 +1,31 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase'; 
-import { collection, query, where, orderBy, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter, UserCog } from 'lucide-react';
+import { Edit, Loader2, UserPlus, Users as UsersIcon, Filter, UserCog } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserCard } from '@/components/admin/UserCard'; 
+import { UserCard } from '@/components/admin/UserCard';
 import { DispensaryAddStaffDialog } from '@/components/dispensary-admin/DispensaryAddStaffDialog';
 import { DispensaryAddLeafUserDialog } from '@/components/dispensary-admin/DispensaryAddLeafUserDialog';
+import { useDispensaryData } from '@/contexts/DispensaryDataContext';
 
 
 const wellnessUserEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
-  role: z.enum(['DispensaryStaff', 'LeafUser', 'User']), 
+  role: z.enum(['DispensaryStaff', 'LeafUser', 'User']),
   status: z.enum(['Active', 'Suspended', 'PendingApproval']),
   credits: z.coerce.number().int().min(0, "Credits cannot be negative.").optional(),
 });
@@ -65,7 +66,7 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
         displayName: data.displayName,
         role: data.role,
         status: data.status,
-        updatedAt: serverTimestamp() as any, 
+        updatedAt: serverTimestamp() as any,
       };
 
       if (data.role === 'LeafUser' && data.status === 'Active' && user.status !== 'Active' && !user.welcomeCreditsAwarded) {
@@ -76,8 +77,7 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
         updateData.credits = data.credits;
       }
 
-
-      await updateDoc(userDocRef, updateData);
+      await updateDoc(userDocRef, updateData as any);
       if (!(data.role === 'LeafUser' && data.status === 'Active' && user.status !== 'Active' && !user.welcomeCreditsAwarded)) {
         toast({ title: "User Updated", description: `${data.displayName}'s profile has been updated.` });
       }
@@ -158,10 +158,8 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
 
 
 export default function WellnessManageUsersPage() {
-  const { currentUser, loading: authLoading, currentDispensaryStatus } = useAuth();
-  const [managedUsers, setManagedUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { currentUser, currentDispensaryStatus } = useAuth();
+  const { staff: managedUsers, isLoading, fetchDispensaryData } = useDispensaryData();
   
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
@@ -169,61 +167,43 @@ export default function WellnessManageUsersPage() {
   const [filterRole, setFilterRole] = useState<User['role'] | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<User['status'] | 'all' | 'PendingApproval'>('all');
 
-
-  const fetchManagedUsers = useCallback(async () => {
-    if (!currentUser?.dispensaryId || currentDispensaryStatus !== 'Approved') {
-      setIsLoading(false);
-      if (currentDispensaryStatus !== 'Approved' && currentUser?.dispensaryId) {
-         toast({ title: "Access Restricted", description: "User management is available for approved wellness profiles only.", variant: "destructive"});
-      }
-      setManagedUsers([]);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const usersCollectionRef = collection(db, 'users');
-      const usersQuery = query(
-        usersCollectionRef,
-        where('dispensaryId', '==', currentUser.dispensaryId),
-        orderBy('displayName')
-      );
-      const usersSnapshot = await getDocs(usersQuery);
-      const fetchedUsers: User[] = usersSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as User))
-        .filter(user => user.uid !== currentUser.uid); 
-      setManagedUsers(fetchedUsers);
-    } catch (error) {
-      console.error("Error fetching managed users:", error);
-      toast({ title: "Error", description: "Could not fetch users for your wellness profile.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser?.dispensaryId, currentDispensaryStatus, toast, currentUser?.uid]);
-
-  useEffect(() => {
-    if (!authLoading && currentUser) {
-      fetchManagedUsers();
-    }
-  }, [authLoading, currentUser, fetchManagedUsers]);
-  
   const handleEditUser = (user: User) => {
     setEditingUser(user);
     setIsEditUserDialogOpen(true);
   };
 
-  const filteredDisplayUsers = managedUsers.filter(user => {
-    const nameMatch = user.displayName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const emailMatch = user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const roleMatch = filterRole === 'all' || user.role === filterRole;
-    const statusMatch = filterStatus === 'all' || user.status === filterStatus;
-    return (nameMatch || emailMatch) && roleMatch && statusMatch;
-  });
+  const filteredDisplayUsers = useMemo(() => {
+    return managedUsers.filter(user => {
+        const nameMatch = user.displayName?.toLowerCase().includes(searchTerm.toLowerCase());
+        const emailMatch = user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const roleMatch = filterRole === 'all' || user.role === filterRole;
+        const statusMatch = filterStatus === 'all' || user.status === filterStatus;
+        return (nameMatch || emailMatch) && roleMatch && statusMatch;
+    });
+  }, [managedUsers, searchTerm, filterRole, filterStatus]);
 
 
-  if (authLoading) {
-    return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 bg-muted rounded-full"></div>
+              <div>
+                <div className="h-5 w-32 bg-muted rounded mb-1"></div>
+                <div className="h-4 w-40 bg-muted rounded"></div>
+              </div>
+            </div>
+            <div className="h-4 w-20 bg-muted rounded"></div>
+            <div className="h-4 w-24 bg-muted rounded"></div>
+          </Card>
+        ))}
+      </div>
+    );
   }
-  if (!currentUser || currentUser.role !== 'DispensaryOwner' || currentDispensaryStatus !== 'Approved') {
+
+  if (!currentUser || currentDispensaryStatus !== 'Approved') {
     return (
       <Card className="p-6 text-center">
         <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
@@ -253,8 +233,8 @@ export default function WellnessManageUsersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <DispensaryAddStaffDialog onUserAdded={fetchManagedUsers} dispensaryId={currentUser.dispensaryId!} />
-          <DispensaryAddLeafUserDialog onUserAdded={fetchManagedUsers} dispensaryId={currentUser.dispensaryId!} />
+          <DispensaryAddStaffDialog onUserAdded={fetchDispensaryData} dispensaryId={currentUser.dispensaryId!} />
+          <DispensaryAddLeafUserDialog onUserAdded={fetchDispensaryData} dispensaryId={currentUser.dispensaryId!} />
         </div>
       </div>
 
@@ -290,23 +270,7 @@ export default function WellnessManageUsersPage() {
         </div>
       </div>
 
-      {isLoading ? (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse">
-              <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-muted rounded-full"></div>
-                <div>
-                  <div className="h-5 w-32 bg-muted rounded mb-1"></div>
-                  <div className="h-4 w-40 bg-muted rounded"></div>
-                </div>
-              </div>
-              <div className="h-4 w-20 bg-muted rounded"></div>
-              <div className="h-4 w-24 bg-muted rounded"></div>
-            </Card>
-          ))}
-        </div>
-      ) : filteredDisplayUsers.length > 0 ? (
+      {filteredDisplayUsers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDisplayUsers.map((user) => (
             <UserCard
@@ -334,7 +298,7 @@ export default function WellnessManageUsersPage() {
         user={editingUser}
         isOpen={isEditUserDialogOpen}
         onOpenChange={setIsEditUserDialogOpen}
-        onUserUpdate={fetchManagedUsers}
+        onUserUpdate={fetchDispensaryData}
       />
     </div>
   );

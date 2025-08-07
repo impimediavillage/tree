@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { DispensaryDataProvider } from '@/contexts/DispensaryDataContext';
 
 
 interface NavItem {
@@ -62,11 +63,7 @@ const getInitials = (name?: string | null, fallback = 'DO') => {
 };
 
 
-export default function WellnessAdminDashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function WellnessAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
@@ -137,7 +134,7 @@ export default function WellnessAdminDashboardLayout({
   
   const SidebarNavigation = () => (
     <>
-       <div className="flex items-center gap-2 p-3 border-b border-border">
+       <div className="flex items-center gap-2 p-3 border-b border-sidebar-border">
           <Store className="h-7 w-7 text-primary" />
           <div className="overflow-hidden">
             <p className="text-lg font-semibold text-foreground truncate" title={currentDispensary.dispensaryName}>
@@ -290,7 +287,9 @@ export default function WellnessAdminDashboardLayout({
               </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
-              {children}
+              <DispensaryDataProvider>
+                {children}
+              </DispensaryDataProvider>
           </main>
         </div>
 
@@ -306,5 +305,14 @@ export default function WellnessAdminDashboardLayout({
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+
+export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <DispensaryDataProvider>
+      <WellnessAdminLayout>{children}</WellnessAdminLayout>
+    </DispensaryDataProvider>
   );
 }

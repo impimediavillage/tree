@@ -4,11 +4,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BarChart3, DollarSign, Package, Users, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered, ArrowLeft } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
-import type { Product, ProductRequest, ProductCategoryCount } from '@/types';
+import { useDispensaryData } from '@/contexts/DispensaryDataContext';
+import type { Product, ProductCategoryCount } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
@@ -50,69 +49,27 @@ const CHART_COLORS = [
 
 export default function WellnessAnalyticsPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
+  const { products: allProducts, incomingRequests, isLoading: isLoadingData } = useDispensaryData();
   
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    activePoolItems: 0,
-    pendingRequests: 0,
-    totalSales: 0, 
-    totalOrders: 0, 
-    averageOrderValue: 0, 
-    topSellingProduct: 'N/A', 
-  });
-
-  useEffect(() => {
-    if (authLoading || !currentUser?.dispensaryId) {
-      if (!authLoading) setIsLoadingStats(false);
-      return;
-    }
-
-    const fetchAnalyticsData = async () => {
-      setIsLoadingStats(true);
-      try {
-        const productsQuery = query(
-          collection(db, "products"),
-          where("dispensaryId", "==", currentUser.dispensaryId)
-        );
-        const productsSnapshot = await getDocs(productsQuery);
-        const fetchedProducts: Product[] = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-        setAllProducts(fetchedProducts);
-        const activePoolCount = fetchedProducts.filter(p => p.isAvailableForPool).length;
-
-        const requestsQuery = query(
-          collection(db, "productRequests"),
-          where("productOwnerDispensaryId", "==", currentUser.dispensaryId),
-          where("requestStatus", "==", "pending_owner_approval")
-        );
-        const requestsSnapshot = await getDocs(requestsQuery);
-        setIncomingRequests(requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
-        
-        const placeholderTotalSales = Math.floor(Math.random() * 20000) + 5000; 
-        const placeholderTotalOrders = Math.floor(Math.random() * 300) + 50;   
-        const placeholderAvgOrderValue = placeholderTotalOrders > 0 ? placeholderTotalSales / placeholderTotalOrders : 0;
-
-        setStats({
-          totalProducts: fetchedProducts.length,
-          activePoolItems: activePoolCount,
-          pendingRequests: requestsSnapshot.size,
-          totalSales: placeholderTotalSales,
-          totalOrders: placeholderTotalOrders,
-          averageOrderValue: placeholderAvgOrderValue,
-          topSellingProduct: fetchedProducts.length > 0 ? fetchedProducts[0].name : 'N/A', 
-        });
-
-      } catch (error) {
-        console.error("Error fetching wellness analytics data:", error);
-      } finally {
-        setIsLoadingStats(false);
-      }
+  const stats = useMemo(() => {
+    const activePoolCount = allProducts.filter(p => p.isAvailableForPool).length;
+    const pendingRequestCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
+    
+    // Placeholder stats as before
+    const placeholderTotalSales = Math.floor(Math.random() * 20000) + 5000; 
+    const placeholderTotalOrders = Math.floor(Math.random() * 300) + 50;   
+    const placeholderAvgOrderValue = placeholderTotalOrders > 0 ? placeholderTotalSales / placeholderTotalOrders : 0;
+    
+    return {
+      totalProducts: allProducts.length,
+      activePoolItems: activePoolCount,
+      pendingRequests: pendingRequestCount,
+      totalSales: placeholderTotalSales,
+      totalOrders: placeholderTotalOrders,
+      averageOrderValue: placeholderAvgOrderValue,
+      topSellingProduct: allProducts.length > 0 ? allProducts[0].name : 'N/A', 
     };
-
-    fetchAnalyticsData();
-  }, [currentUser, authLoading]);
+  }, [allProducts, incomingRequests]);
   
   const productCategoryData: ProductCategoryCount[] = useMemo(() => {
     if (allProducts.length === 0) return [];
@@ -128,7 +85,7 @@ export default function WellnessAnalyticsPage() {
   }, [allProducts]);
 
 
-  if (authLoading) {
+  if (authLoading || isLoadingData) {
     return <div className="p-4"><Skeleton className="h-12 w-1/2 mb-6" /><Skeleton className="h-72 w-full" /></div>;
   }
   if (!currentUser || currentUser.role !== 'DispensaryOwner') {
@@ -175,49 +132,49 @@ export default function WellnessAnalyticsPage() {
           value={stats.totalProducts}
           icon={Package}
           description="Products listed by your wellness store."
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
         <StatCard
           title="Active in Pool"
           value={stats.activePoolItems}
           icon={ShoppingCart}
           description="Products available in sharing pool."
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
         <StatCard
           title="Pending Requests"
           value={stats.pendingRequests}
           icon={ListOrdered}
           description="Incoming product requests."
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
          <StatCard
           title="Total Sales (Demo)"
           value={`R ${stats.totalSales.toFixed(2)}`}
           icon={DollarSign}
           description="Total revenue generated (demo data)"
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
         <StatCard
           title="Total Orders (Demo)"
           value={stats.totalOrders}
           icon={ShoppingCart}
           description="Number of completed orders (demo data)"
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
         <StatCard
           title="Avg. Order Value (Demo)"
           value={`R ${stats.averageOrderValue.toFixed(2)}`}
           icon={TrendingUp}
           description="Average amount per order (demo data)"
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
         <StatCard
           title="Top Product (Demo)"
           value={stats.topSellingProduct}
           icon={PackageSearch}
           description="Most listed product (simplistic)"
-          isLoading={isLoadingStats}
+          isLoading={isLoadingData}
         />
       </div>
 
@@ -234,7 +191,7 @@ export default function WellnessAnalyticsPage() {
             >Overview of products by category in your wellness store.</CardDescription>
             </CardHeader>
             <CardContent>
-            {isLoadingStats ? (
+            {isLoadingData ? (
                 <Skeleton className="h-72 w-full" />
             ) : productCategoryData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>

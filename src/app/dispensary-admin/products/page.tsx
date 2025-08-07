@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
-import type { Product, DispensaryType, Dispensary } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import type { Product } from '@/types';
+import { useDispensaryData } from '@/contexts/DispensaryDataContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, PackageSearch, Loader2, Search, FilterX } from 'lucide-react';
@@ -19,9 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const PRODUCTS_PER_PAGE = 24;
 
 export default function WellnessProductsPage() {
-  const { currentUser, loading: authLoading } = useAuth();
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { products: allProducts, isLoading, fetchDispensaryData } = useDispensaryData();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,39 +27,12 @@ export default function WellnessProductsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchProductsForDispensary = useCallback(async () => {
-    if (!currentUser?.dispensaryId) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const productsCollectionRef = collection(db, 'products');
-      const q = query(
-        productsCollectionRef,
-        where('dispensaryId', '==', currentUser.dispensaryId),
-        orderBy('name')
-      );
-      const querySnapshot = await getDocs(q);
-      const fetchedProducts: Product[] = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
-      
-      setAllProducts(fetchedProducts);
-      const uniqueCategories = Array.from(new Set(fetchedProducts.map(p => p.category).filter(Boolean)));
-      setCategories(['all', ...uniqueCategories.sort()]);
-
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      toast({ title: "Error", description: "Could not fetch your products.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser?.dispensaryId, toast]);
-
   useEffect(() => {
-    if (!authLoading && currentUser) {
-      fetchProductsForDispensary();
+    if (allProducts.length > 0) {
+      const uniqueCategories = Array.from(new Set(allProducts.map(p => p.category).filter(Boolean)));
+      setCategories(['all', ...uniqueCategories.sort()]);
     }
-  }, [authLoading, currentUser, fetchProductsForDispensary]);
+  }, [allProducts]);
   
   const displayableProductVariants = useMemo(() => {
     return allProducts.flatMap(product => {
@@ -122,7 +93,7 @@ export default function WellnessProductsPage() {
       
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
-      setAllProducts(prev => prev.filter(p => p.id !== productId));
+      await fetchDispensaryData(); // Refetch all dispensary data
       
       if (paginatedProducts.length === 1 && currentPage > 1) {
         setCurrentPage(prev => prev - 1);
@@ -139,26 +110,6 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
     setCurrentPage(1);
   };
-
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!currentUser?.dispensaryId && !isLoading) {
-     return (
-      <div className="text-center py-10">
-        <PackageSearch className="mx-auto h-12 w-12 text-orange-500" />
-        <h3 className="mt-2 text-xl font-semibold">No Wellness Store Linked</h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Your account is not linked to a wellness store. Please contact support.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -216,16 +167,41 @@ export default function WellnessProductsPage() {
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-          {Array.from({ length: PRODUCTS_PER_PAGE / 2 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
           ))}
         </div>
       ) : paginatedProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-          {paginatedProducts.map((productVariant) => (
-            <ProductCard key={(productVariant as any).__variant_key__} product={productVariant as Product} onDelete={handleDeleteProduct} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+            {paginatedProducts.map((productVariant) => (
+              <ProductCard key={(productVariant as any).__variant_key__} product={productVariant as Product} onDelete={handleDeleteProduct} />
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="text-center py-12 col-span-full">
           <PackageSearch className="mx-auto h-16 w-16 text-orange-500" />
@@ -241,30 +217,6 @@ export default function WellnessProductsPage() {
           >
             {allProducts.length === 0 ? "You haven't added any products yet." : "No products match your current filters."}
           </p>
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
         </div>
       )}
     </div>
