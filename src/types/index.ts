@@ -21,6 +21,7 @@ export interface Dispensary {
   fullName: string;
   phone: string;
   ownerEmail: string;
+  ownerId?: string; // NEW: Added to securely link user to dispensary
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
@@ -67,17 +68,7 @@ export interface DispensaryType {
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
   name?: string; 
-  categoriesData: {
-    thcCbdProductCategories?: Record<string, any>;
-    traditionalMedicineCategories?: {
-        useCase: string;
-        categories: {
-            type: string;
-            subtypes?: { type: string }[];
-        }[];
-    }[];
-    mushroomProductCategories?: Record<string, any>;
-  }; 
+  categoriesData: ProductCategory[];
   updatedAt?: Timestamp | Date | string;
 }
 
@@ -343,8 +334,8 @@ export type PoolIssueDocData = Omit<PoolIssue, 'id' | 'createdAt' | 'updatedAt'>
 export type UserDocData = Omit<User, 'id' | 'createdAt' | 'lastLoginAt' | 'dispensaryStatus' | 'preferredDispensaryTypes' | 'welcomeCreditsAwarded' | 'signupSource'> & {
   uid: string;
   email: string;
-  createdAt?: Timestamp | firestore.FieldValue;
-  lastLoginAt?: Timestamp | firestore.FieldValue | null;
+  createdAt?: Timestamp | import('firebase-admin/firestore').FieldValue;
+  lastLoginAt?: Timestamp | import('firebase-admin/firestore').FieldValue | null;
   dispensaryStatus?: Dispensary['status'] | null;
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
