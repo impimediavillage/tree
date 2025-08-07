@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, SheetHeader, SheetTitle
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { auth as firebaseAuthInstance } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -263,54 +263,47 @@ function WellnessAdminLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen"> 
-      <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm">
-        <SidebarNavigation />
-      </aside>
-      
-      <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-        <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> 
-              <SheetTrigger asChild>
-                  <Button size="icon" variant="outline" className="md:hidden">
-                      <Menu className="h-5 w-5" />
-                      <span className="sr-only">Toggle Menu</span>
-                  </Button>
-              </SheetTrigger>
-              <div className="flex-1">
-                  <h1 
-                    className="text-lg font-semibold text-foreground truncate"
-                    style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
-                  >
-                    {currentDispensary.dispensaryName}
-                  </h1>
-              </div>
-          </header>
-          <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
-            {children}
-          </main>
-        </div>
-
-        <SheetContent side="left" className="p-0 w-72 flex flex-col bg-background">
-          <SheetHeader>
-            <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
-          </SheetHeader>
-          <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-          </SheetClose>
-          <SidebarNavigation />
-        </SheetContent>
-      </Sheet>
-    </div>
-  );
-}
-
-
-export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
-  return (
     <DispensaryDataProvider>
-      <WellnessAdminLayout>{children}</WellnessAdminLayout>
+        <div className="flex min-h-screen"> 
+        <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm">
+            <SidebarNavigation />
+        </aside>
+        
+        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+            <div className="flex flex-1 flex-col">
+            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> 
+                <SheetTrigger asChild>
+                    <Button size="icon" variant="outline" className="md:hidden">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle Menu</span>
+                    </Button>
+                </SheetTrigger>
+                <div className="flex-1">
+                    <h1 
+                        className="text-lg font-semibold text-foreground truncate"
+                        style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+                    >
+                        {currentDispensary.dispensaryName}
+                    </h1>
+                </div>
+            </header>
+            <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
+                {children}
+            </main>
+            </div>
+
+            <SheetContent side="left" className="p-0 w-72 flex flex-col bg-background">
+            <SheetHeader>
+                <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
+            </SheetHeader>
+            <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+            </SheetClose>
+            <SidebarNavigation />
+            </SheetContent>
+        </Sheet>
+        </div>
     </DispensaryDataProvider>
   );
 }
