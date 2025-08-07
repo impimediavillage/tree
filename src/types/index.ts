@@ -21,7 +21,7 @@ export interface Dispensary {
   fullName: string;
   phone: string;
   ownerEmail: string;
-  ownerId?: string; // NEW: Added to securely link user to dispensary
+  ownerId?: string;
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
@@ -409,4 +409,16 @@ export interface AuthContextType {
   canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
+}
+
+
+export interface ScrapeLog {
+    status: 'started' | 'completed' | 'failed';
+    startTime: any; // Using `any` for FieldValue
+    endTime?: any;
+    itemCount: number;
+    successCount: number;
+    failCount: number;
+    error?: string;
+    messages: string[];
 }
