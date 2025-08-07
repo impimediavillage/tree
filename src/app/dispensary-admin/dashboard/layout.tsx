@@ -12,11 +12,9 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { auth as firebaseAuthInstance, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import type { Dispensary } from '@/types';
+import { auth as firebaseAuthInstance } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -72,27 +70,25 @@ export default function WellnessAdminDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensaryStatus } = useAuth();
-  const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
-  const [isLoadingWellness, setIsLoadingWellness] = useState(true);
+  const { currentUser, currentDispensary, loading: authLoading, canAccessDispensaryPanel, currentDispensaryStatus } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
 
-    if (!currentUser) {
-      toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
-      router.push('/auth/signin');
-      return;
-    }
-    
-    if (currentUser.role !== 'DispensaryOwner') {
-      toast({ title: "Access Denied", description: "This area is for Wellness Owners.", variant: "destructive" });
-      router.push('/');
-      return;
-    }
+    if (!currentUser || !canAccessDispensaryPanel) {
+        if (!currentUser) {
+            toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
+            router.push('/auth/signin');
+            return;
+        }
 
-    if (!canAccessDispensaryPanel) {
+        if (currentUser.role !== 'DispensaryOwner') {
+            toast({ title: "Access Denied", description: "This area is for Wellness Owners.", variant: "destructive" });
+            router.push('/');
+            return;
+        }
+        
         if (currentDispensaryStatus === 'Pending Approval') {
             toast({ title: "Account Pending", description: "Your wellness application is still pending approval.", variant: "default" });
         } else if (currentDispensaryStatus === 'Suspended') {
@@ -105,35 +101,6 @@ export default function WellnessAdminDashboardLayout({
             toast({ title: "Access Issue", description: "You do not have permission to access the wellness panel at this time.", variant: "destructive" });
         }
       router.push('/'); 
-      return;
-    }
-
-    if (currentUser.dispensaryId) {
-      setIsLoadingWellness(true);
-      const fetchWellnessData = async () => {
-        const wellnessDocRef = doc(db, 'dispensaries', currentUser.dispensaryId!);
-        try {
-          const docSnap = await getDoc(wellnessDocRef);
-          if (docSnap.exists()) {
-            setWellnessProfile({ id: docSnap.id, ...docSnap.data() } as Dispensary);
-          } else {
-            toast({ title: "Wellness Profile Not Found", description: "Your associated wellness data could not be found.", variant: "destructive" });
-            firebaseAuthInstance.signOut(); 
-            router.push('/auth/signin');
-          }
-        } catch (error) {
-          console.error("Error fetching wellness data:", error);
-          toast({ title: "Error", description: "Could not load wellness data.", variant: "destructive" });
-        } finally {
-          setIsLoadingWellness(false);
-        }
-      };
-      fetchWellnessData();
-    } else {
-       toast({ title: "Configuration Error", description: "No wellness profile associated with your account.", variant: "destructive" });
-       firebaseAuthInstance.signOut();
-       router.push('/auth/signin');
-       setIsLoadingWellness(false);
     }
   }, [currentUser, authLoading, canAccessDispensaryPanel, currentDispensaryStatus, router, toast]);
 
@@ -148,7 +115,7 @@ export default function WellnessAdminDashboardLayout({
     }
   };
 
-  if (authLoading || isLoadingWellness) {
+  if (authLoading || !currentDispensary) {
     return (
       <div className="flex items-center justify-center h-screen"> 
         <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
@@ -157,7 +124,7 @@ export default function WellnessAdminDashboardLayout({
     );
   }
 
-  if (!currentUser || !canAccessDispensaryPanel || !wellnessProfile) {
+  if (!currentUser || !canAccessDispensaryPanel) {
     return (
       <div className="flex flex-col items-center justify-center h-screen p-4"> 
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
@@ -173,8 +140,8 @@ export default function WellnessAdminDashboardLayout({
        <div className="flex items-center gap-2 p-3 border-b border-border">
           <Store className="h-7 w-7 text-primary" />
           <div className="overflow-hidden">
-            <p className="text-lg font-semibold text-foreground truncate" title={wellnessProfile.dispensaryName}>
-              {wellnessProfile.dispensaryName}
+            <p className="text-lg font-semibold text-foreground truncate" title={currentDispensary.dispensaryName}>
+              {currentDispensary.dispensaryName}
             </p>
             <p className="text-xs text-muted-foreground">My Store Panel</p> 
           </div>
@@ -256,7 +223,7 @@ export default function WellnessAdminDashboardLayout({
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={currentUser.photoURL || undefined} alt={currentUser.displayName || 'Owner'} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
-                      {getInitials(currentUser.displayName, wellnessProfile.dispensaryName?.[0])}
+                      {getInitials(currentUser.displayName, currentDispensary.dispensaryName?.[0])}
                     </AvatarFallback>
                   </Avatar>
                   <div className="ml-2 text-left overflow-hidden">
@@ -318,7 +285,7 @@ export default function WellnessAdminDashboardLayout({
                     className="text-lg font-semibold text-foreground truncate"
                     style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
                   >
-                    {wellnessProfile.dispensaryName}
+                    {currentDispensary.dispensaryName}
                   </h1>
               </div>
           </header>
