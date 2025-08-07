@@ -63,7 +63,7 @@ const getInitials = (name?: string | null, fallback = 'DO') => {
 };
 
 
-function WellnessAdminLayout({ children }: { children: React.ReactNode }) {
+export default function WellnessAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
