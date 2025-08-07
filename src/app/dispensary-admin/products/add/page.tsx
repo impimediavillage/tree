@@ -358,15 +358,30 @@ export default function AddProductPage() {
                     </CardHeader>
                     <CardContent className="grid md:grid-cols-2 gap-6 items-start">
                         <div className="space-y-4">
-                            <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
-                                 <FormDescription className="text-orange-900/90 text-sm">
-                                    The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
-                                </FormDescription>
-                                <FormControl> <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2"> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="yes" /></FormControl> <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel> </FormItem> <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"> <FormControl><RadioGroupItem value="no" /></FormControl> <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel> </FormItem> </RadioGroup> </FormControl> <FormMessage />
-                                </FormItem>
-                            )} />
+                            <FormField
+                                control={form.control}
+                                name="stickerProgramOptIn"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
+                                        <FormDescription className="text-orange-900/90 text-sm">
+                                            The Wellness Tree complies fully with South African law regarding the sale of T.H.C products. The Wellness Tree Strain Sticker Club offers Cannabis enthusiasts the opportunity to share their home grown flowers and extracts as samples to attach to Strain stickers that shoppers will buy. Its a great way to share the toke and strain you grow or want to add as a sample. The best part is the Sticker can represent your Wellness store or apparel brand name or strain name. Funky Funky Funky People. The Triple S (Strain-Sticker-Sample) club allows You to set your Sticker price and attach your product/s to the free sample of your garden delights, easily categorized by weight, by joint, by unit by, bottle, by pack. Happy sharing of your free samples, and i am totally excited to share the Please chnage the section Sticker Promo Programme text to the The Triple S (Strain-Sticker-Sample) club. Please add some modern ui styling to the section and add placeholders to add some promo images
+                                        </FormDescription>
+                                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select an option" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="yes">Yes, include my product</SelectItem>
+                                                <SelectItem value="no">No, this is a standard product</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                          <div className="grid grid-cols-2 gap-3">
                             <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
@@ -528,7 +543,7 @@ export default function AddProductPage() {
                             </div>
                         ))}
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
-                          <span><PlusCircle className="mr-2 h-4 w-4" /> Add Another Price Tier</span>
+                          <PlusCircle className="mr-2 h-4 w-4" /> Add Another Price Tier
                         </Button>
                     </div>
 
@@ -568,19 +583,19 @@ export default function AddProductPage() {
                            </div>
                         ))}
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
-                            <span><PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier</span>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Pool Price Tier
                         </Button>
                        </CardContent>
                        </Card>
                     )}
-                    <CardFooter>
-                        <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                            Add Product
-                        </Button>
-                    </CardFooter>
                 </div>
             )}
+            <CardFooter>
+                <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                    Add Product
+                </Button>
+            </CardFooter>
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
