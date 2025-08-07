@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -9,8 +8,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useState } from 'react';
+import { useAuth, AuthProvider } from '@/contexts/AuthContext';
+import { DispensaryDataProvider } from '@/contexts/DispensaryDataContext';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { auth as firebaseAuthInstance } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -60,8 +60,7 @@ const getInitials = (name?: string | null, fallback = 'DO') => {
   return name.substring(0, 2).toUpperCase();
 };
 
-
-export default function WellnessAdminLayout({ children }: { children: React.ReactNode }) {
+function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
@@ -301,5 +300,19 @@ export default function WellnessAdminLayout({ children }: { children: React.Reac
           </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+export default function DispensaryAdminRootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <AuthProvider>
+      <DispensaryDataProvider>
+        <WellnessAdminLayoutContent>{children}</WellnessAdminLayoutContent>
+      </DispensaryDataProvider>
+    </AuthProvider>
   );
 }
