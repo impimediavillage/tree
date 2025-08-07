@@ -21,6 +21,7 @@ export interface Dispensary {
   fullName: string;
   phone: string;
   ownerEmail: string;
+  ownerId?: string; 
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
@@ -67,17 +68,7 @@ export interface DispensaryType {
 export interface DispensaryTypeProductCategoriesDoc {
   id?: string;
   name?: string; 
-  categoriesData: {
-    thcCbdProductCategories?: Record<string, any>;
-    traditionalMedicineCategories?: {
-        useCase: string;
-        categories: {
-            type: string;
-            subtypes?: { type: string }[];
-        }[];
-    }[];
-    mushroomProductCategories?: Record<string, any>;
-  }; 
+  categoriesData: ProductCategory[];
   updatedAt?: Timestamp | Date | string;
 }
 
@@ -319,6 +310,12 @@ export interface AIAdvisorConfig {
   dataAiHint?: string | null;
 }
 
+export interface DeductCreditsRequestBody {
+  userId: string;
+  advisorSlug: string;
+  creditsToDeduct: number;
+  wasFreeInteraction: boolean;
+}
 
 // Generic Firestore Document with ID
 export interface FirestoreDocument {
@@ -399,4 +396,17 @@ export interface StickerSet {
   salesCount: number;
   viewCount: number;
   createdAt: Timestamp | Date | string;
+}
+
+// Add dispensary to AuthContextType
+export interface AuthContextType {
+  currentUser: User | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  currentDispensary: Dispensary | null;
+  loading: boolean;
+  isSuperAdmin: boolean;
+  isDispensaryOwner: boolean;
+  canAccessDispensaryPanel: boolean;
+  isLeafUser: boolean;
+  currentDispensaryStatus: Dispensary['status'] | null;
 }

@@ -13,6 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 interface AuthContextType {
   currentUser: AppUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
+  currentDispensary: Dispensary | null; // Add dispensary to the context
   loading: boolean;
   isSuperAdmin: boolean;
   isDispensaryOwner: boolean;
@@ -26,59 +27,91 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
+  const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
+    try {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+            console.error(`User profile not found in database for UID: ${user.uid}. Logging out.`);
+            throw new Error("User profile not found.");
+        }
+        
+        const userData = userDocSnap.data() as AppUser;
+        
+        let dispensaryStatus: Dispensary['status'] | null = null;
+        let dispensaryData: Dispensary | null = null;
+
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+            const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+            if (dispensaryDocSnap.exists()) {
+                dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data()} as Dispensary;
+                dispensaryStatus = dispensaryData.status || null;
+                setCurrentDispensary(dispensaryData);
+            }
+        }
+        
+        const appUser: AppUser = {
+          ...userData,
+          uid: user.uid,
+          dispensaryStatus: dispensaryStatus,
+        };
+
+        setCurrentUser(appUser);
+        localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+        return appUser;
+
+    } catch (error) {
+        console.error("Error fetching user profile:", error);
+        await auth.signOut();
+        setCurrentUser(null);
+        setCurrentDispensary(null);
+        localStorage.removeItem('currentUserHolisticAI');
+        return null;
+    }
+  }, []);
+
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in. Fetch their profile from Firestore.
-        try {
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await userDoc.get();
-
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data() as AppUser;
-
-            let dispensaryStatus: Dispensary['status'] | null = null;
-            if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-                const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
-                const dispensaryDocSnap = await dispensaryDocRef.get();
+        // Attempt to load from localStorage first for faster UI response
+        const storedUserString = localStorage.getItem('currentUserHolisticAI');
+        if (storedUserString) {
+          try {
+            const storedUser = JSON.parse(storedUserString) as AppUser;
+            if (storedUser.uid === user.uid) {
+              setCurrentUser(storedUser);
+              if (storedUser.role === 'DispensaryOwner' && storedUser.dispensaryId) {
+                // Pre-fill dispensary data if available
+                const dispensaryDocRef = doc(db, 'dispensaries', storedUser.dispensaryId);
+                const dispensaryDocSnap = await getDoc(dispensaryDocRef);
                 if (dispensaryDocSnap.exists()) {
-                    dispensaryStatus = dispensaryDocSnap.data().status || null;
+                  setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data()} as Dispensary);
                 }
+              }
             }
-            
-            const appUser: AppUser = {
-              ...userData,
-              uid: user.uid,
-              dispensaryStatus: dispensaryStatus,
-            };
-
-            setCurrentUser(appUser);
-            localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-          } else {
-            // Handle case where user exists in Auth but not in Firestore.
-            throw new Error("User profile not found in database.");
+          } catch(e) {
+             console.error("Error parsing stored user, fetching fresh.", e);
           }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-          // If fetching fails, log them out to prevent being in a broken state.
-          await auth.signOut();
-          setCurrentUser(null);
-          localStorage.removeItem('currentUserHolisticAI');
         }
+        // Always fetch fresh data in the background to ensure it's up-to-date
+        await fetchUserProfile(user);
       } else {
-        // User is signed out.
         setCurrentUser(null);
+        setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
       setLoading(false);
     });
 
     return () => unsubscribeAuth();
-  }, []);
+  }, [fetchUserProfile]);
   
   // This effect handles redirection after login
   useEffect(() => {
@@ -87,9 +120,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if(authPages.includes(pathname)) {
             if (currentUser.role === 'Super Admin') {
                 router.push('/admin/dashboard');
-            } else if (currentUser.role === 'DispensaryOwner') {
+            } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
                 router.push('/dispensary-admin/dashboard');
-            } else {
+            } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
+                router.push('/'); // Or a dedicated "pending approval" page
+            } else { // LeafUser or other roles
                 router.push('/dashboard/leaf');
             }
         }
@@ -107,6 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider value={{
         currentUser,
         setCurrentUser,
+        currentDispensary,
         loading,
         isSuperAdmin,
         isDispensaryOwner,
