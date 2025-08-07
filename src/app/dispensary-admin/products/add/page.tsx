@@ -543,7 +543,7 @@ export default function AddProductPage() {
                             </div>
                         ))}
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
-                          <PlusCircle className="mr-2 h-4 w-4" /> Add Another Price Tier
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Another Price Tier
                         </Button>
                     </div>
 

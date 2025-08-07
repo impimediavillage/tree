@@ -32,7 +32,7 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchDispensaryData = useCallback(async () => {
-    if (!canAccessDispensaryPanel || !currentUser?.dispensaryId) {
+    if (!canAccessDispensaryPanel || !currentUser?.dispensaryId || !currentUser?.uid) {
       setIsLoading(false);
       return;
     }
@@ -42,7 +42,7 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       const dispensaryId = currentUser.dispensaryId;
       
       const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", dispensaryId));
-      const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", dispensaryId), where("uid", "!=", currentUser.uid));
+      const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", dispensaryId));
       const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId));
       const outgoingRequestsQuery = query(collection(db, "productRequests"), where("requesterDispensaryId", "==", dispensaryId));
       const stickerSetsQuery = query(collection(db, 'stickersets'), where('creatorUid', '==', currentUser.uid), orderBy('createdAt', 'desc'));
@@ -62,7 +62,8 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       ]);
 
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-      setStaff(staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+      // Correctly filter out the owner themselves from the staff list
+      setStaff(staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)).filter(user => user.uid !== currentUser.uid));
       setIncomingRequests(incomingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
       setOutgoingRequests(outgoingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
       setStickerSets(stickerSetsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), createdAt: (doc.data().createdAt as any).toDate() } as StickerSet)));

@@ -22,7 +22,9 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -190,8 +192,22 @@ export const onUserCreated = onDocumentCreated(
       const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
       const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
       await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
+    } else if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
+      logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
+       const userDisplayName = userData.displayName || userData.email.split('@')[0];
+      const subject = "Welcome to The Wellness Tree!";
+      const greeting = `Welcome, ${userDisplayName}!`;
+      const content = [
+        `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
+        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+        `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
+        `Enjoy exploring!`,
+      ];
+      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
@@ -330,7 +346,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
         await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp(), ownerId: userId });
-        logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
+        logger.info(`Public store URL ${publicStoreUrl} and ownerId set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
@@ -737,9 +753,13 @@ export const deductCreditsAndLogInteraction = onRequest(
           `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
         );
       }
+      
+      const userDoc = await userRef.get();
+      const userData = userDoc.data() as UserDocData;
 
       const logEntry = {
         userId,
+        dispensaryId: userData.dispensaryId || null,
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
         timestamp: admin.firestore.Timestamp.now() as any,
