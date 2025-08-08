@@ -695,10 +695,10 @@ export const updateStrainImageUrl = onCall(async (request) => {
 
 
 /**
- * NEW: Callable function to securely fetch a user's profile data.
+ * Callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
-export const getUserProfile = onCall({ cors: true }, async (request) => {
+export const getUserProfile = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
@@ -885,11 +885,9 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
 
 
 /**
- * HTTP-callable function to deduct credits and log AI interaction.
- * THIS IS THE PREFERRED METHOD FOR CREDIT DEDUCTION.
+ * Callable function to deduct credits and log AI interaction.
  */
 export const deductCreditsAndLogInteraction = onCall(
-  { cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
