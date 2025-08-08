@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(null);
     setCurrentDispensary(null);
     setLoading(false);
-    localStorage.removeItem('currentUserHolisticAI'); // Clear local storage on sign out
   }, []);
 
   const fetchUserProfile = useCallback(async (): Promise<AppUser | null> => {
