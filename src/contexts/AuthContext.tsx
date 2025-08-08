@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error("Function error code:", error.code);
           console.error("Function error message:", error.message);
       }
-      await auth.signOut(); // Force sign out on profile fetch failure
+      await auth.signOut();
       return null;
     }
   }, []);
