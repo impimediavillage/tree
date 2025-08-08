@@ -29,7 +29,7 @@ const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
-  const [loading, setLoading] = useState(true); // This will be true until auth state is determined and profile is fetched
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser) => {
+  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
       console.log(`Fetching profile for UID: ${firebaseUser.uid}`);
       const result = await getUserProfileCallable();
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error("Function error code:", error.code);
           console.error("Function error message:", error.message);
       }
-      await auth.signOut(); // Force sign out on profile fetch failure
+      await auth.signOut();
       return null;
     }
   }, []);
@@ -67,41 +67,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // User is signed in, now fetch their profile.
         const profile = await fetchUserProfile(firebaseUser);
         
-        // --- Redirection Logic ---
-        // This logic now runs *after* the profile has been successfully fetched.
         if (profile) {
           const isAuthPage = pathname.startsWith('/auth');
           if (isAuthPage) {
             if (profile.role === 'Super Admin') {
-              console.log("Redirecting Super Admin to admin dashboard...");
               router.push('/admin/dashboard');
             } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
-              console.log("Redirecting Dispensary Owner to dispensary dashboard...");
               router.push('/dispensary-admin/dashboard');
             } else if (profile.role === 'DispensaryOwner') {
-              console.log("Dispensary Owner not approved, redirecting to home.");
-              router.push('/'); 
+              router.push('/');
             } else {
-              console.log("Redirecting Leaf User to leaf dashboard...");
               router.push('/dashboard/leaf');
             }
           }
         }
-        // If profile fetch fails, user will be signed out by fetchUserProfile, and the 'else' block below will run.
       } else {
-        // User is signed out.
-        console.log("User is signed out.");
         handleSignOut();
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // The empty dependency array is correct here. We only want this to run once.
+  }, [fetchUserProfile, handleSignOut, pathname, router]);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';

@@ -56,8 +56,8 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       ] = await Promise.all([
         getDocs(productsQuery),
         getDocs(staffQuery),
-        getDocs(incomingRequestsQuery),
-        getDocs(outgoingRequestsQuery),
+        getDocs(incomingRequestsSnapshot),
+        getDocs(outgoingRequestsSnapshot),
         getDocs(stickerSetsSnapshot)
       ]);
 

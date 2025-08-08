@@ -21,7 +21,6 @@ export interface Dispensary {
   fullName: string;
   phone: string;
   ownerEmail: string;
-  ownerId?: string | null;
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
