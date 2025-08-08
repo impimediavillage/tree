@@ -5,10 +5,10 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
-import { fetchUserProfile } from '@/app/auth/actions';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -24,6 +24,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Define the callable function once
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -31,61 +34,70 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleUserProfileResponse = useCallback((profile: AppUser | null) => {
-    if (profile) {
-      setCurrentUser(profile);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
-      if (profile.role === 'DispensaryOwner' && profile.dispensary) {
-        setCurrentDispensary(profile.dispensary);
-      } else {
-        setCurrentDispensary(null);
-      }
-    } else {
-      // Handle profile fetch failure
-      auth.signOut(); // This will trigger the onAuthStateChanged listener to clear state
-    }
+  const handleSignOut = useCallback(() => {
+    setCurrentUser(null);
+    setCurrentDispensary(null);
+    localStorage.removeItem('currentUserHolisticAI');
+    setLoading(false);
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
-          const appUser = await fetchUserProfile();
-          handleUserProfileResponse(appUser);
+          const result = await getUserProfileCallable();
+          const profile = result.data as AppUser | null;
+
+          if (profile) {
+              setCurrentUser(profile);
+              localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
+              if (profile.role === 'DispensaryOwner' && profile.dispensary) {
+                setCurrentDispensary(profile.dispensary);
+              } else {
+                setCurrentDispensary(null);
+              }
+          } else {
+             // This case means the function returned null, which implies a server-side issue like user not found in DB.
+             console.error("Critical: User exists in Auth, but profile not found in DB. Logging out.");
+             await auth.signOut();
+          }
+
         } catch (error) {
           console.error("Critical: Failed to get user profile. Logging out.", error);
-          await auth.signOut();
+          if (error instanceof FunctionsError) {
+              console.error("Function error code:", error.code);
+              console.error("Function error message:", error.message);
+          }
+          await auth.signOut(); // Force sign out on profile fetch failure
         } finally {
           setLoading(false);
         }
       } else {
         // User is signed out
-        setCurrentUser(null);
-        setCurrentDispensary(null);
-        localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
+        handleSignOut();
       }
     });
 
     return () => unsubscribe();
-  }, [handleUserProfileResponse]);
-
-  useEffect(() => {
-    if (!loading && currentUser) {
-      const isAuthPage = pathname.startsWith('/auth');
-      if (isAuthPage) {
-        if (currentUser.role === 'Super Admin') {
-          router.push('/admin/dashboard');
-        } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
-          router.push('/dispensary-admin/dashboard');
-        } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
-          router.push('/'); 
-        } else {
-          router.push('/dashboard/leaf');
+  }, [handleSignOut]);
+  
+    // This effect handles redirection after login
+    useEffect(() => {
+        if (!loading && currentUser) {
+            const isAuthPage = pathname.startsWith('/auth');
+            if(isAuthPage) {
+                if (currentUser.role === 'Super Admin') {
+                    router.push('/admin/dashboard');
+                } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
+                    router.push('/dispensary-admin/dashboard');
+                } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
+                    router.push('/'); 
+                } else { // LeafUser or other roles
+                    router.push('/dashboard/leaf');
+                }
+            }
         }
-      }
-    }
-  }, [currentUser, loading, pathname, router]);
+    }, [currentUser, loading, pathname, router]);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
