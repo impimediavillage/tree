@@ -36,10 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleSignOut = useCallback(() => {
     setCurrentUser(null);
     setCurrentDispensary(null);
-    if (!pathname.startsWith('/auth')) {
-        setLoading(false);
-    }
-  }, [pathname]);
+    setLoading(false);
+  }, []);
 
   const fetchUserProfile = useCallback(async () => {
     try {
@@ -48,12 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (profile) {
         setCurrentUser(profile);
-        
-        if (profile.role === 'DispensaryOwner' && profile.dispensary) {
-          setCurrentDispensary(profile.dispensary);
-        } else {
-          setCurrentDispensary(null);
-        }
+        setCurrentDispensary(profile.dispensary || null);
         return profile;
       }
       throw new Error("User profile data could not be retrieved from the server.");
