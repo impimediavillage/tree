@@ -49,12 +49,13 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         displayName: data.displayName,
         photoURL: null,
         role: 'DispensaryStaff', 
-        dispensaryId: dispensaryId, 
+        dispensaryId: dispensaryId, // Correctly use the passed dispensaryId
         credits: 0, 
         status: 'PendingApproval', 
         createdAt: serverTimestamp() as any,
         lastLoginAt: null,
         welcomeCreditsAwarded: false, 
+        signupSource: 'dispensary_panel',
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newStaffUserData);
