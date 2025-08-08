@@ -398,19 +398,6 @@ export interface StickerSet {
   createdAt: Timestamp | Date | string;
 }
 
-export interface AuthContextType {
-  currentUser: User | null;
-  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
-  currentDispensary: Dispensary | null;
-  loading: boolean;
-  isSuperAdmin: boolean;
-  isDispensaryOwner: boolean;
-  canAccessDispensaryPanel: boolean;
-  isLeafUser: boolean;
-  currentDispensaryStatus: Dispensary['status'] | null;
-}
-
-
 export interface ScrapeLog {
     status: 'started' | 'completed' | 'failed';
     startTime: any; // Using `any` for FieldValue

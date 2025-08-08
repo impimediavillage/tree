@@ -4,55 +4,45 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
   
-    // Helper function to check if a user is authenticated
-    function isSignedIn() {
+    // Helper function to check auth
+    function isAuthenticated() {
       return request.auth != null;
     }
-    
-    // Helper function to check if the user is the owner of the resource
+
+    // Helper function to check ownership
     function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
-
-    // Helper function to check if the user is a Super Admin
-    function isSuperAdmin() {
-      // In a real app, you'd check a custom claim, not just email.
-      // For this example, we assume a custom claim `role` is set.
-      return isSignedIn() && request.auth.token.role == 'Super Admin';
-    }
-
-    // Products:
-    // Allow anyone to read product images (they are public-facing).
-    // Only authenticated users (specifically, the owner via security rules in the upload function) can write.
-    // Deletion is handled by Cloud Functions with appropriate checks.
-    match /products/{userId}/{allPaths=**} {
+  
+    // Allow read access to all files by default
+    match /{allPaths=**} {
       allow read: if true;
-      allow write: if isOwner(userId);
-    }
-
-    // Lab Reports:
-    // Similar to products, but you might want tighter read controls later.
-    // For now, assume if someone has the link, they can read it.
-    // Only the owner of the product can upload a lab report for it.
-    match /lab-reports/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if isOwner(userId);
-    }
-
-    // Dispensary Type Assets (icons, images):
-    // These are public-facing assets.
-    // Only Super Admins should be able to write/delete them.
-    match /dispensary-type-assets/{allPaths=**} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
     }
     
-    // Sticker Sets:
-    // Public can read, only the creator can write/delete.
-    match /stickersets/{userId}/{allPaths=**} {
-        allow read: if true;
-        allow write: if isOwner(userId);
+    // User Profile Pictures
+    match /users/{userId}/{allPaths=**} {
+      allow write: if isOwner(userId);
     }
 
+    // Product Images
+    // Only authenticated users can upload to a folder matching their UID
+    match /products/{userId}/{allPaths=**} {
+      allow write: if isOwner(userId);
+    }
+    
+    // Lab Reports
+    match /lab-reports/{userId}/{allPaths=**} {
+      allow write: if isOwner(userId);
+    }
+
+    // Dispensary Type Assets (Admin only)
+    match /dispensary-type-assets/{allPaths=**} {
+        allow write: if request.auth.token.role == 'Super Admin';
+    }
+    
+    // Sticker Sets
+    match /stickersets/{userId}/{allPaths=**} {
+       allow write: if isOwner(userId);
+    }
   }
 }
