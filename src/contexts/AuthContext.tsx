@@ -5,10 +5,12 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions } from '@/lib/firebase';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
+import { getUserProfileFlow } from '@/ai/flows/get-user-profile';
+import { run } from 'genkit/flow';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -24,8 +26,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -33,28 +33,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
+  const fetchFullProfile = useCallback(async (uid: string) => {
+    try {
+      // Use the new, robust Genkit flow to fetch the user profile
+      const appUser = await run(getUserProfileFlow);
+
+      setCurrentUser(appUser);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+      
+      // If the user is a dispensary owner, fetch their dispensary data
+      if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
+          const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
+          const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+          if (dispensaryDocSnap.exists()) {
+              setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary);
+          } else {
+              console.warn(`Dispensary document ${appUser.dispensaryId} not found for owner ${uid}.`);
+              setCurrentDispensary(null);
+          }
+      } else {
+          setCurrentDispensary(null);
+      }
+
+    } catch (error) {
+      console.error("Critical: Failed to get user profile. Logging out.", error);
+      await auth.signOut();
+      // State will be cleared by the onAuthStateChanged listener below
+    } finally {
+      // This setLoading(false) is crucial for unblocking the UI.
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        try {
-          const result = await getUserProfileCallable();
-          const appUser = result.data as AppUser;
-          
-          setCurrentUser(appUser);
-          localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-          
-        } catch (error) {
-          console.error("Critical: Failed to get user profile. Logging out.", error);
-          if (error instanceof FunctionsError) {
-              console.error("Function error code:", error.code);
-              console.error("Function error message:", error.message);
-          }
-          await auth.signOut();
-          setCurrentUser(null);
-          localStorage.removeItem('currentUserHolisticAI');
-        } finally {
-          setLoading(false); 
-        }
+        await fetchFullProfile(user.uid);
       } else {
         // User is signed out, clear everything.
         setCurrentUser(null);
@@ -65,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [fetchFullProfile]);
 
   useEffect(() => {
     if (!loading && currentUser) {
