@@ -161,7 +161,7 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
                 {assetImages.map(asset => (
                   <div key={asset.name} className="space-y-2">
                     <div className="relative aspect-square w-full bg-muted rounded-md overflow-hidden">
-                      <Image src={asset.url} alt={asset.name} fill className="object-contain p-2"/>
+                      <Image src={asset.url} alt={asset.name} fill style={{objectFit:"contain"}} className="p-2"/>
                     </div>
                     <p className="text-xs text-center text-muted-foreground capitalize">{asset.name}</p>
                   </div>
@@ -184,7 +184,7 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
                                     src={strainInfo.img_url}
                                     alt={`Image of ${strainInfo.name}`}
                                     layout="fill"
-                                    objectFit="cover"
+                                    style={{objectFit:"cover"}}
                                     data-ai-hint={`cannabis strain ${strainInfo.name}`}
                                 />
                             </div>

@@ -151,7 +151,7 @@ export default function GardeningAdvisorPage() {
                 />
                 {photoPreview && (
                   <div className="w-20 h-20 rounded border p-1 relative">
-                    <Image src={photoPreview} alt="Plant preview" layout="fill" objectFit="cover" className="rounded"/>
+                    <Image src={photoPreview} alt="Plant preview" layout="fill" style={{objectFit:"cover"}} className="rounded"/>
                   </div>
                 )}
                 {!photoPreview && <ImageIcon className="w-10 h-10 text-muted-foreground" />}
