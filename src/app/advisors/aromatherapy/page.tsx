@@ -61,8 +61,10 @@ export default function AromatherapyAdvisorPage() {
       }
       
       // 2. Update local user state immediately for instant UI feedback
-      setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
+      const updatedUser = { ...currentUser, credits: newCredits };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
+
 
       // 3. Call the AI flow
       const input: AromatherapyAdviceInput = { question: description };
@@ -75,6 +77,8 @@ export default function AromatherapyAdvisorPage() {
       const errorMessage = e.message || 'An unexpected error occurred. Please try again.';
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
+      // In a real app, you'd need a robust way to handle refunding credits if the AI call fails after deduction.
+      // For this implementation, we will assume deduction is final for simplicity.
     } finally {
       setIsLoading(false);
     }

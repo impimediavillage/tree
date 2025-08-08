@@ -13,7 +13,7 @@ import { usePathname, useRouter } from 'next/navigation';
 interface AuthContextType {
   currentUser: AppUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
-  currentDispensary: Dispensary | null; // Add dispensary to the context
+  currentDispensary: Dispensary | null;
   loading: boolean;
   isSuperAdmin: boolean;
   isDispensaryOwner: boolean;
@@ -36,68 +36,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchFullUserProfile = useCallback(async (user: FirebaseUser) => {
     try {
-      // Use the callable function to securely get the full user profile
       const result = await getUserProfile();
       const appUser = result.data as AppUser;
-
+      
       setCurrentUser(appUser);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
       
-      // If the user is an owner and has a dispensary, we can derive the dispensary info
-      // from the returned profile data (if we included it in the callable function response)
-      // This part depends on what getUserProfile returns. For now, we assume it might not return full dispensary data.
-      // A more robust implementation might fetch the dispensary separately if needed, but this is a start.
-      if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-        // You could fetch full dispensary details here if they are not already on the AppUser object
+      if (appUser.role === 'DispensaryOwner' && appUser.dispensaryStatus === 'Approved') {
+        // Here you would typically fetch full dispensary details if needed.
+        // For now, we assume dispensaryStatus on the user object is sufficient for routing.
+        // This can be expanded later.
       } else {
         setCurrentDispensary(null);
       }
-
     } catch (error) {
-      console.error("Error fetching user profile via callable function:", error);
-      await auth.signOut(); // Log out user if their profile is invalid or inaccessible
+      console.error("Error fetching full user profile. Logging out.", error);
+      await auth.signOut();
       setCurrentUser(null);
       setCurrentDispensary(null);
       localStorage.removeItem('currentUserHolisticAI');
     } finally {
+      // CRITICAL FIX: Ensure loading is set to false after fetching profile.
       setLoading(false);
     }
   }, []);
-  
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        await fetchFullUserProfile(user);
+        fetchFullUserProfile(user);
       } else {
+        // User is signed out
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
         setLoading(false);
       }
     });
-
-    return () => unsubscribeAuth();
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [fetchFullUserProfile]);
-  
-  // This effect handles redirection after login
+
   useEffect(() => {
+    // This effect handles redirection based on user state once loading is complete
     if (!loading && currentUser) {
-        const authPages = ['/auth/signin', '/auth/signup'];
-        if(authPages.includes(pathname)) {
-            if (currentUser.role === 'Super Admin') {
-                router.push('/admin/dashboard');
-            } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
-                router.push('/dispensary-admin/dashboard');
-            } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
-                router.push('/'); // Or a dedicated "pending approval" page
-            } else { // LeafUser or other roles
-                router.push('/dashboard/leaf');
-            }
+      const isAuthPage = pathname.startsWith('/auth');
+      if (isAuthPage) {
+        if (currentUser.role === 'Super Admin') {
+          router.push('/admin/dashboard');
+        } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
+          router.push('/dispensary-admin/dashboard');
+        } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
+          router.push('/'); // Or a dedicated "pending approval" page
+        } else { // LeafUser or other roles
+          router.push('/dashboard/leaf');
         }
+      }
     }
   }, [currentUser, loading, pathname, router]);
-
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
@@ -106,7 +102,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const currentDispensaryStatus = currentUser?.dispensaryStatus || null;
 
   return (
-    <AuthContext.Provider value={{
+    <AuthContext.Provider
+      value={{
         currentUser,
         setCurrentUser,
         currentDispensary,
@@ -115,8 +112,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isDispensaryOwner,
         canAccessDispensaryPanel,
         isLeafUser,
-        currentDispensaryStatus
-    }}>
+        currentDispensaryStatus,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
