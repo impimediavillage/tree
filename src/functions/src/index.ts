@@ -671,7 +671,7 @@ export const onPoolIssueCreated = onDocumentCreated(
  * Callable function to update the image URL for a strain in the seed data.
  * This is triggered when a strain with a "none" image is viewed.
  */
-export const updateStrainImageUrl = onCall(async (request) => {
+export const updateStrainImageUrl = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
@@ -698,7 +698,7 @@ export const updateStrainImageUrl = onCall(async (request) => {
  * NEW: Callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
-export const getUserProfile = onCall(async (request) => {
+export const getUserProfile = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
@@ -749,7 +749,7 @@ export const getUserProfile = onCall(async (request) => {
         // Ensure all date fields on the dispensary object are serialized
         const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
             ...dispensaryData,
-            applicationDate: toISODateString(dispensaryData.applicationDate)!,
+            applicationDate: toISODateString(dispensaryData.applicationDate), // Removed non-null assertion
             approvedDate: toISODateString(dispensaryData.approvedDate),
             lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
         } : null;
@@ -887,7 +887,7 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
 /**
  * Callable function to deduct credits and log AI interaction.
  */
-export const deductCreditsAndLogInteraction = onCall(
+export const deductCreditsAndLogInteraction = onCall( { cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');

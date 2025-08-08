@@ -24,7 +24,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Use httpsCallable for the onCall function
 const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -37,7 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleSignOut = useCallback(() => {
     setCurrentUser(null);
     setCurrentDispensary(null);
-    localStorage.removeItem('currentUserHolisticAI');
     if (!pathname.startsWith('/auth')) {
         setLoading(false);
     }
@@ -45,15 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async () => {
     try {
-      // No need to pass auth token manually, httpsCallable handles it
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser | null;
       
       if (profile) {
         setCurrentUser(profile);
-        localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
         
-        // The 'dispensary' object is now correctly serialized and part of the profile
         if (profile.role === 'DispensaryOwner' && profile.dispensary) {
           setCurrentDispensary(profile.dispensary);
         } else {
