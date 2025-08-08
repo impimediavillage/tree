@@ -671,7 +671,7 @@ export const onPoolIssueCreated = onDocumentCreated(
  * Callable function to update the image URL for a strain in the seed data.
  * This is triggered when a strain with a "none" image is viewed.
  */
-export const updateStrainImageUrl = onCall(async (request) => {
+export const updateStrainImageUrl = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
@@ -885,11 +885,9 @@ export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 5
 
 
 /**
- * HTTP-callable function to deduct credits and log AI interaction.
- * THIS IS THE PREFERRED METHOD FOR CREDIT DEDUCTION.
+ * Callable function to deduct credits and log AI interaction.
  */
-export const deductCreditsAndLogInteraction = onCall(
-  { cors: true },
+export const deductCreditsAndLogInteraction = onCall( { cors: true },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
