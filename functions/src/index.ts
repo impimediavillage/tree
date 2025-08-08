@@ -21,8 +21,7 @@ import type {
   UserDocData,
   DeductCreditsRequestBody,
   NotificationData,
-  NoteDataCloud,
-  ScrapeLog
+  NoteDataCloud
 } from "./types";
 import { runScraper } from './scrapers/justbrand-scraper';
 
@@ -680,32 +679,27 @@ export const onPoolIssueCreated = onDocumentCreated(
 /**
  * HTTP-callable function to deduct credits and log AI interaction.
  */
-export const deductCreditsAndLogInteraction = onRequest(
-  { cors: true }, // Gen 2 CORS configuration
-  async (req: Request, res: Response) => {
-    if (req.method !== "POST") {
-      res.status(405).send({ error: "Method Not Allowed" });
-      return;
+export const deductCreditsAndLogInteraction = onCall(
+  { cors: true },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-
     const {
       userId,
       advisorSlug,
       creditsToDeduct,
       wasFreeInteraction,
-    } = req.body as DeductCreditsRequestBody;
+    } = request.data as DeductCreditsRequestBody;
 
     if (
       !userId ||
       !advisorSlug ||
       creditsToDeduct === undefined ||
-      wasFreeInteraction === undefined
+      wasFreeInteraction === undefined ||
+      userId !== request.auth.uid // Security check
     ) {
-      res.status(400).send({
-        error:
-          "Missing required fields: userId, advisorSlug, creditsToDeduct, wasFreeInteraction",
-      });
-      return;
+      throw new HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
     }
 
     const userRef = db.collection("users").doc(userId);
@@ -716,11 +710,11 @@ export const deductCreditsAndLogInteraction = onRequest(
         await db.runTransaction(async (transaction) => {
           const userDoc = await transaction.get(userRef);
           if (!userDoc.exists) {
-            throw new HttpError(404, "User not found.", "not-found");
+            throw new HttpsError("not-found", "User not found.");
           }
           const currentCredits = (userDoc.data() as UserDocData)?.credits || 0;
           if (currentCredits < creditsToDeduct) {
-            throw new HttpError(400, "Insufficient credits.", "failed-precondition");
+            throw new HttpsError("failed-precondition", "Insufficient credits.");
           }
           newCreditBalance = currentCredits - creditsToDeduct;
           transaction.update(userRef, { credits: newCreditBalance });
@@ -731,7 +725,7 @@ export const deductCreditsAndLogInteraction = onRequest(
       } else {
         const userDoc = await userRef.get();
         if (!userDoc.exists) {
-          throw new HttpError(404, "User not found for free interaction logging.", "not-found");
+          throw new HttpsError("not-found", "User not found for free interaction logging.");
         }
         newCreditBalance = (userDoc.data() as UserDocData)?.credits || 0;
         logger.info(
@@ -747,7 +741,7 @@ export const deductCreditsAndLogInteraction = onRequest(
         dispensaryId: userData.dispensaryId || null,
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
-        timestamp: admin.firestore.Timestamp.now() as any,
+        timestamp: admin.firestore.Timestamp.now(),
         wasFreeInteraction,
       };
       await db.collection("aiInteractionsLog").add(logEntry);
@@ -755,18 +749,17 @@ export const deductCreditsAndLogInteraction = onRequest(
         `Logged AI interaction for user ${userId}, advisor ${advisorSlug}.`
       );
 
-      res.status(200).send({
+      return {
         success: true,
         message: "Credits updated and interaction logged successfully.",
         newCredits: newCreditBalance,
-      });
+      };
     } catch (error: any) {
-      logger.error("Error in deductCreditsAndLogInteraction:", error);
-      if (error instanceof HttpError) {
-        res.status(error.httpStatus).send({ error: error.message, code: error.code });
-      } else {
-        res.status(500).send({ error: "Internal server error." });
-      }
+        logger.error("Error in deductCreditsAndLogInteraction:", error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError("internal", "An internal error occurred while processing your request.");
     }
   }
 );
@@ -795,5 +788,90 @@ export const updateStrainImageUrl = onCall(async (request) => {
     } catch (error: any) {
         logger.error(`Error updating strain image URL for ${strainId}:`, error);
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
+    }
+});
+
+
+/**
+ * NEW: Callable function to securely fetch a user's profile data.
+ * This is called by the client after authentication to prevent race conditions.
+ */
+export const getUserProfile = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
+    }
+    const uid = request.auth.uid;
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDocSnap = await userDocRef.get();
+
+        if (!userDocSnap.exists) {
+            logger.error(`User document not found for authenticated user: ${uid}`);
+            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
+        }
+        
+        const userData = userDocSnap.data() as UserDocData;
+        
+        let dispensaryData: Dispensary | null = null;
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
+                if (dispensaryDocSnap.exists()) {
+                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
+                } else {
+                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                }
+            } catch (dispensaryError) {
+                logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
+            }
+        }
+        
+        const toISODateString = (date: any): string | null => {
+            if (!date) return null;
+            if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
+            if (date instanceof Date) return date.toISOString();
+            if (typeof date === 'string') {
+                 try {
+                     const parsedDate = new Date(date);
+                     if (!isNaN(parsedDate.getTime())) {
+                         return parsedDate.toISOString();
+                     }
+                 } catch (e) {
+                     // Ignore invalid date strings
+                 }
+             }
+            return null;
+        };
+        
+        const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
+            ...dispensaryData,
+            applicationDate: toISODateString(dispensaryData.applicationDate)!,
+            approvedDate: toISODateString(dispensaryData.approvedDate),
+            lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
+        } : null;
+
+        // Return a client-safe AppUser object
+        return {
+            uid: uid,
+            email: userData.email,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            role: userData.role,
+            dispensaryId: userData.dispensaryId,
+            credits: userData.credits,
+            status: userData.status,
+            createdAt: toISODateString(userData.createdAt),
+            lastLoginAt: toISODateString(userData.lastLoginAt),
+            dispensaryStatus: dispensaryData?.status || null,
+            dispensary: dispensaryWithSerializableDates, // Include full dispensary data if found
+            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+            signupSource: userData.signupSource || 'public',
+        };
+
+    } catch (error) {
+        logger.error(`Error fetching user profile for ${uid}:`, error);
+        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
     }
 });

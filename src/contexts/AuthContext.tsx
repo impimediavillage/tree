@@ -44,60 +44,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setLoading(true);
         try {
           const result = await getUserProfileCallable();
-          const profile = result.data as AppUser | null;
+          const profile = result.data as AppUser;
 
           if (profile) {
               setCurrentUser(profile);
               localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
+              
               if (profile.role === 'DispensaryOwner' && profile.dispensary) {
                 setCurrentDispensary(profile.dispensary);
               } else {
                 setCurrentDispensary(null);
               }
+
+              const isAuthPage = pathname.startsWith('/auth');
+              if(isAuthPage) {
+                  if (profile.role === 'Super Admin') {
+                      router.push('/admin/dashboard');
+                  } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
+                      router.push('/dispensary-admin/dashboard');
+                  } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus !== 'Approved') {
+                      router.push('/'); 
+                  } else {
+                      router.push('/dashboard/leaf');
+                  }
+              }
           } else {
-             // This case means the function returned null, which implies a server-side issue like user not found in DB.
-             console.error("Critical: User exists in Auth, but profile not found in DB. Logging out.");
+             console.error("Critical: User is authenticated but profile data is null. Logging out.");
              await auth.signOut();
           }
-
         } catch (error) {
           console.error("Critical: Failed to get user profile. Logging out.", error);
           if (error instanceof FunctionsError) {
               console.error("Function error code:", error.code);
               console.error("Function error message:", error.message);
           }
-          await auth.signOut(); // Force sign out on profile fetch failure
+          await auth.signOut();
         } finally {
           setLoading(false);
         }
       } else {
-        // User is signed out
         handleSignOut();
       }
     });
 
     return () => unsubscribe();
-  }, [handleSignOut]);
-  
-    // This effect handles redirection after login
-    useEffect(() => {
-        if (!loading && currentUser) {
-            const isAuthPage = pathname.startsWith('/auth');
-            if(isAuthPage) {
-                if (currentUser.role === 'Super Admin') {
-                    router.push('/admin/dashboard');
-                } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
-                    router.push('/dispensary-admin/dashboard');
-                } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
-                    router.push('/'); 
-                } else { // LeafUser or other roles
-                    router.push('/dashboard/leaf');
-                }
-            }
-        }
-    }, [currentUser, loading, pathname, router]);
+  }, [handleSignOut, pathname, router]);
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';

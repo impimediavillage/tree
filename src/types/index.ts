@@ -21,7 +21,7 @@ export interface Dispensary {
   fullName: string;
   phone: string;
   ownerEmail: string;
-  ownerId?: string | null; // <-- ADDED THIS CRITICAL FIELD
+  ownerId?: string | null;
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
@@ -239,6 +239,7 @@ export interface User {
   role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
   dispensaryId?: string | null;
   dispensaryStatus?: Dispensary['status'] | null;
+  dispensary?: Dispensary | null; // <-- Include full dispensary data
   credits: number;
   createdAt?: Timestamp | Date | string;
   lastLoginAt?: Timestamp | Date | string | null;
@@ -398,7 +399,6 @@ export interface StickerSet {
   createdAt: Timestamp | Date | string;
 }
 
-// Add dispensary to AuthContextType
 export interface AuthContextType {
   currentUser: User | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
