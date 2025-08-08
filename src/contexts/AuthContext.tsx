@@ -24,7 +24,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the callable function once
 const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -38,17 +37,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setCurrentUser(null);
     setCurrentDispensary(null);
     localStorage.removeItem('currentUserHolisticAI');
-    setLoading(false);
-  }, []);
+    if (!pathname.startsWith('/auth')) {
+        setLoading(false);
+    }
+  }, [pathname]);
 
-  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser) => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser;
       
       if (profile) {
         setCurrentUser(profile);
-        // Persist essential data to localStorage
         localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
         
         if (profile.role === 'DispensaryOwner' && profile.dispensary) {
@@ -74,20 +74,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        const profile = await fetchUserProfile(user);
-        if (profile) {
-          const isAuthPage = pathname.startsWith('/auth');
-          if (isAuthPage) {
-            if (profile.role === 'Super Admin') {
-              router.push('/admin/dashboard');
-            } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
-              router.push('/dispensary-admin/dashboard');
-            } else if (profile.role === 'DispensaryOwner') {
-              router.push('/'); 
-            } else {
-              router.push('/dashboard/leaf');
+        // Only fetch profile if currentUser is not already set
+        // This prevents re-fetching on every hot reload in dev
+        if (!currentUser) {
+            const profile = await fetchUserProfile();
+            if (profile) {
+                const isAuthPage = pathname.startsWith('/auth');
+                if (isAuthPage) {
+                    if (profile.role === 'Super Admin') {
+                        router.push('/admin/dashboard');
+                    } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
+                        router.push('/dispensary-admin/dashboard');
+                    } else if (profile.role === 'DispensaryOwner') {
+                        router.push('/');
+                    } else {
+                        router.push('/dashboard/leaf');
+                    }
+                }
             }
-          }
         }
       } else {
         handleSignOut();
@@ -96,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [handleSignOut, pathname, router, fetchUserProfile]);
+  }, [handleSignOut, pathname, router, fetchUserProfile, currentUser]);
 
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
