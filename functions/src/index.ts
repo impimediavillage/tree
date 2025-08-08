@@ -39,6 +39,8 @@ class HttpError extends Error {
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
+        // This is the correct way to initialize in a standard Cloud Functions environment.
+        // It automatically uses the service account associated with the function.
         admin.initializeApp();
         logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
@@ -177,37 +179,22 @@ export const onUserCreated = onDocumentCreated(
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
 
-    // Welcome email logic for Leaf Users created via dispensary panels or other internal means
-    if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
-      logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
-      const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Wellness Tree!";
-      const greeting = `Dear ${userDisplayName},`;
-      const content = [
-        `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
-        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
-        `You've received 10 free credits to get started with our AI advisors.`,
-        `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
-      ];
-      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
-    } else if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
-      logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
-       const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Wellness Tree!";
-      const greeting = `Welcome, ${userDisplayName}!`;
-      const content = [
-        `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
-        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
-        `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
-        `Enjoy exploring!`,
-      ];
-      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
+    if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
+        logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
+        const userDisplayName = userData.displayName || userData.email.split('@')[0];
+        const subject = "Welcome to The Wellness Tree!";
+        const greeting = `Welcome, ${userDisplayName}!`;
+        const content = [
+            `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
+            `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+            `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
+            `Enjoy exploring!`,
+        ];
+        const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+        const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+        await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a public LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
@@ -845,8 +832,9 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
                 }
             } catch (dispensaryError) {
-                logger.error(`Error fetching dispensary doc for user ${uid}`, dispensaryError);
-                // Do not throw an error here, just proceed without dispensary status
+                logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
+                // Gracefully continue without throwing an error to the client, which would prevent login.
+                // The client-side will see `dispensaryStatus` as null and handle it.
             }
         }
         
@@ -858,6 +846,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             return null;
         };
         
+        // Return a client-safe AppUser object
         return {
             uid: uid,
             email: userData.email,

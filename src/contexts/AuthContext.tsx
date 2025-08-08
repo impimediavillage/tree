@@ -25,7 +25,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfile = httpsCallable<void, AppUser>(functions, 'getUserProfile');
+const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -34,44 +34,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchFullUserProfile = useCallback(async (user: FirebaseUser) => {
-    try {
-      const result = await getUserProfile();
-      const appUser = result.data as AppUser;
-
-      setCurrentUser(appUser);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-      
-      if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-        const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-        if (dispensaryDocSnap.exists()) {
-          setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data()} as Dispensary);
-        } else {
-          // Handle case where dispensary document doesn't exist, though the user is linked
-          console.warn(`User ${user.uid} is linked to non-existent dispensary ${appUser.dispensaryId}`);
-          setCurrentDispensary(null);
-        }
+  const handleAuthSuccess = useCallback(async (appUser: AppUser) => {
+    setCurrentUser(appUser);
+    localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+    
+    if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
+      const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
+      const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+      if (dispensaryDocSnap.exists()) {
+        setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary);
       } else {
         setCurrentDispensary(null);
       }
-    } catch (error) {
-      console.error("Error fetching full user profile. Logging out.", error);
-      // This is a critical failure, sign the user out.
-      await auth.signOut();
-    } finally {
-      setLoading(false);
+    } else {
+      setCurrentDispensary(null);
     }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in. Fetch their full profile.
         setLoading(true);
-        await fetchFullUserProfile(user);
+        try {
+          const result = await getUserProfileCallable();
+          const appUser = result.data as AppUser;
+          await handleAuthSuccess(appUser);
+        } catch (error) {
+          console.error("Critical: Failed to get user profile. Logging out.", error);
+          await auth.signOut(); // Force sign out on profile fetch failure
+          setCurrentUser(null);
+          setCurrentDispensary(null);
+          localStorage.removeItem('currentUserHolisticAI');
+        } finally {
+          setLoading(false);
+        }
       } else {
-        // User is signed out. Clear all state.
+        // User is signed out
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -79,12 +77,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [fetchFullUserProfile]);
+  }, [handleAuthSuccess]);
 
+  // This effect handles redirection based on user state once loading is complete
   useEffect(() => {
-    // This effect handles redirection based on user state once loading is complete
     if (!loading && currentUser) {
       const isAuthPage = pathname.startsWith('/auth');
       if (isAuthPage) {
