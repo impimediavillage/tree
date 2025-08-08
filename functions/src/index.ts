@@ -749,7 +749,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         // Ensure all date fields on the dispensary object are serialized
         const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
             ...dispensaryData,
-            applicationDate: toISODateString(dispensaryData.applicationDate)!,
+            applicationDate: toISODateString(dispensaryData.applicationDate),
             approvedDate: toISODateString(dispensaryData.approvedDate),
             lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
         } : null;
