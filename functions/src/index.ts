@@ -22,7 +22,9 @@ import type {
   DeductCreditsRequestBody,
   NotificationData,
   NoteDataCloud,
+  ScrapeLog
 } from "./types";
+import { runScraper } from './scrapers/justbrand-scraper';
 
 /**
  * Custom error class for HTTP functions to propagate status codes.
@@ -190,8 +192,22 @@ export const onUserCreated = onDocumentCreated(
       const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
       const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
       await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
+    } else if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
+      logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
+       const userDisplayName = userData.displayName || userData.email.split('@')[0];
+      const subject = "Welcome to The Wellness Tree!";
+      const greeting = `Welcome, ${userDisplayName}!`;
+      const content = [
+        `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
+        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+        `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
+        `Enjoy exploring!`,
+      ];
+      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
@@ -329,8 +345,8 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
-        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
-        logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
+        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp(), ownerId: userId });
+        logger.info(`Public store URL ${publicStoreUrl} and ownerId set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
@@ -396,7 +412,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
     else if (previousValue && newValue.status === previousValue.status) {
       const beforeDataForCompare = { ...previousValue };
       const afterDataForCompare = { ...newValue };
-      const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount'];
+      const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount', 'ownerId'];
       fieldsToIgnore.forEach(field => {
         delete (beforeDataForCompare as any)[field];
         delete (afterDataForCompare as any)[field];
@@ -737,9 +753,13 @@ export const deductCreditsAndLogInteraction = onRequest(
           `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
         );
       }
+      
+      const userDoc = await userRef.get();
+      const userData = userDoc.data() as UserDocData;
 
       const logEntry = {
         userId,
+        dispensaryId: userData.dispensaryId || null,
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
         timestamp: admin.firestore.Timestamp.now() as any,
@@ -790,5 +810,73 @@ export const updateStrainImageUrl = onCall(async (request) => {
     } catch (error: any) {
         logger.error(`Error updating strain image URL for ${strainId}:`, error);
         throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
+    }
+});
+
+
+/**
+ * Callable function to securely fetch a user's profile data.
+ * This is called by the client after authentication to prevent race conditions.
+ */
+export const getUserProfile = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
+    }
+    const uid = request.auth.uid;
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDocSnap = await userDocRef.get();
+
+        if (!userDocSnap.exists) {
+            logger.error(`User document not found for authenticated user: ${uid}`);
+            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
+        }
+        
+        const userData = userDocSnap.data() as UserDocData;
+        
+        let dispensaryStatus: Dispensary['status'] | null = null;
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
+                if (dispensaryDocSnap.exists()) {
+                    dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+                } else {
+                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                }
+            } catch (dispensaryError) {
+                logger.error(`Error fetching dispensary doc for user ${uid}`, dispensaryError);
+                // Do not throw an error here, just proceed without dispensary status
+            }
+        }
+        
+        const toISO = (date: any): string | null => {
+            if (!date) return null;
+            if (typeof date.toDate === 'function') return date.toDate().toISOString();
+            if (date instanceof Date) return date.toISOString();
+            if (typeof date === 'string') return date;
+            return null;
+        };
+        
+        return {
+            uid: uid,
+            email: userData.email,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            role: userData.role,
+            dispensaryId: userData.dispensaryId,
+            credits: userData.credits,
+            status: userData.status,
+            createdAt: toISO(userData.createdAt),
+            lastLoginAt: toISO(userData.lastLoginAt),
+            dispensaryStatus: dispensaryStatus,
+            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+            signupSource: userData.signupSource || 'public',
+        };
+
+    } catch (error) {
+        logger.error(`Error fetching user profile for ${uid}:`, error);
+        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
     }
 });
