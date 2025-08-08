@@ -39,6 +39,8 @@ class HttpError extends Error {
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
+        // This is the correct way to initialize in a standard Cloud Functions environment.
+        // It automatically uses the service account associated with the function.
         admin.initializeApp();
         logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
@@ -845,16 +847,27 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
                 }
             } catch (dispensaryError) {
+                // This catch block is crucial. If the dispensary doc is deleted,
+                // this prevents the entire function from crashing.
                 logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
+                dispensaryStatus = null; // Gracefully set status to null
             }
         }
         
+        // ** THE CORE FIX **
+        // Safely convert Firestore Timestamps to ISO strings for JSON serialization.
         const toISODateString = (date: any): string | null => {
             if (!date) return null;
             if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
             if (date instanceof Date) return date.toISOString();
-            if (typeof date === 'string') return new Date(date).toISOString(); // Handle string dates
-            return null;
+            if (typeof date === 'string') {
+                 // Attempt to parse string dates, but handle invalid ones.
+                const parsedDate = new Date(date);
+                if (!isNaN(parsedDate.getTime())) {
+                    return parsedDate.toISOString();
+                }
+            }
+            return null; // Return null for any unhandled or invalid types
         };
         
         // Return a client-safe AppUser object

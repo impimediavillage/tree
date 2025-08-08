@@ -5,11 +5,10 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions, db } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '@/lib/firebase';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -25,6 +24,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// This is now the single source of truth for fetching the user profile.
 const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -34,47 +34,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleAuthSuccess = useCallback(async (appUser: AppUser) => {
-    setCurrentUser(appUser);
-    localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-    
-    if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-      try {
-        const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-        if (dispensaryDocSnap.exists()) {
-          setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary);
-        } else {
-          setCurrentDispensary(null);
-        }
-      } catch (e) {
-        console.error("Failed to fetch dispensary document for owner", e);
-        setCurrentDispensary(null);
-      }
-    } else {
-      setCurrentDispensary(null);
-    }
-  }, []);
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setLoading(true);
+        // User is authenticated with Firebase, now get their full profile from our callable function.
         try {
           const result = await getUserProfileCallable();
           const appUser = result.data as AppUser;
-          await handleAuthSuccess(appUser);
+          
+          setCurrentUser(appUser);
+          localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
+          
         } catch (error) {
           console.error("Critical: Failed to get user profile. Logging out.", error);
+          if (error instanceof FunctionsError) {
+              console.error("Function error code:", error.code);
+              console.error("Function error message:", error.message);
+          }
           await auth.signOut(); // Force sign out on profile fetch failure
           setCurrentUser(null);
-          setCurrentDispensary(null);
           localStorage.removeItem('currentUserHolisticAI');
         } finally {
-          setLoading(false); // This is now correctly called in all scenarios.
+          // This will now ALWAYS be called, un-freezing the app.
+          setLoading(false); 
         }
       } else {
-        // User is signed out
+        // User is signed out, clear everything.
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -83,9 +68,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [handleAuthSuccess]);
+  }, []);
 
-  // This effect handles redirection based on user state once loading is complete
+  // This effect handles redirection based on the final user state once loading is complete.
   useEffect(() => {
     if (!loading && currentUser) {
       const isAuthPage = pathname.startsWith('/auth');
@@ -95,7 +80,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
           router.push('/dispensary-admin/dashboard');
         } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
-          router.push('/'); // Or a dedicated "pending approval" page
+          // Redirect to a safe page if their store isn't approved yet.
+          router.push('/'); 
         } else { // LeafUser or other roles
           router.push('/dashboard/leaf');
         }
