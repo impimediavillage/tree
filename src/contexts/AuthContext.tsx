@@ -24,6 +24,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Use httpsCallable for the onCall function
 const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -44,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async () => {
     try {
+      // No need to pass auth token manually, httpsCallable handles it
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser | null;
       
@@ -51,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(profile);
         localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
         
+        // The 'dispensary' object is now correctly serialized and part of the profile
         if (profile.role === 'DispensaryOwner' && profile.dispensary) {
           setCurrentDispensary(profile.dispensary);
         } else {
@@ -58,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return profile;
       }
-      // Handle case where function returns null (e.g., user doc not found)
       throw new Error("User profile data could not be retrieved from the server.");
     } catch (error) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
@@ -75,7 +77,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-          // Always fetch a fresh profile on auth change to ensure roles/data are up-to-date.
           const profile = await fetchUserProfile();
           if (profile) {
               const isAuthPage = pathname.startsWith('/auth');
@@ -98,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
