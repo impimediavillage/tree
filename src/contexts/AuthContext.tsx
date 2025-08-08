@@ -6,11 +6,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
-import { getUserProfileFlow } from '@/ai/flows/get-user-profile';
-import { run } from 'genkit/flow';
+import { fetchUserProfile } from '@/app/auth/actions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -33,44 +31,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const fetchFullProfile = useCallback(async (uid: string) => {
-    try {
-      // Use the new, robust Genkit flow to fetch the user profile
-      const appUser = await run(getUserProfileFlow);
-
-      setCurrentUser(appUser);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
-      
-      // If the user is a dispensary owner, fetch their dispensary data
-      if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-          const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-          const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-          if (dispensaryDocSnap.exists()) {
-              setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary);
-          } else {
-              console.warn(`Dispensary document ${appUser.dispensaryId} not found for owner ${uid}.`);
-              setCurrentDispensary(null);
-          }
+  const handleUserProfileResponse = useCallback((profile: AppUser | null) => {
+    if (profile) {
+      setCurrentUser(profile);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
+      if (profile.role === 'DispensaryOwner' && profile.dispensary) {
+        setCurrentDispensary(profile.dispensary);
       } else {
-          setCurrentDispensary(null);
+        setCurrentDispensary(null);
       }
-
-    } catch (error) {
-      console.error("Critical: Failed to get user profile. Logging out.", error);
-      await auth.signOut();
-      // State will be cleared by the onAuthStateChanged listener below
-    } finally {
-      // This setLoading(false) is crucial for unblocking the UI.
-      setLoading(false);
+    } else {
+      // Handle profile fetch failure
+      auth.signOut(); // This will trigger the onAuthStateChanged listener to clear state
     }
   }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await fetchFullProfile(user.uid);
+        try {
+          const appUser = await fetchUserProfile();
+          handleUserProfileResponse(appUser);
+        } catch (error) {
+          console.error("Critical: Failed to get user profile. Logging out.", error);
+          await auth.signOut();
+        } finally {
+          setLoading(false);
+        }
       } else {
-        // User is signed out, clear everything.
+        // User is signed out
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -79,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [fetchFullProfile]);
+  }, [handleUserProfileResponse]);
 
   useEffect(() => {
     if (!loading && currentUser) {
@@ -104,20 +93,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   const currentDispensaryStatus = currentUser?.dispensaryStatus || null;
 
+  const value = {
+    currentUser,
+    setCurrentUser,
+    currentDispensary,
+    loading,
+    isSuperAdmin,
+    isDispensaryOwner,
+    canAccessDispensaryPanel,
+    isLeafUser,
+    currentDispensaryStatus,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        currentUser,
-        setCurrentUser,
-        currentDispensary,
-        loading,
-        isSuperAdmin,
-        isDispensaryOwner,
-        canAccessDispensaryPanel,
-        isLeafUser,
-        currentDispensaryStatus,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

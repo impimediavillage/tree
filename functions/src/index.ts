@@ -39,8 +39,6 @@ class HttpError extends Error {
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
-        // This is the correct way to initialize in a standard Cloud Functions environment.
-        // It automatically uses the service account associated with the function.
         admin.initializeApp();
         logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
