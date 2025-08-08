@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = useCallback(async () => {
     try {
       const result = await getUserProfileCallable();
-      const profile = result.data as AppUser;
+      const profile = result.data as AppUser | null;
       
       if (profile) {
         setCurrentUser(profile);
@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return profile;
       }
+      // Handle case where function returns null (e.g., user doc not found)
       throw new Error("User profile data could not be retrieved from the server.");
     } catch (error) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
@@ -74,25 +75,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        // Only fetch profile if currentUser is not already set
-        // This prevents re-fetching on every hot reload in dev
-        if (!currentUser) {
-            const profile = await fetchUserProfile();
-            if (profile) {
-                const isAuthPage = pathname.startsWith('/auth');
-                if (isAuthPage) {
-                    if (profile.role === 'Super Admin') {
-                        router.push('/admin/dashboard');
-                    } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
-                        router.push('/dispensary-admin/dashboard');
-                    } else if (profile.role === 'DispensaryOwner') {
-                        router.push('/');
-                    } else {
-                        router.push('/dashboard/leaf');
-                    }
-                }
-            }
-        }
+          // Always fetch a fresh profile on auth change to ensure roles/data are up-to-date.
+          const profile = await fetchUserProfile();
+          if (profile) {
+              const isAuthPage = pathname.startsWith('/auth');
+              if (isAuthPage) {
+                  if (profile.role === 'Super Admin') {
+                      router.push('/admin/dashboard');
+                  } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
+                      router.push('/dispensary-admin/dashboard');
+                  } else if (profile.role === 'DispensaryOwner') {
+                      router.push('/');
+                  } else {
+                      router.push('/dashboard/leaf');
+                  }
+              }
+          }
       } else {
         handleSignOut();
       }
@@ -100,7 +98,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [handleSignOut, pathname, router, fetchUserProfile, currentUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';

@@ -695,7 +695,7 @@ export const updateStrainImageUrl = onCall(async (request) => {
 
 
 /**
- * Callable function to securely fetch a user's profile data.
+ * NEW: Callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
 export const getUserProfile = onCall(async (request) => {
