@@ -76,10 +76,10 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
   }, [authLoading, canAccessDispensaryPanel, currentUser, toast]);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && canAccessDispensaryPanel) {
       fetchDispensaryData();
     }
-  }, [authLoading, fetchDispensaryData]);
+  }, [authLoading, canAccessDispensaryPanel, fetchDispensaryData]);
 
   return (
     <DispensaryDataContext.Provider value={{
