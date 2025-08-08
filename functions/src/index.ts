@@ -9,8 +9,7 @@ import {
   Change,
   FirestoreEvent,
 } from "firebase-functions/v2/firestore";
-import { onRequest, Request, onCall, HttpsError } from "firebase-functions/v2/https";
-import type { Response } from "express";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 // Import types
 import type {
@@ -19,21 +18,12 @@ import type {
   ProductRequestDocData,
   PoolIssueDocData,
   UserDocData,
-  DeductCreditsRequestBody,
   NotificationData,
-  NoteDataCloud
+  NoteDataCloud,
+  ScrapeLog
 } from "./types";
 import { runScraper } from './scrapers/justbrand-scraper';
 
-/**
- * Custom error class for HTTP functions to propagate status codes.
- */
-class HttpError extends Error {
-  constructor(public httpStatus: number, public message: string, public code: string) {
-    super(message);
-    this.name = 'HttpError';
-  }
-}
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -676,8 +666,229 @@ export const onPoolIssueCreated = onDocumentCreated(
     return null;
   });
 
+
+/**
+ * Callable function to update the image URL for a strain in the seed data.
+ * This is triggered when a strain with a "none" image is viewed.
+ */
+export const updateStrainImageUrl = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+
+    const { strainId, imageUrl } = request.data;
+
+    if (!strainId || typeof strainId !== 'string' || !imageUrl || typeof imageUrl !== 'string') {
+        throw new HttpsError('invalid-argument', 'The function must be called with "strainId" and "imageUrl" arguments.');
+    }
+
+    try {
+        const strainRef = db.collection('my-seeded-collection').doc(strainId);
+        await strainRef.update({ img_url: imageUrl });
+        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}.`);
+        return { success: true, message: 'Image URL updated successfully.' };
+    } catch (error: any) {
+        logger.error(`Error updating strain image URL for ${strainId}:`, error);
+        throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
+    }
+});
+
+
+/**
+ * NEW: Callable function to securely fetch a user's profile data.
+ * This is called by the client after authentication to prevent race conditions.
+ */
+export const getUserProfile = onCall({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
+    }
+    const uid = request.auth.uid;
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDocSnap = await userDocRef.get();
+
+        if (!userDocSnap.exists) {
+            logger.error(`User document not found for authenticated user: ${uid}`);
+            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
+        }
+        
+        const userData = userDocSnap.data() as UserDocData;
+        
+        let dispensaryData: Dispensary | null = null;
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
+                if (dispensaryDocSnap.exists()) {
+                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
+                } else {
+                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                }
+            } catch (dispensaryError) {
+                logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
+            }
+        }
+        
+        const toISODateString = (date: any): string | null => {
+            if (!date) return null;
+            if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
+            if (date instanceof Date) return date.toISOString();
+            // Handle if it's already a string (e.g., from a previous serialization)
+            if (typeof date === 'string') {
+                 try {
+                     const parsedDate = new Date(date);
+                     // Check if parsing was successful before converting
+                     if (!isNaN(parsedDate.getTime())) {
+                         return parsedDate.toISOString();
+                     }
+                 } catch (e) {
+                    // Ignore invalid date strings
+                 }
+             }
+            return null; // Return null for any other type or invalid string
+        };
+        
+        // Ensure all date fields on the dispensary object are serialized
+        const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
+            ...dispensaryData,
+            applicationDate: toISODateString(dispensaryData.applicationDate)!,
+            approvedDate: toISODateString(dispensaryData.approvedDate),
+            lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
+        } : null;
+
+        // Return a client-safe AppUser object
+        return {
+            uid: uid,
+            email: userData.email,
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            role: userData.role,
+            dispensaryId: userData.dispensaryId,
+            credits: userData.credits,
+            status: userData.status,
+            createdAt: toISODateString(userData.createdAt),
+            lastLoginAt: toISODateString(userData.lastLoginAt),
+            dispensaryStatus: dispensaryData?.status || null,
+            dispensary: dispensaryWithSerializableDates, // Include full, serialized dispensary data
+            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+            signupSource: userData.signupSource || 'public',
+        };
+
+    } catch (error) {
+        logger.error(`Error fetching user profile for ${uid}:`, error);
+        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
+    }
+});
+
+/**
+ * Callable function to scrape the JustBrand.co.za catalog.
+ */
+export const scrapeJustBrandCatalog = onCall({ memory: '1GiB', timeoutSeconds: 540 }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    const uid = request.auth.uid;
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists || userDoc.data()?.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'Permission denied. You must be an admin to run this operation.');
+    }
+    
+    const runId = new Date().toISOString().replace(/[:.]/g, '-');
+    const logRef = db.collection('scrapeLogs').doc(runId);
+    const historyRef = db.collection('importsHistory').doc(runId);
+    
+    const logMessages: string[] = [];
+    const log = (message: string) => {
+        logger.info(`[${runId}] ${message}`);
+        logMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    };
+
+    try {
+        log('ScrapeJustBrandCatalog function triggered by admin.');
+        await logRef.set({
+            status: 'started',
+            startTime: admin.firestore.FieldValue.serverTimestamp(),
+            messages: logMessages,
+            itemCount: 0,
+            successCount: 0,
+            failCount: 0,
+        });
+
+        const catalog = await runScraper(log);
+        
+        let totalProducts = 0;
+        const batchSize = 499;
+        let batch = db.batch();
+        let operationCount = 0;
+
+        for (const category of catalog) {
+            totalProducts += category.products.length;
+            const categoryRef = db.collection('justbrand_catalog').doc(category.slug);
+            const { products, ...categoryData } = category;
+            
+            batch.set(categoryRef, { ...categoryData, productCount: products.length, lastUpdated: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+            operationCount++;
+
+            if (operationCount >= batchSize) {
+                await batch.commit();
+                batch = db.batch();
+                operationCount = 0;
+            }
+
+            for (const product of products) {
+                if (product.handle) {
+                    const productRef = categoryRef.collection('products').doc(product.handle);
+                    batch.set(productRef, product);
+                    operationCount++;
+
+                    if (operationCount >= batchSize) {
+                        await batch.commit();
+                        batch = db.batch();
+                        operationCount = 0;
+                    }
+                }
+            }
+        }
+        
+        if (operationCount > 0) {
+            await batch.commit();
+        }
+
+        log(`Successfully wrote ${catalog.length} categories and ${totalProducts} products.`);
+        const finalLog: ScrapeLog = {
+            status: 'completed',
+            startTime: logRef.get()?.then(s => s.data()?.startTime), // Preserve start time
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            itemCount: totalProducts,
+            successCount: totalProducts,
+            failCount: 0,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+
+        return { success: true, message: `Scraping complete. ${totalProducts} products saved.` };
+
+    } catch (error: any) {
+        logger.error(`[${runId}] Scraping failed:`, error);
+        log(`FATAL ERROR: ${error.message}`);
+        const finalLog: Partial<ScrapeLog> = {
+            status: 'failed',
+            endTime: admin.firestore.FieldValue.serverTimestamp(),
+            error: error.message,
+            messages: logMessages,
+        };
+        await logRef.update(finalLog);
+        await historyRef.set(finalLog);
+        throw new HttpsError('internal', 'An error occurred during the scraping process. Check logs.', { runId });
+    }
+});
+
+
 /**
  * HTTP-callable function to deduct credits and log AI interaction.
+ * THIS IS THE PREFERRED METHOD FOR CREDIT DEDUCTION.
  */
 export const deductCreditsAndLogInteraction = onCall(
   { cors: true },
@@ -690,7 +901,7 @@ export const deductCreditsAndLogInteraction = onCall(
       advisorSlug,
       creditsToDeduct,
       wasFreeInteraction,
-    } = request.data as DeductCreditsRequestBody;
+    } = request.data as UserDocData & { advisorSlug: string; creditsToDeduct: number; wasFreeInteraction: boolean };
 
     if (
       !userId ||
@@ -763,115 +974,3 @@ export const deductCreditsAndLogInteraction = onCall(
     }
   }
 );
-
-
-/**
- * Callable function to update the image URL for a strain in the seed data.
- * This is triggered when a strain with a "none" image is viewed.
- */
-export const updateStrainImageUrl = onCall(async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-
-    const { strainId, imageUrl } = request.data;
-
-    if (!strainId || typeof strainId !== 'string' || !imageUrl || typeof imageUrl !== 'string') {
-        throw new HttpsError('invalid-argument', 'The function must be called with "strainId" and "imageUrl" arguments.');
-    }
-
-    try {
-        const strainRef = db.collection('my-seeded-collection').doc(strainId);
-        await strainRef.update({ img_url: imageUrl });
-        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}.`);
-        return { success: true, message: 'Image URL updated successfully.' };
-    } catch (error: any) {
-        logger.error(`Error updating strain image URL for ${strainId}:`, error);
-        throw new HttpsError('internal', 'An error occurred while updating the strain image.', { strainId });
-    }
-});
-
-
-/**
- * NEW: Callable function to securely fetch a user's profile data.
- * This is called by the client after authentication to prevent race conditions.
- */
-export const getUserProfile = onCall({ cors: true }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
-    }
-    const uid = request.auth.uid;
-    try {
-        const userDocRef = db.collection('users').doc(uid);
-        const userDocSnap = await userDocRef.get();
-
-        if (!userDocSnap.exists) {
-            logger.error(`User document not found for authenticated user: ${uid}`);
-            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
-        }
-        
-        const userData = userDocSnap.data() as UserDocData;
-        
-        let dispensaryData: Dispensary | null = null;
-        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-            try {
-                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-                const dispensaryDocSnap = await dispensaryDocRef.get();
-                if (dispensaryDocSnap.exists()) {
-                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
-                } else {
-                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
-                }
-            } catch (dispensaryError) {
-                logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
-            }
-        }
-        
-        const toISODateString = (date: any): string | null => {
-            if (!date) return null;
-            if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
-            if (date instanceof Date) return date.toISOString();
-            if (typeof date === 'string') {
-                 try {
-                     const parsedDate = new Date(date);
-                     if (!isNaN(parsedDate.getTime())) {
-                         return parsedDate.toISOString();
-                     }
-                 } catch (e) {
-                     // Ignore invalid date strings
-                 }
-             }
-            return null;
-        };
-        
-        const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
-            ...dispensaryData,
-            applicationDate: toISODateString(dispensaryData.applicationDate)!,
-            approvedDate: toISODateString(dispensaryData.approvedDate),
-            lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
-        } : null;
-
-        // Return a client-safe AppUser object
-        return {
-            uid: uid,
-            email: userData.email,
-            displayName: userData.displayName,
-            photoURL: userData.photoURL,
-            role: userData.role,
-            dispensaryId: userData.dispensaryId,
-            credits: userData.credits,
-            status: userData.status,
-            createdAt: toISODateString(userData.createdAt),
-            lastLoginAt: toISODateString(userData.lastLoginAt),
-            dispensaryStatus: dispensaryData?.status || null,
-            dispensary: dispensaryWithSerializableDates, // Include full dispensary data if found
-            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
-            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
-            signupSource: userData.signupSource || 'public',
-        };
-
-    } catch (error) {
-        logger.error(`Error fetching user profile for ${uid}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
-    }
-});
