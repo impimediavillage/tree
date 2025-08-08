@@ -733,11 +733,9 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             if (!date) return null;
             if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
             if (date instanceof Date) return date.toISOString();
-            // Handle if it's already a string (e.g., from a previous serialization)
             if (typeof date === 'string') {
                  try {
                      const parsedDate = new Date(date);
-                     // Check if parsing was successful before converting
                      if (!isNaN(parsedDate.getTime())) {
                          return parsedDate.toISOString();
                      }
@@ -745,7 +743,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     // Ignore invalid date strings
                  }
              }
-            return null; // Return null for any other type or invalid string
+            return null;
         };
         
         // Ensure all date fields on the dispensary object are serialized

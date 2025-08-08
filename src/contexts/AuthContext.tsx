@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser;
@@ -57,7 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return profile;
       }
-      // If profile is null/undefined from the function, it's a problem.
       throw new Error("User profile data could not be retrieved from the server.");
     } catch (error) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
@@ -65,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error("Function error code:", error.code);
           console.error("Function error message:", error.message);
       }
-      await auth.signOut(); // Force sign out on profile fetch failure
+      await auth.signOut();
       return null;
     }
   }, []);
@@ -74,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        const profile = await fetchUserProfile(user);
+        const profile = await fetchUserProfile();
         if (profile) {
           const isAuthPage = pathname.startsWith('/auth');
           if (isAuthPage) {
@@ -89,11 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         }
-        // If profile fetch fails, fetchUserProfile handles sign-out, so no need for else block here.
       } else {
         handleSignOut();
       }
-      setLoading(false); // ALWAYS set loading to false after processing
+      setLoading(false);
     });
 
     return () => unsubscribe();
