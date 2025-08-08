@@ -175,23 +175,22 @@ export const onUserCreated = onDocumentCreated(
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
 
-    // Welcome email logic for Leaf Users created via dispensary panels or other internal means
-    if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
-      logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
-      const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Wellness Tree!";
-      const greeting = `Dear ${userDisplayName},`;
-      const content = [
-        `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
-        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
-        `You've received 10 free credits to get started with our AI advisors.`,
-        `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
-      ];
-      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
+    if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
+        logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
+        const userDisplayName = userData.displayName || userData.email.split('@')[0];
+        const subject = "Welcome to The Wellness Tree!";
+        const greeting = `Welcome, ${userDisplayName}!`;
+        const content = [
+            `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
+            `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+            `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
+            `Enjoy exploring!`,
+        ];
+        const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+        const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+        await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for this specific welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+        logger.log(`New user created (ID: ${userId}), but not a public LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
@@ -329,8 +328,8 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
-        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
-        logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
+        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp(), ownerId: userId });
+        logger.info(`Public store URL ${publicStoreUrl} and ownerId set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
@@ -396,7 +395,7 @@ export const onDispensaryUpdate = onDocumentUpdated(
     else if (previousValue && newValue.status === previousValue.status) {
       const beforeDataForCompare = { ...previousValue };
       const afterDataForCompare = { ...newValue };
-      const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount'];
+      const fieldsToIgnore = ['lastActivityDate', 'approvedDate', 'publicStoreUrl', 'productCount', 'incomingRequestCount', 'outgoingRequestCount', 'averageRating', 'reviewCount', 'ownerId'];
       fieldsToIgnore.forEach(field => {
         delete (beforeDataForCompare as any)[field];
         delete (afterDataForCompare as any)[field];
@@ -737,9 +736,13 @@ export const deductCreditsAndLogInteraction = onRequest(
           `Logging free interaction for user ${userId}. Current balance: ${newCreditBalance}`
         );
       }
+      
+      const userDoc = await userRef.get();
+      const userData = userDoc.data() as UserDocData;
 
       const logEntry = {
         userId,
+        dispensaryId: userData.dispensaryId || null,
         advisorSlug,
         creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
         timestamp: admin.firestore.Timestamp.now() as any,
@@ -795,7 +798,7 @@ export const updateStrainImageUrl = onCall(async (request) => {
 
 
 /**
- * NEW: Callable function to securely fetch a user's profile data.
+ * Callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
 export const getUserProfile = onCall({ cors: true }, async (request) => {
@@ -815,11 +818,18 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         const userData = userDocSnap.data() as UserDocData;
         
         let dispensaryStatus: Dispensary['status'] | null = null;
-        if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-            const dispensaryDocSnap = await dispensaryDocRef.get();
-            if (dispensaryDocSnap.exists) {
-                dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
+                if (dispensaryDocSnap.exists()) {
+                    dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+                } else {
+                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                }
+            } catch (dispensaryError) {
+                logger.error(`Error fetching dispensary doc for user ${uid}`, dispensaryError);
+                // Do not throw an error here, just proceed without dispensary status
             }
         }
         
@@ -831,7 +841,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             return null;
         };
         
-        // Return a client-safe AppUser object
         return {
             uid: uid,
             email: userData.email,
@@ -843,7 +852,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             status: userData.status,
             createdAt: toISO(userData.createdAt),
             lastLoginAt: toISO(userData.lastLoginAt),
-            dispensaryStatus: dispensaryStatus, // Include dispensary status
+            dispensaryStatus: dispensaryStatus,
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
