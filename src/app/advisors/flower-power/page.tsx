@@ -56,8 +56,9 @@ export default function FlowerPowerAdvisorPage() {
       const { success, newCredits, message } = creditResult.data as { success: boolean; newCredits: number; message?: string; };
       if (!success) { throw new Error(message || "Credit deduction failed."); }
       
-      setCurrentUser(prevUser => prevUser ? { ...prevUser, credits: newCredits } : null);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify({ ...currentUser, credits: newCredits }));
+      const updatedUser = { ...currentUser, credits: newCredits };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
 
       const input: FlowerPowerAdviceInput = { question: description };
       const adviceOutput = await getFlowerPowerAdvice(input);

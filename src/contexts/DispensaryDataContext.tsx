@@ -43,8 +43,8 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       
       const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", dispensaryId));
       const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", dispensaryId));
-      const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId));
-      const outgoingRequestsQuery = query(collection(db, "productRequests"), where("requesterDispensaryId", "==", dispensaryId));
+      const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
+      const outgoingRequestsQuery = query(collection(db, "productRequests"), where("requesterDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
       const stickerSetsQuery = query(collection(db, 'stickersets'), where('creatorUid', '==', currentUser.uid), orderBy('createdAt', 'desc'));
 
       const [
