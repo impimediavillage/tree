@@ -21,7 +21,7 @@ export interface Dispensary {
   fullName: string;
   phone: string;
   ownerEmail: string;
-  ownerId?: string;
+  ownerId?: string | null; // <-- ADDED THIS CRITICAL FIELD
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
