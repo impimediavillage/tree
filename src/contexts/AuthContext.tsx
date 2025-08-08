@@ -8,7 +8,6 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -24,9 +23,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the callable function once
-const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -41,10 +37,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  const fetchUserProfile = useCallback(async () => {
+  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser) => {
     try {
-      const result = await getUserProfileCallable();
-      const profile = result.data as AppUser;
+      const token = await firebaseUser.getIdToken();
+      
+      const functionUrl = `https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile`;
+
+      const response = await fetch(functionUrl, {
+          method: 'GET',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+          }
+      });
+      
+      if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
+          throw new Error(errorData.error || `Server responded with status ${response.status}`);
+      }
+
+      const profile = await response.json() as AppUser;
 
       if (profile) {
         setCurrentUser(profile);
@@ -60,10 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error("User profile data could not be retrieved from the server.");
     } catch (error) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
-      if (error instanceof FunctionsError) {
-          console.error("Function error code:", error.code);
-          console.error("Function error message:", error.message);
-      }
       await auth.signOut();
       return null;
     }
@@ -73,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        const profile = await fetchUserProfile();
+        const profile = await fetchUserProfile(user);
         if (profile) {
           const isAuthPage = pathname.startsWith('/auth');
           if (isAuthPage) {

@@ -35,7 +35,7 @@ export function FeaturedStickerCard({ stickerSet }: FeaturedStickerCardProps) {
             src={imageUrl}
             alt={`Sticker for ${stickerSet.name}`}
             layout="fill"
-            objectFit="cover"
+            style={{ objectFit: 'cover' }}
             className="transition-transform duration-300 group-hover:scale-105"
             data-ai-hint={`sticker ${stickerSet.name.toLowerCase()}`}
           />

@@ -11,6 +11,9 @@ import {
 } from "firebase-functions/v2/firestore";
 import { onRequest, Request, onCall, HttpsError } from "firebase-functions/v2/https";
 import type { Response } from "express";
+import * as cors from "cors";
+
+const corsHandler = cors({origin: true});
 
 // Import types
 import type {
@@ -800,74 +803,104 @@ export const updateStrainImageUrl = onCall(async (request) => {
 
 
 /**
- * NEW: Callable function to securely fetch a user's profile data.
+ * NEW: HTTP-callable function to securely fetch a user's profile data.
  * This is called by the client after authentication to prevent race conditions.
  */
-export const getUserProfile = onCall({ cors: true }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
-    }
-    const uid = request.auth.uid;
-    try {
-        const userDocRef = db.collection('users').doc(uid);
-        const userDocSnap = await userDocRef.get();
-
-        if (!userDocSnap.exists) {
-            logger.error(`User document not found for authenticated user: ${uid}`);
-            throw new HttpsError('not-found', 'Your user profile could not be found in the database.');
+export const getUserProfile = onRequest({ cors: true }, async (req: Request, res: Response) => {
+    corsHandler(req, res, async () => {
+        if (req.method !== 'GET') {
+            res.status(405).send({ error: "Method Not Allowed" });
+            return;
         }
         
-        const userData = userDocSnap.data() as UserDocData;
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).send({ error: 'Unauthorized', code: 'unauthenticated' });
+            return;
+        }
+
+        const token = authHeader.split('Bearer ')[1];
+        let decodedToken;
+        try {
+            decodedToken = await admin.auth().verifyIdToken(token);
+        } catch (error) {
+            logger.error("Error verifying ID token:", error);
+            res.status(401).send({ error: 'Invalid token', code: 'unauthenticated' });
+            return;
+        }
+
+        const uid = decodedToken.uid;
         
-        let dispensaryData: Dispensary | null = null;
-        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-            try {
-                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-                const dispensaryDocSnap = await dispensaryDocRef.get();
-                if (dispensaryDocSnap.exists()) {
-                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
-                } else {
-                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
-                }
-            } catch (dispensaryError) {
-                logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
+        try {
+            const userDocRef = db.collection('users').doc(uid);
+            const userDocSnap = await userDocRef.get();
+
+            if (!userDocSnap.exists) {
+                logger.error(`User document not found for authenticated user: ${uid}`);
+                res.status(404).send({ error: 'Your user profile could not be found in the database.', code: 'not-found' });
+                return;
             }
-        }
-        
-        const toISODateString = (date: any): string | null => {
-            if (!date) return null;
-            if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
-            if (date instanceof Date) return date.toISOString();
-            if (typeof date === 'string') {
-                 const parsedDate = new Date(date);
-                 if (!isNaN(parsedDate.getTime())) {
-                     return parsedDate.toISOString();
-                 }
-             }
-            return null;
-        };
-        
-        // Return a client-safe AppUser object
-        return {
-            uid: uid,
-            email: userData.email,
-            displayName: userData.displayName,
-            photoURL: userData.photoURL,
-            role: userData.role,
-            dispensaryId: userData.dispensaryId,
-            credits: userData.credits,
-            status: userData.status,
-            createdAt: toISODateString(userData.createdAt),
-            lastLoginAt: toISODateString(userData.lastLoginAt),
-            dispensaryStatus: dispensaryData?.status || null,
-            dispensary: dispensaryData, // Include full dispensary data if found
-            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
-            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
-            signupSource: userData.signupSource || 'public',
-        };
+            
+            const userData = userDocSnap.data() as UserDocData;
+            
+            let dispensaryData: Dispensary | null = null;
+            if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+                try {
+                    const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                    const dispensaryDocSnap = await dispensaryDocRef.get();
+                    if (dispensaryDocSnap.exists()) {
+                        dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
+                    } else {
+                        logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                    }
+                } catch (dispensaryError) {
+                    logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
+                }
+            }
+            
+            const toISODateString = (date: any): string | null => {
+                if (!date) return null;
+                if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
+                if (date instanceof Date) return date.toISOString();
+                if (typeof date === 'string') {
+                    const parsedDate = new Date(date);
+                    if (!isNaN(parsedDate.getTime())) {
+                        return parsedDate.toISOString();
+                    }
+                }
+                return null;
+            };
+            
+            // Serialize the final object
+            const profileToSend = {
+                uid: uid,
+                email: userData.email,
+                displayName: userData.displayName,
+                photoURL: userData.photoURL,
+                role: userData.role,
+                dispensaryId: userData.dispensaryId,
+                credits: userData.credits,
+                status: userData.status,
+                createdAt: toISODateString(userData.createdAt),
+                lastLoginAt: toISODateString(userData.lastLoginAt),
+                dispensaryStatus: dispensaryData?.status || null,
+                dispensary: dispensaryData ? {
+                    ...dispensaryData,
+                    applicationDate: toISODateString(dispensaryData.applicationDate)!,
+                    approvedDate: toISODateString(dispensaryData.approvedDate),
+                    lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
+                } : null,
+                preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+                welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+                signupSource: userData.signupSource || 'public',
+            };
+            
+            res.status(200).send(profileToSend);
 
-    } catch (error) {
-        logger.error(`Error fetching user profile for ${uid}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
-    }
+        } catch (error) {
+            logger.error(`Error fetching user profile for ${uid}:`, error);
+            res.status(500).send({ error: 'An internal error occurred while fetching your profile.', code: 'internal' });
+        }
+    });
 });
+
