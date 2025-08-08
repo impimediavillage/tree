@@ -21,7 +21,7 @@ interface DispensaryDataContextType {
 const DispensaryDataContext = createContext<DispensaryDataContextType | undefined>(undefined);
 
 export const DispensaryDataProvider = ({ children }: { children: ReactNode }) => {
-  const { currentUser, canAccessDispensaryPanel } = useAuth();
+  const { currentUser, canAccessDispensaryPanel, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,8 +32,8 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchDispensaryData = useCallback(async () => {
-    if (!canAccessDispensaryPanel || !currentUser?.dispensaryId || !currentUser?.uid) {
-      setIsLoading(false);
+    if (authLoading || !canAccessDispensaryPanel || !currentUser?.dispensaryId || !currentUser?.uid) {
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -45,7 +45,6 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", dispensaryId));
       const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
       const outgoingRequestsQuery = query(collection(db, "productRequests"), where("requesterDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
-      // Sticker sets are created by the user, so we query by their UID.
       const stickerSetsQuery = query(collection(db, 'stickersets'), where('creatorUid', '==', currentUser.uid), orderBy('createdAt', 'desc'));
 
       const [
@@ -63,7 +62,6 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       ]);
 
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-      // Filter out the owner from the staff list
       setStaff(staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)).filter(user => user.uid !== currentUser.uid));
       setIncomingRequests(incomingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
       setOutgoingRequests(outgoingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
@@ -75,21 +73,13 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
     } finally {
       setIsLoading(false);
     }
-  }, [canAccessDispensaryPanel, currentUser, toast]);
+  }, [authLoading, canAccessDispensaryPanel, currentUser, toast]);
 
   useEffect(() => {
-    if (canAccessDispensaryPanel) {
+    if (!authLoading) {
       fetchDispensaryData();
-    } else {
-      // Clear data if user loses access
-      setProducts([]);
-      setStaff([]);
-      setIncomingRequests([]);
-      setOutgoingRequests([]);
-      setStickerSets([]);
-      setIsLoading(false);
     }
-  }, [canAccessDispensaryPanel, fetchDispensaryData]);
+  }, [authLoading, fetchDispensaryData]);
 
   return (
     <DispensaryDataContext.Provider value={{
