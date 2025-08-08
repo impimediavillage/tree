@@ -37,7 +37,10 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete }: Dispe
   const formatDate = (dateInput: any): string => {
     if (!dateInput) return 'N/A';
     try {
-      const date = (dateInput as any)?.toDate ? (dateInput as any).toDate() : new Date(dateInput);
+      // Handles both Firestore Timestamps (from server) and string dates (from client-side updates)
+      const date = (dateInput.toDate && typeof dateInput.toDate === 'function')
+        ? dateInput.toDate()
+        : new Date(dateInput);
       return format(date, 'MMM d, yyyy');
     } catch (error) {
       return 'Invalid Date';
