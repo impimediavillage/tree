@@ -8,6 +8,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
+import { httpsCallable, FunctionsError } from "firebase/functions";
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -22,6 +23,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const getUserProfile = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -39,25 +42,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser) => {
     try {
-      const token = await firebaseUser.getIdToken();
+      const result = await getUserProfile();
+      const profile = result.data as AppUser;
       
-      const functionUrl = `https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile`;
-
-      const response = await fetch(functionUrl, {
-          method: 'GET',
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-          }
-      });
-      
-      if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
-          throw new Error(errorData.error || `Server responded with status ${response.status}`);
-      }
-
-      const profile = await response.json() as AppUser;
-
       if (profile) {
         setCurrentUser(profile);
         localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
@@ -72,7 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error("User profile data could not be retrieved from the server.");
     } catch (error) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
-      await auth.signOut();
+      if (error instanceof FunctionsError) {
+          console.error("Function error code:", error.code);
+          console.error("Function error message:", error.message);
+      }
+      await auth.signOut(); // Force sign out on profile fetch failure
       return null;
     }
   }, []);

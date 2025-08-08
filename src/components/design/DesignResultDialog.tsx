@@ -6,7 +6,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
 import { generateInitialLogos, generateApparelForTheme } from '@/ai/flows/generate-brand-assets';
@@ -31,6 +32,8 @@ interface DesignResultDialogProps {
   isStoreAsset: boolean;
 }
 
+const deductCreditsAndLog = httpsCallable(functions, 'deductCreditsAndLogInteraction');
+
 export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, onOpenChange, subjectName, isStoreAsset }) => {
     const router = useRouter();
     const { currentUser, setCurrentUser } = useAuth();
@@ -50,28 +53,20 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
             return false;
         }
 
-        const functionUrl = process.env.NEXT_PUBLIC_DEDUCT_CREDITS_FUNCTION_URL;
-        if (!functionUrl) {
-            console.error("Deduct credits function URL is not configured.");
-            toast({ title: "Configuration Error", description: "Credit system is not available.", variant: "destructive" });
-            return false;
-        }
-
         try {
-            const response = await fetch(functionUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: currentUser.uid, advisorSlug: interactionSlug, creditsToDeduct, wasFreeInteraction: false }),
+            const result = await deductCreditsAndLog({ 
+                userId: currentUser.uid, 
+                advisorSlug: interactionSlug, 
+                creditsToDeduct, 
+                wasFreeInteraction: false 
             });
 
-            if (!response.ok) {
-                const data = await response.json().catch(() => ({ error: `An unknown error occurred (status: ${response.status})` }));
-                const errorMessage = data.error || `Failed to deduct credits (status: ${response.status})`;
-                toast({ title: "Credit Deduction Failed", description: errorMessage, variant: "destructive" });
-                return false;
-            }
+            const data = result.data as { success: boolean; newCredits: number; message?: string; };
 
-            const data = await response.json();
+            if (!data.success) {
+                throw new Error(data.message || 'Credit deduction failed.');
+            }
+            
             // Update user in context and localStorage
             const updatedUser = { ...currentUser, credits: data.newCredits };
             setCurrentUser(updatedUser);
@@ -80,8 +75,13 @@ export const DesignResultDialog: React.FC<DesignResultDialogProps> = ({ isOpen, 
             toast({ title: "Credits Deducted", description: `${creditsToDeduct} credits used for asset generation.` });
             return true;
         } catch (e: any) {
-            console.error("Network or parsing error in deductCredits:", e);
-            toast({ title: "Credit System Error", description: "Could not communicate with the credit system.", variant: "destructive" });
+            let errorMessage = "Could not communicate with the credit system.";
+             if (e instanceof FunctionsError) {
+                errorMessage = e.message;
+            } else if (e.message) {
+                errorMessage = e.message;
+            }
+            toast({ title: "Credit System Error", description: errorMessage, variant: "destructive" });
             return false;
         }
     }, [currentUser, toast, setCurrentUser]);
