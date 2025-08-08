@@ -65,11 +65,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
+        // First, check for locally stored profile to reduce latency on page reloads.
+        const storedUserString = localStorage.getItem('currentUserHolisticAI');
+        if (storedUserString) {
+          try {
+            const storedUser = JSON.parse(storedUserString);
+            if (storedUser.uid === firebaseUser.uid) {
+                setCurrentUser(storedUser);
+                setCurrentDispensary(storedUser.dispensary || null);
+            }
+          } catch (e) { console.error("Could not parse stored user profile", e); }
+        }
+
+        // Always fetch the latest profile from the backend to ensure data is fresh and roles are correct.
         const profile = await fetchUserProfile();
         
         if (profile) {
           setCurrentUser(profile);
           setCurrentDispensary(profile.dispensary || null);
+          localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
+
           const isAuthPage = pathname.startsWith('/auth');
           if (isAuthPage) {
             if (profile.role === 'Super Admin') {
@@ -84,9 +99,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } else {
             // fetchUserProfile failed and already logged the user out
+            localStorage.removeItem('currentUserHolisticAI');
             handleSignOut();
         }
       } else {
+        localStorage.removeItem('currentUserHolisticAI');
         handleSignOut();
       }
       setLoading(false);
