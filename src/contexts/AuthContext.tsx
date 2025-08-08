@@ -24,7 +24,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfile = httpsCallable(functions, 'getUserProfile');
+// Define the callable function once
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -42,11 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser) => {
     try {
-      const result = await getUserProfile();
+      const result = await getUserProfileCallable();
       const profile = result.data as AppUser;
       
       if (profile) {
         setCurrentUser(profile);
+        // Persist essential data to localStorage
         localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
         
         if (profile.role === 'DispensaryOwner' && profile.dispensary) {
