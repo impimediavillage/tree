@@ -10,7 +10,7 @@ import { Loader2, WandSparkles, AlertCircle, Sparkles } from 'lucide-react';
 import { getAromatherapyAdvice, type AromatherapyAdviceInput, type AromatherapyAdviceOutput } from '@/ai/flows/aromatherapy-advice';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'aromatherapy-advisor';
@@ -54,14 +54,14 @@ export default function AromatherapyAdvisorPage() {
         wasFreeInteraction: false 
       });
 
-      const { success, newCredits, message } = creditResult.data as { success: boolean; newCredits: number; message?: string; };
+      const data = creditResult.data as { success: boolean; newCredits: number; message?: string; };
 
-      if (!success) {
-        throw new Error(message || "Credit deduction failed.");
+      if (!data.success) {
+        throw new Error(data.message || "Credit deduction failed.");
       }
       
       // 2. Update local user state immediately for instant UI feedback
-      const updatedUser = { ...currentUser, credits: newCredits };
+      const updatedUser = { ...currentUser, credits: data.newCredits };
       setCurrentUser(updatedUser);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
 
@@ -74,11 +74,14 @@ export default function AromatherapyAdvisorPage() {
       toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
 
     } catch (e: any) {
-      const errorMessage = e.message || 'An unexpected error occurred. Please try again.';
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      if (e instanceof FunctionsError) {
+        errorMessage = e.message;
+      } else if (e.message) {
+        errorMessage = e.message;
+      }
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
-      // In a real app, you'd need a robust way to handle refunding credits if the AI call fails after deduction.
-      // For this implementation, we will assume deduction is final for simplicity.
     } finally {
       setIsLoading(false);
     }

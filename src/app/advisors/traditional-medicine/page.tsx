@@ -11,7 +11,7 @@ import { Loader2, WandSparkles, AlertCircle, HandHelping } from 'lucide-react';
 import { traditionalMedicineAdvice, type TraditionalMedicineAdviceInput, type TraditionalMedicineAdviceOutput } from '@/ai/flows/traditional-medicine-advice';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 
 const ADVISOR_SLUG = 'traditional-medicine-advisor';
@@ -57,10 +57,10 @@ export default function TraditionalMedicineAdvisorPage() {
         wasFreeInteraction: false 
       });
 
-      const { success, newCredits, message } = creditResult.data as { success: boolean; newCredits: number; message?: string; };
-      if (!success) { throw new Error(message || "Credit deduction failed."); }
+      const data = creditResult.data as { success: boolean; newCredits: number; message?: string; };
+      if (!data.success) { throw new Error(data.message || "Credit deduction failed."); }
       
-      const updatedUser = { ...currentUser, credits: newCredits };
+      const updatedUser = { ...currentUser, credits: data.newCredits };
       setCurrentUser(updatedUser);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
 
@@ -72,7 +72,12 @@ export default function TraditionalMedicineAdvisorPage() {
       toast({ title: "Success!", description: `${CREDITS_TO_DEDUCT} credits were used.` });
 
     } catch (e: any) {
-      const errorMessage = e.message || 'An unexpected error occurred. Please try again.';
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      if (e instanceof FunctionsError) {
+        errorMessage = e.message;
+      } else if (e.message) {
+        errorMessage = e.message;
+      }
       setError(errorMessage);
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
     } finally {
