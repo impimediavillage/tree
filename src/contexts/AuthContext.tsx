@@ -24,7 +24,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// This is now the single source of truth for fetching the user profile.
 const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -37,7 +36,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is authenticated with Firebase, now get their full profile from our callable function.
         try {
           const result = await getUserProfileCallable();
           const appUser = result.data as AppUser;
@@ -51,11 +49,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error("Function error code:", error.code);
               console.error("Function error message:", error.message);
           }
-          await auth.signOut(); // Force sign out on profile fetch failure
+          await auth.signOut();
           setCurrentUser(null);
           localStorage.removeItem('currentUserHolisticAI');
         } finally {
-          // This will now ALWAYS be called, un-freezing the app.
           setLoading(false); 
         }
       } else {
@@ -70,7 +67,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  // This effect handles redirection based on the final user state once loading is complete.
   useEffect(() => {
     if (!loading && currentUser) {
       const isAuthPage = pathname.startsWith('/auth');
@@ -80,9 +76,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus === 'Approved') {
           router.push('/dispensary-admin/dashboard');
         } else if (currentUser.role === 'DispensaryOwner' && currentUser.dispensaryStatus !== 'Approved') {
-          // Redirect to a safe page if their store isn't approved yet.
           router.push('/'); 
-        } else { // LeafUser or other roles
+        } else {
           router.push('/dashboard/leaf');
         }
       }
