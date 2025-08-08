@@ -319,8 +319,8 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
-        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
-        logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
+        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp(), ownerId: userId });
+        logger.info(`Public store URL ${publicStoreUrl} and ownerId set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
@@ -746,12 +746,16 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             return null;
         };
         
+        const applicationDate = toISODateString(dispensaryData?.applicationDate);
+        const approvedDate = toISODateString(dispensaryData?.approvedDate);
+        const lastActivityDate = toISODateString(dispensaryData?.lastActivityDate);
+
         // Ensure all date fields on the dispensary object are serialized
         const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
             ...dispensaryData,
-            applicationDate: toISODateString(dispensaryData.applicationDate),
-            approvedDate: toISODateString(dispensaryData.approvedDate),
-            lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
+            applicationDate,
+            approvedDate,
+            lastActivityDate,
         } : null;
 
         // Return a client-safe AppUser object
@@ -970,3 +974,5 @@ export const deductCreditsAndLogInteraction = onCall( { cors: true },
     }
   }
 );
+
+    

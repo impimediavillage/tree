@@ -39,16 +39,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
+  const fetchUserProfile = useCallback(async (): Promise<AppUser | null> => {
     try {
-      console.log(`Fetching profile for UID: ${firebaseUser.uid}`);
+      console.log(`Calling getUserProfile function...`);
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser | null;
       
       if (profile) {
         console.log("Profile fetched successfully:", profile);
-        setCurrentUser(profile);
-        setCurrentDispensary(profile.dispensary || null);
         return profile;
       }
       throw new Error("User profile data was null or undefined from the server.");
@@ -58,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error("Function error code:", error.code);
           console.error("Function error message:", error.message);
       }
-      await auth.signOut();
+      await auth.signOut(); // Force sign out on profile fetch failure
       return null;
     }
   }, []);
@@ -67,9 +65,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        const profile = await fetchUserProfile(firebaseUser);
+        const profile = await fetchUserProfile();
         
         if (profile) {
+          setCurrentUser(profile);
+          setCurrentDispensary(profile.dispensary || null);
           const isAuthPage = pathname.startsWith('/auth');
           if (isAuthPage) {
             if (profile.role === 'Super Admin') {
@@ -82,6 +82,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               router.push('/dashboard/leaf');
             }
           }
+        } else {
+            // fetchUserProfile failed and already logged the user out
+            handleSignOut();
         }
       } else {
         handleSignOut();
@@ -124,3 +127,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    
