@@ -1,45 +1,58 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+  
+    // Helper function to check if a user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
     
-    // Helper function to check for Super Admin role from auth token
+    // Helper function to check if the user is the owner of the resource
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Helper function to check if the user is a Super Admin
     function isSuperAdmin() {
-      return request.auth.token.role == 'Super Admin';
-    }
-    
-    // Global rule: Super Admins can read/write anything.
-    match /{allPaths=**} {
-      allow read, write: if isSuperAdmin();
+      // In a real app, you'd check a custom claim, not just email.
+      // For this example, we assume a custom claim `role` is set.
+      return isSignedIn() && request.auth.token.role == 'Super Admin';
     }
 
-    // Lab Reports: Allow users to upload their lab reports.
-    // The path should include the user's UID for security.
-    match /lab-reports/{userId}/{fileName} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Product Images: Allow authenticated users to upload product images.
-    // The path should include the user's UID.
-    match /products/{userId}/{fileName} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Dispensary Type Assets: Icons and images for types should be publicly readable.
-    // Writing should be restricted to Super Admins (covered by the global rule).
-    match /dispensary-type-assets/{path=**} {
-        allow read: if true;
-    }
-
-    // Sticker Sets: Allow users to create their own sticker sets.
-    // Reading is public, writing is restricted to the creator.
-    match /stickersets/{userId}/{fileName} {
+    // Products:
+    // Allow anyone to read product images (they are public-facing).
+    // Only authenticated users (specifically, the owner via security rules in the upload function) can write.
+    // Deletion is handled by Cloud Functions with appropriate checks.
+    match /products/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if isOwner(userId);
+    }
+
+    // Lab Reports:
+    // Similar to products, but you might want tighter read controls later.
+    // For now, assume if someone has the link, they can read it.
+    // Only the owner of the product can upload a lab report for it.
+    match /lab-reports/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+
+    // Dispensary Type Assets (icons, images):
+    // These are public-facing assets.
+    // Only Super Admins should be able to write/delete them.
+    match /dispensary-type-assets/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
     }
     
-    // Default deny: Disallow read/write on any other paths.
-    // This is implicitly handled by not having a matching rule,
-    // but can be made explicit for clarity if desired.
+    // Sticker Sets:
+    // Public can read, only the creator can write/delete.
+    match /stickersets/{userId}/{allPaths=**} {
+        allow read: if true;
+        allow write: if isOwner(userId);
+    }
+
   }
 }
