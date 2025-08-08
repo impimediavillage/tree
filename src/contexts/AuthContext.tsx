@@ -39,11 +39,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('currentUserHolisticAI', JSON.stringify(appUser));
     
     if (appUser.role === 'DispensaryOwner' && appUser.dispensaryId) {
-      const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
-      const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-      if (dispensaryDocSnap.exists()) {
-        setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary);
-      } else {
+      try {
+        const dispensaryDocRef = doc(db, 'dispensaries', appUser.dispensaryId);
+        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+        if (dispensaryDocSnap.exists()) {
+          setCurrentDispensary({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary);
+        } else {
+          setCurrentDispensary(null);
+        }
+      } catch (e) {
+        console.error("Failed to fetch dispensary document for owner", e);
         setCurrentDispensary(null);
       }
     } else {
@@ -66,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setCurrentDispensary(null);
           localStorage.removeItem('currentUserHolisticAI');
         } finally {
-          setLoading(false);
+          setLoading(false); // This is now correctly called in all scenarios.
         }
       } else {
         // User is signed out
