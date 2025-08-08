@@ -39,8 +39,6 @@ class HttpError extends Error {
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
-        // This is the correct way to initialize in a standard Cloud Functions environment.
-        // It automatically uses the service account associated with the function.
         admin.initializeApp();
         logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
@@ -179,37 +177,22 @@ export const onUserCreated = onDocumentCreated(
     // Set custom claims for the new user
     await setClaimsFromDoc(userId, userData);
 
-    // Welcome email logic for Leaf Users created via dispensary panels or other internal means
-    if (userData.role === 'LeafUser' && userData.email && userData.signupSource !== 'public') {
-      logger.log(`New Leaf User created (ID: ${userId}, Email: ${userData.email}, Source: ${userData.signupSource || 'N/A'}). Sending welcome email.`);
-      const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Wellness Tree!";
-      const greeting = `Dear ${userDisplayName},`;
-      const content = [
-        `An account has been created for you on The Wellness Tree! We're excited to have you as part of our community.`,
-        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
-        `You've received 10 free credits to get started with our AI advisors.`,
-        `If you have any questions, feel free to explore our platform or reach out to our support team (if available).`,
-      ];
-      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
-    } else if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
-      logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
-       const userDisplayName = userData.displayName || userData.email.split('@')[0];
-      const subject = "Welcome to The Wellness Tree!";
-      const greeting = `Welcome, ${userDisplayName}!`;
-      const content = [
-        `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
-        `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
-        `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
-        `Enjoy exploring!`,
-      ];
-      const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
-      const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
-      await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
+    if (userData.role === 'LeafUser' && userData.email && userData.signupSource === 'public') {
+        logger.log(`New public Leaf User signed up (ID: ${userId}, Email: ${userData.email}). Sending welcome email.`);
+        const userDisplayName = userData.displayName || userData.email.split('@')[0];
+        const subject = "Welcome to The Wellness Tree!";
+        const greeting = `Welcome, ${userDisplayName}!`;
+        const content = [
+            `Thank you for joining The Wellness Tree! We're excited to have you as part of our community.`,
+            `You can now explore dispensaries, get AI-powered advice, and manage your wellness journey with us.`,
+            `As a welcome gift, you've received 10 free credits to get started with our AI advisors.`,
+            `Enjoy exploring!`,
+        ];
+        const actionButton = { text: "Go to Your Dashboard", url: `${BASE_URL}/dashboard/leaf` };
+        const htmlBody = generateHtmlEmail("Welcome to The Wellness Tree!", content, greeting, undefined, actionButton);
+        await sendDispensaryNotificationEmail(userData.email, subject, htmlBody, "The Wellness Tree Platform");
     } else {
-      logger.log(`New user created (ID: ${userId}), but not a LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
+      logger.log(`New user created (ID: ${userId}), but not a public LeafUser eligible for a welcome email. Role: ${userData.role || 'N/A'}, Source: ${userData.signupSource || 'N/A'}`);
     }
   }
 );
@@ -847,27 +830,21 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
                 }
             } catch (dispensaryError) {
-                // This catch block is crucial. If the dispensary doc is deleted,
-                // this prevents the entire function from crashing.
                 logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
-                dispensaryStatus = null; // Gracefully set status to null
             }
         }
         
-        // ** THE CORE FIX **
-        // Safely convert Firestore Timestamps to ISO strings for JSON serialization.
-        const toISODateString = (date: any): string | null => {
+        const toISO = (date: any): string | null => {
             if (!date) return null;
             if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
             if (date instanceof Date) return date.toISOString();
             if (typeof date === 'string') {
-                 // Attempt to parse string dates, but handle invalid ones.
-                const parsedDate = new Date(date);
-                if (!isNaN(parsedDate.getTime())) {
-                    return parsedDate.toISOString();
-                }
-            }
-            return null; // Return null for any unhandled or invalid types
+                 const parsedDate = new Date(date);
+                 if (!isNaN(parsedDate.getTime())) {
+                     return parsedDate.toISOString();
+                 }
+             }
+            return null;
         };
         
         // Return a client-safe AppUser object
@@ -880,8 +857,8 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             dispensaryId: userData.dispensaryId,
             credits: userData.credits,
             status: userData.status,
-            createdAt: toISODateString(userData.createdAt),
-            lastLoginAt: toISODateString(userData.lastLoginAt),
+            createdAt: toISO(userData.createdAt),
+            lastLoginAt: toISO(userData.lastLoginAt),
             dispensaryStatus: dispensaryStatus,
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
