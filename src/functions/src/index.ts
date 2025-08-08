@@ -319,8 +319,8 @@ export const onDispensaryUpdate = onDocumentUpdated(
         await setClaimsFromDoc(userId, firestoreUserData as UserDocData);
 
         const publicStoreUrl = `${BASE_URL}/store/${dispensaryId}`;
-        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp(), ownerId: userId });
-        logger.info(`Public store URL ${publicStoreUrl} and ownerId set for dispensary ${dispensaryId}.`);
+        await change.after.ref.update({ publicStoreUrl: publicStoreUrl, approvedDate: admin.firestore.FieldValue.serverTimestamp() });
+        logger.info(`Public store URL ${publicStoreUrl} set for dispensary ${dispensaryId}.`);
 
         subject = `Congratulations! Your Dispensary "${dispensaryName}" is Approved!`;
         contentLines = [
