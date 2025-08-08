@@ -835,19 +835,25 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         const userData = userDocSnap.data() as UserDocData;
         
         let dispensaryStatus: Dispensary['status'] | null = null;
-        if(userData.role === 'DispensaryOwner' && userData.dispensaryId) {
-            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-            const dispensaryDocSnap = await dispensaryDocRef.get();
-            if (dispensaryDocSnap.exists()) {
-                dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+        if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
+                if (dispensaryDocSnap.exists()) {
+                    dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+                } else {
+                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                }
+            } catch (dispensaryError) {
+                logger.error(`Error fetching dispensary doc for user ${uid}. This may happen if the dispensary was deleted.`, dispensaryError);
             }
         }
         
-        const toISO = (date: any): string | null => {
+        const toISODateString = (date: any): string | null => {
             if (!date) return null;
-            if (typeof date.toDate === 'function') return date.toDate().toISOString();
+            if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
             if (date instanceof Date) return date.toISOString();
-            if (typeof date === 'string') return date;
+            if (typeof date === 'string') return new Date(date).toISOString(); // Handle string dates
             return null;
         };
         
@@ -861,9 +867,9 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             dispensaryId: userData.dispensaryId,
             credits: userData.credits,
             status: userData.status,
-            createdAt: toISO(userData.createdAt),
-            lastLoginAt: toISO(userData.lastLoginAt),
-            dispensaryStatus: dispensaryStatus, // Include dispensary status
+            createdAt: toISODateString(userData.createdAt),
+            lastLoginAt: toISODateString(userData.lastLoginAt),
+            dispensaryStatus: dispensaryStatus,
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
