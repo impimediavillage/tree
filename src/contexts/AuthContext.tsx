@@ -41,57 +41,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
+  const fetchUserProfile = useCallback(async (user: FirebaseUser) => {
+    try {
+      const result = await getUserProfileCallable();
+      const profile = result.data as AppUser;
+
+      if (profile) {
+        setCurrentUser(profile);
+        localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
+        
+        if (profile.role === 'DispensaryOwner' && profile.dispensary) {
+          setCurrentDispensary(profile.dispensary);
+        } else {
+          setCurrentDispensary(null);
+        }
+        return profile;
+      }
+      // If profile is null/undefined from the function, it's a problem.
+      throw new Error("User profile data could not be retrieved from the server.");
+    } catch (error) {
+      console.error("Critical: Failed to get user profile. Logging out.", error);
+      if (error instanceof FunctionsError) {
+          console.error("Function error code:", error.code);
+          console.error("Function error message:", error.message);
+      }
+      await auth.signOut(); // Force sign out on profile fetch failure
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true);
       if (user) {
-        setLoading(true);
-        try {
-          const result = await getUserProfileCallable();
-          const profile = result.data as AppUser;
-
-          if (profile) {
-              setCurrentUser(profile);
-              localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
-              
-              if (profile.role === 'DispensaryOwner' && profile.dispensary) {
-                setCurrentDispensary(profile.dispensary);
-              } else {
-                setCurrentDispensary(null);
-              }
-
-              const isAuthPage = pathname.startsWith('/auth');
-              if(isAuthPage) {
-                  if (profile.role === 'Super Admin') {
-                      router.push('/admin/dashboard');
-                  } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
-                      router.push('/dispensary-admin/dashboard');
-                  } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus !== 'Approved') {
-                      router.push('/'); 
-                  } else {
-                      router.push('/dashboard/leaf');
-                  }
-              }
-          } else {
-             console.error("Critical: User is authenticated but profile data is null. Logging out.");
-             await auth.signOut();
+        const profile = await fetchUserProfile(user);
+        if (profile) {
+          const isAuthPage = pathname.startsWith('/auth');
+          if (isAuthPage) {
+            if (profile.role === 'Super Admin') {
+              router.push('/admin/dashboard');
+            } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
+              router.push('/dispensary-admin/dashboard');
+            } else if (profile.role === 'DispensaryOwner') {
+              router.push('/'); 
+            } else {
+              router.push('/dashboard/leaf');
+            }
           }
-        } catch (error) {
-          console.error("Critical: Failed to get user profile. Logging out.", error);
-          if (error instanceof FunctionsError) {
-              console.error("Function error code:", error.code);
-              console.error("Function error message:", error.message);
-          }
-          await auth.signOut();
-        } finally {
-          setLoading(false);
         }
+        // If profile fetch fails, fetchUserProfile handles sign-out, so no need for else block here.
       } else {
         handleSignOut();
       }
+      setLoading(false); // ALWAYS set loading to false after processing
     });
 
     return () => unsubscribe();
-  }, [handleSignOut, pathname, router]);
+  }, [handleSignOut, pathname, router, fetchUserProfile]);
+
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
