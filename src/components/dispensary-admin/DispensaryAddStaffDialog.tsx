@@ -40,6 +40,9 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
   const onSubmit = async (data: DispensaryOwnerAddStaffFormData) => {
     setIsSubmitting(true);
     try {
+      // NOTE: Creating user in client is okay for this internal admin panel,
+      // but for public signups, a Cloud Function is better to prevent abuse.
+      // Since this is an owner adding staff, we assume they are trusted.
       const userCredential = await createUserWithEmailAndPassword(firebaseAuthInstance, data.email, data.password);
       const firebaseUser = userCredential.user;
 
@@ -54,7 +57,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         status: 'PendingApproval', 
         createdAt: serverTimestamp() as any,
         lastLoginAt: null,
-        welcomeCreditsAwarded: false, 
+        welcomeCreditsAwarded: false, // Staff don't get welcome credits
         signupSource: 'dispensary_panel',
       };
 
