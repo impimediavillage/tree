@@ -41,12 +41,11 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
     try {
       const dispensaryId = currentUser.dispensaryId;
       
-      // Correct queries
       const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", dispensaryId));
       const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", dispensaryId));
       const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
       const outgoingRequestsQuery = query(collection(db, "productRequests"), where("requesterDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
-      // Sticker sets are created by a user, so we query by creatorUid
+      // Sticker sets are created by the user, so we query by their UID.
       const stickerSetsQuery = query(collection(db, 'stickersets'), where('creatorUid', '==', currentUser.uid), orderBy('createdAt', 'desc'));
 
       const [
@@ -60,11 +59,11 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
         getDocs(staffQuery),
         getDocs(incomingRequestsQuery),
         getDocs(outgoingRequestsQuery),
-        getDocs(stickerSetsQuery)
+        getDocs(stickerSetsSnapshot)
       ]);
 
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-      // Filter out the owner themselves from the staff list
+      // Filter out the owner from the staff list
       setStaff(staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)).filter(user => user.uid !== currentUser.uid));
       setIncomingRequests(incomingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
       setOutgoingRequests(outgoingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
