@@ -24,27 +24,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
+// Define the callable function once
+const getUserProfileCallable = httpsCallable<void, AppUser | null>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-  const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   const handleSignOut = useCallback(() => {
     setCurrentUser(null);
-    setCurrentDispensary(null);
     setLoading(false);
   }, []);
 
   const fetchUserProfile = useCallback(async (): Promise<AppUser | null> => {
     try {
-      console.log(`Calling getUserProfile function...`);
+      console.log("Calling getUserProfile function...");
       const result = await getUserProfileCallable();
-      const profile = result.data as AppUser | null;
-      
+      const profile = result.data;
       if (profile) {
         console.log("Profile fetched successfully:", profile);
         return profile;
@@ -65,26 +63,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // First, check for locally stored profile to reduce latency on page reloads.
-        const storedUserString = localStorage.getItem('currentUserHolisticAI');
-        if (storedUserString) {
-          try {
-            const storedUser = JSON.parse(storedUserString);
-            if (storedUser.uid === firebaseUser.uid) {
-                setCurrentUser(storedUser);
-                setCurrentDispensary(storedUser.dispensary || null);
-            }
-          } catch (e) { console.error("Could not parse stored user profile", e); }
-        }
-
-        // Always fetch the latest profile from the backend to ensure data is fresh and roles are correct.
         const profile = await fetchUserProfile();
         
         if (profile) {
           setCurrentUser(profile);
-          setCurrentDispensary(profile.dispensary || null);
-          localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
-
+          // Redirect logic based on role after profile is successfully fetched
           const isAuthPage = pathname.startsWith('/auth');
           if (isAuthPage) {
             if (profile.role === 'Super Admin') {
@@ -92,18 +75,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
               router.push('/dispensary-admin/dashboard');
             } else if (profile.role === 'DispensaryOwner') {
-              router.push('/');
+              router.push('/'); 
             } else {
               router.push('/dashboard/leaf');
             }
           }
         } else {
-            // fetchUserProfile failed and already logged the user out
-            localStorage.removeItem('currentUserHolisticAI');
-            handleSignOut();
+            handleSignOut(); // This is called if profile fetch fails and logs the user out
         }
       } else {
-        localStorage.removeItem('currentUserHolisticAI');
         handleSignOut();
       }
       setLoading(false);
@@ -112,16 +92,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [fetchUserProfile, handleSignOut, pathname, router]);
 
+
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
-  const canAccessDispensaryPanel = isDispensaryOwner && currentUser?.dispensaryStatus === 'Approved';
-  const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   const currentDispensaryStatus = currentUser?.dispensaryStatus || null;
-
+  const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
+  const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
+  
   const value = {
     currentUser,
     setCurrentUser,
-    currentDispensary,
+    currentDispensary: currentUser?.dispensary || null,
     loading,
     isSuperAdmin,
     isDispensaryOwner,
