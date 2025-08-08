@@ -819,13 +819,13 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         
         const userData = userDocSnap.data() as UserDocData;
         
-        let dispensaryStatus: Dispensary['status'] | null = null;
+        let dispensaryData: Dispensary | null = null;
         if (userData.role === 'DispensaryOwner' && userData.dispensaryId) {
             try {
                 const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
                 const dispensaryDocSnap = await dispensaryDocRef.get();
                 if (dispensaryDocSnap.exists()) {
-                    dispensaryStatus = dispensaryDocSnap.data()?.status || null;
+                    dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
                 }
@@ -834,7 +834,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             }
         }
         
-        const toISO = (date: any): string | null => {
+        const toISODateString = (date: any): string | null => {
             if (!date) return null;
             if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
             if (date instanceof Date) return date.toISOString();
@@ -857,9 +857,10 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             dispensaryId: userData.dispensaryId,
             credits: userData.credits,
             status: userData.status,
-            createdAt: toISO(userData.createdAt),
-            lastLoginAt: toISO(userData.lastLoginAt),
-            dispensaryStatus: dispensaryStatus,
+            createdAt: toISODateString(userData.createdAt),
+            lastLoginAt: toISODateString(userData.lastLoginAt),
+            dispensaryStatus: dispensaryData?.status || null,
+            dispensary: dispensaryData, // Include full dispensary data if found
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
