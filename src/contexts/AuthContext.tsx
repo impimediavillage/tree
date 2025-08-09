@@ -12,9 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
 
-// Define the callable function
 const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
-
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -33,7 +31,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper function to serialize date fields
 const serializeDates = (data: any): any => {
     if (!data) return data;
     const serialized = { ...data };
@@ -43,7 +40,7 @@ const serializeDates = (data: any): any => {
         }
     }
     return serialized;
-}
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -51,6 +48,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
+
+  const handleRedirect = useCallback((userProfile: AppUser) => {
+    if (userProfile.role === 'Super Admin') {
+      router.push('/admin/dashboard');
+    } else if (userProfile.role === 'DispensaryOwner' || userProfile.role === 'DispensaryStaff') {
+      if (userProfile.dispensary?.status === 'Approved') {
+        router.push('/dispensary-admin/dashboard');
+      } else {
+        toast({ title: "Account Not Active", description: `Your dispensary status is: ${userProfile.dispensary?.status || 'Pending'}. Access is limited.`, variant: "default"});
+        router.push('/');
+      }
+    } else {
+      router.push('/dashboard/leaf');
+    }
+  }, [router, toast]);
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     if (!user) return null;
@@ -68,25 +80,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = userDocSnap.data();
       const userDispensaryId = userData.dispensaryId || null;
 
-      // Set the custom claim. This is crucial for security rules.
       await setDispensaryClaim({ dispensaryId: userDispensaryId });
-      
-      // Force refresh the token to get the new claim immediately.
-      await user.getIdToken(true);
+      await user.getIdToken(true); // Force refresh to get new claim
 
       let dispensaryData: Dispensary | null = null;
       if (userDispensaryId) {
-          try {
-            const dispensaryDocRef = doc(db, 'dispensaries', userDispensaryId);
-            const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-            if (dispensaryDocSnap.exists()) {
-                dispensaryData = serializeDates(dispensaryDocSnap.data()) as Dispensary;
-                dispensaryData.id = dispensaryDocSnap.id;
-            }
-          } catch (dispensaryError) {
-             console.error(`Error fetching dispensary for user ${user.uid}:`, dispensaryError);
-             toast({ title: "Dispensary Load Warning", description: "Could not load all dispensary data.", variant: "destructive" });
-          }
+        const dispensaryDocRef = doc(db, 'dispensaries', userDispensaryId);
+        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+        if (dispensaryDocSnap.exists()) {
+          dispensaryData = serializeDates(dispensaryDocSnap.data()) as Dispensary;
+          dispensaryData.id = dispensaryDocSnap.id;
+        }
       }
       
       const finalProfile: AppUser = {
@@ -124,39 +128,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Check if there's a stored user and if it matches the current firebaseUser
-        const storedUserString = localStorage.getItem('currentUserHolisticAI');
-        let storedUser: AppUser | null = null;
-        if (storedUserString) {
-          try {
-            storedUser = JSON.parse(storedUserString);
-          } catch {
-            storedUser = null;
-          }
-        }
-        
-        if (storedUser && storedUser.uid === firebaseUser.uid) {
-          // If a matching user is in storage, use it for a faster initial render
-          setCurrentUser(storedUser);
-          setCurrentDispensary(storedUser.dispensary || null);
-          setLoading(false); // Render immediately with stored data
-          // Then, fetch fresh data in the background to sync state
-          fetchUserProfile(firebaseUser); 
-        } else {
-          // If no matching stored user, fetch from scratch
-          await fetchUserProfile(firebaseUser);
-          setLoading(false);
+        const profile = await fetchUserProfile(firebaseUser);
+        // Only redirect if the fetch was successful and it was a login event (not a refresh)
+        // This simple check might need refinement to differentiate login from refresh
+        if (profile && !currentUser) { // A simple way to check if this is an initial login
+            handleRedirect(profile);
         }
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchUserProfile]);
-
+  }, [fetchUserProfile, handleRedirect, currentUser]); // currentUser added to dependencies
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
