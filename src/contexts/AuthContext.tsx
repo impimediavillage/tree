@@ -5,7 +5,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +27,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -38,15 +36,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // Force refresh the token to get the latest custom claims.
       const idToken = await firebaseUser.getIdToken(true); 
       
-      const response = await fetch(GET_USER_PROFILE_URL, {
+      const response = await fetch('/api/firebase', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
+        body: JSON.stringify({ action: 'getUserProfile' })
       });
 
       if (!response.ok) {
@@ -57,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const fullProfile = await response.json() as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
-        throw new Error("Received invalid user profile from function.");
+        throw new Error("Received invalid user profile from API route.");
       }
 
       setCurrentUser(fullProfile);
