@@ -15,11 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DataTablePagination } from '@/components/ui/pagination'; // Using a shared pagination component
-import { useReactTable, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, ColumnDef, flexRender } from '@tanstack/react-table';
-
-
-const PRODUCTS_PER_PAGE = 12;
 
 export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -31,16 +26,12 @@ export default function WellnessProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
   
-  const fetchProducts = useCallback(async () => {
-    if (!currentUser?.dispensaryId) {
-      if (!authLoading) setIsLoading(false);
-      return;
-    }
+  const fetchProducts = useCallback(async (dispensaryId: string) => {
     setIsLoading(true);
     try {
       const productsQuery = query(
         collection(db, 'products'),
-        where('dispensaryId', '==', currentUser.dispensaryId),
+        where('dispensaryId', '==', dispensaryId),
         orderBy('name')
       );
       const querySnapshot = await getDocs(productsQuery);
@@ -56,15 +47,20 @@ export default function WellnessProductsPage() {
 
     } catch (error) {
       console.error('Error fetching products:', error);
-      toast({ title: 'Error', description: 'Could not fetch product data.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Could not fetch your products. Please check your connection and permissions.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser?.dispensaryId, authLoading, toast]);
+  }, [toast]);
 
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    if (!authLoading && currentUser?.dispensaryId) {
+      fetchProducts(currentUser.dispensaryId);
+    } else if (!authLoading) {
+      // Handle case where there's no dispensary ID after loading
+      setIsLoading(false);
+    }
+  }, [authLoading, currentUser?.dispensaryId, fetchProducts]);
   
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...allProducts];
@@ -105,7 +101,10 @@ export default function WellnessProductsPage() {
       
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
-      await fetchProducts();
+      // Re-fetch products after deletion
+      if (currentUser?.dispensaryId) {
+        fetchProducts(currentUser.dispensaryId);
+      }
       
     } catch (error) {
       console.error("Error deleting product document:", error);
