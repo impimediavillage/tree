@@ -41,30 +41,9 @@ const safeToISOString = (date: any): string | null => {
     return null;
 };
 
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const storedUser = localStorage.getItem('currentUserHolisticAI');
-      return storedUser ? JSON.parse(storedUser) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(() => {
-     if (typeof window === 'undefined') return null;
-    try {
-      const storedUser = localStorage.getItem('currentUserHolisticAI');
-      if (storedUser) {
-        const user = JSON.parse(storedUser) as AppUser;
-        return user.dispensary || null;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
@@ -76,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!userDocSnap.exists()) {
         toast({ title: "Profile Incomplete", description: "Your user profile is not fully set up. Please try signing up again or contact support.", variant: "destructive"});
-        await auth.signOut(); // Force sign out
+        await auth.signOut();
         return null;
       }
 
@@ -98,15 +77,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
+      // Force refresh of ID token to get custom claims
+      await firebaseUser.getIdToken(true);
+      const idTokenResult = await firebaseUser.getIdTokenResult();
+      
       const fullProfile: AppUser = {
         uid: firebaseUser.uid,
         email: userData.email || firebaseUser.email || '',
         displayName: userData.displayName || firebaseUser.displayName || '',
         photoURL: userData.photoURL || firebaseUser.photoURL || null,
-        role: userData.role || 'User',
+        role: idTokenResult.claims.role || userData.role || 'User',
         credits: userData.credits || 0,
         status: userData.status || 'Active',
-        dispensaryId: userData.dispensaryId || null,
+        dispensaryId: idTokenResult.claims.dispensaryId || userData.dispensaryId || null,
         dispensary: dispensaryData,
         dispensaryStatus: dispensaryData?.status || null,
         createdAt: safeToISOString(userData.createdAt),
@@ -145,14 +128,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true); // Always set loading to true when auth state changes
       if (firebaseUser) {
-        // If there's a user session, but we don't have local data (e.g., first visit after closing browser)
-        // or the UIDs don't match, fetch the profile.
-        if (!currentUser || currentUser.uid !== firebaseUser.uid) {
-           await fetchUserProfile(firebaseUser);
-        }
+        await fetchUserProfile(firebaseUser);
       } else {
-        // No user session found
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -160,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchUserProfile, currentUser]); 
+  }, [fetchUserProfile]); 
   
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
