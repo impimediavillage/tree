@@ -17,11 +17,12 @@ import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User as AppUser } from '@/types';
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { fetchUserProfile } = useAuth(); // We keep fetchUserProfile for the redirect logic
+  const { fetchUserProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -32,7 +33,7 @@ export default function SignInPage() {
     },
   });
   
-  const handleRedirect = (userProfile: any) => {
+  const handleRedirect = (userProfile: AppUser) => {
     if (userProfile.role === 'Super Admin') {
       router.push('/admin/dashboard');
     } else if (userProfile.role === 'DispensaryOwner' || userProfile.role === 'DispensaryStaff') {
@@ -52,18 +53,14 @@ export default function SignInPage() {
         description: 'Fetching your profile and redirecting...',
       });
 
-      // Auth state will be picked up by the AuthProvider, which fetches the profile.
-      // We can then redirect based on that profile.
       const userProfile = await fetchUserProfile(userCredential.user);
 
       if (userProfile) {
         handleRedirect(userProfile);
       } else {
-        // This case indicates a problem fetching the profile right after login,
-        // which could be a race condition with Firestore document creation or a permissions issue.
-        // The AuthContext will have already shown an error toast in this case.
-        // We will push the user to a safe page.
-        router.push('/'); 
+         // This case might be hit if the Firestore document is not yet created (race condition)
+         // Or if there's a more serious issue. The AuthContext handles the error toast.
+         throw new Error("Failed to fetch user profile immediately after login.");
       }
 
     } catch (error: any) {
