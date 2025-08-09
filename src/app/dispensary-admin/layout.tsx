@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 
 interface NavItem {
@@ -80,23 +79,28 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     }
   }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
 
-  if (authLoading || !canAccessDispensaryPanel || !currentUser || !currentDispensary) {
+  if (authLoading) {
      return (
       <div className="flex flex-col items-center justify-center h-screen p-4 bg-background"> 
         <div className="flex items-center text-lg text-muted-foreground">
-            <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
-            <p>Loading Wellness Panel...</p>
+            <Loader2 className="h-12 w-12 animate-spin text-primary mr-4" />
+            <p>Verifying Wellness Panel Access...</p>
         </div>
-        {!authLoading && !canAccessDispensaryPanel && (
-            <div className="mt-6 text-center">
-                <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
-                <p className="text-destructive font-semibold">Access Denied or Not Approved</p>
-                <p className="text-sm text-muted-foreground">Redirecting...</p>
-            </div>
-        )}
       </div>
     );
   }
+  
+  if (!canAccessDispensaryPanel || !currentUser || !currentDispensary) {
+    return (
+     <div className="flex flex-col items-center justify-center h-screen p-4 bg-background">
+       <div className="mt-6 text-center">
+           <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
+           <p className="text-destructive font-semibold">Access Denied or Not Approved</p>
+           <p className="text-sm text-muted-foreground">Redirecting...</p>
+       </div>
+     </div>
+   );
+ }
   
   const SidebarNavigation = () => (
     <>
