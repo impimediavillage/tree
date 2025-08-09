@@ -32,10 +32,7 @@ export default function PromoCollectionsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchStickerSets = useCallback(async () => {
-    if (!currentUser?.uid) {
-        setIsLoading(false);
-        return;
-    }
+    if (!currentUser?.uid) return;
     setIsLoading(true);
     try {
       const setsQuery = query(
@@ -59,10 +56,11 @@ export default function PromoCollectionsPage() {
   }, [currentUser?.uid, toast]);
 
   useEffect(() => {
+    // Patiently wait for auth to finish before fetching data
     if (!authLoading && currentUser) {
       fetchStickerSets();
     } else if (!authLoading && !currentUser) {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }, [authLoading, currentUser, fetchStickerSets]);
 
