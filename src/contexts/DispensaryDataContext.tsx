@@ -32,9 +32,8 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchDispensaryData = useCallback(async () => {
-    // Ensure we have the necessary IDs before fetching
     if (authLoading || !canAccessDispensaryPanel || !currentUser?.dispensaryId || !currentUser?.uid) {
-      if (!authLoading) setIsLoading(false); // If auth is done and we still can't fetch, stop loading
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -43,11 +42,10 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
       const dispensaryId = currentUser.dispensaryId;
       
       const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", dispensaryId));
-      // Fetch all users linked to this dispensary, including the owner themself. We filter out the owner on the client.
       const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", dispensaryId));
       const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
       const outgoingRequestsQuery = query(collection(db, "productRequests"), where("requesterDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
-      const stickerSetsQuery = query(collection(db, 'stickersets'), where('dispensaryId', '==', dispensaryId), orderBy('createdAt', 'desc'));
+      const stickerSetsQuery = query(collection(db, 'stickersets'), where('creatorUid', '==', currentUser.uid), orderBy('createdAt', 'desc'));
 
       const [
         productsSnapshot, 
@@ -60,11 +58,10 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
         getDocs(staffQuery),
         getDocs(incomingRequestsSnapshot),
         getDocs(outgoingRequestsSnapshot),
-        getDocs(stickerSetsSnapshot)
+        getDocs(stickerSetsQuery)
       ]);
 
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-      // Filter out the current user from the staff list on the client side
       setStaff(staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)).filter(user => user.uid !== currentUser.uid));
       setIncomingRequests(incomingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
       setOutgoingRequests(outgoingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
@@ -79,7 +76,6 @@ export const DispensaryDataProvider = ({ children }: { children: ReactNode }) =>
   }, [authLoading, canAccessDispensaryPanel, currentUser, toast]);
 
   useEffect(() => {
-    // This effect triggers the fetch when the user's status is confirmed and they have access
     if (!authLoading && canAccessDispensaryPanel) {
       fetchDispensaryData();
     }

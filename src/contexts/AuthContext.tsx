@@ -37,7 +37,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       if (firebaseUser) {
         try {
-          // Always call the function to get the latest profile and roles
           const result = await getUserProfileCallable();
           const profile = result.data;
           
@@ -45,7 +44,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(profile);
             const isAuthPage = pathname.startsWith('/auth');
             if (isAuthPage) {
-              // Redirect based on role after successful login
               if (profile.role === 'Super Admin') {
                 router.push('/admin/dashboard');
               } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
@@ -55,7 +53,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }
             }
           } else {
-            // If profile is null, something is wrong, sign out.
             await auth.signOut();
             setCurrentUser(null);
           }
@@ -65,13 +62,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.error("Function error code:", error.code);
               console.error("Function error message:", error.message);
           }
-          await auth.signOut();
-          setCurrentUser(null);
+           await auth.signOut();
+           setCurrentUser(null);
         } finally {
           setLoading(false);
         }
       } else {
-        // No firebase user, so clear our state
         setCurrentUser(null);
         setLoading(false);
       }
