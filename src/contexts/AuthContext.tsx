@@ -48,12 +48,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
                  router.push('/dispensary-admin/dashboard');
                } else if (profile.role === 'DispensaryOwner') {
+                 // For pending/suspended owners, you might want a different page or just the homepage
                  router.push('/');
                } else {
                  router.push('/dashboard/leaf');
                }
             }
           } else {
+            // Profile call returned null, which implies an issue or no profile found
             await auth.signOut();
             setCurrentUser(null);
           }
@@ -63,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.error("Function error code:", error.code);
                 console.error("Function error message:", error.message);
             }
-           await auth.signOut();
+           await auth.signOut(); // Force sign out on profile fetch failure
            setCurrentUser(null);
         } finally {
           setLoading(false);
