@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -43,6 +44,8 @@ export default function SignInPage() {
     }
   };
 
+  // This is the robust client-side user profile fetcher.
+  // It's a fallback and main logic for when context isn't hydrated yet.
   const fetchFullUserProfile = async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
       const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -70,7 +73,7 @@ export default function SignInPage() {
       const fullProfile: AppUser = {
         ...userData,
         uid: firebaseUser.uid,
-        email: firebaseUser.email || userData.email, // Prefer fresh email from auth
+        email: firebaseUser.email || userData.email,
         photoURL: firebaseUser.photoURL || userData.photoURL,
         displayName: firebaseUser.displayName || userData.displayName,
         dispensary: dispensaryData,
@@ -104,10 +107,8 @@ export default function SignInPage() {
         setCurrentUser(userProfile);
         localStorage.setItem('currentUserHolisticAI', JSON.stringify(userProfile));
         handleRedirect(userProfile);
-      } else {
-        // Error toast is handled within fetchFullUserProfile
-        setIsLoading(false); // Ensure loading stops if profile fetch fails
       }
+      // No 'else' block needed, as fetchFullUserProfile handles its own errors and toasts.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
@@ -124,6 +125,8 @@ export default function SignInPage() {
           case 'auth/too-many-requests':
             errorMessage = 'Too many login attempts. Please try again later.';
             break;
+          default:
+              errorMessage = "An unexpected error occurred. Please try again."
         }
       }
       console.error("Sign-in process failed:", error);
@@ -132,7 +135,8 @@ export default function SignInPage() {
         description: errorMessage,
         variant: 'destructive',
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
