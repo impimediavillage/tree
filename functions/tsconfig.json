@@ -9,10 +9,18 @@
     "target": "es2021",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "../src/types"
+    ]
   },
   "compileOnSave": true,
   "include": [
-    "src"
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
   ]
 }

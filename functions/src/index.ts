@@ -4,7 +4,7 @@ import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-// Import types from the main app source to ensure consistency
+// All types are now sourced from the main app's type definitions
 import type {
   Dispensary,
   User as AppUser,
@@ -52,7 +52,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                 if (dispensaryDocSnap.exists()) {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
-                    // THIS IS THE CRITICAL FIX: Handle case where dispensary doc doesn't exist
+                    // This is the critical fix: Handle case where dispensary doc doesn't exist
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}. Proceeding without dispensary data.`);
                     dispensaryData = null; 
                 }
@@ -70,11 +70,9 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             if (date instanceof Date) {
                 return date.toISOString();
             }
-            // Add a check for string dates, but handle them carefully
             if (typeof date === 'string') {
                  try {
                      const parsedDate = new Date(date);
-                     // Check if the parsed date is valid
                      if (!isNaN(parsedDate.getTime())) {
                          return parsedDate.toISOString();
                      }
@@ -85,7 +83,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             return null;
         };
         
-        // Use a separate variable to avoid modifying the original dispensaryData
         let dispensaryWithSerializableDates: Dispensary | null = null;
         if (dispensaryData) {
             dispensaryWithSerializableDates = {
@@ -129,7 +126,6 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
     }
     const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data as { userId: string, advisorSlug: string, creditsToDeduct: number, wasFreeInteraction: boolean };
 
-    // Strict validation
     if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined || userId !== request.auth.uid) {
         logger.error("Invalid arguments for deductCreditsAndLogInteraction", { data: request.data, auth: request.auth });
         throw new HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
@@ -166,8 +162,7 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),
                 wasFreeInteraction,
             };
-            // Create the log entry within the same transaction for atomicity
-            const logRef = db.collection("aiInteractionsLog").doc(); // Create a new doc reference
+            const logRef = db.collection("aiInteractionsLog").doc();
             transaction.set(logRef, logEntry);
         });
 
@@ -179,17 +174,13 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
     } catch (error: any) {
         logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
         if (error instanceof HttpsError) {
-            // Re-throw HttpsError to be caught by the client with the correct status
             throw error;
         }
-        // Throw a generic internal error for other failures
         throw new HttpsError("internal", "An internal error occurred while processing the transaction.");
     }
 });
 
-// New function to update user profile from admin panel
 export const updateUserProfileAdmin = onCall({ cors: true }, async (request) => {
-    // 1. Authentication and Authorization
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in.');
     }
@@ -199,13 +190,11 @@ export const updateUserProfileAdmin = onCall({ cors: true }, async (request) => 
          throw new HttpsError('permission-denied', 'Only Super Admins can perform this action.');
     }
     
-    // 2. Data Validation
     const { userId, updates } = request.data;
     if (!userId || !updates || typeof updates !== 'object') {
         throw new HttpsError('invalid-argument', 'User ID and updates object are required.');
     }
 
-    // 3. Logic
     try {
         const userDocRef = db.collection('users').doc(userId);
         await userDocRef.update({ ...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
