@@ -26,6 +26,7 @@ interface AuthContextType {
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
   fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>;
+  handleRedirect: (userProfile: AppUser) => void;
   logout: () => Promise<void>;
 }
 
@@ -64,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [router, toast]);
 
+
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     if (!user) return null;
     
@@ -81,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDispensaryId = userData.dispensaryId || null;
 
       await setDispensaryClaim({ dispensaryId: userDispensaryId });
-      await user.getIdToken(true); // Force refresh to get new claim
+      await user.getIdToken(true); 
 
       let dispensaryData: Dispensary | null = null;
       if (userDispensaryId) {
@@ -128,12 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        const profile = await fetchUserProfile(firebaseUser);
-        // Only redirect if the fetch was successful and it was a login event (not a refresh)
-        // This simple check might need refinement to differentiate login from refresh
-        if (profile && !currentUser) { // A simple way to check if this is an initial login
-            handleRedirect(profile);
-        }
+        // Just fetch the profile on state change. Do not redirect here.
+        await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
@@ -142,7 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchUserProfile, handleRedirect, currentUser]); // currentUser added to dependencies
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Changed dependencies to run only once
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
@@ -163,6 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLeafUser,
     currentDispensaryStatus,
     fetchUserProfile,
+    handleRedirect,
     logout,
   };
 

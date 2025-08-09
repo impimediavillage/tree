@@ -21,7 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { fetchUserProfile } = useAuth(); // We'll let the context listener handle redirects
+  const { fetchUserProfile, handleRedirect } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -35,16 +35,23 @@ export default function SignInPage() {
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
-      // The onAuthStateChanged listener in AuthContext will handle everything else:
-      // fetching the profile, setting claims, and redirecting.
-      // We just need to sign the user in here.
-      await signInWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       
       toast({
         title: 'Login Successful',
-        description: 'Redirecting to your dashboard...',
+        description: 'Fetching your profile and redirecting...',
       });
-      // The redirect is now handled by the AuthContext after the profile is fully loaded.
+
+      // Explicitly fetch profile and then redirect. This is the new, correct flow.
+      const userProfile = await fetchUserProfile(userCredential.user);
+
+      if (userProfile) {
+        handleRedirect(userProfile);
+      } else {
+         // This case might be hit if the Firestore document is not yet created (race condition)
+         // Or if there's a more serious issue. The AuthContext handles the error toast.
+         throw new Error("Failed to fetch user profile immediately after login.");
+      }
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
