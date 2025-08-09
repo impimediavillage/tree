@@ -9,6 +9,7 @@ import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { usePathname, useRouter } from 'next/navigation';
 import { httpsCallable, FunctionsError } from "firebase/functions";
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     try {
@@ -41,25 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (!profile || !profile.uid) {
          console.error("Received invalid profile from function, signing out.", profile);
+         toast({ title: "Authentication Error", description: "Could not load a valid user profile.", variant: "destructive" });
          await auth.signOut();
-         setCurrentUser(null);
          return null;
       }
       
       setCurrentUser(profile);
-      // Persist a minimal, safe version of the user profile to local storage
-      const userToStore = {
-        uid: profile.uid,
-        email: profile.email,
-        displayName: profile.displayName,
-        photoURL: profile.photoURL,
-        role: profile.role,
-        credits: profile.credits,
-        dispensaryId: profile.dispensaryId,
-        dispensaryStatus: profile.dispensaryStatus,
-      };
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(userToStore));
-      
       return profile;
 
     } catch (error) {
@@ -67,17 +56,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        if (error instanceof FunctionsError) {
            console.error("Function error code:", error.code);
            console.error("Function error message:", error.message);
+           toast({ title: `Error: ${error.code}`, description: error.message, variant: "destructive" });
+       } else {
+           toast({ title: "Authentication Error", description: "An unexpected error occurred while fetching your profile.", variant: "destructive" });
        }
-      await auth.signOut();
-      localStorage.removeItem('currentUserHolisticAI');
-      setCurrentUser(null);
+      await auth.signOut(); // Force sign out on profile fetch failure
       return null;
     }
-  }, []);
+  }, [toast]);
   
   const logout = async () => {
     await auth.signOut();
-    localStorage.removeItem('currentUserHolisticAI');
     setCurrentUser(null);
     if (!pathname.startsWith('/auth')) {
         router.push('/auth/signin');
@@ -88,12 +77,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Only fetch profile if not already loaded from a recent login
-        if (!currentUser || currentUser.uid !== firebaseUser.uid) {
-           await fetchUserProfile(firebaseUser);
-        }
+        // We always fetch the profile on auth state change to ensure data is fresh.
+        // This also handles the case where a user is already logged in when visiting the site.
+        await fetchUserProfile(firebaseUser);
       } else {
-        localStorage.removeItem('currentUserHolisticAI');
         setCurrentUser(null);
       }
       setLoading(false);
