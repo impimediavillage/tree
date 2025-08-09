@@ -2,10 +2,10 @@
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { HttpsError } from "firebase-functions/v2/https";
 import * as functions from "firebase-functions";
 import type { Dispensary, User as AppUser, UserDocData } from "./types";
-
+import {onRequest} from "firebase-functions/v2/https";
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -96,11 +96,36 @@ const safeToISOString = (date: any): string | null => {
 
 // ============== ROBUST CALLABLE FUNCTIONS ==============
 
-export const getUserProfile = onCall({ cors: [{origin: true}] }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
+export const getUserProfile = onRequest({cors: true}, async (request, response) => {
+    logger.info("getUserProfile function triggered");
+    
+    if (request.method === "OPTIONS") {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        response.status(204).send();
+        return;
     }
-    const uid = request.auth.uid;
+
+    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
+        logger.error("No authorization token found");
+        response.status(403).send('Unauthorized');
+        return;
+    }
+
+    const idToken = request.headers.authorization.split('Bearer ')[1];
+    
+    let decodedIdToken;
+    try {
+        decodedIdToken = await admin.auth().verifyIdToken(idToken);
+    } catch (error) {
+        logger.error("Error verifying token:", error);
+        response.status(403).send('Unauthorized');
+        return;
+    }
+    
+    const uid = decodedIdToken.uid;
+    logger.info(`Fetching profile for authenticated user: ${uid}`);
 
     try {
         const userDocRef = db.collection('users').doc(uid);
@@ -108,7 +133,8 @@ export const getUserProfile = onCall({ cors: [{origin: true}] }, async (request)
 
         if (!userDocSnap.exists) {
             logger.error(`User document not found for authenticated user: ${uid}`);
-            throw new HttpsError('not-found', 'Your user profile could not be found. This may happen if the account was just created. Please try again.');
+            response.status(404).json({error: 'Your user profile could not be found. This may happen if the account was just created. Please try again.'});
+            return;
         }
         
         const userData = userDocSnap.data() as UserDocData;
@@ -140,9 +166,9 @@ export const getUserProfile = onCall({ cors: [{origin: true}] }, async (request)
         
         const profileResponse: AppUser = {
             uid: uid,
-            email: userData.email || request.auth.token.email || '',
-            displayName: userData.displayName || request.auth.token.name || '',
-            photoURL: userData.photoURL || request.auth.token.picture || null,
+            email: userData.email || decodedIdToken.email || '',
+            displayName: userData.displayName || decodedIdToken.name || '',
+            photoURL: userData.photoURL || decodedIdToken.picture || null,
             role: userData.role || 'User',
             dispensaryId: userData.dispensaryId || null,
             credits: userData.credits || 0,
@@ -156,25 +182,52 @@ export const getUserProfile = onCall({ cors: [{origin: true}] }, async (request)
             signupSource: userData.signupSource || 'public',
         };
 
-        return profileResponse;
+        response.status(200).json(profileResponse);
 
     } catch (error: any) {
         logger.error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
-        if (error instanceof HttpsError) throw error;
-        throw new HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
+        if (error instanceof HttpsError) {
+             response.status(500).json({error: error.message});
+        } else {
+            response.status(500).json({error: 'An unexpected server error occurred while fetching your profile.'});
+        }
     }
 });
 
 
-export const deductCreditsAndLogInteraction = onCall({ cors: [{origin: true}] }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+export const deductCreditsAndLogInteraction = onRequest({cors: true}, async (request, response) => {
+    
+    if (request.method === "OPTIONS") {
+        response.setHeader("Access-Control-Allow-Origin", "*");
+        response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+        response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        response.status(204).send();
+        return;
     }
-    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data as { userId: string, advisorSlug: string, creditsToDeduct: number, wasFreeInteraction: boolean };
 
-    if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined || userId !== request.auth.uid) {
-        logger.error("Invalid arguments for deductCreditsAndLogInteraction", { data: request.data, auth: request.auth });
-        throw new HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
+    if (!request.headers.authorization || !request.headers.authorization.startsWith('Bearer ')) {
+        logger.error("No authorization token found for deductCredits");
+        response.status(403).json({ success: false, error: 'Unauthorized' });
+        return;
+    }
+
+    const idToken = request.headers.authorization.split('Bearer ')[1];
+    
+    let decodedIdToken;
+    try {
+        decodedIdToken = await admin.auth().verifyIdToken(idToken);
+    } catch (error) {
+        logger.error("Error verifying token for deductCredits:", error);
+        response.status(403).json({ success: false, error: 'Unauthorized' });
+        return;
+    }
+
+    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.body;
+
+    if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined || userId !== decodedIdToken.uid) {
+        logger.error("Invalid arguments for deductCreditsAndLogInteraction", { body: request.body, auth: decodedIdToken });
+        response.status(400).json({ success: false, error: 'Missing or invalid arguments provided.' });
+        return;
     }
 
     const userRef = db.collection("users").doc(userId);
@@ -212,14 +265,20 @@ export const deductCreditsAndLogInteraction = onCall({ cors: [{origin: true}] },
             transaction.set(logRef, logEntry);
         });
 
-        return {
+        response.status(200).json({
             success: true,
             message: "Credits updated and interaction logged successfully.",
             newCredits: newCreditBalance,
-        };
+        });
+
     } catch (error: any) {
         logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
-        if (error instanceof HttpsError) throw error;
-        throw new HttpsError("internal", "An internal error occurred while processing the transaction.");
+        if (error instanceof HttpsError) {
+            response.status(500).json({ success: false, error: error.message });
+        } else {
+             response.status(500).json({ success: false, error: "An internal error occurred while processing the transaction." });
+        }
     }
 });
+
+    
