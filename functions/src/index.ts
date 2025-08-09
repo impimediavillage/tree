@@ -52,7 +52,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                 if (dispensaryDocSnap.exists()) {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
-                    // This is the critical fix: Handle case where dispensary doc doesn't exist
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}. Proceeding without dispensary data.`);
                     dispensaryData = null; 
                 }
@@ -105,7 +104,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             createdAt: toISODateString(userData.createdAt),
             lastLoginAt: toISODateString(userData.lastLoginAt),
             dispensaryStatus: dispensaryData?.status || null,
-            dispensary: dispensaryWithSerializableDates, // Use the safely processed dispensary data
+            dispensary: dispensaryWithSerializableDates,
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',

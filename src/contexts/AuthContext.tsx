@@ -5,10 +5,13 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/functions/src/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
+
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -32,33 +35,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
+    if (!user) return null;
     try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/firebase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ action: 'getUserProfile' }),
-      });
-      
-      // If the profile is not found (404), it's a valid case for new signups.
-      // We return null and let the onAuthStateChanged listener re-fetch shortly.
-      if (response.status === 404) {
-        console.warn(`User profile for ${user.uid} not found in DB yet. This is expected for new signups.`);
-        return null;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const profile: AppUser = await response.json();
+      const result = await getUserProfileCallable();
+      const profile = result.data as AppUser;
 
       if (!profile || !profile.uid) {
-         console.error("Received invalid profile from API, signing out.", profile);
+         console.error("Received invalid profile from callable function, signing out.", profile);
          toast({ title: "Authentication Error", description: "Could not load a valid user profile.", variant: "destructive" });
          await auth.signOut();
          return null;
@@ -68,8 +51,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return profile;
 
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile. Logging out.", error);
-      toast({ title: "Authentication Error", description: error.message || "An unexpected error occurred while fetching your profile.", variant: "destructive" });
+      console.error("Critical: Failed to get user profile via callable function.", error);
+      
+      let errorMessage = "An unexpected error occurred while fetching your profile.";
+      if (error instanceof FunctionsError) {
+        errorMessage = error.message;
+        console.error("Function error code:", error.code);
+        console.error("Function error message:", error.message);
+      }
+      
+      toast({ title: "Authentication Error", description: errorMessage, variant: "destructive" });
       await auth.signOut();
       return null;
     }
@@ -85,17 +76,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Attempt to fetch profile a few times for new users
         let profile = null;
         for (let i = 0; i < 3; i++) {
           profile = await fetchUserProfile(firebaseUser);
           if (profile) break;
-          // Wait for a short period before retrying
           if (i < 2) await new Promise(resolve => setTimeout(resolve, 1500));
         }
         if (!profile) {
            console.error("Failed to fetch user profile after multiple attempts. User may not exist in DB or there's a persistent issue.");
-           // Don't auto-logout here, let sign-in page handle the error.
            setCurrentUser(null);
         }
       } else {
