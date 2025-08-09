@@ -72,35 +72,35 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const firebaseUser = userCredential.user;
 
-      // 2. Create the user document in Firestore
+      // 2. Create the user document in Firestore IMMEDIATELY. This is the crucial fix.
       const userDocRef = doc(db, "users", firebaseUser.uid);
-      const newUser: Omit<User, 'id' | 'dispensary'> = {
+      const newUserDocData = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
-        displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
+        displayName: firebaseUser.email?.split('@')[0] || 'New User',
         photoURL: firebaseUser.photoURL || null,
         role: 'LeafUser', 
         credits: 10, 
-        createdAt: serverTimestamp() as any,
-        lastLoginAt: serverTimestamp() as any,
+        createdAt: serverTimestamp(),
+        lastLoginAt: serverTimestamp(),
         status: 'Active', 
         preferredDispensaryTypes: data.preferredDispensaryTypes || [],
         welcomeCreditsAwarded: true, 
         signupSource: 'public', 
       };
-      await setDoc(userDocRef, newUser);
+      await setDoc(userDocRef, newUserDocData);
       
       toast({
         title: 'Account Created!',
         description: "You've been successfully signed up and logged in. Welcome!",
       });
       
-      // 3. Fetch the full profile to populate context and redirect
+      // 3. Fetch the full profile to populate context and redirect. This now succeeds because the doc exists.
       const userProfile = await fetchUserProfile(firebaseUser);
       if (userProfile) {
         router.push('/dashboard/leaf');
       } else {
-        throw new Error("Could not fetch profile for new user.");
+        throw new Error("Could not fetch profile for new user, even after creation.");
       }
  
     } catch (error: any) {
