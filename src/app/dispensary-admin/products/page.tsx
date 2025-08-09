@@ -59,6 +59,7 @@ export default function WellnessProductsPage() {
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
     } else if (!authLoading && !dispensaryId) {
+      // If auth is done but there's no dispensaryId, stop loading.
       setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchProducts]);
@@ -215,3 +216,5 @@ export default function WellnessProductsPage() {
     </div>
   );
 }
+
+    
