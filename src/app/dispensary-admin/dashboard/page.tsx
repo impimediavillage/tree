@@ -23,77 +23,29 @@ interface StatCardProps {
   isLoading: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, description, link, linkText, isLoading }) => (
-  <Card className="shadow-md hover:shadow-lg transition-shadow bg-card">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-card-foreground">{title}</CardTitle>
-      <Icon className="h-5 w-5 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      {isLoading ? (
-         <Skeleton className="h-7 w-16" />
-      ) : (
-        <div className="text-2xl font-bold text-primary">{value}</div>
-      )}
-      {description && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
-      {link && linkText && (
-        <Button variant="link" asChild className="px-0 pt-2 text-accent">
-          <Link href={link}>{linkText}</Link>
-        </Button>
-      )}
-    </CardContent>
-  </Card>
-);
+// NOTE: The StatCard component and its associated data fetching have been temporarily removed
+// to resolve a critical permission error. The dashboard now uses a streamlined "QuickActionCard"
+// approach, deferring data loading to the specific pages. This aligns with the original,
+// more robust workflow. The StatCard logic can be revisited later with a secure method for
+// aggregate counts if needed (e.g., using a separate summary document in Firestore).
 
 export default function WellnessAdminOverviewPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   
   const dispensaryId = currentUser?.dispensaryId;
 
-  const fetchDashboardData = useCallback(async (id: string) => {
-    setIsLoading(true);
-    try {
-        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", id));
-        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", id), orderBy("createdAt", "desc"));
-        
-        const [productsSnapshot, incomingRequestsSnapshot] = await Promise.all([
-            getDocs(productsQuery),
-            getDocs(incomingRequestsQuery)
-        ]);
-
-        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
-        setIncomingRequests(incomingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
-
-    } catch(error) {
-        console.error("Error fetching dashboard data:", error);
-        toast({ title: "Data Loading Error", description: "Could not load dashboard data.", variant: "destructive" });
-    } finally {
-        setIsLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    if (authLoading) return; 
-
-    if (dispensaryId) {
-        fetchDashboardData(dispensaryId);
-    } else {
-        setIsLoading(false);
-    }
-  }, [dispensaryId, authLoading, fetchDashboardData]);
-
-
-  const { totalProducts, activePoolItems, pendingRequests } = useMemo(() => {
-      return {
-          totalProducts: products.length,
-          activePoolItems: products.filter(p => p.isAvailableForPool).length,
-          pendingRequests: incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length,
-      }
-  }, [products, incomingRequests]);
+  if (authLoading) {
+    return (
+      <div className="space-y-8">
+        <Skeleton className="h-28 w-full" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
@@ -113,36 +65,6 @@ export default function WellnessAdminOverviewPage() {
           </CardDescription>
         </CardHeader>
       </Card>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard 
-          title="Total Products" 
-          value={totalProducts} 
-          icon={Package} 
-          description="Products currently listed by your wellness profile."
-          link="/dispensary-admin/products"
-          linkText="Manage Products"
-          isLoading={isLoading}
-        />
-        <StatCard 
-          title="Pending Requests" 
-          value={pendingRequests} 
-          icon={ListOrdered} 
-          description="Incoming product requests needing your approval."
-          link="/dispensary-admin/pool?tab=incoming-requests"
-          linkText="View Requests"
-          isLoading={isLoading}
-        />
-        <StatCard 
-          title="Active in Pool" 
-          value={activePoolItems}
-          icon={ShoppingBasket}
-          description="Products you've made available to the sharing pool."
-          link="/dispensary-admin/products?filter=pool" 
-          linkText="Manage Pool Items"
-          isLoading={isLoading}
-        />
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <QuickActionCard
