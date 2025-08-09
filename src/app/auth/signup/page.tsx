@@ -68,17 +68,15 @@ export default function SignUpPage() {
   const onSubmit = async (data: UserSignupFormData) => {
     setIsLoading(true);
     try {
-      // 1. Create the user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const firebaseUser = userCredential.user;
 
-      // 2. Create the user document in Firestore IMMEDIATELY. This is the crucial fix.
       const userDocRef = doc(db, "users", firebaseUser.uid);
       const newUserDocData = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
         displayName: firebaseUser.email?.split('@')[0] || 'New User',
-        photoURL: firebaseUser.photoURL || null,
+        photoURL: null,
         role: 'LeafUser', 
         credits: 10, 
         createdAt: serverTimestamp(),
@@ -95,7 +93,6 @@ export default function SignUpPage() {
         description: "You've been successfully signed up and logged in. Welcome!",
       });
       
-      // 3. Fetch the full profile to populate context and redirect. This now succeeds because the doc exists.
       const userProfile = await fetchUserProfile(firebaseUser);
       if (userProfile) {
         router.push('/dashboard/leaf');

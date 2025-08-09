@@ -28,10 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Using onCall functions
 const getUserProfile = httpsCallable(functions, 'getUserProfile');
-const deductCreditsAndLogInteraction = httpsCallable(functions, 'deductCreditsAndLogInteraction');
-
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);

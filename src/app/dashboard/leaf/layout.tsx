@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Palette } from 'lucide-react'; 
+import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Palette, Loader2, AlertTriangle } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -41,53 +41,44 @@ export default function LeafDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth(); // Get currentUser from useAuth
+  const { currentUser, loading: authLoading, logout, isLeafUser } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await firebaseAuthInstance.signOut();
-      localStorage.removeItem('currentUserHolisticAI');
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/auth/signin');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isLeafUser) {
+      toast({
+        title: "Access Denied",
+        description: "This dashboard is for Leaf Users only.",
+        variant: "destructive",
+      });
+      router.replace(currentUser ? '/' : '/auth/signin');
     }
-  };
+  }, [authLoading, isLeafUser, router, toast, currentUser]);
 
-  if (authLoading) { // Use authLoading from useAuth
-    return <div className="p-4">Loading user data...</div>;
-  }
-
-  if (!currentUser) {
+  if (authLoading || !isLeafUser) {
     return (
-      <div className="p-4 text-center">
-        <p>You need to be logged in to access this dashboard.</p>
-        <Button asChild className="mt-4">
-          <Link href="/auth/signin">Go to Login</Link>
-        </Button>
+      <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h2 className="text-2xl font-bold">Verifying Leaf User Access...</h2>
+        <p className="mt-2 text-muted-foreground">Please wait while we confirm your permissions.</p>
+         {!authLoading && !isLeafUser && (
+             <div className="mt-6 text-center">
+               <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
+               <p className="text-destructive font-semibold">Access Denied</p>
+               <p className="text-sm text-muted-foreground">Redirecting...</p>
+             </div>
+        )}
       </div>
     );
   }
   
-  if (currentUser.role !== 'User' && currentUser.role !== 'LeafUser') {
-     return (
-      <div className="p-4 text-center">
-        <p>This dashboard is for Leaf Users. Your role is: {currentUser.role}</p>
-         <Button asChild className="mt-4">
-          <Link href="/">Back to Home</Link>
-        </Button>
-      </div>
-    );
-  }
-
   const SidebarContentLayout = () => (
     <>
       <div className="p-3 border-b">
         <h2 className="text-xl font-semibold text-primary px-1">Leaf Dashboard</h2>
       </div>
-      <div className="flex-grow overflow-y-auto p-2 space-y-1"> {/* Ensure this container can scroll */}
+      <div className="flex-grow overflow-y-auto p-2 space-y-1">
         <nav className="flex flex-col space-y-1">
           {sidebarNavItems.map((item) => (
             <Button
@@ -108,7 +99,7 @@ export default function LeafDashboardLayout({
           ))}
         </nav>
       </div>
-      <div className="p-3 border-t mt-auto"> {/* Profile Dropdown section */}
+      <div className="p-3 border-t mt-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="w-full justify-start p-2 hover:bg-muted/50">
@@ -149,7 +140,7 @@ export default function LeafDashboardLayout({
                 <span>Main Site</span>
             </DropdownMenuItem>
             <DropdownMenuSeparatorComponent />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+            <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
@@ -176,7 +167,7 @@ export default function LeafDashboardLayout({
               <span className="sr-only">Open menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col bg-card"> {/* Removed pt-8, handled by flex-col and mt-auto */}
+          <SheetContent side="left" className="w-72 p-0 flex flex-col bg-card">
             <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary z-10">
                 <X className="h-4 w-4" />
                 <span className="sr-only">Close</span>
