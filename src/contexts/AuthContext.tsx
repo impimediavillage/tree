@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, functions } from '@/lib/firebase';
-import type { User as AppUser, Dispensary } from '@/types';
+import type { User as AppUser, Dispensary, DeductCreditsRequestBody } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
@@ -28,7 +28,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Using onCall functions
 const getUserProfile = httpsCallable(functions, 'getUserProfile');
+const deductCreditsAndLogInteraction = httpsCallable(functions, 'deductCreditsAndLogInteraction');
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -39,12 +42,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // The httpsCallable function automatically includes the user's ID token.
+      // Force refresh the token to get the latest custom claims
+      await firebaseUser.getIdToken(true); 
+      
       const result = await getUserProfile();
       const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
-        throw new Error("Received invalid user profile from server.");
+        throw new FunctionsError("invalid-argument", "Received invalid user profile from server.");
       }
       
       setCurrentUser(fullProfile);
@@ -58,15 +63,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let description = "Could not load your user profile. Please try logging in again.";
       if (error instanceof FunctionsError) {
           if (error.code === 'not-found') {
-              description = "Your user profile could not be found. If you just signed up, please wait a moment and try again."
+              description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again."
           } else {
             description = error.message;
           }
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
-      // Logout on critical profile fetch failure
-      await auth.signOut();
+      await auth.signOut(); // Logout on critical profile fetch failure
       return null;
     }
   }, [toast]);
@@ -74,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
+        // The onAuthStateChanged listener below will handle state clearing
     } catch(error) {
         console.error("Logout failed", error);
         toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
@@ -88,6 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(parsedUser);
         if (parsedUser.dispensary) setCurrentDispensary(parsedUser.dispensary);
        } catch(e) {
+         console.warn("Could not parse cached user, clearing.", e);
          localStorage.removeItem('currentUserHolisticAI');
        }
     }
@@ -95,14 +101,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // User is signed in. Fetch their full profile.
         await fetchUserProfile(firebaseUser); 
       } else {
+        // User is signed out.
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
       setLoading(false);
     });
+
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [fetchUserProfile]); 
   
