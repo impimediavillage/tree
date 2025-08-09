@@ -17,12 +17,11 @@ import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User as AppUser } from '@/functions/src/types';
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { fetchUserProfile } = useAuth();
+  const { fetchUserProfile } = useAuth(); // We'll let the context listener handle redirects
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -32,50 +31,20 @@ export default function SignInPage() {
       password: '',
     },
   });
-
-  const handleRedirect = (userProfile: AppUser) => {
-    if (userProfile.role === 'Super Admin') {
-      router.push('/admin/dashboard');
-    } else if (userProfile.role === 'DispensaryOwner' || userProfile.role === 'DispensaryStaff') {
-      if (userProfile.dispensary?.status === 'Approved') {
-        router.push('/dispensary-admin/dashboard');
-      } else {
-        toast({ title: "Account Not Active", description: `Your dispensary status is: ${userProfile.dispensary?.status || 'Pending'}. Access is limited.`, variant: "default"});
-        router.push('/'); // Or a dedicated pending page
-      }
-    } else {
-      router.push('/dashboard/leaf');
-    }
-  };
-
+  
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-      const firebaseUser = userCredential.user;
-
+      // The onAuthStateChanged listener in AuthContext will handle everything else:
+      // fetching the profile, setting claims, and redirecting.
+      // We just need to sign the user in here.
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      
       toast({
         title: 'Login Successful',
-        description: 'Fetching your profile...',
+        description: 'Redirecting to your dashboard...',
       });
-      
-      // The onAuthStateChanged listener in AuthContext will handle fetching the profile.
-      // We can optionally call it here again to be sure, or just let the listener do its job.
-      // For simplicity and to rely on the central handler, we can trust the context.
-      // However, for immediate redirect, a direct call is better.
-      const userProfile = await fetchUserProfile(firebaseUser);
-
-      if (userProfile) {
-        toast({
-          title: 'Profile Loaded',
-          description: `Welcome back, ${userProfile.displayName}! Redirecting...`,
-        });
-        handleRedirect(userProfile);
-      } else {
-         // This case might be hit if the Firestore document is not yet created (race condition)
-         // Or if there's a more serious issue. The AuthContext handles the error toast.
-         throw new Error("Failed to fetch user profile immediately after login.");
-      }
+      // The redirect is now handled by the AuthContext after the profile is fully loaded.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
@@ -93,7 +62,7 @@ export default function SignInPage() {
             errorMessage = 'Too many login attempts. Please try again later.';
             break;
         }
-      } else if (error.message && !error.message.includes("Failed to fetch user profile")) {
+      } else if (error.message) {
         errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);
