@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Package, Users, Settings, Store, ShoppingBasket, ListOrdered, BarChart3, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import type { Product, ProductRequest } from '@/types';
@@ -52,13 +52,11 @@ export default function WellnessAdminOverviewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!currentUser?.dispensaryId) return;
-    
+  const fetchDashboardData = useCallback(async (dispensaryId: string) => {
     setIsLoading(true);
     try {
-        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentUser.dispensaryId));
-        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", currentUser.dispensaryId), orderBy("createdAt", "desc"));
+        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", dispensaryId));
+        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
         
         const [productsSnapshot, incomingRequestsSnapshot] = await Promise.all([
             getDocs(productsQuery),
@@ -74,18 +72,26 @@ export default function WellnessAdminOverviewPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [currentUser?.dispensaryId, toast]);
+  }, [toast]);
 
   useEffect(() => {
-    if (!authLoading && currentUser) {
-        fetchDashboardData();
+    // Only fetch data once authentication is complete and we have a user with a dispensary ID.
+    if (!authLoading && currentUser?.dispensaryId) {
+        fetchDashboardData(currentUser.dispensaryId);
+    } else if (!authLoading && !currentUser?.dispensaryId) {
+        // Handle case where user is loaded but has no dispensary ID, stop loading.
+        setIsLoading(false);
     }
   }, [authLoading, currentUser, fetchDashboardData]);
 
 
-  const totalProducts = products.length;
-  const activePoolItems = products.filter(p => p.isAvailableForPool).length;
-  const pendingRequests = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
+  const { totalProducts, activePoolItems, pendingRequests } = useMemo(() => {
+      return {
+          totalProducts: products.length,
+          activePoolItems: products.filter(p => p.isAvailableForPool).length,
+          pendingRequests: incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length,
+      }
+  }, [products, incomingRequests]);
 
   return (
     <div className="space-y-8">
