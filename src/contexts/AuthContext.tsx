@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     try {
-      console.log(`Fetching profile for user: ${user.uid}`);
       const token = await user.getIdToken();
       const response = await fetch('/api/firebase', {
         method: 'POST',
