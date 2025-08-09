@@ -14,10 +14,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Clock, Save, PlusCircle, ArrowLeft, Building } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '@/lib/firebase';
+import { db, functions } from '@/lib/firebase';
 import { collection, doc, updateDoc, serverTimestamp, getDocs, query as firestoreQuery, orderBy, addDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryType } from '@/types';
+import type { Dispensary, DispensaryType, User } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -77,6 +78,8 @@ interface EditDispensaryDialogProps {
     allDispensaryTypes: DispensaryType[];
     isSuperAdmin: boolean;
 }
+
+const updateUserProfileAdmin = httpsCallable(functions, 'updateUserProfileAdmin');
 
 export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispensaryUpdate, allDispensaryTypes, isSuperAdmin }: EditDispensaryDialogProps) {
   const { toast } = useToast();
@@ -147,21 +150,46 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
     if (!dispensary.id || !isSuperAdmin) return;
     setIsSubmitting(true);
     try {
-      const wellnessDocRef = doc(db, 'dispensaries', dispensary.id);
-      const updateData = { ...data };
-      delete (updateData as any).applicationDate;
-      const finalUpdateData = { ...updateData, lastActivityDate: serverTimestamp() };
-      await updateDoc(wellnessDocRef, finalUpdateData as any);
-      toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
-      onOpenChange(false);
-      onDispensaryUpdate();
-    } catch (error) {
-      console.error("Error updating wellness profile:", error);
-      toast({ title: "Update Failed", description: "Could not update wellness profile details.", variant: "destructive" });
+        const wellnessDocRef = doc(db, 'dispensaries', dispensary.id);
+        const updateData = { ...data, lastActivityDate: serverTimestamp() };
+        delete (updateData as any).applicationDate; // Prevent overwriting application date
+
+        // Find the owner's user document
+        const ownerQuery = query(collection(db, 'users'), where('dispensaryId', '==', dispensary.id), where('role', '==', 'DispensaryOwner'), limit(1));
+        const ownerSnapshot = await getDocs(ownerQuery);
+
+        if (!ownerSnapshot.empty) {
+            const ownerDoc = ownerSnapshot.docs[0];
+            const ownerId = ownerDoc.id;
+            const ownerData = ownerDoc.data() as User;
+
+            // Only update the owner's profile if the status has changed
+            if (ownerData.dispensaryStatus !== updateData.status) {
+                const ownerUpdatePayload = {
+                    dispensaryStatus: updateData.status
+                };
+                await updateUserProfileAdmin({ userId: ownerId, updates: ownerUpdatePayload });
+                toast({ title: "Owner Sync", description: `Owner's status synced to ${updateData.status}.` });
+            }
+        } else {
+             toast({ title: "Owner Not Found", description: "Could not find a linked owner to sync status.", variant: "default" });
+        }
+
+        await updateDoc(wellnessDocRef, updateData as any);
+        toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
+        
+        onOpenChange(false);
+        onDispensaryUpdate();
+
+    } catch (error: any) {
+        console.error("Error updating wellness profile:", error);
+        const errorMessage = error.details?.errorMessage || "Could not update wellness profile details.";
+        toast({ title: "Update Failed", description: errorMessage, variant: "destructive" });
     } finally {
-      setIsSubmitting(false);
+        setIsSubmitting(false);
     }
-  }
+}
+
 
   const formatTo12HourDisplay = (time24?: string): string => {
     if (!time24 || !time24.match(/^([01]\d|2[0-3]):([0-5]\d)$/)) return "Select Time";

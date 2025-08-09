@@ -19,40 +19,45 @@ interface AuthContextType {
   canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
-  fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>; // Expose fetch function
+  fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>; 
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfileCallable = httpsCallable<void, AppUser | null>(functions, 'getUserProfile');
+// Ensure the callable function is defined once and correctly typed
+const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     try {
-      console.log("Calling getUserProfile function...");
+      console.log(`Fetching profile for user: ${user.uid}`);
       const result = await getUserProfileCallable();
       const profile = result.data;
-      if (profile) {
-        console.log("User profile received:", profile);
-        setCurrentUser(profile);
-        return profile;
-      } else {
-        console.warn("getUserProfile returned null, signing out.");
-        await auth.signOut();
-        return null;
+
+      if (!profile || !profile.uid) {
+         console.error("Received invalid profile from function, signing out.", profile);
+         await auth.signOut();
+         setCurrentUser(null);
+         return null;
       }
+      
+      setCurrentUser(profile);
+      return profile;
+
     } catch (error) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
-      if (error instanceof FunctionsError) {
-        console.error("Function error code:", error.code);
-        console.error("Function error message:", error.message);
-      }
+       if (error instanceof FunctionsError) {
+           console.error("Function error code:", error.code);
+           console.error("Function error message:", error.message);
+       }
       await auth.signOut();
+      setCurrentUser(null);
       return null;
     }
   }, []);
@@ -60,11 +65,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     await auth.signOut();
     setCurrentUser(null);
-    router.push('/auth/signin');
+    if (!pathname.startsWith('/auth')) {
+        router.push('/auth/signin');
+    }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setLoading(true);
         await fetchUserProfile(firebaseUser);
@@ -84,10 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   
-  const value = {
+  const value: AuthContextType = {
     currentUser,
     setCurrentUser,
-    currentDispensary: currentUser?.dispensary || null,
     loading,
     isSuperAdmin,
     isDispensaryOwner,
