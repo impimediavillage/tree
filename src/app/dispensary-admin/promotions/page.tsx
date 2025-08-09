@@ -118,7 +118,7 @@ export default function PromoCollectionsPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2"><Palette className="text-primary"/>My Created Sticker Sets</CardTitle>
+          <CardTitle className="text-2xl flex items-center gap-2"><Palette className="text-primary"/>My Promo Collections</CardTitle>
           <CardDescription>Manage your generated design packs. Public sets may be featured on the homepage.</CardDescription>
           <CardDescription className="font-bold pt-2">
             Sticker sets are sold for R60 including V.A.T and a 20% commission is added for the Wellness Tree. You earn R25-00 for any Sticker set sold.
@@ -130,7 +130,7 @@ export default function PromoCollectionsPage() {
         <Card className="text-center py-10">
           <CardContent>
             <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-xl font-semibold">No Sticker Sets Yet</h3>
+            <h3 className="mt-4 text-xl font-semibold">No Promo Collections Yet</h3>
             <p className="mt-2 text-muted-foreground">You haven&apos;t created any design packs. Go to the AI Asset Generator to start!</p>
             <Button asChild className="mt-4"><Link href="/design/brand-assets">Create a Design</Link></Button>
           </CardContent>

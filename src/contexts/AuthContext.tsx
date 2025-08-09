@@ -5,9 +5,9 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
-import type { User as AppUser, Dispensary, UserDocData } from '@/types';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { auth, functions } from '@/lib/firebase';
+import type { User as AppUser, Dispensary } from '@/types';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,18 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const safeToISOString = (date: any): string | null => {
-    if (!date) return null;
-    if (date instanceof Timestamp) return date.toDate().toISOString();
-    if (date instanceof Date) return date.toISOString();
-    if (typeof date === 'string') {
-        try {
-            const parsed = new Date(date);
-            if (!isNaN(parsed.getTime())) return parsed.toISOString();
-        } catch (e) { /* ignore */ }
-    }
-    return null;
-};
+const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -50,65 +39,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      await firebaseUser.getIdToken(true);
-      const idTokenResult = await firebaseUser.getIdTokenResult();
-      const claims = idTokenResult.claims;
+      // Force refresh the token to get the latest custom claims
+      await firebaseUser.getIdToken(true); 
+      
+      const result = await getUserProfileCallable();
+      const fullProfile = result.data as AppUser;
 
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (!userDocSnap.exists()) {
-        toast({ title: "Profile Incomplete", description: "Your user profile is not fully set up. Please try signing up again or contact support.", variant: "destructive"});
-        await auth.signOut();
-        return null;
+      if (!fullProfile || !fullProfile.uid) {
+        throw new Error("Received invalid user profile from function.");
       }
 
-      const userData = userDocSnap.data() as UserDocData;
-      let dispensaryData: Dispensary | null = null;
-      
-      const dispensaryId = claims.dispensaryId || userData.dispensaryId;
-
-      if (dispensaryId) {
-        const dispensaryDocRef = doc(db, 'dispensaries', dispensaryId);
-        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-        if (dispensaryDocSnap.exists()) {
-          const rawDispensary = dispensaryDocSnap.data();
-           dispensaryData = {
-              ...rawDispensary,
-              id: dispensaryDocSnap.id,
-              applicationDate: safeToISOString(rawDispensary.applicationDate),
-              approvedDate: safeToISOString(rawDispensary.approvedDate),
-              lastActivityDate: safeToISOString(rawDispensary.lastActivityDate),
-           } as Dispensary;
-        }
-      }
-      
-      const fullProfile: AppUser = {
-        uid: firebaseUser.uid,
-        email: userData.email || firebaseUser.email || '',
-        displayName: userData.displayName || firebaseUser.displayName || '',
-        photoURL: userData.photoURL || firebaseUser.photoURL || null,
-        role: claims.role || userData.role || 'User',
-        credits: userData.credits || 0,
-        status: userData.status || 'Active',
-        dispensaryId: dispensaryId || null,
-        dispensary: dispensaryData,
-        dispensaryStatus: dispensaryData?.status || null,
-        createdAt: safeToISOString(userData.createdAt),
-        lastLoginAt: safeToISOString(userData.lastLoginAt),
-        preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
-        welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
-        signupSource: userData.signupSource || 'public',
-      };
-      
       setCurrentUser(fullProfile);
-      setCurrentDispensary(dispensaryData);
+      setCurrentDispensary(fullProfile.dispensary || null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(fullProfile));
       return fullProfile;
 
     } catch (error: any) {
       console.error("AuthContext: Failed to get user profile.", error);
-      toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging out and back in.", variant: "destructive" });
+      let description = "Could not load your user profile.";
+      if (error instanceof FunctionsError) {
+        description = error.message;
+      }
+      toast({ title: "Profile Load Error", description: description, variant: "destructive" });
       await auth.signOut();
       return null;
     }
@@ -139,18 +91,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
          localStorage.removeItem('currentUserHolisticAI');
        }
     }
-    setLoading(!cachedUserStr); 
+    setLoading(true); 
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         await fetchUserProfile(firebaseUser); 
-        setLoading(false);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]); 
