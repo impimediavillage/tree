@@ -1,8 +1,11 @@
+
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import * as functions from "firebase-functions";
 import type { Dispensary, User as AppUser, UserDocData } from "./types";
+
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -11,27 +14,47 @@ if (admin.apps.length === 0) {
         logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
         logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
-        // This is a critical failure, subsequent calls will likely fail.
     }
 }
 const db = admin.firestore();
 // ============== END INITIALIZATION ==============
 
 
-// ============== ROBUST HELPER FUNCTION ==================
+// ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FIX) ==============
 /**
- * Safely converts various date formats to an ISO string.
- * This function is robust and handles Firestore Timestamps, JS Dates, and valid date strings.
- * It will not throw an error on invalid input, returning null instead.
- *
- * @param date - The date value to convert. Can be a Timestamp, Date, string, or null/undefined.
- * @returns An ISO date string or null if the input is invalid or cannot be parsed.
+ * Sets custom user claims when a user document is created or updated.
+ * This is CRITICAL for Firestore security rules to work correctly.
  */
-const safeToISOString = (date: any): string | null => {
-    if (!date) {
+export const onUserCreateOrUpdate = functions.firestore
+    .document('users/{userId}')
+    .onWrite(async (change, context) => {
+        const userId = context.params.userId;
+        const afterData = change.after.data() as UserDocData | undefined;
+
+        // If the document is deleted, do nothing.
+        if (!afterData) {
+            logger.info(`User document ${userId} deleted. No claims to update.`);
+            return null;
+        }
+
+        const role = afterData.role || null;
+        const dispensaryId = afterData.dispensaryId || null;
+
+        const claims: { [key: string]: any } = { role, dispensaryId };
+
+        try {
+            await admin.auth().setCustomUserClaims(userId, claims);
+            logger.info(`Successfully set custom claims for user ${userId}:`, claims);
+        } catch (error) {
+            logger.error(`Error setting custom claims for user ${userId}:`, error);
+        }
         return null;
-    }
-    // If it's a Firestore Timestamp, convert it to a JS Date first.
+    });
+
+
+// ============== ROBUST HELPER FUNCTION ==================
+const safeToISOString = (date: any): string | null => {
+    if (!date) return null;
     if (date.toDate && typeof date.toDate === 'function') {
         try {
             return date.toDate().toISOString();
@@ -40,32 +63,22 @@ const safeToISOString = (date: any): string | null => {
             return null;
         }
     }
-    // If it's already a JS Date, convert it.
     if (date instanceof Date) {
-        if (!isNaN(date.getTime())) {
-            return date.toISOString();
-        }
+        if (!isNaN(date.getTime())) return date.toISOString();
         return null;
     }
-    // If it's a string, try to parse it. This is a fallback.
     if (typeof date === 'string') {
          try {
              const parsedDate = new Date(date);
-             // Check if the parsed date is valid
-             if (!isNaN(parsedDate.getTime())) {
-                 return parsedDate.toISOString();
-             }
+             if (!isNaN(parsedDate.getTime())) return parsedDate.toISOString();
          } catch (e) { 
             logger.warn(`Could not parse date string: ${date}`);
          }
     }
-    // If it's a number (milliseconds from epoch), convert it
     if (typeof date === 'number') {
         try {
             const parsedDate = new Date(date);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate.toISOString();
-            }
+            if (!isNaN(parsedDate.getTime())) return parsedDate.toISOString();
         } catch (e) {
             logger.warn(`Could not parse number to date: ${date}`);
         }
@@ -142,12 +155,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
 
     } catch (error: any) {
         logger.error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
-        // Avoid exposing internal implementation details.
-        // If it's already an HttpsError, rethrow it.
-        if (error instanceof HttpsError) {
-            throw error;
-        }
-        // Otherwise, throw a generic internal error.
+        if (error instanceof HttpsError) throw error;
         throw new HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
     }
 });
@@ -206,9 +214,7 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
         };
     } catch (error: any) {
         logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
-        if (error instanceof HttpsError) {
-            throw error;
-        }
+        if (error instanceof HttpsError) throw error;
         throw new HttpsError("internal", "An internal error occurred while processing the transaction.");
     }
 });

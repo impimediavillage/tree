@@ -72,7 +72,7 @@ export default function WellnessPoolPage() {
 
   const incomingPendingCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
 
-  if (authLoading || (!dispensaryId && !isLoading)) {
+  if (authLoading || (!dispensaryId && isLoading)) {
     return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
