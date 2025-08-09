@@ -1,60 +1,43 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Helper function to check if a user exists and get their data
-    function getUser(userId) {
+    
+    // Helper function to get user data from Firestore
+    function getUserData(userId) {
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
-    // Helper function to check if user is owner/staff of a specific dispensary
-    function isDispensaryMember(userId, dispensaryId) {
-        let userDoc = getUser(userId);
-        return userDoc.dispensaryId == dispensaryId &&
-               (userDoc.role == 'DispensaryOwner' || userDoc.role == 'DispensaryStaff');
-    }
-
-    // Helper function to check if user is a Super Admin
-    function isSuperAdmin(userId) {
-        return getUser(userId).role == 'Super Admin';
-    }
-
-    // Public Assets (e.g., dispensary type icons) are publicly readable
+    // Anyone can read from the 'dispensary-type-assets' folder. These are public icons/images.
     match /dispensary-type-assets/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null && isSuperAdmin(request.auth.uid);
+      allow write: if request.auth != null && getUserData(request.auth.uid).role == 'Super Admin';
     }
-    
-    // Product Images
-    // Path structure: /products/{ownerUid}/{imageName}
-    match /products/{ownerUid}/{imageName} {
-      // Anyone can read product images
+
+    // Rules for product images
+    match /products/{userId}/{allPaths=**} {
+      // Anyone can read product images.
       allow read: if true;
-      
-      // Only the user specified in the path can write (upload/update/delete)
-      // Additional check could be to verify they own a dispensary
-      allow write: if request.auth != null && request.auth.uid == ownerUid;
+      // Only the authenticated user who owns the folder can write images to it.
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Lab Reports
-    // Path structure: /lab-reports/{ownerUid}/{reportName}
-    match /lab-reports/{ownerUid}/{reportName} {
-      // Only the uploader (owner) and admins can read/write lab reports
-      allow read, write: if request.auth != null && (request.auth.uid == ownerUid || isSuperAdmin(request.auth.uid));
+    // Rules for lab reports
+    match /lab-reports/{userId}/{allPaths=**} {
+      // Only the user who uploaded the report can read or write it.
+      // This path is not publicly accessible.
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Rules for sticker sets
+    match /stickersets/{userId}/{allPaths=**} {
+      // Anyone can read the final sticker assets.
+      allow read: if true;
+      // Only the authenticated creator can write to their folder.
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Sticker Sets
-    // Path structure: /stickersets/{creatorUid}/{assetName}
-    match /stickersets/{creatorUid}/{assetName} {
-        // Publicly readable
-        allow read: if true;
-        // Only the creator can write
-        allow write: if request.auth != null && request.auth.uid == creatorUid;
-    }
-
-    // Default deny all other paths
+    // Default deny all other access to prevent unauthorized uploads/downloads
     match /{allPaths=**} {
       allow read, write: if false;
     }
