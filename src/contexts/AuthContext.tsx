@@ -5,32 +5,44 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/functions/src/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
-
-const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 interface AuthContextType {
   currentUser: AppUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
+  currentDispensary: Dispensary | null;
   loading: boolean;
   isSuperAdmin: boolean;
   isDispensaryOwner: boolean;
+  isDispensaryStaff: boolean;
   canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
-  currentDispensary: Dispensary | null;
   fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to serialize date fields
+const serializeDates = (data: any): any => {
+    if (!data) return data;
+    const serialized = { ...data };
+    for (const key in serialized) {
+        if (serialized[key] instanceof Timestamp) {
+            serialized[key] = serialized[key].toDate().toISOString();
+        }
+    }
+    return serialized;
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
@@ -40,31 +52,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       console.log(`Fetching profile for user: ${user.uid}`);
-      const result = await getUserProfileCallable();
-      const profile = result.data as AppUser;
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      if (!profile || !profile.uid) {
-         console.error("Received invalid profile from callable function, signing out.", profile);
-         toast({ title: "Authentication Error", description: "Could not load a valid user profile.", variant: "destructive" });
-         await auth.signOut();
-         return null;
+      if (!userDocSnap.exists()) {
+        console.error(`User document not found for uid: ${user.uid}. This can happen briefly after signup.`);
+        // Don't toast here, as it might be a race condition on signup.
+        // The signin/signup page should handle this.
+        return null;
       }
       
-      setCurrentUser(profile);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
-      return profile;
+      const userData = serializeDates(userDocSnap.data()) as AppUser;
+      let dispensaryData: Dispensary | null = null;
+      
+      // Step-by-step fetching as per user's correct workflow
+      if (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') {
+        if (userData.dispensaryId) {
+          try {
+            const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+            const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+            if (dispensaryDocSnap.exists()) {
+                dispensaryData = serializeDates(dispensaryDocSnap.data()) as Dispensary;
+                dispensaryData.id = dispensaryDocSnap.id;
+            } else {
+                 console.warn(`User ${user.uid} is linked to a non-existent dispensary: ${userData.dispensaryId}`);
+            }
+          } catch (dispensaryError) {
+             console.error(`Error fetching dispensary doc for user ${user.uid}:`, dispensaryError);
+             // Proceed without dispensary data, don't crash.
+          }
+        }
+      }
+      
+      const finalProfile: AppUser = {
+          ...userData,
+          dispensary: dispensaryData,
+          dispensaryStatus: dispensaryData?.status || null,
+      };
+
+      setCurrentUser(finalProfile);
+      setCurrentDispensary(dispensaryData);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(finalProfile));
+      return finalProfile;
 
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile. Logging out.", error);
-      
-      let errorMessage = "An unexpected error occurred while fetching your profile.";
-      if (error instanceof FunctionsError) {
-        errorMessage = error.message;
-        console.error("Function error code:", error.code);
-        console.error("Function error message:", error.message);
-      }
-      
-      toast({ title: "Authentication Error", description: errorMessage, variant: "destructive" });
+      console.error("Critical: Failed to get user profile.", error);
+      toast({ title: "Authentication Error", description: "Could not load your user profile.", variant: "destructive" });
       await auth.signOut();
       return null;
     }
@@ -73,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     await auth.signOut();
     setCurrentUser(null);
+    setCurrentDispensary(null);
     localStorage.removeItem('currentUserHolisticAI');
     router.push('/auth/signin');
   }, [router]);
@@ -81,18 +115,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        const storedUser = localStorage.getItem('currentUserHolisticAI');
-        if (storedUser) {
-            try {
-                const parsedUser = JSON.parse(storedUser);
-                if (parsedUser.uid === firebaseUser.uid) {
-                    setCurrentUser(parsedUser);
-                }
-            } catch (e) { /* Ignore parsing error */ }
-        }
+        // Attempt to fetch fresh profile data on every auth state change.
         await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);
+        setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
       setLoading(false);
@@ -103,21 +130,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
+  const isDispensaryStaff = currentUser?.role === 'DispensaryStaff';
   const currentDispensaryStatus = currentUser?.dispensary?.status || null;
-  const currentDispensary = currentUser?.dispensary || null;
-  const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
+  const canAccessDispensaryPanel = (isDispensaryOwner || isDispensaryStaff) && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   
   const value: AuthContextType = {
     currentUser,
     setCurrentUser,
+    currentDispensary,
     loading,
     isSuperAdmin,
     isDispensaryOwner,
+    isDispensaryStaff,
     canAccessDispensaryPanel,
     isLeafUser,
     currentDispensaryStatus,
-    currentDispensary,
     fetchUserProfile,
     logout,
   };

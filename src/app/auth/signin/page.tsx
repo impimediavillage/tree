@@ -36,8 +36,13 @@ export default function SignInPage() {
   const handleRedirect = (userProfile: AppUser) => {
     if (userProfile.role === 'Super Admin') {
       router.push('/admin/dashboard');
-    } else if (userProfile.role === 'DispensaryOwner' && userProfile.dispensary?.status === 'Approved') {
-      router.push('/dispensary-admin/dashboard');
+    } else if (userProfile.role === 'DispensaryOwner' || userProfile.role === 'DispensaryStaff') {
+      if (userProfile.dispensary?.status === 'Approved') {
+        router.push('/dispensary-admin/dashboard');
+      } else {
+        toast({ title: "Account Not Active", description: `Your dispensary status is: ${userProfile.dispensary?.status || 'Pending'}. Access is limited.`, variant: "default"});
+        router.push('/'); // Or a dedicated pending page
+      }
     } else {
       router.push('/dashboard/leaf');
     }
@@ -54,6 +59,10 @@ export default function SignInPage() {
         description: 'Fetching your profile...',
       });
       
+      // The onAuthStateChanged listener in AuthContext will handle fetching the profile.
+      // We can optionally call it here again to be sure, or just let the listener do its job.
+      // For simplicity and to rely on the central handler, we can trust the context.
+      // However, for immediate redirect, a direct call is better.
       const userProfile = await fetchUserProfile(firebaseUser);
 
       if (userProfile) {
@@ -63,9 +72,9 @@ export default function SignInPage() {
         });
         handleRedirect(userProfile);
       } else {
-         // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
-         // The error toast is already shown inside fetchUserProfile.
-         throw new Error("Failed to fetch user profile after login.");
+         // This case might be hit if the Firestore document is not yet created (race condition)
+         // Or if there's a more serious issue. The AuthContext handles the error toast.
+         throw new Error("Failed to fetch user profile immediately after login.");
       }
 
     } catch (error: any) {
