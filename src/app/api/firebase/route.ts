@@ -1,3 +1,3 @@
-
-// This file is no longer used and is being deleted to avoid confusion.
-// All backend logic now correctly resides in Firebase Cloud Functions.
+// This file is obsolete and has been removed.
+// All backend logic has been correctly moved to Firebase Cloud Functions
+// to ensure proper execution, CORS handling, and authentication context.

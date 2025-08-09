@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     if (!user) return null;
+    console.log(`Fetching profile for user: ${user.uid}`);
     try {
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser;
@@ -48,10 +49,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       setCurrentUser(profile);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(profile));
       return profile;
 
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile via callable function.", error);
+      console.error("Critical: Failed to get user profile. Logging out.", error);
       
       let errorMessage = "An unexpected error occurred while fetching your profile.";
       if (error instanceof FunctionsError) {
@@ -69,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     await auth.signOut();
     setCurrentUser(null);
+    localStorage.removeItem('currentUserHolisticAI');
     router.push('/auth/signin');
   }, [router]);
 
@@ -76,18 +79,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
+        // Retry logic for new user sign-up race condition
         let profile = null;
         for (let i = 0; i < 3; i++) {
           profile = await fetchUserProfile(firebaseUser);
           if (profile) break;
-          if (i < 2) await new Promise(resolve => setTimeout(resolve, 1500));
+          // If profile fetch fails, wait before retrying.
+          // This gives Firestore time to create the user doc after auth creation.
+          if (i < 2) await new Promise(resolve => setTimeout(resolve, 1500)); 
         }
         if (!profile) {
            console.error("Failed to fetch user profile after multiple attempts. User may not exist in DB or there's a persistent issue.");
            setCurrentUser(null);
+           await auth.signOut(); // Force sign out if profile can't be loaded
         }
       } else {
         setCurrentUser(null);
+        localStorage.removeItem('currentUserHolisticAI');
       }
       setLoading(false);
     });
