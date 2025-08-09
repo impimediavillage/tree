@@ -5,10 +5,9 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db, functions } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
-import type { User as AppUser, Dispensary } from '@/functions/src/types';
+import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,8 +40,6 @@ const serializeDates = (data: any): any => {
     return serialized;
 }
 
-const setDispensaryClaimCallable = httpsCallable(functions, 'setDispensaryClaim');
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -52,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     if (!user) return null;
-    
+    console.log("Fetching profile for user:", user.uid);
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
@@ -87,33 +84,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           dispensaryStatus: dispensaryData?.status || null,
       };
 
-      // Set custom claim for dispensary users to enable security rules
-      const tokenResult = await user.getIdTokenResult();
-      const currentDispensaryClaim = tokenResult.claims.dispensaryId;
-
-      if (finalProfile.dispensaryId && currentDispensaryClaim !== finalProfile.dispensaryId) {
-          console.log("Mismatched or missing claim, setting new claim...");
-          await setDispensaryClaimCallable({ dispensaryId: finalProfile.dispensaryId });
-          // Force a token refresh to get the new claim immediately.
-          await user.getIdToken(true); 
-      } else if (!finalProfile.dispensaryId && currentDispensaryClaim) {
-          console.log("User no longer has a dispensary, removing claim...");
-          await setDispensaryClaimCallable({ dispensaryId: null });
-          await user.getIdToken(true);
-      }
-
       setCurrentUser(finalProfile);
       setCurrentDispensary(dispensaryData);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(finalProfile));
       return finalProfile;
 
     } catch (error: any) {
-      let errorMessage = "Could not load your user profile.";
-      if (error instanceof FunctionsError) {
-          errorMessage = error.message;
-      }
       console.error("Critical: Failed to get user profile.", error);
-      toast({ title: "Authentication Error", description: errorMessage, variant: "destructive" });
+      toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging in again.", variant: "destructive" });
       await auth.signOut();
       return null;
     }
