@@ -52,17 +52,18 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                 if (dispensaryDocSnap.exists()) {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
-                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                    // THIS IS THE CRITICAL FIX: Handle case where dispensary doc doesn't exist
+                    logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}. Proceeding without dispensary data.`);
                     dispensaryData = null; 
                 }
             } catch (dispensaryError) {
-                logger.error(`Error fetching dispensary doc for user ${uid}.`, dispensaryError);
+                logger.error(`Error fetching dispensary doc for user ${uid}. Continuing without dispensary data.`, dispensaryError);
                  dispensaryData = null; 
             }
         }
         
         const toISODateString = (date: any): string | null => {
-            if (!date) return null;
+            if (!date) return null; // Safe check for null or undefined dates
             if (date instanceof admin.firestore.Timestamp) {
                 return date.toDate().toISOString();
             }
@@ -104,7 +105,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             createdAt: toISODateString(userData.createdAt),
             lastLoginAt: toISODateString(userData.lastLoginAt),
             dispensaryStatus: dispensaryData?.status || null,
-            dispensary: dispensaryWithSerializableDates,
+            dispensary: dispensaryWithSerializableDates, // Use the safely processed dispensary data
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
@@ -125,7 +126,9 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
     }
     const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data as { userId: string, advisorSlug: string, creditsToDeduct: number, wasFreeInteraction: boolean };
 
+    // Strict validation
     if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined || userId !== request.auth.uid) {
+        logger.error("Invalid arguments for deductCreditsAndLogInteraction", { data: request.data, auth: request.auth });
         throw new HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
     }
 
@@ -133,34 +136,37 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
     let newCreditBalance = 0;
 
     try {
-        const userDoc = await userRef.get();
-        if (!userDoc.exists) throw new HttpsError("not-found", "User not found.");
-        const userData = userDoc.data() as UserDocData;
+        await db.runTransaction(async (transaction) => {
+            const freshUserDoc = await transaction.get(userRef);
+            if (!freshUserDoc.exists) {
+                throw new HttpsError("not-found", "User not found during transaction.");
+            }
+            
+            const userData = freshUserDoc.data() as UserDocData;
+            const currentCredits = userData.credits || 0;
 
-        if (!wasFreeInteraction) {
-            await db.runTransaction(async (transaction) => {
-                const freshUserDoc = await transaction.get(userRef);
-                if (!freshUserDoc.exists) throw new HttpsError("not-found", "User not found during transaction.");
-                
-                const currentCredits = (freshUserDoc.data() as UserDocData)?.credits || 0;
-                if (currentCredits < creditsToDeduct) throw new HttpsError("failed-precondition", "Insufficient credits.");
-                
+            if (!wasFreeInteraction) {
+                if (currentCredits < creditsToDeduct) {
+                    throw new HttpsError("failed-precondition", "Insufficient credits.");
+                }
                 newCreditBalance = currentCredits - creditsToDeduct;
                 transaction.update(userRef, { credits: newCreditBalance });
-            });
-        } else {
-            newCreditBalance = userData.credits || 0;
-        }
+            } else {
+                newCreditBalance = currentCredits;
+            }
 
-        const logEntry = {
-            userId,
-            dispensaryId: userData.dispensaryId || null,
-            advisorSlug,
-            creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            wasFreeInteraction,
-        };
-        await db.collection("aiInteractionsLog").add(logEntry);
+            const logEntry = {
+                userId,
+                dispensaryId: userData.dispensaryId || null,
+                advisorSlug,
+                creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                wasFreeInteraction,
+            };
+            // Create the log entry within the same transaction for atomicity
+            const logRef = db.collection("aiInteractionsLog").doc(); // Create a new doc reference
+            transaction.set(logRef, logEntry);
+        });
 
         return {
             success: true,
@@ -168,8 +174,44 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
             newCredits: newCreditBalance,
         };
     } catch (error: any) {
-        logger.error("Error in deductCreditsAndLogInteraction:", error);
-        if (error instanceof HttpsError) throw error;
-        throw new HttpsError("internal", "An internal error occurred.");
+        logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
+        if (error instanceof HttpsError) {
+            // Re-throw HttpsError to be caught by the client with the correct status
+            throw error;
+        }
+        // Throw a generic internal error for other failures
+        throw new HttpsError("internal", "An internal error occurred while processing the transaction.");
+    }
+});
+
+// New function to update user profile from admin panel
+export const updateUserProfileAdmin = onCall({ cors: true }, async (request) => {
+    // 1. Authentication and Authorization
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in.');
+    }
+    const adminUid = request.auth.uid;
+    const adminUserDoc = await db.collection('users').doc(adminUid).get();
+    if (adminUserDoc.data()?.role !== 'Super Admin') {
+         throw new HttpsError('permission-denied', 'Only Super Admins can perform this action.');
+    }
+    
+    // 2. Data Validation
+    const { userId, updates } = request.data;
+    if (!userId || !updates || typeof updates !== 'object') {
+        throw new HttpsError('invalid-argument', 'User ID and updates object are required.');
+    }
+
+    // 3. Logic
+    try {
+        const userDocRef = db.collection('users').doc(userId);
+        await userDocRef.update({ ...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        
+        logger.info(`Admin ${adminUid} successfully updated user ${userId}.`, { updates });
+        return { success: true, message: "User profile updated successfully." };
+
+    } catch (error) {
+        logger.error(`Admin ${adminUid} failed to update user ${userId}.`, error);
+        throw new HttpsError('internal', 'An unexpected error occurred while updating the user profile.');
     }
 });
