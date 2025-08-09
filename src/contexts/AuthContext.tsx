@@ -5,14 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db, functions } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
-
-const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -58,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      const userDocSnap = await userDocRef.get();
 
       if (!userDocSnap.exists()) {
         console.error(`User document not found for uid: ${user.uid}. Logging out.`);
@@ -68,11 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const userData = userDocSnap.data();
       const userDispensaryId = userData.dispensaryId || null;
-
-      // Securely set the claim and wait for the token to refresh
-      await setDispensaryClaim({ dispensaryId: userDispensaryId });
-      await user.getIdToken(true); 
-
+      
       let dispensaryData: Dispensary | null = null;
       if (userDispensaryId) {
         const dispensaryDocRef = doc(db, 'dispensaries', userDispensaryId);
@@ -95,12 +88,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return finalProfile;
 
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile or set claim.", error);
-      let errorMessage = "Could not load your user profile. Please try logging in again.";
-      if (error instanceof FunctionsError) {
-        errorMessage = `Auth setup error: ${error.message}`;
-      }
-      toast({ title: "Profile Load Error", description: errorMessage, variant: "destructive" });
+      console.error("Critical: Failed to get user profile.", error);
+      toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging in again.", variant: "destructive" });
       await auth.signOut();
       return null;
     }
