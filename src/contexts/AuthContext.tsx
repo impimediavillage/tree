@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef); // Corrected this line
+      const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
         console.error(`User document not found for uid: ${user.uid}. Logging out.`);
@@ -71,8 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const dispensaryDocRef = doc(db, 'dispensaries', userDispensaryId);
         const dispensaryDocSnap = await getDoc(dispensaryDocRef);
         if (dispensaryDocSnap.exists()) {
-          dispensaryData = serializeDates(dispensaryDocSnap.data()) as Dispensary;
-          dispensaryData.id = dispensaryDocSnap.id;
+          dispensaryData = serializeDates({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() }) as Dispensary;
         }
       }
       
