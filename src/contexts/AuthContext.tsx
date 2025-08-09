@@ -5,8 +5,9 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, functions } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/functions/src/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +41,8 @@ const serializeDates = (data: any): any => {
     return serialized;
 }
 
+const setDispensaryClaimCallable = httpsCallable(functions, 'setDispensaryClaim');
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -51,20 +54,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return null;
     
     try {
-      console.log(`Fetching profile for user: ${user.uid}`);
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        console.error(`User document not found for uid: ${user.uid}.`);
+        console.error(`User document not found for uid: ${user.uid}. Logging out.`);
+        await auth.signOut();
         return null;
       }
       
       const userData = serializeDates(userDocSnap.data()) as AppUser;
       let dispensaryData: Dispensary | null = null;
       
-      if (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') {
-        if (userData.dispensaryId) {
+      if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
           try {
             const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
             const dispensaryDocSnap = await getDoc(dispensaryDocRef);
@@ -77,7 +79,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } catch (dispensaryError) {
              console.error(`Error fetching dispensary doc for user ${user.uid}:`, dispensaryError);
           }
-        }
       }
       
       const finalProfile: AppUser = {
@@ -86,14 +87,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           dispensaryStatus: dispensaryData?.status || null,
       };
 
+      // Set custom claim for dispensary users to enable security rules
+      const tokenResult = await user.getIdTokenResult();
+      const currentDispensaryClaim = tokenResult.claims.dispensaryId;
+
+      if (finalProfile.dispensaryId && currentDispensaryClaim !== finalProfile.dispensaryId) {
+          console.log("Mismatched or missing claim, setting new claim...");
+          await setDispensaryClaimCallable({ dispensaryId: finalProfile.dispensaryId });
+          // Force a token refresh to get the new claim immediately.
+          await user.getIdToken(true); 
+      } else if (!finalProfile.dispensaryId && currentDispensaryClaim) {
+          console.log("User no longer has a dispensary, removing claim...");
+          await setDispensaryClaimCallable({ dispensaryId: null });
+          await user.getIdToken(true);
+      }
+
       setCurrentUser(finalProfile);
       setCurrentDispensary(dispensaryData);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(finalProfile));
       return finalProfile;
 
     } catch (error: any) {
+      let errorMessage = "Could not load your user profile.";
+      if (error instanceof FunctionsError) {
+          errorMessage = error.message;
+      }
       console.error("Critical: Failed to get user profile.", error);
-      toast({ title: "Authentication Error", description: "Could not load your user profile.", variant: "destructive" });
+      toast({ title: "Authentication Error", description: errorMessage, variant: "destructive" });
       await auth.signOut();
       return null;
     }
@@ -109,31 +129,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
-        // First, check for a valid profile in localStorage to speed up initial render
-        const storedUserString = localStorage.getItem('currentUserHolisticAI');
-        if (storedUserString) {
-          try {
-            const storedUser = JSON.parse(storedUserString);
-            if(storedUser.uid === firebaseUser.uid) {
-               setCurrentUser(storedUser);
-               if(storedUser.dispensary) {
-                 setCurrentDispensary(storedUser.dispensary);
-               }
-            }
-          } catch (e) {
-            localStorage.removeItem('currentUserHolisticAI');
-          }
-        }
-        setLoading(false); // Set loading false after potential local storage load
-        // Then, fetch fresh data in the background to ensure it's up-to-date
         await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);
