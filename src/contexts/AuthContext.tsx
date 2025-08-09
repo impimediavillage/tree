@@ -26,7 +26,6 @@ interface AuthContextType {
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
   fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>;
-  handleRedirect: (userProfile: AppUser) => void;
   logout: () => Promise<void>;
 }
 
@@ -50,24 +49,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleRedirect = useCallback((userProfile: AppUser) => {
-    if (userProfile.role === 'Super Admin') {
-      router.push('/admin/dashboard');
-    } else if (userProfile.role === 'DispensaryOwner' || userProfile.role === 'DispensaryStaff') {
-      if (userProfile.dispensary?.status === 'Approved') {
-        router.push('/dispensary-admin/dashboard');
-      } else {
-        toast({ title: "Account Not Active", description: `Your dispensary status is: ${userProfile.dispensary?.status || 'Pending'}. Access is limited.`, variant: "default"});
-        router.push('/');
-      }
-    } else {
-      router.push('/dashboard/leaf');
-    }
-  }, [router, toast]);
-
-
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
-    if (!user) return null;
+    if (!user) {
+      setCurrentUser(null);
+      setCurrentDispensary(null);
+      return null;
+    }
     
     try {
       const userDocRef = doc(db, 'users', user.uid);
@@ -82,6 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = userDocSnap.data();
       const userDispensaryId = userData.dispensaryId || null;
 
+      // Securely set the claim and wait for the token to refresh
       await setDispensaryClaim({ dispensaryId: userDispensaryId });
       await user.getIdToken(true); 
 
@@ -130,7 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Just fetch the profile on state change. Do not redirect here.
         await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);
@@ -140,9 +127,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Changed dependencies to run only once
-
+  }, [fetchUserProfile]); 
+  
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
   const isDispensaryStaff = currentUser?.role === 'DispensaryStaff';
@@ -162,7 +148,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLeafUser,
     currentDispensaryStatus,
     fetchUserProfile,
-    handleRedirect,
     logout,
   };
 
