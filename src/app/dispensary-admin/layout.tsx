@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -63,8 +64,9 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, currentDispensary, loading: authLoading, canAccessDispensaryPanel, currentDispensaryStatus } = useAuth();
+  const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensaryStatus } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const currentDispensary = currentUser?.dispensary;
 
   useEffect(() => {
     if (authLoading) return;

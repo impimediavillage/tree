@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, functions } from '@/lib/firebase';
-import type { User as AppUser, Dispensary } from '@/types';
+import type { User as AppUser, Dispensary } from '../../functions/src/types';
 import { useRouter } from 'next/navigation';
 import { httpsCallable, FunctionsError } from "firebase/functions";
 import { useToast } from '@/hooks/use-toast';
