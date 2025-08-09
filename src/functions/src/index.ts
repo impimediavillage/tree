@@ -96,7 +96,7 @@ const safeToISOString = (date: any): string | null => {
 
 // ============== ROBUST CALLABLE FUNCTIONS ==============
 
-export const getUserProfile = onCall({ cors: true }, async (request) => {
+export const getUserProfile = onCall({ cors: [{origin: true}] }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
@@ -166,7 +166,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
 });
 
 
-export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (request) => {
+export const deductCreditsAndLogInteraction = onCall({ cors: [{origin: true}] }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
