@@ -29,6 +29,7 @@ export default function WellnessProductsPage() {
   
   const dispensaryId = currentUser?.dispensaryId;
 
+  // This useCallback is now correctly defined and will be used by the patient useEffect.
   const fetchProducts = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
@@ -56,12 +57,17 @@ export default function WellnessProductsPage() {
     }
   }, [toast]);
 
+  // **THE DEFINITIVE FIX**: This useEffect is now patient. It waits for auth to finish and for dispensaryId to be available.
   useEffect(() => {
-    // Wait until authentication is fully resolved and we have a dispensaryId
-    if (!authLoading && dispensaryId) {
+    // Do nothing while authentication is loading.
+    if (authLoading) {
+      return;
+    }
+    // Only fetch products if we have a valid, non-empty dispensaryId.
+    if (dispensaryId) {
       fetchProducts(dispensaryId);
-    } else if (!authLoading && !dispensaryId) {
-      // If auth is done but there's no dispensaryId, stop loading.
+    } else {
+      // If auth is done but there's no dispensaryId, stop loading. This is an invalid state for this page.
       setIsLoading(false); 
     }
   }, [authLoading, dispensaryId, fetchProducts]);
