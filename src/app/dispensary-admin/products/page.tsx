@@ -10,11 +10,12 @@ import type { Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PackageSearch, Loader2, Search, FilterX } from 'lucide-react';
+import { PlusCircle, PackageSearch, Loader2, Search, FilterX, AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -59,7 +60,6 @@ export default function WellnessProductsPage() {
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
     } else if (!authLoading && !dispensaryId) {
-      // If auth is done but there's no dispensaryId, stop loading.
       setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchProducts]);
@@ -134,6 +134,18 @@ export default function WellnessProductsPage() {
     );
   }
 
+  if (!dispensaryId) {
+      return (
+        <Card>
+            <CardContent className="pt-6 text-center text-destructive">
+                <AlertTriangle className="mx-auto h-12 w-12 mb-3" />
+                <h3 className="text-xl font-semibold">Unable to load products.</h3>
+                <p>Your user profile is not linked to a valid dispensary.</p>
+            </CardContent>
+        </Card>
+      );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -189,13 +201,11 @@ export default function WellnessProductsPage() {
       </div>
 
       {filteredAndSortedProducts.length > 0 ? (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-            {filteredAndSortedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
-            ))}
-          </div>
-        </>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+          {filteredAndSortedProducts.map((product) => (
+            <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
+          ))}
+        </div>
       ) : (
         <div className="text-center py-12 col-span-full">
           <PackageSearch className="mx-auto h-16 w-16 text-orange-500" />
@@ -216,5 +226,3 @@ export default function WellnessProductsPage() {
     </div>
   );
 }
-
-    

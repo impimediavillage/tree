@@ -8,12 +8,12 @@ import { collection, getDocs, doc, updateDoc, query, where, serverTimestamp, set
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card'; 
+import { Card, CardContent } from '@/components/ui/card'; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter, UserCog } from 'lucide-react';
+import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter, UserCog, AlertTriangle } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -338,5 +338,3 @@ export default function WellnessManageUsersPage() {
     </div>
   );
 }
-
-    

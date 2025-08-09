@@ -118,6 +118,9 @@ export default function PromoCollectionsPage() {
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2"><Palette className="text-primary"/>My Created Sticker Sets</CardTitle>
           <CardDescription>Manage your generated design packs. Public sets may be featured on the homepage.</CardDescription>
+          <CardDescription className="font-bold pt-2">
+            Sticker sets are sold for R60 including V.A.T and a 20% commission is added for the Wellness Tree. You earn R25-00 for any Sticker set sold.
+          </CardDescription>
         </CardHeader>
       </Card>
       
@@ -179,5 +182,3 @@ export default function PromoCollectionsPage() {
     </div>
   );
 }
-
-    
