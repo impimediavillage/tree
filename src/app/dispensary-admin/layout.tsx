@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { auth as firebaseAuthInstance } from '@/lib/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -64,53 +63,26 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensaryStatus } = useAuth();
+  const { currentUser, loading: authLoading, canAccessDispensaryPanel, logout, currentDispensary, isDispensaryStaff } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const currentDispensary = currentUser?.dispensary;
-
+  
+  // This layout now acts as a Protected Route.
+  // It checks for auth and role status once, for all child pages.
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) return; // Wait until auth state is confirmed
 
-    if (!currentUser || !canAccessDispensaryPanel) {
-        if (!currentUser) {
-            toast({ title: "Access Denied", description: "Please log in.", variant: "destructive" });
-            router.push('/auth/signin');
-            return;
-        }
-
-        if (currentUser.role !== 'DispensaryOwner') {
-            toast({ title: "Access Denied", description: "This area is for Wellness Owners.", variant: "destructive" });
-            router.push('/');
-            return;
-        }
-        
-        if (currentDispensaryStatus === 'Pending Approval') {
-            toast({ title: "Account Pending", description: "Your wellness application is still pending approval.", variant: "default" });
-        } else if (currentDispensaryStatus === 'Suspended') {
-            toast({ title: "Account Suspended", description: "Your wellness account is suspended. Please contact support.", variant: "destructive" });
-        } else if (currentDispensaryStatus === 'Rejected') {
-             toast({ title: "Application Rejected", description: "Your wellness application was not approved. Please contact support for details.", variant: "destructive" });
-        } else if (!currentUser.dispensaryId) {
-             toast({ title: "No Wellness Linked", description: "Your account is not linked to a wellness profile.", variant: "destructive" });
-        } else {
-            toast({ title: "Access Issue", description: "You do not have permission to access the wellness panel at this time.", variant: "destructive" });
-        }
-      router.push('/'); 
+    if (!canAccessDispensaryPanel) {
+      if (!currentUser) {
+        toast({ title: "Access Denied", description: "Please log in to access the wellness panel.", variant: "destructive" });
+        router.replace('/auth/signin');
+      } else {
+        toast({ title: "Access Denied", description: "Your account does not have permission for this area or is not active.", variant: "destructive" });
+        router.replace('/');
+      }
     }
-  }, [currentUser, authLoading, canAccessDispensaryPanel, currentDispensaryStatus, router, toast]);
+  }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
 
-  const handleLogout = async () => {
-    try {
-      await firebaseAuthInstance.signOut();
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/auth/signin');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
-    }
-  };
-
-  if (authLoading || !currentDispensary) {
+  if (authLoading || !currentUser || !currentDispensary) {
     return (
       <div className="flex items-center justify-center h-screen"> 
         <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
@@ -119,13 +91,12 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!currentUser || !canAccessDispensaryPanel) {
-    return (
+  if (!canAccessDispensaryPanel) {
+     return (
       <div className="flex flex-col items-center justify-center h-screen p-4"> 
         <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
         <p className="text-xl text-center text-destructive-foreground mb-2">Access Denied or Data Error.</p>
-        <p className="text-md text-center text-muted-foreground mb-6">Please ensure you are logged in with an approved Wellness Owner account.</p>
-        <Button onClick={() => router.push('/auth/signin')}>Go to Login</Button>
+        <p className="text-md text-center text-muted-foreground mb-6">Redirecting you...</p>
       </div>
     );
   }
@@ -171,14 +142,14 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                 variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
                 className={cn(
                 'w-full justify-start text-sm',
-                 pathname.startsWith(item.href)
+                 (pathname.startsWith(item.href) || (item.disabled && isDispensaryStaff))
                     ? 'bg-primary/10 text-primary hover:bg-primary/20'
                     : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
-                item.disabled && 'opacity-50 cursor-not-allowed'
+                (item.disabled || (item.title === 'Manage Staff' && isDispensaryStaff)) && 'opacity-50 cursor-not-allowed'
                 )}
                 asChild
                 onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
-                disabled={item.disabled}
+                disabled={item.disabled || (item.title === 'Manage Staff' && isDispensaryStaff)}
             >
                 <Link href={item.disabled ? '#' : item.href}>
                 <item.icon className="mr-2 h-4 w-4" />
@@ -225,8 +196,8 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                     <p className="text-sm font-medium text-foreground truncate max-w-[120px]">
                       {currentUser.displayName || currentUser.email?.split('@')[0]}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Owner
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {currentUser.role.replace('Dispensary', '')}
                     </p>
                   </div>
                 </Button>
@@ -250,7 +221,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   <span>Main Site</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
