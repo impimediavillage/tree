@@ -17,7 +17,7 @@ import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, type User as FirebaseUser } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User as AppUser } from '@/types';
+import type { User as AppUser } from '../../../functions/src/types';
 
 export default function SignInPage() {
   const router = useRouter();

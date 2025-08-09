@@ -1,5 +1,7 @@
 
 import { z } from 'zod';
+import type { ProductCategory as ProductCategoryType } from '../../functions/src/types';
+
 
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const timeErrorMessage = "Invalid time format (HH:MM). Leave empty if not applicable.";
@@ -142,7 +144,7 @@ export const userProfileSchema = z.object({
 });
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;
 
-export const productCategorySchema: z.ZodType<import('@/types').ProductCategory> = z.object({
+export const productCategorySchema: z.ZodType<ProductCategoryType> = z.object({
   name: z.string().min(1, "Category name cannot be empty.").max(100, "Category name too long."),
   subcategories: z.array(z.lazy(() => productCategorySchema)).optional().default([]),
 });

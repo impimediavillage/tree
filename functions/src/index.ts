@@ -4,12 +4,12 @@ import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 
-// All types are now sourced from the main app's type definitions
+// All types are now sourced from the local types.ts file
 import type {
   Dispensary,
   User as AppUser,
   UserDocData,
-} from "../../src/types";
+} from "./types";
 
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
