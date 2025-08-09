@@ -123,12 +123,17 @@ export default function WellnessAnalyticsPage() {
   }, [products]);
 
 
-  if (authLoading) {
+  if (authLoading || isLoadingData) {
     return (
-      <div className="p-4">
-        <Skeleton className="h-12 w-1/2 mb-6" />
-        <Skeleton className="h-24 w-full mb-6" />
-        <Skeleton className="h-72 w-full" />
+      <div className="p-4 space-y-8">
+        <Skeleton className="h-28 w-full" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-80 w-full" />
+        </div>
       </div>
     );
   }
@@ -306,3 +311,5 @@ export default function WellnessAnalyticsPage() {
     </div>
   );
 }
+
+    

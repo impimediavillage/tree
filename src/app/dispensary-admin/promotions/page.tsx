@@ -32,7 +32,10 @@ export default function PromoCollectionsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchStickerSets = useCallback(async () => {
-    if (!currentUser?.uid) return;
+    if (!currentUser?.uid) {
+        setIsLoading(false);
+        return;
+    }
     setIsLoading(true);
     try {
       const setsQuery = query(
@@ -56,12 +59,10 @@ export default function PromoCollectionsPage() {
   }, [currentUser?.uid, toast]);
 
   useEffect(() => {
-    if (!authLoading && currentUser) {
+    if (!authLoading) {
       fetchStickerSets();
-    } else if (!authLoading) {
-      setIsLoading(false);
     }
-  }, [authLoading, currentUser, fetchStickerSets]);
+  }, [authLoading, fetchStickerSets]);
 
   const handleTogglePublic = async (set: StickerSet) => {
     if (!set.id) return;
@@ -178,3 +179,5 @@ export default function PromoCollectionsPage() {
     </div>
   );
 }
+
+    
