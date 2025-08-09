@@ -49,18 +49,15 @@ const toISODateString = (date: any): string | null => {
     // If it's a string, try to parse it. This is a fallback.
     // We check if it's a valid date to prevent crashes from `new Date(invalid_string)`.
     if (typeof date === 'string') {
-        try {
-            const parsedDate = new Date(date);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate.toISOString();
-            }
-        } catch (e) {
-             logger.warn(`Could not parse date string: ${date}`);
-             return null;
-        }
+         try {
+             const parsedDate = new Date(date);
+             if (!isNaN(parsedDate.getTime())) {
+                 return parsedDate.toISOString();
+             }
+         } catch (e) { 
+            logger.warn(`Could not parse date string: ${date}`);
+         }
     }
-    // If none of the above, log a warning and return null.
-    logger.warn(`Could not serialize date. Type: ${typeof date}, Value:`, date);
     return null;
 };
 

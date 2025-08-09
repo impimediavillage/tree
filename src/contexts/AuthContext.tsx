@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     if (!user) return null;
-    console.log(`Fetching profile for user: ${user.uid}`);
+    
     try {
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser;
