@@ -50,7 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // **CRITICAL FIX**: Force a refresh of the ID token to get the latest custom claims.
       await firebaseUser.getIdToken(true);
       const idTokenResult = await firebaseUser.getIdTokenResult();
       const claims = idTokenResult.claims;
@@ -104,7 +103,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(fullProfile);
       setCurrentDispensary(dispensaryData);
-      // Persist the full user profile to localStorage after successful fetch
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(fullProfile));
       return fullProfile;
 
@@ -123,7 +121,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Logout failed", error);
         toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
     } finally {
-        // Clear state and storage on logout
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -132,7 +129,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [router, toast]);
 
   useEffect(() => {
-    // On initial load, try to set user from localStorage for instant UI.
     const cachedUserStr = localStorage.getItem('currentUserHolisticAI');
     if (cachedUserStr) {
        try {
@@ -143,15 +139,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
          localStorage.removeItem('currentUserHolisticAI');
        }
     }
-    // Start with loading true only if no cached user exists
     setLoading(!cachedUserStr); 
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser); // Always fetch latest from server to verify and update
+        await fetchUserProfile(firebaseUser); 
         setLoading(false);
       } else {
-        // If Firebase says no user, clear everything.
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');

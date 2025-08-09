@@ -30,7 +30,6 @@ export default function WellnessProductsPage() {
   const dispensaryId = currentUser?.dispensaryId;
 
   const fetchProducts = useCallback(async (id: string) => {
-    if (!id) return; // Prevent fetching if id is not available
     setIsLoading(true);
     try {
       const productsQuery = query(
@@ -48,7 +47,6 @@ export default function WellnessProductsPage() {
       } else {
         setCategories(['all']);
       }
-
     } catch (error: any) {
       console.error('Error fetching products:', error);
       toast({ title: 'Error', description: `Could not fetch your products: ${error.message}`, variant: 'destructive' });
@@ -58,23 +56,12 @@ export default function WellnessProductsPage() {
   }, [toast]);
 
   useEffect(() => {
-    // This is the key logic:
-    // 1. Wait for auth to finish loading.
-    // 2. Ensure a valid dispensaryId exists.
-    // 3. Then, and only then, fetch data.
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
-    } else if (!authLoading && !dispensaryId) {
-      // If auth is done but there's no dispensaryId, stop loading.
+    } else if (!authLoading) {
       setIsLoading(false);
-      // Optional: show a message if needed, but the layout might already handle this
-      // toast({
-      //   title: "Dispensary Not Found",
-      //   description: "Your account is not linked to a dispensary.",
-      //   variant: "destructive"
-      // });
     }
-  }, [authLoading, dispensaryId, fetchProducts, toast]);
+  }, [authLoading, dispensaryId, fetchProducts]);
   
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...allProducts];
@@ -129,7 +116,7 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  if (authLoading) {
+  if (isLoading) {
     return (
        <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -144,18 +131,6 @@ export default function WellnessProductsPage() {
         </div>
       </div>
     );
-  }
-
-  if (!dispensaryId) {
-      return (
-        <Card>
-            <CardContent className="pt-6 text-center text-destructive">
-                <AlertTriangle className="mx-auto h-12 w-12 mb-3" />
-                <h3 className="text-xl font-semibold">Unable to load products.</h3>
-                <p>Your user profile is not linked to a valid dispensary.</p>
-            </CardContent>
-        </Card>
-      );
   }
 
   return (
@@ -212,13 +187,7 @@ export default function WellnessProductsPage() {
         )}
       </div>
       
-      {isLoading ? (
-         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-            {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
-            ))}
-        </div>
-      ) : filteredAndSortedProducts.length > 0 ? (
+      {filteredAndSortedProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
           {filteredAndSortedProducts.map((product) => (
             <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
