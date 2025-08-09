@@ -5,12 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db, functions } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { httpsCallable } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -63,9 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const userData = serializeDates(userDocSnap.data()) as AppUser;
       
-      // Fetch dispensary data if applicable
       let dispensaryData: Dispensary | null = null;
-      if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
+      if (userData.dispensaryId) {
           try {
             const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
             const dispensaryDocSnap = await getDoc(dispensaryDocRef);
