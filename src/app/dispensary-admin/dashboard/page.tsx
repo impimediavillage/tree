@@ -4,21 +4,14 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Users, Settings, Store, ShoppingBasket, ListOrdered, BarChart3, AlertTriangle, Loader2 } from 'lucide-react';
+import { Package, Settings, Store, ShoppingBasket, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
-import type { Product, ProductRequest } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 
 
 export default function WellnessAdminOverviewPage() {
-  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { currentDispensary, loading: authLoading } = useAuth();
   
-  const dispensaryId = currentUser?.dispensaryId;
-
   if (authLoading) {
     return (
       <div className="space-y-8">
