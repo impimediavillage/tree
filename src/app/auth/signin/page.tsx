@@ -48,17 +48,11 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       
-      // The onAuthStateChanged listener in AuthContext will now handle fetching the profile.
-      // We can optimistically show a loading toast.
       toast({
         title: 'Login Successful',
         description: 'Verifying your profile and redirecting...',
       });
       
-      // The redirect will be handled by the layout components based on the user role
-      // after the AuthContext updates. We can add a fallback redirect here.
-      // A more robust solution might involve waiting for the currentUser state to update
-      // in the context before redirecting, but the layouts should handle this.
       const userProfile = await fetchUserProfile(userCredential.user);
 
       if (userProfile) {

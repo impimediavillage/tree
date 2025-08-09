@@ -5,7 +5,6 @@ import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import type { Dispensary, User as AppUser, UserDocData, DeductCreditsRequestBody } from './types';
 
-
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
