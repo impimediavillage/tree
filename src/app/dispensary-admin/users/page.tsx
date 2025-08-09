@@ -187,10 +187,11 @@ export default function WellnessManageUsersPage() {
   }, [currentUser?.uid, toast]);
 
   useEffect(() => {
-    if (!authLoading && dispensaryId) {
+    if (authLoading) return; // Wait for auth to finish
+    if (dispensaryId) {
         fetchManagedUsers(dispensaryId);
-    } else if (!authLoading && !dispensaryId) {
-        setIsLoading(false);
+    } else {
+        setIsLoading(false); // If no dispensaryId, stop loading
     }
   }, [authLoading, dispensaryId, fetchManagedUsers]);
 
