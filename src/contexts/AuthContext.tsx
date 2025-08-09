@@ -5,11 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -28,16 +28,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const serializeDates = (data: any): any => {
-    if (!data) return data;
-    const serialized = { ...data };
-    for (const key in serialized) {
-        if (serialized[key] instanceof Timestamp) {
-            serialized[key] = serialized[key].toDate().toISOString();
-        }
-    }
-    return serialized;
-};
+// Moved the callable function reference outside the component for performance.
+const getUserProfileCallable = httpsCallable<unknown, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -50,57 +42,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) {
       setCurrentUser(null);
       setCurrentDispensary(null);
+      localStorage.removeItem('currentUserHolisticAI');
       return null;
     }
     
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+      // Use the callable function to get the entire user profile in one go.
+      // This is more efficient and handles data serialization on the server.
+      const result = await getUserProfileCallable();
+      const userProfile = result.data as AppUser;
 
-      if (!userDocSnap.exists()) {
-        console.error(`User document not found for uid: ${user.uid}. Logging out.`);
-        await auth.signOut();
-        return null;
+      if (!userProfile) {
+          throw new Error("No profile data returned from function.");
       }
-      
-      const userData = userDocSnap.data();
-      const userDispensaryId = userData.dispensaryId || null;
-      
-      let dispensaryData: Dispensary | null = null;
-      if (userDispensaryId) {
-        const dispensaryDocRef = doc(db, 'dispensaries', userDispensaryId);
-        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-        if (dispensaryDocSnap.exists()) {
-          dispensaryData = serializeDates({ id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() }) as Dispensary;
-        }
-      }
-      
-      const finalProfile: AppUser = {
-          ...(serializeDates(userData) as AppUser),
-          dispensary: dispensaryData,
-          dispensaryStatus: dispensaryData?.status || null,
-      };
 
-      setCurrentUser(finalProfile);
-      setCurrentDispensary(dispensaryData);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(finalProfile));
-      return finalProfile;
+      setCurrentUser(userProfile);
+      setCurrentDispensary(userProfile.dispensary || null);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(userProfile));
+
+      return userProfile;
 
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile.", error);
+      console.error("Critical: Failed to get user profile via cloud function.", error);
       toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging in again.", variant: "destructive" });
-      await auth.signOut();
+      await auth.signOut(); // Log out the user if their profile is inaccessible
       return null;
     }
   }, [toast]);
   
   const logout = useCallback(async () => {
-    await auth.signOut();
-    setCurrentUser(null);
-    setCurrentDispensary(null);
-    localStorage.removeItem('currentUserHolisticAI');
-    router.push('/auth/signin');
-  }, [router]);
+    try {
+        await auth.signOut();
+        setCurrentUser(null);
+        setCurrentDispensary(null);
+        localStorage.removeItem('currentUserHolisticAI');
+        router.push('/auth/signin');
+        toast({ title: "Logged Out", description: "You have been successfully logged out." });
+    } catch(error) {
+        console.error("Logout failed", error);
+        toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
+    }
+  }, [router, toast]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
