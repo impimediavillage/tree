@@ -79,28 +79,23 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
     }
   }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
 
-  if (authLoading) {
+  if (authLoading || !canAccessDispensaryPanel || !currentUser || !currentDispensary) {
      return (
       <div className="flex flex-col items-center justify-center h-screen p-4 bg-background"> 
         <div className="flex items-center text-lg text-muted-foreground">
             <Loader2 className="h-12 w-12 animate-spin text-primary mr-4" />
-            <p>Verifying Wellness Panel Access...</p>
+            <p>Loading Wellness Panel...</p>
         </div>
+        {!authLoading && (!canAccessDispensaryPanel || !currentUser) && (
+             <div className="mt-6 text-center">
+               <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
+               <p className="text-destructive font-semibold">Access Denied</p>
+               <p className="text-sm text-muted-foreground">Redirecting...</p>
+             </div>
+        )}
       </div>
     );
   }
-  
-  if (!canAccessDispensaryPanel || !currentUser || !currentDispensary) {
-    return (
-     <div className="flex flex-col items-center justify-center h-screen p-4 bg-background">
-       <div className="mt-6 text-center">
-           <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
-           <p className="text-destructive font-semibold">Access Denied or Not Approved</p>
-           <p className="text-sm text-muted-foreground">Redirecting...</p>
-       </div>
-     </div>
-   );
- }
   
   const SidebarNavigation = () => (
     <>

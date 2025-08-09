@@ -53,8 +53,6 @@ export default function SignInPage() {
         description: 'Fetching your profile and redirecting...',
       });
       
-      // This function now contains all logic for fetching the user profile
-      // and handling potential errors (like profile not found).
       const userProfile = await fetchUserProfile(userCredential.user);
       
       if (userProfile) {
@@ -62,6 +60,7 @@ export default function SignInPage() {
       } else {
          // The AuthContext now handles all user-facing error reporting,
          // including a toast notification for this specific case.
+         console.error("Signin failed because fetchUserProfile returned null. See AuthContext for details.");
       }
 
     } catch (error: any) {

@@ -72,15 +72,12 @@ export default function AdminDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, isSuperAdmin } = useAuth();
+  const { currentUser, loading: authLoading, isSuperAdmin, logout } = useAuth();
 
-  // This layout now acts as a Protected Route.
-  // It checks for auth and role status once, for all child pages.
   React.useEffect(() => {
     if (authLoading) {
-      return; // Do nothing while loading
+      return; 
     }
-    // After loading, if there's no user or the user is not a Super Admin, redirect.
     if (!isSuperAdmin) {
       toast({
         title: "Access Denied",
@@ -98,34 +95,25 @@ export default function AdminDashboardLayout({
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <h2 className="text-2xl font-bold">Verifying Admin Access...</h2>
         <p className="mt-2 text-muted-foreground">Please wait while we confirm your permissions.</p>
+        {!authLoading && !isSuperAdmin && (
+             <div className="mt-6 text-center">
+               <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
+               <p className="text-destructive font-semibold">Access Denied</p>
+               <p className="text-sm text-muted-foreground">Redirecting...</p>
+             </div>
+        )}
       </div>
     );
   }
 
-  // If we reach this point, the user is a confirmed Super Admin.
-
-  const handleLogout = async () => {
-    try {
-        await firebaseAuthInstance.signOut();
-        // The onAuthStateChanged listener in AuthContext will handle clearing user state.
-        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-        router.push('/auth/signin');
-      } catch (error) {
-        console.error('Logout error:', error);
-        toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
-      }
-  };
-
   const getPageTitle = () => {
     const allItems = [...mainSidebarNavItems, ...managementSidebarNavItems];
-    // Find the most specific match first
     const activeItem = allItems
         .filter(item => pathname.startsWith(item.href))
         .sort((a,b) => b.href.length - a.href.length)[0];
 
     if (activeItem) return activeItem.title;
     
-    // Fallback for nested pages not in nav
     if (pathname.includes('/admin/dashboard/dispensary-types/edit-categories')) return 'Manage Categories';
     if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
     return 'Admin Panel';
@@ -237,7 +225,7 @@ export default function AdminDashboardLayout({
                   <span>Account Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparatorComponent />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
