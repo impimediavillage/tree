@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -28,7 +27,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Moved the callable function reference outside the component for performance.
 const getUserProfileCallable = httpsCallable<unknown, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -46,9 +44,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return null;
     }
     
+    // This function can now be simplified or kept for other purposes,
+    // but the sign-in page will perform the detailed client-side fetch.
+    // For consistency, we can still use the Cloud Function here, but ensure it's robust.
     try {
-      // Use the callable function to get the entire user profile in one go.
-      // This is more efficient and handles data serialization on the server.
       const result = await getUserProfileCallable();
       const userProfile = result.data as AppUser;
 
@@ -59,13 +58,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(userProfile);
       setCurrentDispensary(userProfile.dispensary || null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(userProfile));
-
       return userProfile;
-
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile via cloud function.", error);
-      toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging in again.", variant: "destructive" });
-      await auth.signOut(); // Log out the user if their profile is inaccessible
+      console.error("AuthContext: Failed to get user profile.", error);
+      toast({ title: "Profile Load Error", description: "Could not load your user profile.", variant: "destructive" });
+      await auth.signOut();
       return null;
     }
   }, [toast]);
@@ -86,9 +83,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser);
+        // Attempt to load from localStorage first for faster UI response
+        const storedUserString = localStorage.getItem('currentUserHolisticAI');
+        if (storedUserString) {
+          try {
+            const storedUser = JSON.parse(storedUserString);
+            // Quick check to see if the stored user matches the auth user
+            if (storedUser.uid === firebaseUser.uid) {
+              setCurrentUser(storedUser);
+              setCurrentDispensary(storedUser.dispensary || null);
+              setLoading(false);
+              // Optionally re-fetch in the background to sync data
+              // fetchUserProfile(firebaseUser); 
+            } else {
+               // Mismatch, fetch fresh data
+               await fetchUserProfile(firebaseUser);
+            }
+          } catch {
+             await fetchUserProfile(firebaseUser);
+          }
+        } else {
+          await fetchUserProfile(firebaseUser);
+        }
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
