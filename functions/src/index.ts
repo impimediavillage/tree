@@ -48,13 +48,18 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             try {
                 const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
                 const dispensaryDocSnap = await dispensaryDocRef.get();
+                // **THE CORE FIX IS HERE**
+                // Check if the dispensary document actually exists before trying to read from it.
                 if (dispensaryDocSnap.exists()) {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
+                    // This prevents the function from crashing if a user is linked to a non-existent dispensary.
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                    dispensaryData = null; // Ensure dispensaryData is null if not found
                 }
             } catch (dispensaryError) {
                 logger.error(`Error fetching dispensary doc for user ${uid}.`, dispensaryError);
+                 dispensaryData = null; // Ensure we fail gracefully
             }
         }
         
@@ -80,6 +85,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         };
         
         let dispensaryWithSerializableDates: Dispensary | null = null;
+        // This check is now safe because we ensured dispensaryData is null if the doc doesn't exist.
         if (dispensaryData) {
             dispensaryWithSerializableDates = {
                 ...dispensaryData,
