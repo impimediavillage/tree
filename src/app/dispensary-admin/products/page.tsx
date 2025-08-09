@@ -30,6 +30,7 @@ export default function WellnessProductsPage() {
   const dispensaryId = currentUser?.dispensaryId;
 
   const fetchProducts = useCallback(async (id: string) => {
+    if (!id) return; // Prevent fetching if id is not available
     setIsLoading(true);
     try {
       const productsQuery = query(
@@ -66,11 +67,12 @@ export default function WellnessProductsPage() {
     } else if (!authLoading && !dispensaryId) {
       // If auth is done but there's no dispensaryId, stop loading.
       setIsLoading(false);
-      toast({
-        title: "Dispensary Not Found",
-        description: "Your account is not linked to a dispensary.",
-        variant: "destructive"
-      });
+      // Optional: show a message if needed, but the layout might already handle this
+      // toast({
+      //   title: "Dispensary Not Found",
+      //   description: "Your account is not linked to a dispensary.",
+      //   variant: "destructive"
+      // });
     }
   }, [authLoading, dispensaryId, fetchProducts, toast]);
   
@@ -127,7 +129,7 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
        <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -209,8 +211,14 @@ export default function WellnessProductsPage() {
             </Button>
         )}
       </div>
-
-      {filteredAndSortedProducts.length > 0 ? (
+      
+      {isLoading ? (
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
+            ))}
+        </div>
+      ) : filteredAndSortedProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
           {filteredAndSortedProducts.map((product) => (
             <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
