@@ -211,7 +211,7 @@ export default function WellnessManageUsersPage() {
   }, [managedUsers, searchTerm, filterRole, filterStatus]);
 
 
-  if (authLoading || isLoading) {
+  if (authLoading || (!dispensaryId && isLoading)) {
      return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -305,7 +305,9 @@ export default function WellnessManageUsersPage() {
         </div>
       </div>
 
-      {filteredDisplayUsers.length > 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center p-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+      ) : filteredDisplayUsers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDisplayUsers.map((user) => (
             <UserCard
