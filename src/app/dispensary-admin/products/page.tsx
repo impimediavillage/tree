@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -14,8 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DataTablePagination } from '@/components/ui/pagination'; // Using a shared pagination component
+import { useReactTable, getCoreRowModel, getPaginationRowModel, getFilteredRowModel, ColumnDef, flexRender } from '@tanstack/react-table';
 
-const PRODUCTS_PER_PAGE = 24;
+
+const PRODUCTS_PER_PAGE = 12;
 
 export default function WellnessProductsPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -26,9 +30,8 @@ export default function WellnessProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const fetchDispensaryData = useCallback(async () => {
+  
+  const fetchProducts = useCallback(async () => {
     if (!currentUser?.dispensaryId) {
       if (!authLoading) setIsLoading(false);
       return;
@@ -43,6 +46,14 @@ export default function WellnessProductsPage() {
       const querySnapshot = await getDocs(productsQuery);
       const fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
       setAllProducts(fetchedProducts);
+
+      if (fetchedProducts.length > 0) {
+        const uniqueCategories = Array.from(new Set(fetchedProducts.map(p => p.category).filter(Boolean)));
+        setCategories(['all', ...uniqueCategories.sort()]);
+      } else {
+        setCategories(['all']);
+      }
+
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({ title: 'Error', description: 'Could not fetch product data.', variant: 'destructive' });
@@ -52,32 +63,11 @@ export default function WellnessProductsPage() {
   }, [currentUser?.dispensaryId, authLoading, toast]);
 
   useEffect(() => {
-    fetchDispensaryData();
-  }, [fetchDispensaryData]);
-
-  useEffect(() => {
-    if (allProducts.length > 0) {
-      const uniqueCategories = Array.from(new Set(allProducts.map(p => p.category).filter(Boolean)));
-      setCategories(['all', ...uniqueCategories.sort()]);
-    }
-  }, [allProducts]);
+    fetchProducts();
+  }, [fetchProducts]);
   
-  const displayableProductVariants = useMemo(() => {
-    return allProducts.flatMap(product => {
-      if (product.priceTiers && product.priceTiers.length > 0) {
-        return product.priceTiers.map((tier, index) => ({
-          ...product,
-          __variant_key__: `${product.id}-${tier.unit}-${index}`,
-          priceTiers: [tier],
-          quantityInStock: tier.quantityInStock ?? 0,
-        }));
-      }
-      return [{ ...product, __variant_key__: product.id! }];
-    });
-  }, [allProducts]);
-
   const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...displayableProductVariants];
+    let filtered = [...allProducts];
 
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
@@ -93,14 +83,8 @@ export default function WellnessProductsPage() {
       filtered = filtered.filter(product => product.category === selectedCategory);
     }
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
-  }, [displayableProductVariants, searchTerm, selectedCategory]);
+  }, [allProducts, searchTerm, selectedCategory]);
 
-  const paginatedProducts = useMemo(() => {
-    const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-    return filteredAndSortedProducts.slice(startIndex, startIndex + PRODUCTS_PER_PAGE);
-  }, [filteredAndSortedProducts, currentPage]);
-
-  const totalPages = Math.ceil(filteredAndSortedProducts.length / PRODUCTS_PER_PAGE);
 
   const handleDeleteProduct = async (productId: string, productName: string, imageUrls?: (string | null)[] | null) => {
     try {
@@ -121,11 +105,7 @@ export default function WellnessProductsPage() {
       
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
-      await fetchDispensaryData(); // Refetch all dispensary data
-      
-      if (paginatedProducts.length === 1 && currentPage > 1) {
-        setCurrentPage(prev => prev - 1);
-      }
+      await fetchProducts();
       
     } catch (error) {
       console.error("Error deleting product document:", error);
@@ -136,7 +116,6 @@ export default function WellnessProductsPage() {
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedCategory('all');
-    setCurrentPage(1);
   };
 
   return (
@@ -170,11 +149,11 @@ export default function WellnessProductsPage() {
                 type="text"
                 placeholder="Search by name, description, category, tag..."
                 value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1);}}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 w-full"
             />
         </div>
-        <Select value={selectedCategory} onValueChange={(value) => {setSelectedCategory(value); setCurrentPage(1);}}>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
@@ -199,36 +178,13 @@ export default function WellnessProductsPage() {
             <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
           ))}
         </div>
-      ) : paginatedProducts.length > 0 ? (
+      ) : filteredAndSortedProducts.length > 0 ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-            {paginatedProducts.map((productVariant) => (
-              <ProductCard key={(productVariant as any).__variant_key__} product={productVariant as Product} onDelete={handleDeleteProduct} />
+            {filteredAndSortedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
             ))}
           </div>
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          )}
         </>
       ) : (
         <div className="text-center py-12 col-span-full">

@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { User, Dispensary } from '@/types';
+import type { User } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +33,7 @@ const RoleIcon = ({ role }: { role: User['role'] }) => {
   }
 };
 
-const StatusIndicator = ({ status }: { status: User['status'] }) => {
+const StatusIndicator = ({ status }: { status?: User['status'] }) => {
   switch (status) {
     case 'Active': return <CheckCircle className="h-4 w-4 text-green-500" />;
     case 'Suspended': return <XCircle className="h-4 w-4 text-red-500" />;
@@ -79,7 +79,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Status:</span>
           <div className="flex items-center gap-1.5">
-            <StatusIndicator status={user.status || 'Active'} />
+            <StatusIndicator status={user.status} />
             <span className="font-medium">{user.status || 'Active'}</span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
             <span>{user.credits?.toLocaleString() || '0'}</span>
           </div>
         </div>
-        {user.role === 'DispensaryOwner' && user.dispensaryId && (
+        {(user.role === 'DispensaryOwner' || user.role === 'DispensaryStaff') && user.dispensaryId && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Wellness:</span>
             <span className="font-medium truncate max-w-[150px]" title={dispensaryName || user.dispensaryId}>
@@ -118,4 +118,3 @@ export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
     </Card>
   );
 }
-
