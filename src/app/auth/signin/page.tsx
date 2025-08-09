@@ -15,14 +15,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, type User as FirebaseUser } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import type { User as AppUser } from '@/types';
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { fetchUserProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const { loading: authLoading } = useAuth(); // Use auth loading state
 
   const form = useForm<UserSigninFormData>({
     resolver: zodResolver(userSigninSchema),
@@ -32,62 +33,64 @@ export default function SignInPage() {
     },
   });
 
+  const handleRedirect = (userProfile: AppUser) => {
+    if (userProfile.role === 'Super Admin') {
+      router.push('/admin/dashboard');
+    } else if (userProfile.role === 'DispensaryOwner' && userProfile.dispensaryStatus === 'Approved') {
+      router.push('/dispensary-admin/dashboard');
+    } else {
+      router.push('/dashboard/leaf');
+    }
+  };
+
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
-      // The onAuthStateChanged listener in AuthContext will handle fetching the profile
-      // and redirecting after a successful sign-in.
-      await signInWithEmailAndPassword(auth, data.email, data.password);
-      
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const firebaseUser = userCredential.user;
+
       toast({
         title: 'Login Successful',
-        description: 'Welcome back! Redirecting you now...',
+        description: 'Fetching your profile...',
       });
-      // No need to call router.push here, AuthContext handles it.
+      
+      const userProfile = await fetchUserProfile(firebaseUser);
+
+      if (userProfile) {
+        toast({
+          title: 'Profile Loaded',
+          description: `Welcome back, ${userProfile.displayName}! Redirecting...`,
+        });
+        handleRedirect(userProfile);
+      } else {
+         throw new Error("Failed to fetch user profile after login.");
+      }
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
-      let isExpectedAuthError = false;
-
       if (error.code) {
         switch (error.code) {
           case 'auth/user-not-found':
           case 'auth/wrong-password':
           case 'auth/invalid-credential':
-            errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-            isExpectedAuthError = true;
-            break;
-          case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            isExpectedAuthError = true;
+            errorMessage = 'Invalid email or password.';
             break;
           case 'auth/user-disabled':
-            errorMessage = 'This account has been disabled. Please contact support.';
-            isExpectedAuthError = true;
+            errorMessage = 'This account has been disabled.';
             break;
           case 'auth/too-many-requests':
-            errorMessage = 'Too many login attempts. Please try again later or reset your password.';
-            isExpectedAuthError = true;
+            errorMessage = 'Too many login attempts. Please try again later.';
             break;
-          default: 
-            errorMessage = `Login error: ${error.message || 'Please try again.'}`;
         }
       }
-
-      if (isExpectedAuthError) {
-        console.warn(`Authentication attempt failed: ${error.code} - ${error.message}`);
-      } else {
-        console.error("Login error (unexpected):", error);
-      }
-      
+      console.error("Sign-in process failed:", error);
       toast({
         title: 'Login Failed',
         description: errorMessage,
         variant: 'destructive',
       });
-      setIsLoading(false); // Only set loading to false on error
+      setIsLoading(false);
     } 
-    // Do not set isLoading to false on success, as redirection will happen
   };
 
   const handlePasswordReset = async () => {
@@ -178,9 +181,9 @@ export default function SignInPage() {
               <Button 
                 type="submit" 
                 className="w-full text-lg py-6" 
-                disabled={isLoading || authLoading}
+                disabled={isLoading}
               >
-                {(isLoading || authLoading) ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Authenticating...</> : 'Sign In'}
+                {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Authenticating...</> : 'Sign In'}
               </Button>
             </form>
           </Form>

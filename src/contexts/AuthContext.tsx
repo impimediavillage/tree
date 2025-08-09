@@ -13,13 +13,14 @@ import { httpsCallable, FunctionsError } from "firebase/functions";
 interface AuthContextType {
   currentUser: AppUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
-  currentDispensary: Dispensary | null;
   loading: boolean;
   isSuperAdmin: boolean;
   isDispensaryOwner: boolean;
   canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
+  fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>; // Expose fetch function
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,51 +31,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
+
+  const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
+    try {
+      console.log("Calling getUserProfile function...");
+      const result = await getUserProfileCallable();
+      const profile = result.data;
+      if (profile) {
+        console.log("User profile received:", profile);
+        setCurrentUser(profile);
+        return profile;
+      } else {
+        console.warn("getUserProfile returned null, signing out.");
+        await auth.signOut();
+        return null;
+      }
+    } catch (error) {
+      console.error("Critical: Failed to get user profile. Logging out.", error);
+      if (error instanceof FunctionsError) {
+        console.error("Function error code:", error.code);
+        console.error("Function error message:", error.message);
+      }
+      await auth.signOut();
+      return null;
+    }
+  }, []);
+  
+  const logout = async () => {
+    await auth.signOut();
+    setCurrentUser(null);
+    router.push('/auth/signin');
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      setLoading(true);
       if (firebaseUser) {
-        try {
-          const result = await getUserProfileCallable();
-          const profile = result.data;
-          
-          if (profile) {
-            setCurrentUser(profile);
-            const isAuthPage = pathname.startsWith('/auth');
-            if (isAuthPage) {
-              if (profile.role === 'Super Admin') {
-                router.push('/admin/dashboard');
-              } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
-                router.push('/dispensary-admin/dashboard');
-              } else {
-                router.push('/dashboard/leaf');
-              }
-            }
-          } else {
-            await auth.signOut();
-            setCurrentUser(null);
-          }
-        } catch (error) {
-          console.error("Critical: Failed to get user profile. Logging out.", error);
-          if (error instanceof FunctionsError) {
-              console.error("Function error code:", error.code);
-              console.error("Function error message:", error.message);
-          }
-           await auth.signOut();
-           setCurrentUser(null);
-        } finally {
-          setLoading(false);
-        }
+        setLoading(true);
+        await fetchUserProfile(firebaseUser);
+        setLoading(false);
       } else {
         setCurrentUser(null);
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
-  }, [router, pathname]);
+  }, [fetchUserProfile]);
 
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
@@ -93,6 +94,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     canAccessDispensaryPanel,
     isLeafUser,
     currentDispensaryStatus,
+    fetchUserProfile,
+    logout,
   };
 
   return (
