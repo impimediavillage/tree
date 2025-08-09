@@ -48,23 +48,31 @@ export default function WellnessProductsPage() {
         setCategories(['all']);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching products:', error);
-      toast({ title: 'Error', description: 'Could not fetch your products. Please check your connection and permissions.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Could not fetch your products: ${error.message}`, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    // The hook now waits for the authentication to be confirmed AND for a valid dispensaryId.
+    // This is the key logic:
+    // 1. Wait for auth to finish loading.
+    // 2. Ensure a valid dispensaryId exists.
+    // 3. Then, and only then, fetch data.
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
     } else if (!authLoading && !dispensaryId) {
-      // If auth is done but there's no dispensaryId, stop loading. This indicates a state where the user can't access this page.
+      // If auth is done but there's no dispensaryId, stop loading.
       setIsLoading(false);
+      toast({
+        title: "Dispensary Not Found",
+        description: "Your account is not linked to a dispensary.",
+        variant: "destructive"
+      });
     }
-  }, [authLoading, dispensaryId, fetchProducts]);
+  }, [authLoading, dispensaryId, fetchProducts, toast]);
   
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...allProducts];
