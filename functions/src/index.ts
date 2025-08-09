@@ -1,4 +1,3 @@
-
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -60,13 +59,26 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         
         const toISODateString = (date: any): string | null => {
             if (!date) return null;
-            if (date instanceof admin.firestore.Timestamp) return date.toDate().toISOString();
-            if (date instanceof Date) return date.toISOString();
+            // Check for Firestore Timestamp first
+            if (date instanceof admin.firestore.Timestamp) {
+                return date.toDate().toISOString();
+            }
+            // Check for JS Date object
+            if (date instanceof Date) {
+                return date.toISOString();
+            }
+            // Try to parse if it's a string
             if (typeof date === 'string') {
                  try {
                      const parsedDate = new Date(date);
-                     if (!isNaN(parsedDate.getTime())) return parsedDate.toISOString();
-                 } catch (e) { /* Ignore */ }
+                     // Check if parsing was successful
+                     if (!isNaN(parsedDate.getTime())) {
+                         return parsedDate.toISOString();
+                     }
+                 } catch (e) { 
+                    logger.warn(`Could not parse date string: ${date}`);
+                    return null;
+                 }
             }
             return null;
         };

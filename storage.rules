@@ -1,68 +1,59 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Helper function to check if a user is a Super Admin
-    function isSuperAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    
+    // Helper function to check if a user has a specific role
+    function hasRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
     }
     
-    // Helper function to check if a user is an owner of a specific dispensary
-    function isDispensaryOwner(dispensaryId) {
-      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return user.role == 'DispensaryOwner' && user.dispensaryId == dispensaryId;
-    }
-
-    // Helper function to check if a user is a standard Leaf User or any authenticated user
-    function isSignedIn() {
-      return request.auth != null;
-    }
-  
-    // PUBLIC ASSETS (e.g., dispensary type icons/images)
-    // Anyone can read these assets. Only admins can write.
-    match /dispensary-type-assets/{allPaths=**} {
-      allow read: if true;
-      allow write: if isSuperAdmin();
-    }
-    
-    // PRODUCT IMAGES
-    // Anyone can read product images.
-    // Only authenticated users (who will be linked to a dispensary) can write.
-    // The path includes the user's UID for ownership.
-    match /products/{userId}/{allPaths=**} {
-      allow read: if true;
-      // Allow write if the user is authenticated and is uploading to their own user folder.
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // LAB REPORTS
-    // Similar to product images, but we might want to restrict read access in the future.
-    // For now, keep it consistent.
-    match /lab-reports/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // STICKER SETS
-    // Anyone can read generated sticker sets.
-    // Only the authenticated creator can write to their folder.
-    match /stickersets/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // USER PROFILE PICTURES (If you add this feature)
-    // Users can read/write their own profile picture.
-    match /user-profiles/{userId}/{allPaths=**} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Default deny all other paths
+    // Default deny all reads and writes
     match /{allPaths=**} {
       allow read, write: if false;
     }
+    
+    // Public read for dispensary type assets (icons, images)
+    match /dispensary-type-assets/{allPaths=**} {
+      allow read: if true;
+    }
+    
+    // Public read for product images
+    match /products/{userId}/{imageName} {
+      allow read: if true;
+    }
+
+    // Users can only write to their own designated folder within /products
+    // and can only upload files smaller than 5MB.
+    match /products/{userId}/{imageName} {
+      allow write: if request.auth != null && request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+    }
+    
+    // Lab reports can be written by the user who owns the path
+    match /lab-reports/{userId}/{fileName} {
+      allow write: if request.auth != null && request.auth.uid == userId &&
+                      request.resource.size < 2 * 1024 * 1024 && // 2MB limit
+                      (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf');
+    }
+
+    // Allow read access to lab reports for authenticated users (or make more specific if needed)
+    match /lab-reports/{userId}/{fileName} {
+      allow read: if request.auth != null;
+    }
+
+    // Sticker sets can be read publicly
+    match /stickersets/{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Authenticated users can write to their own sticker set folder
+    match /stickersets/{userId}/{fileName} {
+       allow write: if request.auth != null && request.auth.uid == userId &&
+                      request.resource.size < 5 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+    }
+
   }
 }
