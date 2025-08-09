@@ -2,82 +2,86 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    match /users/{userId} {
-      // Users can read/write their own profile
-      allow read, write: if request.auth.uid == userId;
-      
-      // Admins can manage users within their own dispensary
-      allow list: if request.auth.uid != null &&
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['DispensaryOwner', 'Super Admin'] &&
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == request.query.where.dispensaryId;
+
+    // Helper function to check if a user belongs to a specific dispensary
+    function isDispensaryMember(dispensaryId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
     }
 
-    match /products/{productId} {
-      // Anyone can read a single product document (for public store pages)
-      allow get: if true;
-
-      // Admins can list products belonging to their dispensary
-      // This is the key rule that fixes the /dispensary-admin/products page
-      allow list: if request.auth.uid != null &&
-                   get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == request.query.where.dispensaryId;
-
-      // Admins can write products only for their own dispensary
-      allow write: if request.auth.uid != null &&
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == request.resource.data.dispensaryId;
-    }
-
-    match /dispensaries/{dispensaryId} {
-      // Anyone can read dispensary info (for public store pages)
-      allow get: if true;
-      allow list: if true;
-
-      // Only Super Admins should be able to write to dispensaries
-      allow write: if request.auth.uid != null &&
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
-    }
-
+    // Public read access for dispensary types
     match /dispensaryTypes/{typeId} {
-      // Publicly readable
-      allow get, list: if true;
-      // Only Super Admins can write
-      allow write: if request.auth.uid != null &&
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+      allow read: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
-    
+
     match /dispensaryTypeProductCategories/{docId} {
-        allow get, list: if true;
-        allow write: if request.auth.uid != null &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+
+    // Public read for approved dispensaries, write access for owners/admins
+    match /dispensaries/{dispensaryId} {
+      allow read: if resource.data.status == 'Approved' || isDispensaryMember(dispensaryId);
+      allow create: if request.auth != null;
+      allow update: if isDispensaryMember(dispensaryId) || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+      allow delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+
+    // Rules for User Profiles
+    match /users/{userId} {
+      // Allow users to read/write their own document
+      allow read, write: if request.auth.uid == userId;
+
+      // Allow Super Admins to read/write any user document
+      allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+      
+      // Allow dispensary owners/staff to read/write users linked to their dispensary
+      allow read, write: if isDispensaryMember(resource.data.dispensaryId);
     }
     
-    match /productRequests/{requestId} {
-      allow read, write: if request.auth.uid != null; // Simplified for now, can be tightened later
+    match /products/{productId} {
+      // Anyone can read any product. This is for the public storefronts.
+      allow get: if true;
+      allow list: if request.auth != null;
+
+      // Only allow write access if the user's dispensaryId matches the product's dispensaryId
+      allow write: if isDispensaryMember(request.resource.data.dispensaryId);
     }
-    
+
+     match /productRequests/{requestId} {
+      // Allow read/write if the user is part of either the requester or owner dispensary
+      allow read, write: if isDispensaryMember(resource.data.requesterDispensaryId) || isDispensaryMember(resource.data.productOwnerDispensaryId);
+      allow create: if isDispensaryMember(request.resource.data.requesterDispensaryId);
+    }
+
     match /poolIssues/{issueId} {
-      allow read, write: if request.auth.uid != null &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+        allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+        allow create: if request.auth != null;
+    }
+
+    match /creditPackages/{packageId} {
+        allow read: if true;
+        allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
     match /aiInteractionsLog/{logId} {
-       allow read, create: if request.auth.uid != null && request.auth.uid == request.resource.data.userId;
-    }
-    
-    match /creditPackages/{packageId} {
-        allow get, list: if true;
-        allow create, write: if request.auth.uid != null &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+        allow read, create: if request.auth.uid == request.resource.data.userId;
+        allow list: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
-    match /stickersets/{stickerId} {
-        allow get, list: if true;
-        allow create, write, delete: if request.auth.uid != null && request.resource.data.creatorUid == request.auth.uid;
+    match /stickersets/{setId} {
+        allow read: if resource.data.isPublic == true || request.auth.uid == resource.data.creatorUid;
+        allow create: if request.auth.uid == request.resource.data.creatorUid;
+        allow update, delete: if request.auth.uid == resource.data.creatorUid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+
+    match /importsHistory/{logId} {
+       allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
     
-    match /importsHistory/{docId} {
-        allow get, list: if request.auth.uid != null &&
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

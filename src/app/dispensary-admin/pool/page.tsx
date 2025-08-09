@@ -57,10 +57,11 @@ export default function WellnessPoolPage() {
   }, [toast]);
 
   useEffect(() => {
-    if (!authLoading && dispensaryId) {
+    if (authLoading) return; // Wait for auth to finish
+    if (dispensaryId) {
       fetchRequests(dispensaryId);
-    } else if (!authLoading && !dispensaryId) {
-        setIsLoading(false);
+    } else {
+      setIsLoading(false); // If no dispensaryId, stop loading
     }
   }, [authLoading, dispensaryId, fetchRequests]);
 
@@ -80,7 +81,7 @@ export default function WellnessPoolPage() {
     return (
         <Card className="mt-6 text-center">
             <CardHeader>
-                <AlertCircle className="mx-auto h-12 w-12 text-orange-500" />
+                <AlertTriangle className="mx-auto h-12 w-12 text-orange-500" />
                 <CardTitle className="text-xl font-semibold">Product Sharing Disabled</CardTitle>
             </CardHeader>
             <CardContent>
