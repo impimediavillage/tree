@@ -33,9 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      setLoading(true);
       if (firebaseUser) {
-        // If there's a firebase user, we are in a loading state until we fetch their profile
-        setLoading(true); 
         try {
           const result = await getUserProfileCallable();
           const profile = result.data;
@@ -55,7 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                }
             }
           } else {
-            // Profile fetch failed, treat as logged out
             await auth.signOut();
             setCurrentUser(null);
           }
@@ -71,7 +69,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setLoading(false);
         }
       } else {
-        // No firebase user, so not logged in
         setCurrentUser(null);
         setLoading(false);
       }

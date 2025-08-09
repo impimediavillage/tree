@@ -55,7 +55,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                 }
             } catch (dispensaryError) {
                 logger.error(`Error fetching dispensary doc for user ${uid}.`, dispensaryError);
-                // Don't throw here, just proceed without dispensary data
             }
         }
         
@@ -72,13 +71,17 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             return null;
         };
         
-        const dispensaryWithSerializableDates: Dispensary | null = dispensaryData ? {
-            ...dispensaryData,
-            applicationDate: toISODateString(dispensaryData.applicationDate), // Safe conversion
-            approvedDate: toISODateString(dispensaryData.approvedDate),
-            lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
-        } : null;
-
+        // This is the safe way to construct the dispensary object with optional dates
+        let dispensaryWithSerializableDates: Dispensary | null = null;
+        if (dispensaryData) {
+            dispensaryWithSerializableDates = {
+                ...dispensaryData,
+                applicationDate: toISODateString(dispensaryData.applicationDate),
+                approvedDate: dispensaryData.approvedDate ? toISODateString(dispensaryData.approvedDate) : null,
+                lastActivityDate: dispensaryData.lastActivityDate ? toISODateString(dispensaryData.lastActivityDate) : null,
+            };
+        }
+        
         const profileResponse: AppUser = {
             uid: uid,
             email: userData.email || request.auth.token.email || '',
@@ -91,7 +94,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             createdAt: toISODateString(userData.createdAt),
             lastLoginAt: toISODateString(userData.lastLoginAt),
             dispensaryStatus: dispensaryData?.status || null,
-            dispensary: dispensaryWithSerializableDates,
+            dispensary: dispensaryWithSerializableDates, // Use the safely constructed object
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
