@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -14,6 +15,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const themeDisplay: Record<StickerSet['theme'], string> = {
   clay: '3D Clay',
@@ -54,17 +56,19 @@ export default function PromoCollectionsPage() {
   }, [currentUser?.uid, toast]);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && currentUser) {
       fetchStickerSets();
+    } else if (!authLoading) {
+      setIsLoading(false);
     }
-  }, [authLoading, fetchStickerSets]);
+  }, [authLoading, currentUser, fetchStickerSets]);
 
   const handleTogglePublic = async (set: StickerSet) => {
     if (!set.id) return;
     const newStatus = !set.isPublic;
     try {
       await updateDoc(doc(db, 'stickersets', set.id), { isPublic: newStatus });
-      fetchStickerSets(); // Re-fetch to update state
+      setStickerSets(prev => prev.map(s => s.id === set.id ? { ...s, isPublic: newStatus } : s));
       toast({ title: "Visibility Updated", description: `${set.name} is now ${newStatus ? 'public' : 'private'}.` });
     } catch (error) {
       console.error("Error toggling public status:", error);
@@ -76,13 +80,36 @@ export default function PromoCollectionsPage() {
     if (!set.id) return;
     try {
       await deleteDoc(doc(db, 'stickersets', set.id));
-      fetchStickerSets(); // Re-fetch to update state
+      setStickerSets(prev => prev.filter(s => s.id !== set.id));
       toast({ title: "Set Deleted", description: `${set.name} has been permanently deleted.` });
     } catch (error) {
       console.error("Error deleting set:", error);
       toast({ title: "Deletion Failed", variant: "destructive" });
     }
   };
+  
+   if (authLoading || isLoading) {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-24 w-full" />
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({length: 3}).map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                        <CardHeader className="p-0 relative h-56 bg-muted rounded-t-lg"/>
+                        <CardContent className="p-4 space-y-2">
+                           <Skeleton className="h-6 w-3/4"/>
+                           <Skeleton className="h-4 w-1/2"/>
+                           <Skeleton className="h-4 w-1/4"/>
+                        </CardContent>
+                        <CardFooter className="p-4">
+                            <Skeleton className="h-10 w-full"/>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -93,9 +120,7 @@ export default function PromoCollectionsPage() {
         </CardHeader>
       </Card>
       
-      {isLoading ? (
-        <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
-      ) : stickerSets.length === 0 ? (
+      {stickerSets.length === 0 ? (
         <Card className="text-center py-10">
           <CardContent>
             <AlertTriangle className="mx-auto h-12 w-12 text-muted-foreground" />

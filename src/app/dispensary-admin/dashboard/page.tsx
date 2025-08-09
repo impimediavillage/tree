@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Store, ShoppingBasket, BarChart3, Users } from 'lucide-react';
+import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -104,6 +104,13 @@ export default function WellnessAdminOverviewPage() {
             icon={Users}
             link="/dispensary-admin/users"
             buttonText="Manage Users"
+        />
+         <QuickActionCard
+            title="Credit Analytics"
+            description="View your store's credit usage and history across all services."
+            icon={CreditCard}
+            link="/dispensary-admin/credits"
+            buttonText="View Credit Usage"
         />
       </div>
     </div>
