@@ -53,6 +53,7 @@ export default function SignInPage() {
         description: 'Fetching your profile and redirecting...',
       });
 
+      // fetchUserProfile will now handle fetching the profile and setting it in the context
       const userProfile = await fetchUserProfile(userCredential.user);
 
       if (userProfile) {
@@ -80,6 +81,7 @@ export default function SignInPage() {
             break;
         }
       } else if (error.message) {
+        // Handle custom errors thrown from fetchUserProfile
         errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);
