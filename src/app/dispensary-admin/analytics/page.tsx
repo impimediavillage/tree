@@ -82,9 +82,11 @@ export default function WellnessAnalyticsPage() {
   }, [toast]);
 
   useEffect(() => {
-    if (dispensaryId) {
+    // We wait for auth to be resolved and ensure we have a dispensaryId
+    if (!authLoading && dispensaryId) {
         fetchAnalyticsData(dispensaryId);
-    } else if (!authLoading) {
+    } else if (!authLoading && !dispensaryId) {
+        // Handle case where user might not have a dispensaryId but is on this page
         setIsLoadingData(false);
     }
   }, [dispensaryId, authLoading, fetchAnalyticsData]);
