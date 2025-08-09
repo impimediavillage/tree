@@ -4,39 +4,9 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Settings, Store, ShoppingBasket, BarChart3, Users, ListOrdered } from 'lucide-react';
+import { Package, Store, ShoppingBasket, BarChart3, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  description?: string;
-  isLoading: boolean;
-  link: string;
-  linkText: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, description, isLoading, link, linkText }) => (
-  <Card className="shadow-md hover:shadow-lg transition-shadow bg-card">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-card-foreground">{title}</CardTitle>
-      <Icon className="h-5 w-5 text-muted-foreground" />
-    </CardHeader>
-    <CardContent>
-      {isLoading ? (
-         <Skeleton className="h-7 w-20" />
-      ) : (
-        <div className="text-2xl font-bold text-primary">{value}</div>
-      )}
-      {description && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
-       <Button variant="link" asChild className="px-0 pt-2 text-primary">
-          <Link href={link}>{linkText}</Link>
-        </Button>
-    </CardContent>
-  </Card>
-);
 
 interface QuickActionCardProps {
     title: string;

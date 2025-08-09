@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Package, Users, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered, ArrowLeft, Loader2 } from 'lucide-react';
+import { BarChart3, DollarSign, Package, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered, ArrowLeft, Loader2 } from 'lucide-react';
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Product, ProductRequest, ProductCategoryCount } from '@/types';
@@ -82,11 +82,9 @@ export default function WellnessAnalyticsPage() {
   }, [toast]);
 
   useEffect(() => {
-    // We wait for auth to be resolved and ensure we have a dispensaryId
     if (!authLoading && dispensaryId) {
         fetchAnalyticsData(dispensaryId);
     } else if (!authLoading && !dispensaryId) {
-        // Handle case where user might not have a dispensaryId but is on this page
         setIsLoadingData(false);
     }
   }, [dispensaryId, authLoading, fetchAnalyticsData]);
@@ -95,9 +93,9 @@ export default function WellnessAnalyticsPage() {
     const activePoolCount = products.filter(p => p.isAvailableForPool).length;
     const pendingRequestCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
     
-    // Placeholder stats as before
-    const placeholderTotalSales = Math.floor(Math.random() * 20000) + 5000; 
-    const placeholderTotalOrders = Math.floor(Math.random() * 300) + 50;   
+    // Placeholder stats
+    const placeholderTotalSales = products.reduce((sum, p) => sum + (p.priceTiers[0]?.price || 0) * (5 - p.quantityInStock > 0 ? 5 - p.quantityInStock : 0), 0);
+    const placeholderTotalOrders = Math.max(1, Math.floor(placeholderTotalSales / 150));
     const placeholderAvgOrderValue = placeholderTotalOrders > 0 ? placeholderTotalSales / placeholderTotalOrders : 0;
     
     return {
@@ -125,7 +123,7 @@ export default function WellnessAnalyticsPage() {
   }, [products]);
 
 
-  if (authLoading || (!dispensaryId && !authLoading)) {
+  if (authLoading) {
     return (
       <div className="p-4">
         <Skeleton className="h-12 w-1/2 mb-6" />
@@ -141,6 +139,16 @@ export default function WellnessAnalyticsPage() {
         <AlertTriangle className="h-12 w-12 mb-4" />
         <p className="text-xl">Access Denied.</p>
         <p>This section is for Wellness Owners & Staff only.</p>
+      </div>
+    );
+  }
+
+  if (!dispensaryId) {
+     return (
+      <div className="p-4 text-center text-muted-foreground flex flex-col items-center justify-center h-full">
+        <AlertTriangle className="h-12 w-12 mb-4" />
+        <p className="text-xl">Dispensary Not Linked</p>
+        <p>Your user profile is not linked to a dispensary.</p>
       </div>
     );
   }
