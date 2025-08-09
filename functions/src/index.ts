@@ -63,16 +63,18 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         }
         
         const toISODateString = (date: any): string | null => {
-            if (!date) return null; // Safe check for null or undefined dates
+            if (!date) return null;
             if (date instanceof admin.firestore.Timestamp) {
                 return date.toDate().toISOString();
             }
             if (date instanceof Date) {
                 return date.toISOString();
             }
+            // Add a check for string dates, but handle them carefully
             if (typeof date === 'string') {
                  try {
                      const parsedDate = new Date(date);
+                     // Check if the parsed date is valid
                      if (!isNaN(parsedDate.getTime())) {
                          return parsedDate.toISOString();
                      }
@@ -83,6 +85,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             return null;
         };
         
+        // Use a separate variable to avoid modifying the original dispensaryData
         let dispensaryWithSerializableDates: Dispensary | null = null;
         if (dispensaryData) {
             dispensaryWithSerializableDates = {
