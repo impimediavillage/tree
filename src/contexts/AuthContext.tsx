@@ -56,16 +56,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        console.error(`User document not found for uid: ${user.uid}. This can happen briefly after signup.`);
-        // Don't toast here, as it might be a race condition on signup.
-        // The signin/signup page should handle this.
+        console.error(`User document not found for uid: ${user.uid}.`);
         return null;
       }
       
       const userData = serializeDates(userDocSnap.data()) as AppUser;
       let dispensaryData: Dispensary | null = null;
       
-      // Step-by-step fetching as per user's correct workflow
       if (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff') {
         if (userData.dispensaryId) {
           try {
@@ -79,7 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (dispensaryError) {
              console.error(`Error fetching dispensary doc for user ${user.uid}:`, dispensaryError);
-             // Proceed without dispensary data, don't crash.
           }
         }
       }
@@ -113,16 +109,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
       if (firebaseUser) {
-        // Attempt to fetch fresh profile data on every auth state change.
+        // First, check for a valid profile in localStorage to speed up initial render
+        const storedUserString = localStorage.getItem('currentUserHolisticAI');
+        if (storedUserString) {
+          try {
+            const storedUser = JSON.parse(storedUserString);
+            if(storedUser.uid === firebaseUser.uid) {
+               setCurrentUser(storedUser);
+               if(storedUser.dispensary) {
+                 setCurrentDispensary(storedUser.dispensary);
+               }
+            }
+          } catch (e) {
+            localStorage.removeItem('currentUserHolisticAI');
+          }
+        }
+        setLoading(false); // Set loading false after potential local storage load
+        // Then, fetch fresh data in the background to ensure it's up-to-date
         await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);
