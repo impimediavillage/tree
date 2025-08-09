@@ -22,6 +22,7 @@ interface AuthContextType {
   canAccessDispensaryPanel: boolean;
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
+  currentDispensary: Dispensary | null;
   fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>;
   logout: () => Promise<void>;
 }
@@ -106,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
   const currentDispensaryStatus = currentUser?.dispensary?.status || null;
+  const currentDispensary = currentUser?.dispensary || null;
   const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   
@@ -118,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     canAccessDispensaryPanel,
     isLeafUser,
     currentDispensaryStatus,
+    currentDispensary,
     fetchUserProfile,
     logout,
   };

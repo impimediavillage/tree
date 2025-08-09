@@ -3,16 +3,9 @@
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import type { Dispensary, User as AppUser, UserDocData } from "./types";
 
-// All types are now sourced from the local types.ts file
-import type {
-  Dispensary,
-  User as AppUser,
-  UserDocData,
-} from "./types";
-
-
-// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// ================== FIREBASE ADMIN SDK INITIALIZATION ==================
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
@@ -22,16 +15,47 @@ if (admin.apps.length === 0) {
     }
 }
 const db = admin.firestore();
-// ============== END INITIALIZATION ==============
+// ================== END INITIALIZATION ==================
+
+// ================== HELPER FUNCTIONS ==================
+
+/**
+ * Safely converts a date-like object to an ISO string.
+ * Handles null, undefined, Firestore Timestamps, JS Dates, and date strings.
+ * @param date - The date object to convert.
+ * @returns An ISO date string or null if conversion fails.
+ */
+const toISODateString = (date: any): string | null => {
+    if (!date) return null;
+    if (date instanceof admin.firestore.Timestamp) {
+        return date.toDate().toISOString();
+    }
+    if (date instanceof Date) {
+        return date.toISOString();
+    }
+    if (typeof date === 'string') {
+        try {
+            const parsedDate = new Date(date);
+            if (!isNaN(parsedDate.getTime())) {
+                return parsedDate.toISOString();
+            }
+        } catch (e) {
+            logger.warn(`Could not parse date string: ${date}`, e);
+        }
+    }
+    logger.warn(`Unserializable date type encountered:`, date);
+    return null;
+};
 
 
-// ============== CALLABLE FUNCTIONS ==============
+// ================== CALLABLE FUNCTIONS ==================
 
 export const getUserProfile = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
     const uid = request.auth.uid;
+    
     try {
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
@@ -60,28 +84,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                  dispensaryData = null; 
             }
         }
-        
-        const toISODateString = (date: any): string | null => {
-            if (!date) return null;
-            if (date instanceof admin.firestore.Timestamp) {
-                return date.toDate().toISOString();
-            }
-            if (date instanceof Date) {
-                return date.toISOString();
-            }
-            if (typeof date === 'string') {
-                 try {
-                     const parsedDate = new Date(date);
-                     if (!isNaN(parsedDate.getTime())) {
-                         return parsedDate.toISOString();
-                     }
-                 } catch (e) { 
-                    logger.warn(`Could not parse date string: ${date}`);
-                 }
-            }
-            logger.warn(`Unserializable date type encountered:`, date);
-            return null;
-        };
         
         let dispensaryWithSerializableDates: Dispensary | null = null;
         if (dispensaryData) {
@@ -115,6 +117,9 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
 
     } catch (error) {
         logger.error(`Error fetching user profile for ${uid}:`, error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
         throw new HttpsError('internal', 'An unexpected error occurred while fetching your profile.');
     }
 });
