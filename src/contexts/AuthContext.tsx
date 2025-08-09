@@ -25,7 +25,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Ensure the callable function is defined once and correctly typed
 const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -48,6 +47,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       setCurrentUser(profile);
+      // Persist a minimal, safe version of the user profile to local storage
+      const userToStore = {
+        uid: profile.uid,
+        email: profile.email,
+        displayName: profile.displayName,
+        photoURL: profile.photoURL,
+        role: profile.role,
+        credits: profile.credits,
+        dispensaryId: profile.dispensaryId,
+        dispensaryStatus: profile.dispensaryStatus,
+      };
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(userToStore));
+      
       return profile;
 
     } catch (error) {
@@ -57,6 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
            console.error("Function error message:", error.message);
        }
       await auth.signOut();
+      localStorage.removeItem('currentUserHolisticAI');
       setCurrentUser(null);
       return null;
     }
@@ -64,6 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const logout = async () => {
     await auth.signOut();
+    localStorage.removeItem('currentUserHolisticAI');
     setCurrentUser(null);
     if (!pathname.startsWith('/auth')) {
         router.push('/auth/signin');
@@ -72,22 +86,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
-        setLoading(true);
-        await fetchUserProfile(firebaseUser);
-        setLoading(false);
+        // Only fetch profile if not already loaded from a recent login
+        if (!currentUser || currentUser.uid !== firebaseUser.uid) {
+           await fetchUserProfile(firebaseUser);
+        }
       } else {
+        localStorage.removeItem('currentUserHolisticAI');
         setCurrentUser(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
-  }, [fetchUserProfile]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
-  const currentDispensaryStatus = currentUser?.dispensary?.status || null;
+  const currentDispensaryStatus = currentUser?.dispensary?.status || currentUser?.dispensaryStatus || null;
   const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   

@@ -54,6 +54,7 @@ export default function SignInPage() {
         description: 'Fetching your profile...',
       });
       
+      // The fetchUserProfile function now also sets the user in context.
       const userProfile = await fetchUserProfile(firebaseUser);
 
       if (userProfile) {
@@ -63,7 +64,9 @@ export default function SignInPage() {
         });
         handleRedirect(userProfile);
       } else {
-         throw new Error("Failed to fetch user profile after login.");
+         // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
+         // The error toast is already shown inside fetchUserProfile.
+         setIsLoading(false); // Stop loading indicator
       }
 
     } catch (error: any) {
