@@ -54,7 +54,6 @@ export default function SignInPage() {
         description: 'Fetching your profile...',
       });
       
-      // The fetchUserProfile function now also sets the user in context.
       const userProfile = await fetchUserProfile(firebaseUser);
 
       if (userProfile) {
@@ -66,7 +65,7 @@ export default function SignInPage() {
       } else {
          // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
          // The error toast is already shown inside fetchUserProfile.
-         setIsLoading(false); // Stop loading indicator
+         throw new Error("Failed to fetch user profile after login.");
       }
 
     } catch (error: any) {
@@ -89,11 +88,12 @@ export default function SignInPage() {
       console.error("Sign-in process failed:", error);
       toast({
         title: 'Login Failed',
-        description: errorMessage,
+        description: error.message || errorMessage,
         variant: 'destructive',
       });
-      setIsLoading(false);
-    } 
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const handlePasswordReset = async () => {
