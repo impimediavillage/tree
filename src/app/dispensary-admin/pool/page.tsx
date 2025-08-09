@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductRequestTable } from '@/components/dispensary-admin/ProductRequestTable';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Inbox, Send, AlertCircle } from 'lucide-react';
+import { History, Inbox, Send, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function WellnessPoolPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -20,21 +21,19 @@ export default function WellnessPoolPage() {
   const [outgoingRequests, setOutgoingRequests] = useState<ProductRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRequests = useCallback(async () => {
-    if (!currentUser?.dispensaryId) {
-      if (!authLoading) setIsLoading(false);
-      return;
-    }
+  const dispensaryId = currentUser?.dispensaryId;
+
+  const fetchRequests = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
       const incomingQuery = query(
         collection(db, 'productRequests'),
-        where('productOwnerDispensaryId', '==', currentUser.dispensaryId),
+        where('productOwnerDispensaryId', '==', id),
         orderBy('createdAt', 'desc')
       );
       const outgoingQuery = query(
         collection(db, 'productRequests'),
-        where('requesterDispensaryId', '==', currentUser.dispensaryId),
+        where('requesterDispensaryId', '==', id),
         orderBy('createdAt', 'desc')
       );
       
@@ -55,18 +54,28 @@ export default function WellnessPoolPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser?.dispensaryId, authLoading, toast]);
+  }, [toast]);
 
   useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+    if (!authLoading && dispensaryId) {
+      fetchRequests(dispensaryId);
+    } else if (!authLoading && !dispensaryId) {
+        setIsLoading(false);
+    }
+  }, [authLoading, dispensaryId, fetchRequests]);
 
   const handleRequestUpdate = () => {
     // Re-fetch all data when an update happens
-    fetchRequests();
+    if (dispensaryId) {
+      fetchRequests(dispensaryId);
+    }
   };
 
   const incomingPendingCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
+
+  if (authLoading) {
+    return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
   if (!currentUser?.dispensary?.participateSharing || currentUser.dispensary.participateSharing === 'no') {
     return (

@@ -125,7 +125,7 @@ export default function WellnessAnalyticsPage() {
   }, [products]);
 
 
-  if (authLoading) {
+  if (authLoading || (!dispensaryId && !authLoading)) {
     return (
       <div className="p-4">
         <Skeleton className="h-12 w-1/2 mb-6" />
@@ -135,12 +135,12 @@ export default function WellnessAnalyticsPage() {
     );
   }
   
-  if (!currentUser || currentUser.role !== 'DispensaryOwner') {
+  if (!currentUser || (currentUser.role !== 'DispensaryOwner' && currentUser.role !== 'DispensaryStaff')) {
     return (
       <div className="p-4 text-center text-destructive flex flex-col items-center justify-center h-full">
         <AlertTriangle className="h-12 w-12 mb-4" />
         <p className="text-xl">Access Denied.</p>
-        <p>This section is for Wellness Owners only.</p>
+        <p>This section is for Wellness Owners & Staff only.</p>
       </div>
     );
   }

@@ -81,12 +81,9 @@ function parseTimeToComponents(time24?: string): { hour?: string, minute?: strin
 export default function WellnessOwnerProfilePage() {
     const { toast } = useToast();
     const router = useRouter();
-    const { currentUser, loading: authLoading } = useAuth();
-    const dispensaryId = currentUser?.dispensaryId;
+    const { currentUser, currentDispensary, loading: authLoading } = useAuth();
 
-    const [isFetchingData, setIsFetchingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [wellnessProfile, setWellnessProfile] = useState<Dispensary | null>(null);
     
     const [openHour, setOpenHour] = useState<string | undefined>();
     const [openMinute, setOpenMinute] = useState<string | undefined>();
@@ -115,8 +112,8 @@ export default function WellnessOwnerProfilePage() {
         form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
     }, [selectedCountryCode, nationalPhoneNumber, form]);
     
-    const initializeMap = useCallback(async () => {
-        if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current || !wellnessProfile) return;
+    const initializeMap = useCallback(async (profile: Dispensary) => {
+        if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
 
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         if (!apiKey) {
@@ -138,10 +135,10 @@ export default function WellnessOwnerProfilePage() {
             const { Map } = google.maps;
             const { Marker } = google.maps;
     
-            const lat = wellnessProfile.latitude ?? -29.8587;
-            const lng = wellnessProfile.longitude ?? 31.0218;
-            const zoom = (wellnessProfile.latitude && wellnessProfile.longitude) ? 17 : 6;
-            let iconUrl = wellnessTypeIcons[wellnessProfile.dispensaryType] || wellnessTypeIcons.default;
+            const lat = profile.latitude ?? -29.8587;
+            const lng = profile.longitude ?? 31.0218;
+            const zoom = (profile.latitude && profile.longitude) ? 17 : 6;
+            let iconUrl = wellnessTypeIcons[profile.dispensaryType] || wellnessTypeIcons.default;
     
             const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapId: 'b39f3f8b7139051d', mapTypeControl: false, streetViewControl: false });
             const marker = new Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) } });
@@ -180,64 +177,37 @@ export default function WellnessOwnerProfilePage() {
           console.error('Error loading Google Maps:', e);
           toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
         }
-    }, [wellnessProfile, form, toast]);
+    }, [form, toast]);
 
     useEffect(() => {
-        if (authLoading) return;
-        if (!currentUser || !dispensaryId) {
-            toast({ title: "Error", description: "Could not find wellness profile information.", variant: "destructive" });
-            router.push('/auth/signin');
-            return;
-        }
+        if (!authLoading && currentDispensary) {
+            form.reset({
+                ...currentDispensary,
+                latitude: currentDispensary.latitude === null ? undefined : currentDispensary.latitude,
+                longitude: currentDispensary.longitude === null ? undefined : currentDispensary.longitude,
+                operatingDays: currentDispensary.operatingDays || [],
+            });
+            
+            const openTimeComps = parseTimeToComponents(currentDispensary.openTime);
+            setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
+            
+            const closeTimeComps = parseTimeToComponents(currentDispensary.closeTime);
+            setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
 
-        const fetchWellnessProfile = async () => {
-            setIsFetchingData(true);
-            try {
-                const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
-                const docSnap = await getDoc(wellnessDocRef);
-                if (docSnap.exists()) {
-                    const data = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-                    setWellnessProfile(data);
-                    
-                    form.reset({
-                        ...data,
-                        latitude: data.latitude === null ? undefined : data.latitude,
-                        longitude: data.longitude === null ? undefined : data.longitude,
-                        operatingDays: data.operatingDays || [],
-                    });
-                    
-                    const openTimeComps = parseTimeToComponents(data.openTime);
-                    setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-                    
-                    const closeTimeComps = parseTimeToComponents(data.closeTime);
-                    setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-
-                    if (data.phone) {
-                        const foundCountry = countryCodes.find(cc => data.phone!.startsWith(cc.value));
-                        if (foundCountry) {
-                            setSelectedCountryCode(foundCountry.value);
-                            setNationalPhoneNumber(data.phone!.substring(foundCountry.value.length));
-                        } else { setNationalPhoneNumber(data.phone); }
-                    }
-
-                } else {
-                    toast({ title: "Not Found", description: "Your wellness profile could not be found.", variant: "destructive" });
-                    router.push('/dispensary-admin/dashboard');
-                }
-            } catch (error) {
-                toast({ title: "Error", description: "Failed to fetch your wellness profile.", variant: "destructive" });
-            } finally {
-                setIsFetchingData(false);
+            if (currentDispensary.phone) {
+                const foundCountry = countryCodes.find(cc => currentDispensary.phone!.startsWith(cc.value));
+                if (foundCountry) {
+                    setSelectedCountryCode(foundCountry.value);
+                    setNationalPhoneNumber(currentDispensary.phone!.substring(foundCountry.value.length));
+                } else { setNationalPhoneNumber(currentDispensary.phone); }
             }
-        };
-        fetchWellnessProfile();
-    }, [currentUser, dispensaryId, authLoading, router, toast, form]);
-    
-    useEffect(() => {
-        if (!isFetchingData && wellnessProfile) {
-            initializeMap();
+            
+            initializeMap(currentDispensary);
+        } else if (!authLoading && !currentDispensary) {
+            toast({ title: "Not Found", description: "Your wellness profile could not be found.", variant: "destructive" });
+            router.push('/dispensary-admin/dashboard');
         }
-      }, [isFetchingData, wellnessProfile, initializeMap]);
+    }, [currentDispensary, authLoading, router, toast, form, initializeMap]);
     
     const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
         if (!hourStr || !minuteStr || !amPmStr) return '';
@@ -251,10 +221,10 @@ export default function WellnessOwnerProfilePage() {
     useEffect(() => { form.setValue('closeTime', formatTo24Hour(closeHour, closeMinute, closeAmPm), { shouldValidate: true, shouldDirty: true }); }, [closeHour, closeMinute, closeAmPm, form]);
 
     async function onSubmit(data: OwnerEditDispensaryFormData) {
-        if (!dispensaryId) return;
+        if (!currentDispensary?.id) return;
         setIsSubmitting(true);
         try {
-            const wellnessDocRef = doc(db, 'dispensaries', dispensaryId);
+            const wellnessDocRef = doc(db, 'dispensaries', currentDispensary.id);
             const updateData = { ...data, lastActivityDate: serverTimestamp() };
             await updateDoc(wellnessDocRef, updateData as any);
             toast({ title: "Profile Updated", description: "Your wellness profile has been successfully updated." });
@@ -276,12 +246,8 @@ export default function WellnessOwnerProfilePage() {
         return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
     };
     
-    if (authLoading || isFetchingData) {
+    if (authLoading || !currentDispensary) {
         return <div className="max-w-3xl mx-auto my-8 p-6 space-y-6"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-8 w-2/3" /><Skeleton className="h-96 w-full mt-4" /><Skeleton className="h-12 w-full mt-4" /></div>;
-    }
-
-    if (!wellnessProfile) {
-        return <div className="text-center py-10">Your wellness profile could not be loaded.</div>;
     }
     
     const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
