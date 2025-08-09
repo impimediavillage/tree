@@ -60,7 +60,6 @@ export default function SignInPage() {
       } else {
          // The AuthContext now handles all user-facing error reporting,
          // including a toast notification for this specific case.
-         console.error("Signin failed because fetchUserProfile returned null. See AuthContext for details.");
       }
 
     } catch (error: any) {
