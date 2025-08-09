@@ -28,7 +28,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper to convert Firestore Timestamps to ISO strings for JSON serialization
 const safeToISOString = (date: any): string | null => {
     if (!date) return null;
     if (date instanceof Timestamp) return date.toDate().toISOString();
@@ -63,13 +62,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        throw new Error("User profile not found in database.");
+        // This can happen briefly during signup. Return null and let the calling function handle it.
+        return null;
       }
 
       const userData = userDocSnap.data() as UserDocData;
       let dispensaryData: Dispensary | null = null;
       
-      // If user has a dispensaryId, fetch the dispensary document
       if (userData.dispensaryId) {
         const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
         const dispensaryDocSnap = await getDoc(dispensaryDocRef);
@@ -123,7 +122,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Logout failed", error);
         toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
     } finally {
-        // Clear state regardless of error
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -133,15 +131,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
       if (firebaseUser) {
+        // Only set loading to false AFTER we've attempted to fetch the profile
         await fetchUserProfile(firebaseUser);
+        setLoading(false);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]); 
