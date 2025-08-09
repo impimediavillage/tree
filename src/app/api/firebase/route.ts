@@ -3,13 +3,13 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { admin } from '@/lib/firebase-admin';
 import type { Dispensary, User as AppUser, UserDocData } from '@/functions/src/types';
 
-async function verifyIdToken(request: NextRequest): Promise<string | null> {
+async function verifyIdToken(request: NextRequest): Promise<{uid: string, token: admin.auth.DecodedIdToken} | null> {
     const authHeader = request.headers.get('Authorization');
     if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.split('Bearer ')[1];
         try {
             const decodedToken = await admin.auth().verifyIdToken(token);
-            return decodedToken.uid;
+            return { uid: decodedToken.uid, token: decodedToken };
         } catch (error) {
             console.error("Error verifying Firebase ID token:", error);
             return null;
@@ -18,14 +18,27 @@ async function verifyIdToken(request: NextRequest): Promise<string | null> {
     return null;
 }
 
-async function handleGetUserProfile(uid: string) {
+async function handleGetUserProfile(uid: string, decodedToken: admin.auth.DecodedIdToken) {
     const db = admin.firestore();
     try {
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
-            throw new Error('Your user profile could not be found in the database.');
+            // If user doc doesn't exist, this might be their first login after creation
+            // Create a basic profile to prevent login failure
+            const newUser: AppUser = {
+                uid: uid,
+                email: decodedToken.email || '',
+                displayName: decodedToken.name || decodedToken.email?.split('@')[0] || 'New User',
+                photoURL: decodedToken.picture || null,
+                role: 'User',
+                credits: 0,
+                status: 'Active',
+            };
+            // Do not write to DB here, let a dedicated signup flow handle it.
+            // Just return the transient profile for this session.
+            return NextResponse.json(newUser);
         }
         
         const userData = userDocSnap.data() as UserDocData;
@@ -79,13 +92,11 @@ async function handleGetUserProfile(uid: string) {
             };
         }
         
-        const userRecord = await admin.auth().getUser(uid);
-
         const profileResponse: AppUser = {
             uid: uid,
-            email: userData.email || userRecord.email || '',
-            displayName: userData.displayName || userRecord.displayName || '',
-            photoURL: userData.photoURL || userRecord.photoURL || null,
+            email: userData.email || decodedToken.email || '',
+            displayName: userData.displayName || decodedToken.name || '',
+            photoURL: userData.photoURL || decodedToken.picture || null,
             role: userData.role || 'User',
             dispensaryId: userData.dispensaryId || null,
             credits: userData.credits || 0,
@@ -163,17 +174,18 @@ async function handleDeductCredits(uid: string, body: any) {
 
 
 export async function POST(request: NextRequest) {
-    const uid = await verifyIdToken(request);
-    if (!uid) {
+    const authResult = await verifyIdToken(request);
+    if (!authResult) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+    const { uid, token } = authResult;
 
     const body = await request.json();
     const { action } = body;
 
     switch (action) {
         case 'getUserProfile':
-            return handleGetUserProfile(uid);
+            return handleGetUserProfile(uid, token);
         case 'deductCreditsAndLogInteraction':
             return handleDeductCredits(uid, body);
         default:
