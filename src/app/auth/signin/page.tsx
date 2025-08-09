@@ -14,16 +14,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
-import { auth, db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, type User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User as AppUser, Dispensary } from '@/types';
+import type { User as AppUser } from '@/types';
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setCurrentUser } = useAuth();
+  const { fetchUserProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -44,53 +43,6 @@ export default function SignInPage() {
     }
   };
 
-  // This is the robust client-side user profile fetcher.
-  // It's a fallback and main logic for when context isn't hydrated yet.
-  const fetchFullUserProfile = async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
-    try {
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (!userDocSnap.exists()) {
-        toast({ title: "Profile Error", description: "Your user profile was not found in the database. Please contact support.", variant: "destructive" });
-        await auth.signOut();
-        return null;
-      }
-      
-      const userData = userDocSnap.data() as Omit<AppUser, 'id'>;
-      let dispensaryData: Dispensary | null = null;
-      
-      if (userData.dispensaryId) {
-        const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
-        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
-        if (dispensaryDocSnap.exists()) {
-          dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
-        } else {
-           console.warn(`User ${firebaseUser.uid} has a dispensaryId for a non-existent dispensary.`);
-        }
-      }
-      
-      const fullProfile: AppUser = {
-        ...userData,
-        uid: firebaseUser.uid,
-        email: firebaseUser.email || userData.email,
-        photoURL: firebaseUser.photoURL || userData.photoURL,
-        displayName: firebaseUser.displayName || userData.displayName,
-        dispensary: dispensaryData,
-        dispensaryStatus: dispensaryData?.status || null,
-      };
-      
-      return fullProfile;
-
-    } catch (e) {
-      console.error("Error fetching full user profile from client:", e);
-      toast({ title: "Error", description: "Could not retrieve your profile details.", variant: "destructive" });
-      await auth.signOut();
-      return null;
-    }
-  }
-
-
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
@@ -101,14 +53,15 @@ export default function SignInPage() {
         description: 'Fetching your profile and redirecting...',
       });
       
-      const userProfile = await fetchFullUserProfile(userCredential.user);
+      const userProfile = await fetchUserProfile(userCredential.user);
       
       if (userProfile) {
-        setCurrentUser(userProfile);
-        localStorage.setItem('currentUserHolisticAI', JSON.stringify(userProfile));
         handleRedirect(userProfile);
+      } else {
+         // This case might be hit if the Firestore document is not yet created (race condition)
+         // Or if there's a more serious issue. The AuthContext handles the error toast.
+         console.error("Failed to fetch user profile immediately after login.");
       }
-      // No 'else' block needed, as fetchFullUserProfile handles its own errors and toasts.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";

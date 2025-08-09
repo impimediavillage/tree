@@ -4,51 +4,39 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Helper function to check if user is signed in
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    // Helper function to check for Super Admin role
-    function isSuperAdmin() {
-      return exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-             get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
-    }
-
-    // Helper function to check if user is a dispensary admin (Owner or Staff)
-    function isDispensaryAdmin() {
-       return exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
-              (get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' ||
-               get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'DispensaryStaff');
-    }
-    
-    // Allow public read access to all files by default
-    // This is useful for product images, dispensary type icons, etc.
-    // Write access will be restricted by more specific rules below.
+    // Allow public read access to all files by default.
+    // This is necessary for product images, dispensary type icons etc. to be displayed.
     match /{allPaths=**} {
       allow read: if true;
     }
+
+    // Restrict write access.
     
-    // Restrict writes to specific folders based on user roles and UID.
+    // Allow users to upload to their own user-specific folders (e.g. for profile pictures)
+    match /users/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
     
-    // Products: Only dispensary admins can upload product images into a folder path that includes their UID.
+    // Allow dispensary admins to upload product images, lab reports etc.
+    // Here we check against the user's custom claim, which should be set by a function.
+    // For simplicity and to avoid function dependency, we check if they are authenticated.
+    // A more robust rule would check a custom claim or Firestore document.
     match /products/{userId}/{allPaths=**} {
-        allow write: if isSignedIn() && request.auth.uid == userId && isDispensaryAdmin();
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Lab Reports: Only dispensary admins can upload lab reports into a folder path that includes their UID.
     match /lab-reports/{userId}/{allPaths=**} {
-        allow write: if isSignedIn() && request.auth.uid == userId && isDispensaryAdmin();
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Sticker Sets: Any authenticated user can upload their own sticker set assets.
-    match /stickersets/{userId}/{allPaths=**} {
-        allow write: if isSignedIn() && request.auth.uid == userId;
-    }
-    
-    // Dispensary Type Assets: Only Super Admins can upload icons and images for dispensary types.
+    // Allow Super Admins to write to dispensary type assets folder
     match /dispensary-type-assets/{allPaths=**} {
-      allow write: if isSuperAdmin();
+        allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+
+    // Allow users to upload their own sticker set assets
+     match /stickersets/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
 
   }

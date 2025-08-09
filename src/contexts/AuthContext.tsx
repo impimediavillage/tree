@@ -5,11 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions } from '@/lib/firebase';
-import type { User as AppUser, Dispensary } from '@/types';
+import { auth, db } from '@/lib/firebase';
+import type { User as AppUser, Dispensary, UserDocData } from '@/types';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -28,7 +28,20 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfileCallable = httpsCallable<unknown, AppUser>(functions, 'getUserProfile');
+// Helper to convert Firestore Timestamps to ISO strings for JSON serialization
+const safeToISOString = (date: any): string | null => {
+    if (!date) return null;
+    if (date instanceof Timestamp) return date.toDate().toISOString();
+    if (date instanceof Date) return date.toISOString();
+    if (typeof date === 'string') {
+        try {
+            const parsed = new Date(date);
+            if (!isNaN(parsed.getTime())) return parsed.toISOString();
+        } catch (e) { /* ignore */ }
+    }
+    return null;
+};
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -37,8 +50,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const { toast } = useToast();
 
-  const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
-    if (!user) {
+  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
+    if (!firebaseUser) {
       setCurrentUser(null);
       setCurrentDispensary(null);
       localStorage.removeItem('currentUserHolisticAI');
@@ -46,17 +59,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      const result = await getUserProfileCallable();
-      const userProfile = result.data as AppUser;
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      if (!userProfile) {
-          throw new Error("No profile data returned from function.");
+      if (!userDocSnap.exists()) {
+        throw new Error("User profile not found in database.");
       }
 
-      setCurrentUser(userProfile);
-      setCurrentDispensary(userProfile.dispensary || null);
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(userProfile));
-      return userProfile;
+      const userData = userDocSnap.data() as UserDocData;
+      let dispensaryData: Dispensary | null = null;
+      
+      // If user has a dispensaryId, fetch the dispensary document
+      if (userData.dispensaryId) {
+        const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+        if (dispensaryDocSnap.exists()) {
+          const rawDispensary = dispensaryDocSnap.data();
+           dispensaryData = {
+              ...rawDispensary,
+              id: dispensaryDocSnap.id,
+              applicationDate: safeToISOString(rawDispensary.applicationDate),
+              approvedDate: safeToISOString(rawDispensary.approvedDate),
+              lastActivityDate: safeToISOString(rawDispensary.lastActivityDate),
+           } as Dispensary;
+        }
+      }
+      
+      const fullProfile: AppUser = {
+        uid: firebaseUser.uid,
+        email: userData.email || firebaseUser.email || '',
+        displayName: userData.displayName || firebaseUser.displayName || '',
+        photoURL: userData.photoURL || firebaseUser.photoURL || null,
+        role: userData.role || 'User',
+        credits: userData.credits || 0,
+        status: userData.status || 'Active',
+        dispensaryId: userData.dispensaryId || null,
+        dispensary: dispensaryData,
+        dispensaryStatus: dispensaryData?.status || null,
+        createdAt: safeToISOString(userData.createdAt),
+        lastLoginAt: safeToISOString(userData.lastLoginAt),
+        preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+        welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+        signupSource: userData.signupSource || 'public',
+      };
+      
+      setCurrentUser(fullProfile);
+      setCurrentDispensary(dispensaryData);
+      localStorage.setItem('currentUserHolisticAI', JSON.stringify(fullProfile));
+      return fullProfile;
+
     } catch (error: any) {
       console.error("AuthContext: Failed to get user profile.", error);
       toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging out and back in.", variant: "destructive" });
@@ -68,14 +119,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
+    } catch(error) {
+        console.error("Logout failed", error);
+        toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
+    } finally {
+        // Clear state regardless of error
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
         router.push('/auth/signin');
-        toast({ title: "Logged Out", description: "You have been successfully logged out." });
-    } catch(error) {
-        console.error("Logout failed", error);
-        toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
     }
   }, [router, toast]);
 
@@ -83,7 +135,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Always fetch fresh data on auth change to prevent stale state.
         await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);

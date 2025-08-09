@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Trees, ShoppingCart } from 'lucide-react';
 import type { DispensaryType } from '@/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query as firestoreQuery } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -17,27 +17,28 @@ export default function BrowseWellnessTypesPage() {
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchTypes = async () => {
-      setIsLoadingTypes(true);
-      try {
-        const typesCollectionRef = collection(db, 'dispensaryTypes');
-        const q = firestoreQuery(typesCollectionRef, orderBy('name', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const fetchedTypes: DispensaryType[] = [];
-        querySnapshot.forEach((docSnap) => {
-          fetchedTypes.push({ id: docSnap.id, ...docSnap.data() } as DispensaryType);
-        });
-        setAllWellnessTypes(fetchedTypes);
-      } catch (error) {
-        console.error("Error fetching wellness types:", error);
-        toast({ title: "Error", description: "Could not load wellness types.", variant: "destructive" });
-      } finally {
-        setIsLoadingTypes(false);
-      }
-    };
-    fetchTypes();
+  const fetchTypes = useCallback(async () => {
+    setIsLoadingTypes(true);
+    try {
+      const typesCollectionRef = collection(db, 'dispensaryTypes');
+      const q = firestoreQuery(typesCollectionRef, orderBy('name'));
+      const querySnapshot = await getDocs(q);
+      const fetchedTypes: DispensaryType[] = [];
+      querySnapshot.forEach((docSnap) => {
+        fetchedTypes.push({ id: docSnap.id, ...docSnap.data() } as DispensaryType);
+      });
+      setAllWellnessTypes(fetchedTypes);
+    } catch (error) {
+      console.error("Error fetching wellness types:", error);
+      toast({ title: "Error", description: "Could not load wellness types.", variant: "destructive" });
+    } finally {
+      setIsLoadingTypes(false);
+    }
   }, [toast]);
+
+  useEffect(() => {
+    fetchTypes();
+  }, [fetchTypes]);
 
   return (
     <div className="container mx-auto py-12 px-4 md:px-6 lg:px-8">
