@@ -76,12 +76,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        // Attempt to load from localStorage first for faster UI response
+        const storedUser = localStorage.getItem('currentUserHolisticAI');
+        if (storedUser) {
+            try {
+                const parsedUser = JSON.parse(storedUser);
+                if (parsedUser.uid === firebaseUser.uid) {
+                    setCurrentUser(parsedUser);
+                    setLoading(false); // Stop loading early
+                }
+            } catch (e) {
+                // Invalid JSON, proceed to fetch
+            }
+        }
         await fetchUserProfile(firebaseUser);
+        setLoading(false);
       } else {
         setCurrentUser(null);
         localStorage.removeItem('currentUserHolisticAI');
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);
