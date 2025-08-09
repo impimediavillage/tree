@@ -5,7 +5,8 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, functions } from '@/lib/firebase';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the Cloud Function URL
-const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -40,22 +40,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
       // Force refresh the token to get the latest custom claims. This is critical.
-      const idToken = await firebaseUser.getIdToken(true); 
+      await firebaseUser.getIdToken(true); 
       
-      const response = await fetch(GET_USER_PROFILE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-        throw new Error(errorData.error || `Server responded with status ${response.status}`);
-      }
-      
-      const fullProfile = await response.json() as AppUser;
+      const result = await getUserProfileCallable();
+      const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
         throw new Error("Received invalid user profile from function.");
@@ -70,12 +58,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("AuthContext: Failed to get user profile.", error);
       
       let description = "Could not load your user profile.";
-      if(error.message) {
+      if (error instanceof FunctionsError) {
+        description = error.message;
+      } else if (error.message) {
         description = error.message;
       }
+      
       toast({ title: "Profile Load Error", description, variant: "destructive" });
 
-      await auth.signOut();
+      // We don't sign out here anymore, to allow for retries or to show a degraded experience.
+      // The caller (e.g., signin page) should decide what to do.
       return null;
     }
   }, [toast]);
@@ -156,5 +148,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
