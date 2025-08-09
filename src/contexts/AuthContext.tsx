@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -24,7 +23,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the callable function once
 const getUserProfileCallable = httpsCallable<void, AppUser | null>(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -33,69 +31,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleSignOut = useCallback(() => {
-    setCurrentUser(null);
-    setLoading(false);
-  }, []);
-
-  const fetchUserProfile = useCallback(async (): Promise<AppUser | null> => {
-    try {
-      console.log("Calling getUserProfile function...");
-      const result = await getUserProfileCallable();
-      const profile = result.data;
-      if (profile) {
-        console.log("Profile fetched successfully:", profile);
-        return profile;
-      }
-      throw new Error("User profile data was null or undefined from the server.");
-    } catch (error) {
-      console.error("Critical: Failed to get user profile. Logging out.", error);
-      if (error instanceof FunctionsError) {
-          console.error("Function error code:", error.code);
-          console.error("Function error message:", error.message);
-      }
-      await auth.signOut(); // Force sign out on profile fetch failure
-      return null;
-    }
-  }, []);
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       if (firebaseUser) {
-        const profile = await fetchUserProfile();
-        
-        if (profile) {
-          setCurrentUser(profile);
-          // Redirect logic based on role after profile is successfully fetched
-          const isAuthPage = pathname.startsWith('/auth');
-          if (isAuthPage) {
-            if (profile.role === 'Super Admin') {
-              router.push('/admin/dashboard');
-            } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
-              router.push('/dispensary-admin/dashboard');
-            } else if (profile.role === 'DispensaryOwner') {
-              router.push('/'); 
-            } else {
-              router.push('/dashboard/leaf');
+        // If there's a firebase user, we are in a loading state until we fetch their profile
+        setLoading(true); 
+        try {
+          const result = await getUserProfileCallable();
+          const profile = result.data;
+
+          if (profile) {
+            setCurrentUser(profile);
+            const isAuthPage = pathname.startsWith('/auth');
+            if (isAuthPage) {
+               if (profile.role === 'Super Admin') {
+                 router.push('/admin/dashboard');
+               } else if (profile.role === 'DispensaryOwner' && profile.dispensaryStatus === 'Approved') {
+                 router.push('/dispensary-admin/dashboard');
+               } else if (profile.role === 'DispensaryOwner') {
+                 router.push('/');
+               } else {
+                 router.push('/dashboard/leaf');
+               }
             }
+          } else {
+            // Profile fetch failed, treat as logged out
+            await auth.signOut();
+            setCurrentUser(null);
           }
-        } else {
-            handleSignOut(); // This is called if profile fetch fails and logs the user out
+        } catch (error) {
+           console.error("Critical: Failed to get user profile. Logging out.", error);
+            if (error instanceof FunctionsError) {
+                console.error("Function error code:", error.code);
+                console.error("Function error message:", error.message);
+            }
+           await auth.signOut();
+           setCurrentUser(null);
+        } finally {
+          setLoading(false);
         }
       } else {
-        handleSignOut();
+        // No firebase user, so not logged in
+        setCurrentUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [fetchUserProfile, handleSignOut, pathname, router]);
+  }, [router, pathname]);
 
 
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
-  const currentDispensaryStatus = currentUser?.dispensaryStatus || null;
+  const currentDispensaryStatus = currentUser?.dispensary?.status || null;
   const canAccessDispensaryPanel = isDispensaryOwner && currentDispensaryStatus === 'Approved';
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   
