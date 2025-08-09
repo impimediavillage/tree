@@ -63,8 +63,8 @@ export default function SignInPage() {
         });
         handleRedirect(userProfile);
       } else {
-         // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
-         // The error toast is already shown inside fetchUserProfile.
+         // This case is now handled more gracefully inside the AuthContext
+         // but we keep the error here as a final fallback.
          throw new Error("Failed to fetch user profile after login.");
       }
 
@@ -85,7 +85,6 @@ export default function SignInPage() {
             break;
         }
       } else if (error.message) {
-        // Use the custom error message from the `throw` statement above.
         errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);

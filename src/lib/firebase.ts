@@ -26,7 +26,6 @@ const app: FirebaseApp = getApp();
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
-// Correctly specify the region for callable functions to ensure they are found.
 const functions: Functions = getFunctions(app, 'us-central1');
 
 export { app, auth, db, storage, functions };
