@@ -25,15 +25,20 @@ const db = admin.firestore();
  * Sets custom user claims when a user document is created or updated.
  * This is CRITICAL for Firestore security rules to work correctly.
  */
-export const onUserCreateOrUpdate = functions.firestore
+export const onUserWriteSetClaims = functions.firestore
     .document('users/{userId}')
     .onWrite(async (change, context) => {
         const userId = context.params.userId;
         const afterData = change.after.data() as UserDocData | undefined;
 
-        // If the document is deleted, do nothing.
+        // If the document is deleted, do nothing for claims.
         if (!afterData) {
-            logger.info(`User document ${userId} deleted. No claims to update.`);
+            logger.info(`User document ${userId} deleted. Revoking custom claims.`);
+            try {
+                await admin.auth().setCustomUserClaims(userId, null);
+            } catch (error) {
+                logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
+            }
             return null;
         }
 

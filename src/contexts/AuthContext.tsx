@@ -50,6 +50,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
+      // Force refresh of ID token to get the latest custom claims
+      await firebaseUser.getIdToken(true);
+      const idTokenResult = await firebaseUser.getIdTokenResult();
+
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDocSnap = await getDoc(userDocRef);
 
@@ -62,8 +66,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userData = userDocSnap.data() as UserDocData;
       let dispensaryData: Dispensary | null = null;
       
-      if (userData.dispensaryId) {
-        const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+      const dispensaryIdFromClaims = idTokenResult.claims.dispensaryId || userData.dispensaryId;
+
+      if (dispensaryIdFromClaims) {
+        const dispensaryDocRef = doc(db, 'dispensaries', dispensaryIdFromClaims);
         const dispensaryDocSnap = await getDoc(dispensaryDocRef);
         if (dispensaryDocSnap.exists()) {
           const rawDispensary = dispensaryDocSnap.data();
@@ -77,10 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
       
-      // Force refresh of ID token to get custom claims
-      await firebaseUser.getIdToken(true);
-      const idTokenResult = await firebaseUser.getIdTokenResult();
-      
       const fullProfile: AppUser = {
         uid: firebaseUser.uid,
         email: userData.email || firebaseUser.email || '',
@@ -89,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: idTokenResult.claims.role || userData.role || 'User',
         credits: userData.credits || 0,
         status: userData.status || 'Active',
-        dispensaryId: idTokenResult.claims.dispensaryId || userData.dispensaryId || null,
+        dispensaryId: dispensaryIdFromClaims || null,
         dispensary: dispensaryData,
         dispensaryStatus: dispensaryData?.status || null,
         createdAt: safeToISOString(userData.createdAt),
@@ -130,7 +132,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true); // Always set loading to true when auth state changes
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser);
+        // Attempt to load from localStorage first for faster UI response
+        const cachedUser = localStorage.getItem('currentUserHolisticAI');
+        if(cachedUser) {
+           try {
+            const parsedUser = JSON.parse(cachedUser);
+            if(parsedUser.uid === firebaseUser.uid) {
+                setCurrentUser(parsedUser);
+                setCurrentDispensary(parsedUser.dispensary);
+            }
+           } catch(e) {
+             localStorage.removeItem('currentUserHolisticAI');
+           }
+        }
+        await fetchUserProfile(firebaseUser); // Then fetch latest from server
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
