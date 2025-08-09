@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -136,7 +135,7 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
                   <FormLabel>Credits</FormLabel>
                   <FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl>
                   <FormMessage />
-                  {user.role === 'LeafUser' && user.status !== 'Active' && data.status === 'Active' && !user.welcomeCreditsAwarded &&
+                  {user.role === 'LeafUser' && user.status !== 'Active' && form.getValues('status') === 'Active' && !user.welcomeCreditsAwarded &&
                     <FormDescription className="text-xs text-green-600">10 welcome credits will be added upon activation.</FormDescription>
                   }
                 </FormItem>
