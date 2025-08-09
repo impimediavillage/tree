@@ -1,10 +1,10 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase'; 
 import { collection, getDocs, doc, updateDoc, query, where, serverTimestamp, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -166,14 +166,15 @@ export default function WellnessManageUsersPage() {
   const [filterRole, setFilterRole] = useState<User['role'] | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<User['status'] | 'all' | 'PendingApproval'>('all');
   const { toast } = useToast();
+  
+  const dispensaryId = currentUser?.dispensaryId;
 
-  const fetchManagedUsers = useCallback(async () => {
-    if (!currentUser?.dispensaryId) return;
+  const fetchManagedUsers = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
-        const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", currentUser.dispensaryId));
+        const staffQuery = query(collection(db, "users"), where("dispensaryId", "==", id));
         const staffSnapshot = await getDocs(staffQuery);
-        const fetchedUsers = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)).filter(user => user.uid !== currentUser.uid);
+        const fetchedUsers = staffSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)).filter(user => user.uid !== currentUser?.uid);
         setManagedUsers(fetchedUsers);
     } catch(error) {
         toast({title: "Error", description: "Could not fetch managed users.", variant: "destructive"});
@@ -181,13 +182,15 @@ export default function WellnessManageUsersPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [currentUser?.dispensaryId, currentUser?.uid, toast]);
+  }, [currentUser?.uid, toast]);
 
   useEffect(() => {
-    if (!authLoading && currentUser) {
-        fetchManagedUsers();
+    if (!authLoading && dispensaryId) {
+        fetchManagedUsers(dispensaryId);
+    } else if (!authLoading && !dispensaryId) {
+        setIsLoading(false);
     }
-  }, [authLoading, currentUser, fetchManagedUsers]);
+  }, [authLoading, dispensaryId, fetchManagedUsers]);
 
 
   const handleEditUser = (user: User) => {
@@ -206,24 +209,8 @@ export default function WellnessManageUsersPage() {
   }, [managedUsers, searchTerm, filterRole, filterStatus]);
 
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 bg-muted rounded-full"></div>
-              <div>
-                <div className="h-5 w-32 bg-muted rounded mb-1"></div>
-                <div className="h-4 w-40 bg-muted rounded"></div>
-              </div>
-            </div>
-            <div className="h-4 w-20 bg-muted rounded"></div>
-            <div className="h-4 w-24 bg-muted rounded"></div>
-          </Card>
-        ))}
-      </div>
-    );
+  if (authLoading) {
+     return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
   if (!currentUser || currentDispensaryStatus !== 'Approved') {
@@ -256,8 +243,8 @@ export default function WellnessManageUsersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <DispensaryAddStaffDialog onUserAdded={fetchManagedUsers} dispensaryId={currentUser.dispensaryId!} />
-          <DispensaryAddLeafUserDialog onUserAdded={fetchManagedUsers} dispensaryId={currentUser.dispensaryId!} />
+          <DispensaryAddStaffDialog onUserAdded={() => dispensaryId && fetchManagedUsers(dispensaryId)} dispensaryId={dispensaryId!} />
+          <DispensaryAddLeafUserDialog onUserAdded={() => dispensaryId && fetchManagedUsers(dispensaryId)} dispensaryId={dispensaryId!} />
         </div>
       </div>
 
@@ -293,7 +280,23 @@ export default function WellnessManageUsersPage() {
         </div>
       </div>
 
-      {filteredDisplayUsers.length > 0 ? (
+      {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse">
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 bg-muted rounded-full"></div>
+                  <div>
+                    <div className="h-5 w-32 bg-muted rounded mb-1"></div>
+                    <div className="h-4 w-40 bg-muted rounded"></div>
+                  </div>
+                </div>
+                <div className="h-4 w-20 bg-muted rounded"></div>
+                <div className="h-4 w-24 bg-muted rounded"></div>
+              </Card>
+            ))}
+          </div>
+      ) : filteredDisplayUsers.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDisplayUsers.map((user) => (
             <UserCard
@@ -321,7 +324,7 @@ export default function WellnessManageUsersPage() {
         user={editingUser}
         isOpen={isEditUserDialogOpen}
         onOpenChange={setIsEditUserDialogOpen}
-        onUserUpdate={fetchManagedUsers}
+        onUserUpdate={() => dispensaryId && fetchManagedUsers(dispensaryId)}
       />
     </div>
   );

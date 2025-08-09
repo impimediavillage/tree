@@ -26,16 +26,14 @@ export default function WellnessProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
   
-  const fetchProducts = useCallback(async (dispensaryId: string) => {
-    if (!dispensaryId) {
-        setIsLoading(false);
-        return;
-    }
+  const dispensaryId = currentUser?.dispensaryId;
+
+  const fetchProducts = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
       const productsQuery = query(
         collection(db, 'products'),
-        where('dispensaryId', '==', dispensaryId),
+        where('dispensaryId', '==', id),
         orderBy('name')
       );
       const querySnapshot = await getDocs(productsQuery);
@@ -59,13 +57,13 @@ export default function WellnessProductsPage() {
 
   useEffect(() => {
     // Only fetch if auth is resolved and we have a dispensaryId
-    if (!authLoading && currentUser?.dispensaryId) {
-      fetchProducts(currentUser.dispensaryId);
-    } else if (!authLoading) {
+    if (!authLoading && dispensaryId) {
+      fetchProducts(dispensaryId);
+    } else if (!authLoading && !dispensaryId) {
       // Handle case where there's no dispensary ID after loading
       setIsLoading(false);
     }
-  }, [authLoading, currentUser?.dispensaryId, fetchProducts]);
+  }, [authLoading, dispensaryId, fetchProducts]);
   
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...allProducts];
@@ -88,6 +86,7 @@ export default function WellnessProductsPage() {
 
 
   const handleDeleteProduct = async (productId: string, productName: string, imageUrls?: (string | null)[] | null) => {
+    if (!dispensaryId) return;
     try {
       if (imageUrls && imageUrls.length > 0) {
         const deletePromises = imageUrls.map(url => {
@@ -107,9 +106,7 @@ export default function WellnessProductsPage() {
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
       // Re-fetch products after deletion
-      if (currentUser?.dispensaryId) {
-        fetchProducts(currentUser.dispensaryId);
-      }
+      fetchProducts(dispensaryId);
       
     } catch (error) {
       console.error("Error deleting product document:", error);
