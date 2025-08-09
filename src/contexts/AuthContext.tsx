@@ -33,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     try {
+      console.log(`Fetching profile for user: ${user.uid}`);
       const token = await user.getIdToken();
       const response = await fetch('/api/firebase', {
         method: 'POST',
@@ -42,6 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
         body: JSON.stringify({ action: 'getUserProfile' }),
       });
+      
+      if (response.status === 404) {
+        console.warn(`User profile for ${user.uid} not found in DB yet. This is expected for new signups.`);
+        return null;
+      }
 
       if (!response.ok) {
         const errorData = await response.json();

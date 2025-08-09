@@ -63,9 +63,13 @@ export default function SignInPage() {
         });
         handleRedirect(userProfile);
       } else {
-         // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
-         // The error toast is already shown inside fetchUserProfile.
-         throw new Error("Failed to fetch user profile after login.");
+         // This case can be hit if the profile doesn't exist yet for a new user.
+         // The AuthContext will handle the re-fetch. For now, we redirect to a safe page.
+         toast({
+          title: 'Profile Finalizing',
+          description: `Just a moment...`,
+        });
+         router.push('/dashboard/leaf');
       }
 
     } catch (error: any) {

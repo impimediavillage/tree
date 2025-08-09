@@ -25,20 +25,11 @@ async function handleGetUserProfile(uid: string, decodedToken: admin.auth.Decode
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
-            // If user doc doesn't exist, this might be their first login after creation
-            // Create a basic profile to prevent login failure
-            const newUser: AppUser = {
-                uid: uid,
-                email: decodedToken.email || '',
-                displayName: decodedToken.name || decodedToken.email?.split('@')[0] || 'New User',
-                photoURL: decodedToken.picture || null,
-                role: 'User',
-                credits: 0,
-                status: 'Active',
-            };
-            // Do not write to DB here, let a dedicated signup flow handle it.
-            // Just return the transient profile for this session.
-            return NextResponse.json(newUser);
+            // This is a critical case. The user is authenticated, but their profile doc doesn't exist yet.
+            // This can happen in the brief moment between account creation and Firestore document creation.
+            // Returning a 404 tells the client to wait or treat as not fully logged in yet.
+            console.warn(`User document not found for authenticated user: ${uid}. This may be a new user signup.`);
+            return NextResponse.json({ message: 'User profile not found.' }, { status: 404 });
         }
         
         const userData = userDocSnap.data() as UserDocData;
@@ -118,6 +109,7 @@ async function handleGetUserProfile(uid: string, decodedToken: admin.auth.Decode
     }
 }
 
+
 async function handleDeductCredits(uid: string, body: any) {
     const db = admin.firestore();
     const { advisorSlug, creditsToDeduct, wasFreeInteraction } = body as { advisorSlug: string, creditsToDeduct: number, wasFreeInteraction: boolean };
@@ -192,3 +184,4 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Invalid action' }, { status: 400 });
     }
 }
+
