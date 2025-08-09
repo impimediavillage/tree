@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service firebase.storage {
@@ -9,50 +10,45 @@ service firebase.storage {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
-    // Default deny all reads and writes
-    match /{allPaths=**} {
-      allow read, write: if false;
+    // Helper function to check if a user is an admin of a specific dispensary
+    function isDispensaryAdmin(dispensaryId) {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId;
     }
 
-    // Allow public read on dispensary type assets
+    // Public assets (like dispensary type icons/images) can be read by anyone.
     match /dispensary-type-assets/{allPaths=**} {
       allow read: if true;
+      allow write: if isSuperAdmin(); // Only super admins can upload these.
     }
 
-    // Allow SuperAdmins to write to dispensary type assets
-    match /dispensary-type-assets/{allPaths=**} {
-      allow write: if isSuperAdmin();
+    // Product images can be read by anyone.
+    // Only an authenticated user who is part of the dispensary can write to that dispensary's product image folder.
+    match /products/{dispensaryId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isDispensaryAdmin(dispensaryId) || isSuperAdmin();
     }
     
-    // Allow public read on product images
-    match /products/{allPaths=**} {
-        allow read: if true;
+    // Lab reports should be more restricted.
+    // Only an authenticated user who is part of the dispensary can write.
+    // For reads, you might want to restrict this further if they are sensitive,
+    // but for now, we'll allow any authenticated user to read them if they have the link.
+    match /lab-reports/{dispensaryId}/{allPaths=**} {
+        allow read: if request.auth != null;
+        allow write: if isDispensaryAdmin(dispensaryId) || isSuperAdmin();
     }
 
-    // Allow authenticated users to write to their own product images folder
-    // The path should be like: /products/{userId}/{imageName}
-    match /products/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Sticker set assets can be read publicly if the corresponding Firestore doc is public.
+    // Only the creator can write to their own folder.
+    match /stickersets/{creatorId}/{allPaths=**} {
+        allow read: if true; // Simple rule: if you have the URL, you can see it.
+        allow write: if request.auth.uid == creatorId || isSuperAdmin();
     }
 
-    // Allow public read on lab reports
-    match /lab-reports/{allPaths=**} {
-        allow read: if true;
-    }
-    
-    // Allow authenticated users to write their own lab reports
-    match /lab-reports/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Allow public read on sticker set assets
-    match /stickersets/{allPaths=**} {
-        allow read: if true;
-    }
-    
-    // Allow authenticated users to write to their own sticker set folder
-    match /stickersets/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // Default deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
