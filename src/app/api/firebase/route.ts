@@ -25,9 +25,6 @@ async function handleGetUserProfile(uid: string, decodedToken: admin.auth.Decode
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
-            // This is a critical case. The user is authenticated, but their profile doc doesn't exist yet.
-            // This can happen in the brief moment between account creation and Firestore document creation.
-            // Returning a 404 tells the client to wait or treat as not fully logged in yet.
             console.warn(`User document not found for authenticated user: ${uid}. This may be a new user signup.`);
             return NextResponse.json({ message: 'User profile not found.' }, { status: 404 });
         }
@@ -35,7 +32,8 @@ async function handleGetUserProfile(uid: string, decodedToken: admin.auth.Decode
         const userData = userDocSnap.data() as UserDocData;
         
         let dispensaryData: Dispensary | null = null;
-        if (userData.dispensaryId) {
+        // THE CORE FIX: Only attempt to fetch dispensary if the ID exists.
+        if (userData.dispensaryId && typeof userData.dispensaryId === 'string') {
             try {
                 const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
                 const dispensaryDocSnap = await dispensaryDocRef.get();
@@ -44,11 +42,11 @@ async function handleGetUserProfile(uid: string, decodedToken: admin.auth.Decode
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
                     console.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}. Proceeding without dispensary data.`);
-                    dispensaryData = null; 
+                    // dispensaryData remains null, which is the correct state.
                 }
             } catch (dispensaryError) {
                 console.error(`Error fetching dispensary doc for user ${uid}. Continuing without dispensary data.`, dispensaryError);
-                dispensaryData = null; 
+                // dispensaryData remains null
             }
         }
         
@@ -184,4 +182,3 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: 'Invalid action' }, { status: 400 });
     }
 }
-

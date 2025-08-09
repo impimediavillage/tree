@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     try {
-      console.log(`Fetching profile for user: ${user.uid}`);
       const token = await user.getIdToken();
       const response = await fetch('/api/firebase', {
         method: 'POST',
@@ -44,6 +43,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify({ action: 'getUserProfile' }),
       });
       
+      // If the profile is not found (404), it's a valid case for new signups.
+      // We return null and let the onAuthStateChanged listener re-fetch shortly.
       if (response.status === 404) {
         console.warn(`User profile for ${user.uid} not found in DB yet. This is expected for new signups.`);
         return null;
@@ -69,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
       toast({ title: "Authentication Error", description: error.message || "An unexpected error occurred while fetching your profile.", variant: "destructive" });
-      await auth.signOut(); // Force sign out on profile fetch failure
+      await auth.signOut();
       return null;
     }
   }, [toast]);

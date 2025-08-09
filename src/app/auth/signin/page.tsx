@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, type User as FirebaseUser } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User as AppUser } from '../../../functions/src/types';
 
@@ -63,13 +63,9 @@ export default function SignInPage() {
         });
         handleRedirect(userProfile);
       } else {
-         // This case can be hit if the profile doesn't exist yet for a new user.
-         // The AuthContext will handle the re-fetch. For now, we redirect to a safe page.
-         toast({
-          title: 'Profile Finalizing',
-          description: `Just a moment...`,
-        });
-         router.push('/dashboard/leaf');
+         // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
+         // The error toast is already shown inside fetchUserProfile.
+         throw new Error("Failed to fetch user profile after login.");
       }
 
     } catch (error: any) {
@@ -88,11 +84,13 @@ export default function SignInPage() {
             errorMessage = 'Too many login attempts. Please try again later.';
             break;
         }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);
       toast({
         title: 'Login Failed',
-        description: error.message || errorMessage,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
