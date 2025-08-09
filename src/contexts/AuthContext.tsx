@@ -5,11 +5,12 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, functions } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -40,6 +41,8 @@ const serializeDates = (data: any): any => {
     return serialized;
 }
 
+const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -62,6 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const userData = serializeDates(userDocSnap.data()) as AppUser;
       let dispensaryData: Dispensary | null = null;
+      let needsClaimUpdate = false;
       
       if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
           try {
@@ -76,6 +80,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } catch (dispensaryError) {
              console.error(`Error fetching dispensary doc for user ${user.uid}:`, dispensaryError);
           }
+      }
+      
+      const idTokenResult = await user.getIdTokenResult(true); // Force refresh to get latest claims
+      const currentClaim = idTokenResult.claims.dispensaryId;
+
+      if (userData.dispensaryId && currentClaim !== userData.dispensaryId) {
+          needsClaimUpdate = true;
+      } else if (!userData.dispensaryId && currentClaim) {
+          needsClaimUpdate = true;
+      }
+
+      if (needsClaimUpdate) {
+          console.log("Dispensary ID mismatch, updating custom claim...");
+          await setDispensaryClaim({ dispensaryId: userData.dispensaryId || null });
+          // Force a token refresh to get the new claim immediately
+          await user.getIdToken(true);
+          console.log("Custom claim updated and token refreshed.");
       }
       
       const finalProfile: AppUser = {
