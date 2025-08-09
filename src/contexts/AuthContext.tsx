@@ -5,11 +5,10 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -28,7 +27,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
+// Define the Cloud Function URL
+const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -39,12 +39,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // The callable function automatically includes the user's ID token.
-      const result = await getUserProfileCallable();
-      const fullProfile = result.data as AppUser;
+      const idToken = await firebaseUser.getIdToken(true); // Force refresh the token
+      
+      const response = await fetch(GET_USER_PROFILE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        // onRequest functions expect a `data` object in the body
+        body: JSON.stringify({ data: {} }), 
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const { result: fullProfile } = await response.json();
 
       if (!fullProfile || !fullProfile.uid) {
-        throw new FunctionsError("invalid-argument", "Received invalid user profile from server.");
+        throw new Error("Received invalid user profile from server.");
       }
       
       setCurrentUser(fullProfile);
@@ -56,13 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("AuthContext: Failed to get user profile.", error);
       
       let description = "Could not load your user profile. Please try logging in again.";
-      if (error instanceof FunctionsError) {
-          if (error.code === 'not-found') {
-              description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again."
-          } else {
-            description = error.message;
-          }
-      }
+       if (error.message) {
+           if (error.message.includes("not found")) {
+                description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again."
+           } else {
+               description = error.message;
+           }
+       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
       // Logout if we can't fetch profile, as the user is in an inconsistent state
@@ -84,23 +99,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast, router]);
 
   useEffect(() => {
-    // This effect runs only once on mount to set up the auth state listener.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true); // Always start in a loading state when auth changes
+      setLoading(true);
       if (firebaseUser) {
-        // User is signed in. Fetch their full profile.
-        // The loading state will be set to false inside fetchUserProfile's logic flow.
         await fetchUserProfile(firebaseUser);
       } else {
-        // User is signed out. Clear all user state.
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
-      setLoading(false); // End loading state after processing
+      setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [fetchUserProfile]); 
   
