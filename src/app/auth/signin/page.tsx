@@ -63,8 +63,8 @@ export default function SignInPage() {
         });
         handleRedirect(userProfile);
       } else {
-         // This case is now handled more gracefully inside the AuthContext
-         // but we keep the error here as a final fallback.
+         // This case will be hit if fetchUserProfile returns null (e.g., after an error and auto-logout)
+         // The error toast is already shown inside fetchUserProfile.
          throw new Error("Failed to fetch user profile after login.");
       }
 
@@ -84,7 +84,7 @@ export default function SignInPage() {
             errorMessage = 'Too many login attempts. Please try again later.';
             break;
         }
-      } else if (error.message) {
+      } else if (error.message && !error.message.includes("Failed to fetch user profile")) {
         errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);
