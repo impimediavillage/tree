@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -9,7 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useAuth, AuthProvider } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { auth as firebaseAuthInstance } from '@/lib/firebase';
@@ -309,8 +308,6 @@ export default function DispensaryAdminRootLayout({
   children: ReactNode;
 }) {
   return (
-    <AuthProvider>
-        <WellnessAdminLayoutContent>{children}</WellnessAdminLayoutContent>
-    </AuthProvider>
+      <WellnessAdminLayoutContent>{children}</WellnessAdminLayoutContent>
   );
 }

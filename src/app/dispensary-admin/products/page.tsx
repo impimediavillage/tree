@@ -1,13 +1,12 @@
-
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { db, storage } from '@/lib/firebase';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, orderBy } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
 import type { Product } from '@/types';
-import { useDispensaryData } from '@/contexts/DispensaryDataContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, PackageSearch, Loader2, Search, FilterX } from 'lucide-react';
@@ -19,13 +18,42 @@ import { Skeleton } from '@/components/ui/skeleton';
 const PRODUCTS_PER_PAGE = 24;
 
 export default function WellnessProductsPage() {
-  const { products: allProducts, isLoading, fetchDispensaryData } = useDispensaryData();
+  const { currentUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
-
+  
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const fetchDispensaryData = useCallback(async () => {
+    if (!currentUser?.dispensaryId) {
+      if (!authLoading) setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const productsQuery = query(
+        collection(db, 'products'),
+        where('dispensaryId', '==', currentUser.dispensaryId),
+        orderBy('name')
+      );
+      const querySnapshot = await getDocs(productsQuery);
+      const fetchedProducts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+      setAllProducts(fetchedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({ title: 'Error', description: 'Could not fetch product data.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentUser?.dispensaryId, authLoading, toast]);
+
+  useEffect(() => {
+    fetchDispensaryData();
+  }, [fetchDispensaryData]);
 
   useEffect(() => {
     if (allProducts.length > 0) {
