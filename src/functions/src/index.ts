@@ -3,7 +3,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import type { UserDocData } from './types';
+import type { Dispensary, User as AppUser, UserDocData, DeductCreditsRequestBody } from './types';
 
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
@@ -15,21 +15,17 @@ if (admin.apps.length === 0) {
         logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
     }
 }
+const db = admin.firestore();
 // ============== END INITIALIZATION ==============
 
 
 // ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) ==============
-/**
- * Sets custom user claims when a user document is created or updated.
- * This is CRITICAL for Firestore security rules to work correctly.
- */
 export const onUserWriteSetClaims = functions.firestore
     .document('users/{userId}')
     .onWrite(async (change, context) => {
         const userId = context.params.userId;
         const afterData = change.after.data() as UserDocData | undefined;
 
-        // If the document is deleted, revoke custom claims.
         if (!afterData) {
             logger.info(`User document ${userId} deleted. Revoking custom claims.`);
             try {
@@ -42,7 +38,6 @@ export const onUserWriteSetClaims = functions.firestore
 
         const role = afterData.role || null;
         const dispensaryId = afterData.dispensaryId || null;
-
         const claims: { [key: string]: any } = { role, dispensaryId };
 
         try {
@@ -54,7 +49,168 @@ export const onUserWriteSetClaims = functions.firestore
         return null;
     });
 
-// NOTE: The getUserProfile and deductCreditsAndLogInteraction functions have been
-// moved to a Next.js API Route (src/app/api/firebase/route.ts) to resolve
-// persistent CORS issues in the Firebase App Hosting environment. This is the
-// architecturally correct approach.
+
+// ============== ROBUST HELPER FUNCTION for Date Conversion ==============
+const safeToISOString = (date: any): string | null => {
+    if (!date) return null;
+    // Handle Firestore Timestamps
+    if (date.toDate && typeof date.toDate === 'function') {
+        try {
+            return date.toDate().toISOString();
+        } catch (e) {
+            logger.warn(`Could not convert Firestore Timestamp to Date:`, e);
+            return null;
+        }
+    }
+    // Handle JS Date objects
+    if (date instanceof Date) {
+        if (!isNaN(date.getTime())) return date.toISOString();
+        return null;
+    }
+    // Handle date strings
+    if (typeof date === 'string') {
+         try {
+             const parsedDate = new Date(date);
+             if (!isNaN(parsedDate.getTime())) return parsedDate.toISOString();
+         } catch (e) { 
+            logger.warn(`Could not parse date string: ${date}`);
+         }
+    }
+    
+    logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
+    return null;
+};
+
+
+// ============== Callable Functions (v1) ==============
+
+export const getUserProfile = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    const uid = context.auth.uid;
+    const token = context.auth.token;
+
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDocSnap = await userDocRef.get();
+
+        if (!userDocSnap.exists) {
+            throw new functions.https.HttpsError('not-found', 'Your user profile data could not be found.');
+        }
+        
+        const userData = userDocSnap.data() as UserDocData;
+        
+        let dispensaryData: Dispensary | null = null;
+        if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
+            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+            const dispensaryDocSnap = await dispensaryDocRef.get();
+            
+            if (dispensaryDocSnap.exists()) {
+                const rawDispensaryData = dispensaryDocSnap.data();
+                if (rawDispensaryData) {
+                    dispensaryData = {
+                        ...rawDispensaryData,
+                        id: dispensaryDocSnap.id,
+                        applicationDate: safeToISOString(rawDispensaryData.applicationDate),
+                        approvedDate: safeToISOString(rawDispensaryData.approvedDate),
+                        lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
+                    } as Dispensary;
+                }
+            }
+        }
+        
+        const profileResponse: AppUser = {
+            uid: uid,
+            email: userData.email || token.email || '',
+            displayName: userData.displayName || token.name || '',
+            photoURL: userData.photoURL || token.picture || null,
+            role: userData.role || 'User',
+            dispensaryId: userData.dispensaryId || null,
+            credits: userData.credits || 0,
+            status: userData.status || 'Active',
+            createdAt: safeToISOString(userData.createdAt),
+            lastLoginAt: safeToISOString(userData.lastLoginAt),
+            dispensaryStatus: dispensaryData?.status || null,
+            dispensary: dispensaryData,
+            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+            signupSource: userData.signupSource || 'public',
+        };
+
+        return profileResponse;
+    } catch (error: any) {
+        logger.error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
+        if (error instanceof functions.https.HttpsError) {
+          throw error;
+        }
+        throw new functions.https.HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
+    }
+});
+
+
+export const deductCreditsAndLogInteraction = functions.https.onCall(async (data: DeductCreditsRequestBody, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    
+    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = data;
+    
+    // Security check: ensure the user is only deducting their own credits
+    if (userId !== context.auth.uid) {
+        throw new functions.https.HttpsError('permission-denied', 'You can only deduct your own credits.');
+    }
+
+    if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
+    }
+
+    const userRef = db.collection("users").doc(userId);
+    let newCreditBalance = 0;
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const freshUserDoc = await transaction.get(userRef);
+            if (!freshUserDoc.exists) {
+                throw new functions.https.HttpsError('not-found', 'User not found during transaction.');
+            }
+            
+            const userData = freshUserDoc.data() as UserDocData;
+            const currentCredits = userData.credits || 0;
+
+            if (!wasFreeInteraction) {
+                if (currentCredits < creditsToDeduct) {
+                    throw new functions.https.HttpsError('failed-precondition', 'Insufficient credits.');
+                }
+                newCreditBalance = currentCredits - creditsToDeduct;
+                transaction.update(userRef, { credits: newCreditBalance });
+            } else {
+                newCreditBalance = currentCredits;
+            }
+
+            const logEntry = {
+                userId,
+                dispensaryId: userData.dispensaryId || null,
+                advisorSlug,
+                creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                wasFreeInteraction,
+            };
+            const logRef = db.collection("aiInteractionsLog").doc();
+            transaction.set(logRef, logEntry);
+        });
+
+        return {
+            success: true,
+            message: "Credits updated and interaction logged successfully.",
+            newCredits: newCreditBalance,
+        };
+
+    } catch (error: any) {
+        logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
+         if (error instanceof functions.https.HttpsError) {
+          throw error;
+        }
+        throw new functions.https.HttpsError('internal', 'An internal error occurred while processing the transaction.');
+    }
+});

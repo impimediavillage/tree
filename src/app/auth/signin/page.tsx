@@ -53,6 +53,8 @@ export default function SignInPage() {
         description: 'Fetching your profile and redirecting...',
       });
       
+      // This function now contains all logic for fetching the user profile
+      // and handling potential errors (like profile not found).
       const userProfile = await fetchUserProfile(userCredential.user);
       
       if (userProfile) {
