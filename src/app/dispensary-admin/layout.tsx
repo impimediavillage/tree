@@ -63,7 +63,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, loading: authLoading, canAccessDispensaryPanel, logout, currentDispensary, isDispensaryStaff } = useAuth();
+  const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensary, isDispensaryStaff } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   useEffect(() => {
@@ -218,7 +218,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   <span>Main Site</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <DropdownMenuItem onClick={() => router.push('/auth/signin')} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>

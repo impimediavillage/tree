@@ -10,7 +10,6 @@ import { UserPlus, Mail, Lock, ArrowLeft, CheckSquare, Square, Loader2, ListFilt
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -18,14 +17,16 @@ import { userSignupSchema, type UserSignupFormData } from '@/lib/schemas';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, collection, getDocs, query as firestoreQuery, orderBy } from 'firebase/firestore';
-import type { User, DispensaryType } from '../../../functions/src/types';
+import type { User, DispensaryType } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 export default function SignUpPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { fetchUserProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -67,11 +68,13 @@ export default function SignUpPage() {
   const onSubmit = async (data: UserSignupFormData) => {
     setIsLoading(true);
     try {
+      // 1. Create the user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const firebaseUser = userCredential.user;
 
+      // 2. Create the user document in Firestore
       const userDocRef = doc(db, "users", firebaseUser.uid);
-      const newUser: User = {
+      const newUser: Omit<User, 'id' | 'dispensary'> = {
         uid: firebaseUser.uid,
         email: firebaseUser.email || '',
         displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
@@ -87,23 +90,19 @@ export default function SignUpPage() {
       };
       await setDoc(userDocRef, newUser);
       
-      const currentUserForStorage = {
-        uid: newUser.uid,
-        email: newUser.email,
-        displayName: newUser.displayName,
-        role: newUser.role,
-        credits: newUser.credits,
-        preferredDispensaryTypes: newUser.preferredDispensaryTypes,
-        status: newUser.status,
-        signupSource: newUser.signupSource,
-      };
-      localStorage.setItem('currentUserHolisticAI', JSON.stringify(currentUserForStorage));
-
       toast({
         title: 'Account Created!',
         description: "You've been successfully signed up and logged in. Welcome!",
       });
-      router.push('/dashboard/leaf'); 
+      
+      // 3. Fetch the full profile to populate context and redirect
+      const userProfile = await fetchUserProfile(firebaseUser);
+      if (userProfile) {
+        router.push('/dashboard/leaf');
+      } else {
+        throw new Error("Could not fetch profile for new user.");
+      }
+ 
     } catch (error: any) {
       console.error("Signup error:", error);
       let errorMessage = "Failed to create account.";
