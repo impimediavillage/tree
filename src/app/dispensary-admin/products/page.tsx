@@ -30,7 +30,6 @@ export default function WellnessProductsPage() {
   const dispensaryId = currentUser?.dispensaryId;
 
   const fetchProducts = useCallback(async (id: string) => {
-    if (!id) return;
     setIsLoading(true);
     try {
       const productsQuery = query(
