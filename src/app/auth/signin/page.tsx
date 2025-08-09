@@ -16,11 +16,13 @@ import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { loading: authLoading } = useAuth(); // Use auth loading state
 
   const form = useForm<UserSigninFormData>({
     resolver: zodResolver(userSigninSchema),
@@ -33,14 +35,15 @@ export default function SignInPage() {
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
-      // The onAuthStateChanged listener in AuthContext will handle everything else,
-      // including setting user state and redirection.
+      // The onAuthStateChanged listener in AuthContext will handle fetching the profile
+      // and redirecting after a successful sign-in.
       await signInWithEmailAndPassword(auth, data.email, data.password);
       
       toast({
         title: 'Login Successful',
         description: 'Welcome back! Redirecting you now...',
       });
+      // No need to call router.push here, AuthContext handles it.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
@@ -82,9 +85,9 @@ export default function SignInPage() {
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
-    }
+      setIsLoading(false); // Only set loading to false on error
+    } 
+    // Do not set isLoading to false on success, as redirection will happen
   };
 
   const handlePasswordReset = async () => {
@@ -175,9 +178,9 @@ export default function SignInPage() {
               <Button 
                 type="submit" 
                 className="w-full text-lg py-6" 
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
               >
-                {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Signing In...</> : 'Sign In'}
+                {(isLoading || authLoading) ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Authenticating...</> : 'Sign In'}
               </Button>
             </form>
           </Form>

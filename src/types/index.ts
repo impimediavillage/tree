@@ -38,7 +38,7 @@ export interface Dispensary {
   leadTime?: string | null;
   message?: string | null;
   status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
-  applicationDate: Timestamp | Date | string;
+  applicationDate: Timestamp | Date | string | null; // Changed to allow null
   approvedDate?: Timestamp | Date | string | null;
   lastActivityDate?: Timestamp | Date | string | null;
   publicStoreUrl?: string | null;
@@ -240,12 +240,29 @@ export interface User {
   dispensaryStatus?: Dispensary['status'] | null;
   dispensary?: Dispensary | null; // <-- Include full dispensary data
   credits: number;
-  createdAt?: Timestamp | Date | string;
+  createdAt?: Timestamp | Date | string | null; // Allow null
   lastLoginAt?: Timestamp | Date | string | null;
   status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
+}
+
+// Represents a User document in Firestore (for server-side functions)
+export interface UserDocData {
+  uid?: string; 
+  email?: string;
+  displayName?: string | null;
+  photoURL?: string | null;
+  credits?: number;
+  role?: string;
+  dispensaryId?: string | null;
+  status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
+  createdAt?: Timestamp | Date | string | null;
+  lastLoginAt?: Timestamp | Date | string | null;
+  signupSource?: string;
+  welcomeCreditsAwarded?: boolean;
+  preferredDispensaryTypes?: string[];
 }
 
 // Represents a Credit Package document in Firestore
