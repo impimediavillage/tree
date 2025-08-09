@@ -48,13 +48,12 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             try {
                 const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
                 const dispensaryDocSnap = await dispensaryDocRef.get();
-                // **THE CORE FIX IS HERE**
-                // Check if the dispensary document actually exists before trying to read from it.
+                
                 if (dispensaryDocSnap.exists()) {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
-                    // This prevents the function from crashing if a user is linked to a non-existent dispensary.
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
+                    // This prevents the function from crashing if a user is linked to a non-existent dispensary.
                     dispensaryData = null; // Ensure dispensaryData is null if not found
                 }
             } catch (dispensaryError) {
@@ -85,7 +84,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         };
         
         let dispensaryWithSerializableDates: Dispensary | null = null;
-        // This check is now safe because we ensured dispensaryData is null if the doc doesn't exist.
         if (dispensaryData) {
             dispensaryWithSerializableDates = {
                 ...dispensaryData,
@@ -117,7 +115,8 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
 
     } catch (error) {
         logger.error(`Error fetching user profile for ${uid}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching your profile.');
+        // Avoid throwing HttpsError for unexpected issues, let the client handle it gracefully
+        throw new HttpsError('internal', 'An unexpected error occurred while fetching your profile.');
     }
 });
 
