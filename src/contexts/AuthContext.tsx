@@ -28,8 +28,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Correctly initialize the callable function
-const getUserProfile = httpsCallable(functions, 'getUserProfile');
+// Define the URLs for the Cloud Functions
+const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -40,14 +40,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // Force refresh the token to get the latest custom claims
-      await firebaseUser.getIdToken(true); 
+      const idToken = await firebaseUser.getIdToken(true); 
       
-      const result = await getUserProfile();
-      const fullProfile = result.data as AppUser;
+      const response = await fetch(GET_USER_PROFILE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({}) // onCall functions expect a 'data' property
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new FunctionsError(errorData.error.status || 'internal', errorData.error.message || 'Failed to fetch user profile.');
+      }
+      
+      const { result: fullProfile } = await response.json();
 
       if (!fullProfile || !fullProfile.uid) {
-        // This case should ideally not be hit if the function is successful.
         throw new FunctionsError("invalid-argument", "Received invalid user profile from server.");
       }
       
@@ -60,16 +71,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("AuthContext: Failed to get user profile.", error);
       
       let description = "Could not load your user profile. Please try logging in again.";
-      if (error instanceof FunctionsError) {
-          if (error.code === 'not-found') {
+      if (error instanceof FunctionsError || (error.details && error.details.code)) {
+          const code = error.code || error.details.code;
+          if (code === 'not-found') {
               description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again."
           } else {
             description = error.message;
           }
+      } else if (error instanceof Error) {
+          description = error.message;
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
-      // Don't sign out here, let the user decide. They might just need to refresh.
       return null;
     }
   }, [toast]);
@@ -77,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
-        // The onAuthStateChanged listener below will handle state clearing
         toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/');
     } catch(error) {
@@ -102,10 +114,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // User is signed in. Fetch their full profile.
         await fetchUserProfile(firebaseUser); 
       } else {
-        // User is signed out.
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -113,7 +123,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [fetchUserProfile]); 
   
