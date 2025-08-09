@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // Force refresh the token to get the latest custom claims
+      // Force refresh the token to get the latest custom claims. This is critical.
       await firebaseUser.getIdToken(true); 
       
       const result = await getUserProfileCallable();
@@ -56,12 +56,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     } catch (error: any) {
       console.error("AuthContext: Failed to get user profile.", error);
-      let description = "Could not load your user profile.";
-      if (error instanceof FunctionsError) {
-        description = error.message;
+      
+      // Provide more specific feedback for not-found errors, which can happen in a race condition.
+      if (error instanceof FunctionsError && error.code === 'not-found') {
+         toast({ 
+            title: "Profile Finalizing", 
+            description: "Your profile is being created. Please wait a moment and try logging in again.", 
+            variant: "default" 
+        });
+      } else {
+        let description = "Could not load your user profile.";
+        if (error instanceof FunctionsError) {
+          description = error.message;
+        }
+        toast({ title: "Profile Load Error", description: description, variant: "destructive" });
       }
-      toast({ title: "Profile Load Error", description: description, variant: "destructive" });
-      await auth.signOut();
+
+      await auth.signOut(); // Log out user if profile fetch fails to prevent inconsistent state
       return null;
     }
   }, [toast]);
