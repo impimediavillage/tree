@@ -5,11 +5,16 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, functions } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
+
+// Define the callable function
+const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
+
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -60,12 +65,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
       
-      const userData = serializeDates(userDocSnap.data()) as AppUser;
+      const userData = userDocSnap.data();
+      const userDispensaryId = userData.dispensaryId || null;
+
+      // Set the custom claim. This is crucial for security rules.
+      await setDispensaryClaim({ dispensaryId: userDispensaryId });
       
+      // Force refresh the token to get the new claim immediately.
+      await user.getIdToken(true);
+
       let dispensaryData: Dispensary | null = null;
-      if (userData.dispensaryId) {
+      if (userDispensaryId) {
           try {
-            const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+            const dispensaryDocRef = doc(db, 'dispensaries', userDispensaryId);
             const dispensaryDocSnap = await getDoc(dispensaryDocRef);
             if (dispensaryDocSnap.exists()) {
                 dispensaryData = serializeDates(dispensaryDocSnap.data()) as Dispensary;
@@ -73,12 +85,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch (dispensaryError) {
              console.error(`Error fetching dispensary for user ${user.uid}:`, dispensaryError);
-             toast({ title: "Dispensary Load Warning", description: "Could not load all dispensary data. Some features may be affected.", variant: "destructive" });
+             toast({ title: "Dispensary Load Warning", description: "Could not load all dispensary data.", variant: "destructive" });
           }
       }
       
       const finalProfile: AppUser = {
-          ...userData,
+          ...(serializeDates(userData) as AppUser),
           dispensary: dispensaryData,
           dispensaryStatus: dispensaryData?.status || null,
       };
@@ -89,8 +101,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return finalProfile;
 
     } catch (error: any) {
-      console.error("Critical: Failed to get user profile.", error);
-      toast({ title: "Profile Load Error", description: "Could not load your user profile. Please try logging in again.", variant: "destructive" });
+      console.error("Critical: Failed to get user profile or set claim.", error);
+      let errorMessage = "Could not load your user profile. Please try logging in again.";
+      if (error instanceof FunctionsError) {
+        errorMessage = `Auth setup error: ${error.message}`;
+      }
+      toast({ title: "Profile Load Error", description: errorMessage, variant: "destructive" });
       await auth.signOut();
       return null;
     }
@@ -108,13 +124,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser);
+        // Check if there's a stored user and if it matches the current firebaseUser
+        const storedUserString = localStorage.getItem('currentUserHolisticAI');
+        let storedUser: AppUser | null = null;
+        if (storedUserString) {
+          try {
+            storedUser = JSON.parse(storedUserString);
+          } catch {
+            storedUser = null;
+          }
+        }
+        
+        if (storedUser && storedUser.uid === firebaseUser.uid) {
+          // If a matching user is in storage, use it for a faster initial render
+          setCurrentUser(storedUser);
+          setCurrentDispensary(storedUser.dispensary || null);
+          setLoading(false); // Render immediately with stored data
+          // Then, fetch fresh data in the background to sync state
+          fetchUserProfile(firebaseUser); 
+        } else {
+          // If no matching stored user, fetch from scratch
+          await fetchUserProfile(firebaseUser);
+          setLoading(false);
+        }
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);

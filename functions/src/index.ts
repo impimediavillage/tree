@@ -195,34 +195,6 @@ export const deductCreditsAndLogInteraction = onCall({ cors: true }, async (requ
     }
 });
 
-export const updateUserProfileAdmin = onCall({ cors: true }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'You must be logged in.');
-    }
-    const adminUid = request.auth.uid;
-    const adminUserDoc = await db.collection('users').doc(adminUid).get();
-    if (adminUserDoc.data()?.role !== 'Super Admin') {
-         throw new HttpsError('permission-denied', 'Only Super Admins can perform this action.');
-    }
-    
-    const { userId, updates } = request.data;
-    if (!userId || !updates || typeof updates !== 'object') {
-        throw new HttpsError('invalid-argument', 'User ID and updates object are required.');
-    }
-
-    try {
-        const userDocRef = db.collection('users').doc(userId);
-        await userDocRef.update({ ...updates, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-        
-        logger.info(`Admin ${adminUid} successfully updated user ${userId}.`, { updates });
-        return { success: true, message: "User profile updated successfully." };
-
-    } catch (error) {
-        logger.error(`Admin ${adminUid} failed to update user ${userId}.`, error);
-        throw new HttpsError('internal', 'An unexpected error occurred while updating the user profile.');
-    }
-});
-
 // New function to securely set custom claims
 export const setDispensaryClaim = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
@@ -255,6 +227,7 @@ export const setDispensaryClaim = onCall({ cors: true }, async (request) => {
         const newClaims = {
             ...currentClaims,
             dispensaryId: dispensaryId, // can be a string or null
+            role: userData.role, // also set role for convenience
         };
         
         await admin.auth().setCustomUserClaims(uid, newClaims);
