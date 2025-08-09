@@ -5,10 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -27,6 +28,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getUserProfile = httpsCallable(functions, 'getUserProfile');
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -36,28 +39,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      const idToken = await firebaseUser.getIdToken(true); 
-      
-      const response = await fetch('/api/firebase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({ action: 'getUserProfile' })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Request failed with status ${response.status}`);
-      }
-      
-      const fullProfile = await response.json() as AppUser;
+      // The httpsCallable function automatically includes the user's ID token.
+      const result = await getUserProfile();
+      const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
-        throw new Error("Received invalid user profile from API route.");
+        throw new Error("Received invalid user profile from server.");
       }
-
+      
       setCurrentUser(fullProfile);
       setCurrentDispensary(fullProfile.dispensary || null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(fullProfile));
@@ -67,11 +56,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("AuthContext: Failed to get user profile.", error);
       
       let description = "Could not load your user profile. Please try logging in again.";
-      if (error.message) {
-        description = error.message;
+      if (error instanceof FunctionsError) {
+          if (error.code === 'not-found') {
+              description = "Your user profile could not be found. If you just signed up, please wait a moment and try again."
+          } else {
+            description = error.message;
+          }
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
+      // Logout on critical profile fetch failure
+      await auth.signOut();
       return null;
     }
   }, [toast]);
@@ -82,13 +77,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch(error) {
         console.error("Logout failed", error);
         toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
-    } finally {
-        setCurrentUser(null);
-        setCurrentDispensary(null);
-        localStorage.removeItem('currentUserHolisticAI');
-        router.push('/auth/signin');
     }
-  }, [router, toast]);
+  }, [toast]);
 
   useEffect(() => {
     const cachedUserStr = localStorage.getItem('currentUserHolisticAI');
