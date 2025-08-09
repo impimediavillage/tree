@@ -31,7 +31,7 @@ const mainSidebarNavItems: NavItem[] = [
   { title: 'Overview', href: '/dispensary-admin/dashboard', icon: LayoutDashboard },
   { title: 'My Products', href: '/dispensary-admin/products', icon: Package },
   { title: 'Promo Collections', href: '/dispensary-admin/promotions', icon: Palette },
-  { title: 'Browse Pool', href: '/dispensary-admin/browse-pool', icon: ShoppingBasket },
+  { title: 'Browse Pool', href: '/dispensary-admin/browse-pool', icon: ShoppingBasket, disabled: true, badge: 'Soon' },
   { title: 'My Pool Activity', href: '/dispensary-admin/pool', icon: History },
   { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered, disabled: true, badge: 'Soon' },
 ];
@@ -66,37 +66,34 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const { currentUser, loading: authLoading, canAccessDispensaryPanel, logout, currentDispensary, isDispensaryStaff } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
-  // This layout now acts as a Protected Route.
-  // It checks for auth and role status once, for all child pages.
   useEffect(() => {
-    if (authLoading) return; // Wait until auth state is confirmed
+    if (authLoading) return;
 
     if (!canAccessDispensaryPanel) {
       if (!currentUser) {
         toast({ title: "Access Denied", description: "Please log in to access the wellness panel.", variant: "destructive" });
         router.replace('/auth/signin');
       } else {
-        toast({ title: "Access Denied", description: "Your account does not have permission for this area or is not active.", variant: "destructive" });
+        toast({ title: "Access Denied", description: "Your account does not have permission for this area or your dispensary is not yet approved.", variant: "destructive" });
         router.replace('/');
       }
     }
   }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
 
-  if (authLoading || !currentUser || !currentDispensary) {
-    return (
-      <div className="flex items-center justify-center h-screen"> 
-        <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
-        <p className="text-lg text-muted-foreground">Loading Wellness Panel...</p>
-      </div>
-    );
-  }
-
-  if (!canAccessDispensaryPanel) {
+  if (authLoading || !canAccessDispensaryPanel || !currentUser || !currentDispensary) {
      return (
-      <div className="flex flex-col items-center justify-center h-screen p-4"> 
-        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
-        <p className="text-xl text-center text-destructive-foreground mb-2">Access Denied or Data Error.</p>
-        <p className="text-md text-center text-muted-foreground mb-6">Redirecting you...</p>
+      <div className="flex flex-col items-center justify-center h-screen p-4 bg-background"> 
+        <div className="flex items-center text-lg text-muted-foreground">
+            <Store className="h-12 w-12 animate-pulse text-primary mr-4" />
+            <p>Loading Wellness Panel...</p>
+        </div>
+        {!authLoading && !canAccessDispensaryPanel && (
+            <div className="mt-6 text-center">
+                <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
+                <p className="text-destructive font-semibold">Access Denied or Not Approved</p>
+                <p className="text-sm text-muted-foreground">Redirecting...</p>
+            </div>
+        )}
       </div>
     );
   }

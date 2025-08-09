@@ -59,10 +59,12 @@ export default function PromoCollectionsPage() {
   }, [currentUser?.uid, toast]);
 
   useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && currentUser) {
       fetchStickerSets();
+    } else if (!authLoading && !currentUser) {
+        setIsLoading(false);
     }
-  }, [authLoading, fetchStickerSets]);
+  }, [authLoading, currentUser, fetchStickerSets]);
 
   const handleTogglePublic = async (set: StickerSet) => {
     if (!set.id) return;
