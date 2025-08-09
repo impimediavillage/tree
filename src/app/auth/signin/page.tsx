@@ -36,7 +36,7 @@ export default function SignInPage() {
   const handleRedirect = (userProfile: AppUser) => {
     if (userProfile.role === 'Super Admin') {
       router.push('/admin/dashboard');
-    } else if (userProfile.role === 'DispensaryOwner' && userProfile.dispensaryStatus === 'Approved') {
+    } else if (userProfile.role === 'DispensaryOwner' && userProfile.dispensary?.status === 'Approved') {
       router.push('/dispensary-admin/dashboard');
     } else {
       router.push('/dashboard/leaf');
