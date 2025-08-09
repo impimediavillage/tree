@@ -58,11 +58,10 @@ export default function SignInPage() {
 
       if (userProfile) {
         handleRedirect(userProfile);
-      } else {
-         // This case might be hit if the Firestore document is not yet created (race condition)
-         // Or if there's a more serious issue. The AuthContext handles the error toast.
-         throw new Error("Failed to fetch user profile immediately after login.");
       }
+      // If userProfile is null, the AuthContext's error handling will have already
+      // been triggered (e.g., redirecting or showing a toast).
+      // Throwing an error here is redundant and causes the page to crash.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
