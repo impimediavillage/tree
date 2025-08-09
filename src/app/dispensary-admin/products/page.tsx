@@ -116,12 +116,19 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
-        ))}
+       <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="w-full sm:w-1/2 space-y-2"><Skeleton className="h-9 w-1/2" /><Skeleton className="h-5 w-3/4" /></div>
+            <Skeleton className="h-10 w-full sm:w-44" />
+        </div>
+        <Skeleton className="h-16 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
+            ))}
+        </div>
       </div>
     );
   }
@@ -180,13 +187,7 @@ export default function WellnessProductsPage() {
         )}
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
-          ))}
-        </div>
-      ) : filteredAndSortedProducts.length > 0 ? (
+      {filteredAndSortedProducts.length > 0 ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
             {filteredAndSortedProducts.map((product) => (
