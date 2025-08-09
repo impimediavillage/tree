@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      const userDocSnap = await userDocRef.get();
+      const userDocSnap = await getDoc(userDocRef); // Corrected this line
 
       if (!userDocSnap.exists()) {
         console.error(`User document not found for uid: ${user.uid}. Logging out.`);
