@@ -5,10 +5,9 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, functions } from '@/lib/firebase';
-import type { User as AppUser, Dispensary } from '../../functions/src/types';
+import { auth } from '@/lib/firebase';
+import type { User as AppUser, Dispensary } from '@/functions/src/types';
 import { useRouter } from 'next/navigation';
-import { httpsCallable, FunctionsError } from "firebase/functions";
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -26,8 +25,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getUserProfileCallable = httpsCallable<void, AppUser>(functions, 'getUserProfile');
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,11 +34,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     try {
       console.log(`Fetching profile for user: ${user.uid}`);
-      const result = await getUserProfileCallable();
-      const profile = result.data;
+      const token = await user.getIdToken();
+      const response = await fetch('/api/firebase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ action: 'getUserProfile' }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const profile: AppUser = await response.json();
 
       if (!profile || !profile.uid) {
-         console.error("Received invalid profile from function, signing out.", profile);
+         console.error("Received invalid profile from API, signing out.", profile);
          toast({ title: "Authentication Error", description: "Could not load a valid user profile.", variant: "destructive" });
          await auth.signOut();
          return null;
@@ -50,15 +61,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(profile);
       return profile;
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Critical: Failed to get user profile. Logging out.", error);
-       if (error instanceof FunctionsError) {
-           console.error("Function error code:", error.code);
-           console.error("Function error message:", error.message);
-           toast({ title: `Error: ${error.code}`, description: error.message, variant: "destructive" });
-       } else {
-           toast({ title: "Authentication Error", description: "An unexpected error occurred while fetching your profile.", variant: "destructive" });
-       }
+      toast({ title: "Authentication Error", description: error.message || "An unexpected error occurred while fetching your profile.", variant: "destructive" });
       await auth.signOut(); // Force sign out on profile fetch failure
       return null;
     }
