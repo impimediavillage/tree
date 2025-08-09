@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -45,18 +46,19 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
 );
 
 export default function WellnessAdminOverviewPage() {
-  const { currentDispensary, loading: authLoading } = useAuth();
+  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const fetchDashboardData = useCallback(async () => {
-    if (!currentDispensary?.id) return;
+    if (!currentUser?.dispensaryId) return;
+    
     setIsLoading(true);
     try {
-        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentDispensary.id));
-        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", currentDispensary.id), orderBy("createdAt", "desc"));
+        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentUser.dispensaryId));
+        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", currentUser.dispensaryId), orderBy("createdAt", "desc"));
         
         const [productsSnapshot, incomingRequestsSnapshot] = await Promise.all([
             getDocs(productsQuery),
@@ -72,13 +74,13 @@ export default function WellnessAdminOverviewPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [currentDispensary?.id, toast]);
+  }, [currentUser?.dispensaryId, toast]);
 
   useEffect(() => {
-    if (!authLoading && currentDispensary) {
+    if (!authLoading && currentUser) {
         fetchDashboardData();
     }
-  }, [authLoading, currentDispensary, fetchDashboardData]);
+  }, [authLoading, currentUser, fetchDashboardData]);
 
 
   const totalProducts = products.length;
