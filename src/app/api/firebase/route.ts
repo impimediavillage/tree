@@ -25,6 +25,8 @@ async function handleGetUserProfile(uid: string, decodedToken: admin.auth.Decode
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
+            // This is a critical case for new signups.
+            // The document might not be created yet. Return a clear 404.
             console.warn(`User document not found for authenticated user: ${uid}. This may be a new user signup.`);
             return NextResponse.json({ message: 'User profile not found.' }, { status: 404 });
         }

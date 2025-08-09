@@ -85,7 +85,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser);
+        // Attempt to fetch profile a few times for new users
+        let profile = null;
+        for (let i = 0; i < 3; i++) {
+          profile = await fetchUserProfile(firebaseUser);
+          if (profile) break;
+          // Wait for a short period before retrying
+          if (i < 2) await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+        if (!profile) {
+           console.error("Failed to fetch user profile after multiple attempts. User may not exist in DB or there's a persistent issue.");
+           // Don't auto-logout here, let sign-in page handle the error.
+           setCurrentUser(null);
+        }
       } else {
         setCurrentUser(null);
       }

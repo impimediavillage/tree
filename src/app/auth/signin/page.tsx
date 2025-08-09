@@ -17,7 +17,7 @@ import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User as AppUser } from '../../../functions/src/types';
+import type { User as AppUser } from '@/functions/src/types';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -85,6 +85,7 @@ export default function SignInPage() {
             break;
         }
       } else if (error.message) {
+        // Use the custom error message from the `throw` statement above.
         errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);
