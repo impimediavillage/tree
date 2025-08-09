@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, functions } from '@/lib/firebase';
-import type { User as AppUser, Dispensary, DeductCreditsRequestBody } from '@/types';
+import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
@@ -28,6 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Correctly initialize the callable function
 const getUserProfile = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -46,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
+        // This case should ideally not be hit if the function is successful.
         throw new FunctionsError("invalid-argument", "Received invalid user profile from server.");
       }
       
@@ -67,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
-      await auth.signOut(); // Logout on critical profile fetch failure
+      // Don't sign out here, let the user decide. They might just need to refresh.
       return null;
     }
   }, [toast]);
@@ -76,11 +78,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
         await auth.signOut();
         // The onAuthStateChanged listener below will handle state clearing
+        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+        router.push('/');
     } catch(error) {
         console.error("Logout failed", error);
         toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
     }
-  }, [toast]);
+  }, [toast, router]);
 
   useEffect(() => {
     const cachedUserStr = localStorage.getItem('currentUserHolisticAI');

@@ -30,6 +30,7 @@ export const onUserWriteSetClaims = functions.firestore
             logger.info(`User document ${userId} deleted. Revoking custom claims.`);
             try {
                 await admin.auth().setCustomUserClaims(userId, null);
+                logger.info(`Successfully revoked custom claims for deleted user ${userId}.`);
             } catch (error) {
                 logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
             }
@@ -53,7 +54,6 @@ export const onUserWriteSetClaims = functions.firestore
 // ============== ROBUST HELPER FUNCTION for Date Conversion ==============
 const safeToISOString = (date: any): string | null => {
     if (!date) return null;
-    // Handle Firestore Timestamps
     if (date.toDate && typeof date.toDate === 'function') {
         try {
             return date.toDate().toISOString();
@@ -62,12 +62,10 @@ const safeToISOString = (date: any): string | null => {
             return null;
         }
     }
-    // Handle JS Date objects
     if (date instanceof Date) {
         if (!isNaN(date.getTime())) return date.toISOString();
         return null;
     }
-    // Handle date strings
     if (typeof date === 'string') {
          try {
              const parsedDate = new Date(date);
@@ -76,7 +74,6 @@ const safeToISOString = (date: any): string | null => {
             logger.warn(`Could not parse date string: ${date}`);
          }
     }
-    
     logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
     return null;
 };
@@ -96,7 +93,8 @@ export const getUserProfile = functions.https.onCall(async (data, context) => {
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
-            throw new functions.https.HttpsError('not-found', 'Your user profile data could not be found.');
+            logger.warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`);
+            throw new functions.https.HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
         }
         
         const userData = userDocSnap.data() as UserDocData;
@@ -156,7 +154,6 @@ export const deductCreditsAndLogInteraction = functions.https.onCall(async (data
     
     const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = data;
     
-    // Security check: ensure the user is only deducting their own credits
     if (userId !== context.auth.uid) {
         throw new functions.https.HttpsError('permission-denied', 'You can only deduct your own credits.');
     }
