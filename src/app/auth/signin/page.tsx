@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -14,15 +13,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { signInWithEmailAndPassword, sendPasswordResetEmail, type User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User as AppUser } from '@/types';
+import type { User as AppUser, Dispensary } from '@/types';
 
 export default function SignInPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { fetchUserProfile } = useAuth();
+  const { setCurrentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<UserSigninFormData>({
@@ -43,6 +43,51 @@ export default function SignInPage() {
     }
   };
 
+  const fetchFullUserProfile = async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
+    try {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        toast({ title: "Profile Error", description: "Your user profile was not found in the database. Please contact support.", variant: "destructive" });
+        await auth.signOut();
+        return null;
+      }
+      
+      const userData = userDocSnap.data() as Omit<AppUser, 'id'>;
+      let dispensaryData: Dispensary | null = null;
+      
+      if (userData.dispensaryId) {
+        const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+        const dispensaryDocSnap = await getDoc(dispensaryDocRef);
+        if (dispensaryDocSnap.exists()) {
+          dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
+        } else {
+           console.warn(`User ${firebaseUser.uid} has a dispensaryId for a non-existent dispensary.`);
+        }
+      }
+      
+      const fullProfile: AppUser = {
+        ...userData,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email || userData.email, // Prefer fresh email from auth
+        photoURL: firebaseUser.photoURL || userData.photoURL,
+        displayName: firebaseUser.displayName || userData.displayName,
+        dispensary: dispensaryData,
+        dispensaryStatus: dispensaryData?.status || null,
+      };
+      
+      return fullProfile;
+
+    } catch (e) {
+      console.error("Error fetching full user profile from client:", e);
+      toast({ title: "Error", description: "Could not retrieve your profile details.", variant: "destructive" });
+      await auth.signOut();
+      return null;
+    }
+  }
+
+
   const onSubmit = async (data: UserSigninFormData) => {
     setIsLoading(true);
     try {
@@ -52,16 +97,17 @@ export default function SignInPage() {
         title: 'Login Successful',
         description: 'Fetching your profile and redirecting...',
       });
-
-      // fetchUserProfile will now handle fetching the profile and setting it in the context
-      const userProfile = await fetchUserProfile(userCredential.user);
-
+      
+      const userProfile = await fetchFullUserProfile(userCredential.user);
+      
       if (userProfile) {
+        setCurrentUser(userProfile);
+        localStorage.setItem('currentUserHolisticAI', JSON.stringify(userProfile));
         handleRedirect(userProfile);
+      } else {
+        // Error toast is handled within fetchFullUserProfile
+        setIsLoading(false); // Ensure loading stops if profile fetch fails
       }
-      // If userProfile is null, the AuthContext's error handling will have already
-      // been triggered (e.g., redirecting or showing a toast).
-      // Throwing an error here is redundant and causes the page to crash.
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
@@ -79,9 +125,6 @@ export default function SignInPage() {
             errorMessage = 'Too many login attempts. Please try again later.';
             break;
         }
-      } else if (error.message) {
-        // Handle custom errors thrown from fetchUserProfile
-        errorMessage = error.message;
       }
       console.error("Sign-in process failed:", error);
       toast({
@@ -89,8 +132,7 @@ export default function SignInPage() {
         description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
