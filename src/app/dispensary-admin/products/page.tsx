@@ -57,9 +57,11 @@ export default function WellnessProductsPage() {
   }, [toast]);
 
   useEffect(() => {
+    // This effect waits for auth to finish loading and for a valid dispensaryId.
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
     } else if (!authLoading && !dispensaryId) {
+      // Handle the case where the user is loaded but has no dispensary link.
       setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchProducts]);
