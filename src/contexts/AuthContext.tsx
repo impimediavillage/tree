@@ -5,10 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, functions } from '@/lib/firebase';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -27,8 +28,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the Cloud Function URL
-const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
+// Get references to the callable functions
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -39,24 +40,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      const idToken = await firebaseUser.getIdToken(true); // Force refresh the token
-      
-      const response = await fetch(GET_USER_PROFILE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        // onRequest functions expect a `data` object in the body
-        body: JSON.stringify({ data: {} }), 
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
-      }
-
-      const { result: fullProfile } = await response.json();
+      // No need to get the token manually, 'httpsCallable' handles it.
+      const result = await getUserProfileCallable();
+      const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
         throw new Error("Received invalid user profile from server.");
@@ -71,16 +57,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("AuthContext: Failed to get user profile.", error);
       
       let description = "Could not load your user profile. Please try logging in again.";
-       if (error.message) {
-           if (error.message.includes("not found")) {
-                description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again."
-           } else {
-               description = error.message;
-           }
-       }
+      if (error instanceof FunctionsError) {
+          if (error.code === 'not-found') {
+              description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again.";
+          } else {
+              description = error.message;
+          }
+      }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
-      // Logout if we can't fetch profile, as the user is in an inconsistent state
       await auth.signOut();
       return null;
     }
@@ -89,7 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
-        // The onAuthStateChanged listener below will handle cleanup
         toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/auth/signin');
     } catch(error) {
