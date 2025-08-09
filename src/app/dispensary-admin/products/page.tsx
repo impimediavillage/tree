@@ -17,7 +17,7 @@ import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function WellnessProductsPage() {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading } from useAuth();
   const { toast } = useToast();
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -118,6 +118,16 @@ export default function WellnessProductsPage() {
     setSearchTerm('');
     setSelectedCategory('all');
   };
+
+  if (authLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

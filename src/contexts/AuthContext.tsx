@@ -5,12 +5,11 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db, functions } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -41,8 +40,6 @@ const serializeDates = (data: any): any => {
     return serialized;
 }
 
-const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
@@ -65,32 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const userData = serializeDates(userDocSnap.data()) as AppUser;
       
-      // Always get the ID token result to check existing claims first
-      const idTokenResult = await user.getIdTokenResult();
-      const currentClaim = idTokenResult.claims.dispensaryId as string | undefined;
-
-      // Logic to set or update the custom claim
-      const needsClaimUpdate = userData.dispensaryId && currentClaim !== userData.dispensaryId;
-      const needsClaimRemoval = !userData.dispensaryId && currentClaim;
-
-      if (needsClaimUpdate || needsClaimRemoval) {
-        console.log(`Updating custom claim for user ${user.uid}. New dispensaryId: ${userData.dispensaryId || null}`);
-        try {
-          // This call securely updates the claim on the backend
-          await setDispensaryClaim({ dispensaryId: userData.dispensaryId || null });
-          // Crucially, wait for the token to refresh with the new claim
-          await user.getIdToken(true); 
-          console.log("Custom claim updated and token refreshed successfully.");
-        } catch (claimError) {
-          console.error("Failed to set custom claim:", claimError);
-          toast({
-              title: "Permission Sync Failed",
-              description: "Could not sync your store permissions. Some data may not load.",
-              variant: "destructive"
-          });
-        }
-      }
-
       // Fetch dispensary data if applicable
       let dispensaryData: Dispensary | null = null;
       if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
