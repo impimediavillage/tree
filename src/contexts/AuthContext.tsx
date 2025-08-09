@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return null;
     
     try {
+      console.log(`Fetching profile for user: ${user.uid}`);
       const result = await getUserProfileCallable();
       const profile = result.data as AppUser;
 
@@ -71,31 +72,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const logout = useCallback(async () => {
     await auth.signOut();
-  }, []);
+    setCurrentUser(null);
+    localStorage.removeItem('currentUserHolisticAI');
+    router.push('/auth/signin');
+  }, [router]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
-        // Attempt to load from localStorage first for faster UI response
         const storedUser = localStorage.getItem('currentUserHolisticAI');
         if (storedUser) {
             try {
                 const parsedUser = JSON.parse(storedUser);
                 if (parsedUser.uid === firebaseUser.uid) {
                     setCurrentUser(parsedUser);
-                    setLoading(false); // Stop loading early
                 }
-            } catch (e) {
-                // Invalid JSON, proceed to fetch
-            }
+            } catch (e) { /* Ignore parsing error */ }
         }
         await fetchUserProfile(firebaseUser);
-        setLoading(false);
       } else {
         setCurrentUser(null);
         localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]);
