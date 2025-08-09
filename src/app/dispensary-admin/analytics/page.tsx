@@ -3,14 +3,16 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, DollarSign, Package, Users, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered, ArrowLeft } from 'lucide-react';
-import { useMemo } from 'react';
+import { BarChart3, DollarSign, Package, Users, ShoppingCart, TrendingUp, AlertTriangle, PackageSearch, ListOrdered, ArrowLeft, Loader2 } from 'lucide-react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDispensaryData } from '@/contexts/DispensaryDataContext';
-import type { Product, ProductCategoryCount } from '@/types';
+import type { Product, ProductRequest, ProductCategoryCount } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Link from 'next/link';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface StatCardProps {
   title: string;
@@ -49,10 +51,43 @@ const CHART_COLORS = [
 
 export default function WellnessAnalyticsPage() {
   const { currentUser, loading: authLoading } = useAuth();
-  const { products: allProducts, incomingRequests, isLoading: isLoadingData } = useDispensaryData();
+  const { toast } = useToast();
   
+  const [products, setProducts] = useState<Product[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  
+  const fetchAnalyticsData = useCallback(async () => {
+    if (!currentUser?.dispensaryId) return;
+    setIsLoadingData(true);
+    try {
+        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentUser.dispensaryId));
+        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", currentUser.dispensaryId));
+
+        const [productsSnapshot, requestsSnapshot] = await Promise.all([
+            getDocs(productsQuery),
+            getDocs(incomingRequestsQuery)
+        ]);
+
+        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+        setIncomingRequests(requestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
+
+    } catch(error) {
+        toast({title: "Error", description: "Failed to load analytics data.", variant: "destructive"});
+        console.error("Error fetching analytics data: ", error);
+    } finally {
+        setIsLoadingData(false);
+    }
+  }, [currentUser?.dispensaryId, toast]);
+
+  useEffect(() => {
+    if (!authLoading && currentUser) {
+        fetchAnalyticsData();
+    }
+  }, [authLoading, currentUser, fetchAnalyticsData]);
+
   const stats = useMemo(() => {
-    const activePoolCount = allProducts.filter(p => p.isAvailableForPool).length;
+    const activePoolCount = products.filter(p => p.isAvailableForPool).length;
     const pendingRequestCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
     
     // Placeholder stats as before
@@ -61,20 +96,20 @@ export default function WellnessAnalyticsPage() {
     const placeholderAvgOrderValue = placeholderTotalOrders > 0 ? placeholderTotalSales / placeholderTotalOrders : 0;
     
     return {
-      totalProducts: allProducts.length,
+      totalProducts: products.length,
       activePoolItems: activePoolCount,
       pendingRequests: pendingRequestCount,
       totalSales: placeholderTotalSales,
       totalOrders: placeholderTotalOrders,
       averageOrderValue: placeholderAvgOrderValue,
-      topSellingProduct: allProducts.length > 0 ? allProducts[0].name : 'N/A', 
+      topSellingProduct: products.length > 0 ? products[0].name : 'N/A', 
     };
-  }, [allProducts, incomingRequests]);
+  }, [products, incomingRequests]);
   
   const productCategoryData: ProductCategoryCount[] = useMemo(() => {
-    if (allProducts.length === 0) return [];
+    if (products.length === 0) return [];
     const categoryMap = new Map<string, number>();
-    allProducts.forEach(product => {
+    products.forEach(product => {
       categoryMap.set(product.category, (categoryMap.get(product.category) || 0) + 1);
     });
     return Array.from(categoryMap.entries()).map(([name, count], index) => ({
@@ -82,7 +117,7 @@ export default function WellnessAnalyticsPage() {
       count,
       fill: CHART_COLORS[index % CHART_COLORS.length],
     })).sort((a,b) => b.count - a.count); 
-  }, [allProducts]);
+  }, [products]);
 
 
   if (authLoading || isLoadingData) {

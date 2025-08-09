@@ -4,10 +4,14 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Users, Settings, Store, ShoppingBasket, ListOrdered, BarChart3, AlertTriangle } from 'lucide-react';
+import { Package, Users, Settings, Store, ShoppingBasket, ListOrdered, BarChart3, AlertTriangle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDispensaryData } from '@/contexts/DispensaryDataContext'; // Import the new context
+import { useState, useEffect, useCallback } from 'react';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import type { Product, ProductRequest } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface StatCardProps {
   title: string;
@@ -42,8 +46,41 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
 );
 
 export default function WellnessAdminOverviewPage() {
-  const { currentDispensary } = useAuth();
-  const { products, incomingRequests, isLoading } = useDispensaryData();
+  const { currentDispensary, loading: authLoading } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!currentDispensary?.id) return;
+    setIsLoading(true);
+    try {
+        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentDispensary.id));
+        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", currentDispensary.id), orderBy("createdAt", "desc"));
+        
+        const [productsSnapshot, incomingRequestsSnapshot] = await Promise.all([
+            getDocs(productsQuery),
+            getDocs(incomingRequestsQuery)
+        ]);
+
+        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+        setIncomingRequests(incomingRequestsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductRequest)));
+
+    } catch(error) {
+        console.error("Error fetching dashboard data:", error);
+        toast({ title: "Data Loading Error", description: "Could not load dashboard data.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [currentDispensary?.id, toast]);
+
+  useEffect(() => {
+    if (!authLoading && currentDispensary) {
+        fetchDashboardData();
+    }
+  }, [authLoading, currentDispensary, fetchDashboardData]);
+
 
   const totalProducts = products.length;
   const activePoolItems = products.filter(p => p.isAvailableForPool).length;

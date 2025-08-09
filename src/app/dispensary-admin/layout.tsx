@@ -10,7 +10,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth, AuthProvider } from '@/contexts/AuthContext';
-import { DispensaryDataProvider } from '@/contexts/DispensaryDataContext';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { auth as firebaseAuthInstance } from '@/lib/firebase';
@@ -311,9 +310,7 @@ export default function DispensaryAdminRootLayout({
 }) {
   return (
     <AuthProvider>
-      <DispensaryDataProvider>
         <WellnessAdminLayoutContent>{children}</WellnessAdminLayoutContent>
-      </DispensaryDataProvider>
     </AuthProvider>
   );
 }
