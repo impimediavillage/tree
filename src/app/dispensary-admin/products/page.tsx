@@ -27,6 +27,10 @@ export default function WellnessProductsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   
   const fetchProducts = useCallback(async (dispensaryId: string) => {
+    if (!dispensaryId) {
+        setIsLoading(false);
+        return;
+    }
     setIsLoading(true);
     try {
       const productsQuery = query(
@@ -54,6 +58,7 @@ export default function WellnessProductsPage() {
   }, [toast]);
 
   useEffect(() => {
+    // Only fetch if auth is resolved and we have a dispensaryId
     if (!authLoading && currentUser?.dispensaryId) {
       fetchProducts(currentUser.dispensaryId);
     } else if (!authLoading) {
