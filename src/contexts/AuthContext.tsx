@@ -43,12 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const idToken = await firebaseUser.getIdToken(true); 
       
       const response = await fetch(GET_USER_PROFILE_URL, {
-        method: 'POST',
+        method: 'POST', // Using POST to send body
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`,
         },
-        body: JSON.stringify({}) // onCall functions expect a 'data' property
+        body: JSON.stringify({ data: {} }), // Wrap empty data object
       });
 
       if (!response.ok) {
@@ -71,9 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("AuthContext: Failed to get user profile.", error);
       
       let description = "Could not load your user profile. Please try logging in again.";
-      if (error instanceof FunctionsError || (error.details && error.details.code)) {
-          const code = error.code || error.details.code;
-          if (code === 'not-found') {
+      if (error instanceof FunctionsError) {
+          if (error.code === 'not-found') {
               description = "Your user profile data could not be found. If you just signed up, please wait a moment and try again."
           } else {
             description = error.message;
