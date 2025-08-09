@@ -14,7 +14,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { auth as firebaseAuthInstance } from '@/lib/firebase';
 
 const sidebarNavItems = [
   { title: 'Overview', href: '/dashboard/leaf', icon: LayoutDashboard },
@@ -45,8 +44,7 @@ export default function LeafDashboardLayout({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!isLeafUser) {
+    if (!authLoading && !isLeafUser) {
       toast({
         title: "Access Denied",
         description: "This dashboard is for Leaf Users only.",
@@ -56,13 +54,13 @@ export default function LeafDashboardLayout({
     }
   }, [authLoading, isLeafUser, router, toast, currentUser]);
 
-  if (authLoading || !isLeafUser) {
+  if (authLoading || !currentUser) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <h2 className="text-2xl font-bold">Verifying Leaf User Access...</h2>
-        <p className="mt-2 text-muted-foreground">Please wait while we confirm your permissions.</p>
-         {!authLoading && !isLeafUser && (
+        <h2 className="text-2xl font-bold">Loading Your Dashboard...</h2>
+        <p className="mt-2 text-muted-foreground">Please wait while we prepare your space.</p>
+         {!authLoading && !currentUser && (
              <div className="mt-6 text-center">
                <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
                <p className="text-destructive font-semibold">Access Denied</p>

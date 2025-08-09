@@ -66,27 +66,23 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!canAccessDispensaryPanel) {
-      if (!currentUser) {
-        toast({ title: "Access Denied", description: "Please log in to access the wellness panel.", variant: "destructive" });
-        router.replace('/auth/signin');
-      } else {
-        toast({ title: "Access Denied", description: "Your account does not have permission for this area or your dispensary is not yet approved.", variant: "destructive" });
-        router.replace('/');
-      }
+    if (!authLoading && !canAccessDispensaryPanel) {
+        if (!currentUser) {
+            toast({ title: "Access Denied", description: "Please log in to access the wellness panel.", variant: "destructive" });
+            router.replace('/auth/signin');
+        } else {
+            toast({ title: "Access Denied", description: "Your account does not have permission for this area or your dispensary is not yet approved.", variant: "destructive" });
+            router.replace('/');
+        }
     }
   }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
 
   if (authLoading || !canAccessDispensaryPanel || !currentUser || !currentDispensary) {
      return (
       <div className="flex flex-col items-center justify-center h-screen p-4 bg-background"> 
-        <div className="flex items-center text-lg text-muted-foreground">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mr-4" />
-            <p>Loading Wellness Panel...</p>
-        </div>
-        {!authLoading && (!canAccessDispensaryPanel || !currentUser) && (
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading Wellness Panel...</p>
+        {!authLoading && (
              <div className="mt-6 text-center">
                <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
                <p className="text-destructive font-semibold">Access Denied</p>
@@ -217,6 +213,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   <span>Main Site</span>
                 </DropdownMenuItem>
+                <DropdownMenuSeparatorComponent />
                 <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>

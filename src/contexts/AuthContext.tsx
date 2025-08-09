@@ -28,8 +28,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the URLs for the Cloud Functions
-const GET_USER_PROFILE_URL = 'https://us-central1-dispensary-tree.cloudfunctions.net/getUserProfile';
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -40,23 +39,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      const idToken = await firebaseUser.getIdToken(true); 
-      
-      const response = await fetch(GET_USER_PROFILE_URL, {
-        method: 'POST', // Using POST to send body
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ data: {} }), // Wrap empty data object
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new FunctionsError(errorData.error.status || 'internal', errorData.error.message || 'Failed to fetch user profile.');
-      }
-      
-      const { result: fullProfile } = await response.json();
+      // The callable function automatically includes the user's ID token.
+      const result = await getUserProfileCallable();
+      const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
         throw new FunctionsError("invalid-argument", "Received invalid user profile from server.");
@@ -77,11 +62,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } else {
             description = error.message;
           }
-      } else if (error instanceof Error) {
-          description = error.message;
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
+      // Logout if we can't fetch profile, as the user is in an inconsistent state
+      await auth.signOut();
       return null;
     }
   }, [toast]);
@@ -89,8 +74,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
+        // The onAuthStateChanged listener below will handle cleanup
         toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-        router.push('/');
+        router.push('/auth/signin');
     } catch(error) {
         console.error("Logout failed", error);
         toast({ title: "Logout Failed", description: "An error occurred while logging out.", variant: "destructive"});
@@ -98,30 +84,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast, router]);
 
   useEffect(() => {
-    const cachedUserStr = localStorage.getItem('currentUserHolisticAI');
-    if (cachedUserStr) {
-       try {
-        const parsedUser = JSON.parse(cachedUserStr);
-        setCurrentUser(parsedUser);
-        if (parsedUser.dispensary) setCurrentDispensary(parsedUser.dispensary);
-       } catch(e) {
-         console.warn("Could not parse cached user, clearing.", e);
-         localStorage.removeItem('currentUserHolisticAI');
-       }
-    }
-    setLoading(true); 
-
+    // This effect runs only once on mount to set up the auth state listener.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true); // Always start in a loading state when auth changes
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser); 
+        // User is signed in. Fetch their full profile.
+        // The loading state will be set to false inside fetchUserProfile's logic flow.
+        await fetchUserProfile(firebaseUser);
       } else {
+        // User is signed out. Clear all user state.
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
       }
-      setLoading(false);
+      setLoading(false); // End loading state after processing
     });
 
+    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [fetchUserProfile]); 
   

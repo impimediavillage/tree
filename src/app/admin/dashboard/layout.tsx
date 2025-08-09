@@ -28,9 +28,7 @@ import {
 } from '@/components/ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
 import React from 'react';
-import { auth as firebaseAuthInstance } from '@/lib/firebase';
 
 interface NavItem {
   title: string;
@@ -71,38 +69,35 @@ export default function AdminDashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { toast } = useToast();
   const { currentUser, loading: authLoading, isSuperAdmin, logout } = useAuth();
 
+  // This effect handles redirection after the auth state is confirmed.
   React.useEffect(() => {
-    if (authLoading) {
-      return; 
-    }
-    if (!isSuperAdmin) {
-      toast({
-        title: "Access Denied",
-        description: "You do not have permission to access the admin dashboard.",
-        variant: "destructive",
-      });
+    if (!authLoading && !isSuperAdmin) {
       router.replace('/auth/signin');
     }
-  }, [authLoading, isSuperAdmin, router, toast]);
+  }, [authLoading, isSuperAdmin, router]);
 
-
-  if (authLoading || !isSuperAdmin) {
+  // Render a loading state while the authentication context is being populated.
+  if (authLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
         <h2 className="text-2xl font-bold">Verifying Admin Access...</h2>
         <p className="mt-2 text-muted-foreground">Please wait while we confirm your permissions.</p>
-        {!authLoading && !isSuperAdmin && (
-             <div className="mt-6 text-center">
-               <AlertTriangle className="h-10 w-10 mx-auto text-destructive mb-2" />
-               <p className="text-destructive font-semibold">Access Denied</p>
-               <p className="text-sm text-muted-foreground">Redirecting...</p>
-             </div>
-        )}
       </div>
+    );
+  }
+
+  // Render an access denied message if the user is not a super admin after loading is complete.
+  if (!isSuperAdmin) {
+     return (
+        <div className="flex flex-col items-center justify-center h-screen bg-background text-center p-4">
+            <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+            <h2 className="text-2xl font-bold">Access Denied</h2>
+            <p className="mt-2 text-muted-foreground">You do not have permission to access the admin dashboard.</p>
+             <Button onClick={() => router.push('/')} className="mt-6">Go to Home</Button>
+        </div>
     );
   }
 

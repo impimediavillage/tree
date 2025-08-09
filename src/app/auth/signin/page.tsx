@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useToast } from '@/hooks/use-toast';
 import { userSigninSchema, type UserSigninFormData } from '@/lib/schemas';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, type User as FirebaseUser } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import type { User as AppUser } from '@/types';
 
@@ -48,18 +48,25 @@ export default function SignInPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       
+      // The onAuthStateChanged listener in AuthContext will now handle fetching the profile.
+      // We can optimistically show a loading toast.
       toast({
         title: 'Login Successful',
-        description: 'Fetching your profile and redirecting...',
+        description: 'Verifying your profile and redirecting...',
       });
       
+      // The redirect will be handled by the layout components based on the user role
+      // after the AuthContext updates. We can add a fallback redirect here.
+      // A more robust solution might involve waiting for the currentUser state to update
+      // in the context before redirecting, but the layouts should handle this.
       const userProfile = await fetchUserProfile(userCredential.user);
-      
+
       if (userProfile) {
         handleRedirect(userProfile);
       } else {
-         // The AuthContext now handles all user-facing error reporting,
-         // including a toast notification for this specific case.
+         // The AuthContext now handles all error reporting, including a toast notification.
+         // This else block is for catching edge cases where the profile might be null
+         // even if the function doesn't throw.
       }
 
     } catch (error: any) {
