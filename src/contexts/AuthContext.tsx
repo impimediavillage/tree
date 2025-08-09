@@ -5,11 +5,12 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, functions } from '@/lib/firebase';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { httpsCallable } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
@@ -27,6 +28,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
 
 // Helper function to serialize date fields
 const serializeDates = (data: any): any => {
@@ -66,6 +69,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let dispensaryData: Dispensary | null = null;
       if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
           try {
+            // ** CRITICAL STEP: Set custom claim before proceeding **
+            // This ensures subsequent security rules have the claim available.
+            await setDispensaryClaim({ dispensaryId: userData.dispensaryId });
+            // Forcibly refresh the token to get the new claim immediately.
+            await user.getIdToken(true);
+            
             const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
             const dispensaryDocSnap = await getDoc(dispensaryDocRef);
             if (dispensaryDocSnap.exists()) {
@@ -73,7 +82,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 dispensaryData.id = dispensaryDocSnap.id;
             }
           } catch (dispensaryError) {
-             console.error(`Error fetching dispensary doc for user ${user.uid}:`, dispensaryError);
+             console.error(`Error fetching dispensary or setting claim for user ${user.uid}:`, dispensaryError);
+             // Don't block login if claim fails, but log it.
+             toast({ title: "Permission Sync Warning", description: "Could not sync all permissions. Some data may not load.", variant: "destructive" });
           }
       }
       
