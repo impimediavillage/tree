@@ -43,7 +43,15 @@ const safeToISOString = (date: any): string | null => {
 
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const storedUser = localStorage.getItem('currentUserHolisticAI');
+    try {
+        return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+        return null;
+    }
+  });
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -62,7 +70,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        // This can happen briefly during signup. Return null and let the calling function handle it.
+        toast({ title: "Profile Incomplete", description: "Your user profile is not fully set up. Please try signing up again or contact support.", variant: "destructive"});
+        await auth.signOut();
         return null;
       }
 
@@ -131,16 +140,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
-        // Only set loading to false AFTER we've attempted to fetch the profile
         await fetchUserProfile(firebaseUser);
-        setLoading(false);
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
-        setLoading(false);
       }
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [fetchUserProfile]); 

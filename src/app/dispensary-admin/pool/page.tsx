@@ -57,11 +57,10 @@ export default function WellnessPoolPage() {
   }, [toast]);
 
   useEffect(() => {
-    if (authLoading) return; // Wait for auth to finish
-    if (dispensaryId) {
+    if (!authLoading && dispensaryId) {
       fetchRequests(dispensaryId);
-    } else {
-      setIsLoading(false); // If no dispensaryId, stop loading
+    } else if (!authLoading) {
+      setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchRequests]);
 
@@ -73,7 +72,7 @@ export default function WellnessPoolPage() {
 
   const incomingPendingCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
 
-  if (authLoading) {
+  if (authLoading || (!dispensaryId && !isLoading)) {
     return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
