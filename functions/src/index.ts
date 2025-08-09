@@ -25,6 +25,43 @@ const db = admin.firestore();
 // ============== END INITIALIZATION ==============
 
 
+// ============== HELPER FUNCTIONS ==================
+/**
+ * Safely converts various date formats to an ISO string.
+ * This function is robust and handles Firestore Timestamps, JS Dates, and valid date strings.
+ * It will not throw an error on invalid input, returning null instead.
+ *
+ * @param date - The date value to convert.
+ * @returns An ISO date string or null if the input is invalid or null.
+ */
+const toISODateString = (date: any): string | null => {
+    if (!date) {
+        return null;
+    }
+    // If it's a Firestore Timestamp, convert it to a JS Date first.
+    if (date instanceof admin.firestore.Timestamp) {
+        return date.toDate().toISOString();
+    }
+    // If it's already a JS Date, convert it.
+    if (date instanceof Date) {
+        return date.toISOString();
+    }
+    // If it's a string, try to parse it. This is a fallback.
+    // We check if it's a valid date to prevent crashes from `new Date(invalid_string)`.
+    if (typeof date === 'string') {
+         try {
+             const parsedDate = new Date(date);
+             if (!isNaN(parsedDate.getTime())) {
+                 return parsedDate.toISOString();
+             }
+         } catch (e) { 
+            logger.warn(`Could not parse date string: ${date}`);
+         }
+    }
+    return null;
+};
+
+
 // ============== CALLABLE FUNCTIONS ==============
 
 export const getUserProfile = onCall({ cors: true }, async (request) => {
@@ -53,34 +90,13 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}. Proceeding without dispensary data.`);
-                    dispensaryData = null; 
+                    // dispensaryData remains null, which is the correct behavior.
                 }
             } catch (dispensaryError) {
                 logger.error(`Error fetching dispensary doc for user ${uid}. Continuing without dispensary data.`, dispensaryError);
-                 dispensaryData = null; 
+                 // dispensaryData remains null
             }
         }
-        
-        const toISODateString = (date: any): string | null => {
-            if (!date) return null;
-            if (date instanceof admin.firestore.Timestamp) {
-                return date.toDate().toISOString();
-            }
-            if (date instanceof Date) {
-                return date.toISOString();
-            }
-            if (typeof date === 'string') {
-                 try {
-                     const parsedDate = new Date(date);
-                     if (!isNaN(parsedDate.getTime())) {
-                         return parsedDate.toISOString();
-                     }
-                 } catch (e) { 
-                    logger.warn(`Could not parse date string: ${date}`);
-                 }
-            }
-            return null;
-        };
         
         let dispensaryWithSerializableDates: Dispensary | null = null;
         if (dispensaryData) {
