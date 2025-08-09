@@ -57,19 +57,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("AuthContext: Failed to get user profile.", error);
       
-      if (error instanceof FunctionsError && error.code === 'not-found') {
-         toast({ 
-            title: "Profile Finalizing", 
-            description: "Your profile is being created. Please wait a moment and try logging in again.", 
-            variant: "default" 
-        });
-      } else {
-        let description = "Could not load your user profile.";
-        if (error instanceof FunctionsError) {
-          description = error.message;
-        }
-        toast({ title: "Profile Load Error", description: description, variant: "destructive" });
+      let description = "Could not load your user profile.";
+      if (error instanceof FunctionsError) {
+        description = `Function error: ${error.message} (code: ${error.code})`;
+      } else if (error.message) {
+        description = error.message;
       }
+      toast({ title: "Profile Load Error", description, variant: "destructive" });
 
       await auth.signOut();
       return null;
