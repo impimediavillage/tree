@@ -13,21 +13,6 @@ import type { Product, ProductRequest } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  description?: string;
-  link?: string;
-  linkText?: string;
-  isLoading: boolean;
-}
-
-// NOTE: The StatCard component and its associated data fetching have been temporarily removed
-// to resolve a critical permission error. The dashboard now uses a streamlined "QuickActionCard"
-// approach, deferring data loading to the specific pages. This aligns with the original,
-// more robust workflow. The StatCard logic can be revisited later with a secure method for
-// aggregate counts if needed (e.g., using a separate summary document in Firestore).
 
 export default function WellnessAdminOverviewPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
