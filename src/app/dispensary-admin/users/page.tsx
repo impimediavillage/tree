@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Edit, Loader2, PlusCircle, Users as UsersIcon, Filter, UserCog, AlertTriangle } from 'lucide-react';
+import { Edit, Loader2, Filter, UserCog, AlertTriangle, Users as UsersIcon } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -189,7 +189,7 @@ export default function WellnessManageUsersPage() {
   useEffect(() => {
     if (!authLoading && dispensaryId) {
         fetchManagedUsers(dispensaryId);
-    } else if (!authLoading) {
+    } else if (!authLoading && !dispensaryId) {
         setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchManagedUsers]);
