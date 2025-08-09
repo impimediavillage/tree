@@ -29,8 +29,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const setDispensaryClaim = httpsCallable(functions, 'setDispensaryClaim');
-
 // Helper function to serialize date fields
 const serializeDates = (data: any): any => {
     if (!data) return data;
@@ -69,12 +67,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let dispensaryData: Dispensary | null = null;
       if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
           try {
-            // ** CRITICAL STEP: Set custom claim before proceeding **
-            // This ensures subsequent security rules have the claim available.
-            await setDispensaryClaim({ dispensaryId: userData.dispensaryId });
-            // Forcibly refresh the token to get the new claim immediately.
-            await user.getIdToken(true);
-            
             const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
             const dispensaryDocSnap = await getDoc(dispensaryDocRef);
             if (dispensaryDocSnap.exists()) {
@@ -82,9 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 dispensaryData.id = dispensaryDocSnap.id;
             }
           } catch (dispensaryError) {
-             console.error(`Error fetching dispensary or setting claim for user ${user.uid}:`, dispensaryError);
-             // Don't block login if claim fails, but log it.
-             toast({ title: "Permission Sync Warning", description: "Could not sync all permissions. Some data may not load.", variant: "destructive" });
+             console.error(`Error fetching dispensary for user ${user.uid}:`, dispensaryError);
+             toast({ title: "Dispensary Load Warning", description: "Could not load all dispensary data. Some features may be affected.", variant: "destructive" });
           }
       }
       
