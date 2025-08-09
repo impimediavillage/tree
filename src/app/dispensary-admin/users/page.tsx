@@ -111,7 +111,7 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
                   <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
-                    <SelectItem value="LeafUser">Leaf User (Linked)</SelectItem>
+                    <SelectItem value="LeafUser">Leaf Users (Linked)</SelectItem>
                   </SelectContent>
                 </Select><FormMessage />
               </FormItem>

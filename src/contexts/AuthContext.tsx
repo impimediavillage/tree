@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
     if (!user) return null;
-    console.log("Fetching profile for user:", user.uid);
+    
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
@@ -64,8 +64,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const userData = serializeDates(userDocSnap.data()) as AppUser;
-      let dispensaryData: Dispensary | null = null;
       
+      // Always get the ID token result to check existing claims first
+      const idTokenResult = await user.getIdTokenResult();
+      const currentClaim = idTokenResult.claims.dispensaryId as string | undefined;
+
+      // Logic to set or update the custom claim
+      const needsClaimUpdate = userData.dispensaryId && currentClaim !== userData.dispensaryId;
+      const needsClaimRemoval = !userData.dispensaryId && currentClaim;
+
+      if (needsClaimUpdate || needsClaimRemoval) {
+        console.log(`Updating custom claim for user ${user.uid}. New dispensaryId: ${userData.dispensaryId || null}`);
+        try {
+          // This call securely updates the claim on the backend
+          await setDispensaryClaim({ dispensaryId: userData.dispensaryId || null });
+          // Crucially, wait for the token to refresh with the new claim
+          await user.getIdToken(true); 
+          console.log("Custom claim updated and token refreshed successfully.");
+        } catch (claimError) {
+          console.error("Failed to set custom claim:", claimError);
+          toast({
+              title: "Permission Sync Failed",
+              description: "Could not sync your store permissions. Some data may not load.",
+              variant: "destructive"
+          });
+        }
+      }
+
+      // Fetch dispensary data if applicable
+      let dispensaryData: Dispensary | null = null;
       if (userData.dispensaryId && (userData.role === 'DispensaryOwner' || userData.role === 'DispensaryStaff')) {
           try {
             const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
@@ -73,31 +100,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (dispensaryDocSnap.exists()) {
                 dispensaryData = serializeDates(dispensaryDocSnap.data()) as Dispensary;
                 dispensaryData.id = dispensaryDocSnap.id;
-            } else {
-                 console.warn(`User ${user.uid} is linked to a non-existent dispensary: ${userData.dispensaryId}`);
             }
           } catch (dispensaryError) {
              console.error(`Error fetching dispensary doc for user ${user.uid}:`, dispensaryError);
-          }
-      }
-      
-      const idTokenResult = await user.getIdTokenResult(); // No need to force refresh here, we'll do it after the call
-      const currentClaim = idTokenResult.claims.dispensaryId;
-
-      // Only set the claim if it's different from what's in the user's document
-      if (currentClaim !== (userData.dispensaryId || null)) {
-          console.log(`Updating custom claim for user ${user.uid}.`);
-          try {
-            await setDispensaryClaim({ dispensaryId: userData.dispensaryId || null });
-            await user.getIdToken(true); // Force refresh token to get new claims
-            console.log("Custom claim updated successfully.");
-          } catch (claimError) {
-            console.error("Failed to set custom claim:", claimError);
-            toast({
-                title: "Permission Sync Failed",
-                description: "Could not sync your store permissions. Some data may not load.",
-                variant: "destructive"
-            });
           }
       }
       
