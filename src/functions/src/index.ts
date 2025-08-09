@@ -108,7 +108,7 @@ export const getUserProfile = onCall({ cors: [{origin: true}] }, async (request)
 
         if (!userDocSnap.exists) {
             logger.error(`User document not found for authenticated user: ${uid}`);
-            throw new HttpsError('not-found', 'Your user profile could not be found in the database. This may happen if the account was just created. Please try again.');
+            throw new HttpsError('not-found', 'Your user profile could not be found. This may happen if the account was just created. Please try again.');
         }
         
         const userData = userDocSnap.data() as UserDocData;

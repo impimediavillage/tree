@@ -58,9 +58,8 @@ export default function SignInPage() {
       if (userProfile) {
         handleRedirect(userProfile);
       } else {
-         // The AuthContext now handles all error reporting, including a toast notification.
-         // This console error is redundant if the context handles the user-facing error.
-         console.error("Signin failed because fetchUserProfile returned null. See AuthContext for details.");
+         // The AuthContext now handles all user-facing error reporting,
+         // including a toast notification for this specific case.
       }
 
     } catch (error: any) {
