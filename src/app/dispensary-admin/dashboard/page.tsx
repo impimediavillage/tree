@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -97,47 +98,7 @@ export default function WellnessAdminOverviewPage() {
           </CardDescription>
         </CardHeader>
       </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="Total Products"
-            value={currentDispensary?.productCount ?? 0}
-            icon={Package}
-            description="Products in your inventory."
-            isLoading={authLoading}
-            link="/dispensary-admin/products"
-            linkText="Manage Products"
-          />
-          <StatCard
-            title="Incoming Requests"
-            value={currentDispensary?.incomingRequestCount ?? 0}
-            icon={ListOrdered}
-            description="From other wellness stores."
-            isLoading={authLoading}
-            link="/dispensary-admin/pool"
-            linkText="View Requests"
-          />
-           <StatCard
-            title="Outgoing Requests"
-            value={currentDispensary?.outgoingRequestCount ?? 0}
-            icon={ShoppingBasket}
-            description="Made to other wellness stores."
-            isLoading={authLoading}
-            link="/dispensary-admin/pool"
-            linkText="View Requests"
-          />
-           <StatCard
-            title="Manage Staff"
-            value={"..."}
-            icon={Users}
-            description="Add or edit staff members."
-            isLoading={authLoading}
-            link="/dispensary-admin/users"
-            linkText="Manage Users"
-          />
-      </div>
-
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <QuickActionCard
             title="Manage My Products"
@@ -166,6 +127,13 @@ export default function WellnessAdminOverviewPage() {
             icon={BarChart3}
             link="/dispensary-admin/analytics"
             buttonText="View Analytics"
+        />
+        <QuickActionCard
+            title="Manage Staff"
+            description="Add or edit staff members for your store."
+            icon={Users}
+            link="/dispensary-admin/users"
+            buttonText="Manage Users"
         />
       </div>
     </div>

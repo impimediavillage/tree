@@ -10,7 +10,7 @@ import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package } from 'lucide-react';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useForm } from 'react-hook-form';
@@ -98,7 +98,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 <DialogHeader>
                     <DialogTitle>Manage Request: {request.productName}</DialogTitle>
                     <DialogDescription>
-                        {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerDispensaryId}`}
+                        {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-grow pr-4">
@@ -179,8 +179,8 @@ export const ProductRequestTable: React.FC<ProductRequestTableProps> = ({ data, 
           header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Product <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
         },
         {
-          accessorKey: type === 'incoming' ? 'requesterDispensaryName' : 'productOwnerDispensaryId',
-          header: type === 'incoming' ? 'From' : 'To (Owner ID)',
+          accessorKey: type === 'incoming' ? 'requesterDispensaryName' : 'productOwnerEmail',
+          header: type === 'incoming' ? 'From' : 'To (Owner Email)',
         },
         {
           accessorKey: 'quantityRequested',

@@ -17,7 +17,7 @@ import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function WellnessProductsPage() {
-  const { currentUser, loading: authLoading } from useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
