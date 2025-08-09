@@ -3,9 +3,16 @@
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
-import type { Dispensary, User as AppUser, UserDocData } from "./types";
 
-// ================== FIREBASE ADMIN SDK INITIALIZATION ==================
+// All types are now sourced from the local types.ts file
+import type {
+  Dispensary,
+  User as AppUser,
+  UserDocData,
+} from "./types";
+
+
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
@@ -15,47 +22,52 @@ if (admin.apps.length === 0) {
     }
 }
 const db = admin.firestore();
-// ================== END INITIALIZATION ==================
+// ============== END INITIALIZATION ==============
 
-// ================== HELPER FUNCTIONS ==================
 
+// ============== HELPER FUNCTIONS ==================
 /**
- * Safely converts a date-like object to an ISO string.
- * Handles null, undefined, Firestore Timestamps, JS Dates, and date strings.
- * @param date - The date object to convert.
- * @returns An ISO date string or null if conversion fails.
+ * Safely converts various date formats to an ISO string.
+ * This function is robust and handles Firestore Timestamps, JS Dates, and valid date strings.
+ * It will not throw an error on invalid input, returning null instead.
+ *
+ * @param date - The date value to convert.
+ * @returns An ISO date string or null if the input is invalid or null.
  */
 const toISODateString = (date: any): string | null => {
-    if (!date) return null;
+    if (!date) {
+        return null;
+    }
+    // If it's a Firestore Timestamp, convert it to a JS Date first.
     if (date instanceof admin.firestore.Timestamp) {
         return date.toDate().toISOString();
     }
+    // If it's already a JS Date, convert it.
     if (date instanceof Date) {
         return date.toISOString();
     }
+    // If it's a string, try to parse it. This is a fallback.
+    // We check if it's a valid date to prevent crashes from `new Date(invalid_string)`.
     if (typeof date === 'string') {
-        try {
-            const parsedDate = new Date(date);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate.toISOString();
-            }
-        } catch (e) {
-            logger.warn(`Could not parse date string: ${date}`, e);
+        const parsedDate = new Date(date);
+        // Check if the parsed date is valid. `getTime()` returns NaN for invalid dates.
+        if (!isNaN(parsedDate.getTime())) {
+            return parsedDate.toISOString();
         }
     }
-    logger.warn(`Unserializable date type encountered:`, date);
+    // If none of the above, log a warning and return null.
+    logger.warn(`Could not serialize date. Type: ${typeof date}, Value:`, date);
     return null;
 };
 
 
-// ================== CALLABLE FUNCTIONS ==================
+// ============== CALLABLE FUNCTIONS ==============
 
 export const getUserProfile = onCall({ cors: true }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'You must be logged in to get your profile.');
     }
     const uid = request.auth.uid;
-    
     try {
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
@@ -68,7 +80,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         const userData = userDocSnap.data() as UserDocData;
         
         let dispensaryData: Dispensary | null = null;
-        if (userData.dispensaryId && typeof userData.dispensaryId === 'string') {
+        if (userData.dispensaryId) {
             try {
                 const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
                 const dispensaryDocSnap = await dispensaryDocRef.get();
@@ -77,11 +89,11 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}. Proceeding without dispensary data.`);
-                    dispensaryData = null; 
+                    // dispensaryData remains null, which is the correct behavior.
                 }
             } catch (dispensaryError) {
                 logger.error(`Error fetching dispensary doc for user ${uid}. Continuing without dispensary data.`, dispensaryError);
-                 dispensaryData = null; 
+                 // dispensaryData remains null
             }
         }
         
@@ -117,9 +129,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
 
     } catch (error) {
         logger.error(`Error fetching user profile for ${uid}:`, error);
-        if (error instanceof HttpsError) {
-            throw error;
-        }
         throw new HttpsError('internal', 'An unexpected error occurred while fetching your profile.');
     }
 });

@@ -54,9 +54,6 @@ export default function SignInPage() {
         description: 'Fetching your profile...',
       });
       
-      // The onAuthStateChanged listener in AuthContext now handles profile fetching.
-      // We can just wait for it to complete by checking the loading state or currentUser.
-      // For a better UX, we can explicitly call it here again to be sure.
       const userProfile = await fetchUserProfile(firebaseUser);
 
       if (userProfile) {
