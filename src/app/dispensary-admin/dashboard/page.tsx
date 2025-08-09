@@ -51,12 +51,14 @@ export default function WellnessAdminOverviewPage() {
   const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  const dispensaryId = currentUser?.dispensaryId;
 
-  const fetchDashboardData = useCallback(async (dispensaryId: string) => {
+  const fetchDashboardData = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
-        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", dispensaryId));
-        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", dispensaryId), orderBy("createdAt", "desc"));
+        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", id));
+        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", id), orderBy("createdAt", "desc"));
         
         const [productsSnapshot, incomingRequestsSnapshot] = await Promise.all([
             getDocs(productsQuery),
@@ -75,14 +77,14 @@ export default function WellnessAdminOverviewPage() {
   }, [toast]);
 
   useEffect(() => {
-    // Only fetch data once authentication is complete and we have a user with a dispensary ID.
-    if (!authLoading && currentUser?.dispensaryId) {
-        fetchDashboardData(currentUser.dispensaryId);
-    } else if (!authLoading && !currentUser?.dispensaryId) {
-        // Handle case where user is loaded but has no dispensary ID, stop loading.
+    // This effect now robustly waits for a valid dispensaryId before fetching.
+    if (dispensaryId) {
+        fetchDashboardData(dispensaryId);
+    } else if (!authLoading) {
+        // If auth is done and there's still no ID, stop loading.
         setIsLoading(false);
     }
-  }, [authLoading, currentUser, fetchDashboardData]);
+  }, [dispensaryId, authLoading, fetchDashboardData]);
 
 
   const { totalProducts, activePoolItems, pendingRequests } = useMemo(() => {

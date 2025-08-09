@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,12 +57,13 @@ export default function WellnessAnalyticsPage() {
   const [incomingRequests, setIncomingRequests] = useState<ProductRequest[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   
-  const fetchAnalyticsData = useCallback(async () => {
-    if (!currentUser?.dispensaryId) return;
+  const dispensaryId = currentUser?.dispensaryId;
+
+  const fetchAnalyticsData = useCallback(async (id: string) => {
     setIsLoadingData(true);
     try {
-        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", currentUser.dispensaryId));
-        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", currentUser.dispensaryId));
+        const productsQuery = query(collection(db, "products"), where("dispensaryId", "==", id));
+        const incomingRequestsQuery = query(collection(db, "productRequests"), where("productOwnerDispensaryId", "==", id));
 
         const [productsSnapshot, requestsSnapshot] = await Promise.all([
             getDocs(productsQuery),
@@ -77,13 +79,15 @@ export default function WellnessAnalyticsPage() {
     } finally {
         setIsLoadingData(false);
     }
-  }, [currentUser?.dispensaryId, toast]);
+  }, [toast]);
 
   useEffect(() => {
-    if (!authLoading && currentUser) {
-        fetchAnalyticsData();
+    if (dispensaryId) {
+        fetchAnalyticsData(dispensaryId);
+    } else if (!authLoading) {
+        setIsLoadingData(false);
     }
-  }, [authLoading, currentUser, fetchAnalyticsData]);
+  }, [dispensaryId, authLoading, fetchAnalyticsData]);
 
   const stats = useMemo(() => {
     const activePoolCount = products.filter(p => p.isAvailableForPool).length;
@@ -119,9 +123,16 @@ export default function WellnessAnalyticsPage() {
   }, [products]);
 
 
-  if (authLoading || isLoadingData) {
-    return <div className="p-4"><Skeleton className="h-12 w-1/2 mb-6" /><Skeleton className="h-72 w-full" /></div>;
+  if (authLoading) {
+    return (
+      <div className="p-4">
+        <Skeleton className="h-12 w-1/2 mb-6" />
+        <Skeleton className="h-24 w-full mb-6" />
+        <Skeleton className="h-72 w-full" />
+      </div>
+    );
   }
+  
   if (!currentUser || currentUser.role !== 'DispensaryOwner') {
     return (
       <div className="p-4 text-center text-destructive flex flex-col items-center justify-center h-full">
