@@ -1,3 +1,4 @@
+
 'use server';
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -59,38 +60,32 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
         
         const toISODateString = (date: any): string | null => {
             if (!date) return null;
-            // Check for Firestore Timestamp first
             if (date instanceof admin.firestore.Timestamp) {
                 return date.toDate().toISOString();
             }
-            // Check for JS Date object
             if (date instanceof Date) {
                 return date.toISOString();
             }
-            // Try to parse if it's a string
             if (typeof date === 'string') {
                  try {
                      const parsedDate = new Date(date);
-                     // Check if parsing was successful
                      if (!isNaN(parsedDate.getTime())) {
                          return parsedDate.toISOString();
                      }
                  } catch (e) { 
                     logger.warn(`Could not parse date string: ${date}`);
-                    return null;
                  }
             }
             return null;
         };
         
-        // This is the safe way to construct the dispensary object with optional dates
         let dispensaryWithSerializableDates: Dispensary | null = null;
         if (dispensaryData) {
             dispensaryWithSerializableDates = {
                 ...dispensaryData,
                 applicationDate: toISODateString(dispensaryData.applicationDate),
-                approvedDate: dispensaryData.approvedDate ? toISODateString(dispensaryData.approvedDate) : null,
-                lastActivityDate: dispensaryData.lastActivityDate ? toISODateString(dispensaryData.lastActivityDate) : null,
+                approvedDate: toISODateString(dispensaryData.approvedDate),
+                lastActivityDate: toISODateString(dispensaryData.lastActivityDate),
             };
         }
         
@@ -106,7 +101,7 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
             createdAt: toISODateString(userData.createdAt),
             lastLoginAt: toISODateString(userData.lastLoginAt),
             dispensaryStatus: dispensaryData?.status || null,
-            dispensary: dispensaryWithSerializableDates, // Use the safely constructed object
+            dispensary: dispensaryWithSerializableDates,
             preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
             welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
             signupSource: userData.signupSource || 'public',
