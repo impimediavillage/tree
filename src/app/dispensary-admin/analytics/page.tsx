@@ -84,8 +84,8 @@ export default function WellnessAnalyticsPage() {
   useEffect(() => {
     if (!authLoading && dispensaryId) {
         fetchAnalyticsData(dispensaryId);
-    } else if (!authLoading) {
-        setIsLoadingData(false);
+    } else if (!authLoading && !dispensaryId) {
+        setIsLoadingData(false); // Stop loading if there's no dispensary ID
     }
   }, [dispensaryId, authLoading, fetchAnalyticsData]);
 
