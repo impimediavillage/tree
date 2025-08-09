@@ -77,11 +77,11 @@ export default function WellnessAdminOverviewPage() {
   }, [toast]);
 
   useEffect(() => {
-    // This effect now robustly waits for a valid dispensaryId before fetching.
+    if (authLoading) return; 
+
     if (dispensaryId) {
         fetchDashboardData(dispensaryId);
-    } else if (!authLoading) {
-        // If auth is done and there's still no ID, stop loading.
+    } else {
         setIsLoading(false);
     }
   }, [dispensaryId, authLoading, fetchDashboardData]);
