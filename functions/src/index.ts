@@ -53,12 +53,11 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
                     dispensaryData = { id: dispensaryDocSnap.id, ...dispensaryDocSnap.data() } as Dispensary;
                 } else {
                     logger.warn(`User ${uid} is linked to a non-existent dispensary document: ${userData.dispensaryId}`);
-                    // This prevents the function from crashing if a user is linked to a non-existent dispensary.
-                    dispensaryData = null; // Ensure dispensaryData is null if not found
+                    dispensaryData = null; 
                 }
             } catch (dispensaryError) {
                 logger.error(`Error fetching dispensary doc for user ${uid}.`, dispensaryError);
-                 dispensaryData = null; // Ensure we fail gracefully
+                 dispensaryData = null; 
             }
         }
         
@@ -115,7 +114,6 @@ export const getUserProfile = onCall({ cors: true }, async (request) => {
 
     } catch (error) {
         logger.error(`Error fetching user profile for ${uid}:`, error);
-        // Avoid throwing HttpsError for unexpected issues, let the client handle it gracefully
         throw new HttpsError('internal', 'An unexpected error occurred while fetching your profile.');
     }
 });
