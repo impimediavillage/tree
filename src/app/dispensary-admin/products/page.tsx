@@ -56,11 +56,9 @@ export default function WellnessProductsPage() {
   }, [toast]);
 
   useEffect(() => {
-    // Only fetch if auth is resolved and we have a dispensaryId
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
     } else if (!authLoading && !dispensaryId) {
-      // Handle case where there's no dispensary ID after loading
       setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchProducts]);
@@ -105,7 +103,6 @@ export default function WellnessProductsPage() {
       
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
-      // Re-fetch products after deletion
       fetchProducts(dispensaryId);
       
     } catch (error) {
