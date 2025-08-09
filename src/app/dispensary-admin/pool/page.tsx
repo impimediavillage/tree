@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductRequestTable } from '@/components/dispensary-admin/ProductRequestTable';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Inbox, Send, AlertCircle, Loader2 } from 'lucide-react';
+import { History, Inbox, Send, AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function WellnessPoolPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -65,7 +65,6 @@ export default function WellnessPoolPage() {
   }, [authLoading, dispensaryId, fetchRequests]);
 
   const handleRequestUpdate = () => {
-    // Re-fetch all data when an update happens
     if (dispensaryId) {
       fetchRequests(dispensaryId);
     }
