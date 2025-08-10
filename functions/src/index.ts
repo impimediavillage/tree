@@ -1,5 +1,4 @@
 
-'use server';
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
@@ -152,6 +151,7 @@ export const deductCreditsAndLogInteraction = functions.https.onCall(async (data
     }
     
     const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = data;
+    const dispensaryId = context.auth.token.dispensaryId || null;
     
     if (userId !== context.auth.uid) {
         throw new functions.https.HttpsError('permission-denied', 'You can only deduct your own credits.');
@@ -186,7 +186,7 @@ export const deductCreditsAndLogInteraction = functions.https.onCall(async (data
 
             const logEntry = {
                 userId,
-                dispensaryId: userData.dispensaryId || null,
+                dispensaryId: dispensaryId, // Use dispensaryId from auth token
                 advisorSlug,
                 creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),

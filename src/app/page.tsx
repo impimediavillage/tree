@@ -54,7 +54,7 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
       </CardContent>
       <CardFooter className="p-4 pt-0 mt-auto">
           <DialogTrigger asChild>
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">Learn more</Button>
+              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">Learn more</Button>
           </DialogTrigger>
       </CardFooter>
     </Card>
@@ -71,7 +71,7 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
             </DialogHeader>
         </ScrollArea>
         <DialogFooter className="p-6 pt-4 border-t mt-auto flex-shrink-0">
-            <Button asChild size="lg" className="w-full bg-green-600 hover:bg-green-700 text-white">
+            <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                 <Link href={link}>Consult Advisor</Link>
             </Button>
         </DialogFooter>
@@ -367,14 +367,14 @@ export default function HolisticAiHubPage() {
         </Card>
       )}
 
-      {currentUser && currentUser.role === 'DispensaryOwner' && (
+      {currentUser && (currentUser.role === 'DispensaryOwner' || currentUser.role === 'DispensaryStaff') && (
          <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
           <CardHeader>
             <CardTitle 
               className="text-2xl text-foreground flex items-center gap-2"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Owner!
+              <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Team!
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -404,7 +404,7 @@ export default function HolisticAiHubPage() {
               <Link href="/dashboard/leaf">My Dashboard</Link>
             </Button>
              <Button variant="outline" size="lg" className="text-lg" asChild>
-                <Link href="/dashboard/leaf/credits">Buy More Credits</Link>
+                <Link href="/pricing">Buy More Credits</Link>
             </Button>
           </CardContent>
         </Card>
@@ -445,7 +445,7 @@ export default function HolisticAiHubPage() {
               </CardDescription>
           </CardHeader>
           <CardFooter className="p-6 pt-0">
-             <Button asChild size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700 text-white">
+             <Button asChild size="lg" className="w-full text-lg bg-primary hover:bg-primary/90 text-primary-foreground">
               <Link href="/design/brand-assets">
                 <Sparkles className="mr-2 h-5 w-5" />
                 Design Your Own Sticker & Apparel Pack
