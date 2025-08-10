@@ -1,4 +1,6 @@
 
+'use server';
+
 import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from 'firebase-admin';
