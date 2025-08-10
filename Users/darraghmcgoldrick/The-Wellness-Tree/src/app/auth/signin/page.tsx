@@ -53,6 +53,8 @@ export default function SignInPage() {
         description: 'Verifying your profile and redirecting...',
       });
       
+      // Explicitly fetch the user profile *after* a successful login.
+      // This is critical to ensure custom claims are ready.
       const userProfile = await fetchUserProfile(userCredential.user);
 
       if (userProfile) {
