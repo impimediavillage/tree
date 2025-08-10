@@ -74,6 +74,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
+        setCurrentUser(null);
+        setCurrentDispensary(null);
+        localStorage.removeItem('currentUserHolisticAI');
         toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/auth/signin');
     } catch(error) {
