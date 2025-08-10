@@ -1,3 +1,4 @@
+
 {
   "name": "functions",
   "scripts": {
@@ -32,3 +33,5 @@
     "lib/**/*"
   ]
 }
+
+    
