@@ -28,7 +28,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Get references to the callable functions
 const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -67,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
-      await auth.signOut(); // Log out the user if their profile can't be fetched
+      await auth.signOut();
       return null;
     }
   }, [toast]);
@@ -87,7 +86,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Attempt to load from localStorage first for faster UI response
+        // Attempt to load from localStorage first for faster UI response,
+        // but the explicit fetchUserProfile in SignInPage handles the critical post-login fetch.
         const cachedUser = localStorage.getItem('currentUserHolisticAI');
         if (cachedUser) {
           try {
@@ -100,8 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.removeItem('currentUserHolisticAI');
           }
         }
-        // This won't block UI if cache exists, but ensures data is fresh on next load.
-        // The explicit call in SignInPage handles the immediate need after login.
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
@@ -149,5 +147,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
