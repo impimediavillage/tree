@@ -1,10 +1,9 @@
 
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, HttpsError, type CallableRequest } from "firebase-functions/v2/https";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import type { Dispensary, User as AppUser, UserDocData, DeductCreditsRequestBody, AllowedUserRole } from './types';
-import type { CallableRequest } from 'firebase-functions/v2/https';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -214,5 +213,3 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
-
-    

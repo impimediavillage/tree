@@ -128,19 +128,30 @@ exports.getUserProfile = (0, https_1.onCall)(async (request) => {
         const userData = userDocSnap.data();
         let dispensaryData = null;
         if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
-            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-            const dispensaryDocSnap = await dispensaryDocRef.get();
-            if (dispensaryDocSnap.exists) { // exists is a boolean property
-                const rawDispensaryData = dispensaryDocSnap.data();
-                if (rawDispensaryData) {
-                    dispensaryData = {
-                        ...rawDispensaryData,
-                        id: dispensaryDocSnap.id,
-                        applicationDate: safeToISOString(rawDispensaryData.applicationDate),
-                        approvedDate: safeToISOString(rawDispensaryData.approvedDate),
-                        lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
-                    };
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
+                if (dispensaryDocSnap.exists) { // exists is a boolean property
+                    const rawDispensaryData = dispensaryDocSnap.data();
+                    if (rawDispensaryData) {
+                        // Wrap date conversions in a try-catch as well
+                        try {
+                            dispensaryData = {
+                                ...rawDispensaryData,
+                                id: dispensaryDocSnap.id,
+                                applicationDate: safeToISOString(rawDispensaryData.applicationDate),
+                                approvedDate: safeToISOString(rawDispensaryData.approvedDate),
+                                lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
+                            };
+                        }
+                        catch (dateError) {
+                            (0, logger_1.error)(`Error converting dispensary dates for dispensary ${userData.dispensaryId}:`, dateError);
+                        }
+                    }
                 }
+            }
+            catch (dispensaryFetchError) {
+                (0, logger_1.error)(`Error fetching dispensary data for dispensaryId ${userData.dispensaryId}:`, dispensaryFetchError);
             }
         }
         const profileResponse = {
@@ -163,7 +174,7 @@ exports.getUserProfile = (0, https_1.onCall)(async (request) => {
         return profileResponse;
     }
     catch (error) {
-        error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
+        error(`CRITICAL UNHANDLED ERROR in getUserProfile for ${uid}:`, error);
         if (error instanceof https_1.HttpsError) {
             throw error;
         }

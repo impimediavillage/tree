@@ -62,6 +62,7 @@ export default function SignInPage() {
       } else {
          // The AuthContext now handles all user-facing error reporting,
          // including a toast notification if the profile fetch fails after a successful auth.
+         // It will also log the user out automatically in that case.
       }
 
     } catch (error: any) {
@@ -208,5 +209,3 @@ export default function SignInPage() {
     </div>
   );
 }
-
-    
