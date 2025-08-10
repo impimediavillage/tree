@@ -34,47 +34,48 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
-const functions = __importStar(require("firebase-functions"));
+const firestore_1 = require("firebase-functions/v2/firestore");
+const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
-const logger = __importStar(require("firebase-functions/logger"));
-// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+const logger_1 = require("firebase-functions/logger");
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
-        logger.info("Firebase Admin SDK initialized successfully.");
+        (0, logger_1.info)("Firebase Admin SDK initialized successfully.");
     }
     catch (e) {
-        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+        (0, logger_1.error)("CRITICAL: Firebase Admin SDK initialization failed:", e);
     }
 }
 const db = admin.firestore();
-// ============== END INITIALIZATION ==============
 // ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) ==============
-exports.onUserWriteSetClaims = functions.firestore
-    .document('users/{userId}')
-    .onWrite(async (change, context) => {
-    const userId = context.params.userId;
-    const afterData = change.after.data();
+exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)('users/{userId}', async (event) => {
+    const afterData = event.data?.after.data(); // Access after data
+    const userId = event.params.userId;
+    // Ensure role is one of the allowed types
+    const validRoles = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
+    const role = afterData?.role && validRoles.includes(afterData.role)
+        ? afterData.role
+        : 'User'; // Default to 'User' if role is missing or invalid
+    const dispensaryId = afterData?.dispensaryId || null;
     if (!afterData) {
-        logger.info(`User document ${userId} deleted. Revoking custom claims.`);
+        (0, logger_1.info)(`User document ${userId} deleted. Revoking custom claims.`);
         try {
             await admin.auth().setCustomUserClaims(userId, null);
-            logger.info(`Successfully revoked custom claims for deleted user ${userId}.`);
+            (0, logger_1.info)(`Successfully revoked custom claims for deleted user ${userId}.`);
         }
         catch (error) {
-            logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
+            error(`Error revoking custom claims for deleted user ${userId}:`, error);
         }
         return null;
     }
-    const role = afterData.role || null;
-    const dispensaryId = afterData.dispensaryId || null;
-    const claims = { role, dispensaryId };
     try {
+        const claims = { role, dispensaryId };
         await admin.auth().setCustomUserClaims(userId, claims);
-        logger.info(`Successfully set custom claims for user ${userId}:`, claims);
+        (0, logger_1.info)(`Successfully set custom claims for user ${userId}:`, claims);
     }
     catch (error) {
-        logger.error(`Error setting custom claims for user ${userId}:`, error);
+        error(`Error setting custom claims for user ${userId}:`, error);
     }
     return null;
 });
@@ -87,7 +88,7 @@ const safeToISOString = (date) => {
             return date.toDate().toISOString();
         }
         catch (e) {
-            logger.warn(`Could not convert Firestore Timestamp to Date:`, e);
+            (0, logger_1.warn)(`Could not convert Firestore Timestamp to Date:`, e);
             return null;
         }
     }
@@ -103,32 +104,32 @@ const safeToISOString = (date) => {
                 return parsedDate.toISOString();
         }
         catch (e) {
-            logger.warn(`Could not parse date string: ${date}`);
+            (0, logger_1.warn)(`Could not parse date string: ${date}`);
         }
     }
-    logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
+    (0, logger_1.warn)(`Unsupported date type encountered for conversion: ${typeof date}`);
     return null;
 };
-// ============== Callable Functions (v1) ==============
-exports.getUserProfile = functions.https.onCall(async (data, context) => {
+exports.getUserProfile = (0, https_1.onCall)(async (request) => {
+    const context = request; // Use request as context in v2
     if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
     const uid = context.auth.uid;
     const token = context.auth.token;
     try {
         const userDocRef = db.collection('users').doc(uid);
-        const userDocSnap = await userDocRef.get();
-        if (!userDocSnap.exists) {
-            logger.warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`);
-            throw new functions.https.HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
+        const userDocSnap = await userDocRef.get(); // .get() returns a DocumentSnapshot
+        if (!userDocSnap.exists) { // exists is a boolean property on DocumentSnapshot
+            (0, logger_1.warn)(`User document not found for uid: ${uid}. This can happen briefly after signup.`, { uid });
+            throw new https_1.HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
         }
         const userData = userDocSnap.data();
         let dispensaryData = null;
         if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
             const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
             const dispensaryDocSnap = await dispensaryDocRef.get();
-            if (dispensaryDocSnap.exists()) {
+            if (dispensaryDocSnap.exists) { // exists is a boolean property
                 const rawDispensaryData = dispensaryDocSnap.data();
                 if (rawDispensaryData) {
                     dispensaryData = {
@@ -146,7 +147,7 @@ exports.getUserProfile = functions.https.onCall(async (data, context) => {
             email: userData.email || token.email || '',
             displayName: userData.displayName || token.name || '',
             photoURL: userData.photoURL || token.picture || null,
-            role: userData.role || 'User',
+            role: userData.role || 'User', // Ensure role is one of the allowed types
             dispensaryId: userData.dispensaryId || null,
             credits: userData.credits || 0,
             status: userData.status || 'Active',
@@ -161,24 +162,25 @@ exports.getUserProfile = functions.https.onCall(async (data, context) => {
         return profileResponse;
     }
     catch (error) {
-        logger.error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
-        if (error instanceof functions.https.HttpsError) {
+        error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
+        if (error instanceof https_1.HttpsError) {
             throw error;
         }
-        throw new functions.https.HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
+        throw new https_1.HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
     }
 });
-exports.deductCreditsAndLogInteraction = functions.https.onCall(async (data, context) => {
+exports.deductCreditsAndLogInteraction = (0, https_1.onCall)(async (request) => {
+    const context = request; // Use request as context in v2
     if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = data;
+    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data; // Access data via request.data
     const dispensaryId = context.auth.token.dispensaryId || null;
     if (userId !== context.auth.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'You can only deduct your own credits.');
+        throw new https_1.HttpsError('permission-denied', 'You can only deduct your own credits.');
     }
     if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
+        throw new https_1.HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
     }
     const userRef = db.collection("users").doc(userId);
     let newCreditBalance = 0;
@@ -186,13 +188,13 @@ exports.deductCreditsAndLogInteraction = functions.https.onCall(async (data, con
         await db.runTransaction(async (transaction) => {
             const freshUserDoc = await transaction.get(userRef);
             if (!freshUserDoc.exists) {
-                throw new functions.https.HttpsError('not-found', 'User not found during transaction.');
+                throw new https_1.HttpsError('not-found', 'User not found during transaction.');
             }
             const userData = freshUserDoc.data();
             const currentCredits = userData.credits || 0;
             if (!wasFreeInteraction) {
-                if (currentCredits < creditsToDeduct) {
-                    throw new functions.https.HttpsError('failed-precondition', 'Insufficient credits.');
+                if (currentCredits < creditsToDeduct && creditsToDeduct > 0) { // Only check if credits are needed
+                    throw new https_1.HttpsError('failed-precondition', 'Insufficient credits.');
                 }
                 newCreditBalance = currentCredits - creditsToDeduct;
                 transaction.update(userRef, { credits: newCreditBalance });
@@ -218,11 +220,11 @@ exports.deductCreditsAndLogInteraction = functions.https.onCall(async (data, con
         };
     }
     catch (error) {
-        logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
-        if (error instanceof functions.https.HttpsError) {
+        error("Error in deductCreditsAndLogInteraction transaction:", error);
+        if (error instanceof https_1.HttpsError) {
             throw error;
         }
-        throw new functions.https.HttpsError('internal', 'An internal error occurred while processing the transaction.');
+        throw new https_1.HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
 //# sourceMappingURL=index.js.map
