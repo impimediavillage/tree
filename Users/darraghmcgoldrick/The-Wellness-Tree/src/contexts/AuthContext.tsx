@@ -100,9 +100,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.removeItem('currentUserHolisticAI');
           }
         }
-        // Always fetch fresh profile in the background to ensure data is up-to-date
-        // This won't block UI if cache exists
-        await fetchUserProfile(firebaseUser);
+        // This won't block UI if cache exists, but ensures data is fresh on next load.
+        // The explicit call in SignInPage handles the immediate need after login.
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
@@ -112,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [fetchUserProfile]); 
+  }, []); 
   
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
