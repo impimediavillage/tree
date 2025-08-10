@@ -14,7 +14,7 @@ export interface ProductCategory {
   name: string;
   subcategories?: ProductCategory[]; // Recursive
 }
-
+export type AllowedUserRole = 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
 // Represents the structure of a Dispensary document in Firestore
 export interface Dispensary {
   id?: string; 
