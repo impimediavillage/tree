@@ -77,8 +77,8 @@ const safeToISOString = (date: any): string | null => {
     return null;
 };
 
-
-export const getUserProfile = onCall(async (request: CallableRequest) => {
+export const getUserProfile = onCall(async (request: CallableRequest): Promise<User> => {
+    // CORS is handled automatically for Callable Functions by Firebase
     const context = request; // Use request as context in v2
     if (!context.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
@@ -99,20 +99,29 @@ export const getUserProfile = onCall(async (request: CallableRequest) => {
         
         let dispensaryData: Dispensary | null = null;
         if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
-            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-            const dispensaryDocSnap = await dispensaryDocRef.get();
+            try {
+                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+                const dispensaryDocSnap = await dispensaryDocRef.get();
             
-            if (dispensaryDocSnap.exists) { // exists is a boolean property
-                const rawDispensaryData = dispensaryDocSnap.data();
-                if (rawDispensaryData) {
-                    dispensaryData = {
-                        ...rawDispensaryData,
-                        id: dispensaryDocSnap.id,
-                        applicationDate: safeToISOString(rawDispensaryData.applicationDate),
-                        approvedDate: safeToISOString(rawDispensaryData.approvedDate),
-                        lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
-                    } as Dispensary;
+                if (dispensaryDocSnap.exists) { // exists is a boolean property
+                    const rawDispensaryData = dispensaryDocSnap.data();
+                    if (rawDispensaryData) {
+                        // Wrap date conversions in a try-catch as well
+                        try {
+                            dispensaryData = {
+                                ...rawDispensaryData,
+                                id: dispensaryDocSnap.id,
+                                applicationDate: safeToISOString(rawDispensaryData.applicationDate),
+                                approvedDate: safeToISOString(rawDispensaryData.approvedDate),
+                                lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
+                            } as Dispensary;
+                        } catch (dateError: any) {
+                            error(`Error converting dispensary dates for dispensary ${userData.dispensaryId}:`, dateError);
+                        }
+                    }
                 }
+            } catch (dispensaryFetchError: any) {
+                error(`Error fetching dispensary data for dispensaryId ${userData.dispensaryId}:`, dispensaryFetchError);
             }
         }
         
@@ -136,7 +145,7 @@ export const getUserProfile = onCall(async (request: CallableRequest) => {
 
         return profileResponse;
     } catch (error: any) {
-        error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
+        error(`CRITICAL UNHANDLED ERROR in getUserProfile for ${uid}:`, error);
         if (error instanceof HttpsError) {
             throw error;
         }
