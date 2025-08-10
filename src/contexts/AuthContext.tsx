@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      // No need to get the token manually, 'httpsCallable' handles it.
       const result = await getUserProfileCallable();
       const fullProfile = result.data as AppUser;
 
@@ -86,7 +85,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        await fetchUserProfile(firebaseUser);
+        const storedUser = localStorage.getItem('currentUserHolisticAI');
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            if (parsedUser.uid === firebaseUser.uid) {
+               setCurrentUser(parsedUser);
+               setCurrentDispensary(parsedUser.dispensary || null);
+            } else {
+              await fetchUserProfile(firebaseUser);
+            }
+          } catch(e) {
+             await fetchUserProfile(firebaseUser);
+          }
+        } else {
+          await fetchUserProfile(firebaseUser);
+        }
       } else {
         setCurrentUser(null);
         setCurrentDispensary(null);
