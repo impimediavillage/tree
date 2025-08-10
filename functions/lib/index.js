@@ -111,6 +111,7 @@ const safeToISOString = (date) => {
     return null;
 };
 exports.getUserProfile = (0, https_1.onCall)(async (request) => {
+    // CORS is handled automatically for Callable Functions by Firebase
     const context = request; // Use request as context in v2
     if (!context.auth) {
         throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
