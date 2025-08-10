@@ -19,7 +19,7 @@ const db = admin.firestore();
 
 
 // ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) - V2 SYNTAX ==============
-export const onUserWriteSetClaimsV2 = onDocumentWritten("users/{userId}", async (event) => {
+export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (event) => {
     const userId = event.params.userId;
     const afterData = event.data?.after.data() as UserDocData | undefined;
 
