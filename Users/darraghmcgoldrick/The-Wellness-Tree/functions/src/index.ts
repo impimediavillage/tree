@@ -3,7 +3,7 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import type { Dispensary, User as AppUser, UserDocData, DeductCreditsRequestBody } from './types';
+import type { Dispensary, User as AppUser, UserDocData, DeductCreditsRequestBody, AllowedUserRole } from './types';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
@@ -35,7 +35,11 @@ export const onUserWriteSetClaimsV2 = onDocumentWritten("users/{userId}", async 
         return null;
     }
 
-    const role = afterData.role || null;
+    const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
+    const role: AllowedUserRole = afterData.role && validRoles.includes(afterData.role as AllowedUserRole)
+        ? afterData.role as AllowedUserRole
+        : 'User'; // Default to 'User'
+        
     const dispensaryId = afterData.dispensaryId || null;
     const claims: { [key: string]: any } = { role, dispensaryId };
 
@@ -79,12 +83,11 @@ const safeToISOString = (date: any): string | null => {
 
 // ============== Callable Functions (v2) ==============
 
-export const getuserprofile = onCall(async (request: CallableRequest) => {
+export const getUserProfile = onCall(async (request: CallableRequest) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const uid = request.auth.uid;
-    const token = request.auth.token;
+    const { uid, token } = request.auth;
 
     try {
         const userDocRef = db.collection('users').doc(uid);
@@ -121,7 +124,7 @@ export const getuserprofile = onCall(async (request: CallableRequest) => {
             email: userData.email || token.email || '',
             displayName: userData.displayName || token.name || '',
             photoURL: userData.photoURL || token.picture || null,
-            role: (userData.role || 'User') as AppUser['role'],
+            role: (userData.role as AllowedUserRole || 'User'),
             dispensaryId: userData.dispensaryId || null,
             credits: userData.credits || 0,
             status: userData.status || 'Active',
@@ -145,7 +148,7 @@ export const getuserprofile = onCall(async (request: CallableRequest) => {
 });
 
 
-export const deductcreditsandloginteraction = onCall(async (request: CallableRequest<DeductCreditsRequestBody>) => {
+export const deductCreditsAndLogInteraction = onCall(async (request: CallableRequest<DeductCreditsRequestBody>) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
