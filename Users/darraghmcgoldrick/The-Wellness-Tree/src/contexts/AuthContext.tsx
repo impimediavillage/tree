@@ -29,7 +29,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Get references to the callable functions
-const getUserProfileCallable = httpsCallable(functions, 'getuserprofile');
+const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
@@ -87,8 +87,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Instead of checking localStorage, always fetch the fresh profile on auth state change.
-        // This ensures data consistency and claims are up-to-date.
+        // Attempt to load from localStorage first for faster UI response
+        const cachedUser = localStorage.getItem('currentUserHolisticAI');
+        if (cachedUser) {
+          try {
+            const parsedUser = JSON.parse(cachedUser) as AppUser;
+            if (parsedUser.uid === firebaseUser.uid) {
+              setCurrentUser(parsedUser);
+              setCurrentDispensary(parsedUser.dispensary || null);
+            }
+          } catch {
+            localStorage.removeItem('currentUserHolisticAI');
+          }
+        }
+        // Always fetch fresh profile in the background to ensure data is up-to-date
+        // This won't block UI if cache exists
         await fetchUserProfile(firebaseUser);
       } else {
         setCurrentUser(null);
