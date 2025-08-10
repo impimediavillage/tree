@@ -58,8 +58,8 @@ export default function SignInPage() {
       if (userProfile) {
         handleRedirect(userProfile);
       } else {
-         // The AuthContext now handles all error reporting,
-         // including a toast notification for this specific case.
+         // The AuthContext now handles all user-facing error reporting,
+         // including a toast notification if the profile fetch fails after a successful auth.
       }
 
     } catch (error: any) {
