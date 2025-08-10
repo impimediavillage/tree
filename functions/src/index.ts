@@ -4,9 +4,6 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import type { Dispensary, User as AppUser, UserDocData, DeductCreditsRequestBody } from './types';
-import * as cors from 'cors';
-
-const corsHandler = cors({ origin: true });
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -81,37 +78,34 @@ const safeToISOString = (date: any): string | null => {
 };
 
 
-// ============== onRequest Function for getUserProfile ==============
-export const getUserProfile = functions.https.onRequest((request, response) => {
-    corsHandler(request, response, async () => {
-        const authHeader = request.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            response.status(403).send({ error: { status: 'unauthenticated', message: 'Unauthorized' } });
-            return;
+// ============== Callable Functions (v1) ==============
+
+export const getUserProfile = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    const uid = context.auth.uid;
+    const token = context.auth.token;
+
+    try {
+        const userDocRef = db.collection('users').doc(uid);
+        const userDocSnap = await userDocRef.get();
+
+        if (!userDocSnap.exists) {
+            logger.warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`);
+            throw new functions.https.HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
         }
-        const idToken = authHeader.split('Bearer ')[1];
-
-        try {
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
-            const uid = decodedToken.uid;
+        
+        const userData = userDocSnap.data() as UserDocData;
+        
+        let dispensaryData: Dispensary | null = null;
+        if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
+            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+            const dispensaryDocSnap = await dispensaryDocRef.get();
             
-            const userDocRef = db.collection('users').doc(uid);
-            const userDocSnap = await userDocRef.get();
-
-            if (!userDocSnap.exists) {
-                logger.warn(`User document not found for uid: ${uid}.`);
-                response.status(404).send({ error: { status: 'not-found', message: 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.' }});
-                return;
-            }
-            
-            const userData = userDocSnap.data() as UserDocData;
-            
-            let dispensaryData: Dispensary | null = null;
-            if (userData.dispensaryId) {
-                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-                const dispensaryDocSnap = await dispensaryDocRef.get();
-                if (dispensaryDocSnap.exists()) {
-                    const rawDispensaryData = dispensaryDocSnap.data()!;
+            if (dispensaryDocSnap.exists()) {
+                const rawDispensaryData = dispensaryDocSnap.data();
+                if (rawDispensaryData) {
                     dispensaryData = {
                         ...rawDispensaryData,
                         id: dispensaryDocSnap.id,
@@ -121,106 +115,98 @@ export const getUserProfile = functions.https.onRequest((request, response) => {
                     } as Dispensary;
                 }
             }
-            
-            const profileResponse: AppUser = {
-                uid: uid,
-                email: userData.email || decodedToken.email || '',
-                displayName: userData.displayName || decodedToken.name || '',
-                photoURL: userData.photoURL || decodedToken.picture || null,
-                role: userData.role || 'User',
-                dispensaryId: userData.dispensaryId || null,
-                credits: userData.credits || 0,
-                status: userData.status || 'Active',
-                createdAt: safeToISOString(userData.createdAt),
-                lastLoginAt: safeToISOString(userData.lastLoginAt),
-                dispensaryStatus: dispensaryData?.status || null,
-                dispensary: dispensaryData,
-                preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
-                welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
-                signupSource: userData.signupSource || 'public',
-            };
-
-            response.status(200).send({ result: profileResponse });
-
-        } catch (error) {
-            logger.error(`CRITICAL ERROR in getUserProfile:`, error);
-            response.status(500).send({ error: { status: 'internal', message: 'An unexpected server error occurred while fetching your profile.' } });
         }
-    });
+        
+        const profileResponse: AppUser = {
+            uid: uid,
+            email: userData.email || token.email || '',
+            displayName: userData.displayName || token.name || '',
+            photoURL: userData.photoURL || token.picture || null,
+            role: userData.role || 'User',
+            dispensaryId: userData.dispensaryId || null,
+            credits: userData.credits || 0,
+            status: userData.status || 'Active',
+            createdAt: safeToISOString(userData.createdAt),
+            lastLoginAt: safeToISOString(userData.lastLoginAt),
+            dispensaryStatus: dispensaryData?.status || null,
+            dispensary: dispensaryData,
+            preferredDispensaryTypes: userData.preferredDispensaryTypes || [],
+            welcomeCreditsAwarded: userData.welcomeCreditsAwarded || false,
+            signupSource: userData.signupSource || 'public',
+        };
+
+        return profileResponse;
+    } catch (error: any) {
+        logger.error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
+        if (error instanceof functions.https.HttpsError) {
+          throw error;
+        }
+        throw new functions.https.HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
+    }
 });
 
 
-// ============== onRequest Function for deductCreditsAndLogInteraction ==============
-export const deductCreditsAndLogInteraction = functions.https.onRequest((request, response) => {
-    corsHandler(request, response, async () => {
-        const authHeader = request.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            response.status(403).send({ error: { status: 'unauthenticated', message: 'Unauthorized' } });
-            return;
-        }
-        const idToken = authHeader.split('Bearer ')[1];
-        
-        try {
-            const decodedToken = await admin.auth().verifyIdToken(idToken);
-            const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.body.data as DeductCreditsRequestBody;
+export const deductCreditsAndLogInteraction = functions.https.onCall(async (data: DeductCreditsRequestBody, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    
+    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = data;
+    
+    if (userId !== context.auth.uid) {
+        throw new functions.https.HttpsError('permission-denied', 'You can only deduct your own credits.');
+    }
+
+    if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
+    }
+
+    const userRef = db.collection("users").doc(userId);
+    let newCreditBalance = 0;
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const freshUserDoc = await transaction.get(userRef);
+            if (!freshUserDoc.exists) {
+                throw new functions.https.HttpsError('not-found', 'User not found during transaction.');
+            }
             
-            if (userId !== decodedToken.uid) {
-                response.status(403).send({ error: { status: 'permission-denied', message: 'You can only deduct your own credits.' } });
-                return;
-            }
+            const userData = freshUserDoc.data() as UserDocData;
+            const currentCredits = userData.credits || 0;
 
-            if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined) {
-                response.status(400).send({ error: { status: 'invalid-argument', message: 'Missing or invalid arguments provided.' } });
-                return;
-            }
-
-            const userRef = db.collection("users").doc(userId);
-            let newCreditBalance = 0;
-
-            await db.runTransaction(async (transaction) => {
-                const freshUserDoc = await transaction.get(userRef);
-                if (!freshUserDoc.exists) {
-                    throw { status: 'not-found', message: 'User not found during transaction.' };
+            if (!wasFreeInteraction) {
+                if (currentCredits < creditsToDeduct) {
+                    throw new functions.https.HttpsError('failed-precondition', 'Insufficient credits.');
                 }
-                
-                const userData = freshUserDoc.data() as UserDocData;
-                const currentCredits = userData.credits || 0;
-
-                if (!wasFreeInteraction) {
-                    if (currentCredits < creditsToDeduct) {
-                        throw { status: 'failed-precondition', message: 'Insufficient credits.' };
-                    }
-                    newCreditBalance = currentCredits - creditsToDeduct;
-                    transaction.update(userRef, { credits: newCreditBalance });
-                } else {
-                    newCreditBalance = currentCredits;
-                }
-
-                const logEntry = {
-                    userId,
-                    dispensaryId: userData.dispensaryId || null,
-                    advisorSlug,
-                    creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
-                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                    wasFreeInteraction,
-                };
-                const logRef = db.collection("aiInteractionsLog").doc();
-                transaction.set(logRef, logEntry);
-            });
-
-            response.status(200).send({ result: {
-                success: true,
-                message: "Credits updated and interaction logged successfully.",
-                newCredits: newCreditBalance,
-            }});
-
-        } catch (error: any) {
-            logger.error("Error in deductCreditsAndLogInteraction:", error);
-            if (error.status && error.message) {
-                 response.status(400).send({ error }); // Send structured error
+                newCreditBalance = currentCredits - creditsToDeduct;
+                transaction.update(userRef, { credits: newCreditBalance });
             } else {
-                 response.status(500).send({ error: { status: 'internal', message: 'An internal error occurred while processing the transaction.' } });
+                newCreditBalance = currentCredits;
             }
+
+            const logEntry = {
+                userId,
+                dispensaryId: userData.dispensaryId || null,
+                advisorSlug,
+                creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                wasFreeInteraction,
+            };
+            const logRef = db.collection("aiInteractionsLog").doc();
+            transaction.set(logRef, logEntry);
+        });
+
+        return {
+            success: true,
+            message: "Credits updated and interaction logged successfully.",
+            newCredits: newCreditBalance,
+        };
+
+    } catch (error: any) {
+        logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
+         if (error instanceof functions.https.HttpsError) {
+          throw error;
         }
-    });
+        throw new functions.https.HttpsError('internal', 'An internal error occurred while processing the transaction.');
+    }
 });

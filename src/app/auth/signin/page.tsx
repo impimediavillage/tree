@@ -58,9 +58,8 @@ export default function SignInPage() {
       if (userProfile) {
         handleRedirect(userProfile);
       } else {
-         // The AuthContext now handles all error reporting, including a toast notification.
-         // This else block is for catching edge cases where the profile might be null
-         // even if the function doesn't throw.
+         // The AuthContext now handles all error reporting,
+         // including a toast notification for this specific case.
       }
 
     } catch (error: any) {
