@@ -36,12 +36,16 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    // Dispensaries collection rules
+   // Dispensaries collection rules
     match /dispensaries/{dispensaryId} {
       // Anyone can create a dispensary (application process)
       allow create: if request.auth != null;
-      // Anyone can read approved dispensary profiles
-      allow read: if resource.data.status == 'Approved' || isSuperAdmin() || isDispensaryMember(dispensaryId);
+      // Allow the getUserProfile function to read the dispensary linked to the requesting user,
+      // AND allow public read for approved dispensaries, Super Admins, and Dispensary Members
+      allow read: if (request.auth != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == dispensaryId) ||
+                      resource.data.status == 'Approved' || 
+                      isSuperAdmin() || 
+                      isDispensaryMember(dispensaryId);
       // Only Super Admins or members of that dispensary can update it
       allow update: if isSuperAdmin() || isDispensaryMember(dispensaryId);
       // Only Super Admins can delete dispensaries

@@ -5,11 +5,9 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Building, ListChecks, CreditCard, ShieldAlert, Bell, Settings, Package, Loader2, Hourglass, DownloadCloud } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
-import { db, functions } from '@/lib/firebase';
+import { useEffect, useState, useCallback, use } from 'react';
+import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, CollectionReference, DocumentData, doc, getDoc } from 'firebase/firestore';
-import type { Dispensary, ScrapeLog } from '@/types';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -97,9 +95,6 @@ export default function AdminDashboardOverviewPage() {
     activeProducts: 0, 
   });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
-  const [isScraping, setIsScraping] = useState(false);
-  const [lastScrape, setLastScrape] = useState<ScrapeLog | null>(null);
-  const { toast } = useToast();
 
   const fetchStats = useCallback(async () => {
       setIsLoadingStats(true);
@@ -110,11 +105,6 @@ export default function AdminDashboardOverviewPage() {
         const pendingWellnessQuery = query(wellnessCollection, where("status", "==", "Pending Approval"));
         const pendingWellnessSnapshot = await getDocs(pendingWellnessQuery);
         const productsSnapshot = await getDocs(collection(db, "products")); 
-
-        const lastScrapeQuery = query(collection(db, "importsHistory"), orderBy('endTime', 'desc'), limit(1));
-        const lastScrapeSnapshot = await getDocs(lastScrapeQuery);
-        if (!lastScrapeSnapshot.empty) {
-            setLastScrape(lastScrapeSnapshot.docs[0].data() as ScrapeLog);
         }
 
         setStats({
@@ -134,36 +124,6 @@ export default function AdminDashboardOverviewPage() {
     fetchStats();
   }, [fetchStats]);
 
-  const handleScrape = async () => {
-    setIsScraping(true);
-    toast({
-        title: 'Scraping Initiated',
-        description: 'The product catalog scraping process has started. This may take several minutes.',
-        duration: 10000,
-    });
-    try {
-        const scrapeFunction = httpsCallable(functions, 'scrapeJustBrandCatalog');
-        const result = await scrapeFunction();
-        toast({
-            title: 'Scraping Successful',
-            description: (result.data as any)?.message || 'Catalog has been updated.',
-        });
-        fetchStats(); // Re-fetch stats to reflect any changes
-    } catch (error) {
-        console.error('Error triggering scrape function:', error);
-        let description = 'An unknown error occurred.';
-        if (error instanceof FunctionsError) {
-            description = error.message;
-        }
-        toast({
-            title: 'Scraping Failed',
-            description: description,
-            variant: 'destructive',
-        });
-    } finally {
-        setIsScraping(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -260,14 +220,6 @@ export default function AdminDashboardOverviewPage() {
             icon={ShieldAlert}
             link="/admin/dashboard/pool-issues"
             buttonText="View Issues"
-        />
-        <QuickActionCard
-            title="JustBrand Catalog Import"
-            description={`Import the latest product catalog from JustBrand. Last run: ${lastScrape ? formatDistanceToNow(new Date((lastScrape.endTime as any).toDate()), { addSuffix: true }) : 'never'}`}
-            icon={DownloadCloud}
-            onClick={handleScrape}
-            buttonText={isScraping ? "Scraping..." : "Run Scraper"}
-            disabled={isScraping}
         />
       </div>
     </div>
