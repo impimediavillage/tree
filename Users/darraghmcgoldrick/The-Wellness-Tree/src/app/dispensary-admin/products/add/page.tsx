@@ -233,7 +233,7 @@ export default function AddProductPage() {
                     {productStreams.map((stream) => {
                         const IconComponent = streamIconMapping[stream.name] || Sparkles;
                         const color = streamIconMapping[stream.name] ? 'text-inherit' : 'text-gray-500';
-                        const text = stream.name.includes('Gear') ? 'Accessories' : `${stream.name} Products`;
+                        const text = stream.name.includes('Gear') ? 'Accessories' : stream.name.replace(' Products', '');
 
                         return ( 
                             <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}>
