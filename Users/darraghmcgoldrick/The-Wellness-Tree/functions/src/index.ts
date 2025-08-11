@@ -23,6 +23,7 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
     const userId = event.params.userId;
     const afterData = event.data?.after.data() as UserDocData | undefined;
 
+    // Handle user deletion
     if (!afterData) {
         logger.info(`User document ${userId} deleted. Revoking custom claims.`);
         try {
@@ -31,9 +32,10 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         } catch (error) {
             logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
         }
-        return null;
+        return; // Exit function
     }
 
+    // Handle user creation or update
     const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
     const role: AllowedUserRole = afterData.role && validRoles.includes(afterData.role as AllowedUserRole)
         ? afterData.role as AllowedUserRole
@@ -48,7 +50,6 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
     } catch (error) {
         logger.error(`Error setting custom claims for user ${userId}:`, error);
     }
-    return null;
 });
 
 
@@ -82,7 +83,7 @@ const safeToISOString = (date: any): string | null => {
 
 // ============== Callable Functions (v2) ==============
 
-export const getUserProfile = onCall(async (request: CallableRequest) => {
+export const getUserProfile = onCall(async (request: CallableRequest): Promise<AppUser> => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
@@ -145,3 +146,71 @@ export const getUserProfile = onCall(async (request: CallableRequest) => {
         throw new HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
     }
 });
+
+export const deductCreditsAndLogInteraction = onCall(async (request: CallableRequest) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    
+    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data;
+    const dispensaryId = request.auth.token.dispensaryId || null;
+    
+    if (userId !== request.auth.uid) {
+        throw new HttpsError('permission-denied', 'You can only deduct your own credits.');
+    }
+    
+    if (!userId || !advisorSlug || creditsToDeduct === undefined || wasFreeInteraction === undefined) {
+        throw new HttpsError('invalid-argument', 'Missing or invalid arguments provided.');
+    }
+
+    const userRef = db.collection("users").doc(userId);
+    let newCreditBalance = 0;
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const freshUserDoc = await transaction.get(userRef);
+            if (!freshUserDoc.exists) {
+                throw new HttpsError('not-found', 'User not found during transaction.');
+            }
+            
+            const userData = freshUserDoc.data() as UserDocData;
+            const currentCredits = userData.credits || 0;
+
+            if (!wasFreeInteraction) {
+                if (currentCredits < creditsToDeduct && creditsToDeduct > 0) { // Only check if credits are needed
+                    throw new HttpsError('failed-precondition', 'Insufficient credits.');
+                }
+                newCreditBalance = currentCredits - creditsToDeduct;
+                transaction.update(userRef, { credits: newCreditBalance });
+            } else {
+                newCreditBalance = currentCredits;
+            }
+
+            const logEntry = {
+                userId,
+                dispensaryId: dispensaryId, // Use dispensaryId from auth token
+                advisorSlug,
+                creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                wasFreeInteraction,
+            };
+            const logRef = db.collection("aiInteractionsLog").doc();
+            transaction.set(logRef, logEntry);
+        });
+
+        return {
+            success: true,
+            message: "Credits updated and interaction logged successfully.",
+            newCredits: newCreditBalance,
+        };
+
+    } catch (error: any) {
+        logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
+         if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
+    }
+});
+
+    
