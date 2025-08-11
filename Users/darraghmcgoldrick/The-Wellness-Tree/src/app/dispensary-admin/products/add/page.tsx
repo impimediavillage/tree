@@ -239,7 +239,7 @@ export default function AddProductPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                     {productStreams.map((stream) => {
                         const IconComponent = streamIconMapping[stream.name] || Sparkles;
-                        const color = streamIconMapping[stream.name] ? streamIconMapping[stream.name].color : 'text-gray-500';
+                        const color = streamIconMapping[stream.name] ? 'text-inherit' : 'text-gray-500';
                         const text = stream.name.includes('Gear') ? 'Accessories' : `${stream.name} Products`;
 
                         return ( 
