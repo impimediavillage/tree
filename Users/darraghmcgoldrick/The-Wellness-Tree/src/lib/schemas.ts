@@ -251,6 +251,14 @@ export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => 
             path: ["poolPriceTiers"],
         });
     }
+    if (data.category === 'Apparel') {
+        if (!data.gender) {
+             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Gender is required for Apparel.", path: ["gender"] });
+        }
+        if (!data.sizingSystem) {
+             ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Sizing system is required for Apparel.", path: ["sizingSystem"] });
+        }
+    }
 });
 export type ProductFormData = z.infer<typeof productSchema>;
 export type ProductAttribute = z.infer<typeof attributeSchema>;
