@@ -114,14 +114,7 @@ export default function AddProductPage() {
   const handleProductStreamSelect = (streamCategory: string) => {
     resetFormFields();
     setSelectedProductStream(streamCategory);
-
-    const matchingCategory = categoryStructure.find(c => c.name === streamCategory);
-    
-    if (matchingCategory) {
-        form.setValue('category', matchingCategory.name, { shouldValidate: true });
-    } else {
-        form.setValue('category', '', { shouldValidate: true });
-    }
+    form.setValue('category', streamCategory, { shouldValidate: true });
   };
 
   useEffect(() => {
@@ -328,7 +321,7 @@ export default function AddProductPage() {
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                     <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
+                    <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
                     {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                   </div>
                 )}
@@ -349,12 +342,7 @@ export default function AddProductPage() {
                           <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
                           {priceTierFields.length > 1 && (
-                            <div
-                                role="button"
-                                aria-label="Remove price tier"
-                                onClick={() => removePriceTier(index)}
-                                className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer"
-                            >
+                            <div role="button" aria-label="Remove price tier" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer">
                                 <Trash2 className="h-4 w-4" />
                             </div>
                           )}
@@ -371,7 +359,7 @@ export default function AddProductPage() {
                 <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
 
                 <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Final Step: Sharing & Visibility</h2>
-                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other wellness stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other wellness stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                 {watchIsAvailableForPool && (
                   <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other wellness stores.</CardDescription></CardHeader>
                   <CardContent className="p-0 space-y-2">
@@ -380,12 +368,7 @@ export default function AddProductPage() {
                         <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
                         {poolPriceTierFields.length > 1 && (
-                            <div
-                                role="button"
-                                aria-label="Remove pool price tier"
-                                onClick={() => removePoolPriceTier(index)}
-                                className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer"
-                            >
+                            <div role="button" aria-label="Remove pool price tier" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer">
                                 <Trash2 className="h-4 w-4" />
                             </div>
                         )}
