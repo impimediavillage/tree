@@ -41,6 +41,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
       console.log("AuthContext: Fetching user profile for UID:", firebaseUser.uid);
+      
+       // --- TEMPORARY DELAY FOR TESTING ---
+       await new Promise(resolve => setTimeout(resolve, 500)); // Add a 500ms delay
+       console.log("AuthContext: Delay finished, calling getUserProfile callable...");
+       // --- END TEMPORARY DELAY ---
       const result = await getUserProfileCallable();
       const fullProfile = result.data as AppUser;
 
@@ -86,11 +91,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
+      console.log("onAuthStateChanged fired. firebaseUser:", firebaseUser); // Add this log
       if (firebaseUser) {
-        // Instead of checking localStorage, always fetch the fresh profile on auth state change.
-        // This ensures data consistency and claims are up-to-date.
+        console.log("Authenticated user detected, fetching profile..."); // Add this log
         await fetchUserProfile(firebaseUser);
       } else {
+        console.log("No authenticated user."); // Add this log
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -99,7 +105,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [fetchUserProfile]); 
+  }, [fetchUserProfile]);
+
   
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
