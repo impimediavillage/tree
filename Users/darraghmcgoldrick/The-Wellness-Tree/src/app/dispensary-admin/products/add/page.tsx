@@ -50,14 +50,6 @@ const streamIconMapping: Record<string, React.ElementType> = {
     'Sticker Promo Set': Gift,
 };
 
-const streamColorMapping: Record<string, string> = {
-    'THC': 'text-red-500',
-    'CBD': 'text-green-500',
-    'Apparel': 'text-blue-500',
-    'Smoking Gear': 'text-purple-500',
-    'Sticker Promo Set': 'text-yellow-500',
-};
-
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -247,7 +239,7 @@ export default function AddProductPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                     {productStreams.map((stream) => {
                         const IconComponent = streamIconMapping[stream.name] || Sparkles;
-                        const color = streamColorMapping[stream.name] || 'text-gray-500';
+                        const color = streamIconMapping[stream.name] ? streamIconMapping[stream.name].color : 'text-gray-500';
                         const text = stream.name.includes('Gear') ? 'Accessories' : `${stream.name} Products`;
 
                         return ( 
