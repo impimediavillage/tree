@@ -76,9 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
-        setCurrentUser(null);
-        setCurrentDispensary(null);
-        localStorage.removeItem('currentUserHolisticAI');
+        // The onAuthStateChanged listener below will handle clearing state
         toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/auth/signin');
     } catch(error) {
@@ -106,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } else {
+        // User logged out
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -152,3 +151,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+    
