@@ -137,9 +137,8 @@ export default function AddProductPage() {
     if (watchCategory) {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
       setSubCategoryL1Options(mainCat?.subcategories?.map(sc => sc.name).sort() || []);
-      form.setValue('subcategory', null); // Reset subcategory when main changes
+      form.setValue('subcategory', null);
     }
-  // This dependency array is intentionally focused on watchCategory and the structure.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchCategory, categoryStructure]);
 
@@ -148,11 +147,10 @@ export default function AddProductPage() {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
       const subCat = mainCat?.subcategories?.find(sc => sc.name === watchSubCategory);
       setSubCategoryL2Options(subCat?.subcategories?.map(ssc => ssc.name).sort() || []);
-      form.setValue('subSubcategory', null); // Reset sub-subcategory when L1 changes
+      form.setValue('subSubcategory', null);
     } else {
       setSubCategoryL2Options([]);
     }
-  // This dependency array is intentionally focused on the subcategory.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchSubCategory]);
 
@@ -295,10 +293,9 @@ export default function AddProductPage() {
                 </Card>
             )}
 
-            <Separator className={cn("my-6", !showProductDetailsForm && 'hidden')} />
-            
             {showProductDetailsForm && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                <Separator className="my-6" />
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
@@ -358,7 +355,16 @@ export default function AddProductPage() {
                           <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                          {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                          {priceTierFields.length > 1 && (
+                            <div
+                                role="button"
+                                aria-label="Remove price tier"
+                                onClick={() => removePriceTier(index)}
+                                className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </div>
+                          )}
                       </div>
                   ))}
                   <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
@@ -380,10 +386,19 @@ export default function AddProductPage() {
                       <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
                         <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                        {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                        {poolPriceTierFields.length > 1 && (
+                            <div
+                                role="button"
+                                aria-label="Remove pool price tier"
+                                onClick={() => removePoolPriceTier(index)}
+                                className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </div>
+                        )}
                       </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
+                     <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
                         <PackagePlus className="mr-2 h-4 w-4" />
                         Add Pool Price Tier
                     </Button>
