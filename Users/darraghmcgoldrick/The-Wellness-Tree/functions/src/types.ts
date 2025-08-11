@@ -1,5 +1,5 @@
 
-import type { Timestamp } from 'firebase-admin/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
 // Price Tier Interface
 export interface PriceTier {
@@ -125,9 +125,9 @@ export interface Product {
   quantityInStock: number;
   imageUrls?: string[] | null;
   imageUrl?: string | null;
-  labTested?: boolean;
+  labTested?: boolean | null;
   labTestReportUrl?: string | null;
-  isAvailableForPool?: boolean;
+  isAvailableForPool?: boolean | null;
   tags?: string[] | null;
   
   createdAt: Timestamp | Date | string;
