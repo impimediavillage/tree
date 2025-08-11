@@ -28,7 +28,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -264,38 +263,29 @@ export default function AddProductPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-6 items-start">
-                        <div className="space-y-4">
-                            <FormField
-                                control={form.control}
-                                name="stickerProgramOptIn"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                        <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
-                                        <FormDescription className="text-orange-900/90 text-sm">
-                                            The Triple S club allows you to sell a sticker and attach a free sample of your garden delights.
-                                        </FormDescription>
-                                        <FormControl>
-                                            <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                                    <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                                    <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                                    <FormControl><RadioGroupItem value="no" /></FormControl>
-                                                    <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
-                                                </FormItem>
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                         <div className="grid grid-cols-2 gap-3">
-                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                            <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                         </div>
+                    <CardContent>
+                      <FormField
+                          control={form.control}
+                          name="stickerProgramOptIn"
+                          render={({ field }) => (
+                              <FormItem className="space-y-3">
+                                  <FormLabel className="text-lg font-semibold text-gray-800">Participate in this program for this product?</FormLabel>
+                                  <FormDescription className="text-orange-900/90 text-sm">
+                                      The Triple S club allows you to sell a sticker and attach a free sample of your garden delights.
+                                  </FormDescription>
+                                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                      <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                          <SelectItem value="yes">Yes, include my product</SelectItem>
+                                          <SelectItem value="no">No, this is a standard product</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
                     </CardContent>
                 </Card>
             )}
