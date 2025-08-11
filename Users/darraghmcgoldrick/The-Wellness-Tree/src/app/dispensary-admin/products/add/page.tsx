@@ -10,7 +10,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory, Product as ProductType } from 'functions/src/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory as ProductCategoryType } from 'functions/src/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,15 +42,22 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
-
-const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string, categoryMatch: string }> = {
-    'THC': { text: 'THC Products', icon: Flame, color: 'text-red-500', categoryMatch: 'THC' },
-    'CBD': { text: 'CBD Products', icon: LeafIconLucide, color: 'text-green-500', categoryMatch: 'CBD' },
-    'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500', categoryMatch: 'Apparel' },
-    'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500', categoryMatch: 'Smoking Gear' },
-    'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Gift, color: 'text-yellow-500', categoryMatch: 'Sticker Promo Set'},
+const streamIconMapping: Record<string, React.ElementType> = {
+    'THC': Flame,
+    'CBD': LeafIconLucide,
+    'Apparel': Shirt,
+    'Smoking Gear': Sparkles,
+    'Sticker Promo Set': Gift,
 };
+
+const streamColorMapping: Record<string, string> = {
+    'THC': 'text-red-500',
+    'CBD': 'text-green-500',
+    'Apparel': 'text-blue-500',
+    'Smoking Gear': 'text-purple-500',
+    'Sticker Promo Set': 'text-yellow-500',
+};
+
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -59,10 +66,9 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
-  const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
+  const [categoryStructure, setCategoryStructure] = useState<ProductCategoryType[]>([]);
+  const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
   
-  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
   
@@ -113,23 +119,17 @@ export default function AddProductPage() {
     form.reset({ ...productSchema.strip()._def.defaultValue(), ...keptValues });
   };
 
-  const handleProductStreamSelect = (stream: StreamKey) => {
+  const handleProductStreamSelect = (streamCategory: string) => {
     resetFormFields();
-    setSelectedProductStream(stream);
+    setSelectedProductStream(streamCategory);
 
-    const categoryMatch = streamDisplayMapping[stream].categoryMatch;
-    const matchingCategory = categoryStructure.find(c => c.name === categoryMatch);
+    const matchingCategory = categoryStructure.find(c => c.name === streamCategory);
     
     if (matchingCategory) {
         form.setValue('category', matchingCategory.name, { shouldValidate: true });
-        setSubCategoryL1Options(matchingCategory.subcategories?.map(sc => sc.name).sort() || []);
     } else {
         form.setValue('category', '', { shouldValidate: true });
-        setSubCategoryL1Options([]);
     }
-    form.setValue('subcategory', null);
-    form.setValue('subSubcategory', null);
-    setSubCategoryL2Options([]);
   };
 
   useEffect(() => {
@@ -137,6 +137,7 @@ export default function AddProductPage() {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
       setSubCategoryL1Options(mainCat?.subcategories?.map(sc => sc.name).sort() || []);
       form.setValue('subcategory', null);
+      setSubCategoryL2Options([]);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchCategory, categoryStructure]);
@@ -167,7 +168,6 @@ export default function AddProductPage() {
           const docSnap = querySnapshot.docs[0];
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
           setCategoryStructure(categoriesDoc.categoriesData || []);
-          setMainCategoryOptions((categoriesDoc.categoriesData || []).map(c => c.name));
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -225,14 +225,18 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
+  const productStreams = categoryStructure.filter(cat => cat.name !== 'Sticker Promo Set');
+
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Products
+                <span className="flex items-center">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Products
+                </span>
             </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {currentDispensary?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} </CardDescription>
@@ -243,11 +247,13 @@ export default function AddProductPage() {
             <FormItem>
                 <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                    {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
-                        if (stream === 'Sticker Promo Set') return null;
-                        const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; 
+                    {productStreams.map((stream) => {
+                        const IconComponent = streamIconMapping[stream.name] || Sparkles;
+                        const color = streamColorMapping[stream.name] || 'text-gray-500';
+                        const text = stream.name.includes('Gear') ? 'Accessories' : `${stream.name} Products`;
+
                         return ( 
-                            <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}>
+                            <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}>
                                 <div className="flex flex-col items-center text-center">
                                     <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2 mx-auto", color)} /> 
                                     <span className="text-lg sm:text-xl font-semibold">{text}</span>
@@ -302,7 +308,7 @@ export default function AddProductPage() {
                       <FormItem><FormLabel>Category *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ''} disabled>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl>
-                          <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                          <SelectContent><SelectItem value={field.value || ''}>{field.value}</SelectItem></SelectContent>
                         </Select><FormMessage />
                       </FormItem>
                   )} />
@@ -339,8 +345,8 @@ export default function AddProductPage() {
                 
                 {selectedProductStream === 'Apparel' && (
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                    <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     {availableStandardSizes.length > 0 && <FormField control={form.control} name="sizes" render={() => (<FormItem><FormLabel>Standard Sizes Available</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">{availableStandardSizes.map((size) => (<FormField key={size} control={form.control} name="sizes" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value?.includes(size)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), size]) : field.onChange(field.value?.filter((value) => value !== size))}} /></FormControl><FormLabel className="font-normal text-sm">{size}</FormLabel></FormItem>)} />))}</div><FormMessage /></FormItem>)}/>}
                   </div>
                 )}
@@ -429,3 +435,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
