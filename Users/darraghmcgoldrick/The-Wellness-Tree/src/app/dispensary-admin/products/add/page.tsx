@@ -361,7 +361,10 @@ export default function AddProductPage() {
                           {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                       </div>
                   ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
+                    <PackagePlus className="mr-2 h-4 w-4" />
+                    Add Price Tier
+                  </Button>
                 </div>
 
                 <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Images & Tags</h2>
@@ -380,22 +383,25 @@ export default function AddProductPage() {
                         {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                       </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
+                        <PackagePlus className="mr-2 h-4 w-4" />
+                        Add Pool Price Tier
+                    </Button>
                   </CardContent>
                   </Card>
                 )}
                 
                 <CardFooter className="mt-6 p-0">
-                  <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                    <span className="flex items-center justify-center">
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      ) : (
-                        <PackagePlus className="mr-2 h-5 w-5" />
-                      )}
-                      <span>Add Product</span>
-                    </span>
-                  </Button>
+                    <Button type="submit" size="lg" className="w-full text-lg">
+                        <span className="flex items-center justify-center">
+                        {isLoading ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        ) : (
+                            <PackagePlus className="mr-2 h-5 w-5" />
+                        )}
+                        <span>Add Product</span>
+                        </span>
+                    </Button>
                 </CardFooter>
               </div>
             )}
