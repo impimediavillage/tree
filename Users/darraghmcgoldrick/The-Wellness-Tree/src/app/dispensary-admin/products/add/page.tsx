@@ -10,7 +10,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory as ProductCategoryType } from 'functions/src/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,7 +66,7 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<ProductCategoryType[]>([]);
+  const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
   const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
   
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
@@ -233,10 +233,8 @@ export default function AddProductPage() {
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <span className="flex items-center">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Products
-                </span>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Products
             </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {currentDispensary?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} </CardDescription>
@@ -370,12 +368,10 @@ export default function AddProductPage() {
                           )}
                       </div>
                   ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
-                    <span className="flex items-center justify-center">
+                   <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
                         <PackagePlus className="mr-2 h-4 w-4" />
                         Add Price Tier
-                    </span>
-                  </Button>
+                    </Button>
                 </div>
 
                 <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Images & Tags</h2>
@@ -403,11 +399,9 @@ export default function AddProductPage() {
                         )}
                       </div>
                     ))}
-                     <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
-                        <span className="flex items-center justify-center">
-                            <PackagePlus className="mr-2 h-4 w-4" />
-                            Add Pool Price Tier
-                        </span>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
+                        <PackagePlus className="mr-2 h-4 w-4" />
+                        Add Pool Price Tier
                     </Button>
                   </CardContent>
                   </Card>
@@ -415,14 +409,8 @@ export default function AddProductPage() {
                 
                 <CardFooter className="mt-6 p-0">
                     <Button type="submit" size="lg" className="w-full text-lg">
-                        <span className="flex items-center justify-center">
-                        {isLoading ? (
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        ) : (
-                            <PackagePlus className="mr-2 h-5 w-5" />
-                        )}
-                        <span>Add Product</span>
-                        </span>
+                        <PackagePlus className="mr-2 h-5 w-5" />
+                        Add Product
                     </Button>
                 </CardFooter>
               </div>
@@ -435,5 +423,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
