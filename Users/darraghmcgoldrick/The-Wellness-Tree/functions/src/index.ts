@@ -1,4 +1,5 @@
 
+'use server';
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
@@ -87,7 +88,7 @@ export const getUserProfile = onCall(async (request: CallableRequest): Promise<A
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const { uid, token } = request.auth;
+    const { uid, token } = request.auth; // The decoded token IS the auth object in v2 onCall
 
     try {
         const userDocRef = db.collection('users').doc(uid);
@@ -124,8 +125,8 @@ export const getUserProfile = onCall(async (request: CallableRequest): Promise<A
             email: userData.email || token.email || '',
             displayName: userData.displayName || token.name || '',
             photoURL: userData.photoURL || token.picture || null,
-            role: (userData.role as AllowedUserRole || 'User'),
-            dispensaryId: userData.dispensaryId || null,
+            role: (token.role as AllowedUserRole || 'User'),
+            dispensaryId: (token.dispensaryId as string || null),
             credits: userData.credits || 0,
             status: userData.status || 'Active',
             createdAt: safeToISOString(userData.createdAt),
@@ -212,5 +213,3 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
-
-    
