@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import type { ProductCategory as ProductCategoryType } from '../types';
+import type { ProductCategory as ProductCategoryType } from 'functions/src/types';
 
 
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -251,12 +251,6 @@ export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => 
             path: ["poolPriceTiers"],
         });
     }
-    if (data.category === 'Apparel' && !data.gender) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Gender is required for apparel.", path: ["gender"]});
-    }
-    if (data.category === 'Apparel' && !data.sizingSystem) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Sizing system is required for apparel.", path: ["sizingSystem"]});
-    }
 });
 export type ProductFormData = z.infer<typeof productSchema>;
 export type ProductAttribute = z.infer<typeof attributeSchema>;
@@ -430,3 +424,5 @@ export const ThemeAssetSetSchema = z.object({
     trippySticker1Url: z.string().url(),
     trippySticker2Url: z.string().url(),
 });
+
+    

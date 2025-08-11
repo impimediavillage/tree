@@ -11,7 +11,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from 'functions/src/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -381,12 +381,14 @@ export default function AddProductPage() {
                 )}
               </div>
             )}
-            {selectedProductStream && <CardFooter>
-              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading || !showProductDetailsForm}>
-                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                  Add Product
-              </Button>
-            </CardFooter>}
+            {selectedProductStream && 
+                <CardFooter>
+                  <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading || !showProductDetailsForm}>
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                    Add Product
+                  </Button>
+                </CardFooter>
+            }
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
@@ -395,3 +397,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
