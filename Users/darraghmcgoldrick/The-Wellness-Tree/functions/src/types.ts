@@ -427,3 +427,5 @@ export interface ScrapeLog {
     error?: string;
     messages: string[];
 }
+
+    
