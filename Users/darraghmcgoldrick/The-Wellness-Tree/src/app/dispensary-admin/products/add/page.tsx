@@ -11,7 +11,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from 'functions/src/types';
+import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -232,7 +233,12 @@ export default function AddProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/dispensary-admin/products">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  <span>Back to Products</span>
+              </Link>
+            </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {currentDispensary?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} </CardDescription>
       </CardHeader>
@@ -243,7 +249,6 @@ export default function AddProductPage() {
                 <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                     {(Object.keys(streamDisplayMapping) as StreamKey[]).map((stream) => { 
-                        // Hide Sticker Promo set, it's handled by the THC flow
                         if (stream === 'Sticker Promo Set') return null;
                         const { text, icon: IconComponent, color } = streamDisplayMapping[stream]; 
                         return ( 
@@ -379,7 +384,7 @@ export default function AddProductPage() {
                   </CardContent>
                   </Card>
                 )}
-
+                
                 <CardFooter className="mt-6 p-0">
                   <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
                     <span className="flex items-center justify-center">
@@ -388,7 +393,7 @@ export default function AddProductPage() {
                       ) : (
                         <PackagePlus className="mr-2 h-5 w-5" />
                       )}
-                      Add Product
+                      <span>Add Product</span>
                     </span>
                   </Button>
                 </CardFooter>
