@@ -89,8 +89,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Attempt to load from localStorage first for faster UI response,
-        // but the explicit fetchUserProfile in SignInPage handles the critical post-login fetch.
         const cachedUser = localStorage.getItem('currentUserHolisticAI');
         if (cachedUser) {
           try {
@@ -98,10 +96,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (parsedUser.uid === firebaseUser.uid) {
               setCurrentUser(parsedUser);
               setCurrentDispensary(parsedUser.dispensary || null);
+            } else {
+              // If cached user doesn't match, clear it and fetch fresh.
+              localStorage.removeItem('currentUserHolisticAI');
+              await fetchUserProfile(firebaseUser);
             }
           } catch {
             localStorage.removeItem('currentUserHolisticAI');
+            await fetchUserProfile(firebaseUser);
           }
+        } else {
+          // No cached user, fetch fresh profile.
+          await fetchUserProfile(firebaseUser);
         }
       } else {
         // User logged out
@@ -113,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []); 
+  }, [fetchUserProfile]); 
   
   const isSuperAdmin = currentUser?.role === 'Super Admin';
   const isDispensaryOwner = currentUser?.role === 'DispensaryOwner';
@@ -151,5 +157,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-    
