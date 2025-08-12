@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData } from '@/lib/schemas';
+import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -108,6 +108,12 @@ export default function AddProductPage() {
 
   const resetFormFields = () => {
     const keptValues = {
+        name: form.getValues('name'),
+        description: form.getValues('description'),
+        priceTiers: form.getValues('priceTiers'),
+        isAvailableForPool: form.getValues('isAvailableForPool'),
+        poolPriceTiers: form.getValues('poolPriceTiers'),
+        tags: form.getValues('tags'),
         currency: form.getValues('currency'),
     };
     form.reset({
