@@ -29,6 +29,8 @@ import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import Image from 'next/image';
+import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
 
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -80,6 +82,8 @@ export default function AddProductPage() {
   
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
+
+  const [showStrainFinder, setShowStrainFinder] = useState(false);
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -89,7 +93,7 @@ export default function AddProductPage() {
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
-      stickerProgramOptIn: null,
+      stickerProgramOptIn: 'no',
       currency: currentDispensary?.currency || 'ZAR',
       effects: [], flavors: [], medicalUses: [],
     },
@@ -104,6 +108,7 @@ export default function AddProductPage() {
   const watchGender = form.watch('gender');
   const watchCategory = form.watch('category');
   const watchSubCategory = form.watch('subcategory');
+  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
   const showProductDetailsForm = !!selectedProductStream;
 
@@ -233,6 +238,67 @@ export default function AddProductPage() {
                 </div>
             </FormItem>
             
+            {showStrainFinder && (
+                <StrainFinder
+                    onStrainSelect={(strainData) => {
+                        form.setValue('name', strainData.name);
+                        form.setValue('description', strainData.description);
+                        form.setValue('strain', strainData.name);
+                        form.setValue('strainType', strainData.strain_type);
+                        form.setValue('effects', strainData.effects);
+                        form.setValue('flavors', strainData.flavors);
+                        form.setValue('medicalUses', strainData.medical_uses);
+                        toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
+                        setShowStrainFinder(false);
+                    }}
+                    onClose={() => setShowStrainFinder(false)}
+                />
+            )}
+
+            {selectedProductStream === 'THC' && (
+              <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid md:grid-cols-2 gap-6 items-start">
+                      <div className="space-y-4">
+                          <FormField
+                              control={form.control}
+                              name="stickerProgramOptIn"
+                              render={({ field }) => (
+                                  <FormItem className="space-y-3">
+                                      <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
+                                      <FormDescription className="text-orange-900/90 text-sm">
+                                          The Triple S club allows you to sell a sticker and attach a free sample of your garden delights.
+                                      </FormDescription>
+                                      <FormControl>
+                                          <RadioGroup onValueChange={field.onChange} value={field.value ?? 'no'} className="flex flex-col sm:flex-row gap-4 pt-2">
+                                              <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                                  <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                                  <FormLabel className="font-normal text-lg text-green-700">Yes, find a strain</FormLabel>
+                                              </FormItem>
+                                              <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                                  <FormControl><RadioGroupItem value="no" /></FormControl>
+                                                  <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
+                                              </FormItem>
+                                          </RadioGroup>
+                                      </FormControl>
+                                      <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                          {watchStickerProgramOptIn === 'yes' && (
+                             <Button type="button" onClick={() => setShowStrainFinder(true)}>Find Strain</Button>
+                          )}
+                      </div>
+                       <div className="grid grid-cols-2 gap-3">
+                          <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
+                          <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
+                       </div>
+                  </CardContent>
+              </Card>
+            )}
+
             {showProductDetailsForm && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                 <Separator />
