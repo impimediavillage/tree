@@ -21,10 +21,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
@@ -44,7 +44,7 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 
 const streamIconMapping: Record<string, React.ElementType> = {
     'THC': Flame,
-    'CBD': Leaf,
+    'CBD': LeafIconLucide,
     'Apparel': Shirt,
     'Smoking Gear': Sparkles,
     'Medicinal': Sparkles,
@@ -53,12 +53,11 @@ const streamIconMapping: Record<string, React.ElementType> = {
     'Tinctures': Sparkles,
     'Creams': Sparkles,
     'Other': Sparkles,
-    'Herbs': Leaf,
-    'Roots': Leaf,
+    'Herbs': LeafIconLucide,
+    'Roots': LeafIconLucide,
     'Ritual Items': Sparkles,
     'Default': PackagePlus
 };
-
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -70,7 +69,6 @@ export default function AddProductPage() {
   const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
   const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
   
-  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
   
@@ -83,7 +81,7 @@ export default function AddProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
@@ -107,33 +105,22 @@ export default function AddProductPage() {
 
   const showProductDetailsForm = selectedProductStream;
 
-  const resetFormFieldsForNewStream = () => {
+  const resetFormFields = () => {
     const keptValues = {
-      name: form.getValues('name'),
-      description: form.getValues('description'),
-      priceTiers: form.getValues('priceTiers'),
-      isAvailableForPool: form.getValues('isAvailableForPool'),
-      poolPriceTiers: form.getValues('poolPriceTiers'),
-      tags: form.getValues('tags'),
-      currency: form.getValues('currency'),
+        currency: form.getValues('currency'),
     };
     form.reset({
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
-      poolPriceTiers: [],
-      isAvailableForPool: false, tags: [],
-      labTested: false, labTestReportUrl: null,
-      stickerProgramOptIn: null,
-      currency: currentDispensary?.currency || 'ZAR',
-      effects: [],
-      flavors: [],
-      medicalUses: [],
-      ...keptValues,
+      priceTiers: [{ unit: '', price: undefined, quantityInStock: undefined, description: '' }],
+      poolPriceTiers: [], isAvailableForPool: false, tags: [],
+      labTested: false, labTestReportUrl: null, stickerProgramOptIn: null,
+      effects: [], flavors: [], medicalUses: [],
+      ...keptValues
     });
   };
 
   const handleProductStreamSelect = (stream: string) => {
-    resetFormFieldsForNewStream();
+    resetFormFields();
     setSelectedProductStream(stream);
     form.setValue('category', stream, { shouldValidate: true });
   };
@@ -174,7 +161,6 @@ export default function AddProductPage() {
           setCategoryStructure(categories);
         } else {
           setCategoryStructure([]);
-          setMainCategoryOptions([]);
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -333,7 +319,7 @@ export default function AddProductPage() {
                           )}
                       </div>
                   ))}
-                   <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>
+                   <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: undefined, quantityInStock: undefined, description: '' })}>
                         <PackagePlus className="mr-2 h-4 w-4" />
                         Add Price Tier
                     </Button>
@@ -359,7 +345,7 @@ export default function AddProductPage() {
                         )}
                       </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: undefined, quantityInStock: 0, description: '' })}>
                         <PackagePlus className="mr-2 h-4 w-4" />
                         Add Pool Price Tier
                     </Button>
