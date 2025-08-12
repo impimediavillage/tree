@@ -42,7 +42,7 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         : 'User'; // Default to 'User'
         
     const dispensaryId = afterData.dispensaryId || null;
-    const claims: { [key]: any } = { role, dispensaryId };
+    const claims: { [key: string]: any } = { role, dispensaryId };
 
     try {
         await admin.auth().setCustomUserClaims(userId, claims);
@@ -212,5 +212,3 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
-
-    
