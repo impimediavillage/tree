@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
+import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -21,11 +21,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2 } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf, Shirt, Sparkles } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -39,6 +42,24 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
+const streamIconMapping: Record<string, React.ElementType> = {
+    'THC': Flame,
+    'CBD': Leaf,
+    'Apparel': Shirt,
+    'Smoking Gear': Sparkles,
+    'Medicinal': Sparkles,
+    'Psychedelic': Sparkles,
+    'Remedies': Sparkles,
+    'Tinctures': Sparkles,
+    'Creams': Sparkles,
+    'Other': Sparkles,
+    'Herbs': Leaf,
+    'Roots': Leaf,
+    'Ritual Items': Sparkles,
+    'Default': PackagePlus
+};
+
+
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -47,6 +68,8 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
   const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
+  const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
+  
   const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
@@ -82,6 +105,39 @@ export default function AddProductPage() {
   const watchCategory = form.watch('category');
   const watchSubCategory = form.watch('subcategory');
 
+  const showProductDetailsForm = selectedProductStream;
+
+  const resetFormFieldsForNewStream = () => {
+    const keptValues = {
+      name: form.getValues('name'),
+      description: form.getValues('description'),
+      priceTiers: form.getValues('priceTiers'),
+      isAvailableForPool: form.getValues('isAvailableForPool'),
+      poolPriceTiers: form.getValues('poolPriceTiers'),
+      tags: form.getValues('tags'),
+      currency: form.getValues('currency'),
+    };
+    form.reset({
+      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
+      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      poolPriceTiers: [],
+      isAvailableForPool: false, tags: [],
+      labTested: false, labTestReportUrl: null,
+      stickerProgramOptIn: null,
+      currency: currentDispensary?.currency || 'ZAR',
+      effects: [],
+      flavors: [],
+      medicalUses: [],
+      ...keptValues,
+    });
+  };
+
+  const handleProductStreamSelect = (stream: string) => {
+    resetFormFieldsForNewStream();
+    setSelectedProductStream(stream);
+    form.setValue('category', stream, { shouldValidate: true });
+  };
+
   useEffect(() => {
     if (watchCategory) {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
@@ -116,7 +172,6 @@ export default function AddProductPage() {
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
           const categories = categoriesDoc.categoriesData || [];
           setCategoryStructure(categories);
-          setMainCategoryOptions(categories.map(c => c.name).sort());
         } else {
           setCategoryStructure([]);
           setMainCategoryOptions([]);
@@ -178,14 +233,40 @@ export default function AddProductPage() {
             </Button>
         </div>
         <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> 
-            Fill in the details below. Fields marked with * are required. 
+            Select a product stream, then fill in the details. Fields marked with * are required. 
             {currentDispensary?.dispensaryType && ( <span className="block mt-1">Product categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} 
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-6">
+            <FormItem>
+              <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+                {categoryStructure.map((cat) => {
+                  const IconComponent = streamIconMapping[cat.name] || streamIconMapping['Default'];
+                  return (
+                    <Button
+                      key={cat.name}
+                      type="button"
+                      variant={selectedProductStream === cat.name ? 'default' : 'outline'}
+                      className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === cat.name && 'ring-2 ring-primary ring-offset-2')}
+                      onClick={() => handleProductStreamSelect(cat.name)}
+                    >
+                      <IconComponent className="h-10 w-10 sm:h-12 sm:w-12 mb-2" />
+                      <span className="text-lg sm:text-xl font-semibold text-center">{cat.name}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </FormItem>
+
+            {showProductDetailsForm && (
+              <Separator className="my-6" />
+            )}
+            
+            {showProductDetailsForm && (
+              <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
@@ -193,9 +274,9 @@ export default function AddProductPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="category" render={({ field }) => (
                       <FormItem><FormLabel>Category *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                        <Select onValueChange={field.onChange} value={field.value || ''} disabled>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl>
-                          <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                          <SelectContent><SelectItem value={selectedProductStream!}>{selectedProductStream}</SelectItem></SelectContent>
                         </Select><FormMessage />
                       </FormItem>
                   )} />
@@ -226,7 +307,7 @@ export default function AddProductPage() {
                     <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
-                    {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
+                    {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={() => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                   </div>
                 )}
                 
@@ -246,9 +327,9 @@ export default function AddProductPage() {
                           <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
                           {priceTierFields.length > 1 && (
-                            <div role="button" aria-label="Remove price tier" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10">
                                 <Trash2 className="h-4 w-4" />
-                            </div>
+                            </Button>
                           )}
                       </div>
                   ))}
@@ -272,9 +353,9 @@ export default function AddProductPage() {
                         <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
                         {poolPriceTierFields.length > 1 && (
-                            <div role="button" aria-label="Remove pool price tier" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 flex items-center justify-center rounded-md text-destructive hover:bg-destructive/10 cursor-pointer">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10">
                                 <Trash2 className="h-4 w-4" />
-                            </div>
+                            </Button>
                         )}
                       </div>
                     ))}
@@ -293,6 +374,7 @@ export default function AddProductPage() {
                     </Button>
                 </CardFooter>
             </div>
+            )}
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
