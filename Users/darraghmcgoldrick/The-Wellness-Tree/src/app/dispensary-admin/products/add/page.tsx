@@ -205,7 +205,7 @@ export default function AddProductPage() {
 
                   {subCategoryL1Options.length > 0 && (
                       <FormField control={form.control} name="subcategory" render={({ field }) => (
-                          <FormItem><FormLabel>Subcategory L1</FormLabel>
+                          <FormItem><FormLabel>Subcategory</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory"/></SelectTrigger></FormControl>
                               <SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
@@ -216,7 +216,7 @@ export default function AddProductPage() {
 
                 {subCategoryL2Options.length > 0 && (
                   <FormField control={form.control} name="subSubcategory" render={({ field }) => (
-                      <FormItem><FormLabel>Subcategory L2</FormLabel>
+                      <FormItem><FormLabel>Sub-Subcategory</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory"/></SelectTrigger></FormControl>
                           <SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
