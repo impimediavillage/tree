@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
+import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Gift } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -100,7 +100,7 @@ export default function AddProductPage() {
         tags: form.getValues('tags'),
         currency: form.getValues('currency'),
     };
-    const defaultValues = {
+     const defaultValues = {
       category: '', subcategory: null, subSubcategory: null,
       deliveryMethod: null, productSubCategory: null, productType: null,
       baseProductData: null, mostCommonTerpene: null, strain: null, strainType: null,
@@ -111,7 +111,7 @@ export default function AddProductPage() {
     };
     form.reset({ ...defaultValues, ...keptValues });
   };
-
+  
   const handleProductStreamSelect = (streamCategoryName: string) => {
     resetFormFields();
     setSelectedProductStream(streamCategoryName);
