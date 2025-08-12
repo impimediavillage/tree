@@ -110,10 +110,14 @@ export default function AddProductPage() {
   const handleProductStreamSelect = (streamName: string) => {
     setSelectedProductStream(streamName);
     form.reset({
-      ...productSchema.strip()._def.defaultValue(),
+      ...form.getValues(),
+      name: form.getValues('name') || '',
+      description: form.getValues('description') || '',
       category: streamName,
+      subcategory: null,
+      subSubcategory: null,
       currency: currentDispensary?.currency || 'ZAR',
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      priceTiers: form.getValues('priceTiers')?.length > 0 ? form.getValues('priceTiers') : [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
     });
     setFiles([]);
     setLabTestFile(null);
