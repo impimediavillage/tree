@@ -175,7 +175,7 @@ export default function AddProductPage() {
     if (!currentDispensary || !currentUser) { toast({ title: "Error", description: "Cannot submit without dispensary data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
-        let uploadedImageUrls: string[] = [];
+        let uploadedImageUrls: (string | null)[] = [];
         if (files.length > 0) {
             toast({ title: "Uploading Images...", description: "Please wait while your product images are uploaded.", variant: "default" });
             const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
@@ -204,7 +204,7 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
   
-  const productStreams = categoryStructure.filter(cat => cat.name !== 'Sticker Promo Set');
+  const dynamicProductStreams = categoryStructure.filter(cat => cat.name !== 'Sticker Promo Set');
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
@@ -224,7 +224,7 @@ export default function AddProductPage() {
             <FormItem>
                 <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                    {productStreams.map((stream) => ( 
+                    {dynamicProductStreams.map((stream) => ( 
                         <Button 
                             key={stream.name} 
                             type="button" 
@@ -392,3 +392,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
