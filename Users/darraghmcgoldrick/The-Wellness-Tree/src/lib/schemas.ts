@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import type { ProductCategory as ProductCategoryType } from '../../functions/src/types';
+import type { ProductCategory as ProductCategoryType } from '@/types';
 
 
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -236,7 +236,7 @@ const baseProductObjectSchema = z.object({
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
   imageUrls: z.array(z.string().url()).optional().nullable().default([]),
-  labTested: z.boolean().optional().nullable(),
+  labTested: z.boolean().default(false).optional(),
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
