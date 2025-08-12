@@ -6,7 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { auth, functions } from '@/lib/firebase';
-import type { User as AppUser, Dispensary } from 'functions/src/types';
+import type { User as AppUser, Dispensary } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
@@ -89,26 +89,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        const cachedUser = localStorage.getItem('currentUserHolisticAI');
-        if (cachedUser) {
-          try {
-            const parsedUser = JSON.parse(cachedUser) as AppUser;
-            if (parsedUser.uid === firebaseUser.uid) {
-              setCurrentUser(parsedUser);
-              setCurrentDispensary(parsedUser.dispensary || null);
-            } else {
-              // If cached user doesn't match, clear it and fetch fresh.
-              localStorage.removeItem('currentUserHolisticAI');
-              await fetchUserProfile(firebaseUser);
-            }
-          } catch {
-            localStorage.removeItem('currentUserHolisticAI');
-            await fetchUserProfile(firebaseUser);
-          }
-        } else {
-          // No cached user, fetch fresh profile.
-          await fetchUserProfile(firebaseUser);
-        }
+        // Always fetch fresh profile on auth state change to ensure claims are up-to-date
+        await fetchUserProfile(firebaseUser);
       } else {
         // User logged out
         setCurrentUser(null);

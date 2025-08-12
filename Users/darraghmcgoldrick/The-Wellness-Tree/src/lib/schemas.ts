@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import type { ProductCategory as ProductCategoryType } from 'functions/src/types';
+import type { ProductCategory as ProductCategoryType } from '@/types';
 
 
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
