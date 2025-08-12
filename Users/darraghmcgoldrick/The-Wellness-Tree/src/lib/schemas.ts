@@ -430,5 +430,3 @@ export const ThemeAssetSetSchema = z.object({
     trippySticker1Url: z.string().url(),
     trippySticker2Url: z.string().url(),
 });
-
-    

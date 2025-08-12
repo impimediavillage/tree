@@ -29,7 +29,6 @@ import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -309,5 +308,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
