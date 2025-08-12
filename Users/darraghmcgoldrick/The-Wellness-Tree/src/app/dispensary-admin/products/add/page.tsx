@@ -56,6 +56,7 @@ const streamIconMapping: Record<string, React.ElementType> = {
     'Herbs': LeafIconLucide,
     'Roots': LeafIconLucide,
     'Ritual Items': Sparkles,
+    'Sticker Promo Set': Gift,
     'Default': PackagePlus
 };
 

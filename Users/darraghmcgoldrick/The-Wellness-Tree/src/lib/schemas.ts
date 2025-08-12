@@ -232,7 +232,7 @@ export const productSchema = z.object({
   
   // Generic / Core
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
-  priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required.").transform(tiers => tiers.filter(t => t.unit && t.price)),
+  priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required.").transform(tiers => tiers.filter(t => t.unit && t.price !== null && t.price !== undefined)),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
   imageUrls: z.array(z.string().url()).max(5, "You can upload a maximum of 5 images.").optional().nullable().default([]),
@@ -241,7 +241,7 @@ export const productSchema = z.object({
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
 }).superRefine((data, ctx) => {
-    if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {
+    if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0 || data.poolPriceTiers.every(t => !t.unit || t.price === null || t.price === undefined))) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Pool pricing is required if the product is available for sharing.",
