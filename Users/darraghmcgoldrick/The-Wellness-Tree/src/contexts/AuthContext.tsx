@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
       console.log("AuthContext: Fetching user profile for UID:", firebaseUser.uid);
-      // Ensure the user's token is refreshed to get the latest custom claims
       await firebaseUser.getIdToken(true); 
       const result = await getUserProfileCallable();
       const fullProfile = result.data as AppUser;

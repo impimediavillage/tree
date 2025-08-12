@@ -109,10 +109,9 @@ export default function AddProductPage() {
 
   const handleProductStreamSelect = (streamName: string) => {
     setSelectedProductStream(streamName);
-    // Reset form but keep currency
     form.reset({
       ...productSchema.strip()._def.defaultValue(),
-      category: streamName, // Set category immediately
+      category: streamName,
       currency: currentDispensary?.currency || 'ZAR',
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
     });
@@ -186,7 +185,8 @@ export default function AddProductPage() {
             uploadedLabTestUrl = await getDownloadURL(snapshot.ref);
         }
 
-        const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: currentDispensary.dispensaryName, dispensaryType: currentDispensary.dispensaryType, productOwnerEmail: currentUser.email, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), quantityInStock: data.priceTiers.reduce((acc, tier) => acc + (tier.quantityInStock || 0), 0), imageUrls: uploadedImageUrls, labTestReportUrl: uploadedLabTestUrl };
+        const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
+        const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: currentDispensary.dispensaryName, dispensaryType: currentDispensary.dispensaryType, productOwnerEmail: currentUser.email, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), quantityInStock: totalStock, imageUrls: uploadedImageUrls, labTestReportUrl: uploadedLabTestUrl };
         await addDoc(collection(db, 'products'), productData);
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
         router.push('/dispensary-admin/products');
