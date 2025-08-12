@@ -20,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Gift } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Sparkles, Flame, Leaf as LeafIconLucide, Shirt } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -50,7 +50,6 @@ const categoryIconMapping: Record<string, React.ElementType> = {
     'Sticker Promo Set': Gift,
     'Homeopathy': LeafIconLucide,
     'Traditional Medicine': LeafIconLucide,
-    // Add other type-specific mappings here as needed
 };
 
 export default function AddProductPage() {
@@ -154,7 +153,7 @@ export default function AddProductPage() {
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
           setCategoryStructure(categoriesDoc.categoriesData || []);
         } else {
-          setCategoryStructure([]); // Explicitly set to empty array if no doc found
+          setCategoryStructure([]);
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -402,5 +401,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
