@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
+import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -104,26 +104,21 @@ export default function AddProductPage() {
   const watchCategory = form.watch('category');
   const watchSubCategory = form.watch('subcategory');
 
-  const showProductDetailsForm = selectedProductStream;
+  const showProductDetailsForm = !!selectedProductStream;
 
   const resetFormFields = () => {
-    const keptValues = {
-        name: form.getValues('name'),
-        description: form.getValues('description'),
-        priceTiers: form.getValues('priceTiers'),
-        isAvailableForPool: form.getValues('isAvailableForPool'),
-        poolPriceTiers: form.getValues('poolPriceTiers'),
-        tags: form.getValues('tags'),
-        currency: form.getValues('currency'),
-    };
     form.reset({
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      priceTiers: [{ unit: '', price: undefined, quantityInStock: undefined, description: '' }],
+      priceTiers: [{ unit: '', price: undefined as any, quantityInStock: undefined as any, description: '' }],
       poolPriceTiers: [], isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null, stickerProgramOptIn: null,
       effects: [], flavors: [], medicalUses: [],
-      ...keptValues
+      currency: currentDispensary?.currency || 'ZAR',
     });
+    setSubCategoryL1Options([]);
+    setSubCategoryL2Options([]);
+    setFiles([]);
+    setLabTestFile(null);
   };
 
   const handleProductStreamSelect = (stream: string) => {
@@ -234,7 +229,7 @@ export default function AddProductPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormItem>
-              <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
+              <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Step 1: Select Product Stream * </FormLabel>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
                 {categoryStructure.map((cat) => {
                   const IconComponent = streamIconMapping[cat.name] || streamIconMapping['Default'];
@@ -260,7 +255,7 @@ export default function AddProductPage() {
             
             {showProductDetailsForm && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
+                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Step 2: Product Details</h2>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
 
@@ -376,3 +371,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
