@@ -235,7 +235,7 @@ const baseProductObjectSchema = z.object({
   priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
-  imageUrls: z.array(z.string().url()).max(5, "You can upload a maximum of 5 images.").optional().nullable().default([]),
+  imageUrls: z.array(z.string().url()).optional().nullable().default([]),
   labTested: z.boolean().optional().nullable(),
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
@@ -432,3 +432,5 @@ export const ThemeAssetSetSchema = z.object({
     trippySticker1Url: z.string().url(),
     trippySticker2Url: z.string().url(),
 });
+
+    
