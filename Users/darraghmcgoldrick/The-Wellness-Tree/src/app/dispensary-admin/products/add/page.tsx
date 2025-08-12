@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData } from '@/lib/schemas';
+import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,6 @@ import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -51,8 +50,7 @@ export default function AddProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
   const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
-  const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
-  
+  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
   
@@ -84,45 +82,15 @@ export default function AddProductPage() {
   const watchLabTested = form.watch('labTested');
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
-  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchCategory = form.watch('category');
   const watchSubCategory = form.watch('subcategory');
-
-  const showProductDetailsForm = selectedProductStream && (selectedProductStream !== 'THC' || watchStickerProgramOptIn === 'no' || watchStickerProgramOptIn === 'yes');
-
-  const resetFormFields = () => {
-    const keptValues = {
-        name: form.getValues('name'),
-        description: form.getValues('description'),
-        priceTiers: form.getValues('priceTiers'),
-        isAvailableForPool: form.getValues('isAvailableForPool'),
-        poolPriceTiers: form.getValues('poolPriceTiers'),
-        tags: form.getValues('tags'),
-        currency: form.getValues('currency'),
-    };
-     const defaultValues = {
-      category: '', subcategory: null, subSubcategory: null,
-      deliveryMethod: null, productSubCategory: null, productType: null,
-      baseProductData: null, mostCommonTerpene: null, strain: null, strainType: null,
-      homeGrow: [], feedingType: null, thcContent: null, cbdContent: null,
-      effects: [], flavors: [], medicalUses: [], stickerProgramOptIn: null,
-      gender: null, sizingSystem: null, sizes: [],
-      quantityInStock: 0, imageUrls: [], labTested: false, labTestReportUrl: null,
-    };
-    form.reset({ ...defaultValues, ...keptValues });
-  };
-  
-  const handleProductStreamSelect = (streamCategoryName: string) => {
-    resetFormFields();
-    setSelectedProductStream(streamCategoryName);
-    form.setValue('category', streamCategoryName, { shouldValidate: true });
-  };
 
   useEffect(() => {
     if (watchCategory) {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
       setSubCategoryL1Options(mainCat?.subcategories?.map(sc => sc.name).sort() || []);
       form.setValue('subcategory', null);
+      form.setValue('subSubcategory', null);
       setSubCategoryL2Options([]);
     }
   }, [watchCategory, categoryStructure, form]);
@@ -133,8 +101,6 @@ export default function AddProductPage() {
       const subCat = mainCat?.subcategories?.find(sc => sc.name === watchSubCategory);
       setSubCategoryL2Options(subCat?.subcategories?.map(ssc => ssc.name).sort() || []);
       form.setValue('subSubcategory', null);
-    } else {
-      setSubCategoryL2Options([]);
     }
   }, [watchSubCategory, watchCategory, categoryStructure, form]);
 
@@ -151,13 +117,16 @@ export default function AddProductPage() {
         if (!querySnapshot.empty) {
           const docSnap = querySnapshot.docs[0];
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-          setCategoryStructure(categoriesDoc.categoriesData || []);
+          const categories = categoriesDoc.categoriesData || [];
+          setCategoryStructure(categories);
+          setMainCategoryOptions(categories.map(c => c.name).sort());
         } else {
           setCategoryStructure([]);
+          setMainCategoryOptions([]);
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
-      toast({ title: "Error", description: "Could not load necessary data for the form.", variant: "destructive" });
+      toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
     } finally { setIsLoadingInitialData(false); }
   }, [currentDispensary, authLoading, toast]);
 
@@ -167,16 +136,6 @@ export default function AddProductPage() {
     const gender = form.getValues('gender'); const system = form.getValues('sizingSystem');
     if (gender && system && standardSizesData[gender] && standardSizesData[gender][system]) { setAvailableStandardSizes(standardSizesData[gender][system]); } else { setAvailableStandardSizes([]); }
   }, [watchGender, watchSizingSystem, form]);
-
-  useEffect(() => {
-    if(watchStickerProgramOptIn === 'yes') {
-      handleProductStreamSelect('Sticker Promo Set');
-    } else if (watchStickerProgramOptIn === 'no' && selectedProductStream === 'Sticker Promo Set') {
-      setSelectedProductStream(null);
-      form.setValue('category', '');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchStickerProgramOptIn, selectedProductStream, form]);
 
 
   const onSubmit = async (data: ProductFormData) => {
@@ -211,79 +170,25 @@ export default function AddProductPage() {
   if (isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
-  
-  const dynamicProductStreams = categoryStructure.filter(cat => cat.name !== 'Sticker Promo Set');
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Products
+            <Button variant="outline" size="sm" asChild>
+                <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Products</Link>
             </Button>
         </div>
-        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {currentDispensary?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} </CardDescription>
+        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> 
+            Fill in the details below. Fields marked with * are required. 
+            {currentDispensary?.dispensaryType && ( <span className="block mt-1">Product categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} 
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormItem>
-                <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                    {dynamicProductStreams.map((stream) => ( 
-                        <Button 
-                            key={stream.name} 
-                            type="button" 
-                            variant={selectedProductStream === stream.name ? 'default' : 'outline'} 
-                            className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} 
-                            onClick={() => handleProductStreamSelect(stream.name)}
-                        >
-                            <div className="flex flex-col items-center text-center">
-                                <span className="text-lg sm:text-xl font-semibold">{stream.name}</span>
-                            </div>
-                        </Button> 
-                    ))}
-                </div>
-            </FormItem>
-            
-            {selectedProductStream === 'THC' && (
-                <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <FormField
-                          control={form.control}
-                          name="stickerProgramOptIn"
-                          render={({ field }) => (
-                              <FormItem className="space-y-3">
-                                  <FormLabel className="text-lg font-semibold text-gray-800">Participate in this program for this product?</FormLabel>
-                                  <FormDescription className="text-orange-900/90 text-sm">
-                                      The Triple S club allows you to sell a sticker and attach a free sample of your garden delights.
-                                  </FormDescription>
-                                  <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
-                                    </FormItem>
-                                  </RadioGroup>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
-                    </CardContent>
-                </Card>
-            )}
-
-            {showProductDetailsForm && (
-              <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                <Separator className="my-6" />
+            <div className="space-y-6">
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
@@ -291,16 +196,16 @@ export default function AddProductPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="category" render={({ field }) => (
                       <FormItem><FormLabel>Category *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''} disabled>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl>
-                          <SelectContent><SelectItem value={field.value || ''}>{field.value}</SelectItem></SelectContent>
+                          <SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                         </Select><FormMessage />
                       </FormItem>
                   )} />
 
                   {subCategoryL1Options.length > 0 && (
                       <FormField control={form.control} name="subcategory" render={({ field }) => (
-                          <FormItem><FormLabel>Subcategory</FormLabel>
+                          <FormItem><FormLabel>Subcategory L1</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value || ''}>
                               <FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory"/></SelectTrigger></FormControl>
                               <SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
@@ -311,7 +216,7 @@ export default function AddProductPage() {
 
                 {subCategoryL2Options.length > 0 && (
                   <FormField control={form.control} name="subSubcategory" render={({ field }) => (
-                      <FormItem><FormLabel>Sub-Subcategory</FormLabel>
+                      <FormItem><FormLabel>Subcategory L2</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ''}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory"/></SelectTrigger></FormControl>
                           <SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
@@ -319,7 +224,7 @@ export default function AddProductPage() {
                   )} />
                 )}
                 
-                {(selectedProductStream === 'THC' || selectedProductStream === 'CBD' || selectedProductStream === 'Sticker Promo Set') && (
+                {(watchCategory === 'THC' || watchCategory === 'CBD') && (
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                     <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -328,7 +233,7 @@ export default function AddProductPage() {
                   </div>
                 )}
                 
-                {selectedProductStream === 'Apparel' && (
+                {watchCategory === 'Apparel' && (
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                     <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
@@ -390,8 +295,7 @@ export default function AddProductPage() {
                         Add Product
                     </Button>
                 </CardFooter>
-              </div>
-            )}
+            </div>
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
