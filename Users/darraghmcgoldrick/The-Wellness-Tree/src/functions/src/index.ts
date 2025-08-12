@@ -42,7 +42,7 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         : 'User'; // Default to 'User'
         
     const dispensaryId = afterData.dispensaryId || null;
-    const claims: { [key: string]: any } = { role, dispensaryId };
+    const claims: { [key]: any } = { role, dispensaryId };
 
     try {
         await admin.auth().setCustomUserClaims(userId, claims);
