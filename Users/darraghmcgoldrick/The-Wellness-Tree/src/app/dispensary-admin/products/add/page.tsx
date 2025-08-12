@@ -4,13 +4,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Dispensary, DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
+import { productSchema, type ProductFormData } from '@/lib/schemas';
+import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, X as XIcon, Gift } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,14 +43,16 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-const streamIconMapping: Record<string, React.ElementType> = {
+const categoryIconMapping: Record<string, React.ElementType> = {
     'THC': Flame,
     'CBD': LeafIconLucide,
     'Apparel': Shirt,
     'Smoking Gear': Sparkles,
     'Sticker Promo Set': Gift,
+    'Homeopathy': LeafIconLucide,
+    'Traditional Medicine': LeafIconLucide,
+    // Add other type-specific mappings here as needed
 };
-
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -124,8 +127,7 @@ export default function AddProductPage() {
       form.setValue('subcategory', null);
       setSubCategoryL2Options([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchCategory, categoryStructure]);
+  }, [watchCategory, categoryStructure, form]);
 
   useEffect(() => {
     if (watchSubCategory) {
@@ -136,8 +138,7 @@ export default function AddProductPage() {
     } else {
       setSubCategoryL2Options([]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchSubCategory]);
+  }, [watchSubCategory, watchCategory, categoryStructure, form]);
 
 
   const fetchInitialData = useCallback(async () => {
@@ -153,6 +154,8 @@ export default function AddProductPage() {
           const docSnap = querySnapshot.docs[0];
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
           setCategoryStructure(categoriesDoc.categoriesData || []);
+        } else {
+          setCategoryStructure([]); // Explicitly set to empty array if no doc found
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -169,12 +172,13 @@ export default function AddProductPage() {
 
   useEffect(() => {
     if(watchStickerProgramOptIn === 'yes') {
-      handleProductStreamSelect('Sticker Promo Set');
+      setSelectedProductStream('Sticker Promo Set');
+      form.setValue('category', 'Sticker Promo Set');
     } else if (watchStickerProgramOptIn === 'no' && selectedProductStream === 'Sticker Promo Set') {
-      handleProductStreamSelect('THC');
+      setSelectedProductStream('THC');
+      form.setValue('category', 'THC');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchStickerProgramOptIn]);
+  }, [watchStickerProgramOptIn, selectedProductStream, form]);
 
 
   const onSubmit = async (data: ProductFormData) => {
@@ -231,9 +235,9 @@ export default function AddProductPage() {
                 <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                     {productStreams.map((stream) => {
-                        const IconComponent = streamIconMapping[stream.name] || Sparkles;
-                        const color = streamIconMapping[stream.name] ? 'text-inherit' : 'text-gray-500';
-                        const text = stream.name.includes('Gear') ? 'Accessories' : stream.name.replace(' Products', '');
+                        const IconComponent = categoryIconMapping[stream.name] || Sparkles;
+                        const color = categoryIconMapping[stream.name] ? 'text-inherit' : 'text-gray-500';
+                        const text = stream.name.replace(' Products', '');
 
                         return ( 
                             <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}>
@@ -262,15 +266,16 @@ export default function AddProductPage() {
                                   <FormDescription className="text-orange-900/90 text-sm">
                                       The Triple S club allows you to sell a sticker and attach a free sample of your garden delights.
                                   </FormDescription>
-                                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                      <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                          <SelectItem value="yes">Yes, include my product</SelectItem>
-                                          <SelectItem value="no">No, this is a standard product</SelectItem>
-                                      </SelectContent>
-                                  </Select>
+                                  <RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                        <FormLabel className="font-normal text-lg text-green-700">Yes, include my product</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm">
+                                        <FormControl><RadioGroupItem value="no" /></FormControl>
+                                        <FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel>
+                                    </FormItem>
+                                  </RadioGroup>
                                   <FormMessage />
                               </FormItem>
                           )}
@@ -328,8 +333,8 @@ export default function AddProductPage() {
                 
                 {selectedProductStream === 'Apparel' && (
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
-                    <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     {availableStandardSizes.length > 0 && <FormField control={form.control} name="sizes" render={() => (<FormItem><FormLabel>Standard Sizes Available</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">{availableStandardSizes.map((size) => (<FormField key={size} control={form.control} name="sizes" render={({ field }) => (<FormItem className="flex items-center space-x-2"><FormControl><Checkbox checked={field.value?.includes(size)} onCheckedChange={(checked) => {return checked ? field.onChange([...(field.value || []), size]) : field.onChange(field.value?.filter((value) => value !== size))}} /></FormControl><FormLabel className="font-normal text-sm">{size}</FormLabel></FormItem>)} />))}</div><FormMessage /></FormItem>)}/>}
                   </div>
                 )}
@@ -398,3 +403,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
