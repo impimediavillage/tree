@@ -8,9 +8,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { productSchema, type ProductFormData } from '@/lib/schemas';
+import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, X as XIcon, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -41,7 +42,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Womens': { 'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'], 'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'], 'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'], 'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
-
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -100,7 +100,17 @@ export default function AddProductPage() {
         tags: form.getValues('tags'),
         currency: form.getValues('currency'),
     };
-    form.reset({ ...productSchema.strip()._def.defaultValue(), ...keptValues });
+    // Fix: Instead of using productSchema.strip(), provide an explicit default value object.
+    const defaultValues = {
+      category: '', subcategory: null, subSubcategory: null,
+      deliveryMethod: null, productSubCategory: null, productType: null,
+      baseProductData: null, mostCommonTerpene: null, strain: null, strainType: null,
+      homeGrow: [], feedingType: null, thcContent: null, cbdContent: null,
+      effects: [], flavors: [], medicalUses: [], stickerProgramOptIn: null,
+      gender: null, sizingSystem: null, sizes: [],
+      quantityInStock: 0, imageUrls: [], labTested: false, labTestReportUrl: null,
+    };
+    form.reset({ ...defaultValues, ...keptValues });
   };
 
   const handleProductStreamSelect = (streamCategoryName: string) => {
@@ -161,12 +171,12 @@ export default function AddProductPage() {
 
   useEffect(() => {
     if(watchStickerProgramOptIn === 'yes') {
-      setSelectedProductStream('Sticker Promo Set');
-      form.setValue('category', 'Sticker Promo Set');
+      handleProductStreamSelect('Sticker Promo Set');
     } else if (watchStickerProgramOptIn === 'no' && selectedProductStream === 'Sticker Promo Set') {
-      setSelectedProductStream('THC');
-      form.setValue('category', 'THC');
+      setSelectedProductStream(null);
+      form.setValue('category', '');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchStickerProgramOptIn, selectedProductStream, form]);
 
 
@@ -174,7 +184,7 @@ export default function AddProductPage() {
     if (!currentDispensary || !currentUser) { toast({ title: "Error", description: "Cannot submit without dispensary data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
-        let uploadedImageUrls: (string | null)[] = [];
+        let uploadedImageUrls: string[] = [];
         if (files.length > 0) {
             toast({ title: "Uploading Images...", description: "Please wait while your product images are uploaded.", variant: "default" });
             const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
@@ -189,7 +199,7 @@ export default function AddProductPage() {
             uploadedLabTestUrl = await getDownloadURL(snapshot.ref);
         }
 
-        const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: currentDispensary.dispensaryName, dispensaryType: currentDispensary.dispensaryType, productOwnerEmail: currentUser.email, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), quantityInStock: data.priceTiers.reduce((acc, tier) => acc + (tier.quantityInStock || 0), 0), imageUrls: uploadedImageUrls, labTestReportUrl: uploadedLabTestUrl };
+        const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: currentDispensary.dispensaryName, dispensaryType: currentDispensary.dispensaryType, productOwnerEmail: currentUser.email, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), quantityInStock: data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0), imageUrls: uploadedImageUrls, labTestReportUrl: uploadedLabTestUrl };
         await addDoc(collection(db, 'products'), productData);
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
         router.push('/dispensary-admin/products');
@@ -314,7 +324,7 @@ export default function AddProductPage() {
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                     <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
+                    <FormField control={form.control} name="labTested" render={({ field }) => (<FormItem className="flex items-center gap-2 pt-2"><FormControl><Checkbox checked={field.value ?? false} onCheckedChange={field.onChange} id="lab-tested-check" /></FormControl><FormLabel htmlFor="lab-tested-check">Lab Tested?</FormLabel></FormItem>)} />
                     {watchLabTested && (<FormField control={form.control} name="labTestReportUrl" render={({ field }) => (<FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={setLabTestFile} /></FormControl><FormMessage /></FormItem>)} />)}
                   </div>
                 )}
