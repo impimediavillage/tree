@@ -123,7 +123,7 @@ export interface Product {
   priceTiers: PriceTier[]; 
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
-  imageUrls?: string[] | null;
+  imageUrls?: (string | null)[] | null;
   imageUrl?: string | null;
   labTested?: boolean | null;
   labTestReportUrl?: string | null;
@@ -427,3 +427,5 @@ export interface ScrapeLog {
     error?: string;
     messages: string[];
 }
+
+    
