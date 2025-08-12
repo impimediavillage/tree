@@ -185,7 +185,7 @@ export const priceTierSchema = z.object({
     })
     .refine(val => val <= 9999999.99, { 
         message: "Price amount is too high (max 9,999,999.99)."
-    }),
+    }).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock must be a non-negative number.").optional().nullable(),
   description: z.string().optional().nullable(),
 });
@@ -232,7 +232,7 @@ export const productSchema = z.object({
   
   // Generic / Core
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
-  priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
+  priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required.").transform(tiers => tiers.filter(t => t.unit && t.price)),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
   imageUrls: z.array(z.string().url()).max(5, "You can upload a maximum of 5 images.").optional().nullable().default([]),
