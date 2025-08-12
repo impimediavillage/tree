@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 
 // Price Tier Interface
@@ -425,5 +426,3 @@ export interface ScrapeLog {
     error?: string;
     messages: string[];
 }
-
-    

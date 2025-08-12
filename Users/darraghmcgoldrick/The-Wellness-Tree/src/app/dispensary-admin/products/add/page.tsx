@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
@@ -20,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Sparkles, Flame, Leaf as LeafIconLucide, Shirt } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -42,15 +43,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-const categoryIconMapping: Record<string, React.ElementType> = {
-    'THC': Flame,
-    'CBD': LeafIconLucide,
-    'Apparel': Shirt,
-    'Smoking Gear': Sparkles,
-    'Sticker Promo Set': Gift,
-    'Homeopathy': LeafIconLucide,
-    'Traditional Medicine': LeafIconLucide,
-};
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -112,10 +104,10 @@ export default function AddProductPage() {
     form.reset({ ...productSchema.strip()._def.defaultValue(), ...keptValues });
   };
 
-  const handleProductStreamSelect = (streamCategory: string) => {
+  const handleProductStreamSelect = (streamCategoryName: string) => {
     resetFormFields();
-    setSelectedProductStream(streamCategory);
-    form.setValue('category', streamCategory, { shouldValidate: true });
+    setSelectedProductStream(streamCategoryName);
+    form.setValue('category', streamCategoryName, { shouldValidate: true });
   };
 
   useEffect(() => {
@@ -232,20 +224,19 @@ export default function AddProductPage() {
             <FormItem>
                 <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-                    {productStreams.map((stream) => {
-                        const IconComponent = categoryIconMapping[stream.name] || Sparkles;
-                        const color = categoryIconMapping[stream.name] ? 'text-inherit' : 'text-gray-500';
-                        const text = stream.name.replace(' Products', '');
-
-                        return ( 
-                            <Button key={stream.name} type="button" variant={selectedProductStream === stream.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream.name)}>
-                                <div className="flex flex-col items-center text-center">
-                                    <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2 mx-auto", color)} /> 
-                                    <span className="text-lg sm:text-xl font-semibold">{text}</span>
-                                </div>
-                            </Button> 
-                        ); 
-                    })}
+                    {productStreams.map((stream) => ( 
+                        <Button 
+                            key={stream.name} 
+                            type="button" 
+                            variant={selectedProductStream === stream.name ? 'default' : 'outline'} 
+                            className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream.name && 'ring-2 ring-primary ring-offset-2')} 
+                            onClick={() => handleProductStreamSelect(stream.name)}
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <span className="text-lg sm:text-xl font-semibold">{stream.name}</span>
+                            </div>
+                        </Button> 
+                    ))}
                 </div>
             </FormItem>
             
