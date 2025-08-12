@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Brain, ShieldCheck, HandHelping, Sprout } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,6 @@ import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
-import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { Separator } from '@/components/ui/separator';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
@@ -51,12 +50,15 @@ const streamIconMapping: Record<string, React.ElementType> = {
     'Apparel': Shirt,
     'Smoking Gear': Sparkles,
     'Sticker Promo Set': Gift,
-    'Medicinal': LeafIconLucide,
+    'Medicinal': Brain,
     'Psychedelic': Sparkles,
     'Gourmet': LeafIconLucide,
-    'Remedies': LeafIconLucide,
+    'Remedies': ShieldCheck,
+    'Mother Tinctures': Sprout,
+    'Cell Salts': Sprout,
+    'Flower Essences': Sprout,
     'Herbal Preparations': LeafIconLucide,
-    'Topical Treatments': LeafIconLucide,
+    'Topical Treatments': HandHelping,
     'Spiritual & Ritual Items': Sparkles,
     'Default': PackagePlus
 };
@@ -79,9 +81,6 @@ export default function AddProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
-  const [baseMushroomProducts, setBaseMushroomProducts] = useState<any[]>([]);
-  const [isLoadingBaseProducts, setIsLoadingBaseProducts] = useState(false);
-
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -110,6 +109,7 @@ export default function AddProductPage() {
 
   const handleProductStreamSelect = (streamName: string) => {
     setSelectedProductStream(streamName);
+    // Reset form but keep currency
     form.reset({
       ...productSchema.strip()._def.defaultValue(),
       category: streamName, // Set category immediately
@@ -138,7 +138,6 @@ export default function AddProductPage() {
     }
   }, [watchSubCategory, watchCategory, categoryStructure, form]);
 
-
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentDispensary?.dispensaryType) {
       if (!authLoading) setIsLoadingInitialData(false);
@@ -153,7 +152,7 @@ export default function AddProductPage() {
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
           setCategoryStructure(categoriesDoc.categoriesData || []);
         } else {
-          toast({ title: "No Product Categories", description: `No product category structure has been defined for the "${currentDispensary.dispensaryType}" store type.`, variant: "destructive" });
+          toast({ title: "No Product Categories", description: `No product category structure has been defined for the "${currentDispensary.dispensaryType}" store type. Please contact an admin.`, variant: "destructive" });
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
