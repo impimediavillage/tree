@@ -1,0 +1,138 @@
+
+{
+  "Cannibinoid store": {
+    "name": "Cannibinoid store",
+    "categoriesData": [
+      {
+        "name": "THC",
+        "subcategories": [
+          { "name": "Flower" },
+          { "name": "Concentrates" },
+          { "name": "Edibles" },
+          { "name": "Vapes" },
+          { "name": "Tinctures" },
+          { "name": "Topicals" },
+          { "name": "Sticker Promo Set" }
+        ]
+      },
+      {
+        "name": "CBD",
+        "subcategories": [
+          { "name": "Oils & Tinctures" },
+          { "name": "Edibles & Beverages" },
+          { "name": "Topicals & Skincare" },
+          { "name": "Capsules" },
+          { "name": "Vapes" },
+          { "name": "Pet Products" }
+        ]
+      },
+      {
+        "name": "Apparel",
+        "subcategories": [
+          { "name": "Head Gear / Neck Wear" },
+          { "name": "Hoodies / Jackets / Sweaters" },
+          { "name": "Long Sleeve / Short Sleeve Shirts" },
+          { "name": "Streetwear Trousers / Shorts / Track Pants" },
+          { "name": "Socks" },
+          { "name": "Footwear" },
+          { "name": "Jewelry & Accessories" }
+        ]
+      },
+      {
+        "name": "Smoking Gear",
+        "subcategories": [
+          { "name": "Bongs & Rigs" },
+          { "name": "Pipes" },
+          { "name": "Vaporizers" },
+          { "name": "Rolling Papers & Blunts" },
+          { "name": "Grinders" },
+          { "name": "Lighters & Torches" },
+          { "name": "Cleaning Supplies" },
+          { "name": "Storage" }
+        ]
+      }
+    ]
+  },
+  "Mushroom store": {
+    "name": "Mushroom store",
+    "categoriesData": [
+      {
+        "name": "Medicinal",
+        "subcategories": [
+          { "name": "Tinctures" },
+          { "name": "Capsules" },
+          { "name": "Powders" },
+          { "name": "Dried" }
+        ]
+      },
+      {
+        "name": "Psychedelic",
+        "subcategories": [
+          { "name": "Microdosing" },
+          { "name": "Macrodosing" },
+          { "name": "Chocolates" },
+          { "name": "Capsules" },
+          { "name": "Dried" }
+        ]
+      },
+      {
+        "name": "Gourmet",
+        "subcategories": [
+          { "name": "Fresh" },
+          { "name": "Dried" },
+          { "name": "Kits" }
+        ]
+      }
+    ]
+  },
+  "Homeopathic store": {
+    "name": "Homeopathic store",
+    "categoriesData": [
+      {
+        "name": "Remedies",
+        "subcategories": [
+          { "name": "Pellets" },
+          { "name": "Liquid Dilutions" },
+          { "name": "Topical Creams & Gels" }
+        ]
+      },
+      {
+        "name": "Mother Tinctures",
+        "subcategories": []
+      },
+      {
+        "name": "Cell Salts",
+        "subcategories": []
+      },
+      {
+        "name": "Flower Essences",
+        "subcategories": []
+      }
+    ]
+  },
+  "Traditional Medicine dispensary": {
+    "name": "Traditional Medicine dispensary",
+    "categoriesData": [
+      {
+        "name": "Herbal Preparations",
+        "subcategories": [
+          { "name": "Dried Herbs" },
+          { "name": "Powders" },
+          { "name": "Tinctures & Extracts" },
+          { "name": "Teas & Infusions" }
+        ]
+      },
+      {
+        "name": "Topical Treatments",
+        "subcategories": [
+          { "name": "Ointments & Salves" },
+          { "name": "Poultices" }
+        ]
+      },
+      {
+        "name": "Spiritual & Ritual Items",
+        "subcategories": []
+      }
+    ]
+  }
+}
