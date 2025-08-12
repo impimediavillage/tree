@@ -196,21 +196,21 @@ const attributeSchema = z.object({
   percentage: z.string().regex(/^\d+(\.\d+)?%?$/, 'Must be a number or percentage (e.g., "55" or "55%")'),
 });
 
-const baseProductObjectSchema = z.object({
+export const productSchema = z.object({
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   
   category: z.string().min(1, "Category is required."),
+  subcategory: z.string().optional().nullable(),
+  subSubcategory: z.string().optional().nullable(),
   
   // Cannabinoid Specific
   deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
   
   // Traditional Medicine & Mushroom Specific
-  subcategory: z.string().optional().nullable(),
-  subSubcategory: z.string().optional().nullable(),
   productType: z.string().optional().nullable(),
-  baseProductData: z.any().optional().nullable(), // For storing the selected mushroom base product
+  baseProductData: z.any().optional().nullable(),
   
   // Strain details (shared)
   mostCommonTerpene: z.string().optional().nullable(),
@@ -240,10 +240,7 @@ const baseProductObjectSchema = z.object({
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
   tags: z.array(z.string()).optional().nullable().default([]),
-});
-
-
-export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => {
+}).superRefine((data, ctx) => {
     if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -260,6 +257,7 @@ export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => 
         }
     }
 });
+
 export type ProductFormData = z.infer<typeof productSchema>;
 export type ProductAttribute = z.infer<typeof attributeSchema>;
 
