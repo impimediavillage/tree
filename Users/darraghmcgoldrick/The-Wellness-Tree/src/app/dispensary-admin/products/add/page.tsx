@@ -27,7 +27,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
 
@@ -308,3 +307,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
