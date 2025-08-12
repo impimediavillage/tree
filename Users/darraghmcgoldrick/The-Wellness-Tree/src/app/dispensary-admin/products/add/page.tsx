@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
+import type { DispensaryTypeProductCategoriesDoc, ProductCategory, Product as ProductType } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,8 @@ import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
-
+import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
+import { Separator } from '@/components/ui/separator';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -43,6 +44,22 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
+
+const streamIconMapping: Record<string, React.ElementType> = {
+    'THC': Flame,
+    'CBD': LeafIconLucide,
+    'Apparel': Shirt,
+    'Smoking Gear': Sparkles,
+    'Sticker Promo Set': Gift,
+    'Medicinal': LeafIconLucide,
+    'Psychedelic': Sparkles,
+    'Gourmet': LeafIconLucide,
+    'Remedies': LeafIconLucide,
+    'Herbal Preparations': LeafIconLucide,
+    'Topical Treatments': LeafIconLucide,
+    'Spiritual & Ritual Items': Sparkles,
+    'Default': PackagePlus
+};
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -62,6 +79,9 @@ export default function AddProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
+  const [baseMushroomProducts, setBaseMushroomProducts] = useState<any[]>([]);
+  const [isLoadingBaseProducts, setIsLoadingBaseProducts] = useState(false);
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -72,9 +92,7 @@ export default function AddProductPage() {
       labTested: false, labTestReportUrl: null,
       stickerProgramOptIn: null,
       currency: currentDispensary?.currency || 'ZAR',
-      effects: [],
-      flavors: [],
-      medicalUses: [],
+      effects: [], flavors: [], medicalUses: [],
     },
   });
 
@@ -85,7 +103,6 @@ export default function AddProductPage() {
   const watchLabTested = form.watch('labTested');
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
-  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
   const watchCategory = form.watch('category');
   const watchSubCategory = form.watch('subcategory');
 
@@ -95,10 +112,12 @@ export default function AddProductPage() {
     setSelectedProductStream(streamName);
     form.reset({
       ...productSchema.strip()._def.defaultValue(),
+      category: streamName, // Set category immediately
       currency: currentDispensary?.currency || 'ZAR',
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
     });
-    form.setValue('category', streamName, { shouldValidate: true });
+    setFiles([]);
+    setLabTestFile(null);
   };
   
   useEffect(() => {
@@ -177,6 +196,8 @@ export default function AddProductPage() {
         toast({ title: "Creation Failed", description: "An error occurred while creating the product.", variant: "destructive" });
     } finally { setIsLoading(false); }
   };
+  
+  const productStreams = useMemo(() => categoryStructure.map(c => c.name), [categoryStructure]);
 
   if (isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
@@ -197,49 +218,32 @@ export default function AddProductPage() {
             <FormItem>
                 <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
-                    {categoryStructure.map((cat) => ( 
-                        <Button key={cat.name} type="button" variant={selectedProductStream === cat.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === cat.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(cat.name)}>
-                           <span className="text-lg sm:text-xl font-semibold">{cat.name}</span>
-                        </Button> 
-                    ))}
+                    {productStreams.map((stream) => {
+                        const Icon = streamIconMapping[stream] || streamIconMapping['Default'];
+                        return (
+                            <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}>
+                               <Icon className="h-10 w-10 sm:h-12 sm:w-12 mb-2 mx-auto" />
+                               <span className="text-lg sm:text-xl font-semibold text-center">{stream}</span>
+                            </Button> 
+                        );
+                    })}
                 </div>
             </FormItem>
             
             {showProductDetailsForm && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                <Separator />
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                 
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-
-                {watchCategory === 'THC' && (
-                    <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-                        <CardHeader><CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle></CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-6 items-start">
-                            <div className="space-y-4">
-                                <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                                    <FormItem className="space-y-3"><FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
-                                    <FormDescription className="text-orange-900/90 text-sm">Sell a sticker and attach a free sample of your garden delights.</FormDescription>
-                                    <FormControl><RadioGroup onValueChange={field.onChange} value={field.value ?? undefined} className="flex flex-col sm:flex-row gap-4 pt-2">
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal text-lg text-green-700">Yes, include product</FormLabel></FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal text-lg">No, standard product</FormLabel></FormItem>
-                                    </RadioGroup></FormControl><FormMessage /></FormItem>
-                                )}/>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Sticker promo placeholder" layout="fill" objectFit='cover' data-ai-hint="sticker design"/> </div>
-                                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-md"> <Image src="https://placehold.co/400x400.png" alt="Apparel promo placeholder" layout="fill" objectFit='cover' data-ai-hint="apparel mockup"/> </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
+                
                 <div className="grid md:grid-cols-2 gap-4">
                   {subCategoryL1Options.length > 0 && ( <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Subcategory L1</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory"/></SelectTrigger></FormControl><SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} /> )}
                   {subCategoryL2Options.length > 0 && ( <FormField control={form.control} name="subSubcategory" render={({ field }) => ( <FormItem><FormLabel>Subcategory L2</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory"/></SelectTrigger></FormControl><SelectContent>{subCategoryL2Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} /> )}
                 </div>
 
-                {(watchCategory === 'THC' || watchCategory === 'CBD') && (
+                {(selectedProductStream === 'THC' || selectedProductStream === 'CBD') && (
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                     <FormField control={form.control} name="thcContent" render={({ field }) => (<FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="cbdContent" render={({ field }) => (<FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -248,7 +252,7 @@ export default function AddProductPage() {
                   </div>
                 )}
                 
-                {watchCategory === 'Apparel' && (
+                {selectedProductStream === 'Apparel' && (
                   <div className="p-4 border rounded-md space-y-4 bg-muted/30">
                     <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
@@ -305,5 +309,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    

@@ -212,5 +212,3 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
-
-    
