@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import type { ProductCategory as ProductCategoryType } from '../types';
+import type { ProductCategory as ProductCategoryType } from '../../functions/src/types';
 
 
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -185,7 +185,7 @@ export const priceTierSchema = z.object({
     })
     .refine(val => val <= 9999999.99, { 
         message: "Price amount is too high (max 9,999,999.99)."
-    }).optional().nullable(),
+    }),
   quantityInStock: z.coerce.number().int().min(0, "Stock must be a non-negative number.").optional().nullable(),
   description: z.string().optional().nullable(),
 });
@@ -430,3 +430,5 @@ export const ThemeAssetSetSchema = z.object({
     trippySticker1Url: z.string().url(),
     trippySticker2Url: z.string().url(),
 });
+
+    
