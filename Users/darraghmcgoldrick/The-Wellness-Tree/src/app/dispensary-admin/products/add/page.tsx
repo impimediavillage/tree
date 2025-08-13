@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -223,17 +224,6 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
-  if (currentDispensary?.dispensaryType !== "Cannibinoid store") {
-    return (
-        <Card className="max-w-4xl mx-auto my-8 shadow-xl">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-6 w-6 text-destructive"/>Unsupported Store Type</CardTitle>
-                <CardDescription>This page is currently configured for &quot;Cannibinoid store&quot; type only. Please contact support if you believe this is an error. Other workflows will be restored soon.</CardDescription>
-            </CardHeader>
-        </Card>
-    );
-  }
-
   const renderCannibinoidWorkflow = () => (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
@@ -314,7 +304,15 @@ export default function AddProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {renderCannibinoidWorkflow()}
+            
+            {currentDispensary?.dispensaryType === "Cannibinoid store" ? (
+                renderCannibinoidWorkflow()
+            ) : (
+                <div className="p-4 text-center text-muted-foreground border rounded-lg bg-muted">
+                    <p>This product workflow is for store type: {currentDispensary?.dispensaryType || "Unknown"}.</p>
+                    <p>Contact support to configure your product addition workflow.</p>
+                </div>
+            )}
             
             {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
@@ -376,4 +374,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
