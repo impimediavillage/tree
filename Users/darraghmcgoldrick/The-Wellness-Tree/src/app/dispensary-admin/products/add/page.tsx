@@ -53,7 +53,7 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<any | null>(null);
+  const [thcCbdCategories, setThcCbdCategories] = useState<any | null>(null);
 
   const [selectedProductStream, setSelectedProductStream] = useState<CannabinoidStreamKey | null>(null);
   
@@ -116,13 +116,6 @@ export default function AddProductPage() {
   
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentDispensary) return;
-    if (currentDispensary.dispensaryType !== "Cannibinoid store") {
-      setIsLoadingInitialData(false);
-      // Here you would render a different workflow for other store types
-      // For now, we just stop.
-      return;
-    }
-    
     setIsLoadingInitialData(true);
     try {
         const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
@@ -130,8 +123,8 @@ export default function AddProductPage() {
         if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            const thcCbdCategories = (categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories');
-            setCategoryStructure(thcCbdCategories?.data || null);
+            const thcCbdData = (categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories');
+            setThcCbdCategories(thcCbdData?.data || null);
         } else {
             toast({ title: "Configuration Missing", description: "Could not find the product category configuration for 'Cannibinoid store'.", variant: "destructive" });
         }
@@ -220,17 +213,18 @@ export default function AddProductPage() {
   }
 
   const renderCategoryCards = () => {
-      if (!categoryStructure || !selectedProductStream) return null;
+      if (!thcCbdCategories || !selectedProductStream) return null;
       
       const streamKey = selectedProductStream === 'Cannibinoid (other)' ? 'THC' : 'CBD';
-      const deliveryMethods = categoryStructure[streamKey]?.['Delivery Methods'];
+      const deliveryMethods = thcCbdCategories[streamKey]?.['Delivery Methods'];
       if (!deliveryMethods) return null;
 
       return (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {Object.entries(deliveryMethods).map(([key, value]) => {
               const items = value as string[];
-              const imageUrl = items.find(item => item.startsWith('imageUrl: '))?.split(': ')[1];
+              const imageUrlItem = items.find(item => item.startsWith('imageUrl: '));
+              const imageUrl = imageUrlItem?.split(': ')[1];
               const options = items.filter(item => !item.startsWith('imageUrl: '));
               
               return (
@@ -266,7 +260,6 @@ export default function AddProductPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            {/* Step 1: Product Stream Selection */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
                 {(Object.keys(cannibinoidStreamDisplayMapping) as CannabinoidStreamKey[]).map((stream) => { 
                     const { text, icon: IconComponent, color } = cannibinoidStreamDisplayMapping[stream];
@@ -279,7 +272,6 @@ export default function AddProductPage() {
                 })}
             </div>
             
-            {/* Conditional Rendering based on selections */}
             <div className="space-y-6 mt-4">
                 {selectedProductStream === 'Cannibinoid (other)' && (
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
@@ -308,9 +300,8 @@ export default function AddProductPage() {
                     />
                 )}
                 
-                {categoryStructure && (selectedProductStream === 'CBD' || (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'yes')) && renderCategoryCards()}
+                {thcCbdCategories && (selectedProductStream === 'CBD' || (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'yes')) && renderCategoryCards()}
 
-                {/* The rest of the form appears when a stream is selected and conditions are met */}
                 {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <Separator />
