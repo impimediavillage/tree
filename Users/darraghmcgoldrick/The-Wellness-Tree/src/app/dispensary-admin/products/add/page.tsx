@@ -24,14 +24,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Brain, ShieldCheck, HandHelping, Sprout } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
-import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import Image from 'next/image';
+import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
+import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
-
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -47,7 +46,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 
 
 const streamIconMapping: Record<string, React.ElementType> = {
-    'THC': Flame,
     'Cannibinoid (other)': Flame,
     'CBD': LeafIconLucide,
     'Apparel': Shirt,
@@ -115,20 +113,37 @@ export default function AddProductPage() {
 
   const handleProductStreamSelect = (streamName: string) => {
     setSelectedProductStream(streamName);
+    
+    // Determine the base category from the stream name for Cannabinoid store
+    let baseCategory = '';
+    if (currentDispensary?.dispensaryType === "Cannibinoid store") {
+        if (streamName === 'Cannibinoid (other)') baseCategory = 'THC';
+        else if (streamName === 'CBD') baseCategory = 'CBD';
+        else baseCategory = streamName;
+    } else {
+        baseCategory = streamName;
+    }
+
     form.reset({
-      ...form.getValues(),
-      name: form.getValues('name') || '',
-      description: form.getValues('description') || '',
-      category: streamName === 'Cannibinoid (other)' ? 'THC' : streamName,
+      ...form.getValues(), // keep some values like currency
+      name: '',
+      description: '',
+      category: baseCategory,
       subcategory: null,
       subSubcategory: null,
       stickerProgramOptIn: 'no', // Reset this on stream change
-      currency: currentDispensary?.currency || 'ZAR',
-      priceTiers: form.getValues('priceTiers')?.length > 0 ? form.getValues('priceTiers') : [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      effects: [],
+      flavors: [],
+      medicalUses: [],
+      strain: '',
+      strainType: '',
+      thcContent: '',
+      cbdContent: '',
+      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
     });
     setFiles([]);
     setLabTestFile(null);
-    setShowStrainFinder(false);
+    setShowStrainFinder(streamName === 'CBD');
   };
   
   useEffect(() => {
@@ -263,13 +278,6 @@ export default function AddProductPage() {
                 </div>
             </FormItem>
             
-            {showStrainFinder && (
-                <StrainFinder
-                    onStrainSelect={handleStrainSelect}
-                    onClose={() => setShowStrainFinder(false)}
-                />
-            )}
-            
             {/* Cannibinoid Store Specific Logic */}
             {currentDispensary?.dispensaryType === "Cannibinoid store" && (
               <>
@@ -292,23 +300,18 @@ export default function AddProductPage() {
                       </CardContent>
                     </Card>
                 )}
-                
-                {(selectedProductStream === 'CBD') && !showStrainFinder && (
-                  <Button type="button" onClick={() => setShowStrainFinder(true)}>Find CBD Strain</Button>
-                )}
 
-                {/* Shared form fields for THC/CBD once strain is selected or opt-in=no */}
-                {(watchStickerProgramOptIn === 'no' || (selectedProductStream === "Cannibinoid (other)" && watchStickerProgramOptIn === 'yes' && form.getValues('strain')) || (selectedProductStream === "CBD" && form.getValues('strain'))) && (
-                  <div className="space-y-6 animate-fade-in-scale-up">
-                    <Separator />
-                    {/* ... Rest of the form for Cannibinoid store ... */}
-                  </div>
+                {showStrainFinder && (
+                    <StrainFinder
+                        onStrainSelect={handleStrainSelect}
+                        onClose={() => setShowStrainFinder(false)}
+                    />
                 )}
               </>
             )}
 
             {/* General Product Details Form (for non-cannibinoid types or after specific selections) */}
-            {selectedProductStream && (currentDispensary?.dispensaryType !== "Cannibinoid store" || ['Apparel', 'Smoking Gear', 'Sticker Promo Set'].includes(selectedProductStream)) && (
+            {selectedProductStream && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                 <Separator />
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
