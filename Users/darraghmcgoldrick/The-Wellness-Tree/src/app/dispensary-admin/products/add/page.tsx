@@ -67,7 +67,6 @@ export default function AddProductPage() {
   const [thcCbdCategories, setThcCbdCategories] = useState<any | null>(null);
 
   const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   
   const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
   const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
@@ -210,14 +209,36 @@ export default function AddProductPage() {
   
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
-    form.setValue('description', strainData.description);
     form.setValue('strain', strainData.name);
-    form.setValue('strainType', strainData.strain_type);
-    form.setValue('effects', strainData.effects || []);
-    form.setValue('flavors', strainData.flavors || []);
-    form.setValue('medicalUses', strainData.medical_uses || []);
+    form.setValue('strainType', strainData.type);
+    form.setValue('description', strainData.description);
     form.setValue('thcContent', strainData.thc_level);
-    form.setValue('cbdContent', strainData.cbd_level);
+    
+    const effects: ProductAttribute[] = [];
+    const medical: ProductAttribute[] = [];
+    
+    const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "creative", "energetic", "focused", "giggly", "tingly", "aroused", "hungry", "talkative"];
+    effectKeys.forEach(key => {
+        if(strainData[key] && parseInt(strainData[key]) > 0) {
+            effects.push({ name: key.charAt(0).toUpperCase() + key.slice(1), percentage: strainData[key] });
+        }
+    });
+    
+    const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
+    medicalKeys.forEach(key => {
+        const strainKey = key.replace("/", "_");
+        if(strainData[strainKey] && parseInt(strainData[strainKey]) > 0) {
+            medical.push({ name: key.replace("_", "/").toUpperCase(), percentage: strainData[strainKey] });
+        }
+    });
+
+    form.setValue('effects', effects);
+    form.setValue('medicalUses', medical);
+    
+    const flavorKeywords = ["earthy", "sweet", "citrus", "pungent", "pine", "skunk", "grape", "berry", "flowery", "diesel", "woody", "cheese", "chemical", "nutty", "lemon", "lime", "orange", "tropical", "spicy", "herbal", "honey", "mint"];
+    const foundFlavors = flavorKeywords.filter(flavor => strainData.description.toLowerCase().includes(flavor));
+    form.setValue('flavors', foundFlavors);
+
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
     setShowStrainFinder(false);
   };
@@ -274,7 +295,7 @@ export default function AddProductPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {Object.entries(thcCbdCategories[selectedProductStream === 'Cannibinoid (other)' ? 'THC' : 'CBD']['Delivery Methods']).map(([key, value]) => {
                   const items = value as string[];
-                  const imageUrl = items.find(item => item.startsWith('imageUrl:'))?.split(':')[1].trim();
+                  const imageUrl = items.find(item => item.startsWith('imageUrl:'))?.split(': ')[1];
                   const options = items.filter(item => !item.startsWith('imageUrl:'));
                   return (
                       <Card key={key} className="p-3">
@@ -335,7 +356,7 @@ export default function AddProductPage() {
                 
                 {currentDispensary?.dispensaryType !== 'Cannibinoid store' && (
                   <div className="grid md:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl><SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl><SelectContent>{categoryStructure.map(cat => <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                     {subCategoryL1Options.length > 0 && ( <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Subcategory L1</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory"/></SelectTrigger></FormControl><SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />)}
                   </div>
                 )}
@@ -392,3 +413,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
