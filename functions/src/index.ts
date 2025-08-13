@@ -1,53 +1,56 @@
 
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
-import { onCall, type CallableRequest, HttpsError } from 'firebase-functions/v2/https';
+import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import { info, error, warn } from 'firebase-functions/logger';
-import type { Dispensary, User, UserDocData, DeductCreditsRequestBody, AllowedUserRole } from './types';
+import * as logger from 'firebase-functions/logger';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole } from './types';
+
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
-        info("Firebase Admin SDK initialized successfully.");
+        logger.info("Firebase Admin SDK initialized successfully.");
     } catch (e: any) {
-        error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
     }
 }
 const db = admin.firestore();
-// ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) ==============
-
-export const onUserWriteSetClaims = onDocumentWritten('users/{userId}', async (event) => {
-        const afterData = event.data?.after.data() as UserDocData | undefined; // Access after data
-        const userId = event.params.userId;
-
-        // Ensure role is one of the allowed types
-        const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
-        const role = afterData?.role && validRoles.includes(afterData.role as AllowedUserRole)
-            ? afterData.role as AllowedUserRole
-            : 'User'; // Default to 'User' if role is missing or invalid
-
-        const dispensaryId = afterData?.dispensaryId || null;
-
-        if (!afterData) {
-            info(`User document ${userId} deleted. Revoking custom claims.`);
-            try {
-                await admin.auth().setCustomUserClaims(userId, null);
-                info(`Successfully revoked custom claims for deleted user ${userId}.`);
-            } catch (error: any) {
-                error(`Error revoking custom claims for deleted user ${userId}:`, error as any);
-            }
-            return null;
-        }
+// ============== END INITIALIZATION ==============
 
 
+// ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) - V2 SYNTAX ==============
+export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (event) => {
+    const userId = event.params.userId;
+    const afterData = event.data?.after.data() as UserDocData | undefined;
+
+    // Handle user deletion
+    if (!afterData) {
+        logger.info(`User document ${userId} deleted. Revoking custom claims.`);
         try {
-            const claims: { [key: string]: any } = { role, dispensaryId };
-            await admin.auth().setCustomUserClaims(userId, claims);
-            info(`Successfully set custom claims for user ${userId}:`, claims);
-        } catch (error: any) {
-            error(`Error setting custom claims for user ${userId}:`, error);
+            await admin.auth().setCustomUserClaims(userId, null);
+            logger.info(`Successfully revoked custom claims for deleted user ${userId}.`);
+        } catch (error) {
+            logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
         }
-        return null;
-    });
+        return; // Exit function
+    }
+
+    // Handle user creation or update
+    const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
+    const role: AllowedUserRole = afterData.role && validRoles.includes(afterData.role as AllowedUserRole)
+        ? afterData.role as AllowedUserRole
+        : 'User'; // Default to 'User'
+        
+    const dispensaryId = afterData.dispensaryId || null;
+    const claims: { [key: string]: any } = { role, dispensaryId };
+
+    try {
+        await admin.auth().setCustomUserClaims(userId, claims);
+        logger.info(`Successfully set custom claims for user ${userId}:`, claims);
+    } catch (error) {
+        logger.error(`Error setting custom claims for user ${userId}:`, error);
+    }
+});
 
 
 // ============== ROBUST HELPER FUNCTION for Date Conversion ==============
@@ -57,7 +60,7 @@ const safeToISOString = (date: any): string | null => {
         try {
             return date.toDate().toISOString();
         } catch (e) {
-            warn(`Could not convert Firestore Timestamp to Date:`, e);
+            logger.warn(`Could not convert Firestore Timestamp to Date:`, e);
             return null;
         }
     }
@@ -69,29 +72,29 @@ const safeToISOString = (date: any): string | null => {
          try {
              const parsedDate = new Date(date);
              if (!isNaN(parsedDate.getTime())) return parsedDate.toISOString();
-         } catch (e) {
-            warn(`Could not parse date string: ${date}`);
+         } catch (e) { 
+            logger.warn(`Could not parse date string: ${date}`);
          }
     }
-    warn(`Unsupported date type encountered for conversion: ${typeof date}`);
+    logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
     return null;
 };
 
-export const getUserProfile = onCall(async (request: CallableRequest): Promise<User> => {
-    // CORS is handled automatically for Callable Functions by Firebase
-    const context = request; // Use request as context in v2
-    if (!context.auth) {
+
+// ============== Callable Functions (v2) ==============
+
+export const getUserProfile = onCall(async (request: CallableRequest): Promise<AppUser> => {
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const uid = context.auth.uid;
-    const token = context.auth.token;
+    const { uid, token } = request.auth; // The decoded token IS the auth object in v2 onCall
 
     try {
         const userDocRef = db.collection('users').doc(uid);
-        const userDocSnap = await userDocRef.get(); // .get() returns a DocumentSnapshot
+        const userDocSnap = await userDocRef.get();
 
-        if (!userDocSnap.exists) { // exists is a boolean property on DocumentSnapshot
-            warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`, { uid });
+        if (!userDocSnap.exists) {
+            logger.warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`);
             throw new HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
         }
         
@@ -99,39 +102,30 @@ export const getUserProfile = onCall(async (request: CallableRequest): Promise<U
         
         let dispensaryData: Dispensary | null = null;
         if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
-            try {
-                const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-                const dispensaryDocSnap = await dispensaryDocRef.get();
+            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
+            const dispensaryDocSnap = await dispensaryDocRef.get();
             
-                if (dispensaryDocSnap.exists) { // exists is a boolean property
-                    const rawDispensaryData = dispensaryDocSnap.data();
-                    if (rawDispensaryData) {
-                        // Wrap date conversions in a try-catch as well
-                        try {
-                            dispensaryData = {
-                                ...rawDispensaryData,
-                                id: dispensaryDocSnap.id,
-                                applicationDate: safeToISOString(rawDispensaryData.applicationDate),
-                                approvedDate: safeToISOString(rawDispensaryData.approvedDate),
-                                lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
-                            } as Dispensary;
-                        } catch (dateError: any) {
-                            error(`Error converting dispensary dates for dispensary ${userData.dispensaryId}:`, dateError);
-                        }
-                    }
+            if (dispensaryDocSnap.exists) {
+                const rawDispensaryData = dispensaryDocSnap.data();
+                if (rawDispensaryData) {
+                    dispensaryData = {
+                        ...rawDispensaryData,
+                        id: dispensaryDocSnap.id,
+                        applicationDate: safeToISOString(rawDispensaryData.applicationDate),
+                        approvedDate: safeToISOString(rawDispensaryData.approvedDate),
+                        lastActivityDate: safeToISOString(rawDispensaryData.lastActivityDate),
+                    } as Dispensary;
                 }
-            } catch (dispensaryFetchError: any) {
-                error(`Error fetching dispensary data for dispensaryId ${userData.dispensaryId}:`, dispensaryFetchError);
             }
         }
         
-        const profileResponse: User = {
+        const profileResponse: AppUser = {
             uid: uid,
             email: userData.email || token.email || '',
             displayName: userData.displayName || token.name || '',
             photoURL: userData.photoURL || token.picture || null,
-            role: userData.role as AllowedUserRole || 'User', // Ensure role is one of the allowed types
-            dispensaryId: userData.dispensaryId || null,
+            role: (token.role as AllowedUserRole || 'User'),
+            dispensaryId: (token.dispensaryId as string || null),
             credits: userData.credits || 0,
             status: userData.status || 'Active',
             createdAt: safeToISOString(userData.createdAt),
@@ -145,24 +139,23 @@ export const getUserProfile = onCall(async (request: CallableRequest): Promise<U
 
         return profileResponse;
     } catch (error: any) {
-        error(`CRITICAL UNHANDLED ERROR in getUserProfile for ${uid}:`, error);
+        logger.error(`CRITICAL ERROR in getUserProfile for ${uid}:`, error);
         if (error instanceof HttpsError) {
-            throw error;
+          throw error;
         }
         throw new HttpsError('internal', 'An unexpected server error occurred while fetching your profile.');
     }
 });
 
-
-export const deductCreditsAndLogInteraction = onCall(async (request: CallableRequest<DeductCreditsRequestBody>) => {
-    const context = request; // Use request as context in v2
-    if (!context.auth) {
+export const deductCreditsAndLogInteraction = onCall(async (request: CallableRequest) => {
+    if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
     
-    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data; // Access data via request.data
-    const dispensaryId = context.auth.token.dispensaryId || null;
-    if (userId !== context.auth.uid) {
+    const { userId, advisorSlug, creditsToDeduct, wasFreeInteraction } = request.data;
+    const dispensaryId = request.auth.token.dispensaryId || null;
+    
+    if (userId !== request.auth.uid) {
         throw new HttpsError('permission-denied', 'You can only deduct your own credits.');
     }
     
@@ -212,7 +205,7 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         };
 
     } catch (error: any) {
-        error("Error in deductCreditsAndLogInteraction transaction:", error);
+        logger.error("Error in deductCreditsAndLogInteraction transaction:", error);
          if (error instanceof HttpsError) {
           throw error;
         }
