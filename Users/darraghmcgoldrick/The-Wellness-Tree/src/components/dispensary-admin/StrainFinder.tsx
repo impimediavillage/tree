@@ -10,9 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon } from 'lucide-react';
-import { db, functions } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
@@ -63,8 +62,20 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
     }
   };
 
-  const handleStrainClick = (strain: any) => {
+  const handleStrainClick = async (strain: any) => {
     setSelectedStrain(strain);
+    // If the strain has no image, generate one on click
+    if (!strain.img_url || strain.img_url === 'none') {
+        try {
+            toast({ title: 'Generating Image', description: `Creating an image for ${strain.name}...`, variant: 'default' });
+            const { imageUrl } = await findStrainImage({ strainName: strain.name });
+            setSelectedStrain((prev: any) => ({ ...prev, img_url: imageUrl }));
+            // Note: This does not save the image URL back to Firestore. That would require a backend function.
+        } catch (error) {
+            console.error('Error generating strain image:', error);
+            toast({ title: 'Image Generation Failed', variant: 'destructive' });
+        }
+    }
   };
   
   const handleSelectStrain = () => {
@@ -79,8 +90,21 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
     medical: [ "bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800", "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800" ]
   };
 
-  const filteredEffects = React.useMemo(() => selectedStrain?.effects?.filter((eff: ProductAttribute) => parseInt(eff.percentage, 10) > 0) || [], [selectedStrain]);
-  const filteredMedical = React.useMemo(() => selectedStrain?.medical?.filter((med: ProductAttribute) => parseInt(med.percentage, 10) > 0) || [], [selectedStrain]);
+  const filteredEffects = React.useMemo(() => {
+    if (!selectedStrain?.effects) return [];
+    return selectedStrain.effects.filter((eff: ProductAttribute) => {
+      const percentage = parseInt(eff.percentage, 10);
+      return !isNaN(percentage) && percentage > 0;
+    });
+  }, [selectedStrain]);
+
+  const filteredMedical = React.useMemo(() => {
+    if (!selectedStrain?.medical) return [];
+    return selectedStrain.medical.filter((med: ProductAttribute) => {
+      const percentage = parseInt(med.percentage, 10);
+      return !isNaN(percentage) && percentage > 0;
+    });
+  }, [selectedStrain]);
   
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
@@ -133,7 +157,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
               <ScrollArea className="h-full">
                 {selectedStrain ? (
                   <div className="p-4 space-y-4">
-                     {selectedStrain.img_url && selectedStrain.img_url !== 'none' && (
+                     {selectedStrain.img_url && selectedStrain.img_url !== 'none' ? (
                         <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4">
                             <Image
                                 src={selectedStrain.img_url}
@@ -142,6 +166,10 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
                                 objectFit="cover"
                                 data-ai-hint={`cannabis strain ${selectedStrain.name}`}
                             />
+                        </div>
+                    ) : (
+                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     )}
                     <CardTitle>{selectedStrain.name}</CardTitle>
