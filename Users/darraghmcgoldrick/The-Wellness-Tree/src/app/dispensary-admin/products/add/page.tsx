@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,7 +10,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { DispensaryTypeProductCategoriesDoc, ProductCategory, Product as ProductType } from '@/types';
+import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon, AlertTriangle } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -65,7 +64,7 @@ export default function AddProductPage() {
   
   const [thcCbdCategories, setThcCbdCategories] = useState<any | null>(null);
 
-  const [selectedProductStream, setSelectedProductStream] = useState<string | null>(null);
+  const [selectedProductStream, setSelectedProductStream] = useState<CannabinoidStreamKey | null>(null);
   
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   
@@ -97,7 +96,7 @@ export default function AddProductPage() {
   const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
-  const handleProductStreamSelect = (streamName: string) => {
+  const handleProductStreamSelect = (streamName: CannabinoidStreamKey) => {
     setSelectedProductStream(streamName);
     form.reset({
       ...productSchema.strip()._def.defaultValue(),
@@ -118,10 +117,10 @@ export default function AddProductPage() {
   useEffect(() => {
     if (watchStickerProgramOptIn === 'yes') {
         setShowStrainFinder(true);
-    } else if (watchStickerProgramOptIn === 'no') {
+    } else if (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'no') {
         setShowStrainFinder(false);
     }
-  }, [watchStickerProgramOptIn]);
+  }, [watchStickerProgramOptIn, selectedProductStream]);
   
   
   const fetchInitialData = useCallback(async () => {
@@ -189,6 +188,7 @@ export default function AddProductPage() {
     form.setValue('strainType', strainData.type);
     form.setValue('description', strainData.description);
     form.setValue('thcContent', strainData.thc_level);
+    form.setValue('mostCommonTerpene', strainData.most_common_terpene);
     
     const effects: ProductAttribute[] = [];
     const medical: ProductAttribute[] = [];
@@ -202,7 +202,7 @@ export default function AddProductPage() {
     
     const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
     medicalKeys.forEach(key => {
-        const strainKey = key.replace(/[/']+/g, "_"); // Sanitize key for lookup
+        const strainKey = key.replace(/[/'\s]+/g, "_"); // Sanitize key for lookup
         if(strainData[strainKey] && parseInt(strainData[strainKey]) > 0) {
             medical.push({ name: key.toUpperCase(), percentage: strainData[strainKey] });
         }
@@ -227,8 +227,8 @@ export default function AddProductPage() {
     return (
         <Card className="max-w-4xl mx-auto my-8 shadow-xl">
             <CardHeader>
-                <CardTitle>Unsupported Store Type</CardTitle>
-                <CardDescription>This page is currently configured for "Cannibinoid store" type only. Other workflows will be restored soon.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-6 w-6 text-destructive"/>Unsupported Store Type</CardTitle>
+                <CardDescription>This page is currently configured for &quot;Cannibinoid store&quot; type only. Please contact support if you believe this is an error. Other workflows will be restored soon.</CardDescription>
             </CardHeader>
         </Card>
     );
@@ -309,15 +309,14 @@ export default function AddProductPage() {
             <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
             <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link> </Button>
         </div>
-        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. {currentDispensary?.dispensaryType && ( <span className="block mt-1">Categories for: <span className="font-semibold text-primary">{currentDispensary.dispensaryType}</span></span> )} </CardDescription>
+        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {renderCannibinoidWorkflow()}
             
-            {/* Common form fields */}
-            {(selectedProductStream) && (
+            {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                 <Separator />
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
@@ -361,7 +360,7 @@ export default function AddProductPage() {
               </div>
             )}
             
-            {selectedProductStream && (
+            {selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no') && (
               <CardFooter>
                 <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
@@ -378,4 +377,3 @@ export default function AddProductPage() {
   );
 }
 
-    
