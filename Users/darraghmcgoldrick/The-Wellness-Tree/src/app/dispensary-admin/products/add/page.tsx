@@ -106,15 +106,20 @@ export default function AddProductPage() {
 
   const handleProductStreamSelect = (streamName: string) => {
     setSelectedProductStream(streamName);
-    setSelectedCategory(null);
+    form.setValue('category', streamName);
+    form.setValue('subcategory', null);
+    form.setValue('subSubcategory', null);
+    
+    // Reset fields relevant to strain/product details
     form.reset({
-      ...form.getValues(),
-      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      stickerProgramOptIn: 'no', effects: [], flavors: [], medicalUses: [],
+      ...form.getValues(), // Keep existing values like dispensary info
+      name: '', description: '', stickerProgramOptIn: 'no',
+      effects: [], flavors: [], medicalUses: [],
       strain: '', strainType: '', thcContent: '', cbdContent: '',
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
     });
-    setFiles([]); setLabTestFile(null);
+    setFiles([]); 
+    setLabTestFile(null);
     
     if (streamName === 'Cannibinoid (other)') {
       setShowStrainFinder(false); // Only show after opt-in
@@ -126,22 +131,20 @@ export default function AddProductPage() {
   };
   
   useEffect(() => {
-    if (watchCategory) {
+    if (watchCategory && categoryStructure) {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
       setSubCategoryL1Options(mainCat?.subcategories?.map(sc => sc.name).sort() || []);
-      form.setValue('subcategory', null);
-      setSubCategoryL2Options([]);
     }
-  }, [watchCategory, categoryStructure, form]);
+  }, [watchCategory, categoryStructure]);
 
   useEffect(() => {
-    if (watchCategory && watchSubCategory) {
+    if (watchCategory && watchSubCategory && categoryStructure) {
       const mainCat = categoryStructure.find(c => c.name === watchCategory);
       const subCat = mainCat?.subcategories?.find(sc => sc.name === watchSubCategory);
       setSubCategoryL2Options(subCat?.subcategories?.map(ssc => ssc.name).sort() || []);
-      form.setValue('subSubcategory', null);
     }
-  }, [watchSubCategory, watchCategory, categoryStructure, form]);
+  }, [watchSubCategory, watchCategory, categoryStructure]);
+
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentDispensary?.dispensaryType) {
@@ -157,7 +160,7 @@ export default function AddProductPage() {
           const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
           setCategoryStructure(categoriesDoc.categoriesData || []);
           if (currentDispensary.dispensaryType === "Cannibinoid store") {
-            setThcCbdCategories((categoriesDoc.categoriesData as any)?.thcCbdProductCategories || null);
+            setThcCbdCategories((categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories')?.data || null);
           }
         } else {
           toast({ title: "No Product Categories", description: `No product category structure has been defined for the "${currentDispensary.dispensaryType}" store type. Please contact an admin.`, variant: "destructive" });
@@ -205,13 +208,6 @@ export default function AddProductPage() {
     } finally { setIsLoading(false); }
   };
   
-  const productStreams = useMemo(() => {
-    if (currentDispensary?.dispensaryType === "Cannibinoid store") {
-      return (Object.keys(cannibinoidStreamDisplayMapping) as CannabinoidStreamKey[]);
-    }
-    return categoryStructure.map(c => c.name);
-  }, [categoryStructure, currentDispensary]);
-  
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
     form.setValue('description', strainData.description);
@@ -235,8 +231,8 @@ export default function AddProductPage() {
       <FormItem>
         <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-            {productStreams.map((stream) => { 
-                const { text, icon: IconComponent, color } = cannibinoidStreamDisplayMapping[stream as CannabinoidStreamKey];
+            {(Object.keys(cannibinoidStreamDisplayMapping) as CannabinoidStreamKey[]).map((stream) => { 
+                const { text, icon: IconComponent, color } = cannibinoidStreamDisplayMapping[stream];
                 return ( 
                     <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}>
                        <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2 mx-auto", color)} /> 
@@ -274,21 +270,20 @@ export default function AddProductPage() {
           />
       )}
       
-      {/* Dynamic Category Cards */}
-      {selectedCategory && thcCbdCategories && (
+      {thcCbdCategories && (selectedProductStream === 'CBD' || (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'yes')) && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Object.entries(thcCbdCategories[selectedCategory === 'Cannibinoid (other)' ? 'THC' : selectedCategory]['Delivery Methods']).map(([key, value]) => {
+              {Object.entries(thcCbdCategories[selectedProductStream === 'Cannibinoid (other)' ? 'THC' : 'CBD']['Delivery Methods']).map(([key, value]) => {
                   const items = value as string[];
-                  const imageUrl = items.find(item => item.startsWith('imageUrl:'))?.split(':')[1];
+                  const imageUrl = items.find(item => item.startsWith('imageUrl:'))?.split(':')[1].trim();
                   const options = items.filter(item => !item.startsWith('imageUrl:'));
                   return (
                       <Card key={key} className="p-3">
                           {imageUrl && <div className="relative h-24 mb-2"><Image src={imageUrl} alt={key} layout="fill" objectFit="cover" /></div>}
                           <CardTitle className="text-lg">{key}</CardTitle>
                           <Select onValueChange={(val) => {
-                              form.setValue('category', key);
-                              form.setValue('subcategory', val);
-                          }}>
+                              form.setValue('deliveryMethod', key);
+                              form.setValue('productSubCategory', val);
+                          }} required>
                               <SelectTrigger><SelectValue placeholder="Select one" /></SelectTrigger>
                               <SelectContent>
                                   {options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
@@ -299,13 +294,6 @@ export default function AddProductPage() {
               })}
           </div>
       )}
-
-      {/* Rest of the form */}
-      {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes')) && (
-        <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-          {/* ... all the other form fields from your original code */}
-        </div>
-      )}
     </>
   );
 
@@ -313,9 +301,9 @@ export default function AddProductPage() {
     <FormItem>
         <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select Product Stream * </FormLabel>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mt-2">
-            {productStreams.map((stream) => (
-                <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}>
-                   <span className="text-lg sm:text-xl font-semibold text-center">{stream}</span>
+            {categoryStructure.map((cat) => (
+                <Button key={cat.name} type="button" variant={selectedProductStream === cat.name ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === cat.name && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(cat.name)}>
+                   <span className="text-lg sm:text-xl font-semibold text-center">{cat.name}</span>
                 </Button> 
             ))}
         </div>
@@ -336,8 +324,8 @@ export default function AddProductPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {currentDispensary?.dispensaryType === "Cannibinoid store" ? renderCannibinoidWorkflow() : renderOtherWorkflow()}
             
-            {/* The rest of the form that is common or appears after selection */}
-             {(selectedProductStream && (currentDispensary?.dispensaryType !== 'Cannibinoid store' || selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear' || selectedProductStream === 'Sticker Promo Set' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
+            {/* Common form fields */}
+            {(selectedProductStream && (currentDispensary?.dispensaryType !== 'Cannibinoid store' || selectedProductStream === 'Apparel' || selectedProductStream === 'Smoking Gear' || selectedProductStream === 'Sticker Promo Set' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                 <Separator />
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
@@ -345,7 +333,13 @@ export default function AddProductPage() {
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                 
-                {/* ... other common fields like pricing, images, etc. ... */}
+                {currentDispensary?.dispensaryType !== 'Cannibinoid store' && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl><SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                    {subCategoryL1Options.length > 0 && ( <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Subcategory L1</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory"/></SelectTrigger></FormControl><SelectContent>{subCategoryL1Options.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />)}
+                  </div>
+                )}
+                
                 <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing & Stock *</h2>
                 <div className="space-y-4">
                   {priceTierFields.map((field, index) => (
