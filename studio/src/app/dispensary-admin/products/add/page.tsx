@@ -11,7 +11,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { DispensaryTypeProductCategoriesDoc } from '@/types';
+import type { DispensaryTypeProductCategoriesDoc, ProductCategory } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,7 +115,7 @@ export default function AddProductPage() {
   
   
   const fetchInitialData = useCallback(async () => {
-    // Assuming always Cannibinoid store, so no check needed
+    if (authLoading || !currentDispensary) return;
     setIsLoadingInitialData(true);
     try {
         const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
@@ -132,7 +132,7 @@ export default function AddProductPage() {
       console.error("Error fetching initial data:", error);
       toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
     } finally { setIsLoadingInitialData(false); }
-  }, [toast]);
+  }, [toast, authLoading, currentDispensary]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
@@ -205,6 +205,11 @@ export default function AddProductPage() {
   
   if (authLoading || isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
+  }
+
+  // This check ensures we only render for the specified store type
+  if (currentDispensary?.dispensaryType !== "Cannibinoid store") {
+    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">Product workflow for '{currentDispensary?.dispensaryType}' coming soon.</h2></div>
   }
 
   const renderCategoryCards = () => {
