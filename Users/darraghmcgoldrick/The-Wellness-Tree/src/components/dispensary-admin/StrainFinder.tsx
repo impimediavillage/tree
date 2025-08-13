@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -70,7 +71,12 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
   
   React.useEffect(() => {
     const handler = setTimeout(() => {
-      fetchStrains(searchTerm);
+      if (searchTerm) {
+        fetchStrains(searchTerm);
+      } else {
+        setStrains([]);
+        setLastVisible(null);
+      }
     }, 500);
     return () => clearTimeout(handler);
   }, [searchTerm, fetchStrains]);
@@ -121,7 +127,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
               ))}
             </div>
           ) : (
-            <p className="text-center text-muted-foreground py-10">No strains found for &quot;{searchTerm}&quot;.</p>
+             searchTerm && <p className="text-center text-muted-foreground py-10">No strains found for &quot;{searchTerm}&quot;.</p>
           )}
           {strains.length > 0 && lastVisible && (
              <div className="text-center mt-4">
