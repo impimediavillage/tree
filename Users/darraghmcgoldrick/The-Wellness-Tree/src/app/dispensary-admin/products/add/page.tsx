@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -51,8 +51,9 @@ const cannibinoidStreamDisplayMapping: Record<CannabinoidStreamKey, { text: stri
     'CBD Products': { text: 'CBD Products', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
     'Accessories': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
-    'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Gift, color: 'text-yellow-500' },
+    'Sticker Promo Set': { text: 'Sticker Promo', icon: Gift, color: 'text-yellow-500' },
 };
+
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -61,7 +62,7 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<ProductCategory[] | null>(null);
+  const [thcCbdCategories, setThcCbdCategories] = useState<any | null>(null);
 
   const [selectedProductStream, setSelectedProductStream] = useState<CannabinoidStreamKey | null>(null);
   
@@ -125,7 +126,7 @@ export default function AddProductPage() {
         if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            setCategoryStructure(categoriesDoc.categoriesData);
+            setThcCbdCategories(categoriesDoc.categoriesData);
         } else {
             toast({ title: "Configuration Missing", description: "Could not find the product category configuration for 'Cannibinoid store'.", variant: "destructive" });
         }
@@ -187,7 +188,7 @@ export default function AddProductPage() {
     
     const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
     medicalKeys.forEach(key => {
-        const strainKey = key.replace(/[/'\\s]+/g, "_");
+        const strainKey = key.replace(/[/'\s]+/g, "_");
         if(strainData[strainKey] && parseInt(strainData[strainKey]) > 0) {
             medical.push({ name: key.toUpperCase(), percentage: strainData[strainKey] });
         }
@@ -314,7 +315,7 @@ export default function AddProductPage() {
                 />
             )}
             
-            {categoryStructure && (selectedProductStream === 'CBD Products' || (selectedProductStream === 'THC Products' && watchStickerProgramOptIn === 'yes')) && (
+            {thcCbdCategories && (selectedProductStream === 'CBD Products' || (selectedProductStream === 'THC Products' && watchStickerProgramOptIn === 'yes')) && (
                  renderProductDetails()
             )}
 
