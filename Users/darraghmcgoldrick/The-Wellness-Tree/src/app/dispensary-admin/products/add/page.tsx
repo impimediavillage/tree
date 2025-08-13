@@ -226,7 +226,7 @@ export default function AddProductPage() {
   }
 
   if (currentDispensary?.dispensaryType !== "Cannibinoid store") {
-    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">This page is for Cannibinoid Stores only.</h2></div>
+    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">This page is for Cannibinoid Stores only. Other workflows coming soon.</h2></div>
   }
 
   const renderCannibinoidWorkflow = () => (
@@ -372,3 +372,6 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+
+    
