@@ -125,26 +125,20 @@ export default function AddProductPage() {
   
   
   const fetchInitialData = useCallback(async () => {
-    if (authLoading || !currentDispensary?.dispensaryType) {
-      if (!authLoading) setIsLoadingInitialData(false);
-      return;
-    }
     setIsLoadingInitialData(true);
     try {
-        if (currentDispensary.dispensaryType === "Cannibinoid store") {
-            const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
-            const querySnapshot = await getDocs(categoriesQuery);
-            if (!querySnapshot.empty) {
-                const docSnap = querySnapshot.docs[0];
-                const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-                setThcCbdCategories((categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories')?.data || null);
-            }
+        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
+        const querySnapshot = await getDocs(categoriesQuery);
+        if (!querySnapshot.empty) {
+            const docSnap = querySnapshot.docs[0];
+            const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
+            setThcCbdCategories((categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories')?.data || null);
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
       toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
     } finally { setIsLoadingInitialData(false); }
-  }, [currentDispensary, authLoading, toast]);
+  }, [toast]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
@@ -305,14 +299,7 @@ export default function AddProductPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            {currentDispensary?.dispensaryType === "Cannibinoid store" ? (
-                renderCannibinoidWorkflow()
-            ) : (
-                <div className="p-4 text-center text-muted-foreground border rounded-lg bg-muted">
-                    <p>This product workflow is for store type: {currentDispensary?.dispensaryType || "Unknown"}.</p>
-                    <p>Contact support to configure your product addition workflow.</p>
-                </div>
-            )}
+            {renderCannibinoidWorkflow()}
             
             {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
