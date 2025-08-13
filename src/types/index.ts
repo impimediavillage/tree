@@ -1,7 +1,5 @@
-'use server';
 
-// All type definitions are now consolidated in functions/src/types.ts
-// This file can be removed or kept to re-export types if needed in the future.
-// For now, it is being cleared to avoid confusion and conflicts.
-
-export type {};
+// This file is obsolete. All types have been consolidated into functions/src/types.ts
+// to ensure a single source of truth for both frontend and backend.
+// This prevents type mismatches during compilation and runtime.
+export * from '../../functions/src/types';
