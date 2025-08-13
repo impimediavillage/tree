@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -35,13 +35,22 @@ import Image from 'next/image';
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
-type CannabinoidStreamKey = 'Cannibinoid (other)' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
+const apparelGenders = ['Mens', 'Womens', 'Unisex'];
+const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
+
+const standardSizesData: Record<string, Record<string, string[]>> = {
+  'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
+  'Womens': { 'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'], 'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'], 'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'], 'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
+  'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
+};
+
+type CannabinoidStreamKey = 'THC Products' | 'CBD Products' | 'Apparel' | 'Accessories' | 'Sticker Promo Set';
 
 const cannibinoidStreamDisplayMapping: Record<CannabinoidStreamKey, { text: string; icon: React.ElementType; color: string }> = {
-    'Cannibinoid (other)': { text: 'THC Products', icon: Flame, color: 'text-red-500' },
-    'CBD': { text: 'CBD Products', icon: LeafIconLucide, color: 'text-green-500' },
+    'THC Products': { text: 'THC Products', icon: Flame, color: 'text-red-500' },
+    'CBD Products': { text: 'CBD Products', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
-    'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
+    'Accessories': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
     'Sticker Promo Set': { text: 'Sticker Promo', icon: Gift, color: 'text-yellow-500' },
 };
 
@@ -53,9 +62,14 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [thcCbdCategories, setThcCbdCategories] = useState<any | null>(null);
+  const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
+  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
+  const [subCategoryOptions, setSubCategoryOptions] = useState<string[]>([]);
+  const [subSubCategoryOptions, setSubSubCategoryOptions] = useState<string[]>([]);
 
   const [selectedProductStream, setSelectedProductStream] = useState<CannabinoidStreamKey | null>(null);
+  
+  const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
@@ -81,34 +95,42 @@ export default function AddProductPage() {
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
+  const watchSizingSystem = form.watch('sizingSystem');
+  const watchGender = form.watch('gender');
   const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
+  const watchMainCategory = form.watch('category');
+  const watchSubCategory = form.watch('subcategory');
 
   const handleProductStreamSelect = (streamName: CannabinoidStreamKey) => {
     setSelectedProductStream(streamName);
     form.reset({
-      ...form.getValues(),
-      name: '', description: '', subcategory: null, subSubcategory: null,
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
-      poolPriceTiers: [], isAvailableForPool: false, tags: [], labTested: false, labTestReportUrl: null,
-      stickerProgramOptIn: 'no',
-      effects: [], flavors: [], medicalUses: [],
-      category: streamName,
+      ...productSchema.strip()._def.defaultValue(),
+      currency: currentDispensary?.currency || 'ZAR',
     });
+    setMainCategoryOptions([]);
+    setSubCategoryOptions([]);
+    setSubSubCategoryOptions([]);
+
+    const streamCategories = categoryStructure.find(c => c.name === streamName.replace(" Products", "").replace("Accessories", "Smoking Gear"));
+    if (streamCategories && streamCategories.subcategories) {
+        setMainCategoryOptions(streamCategories.subcategories.map(sc => sc.name));
+    }
+
     setFiles([]); 
     setLabTestFile(null);
     setShowStrainFinder(false);
     
-    if (streamName === 'Cannibinoid (other)') {
-      // Logic for opt-in will handle showing next steps
-    } else if (streamName === 'CBD') {
-      setShowStrainFinder(true);
+    if (streamName === 'THC Products') {
+        // Will show opt-in first
+    } else if (streamName === 'CBD Products') {
+        setShowStrainFinder(true);
     }
   };
 
   useEffect(() => {
     if (watchStickerProgramOptIn === 'yes') {
         setShowStrainFinder(true);
-    } else if (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'no') {
+    } else if (selectedProductStream === 'THC Products' && watchStickerProgramOptIn === 'no') {
         setShowStrainFinder(false);
     }
   }, [watchStickerProgramOptIn, selectedProductStream]);
@@ -116,6 +138,11 @@ export default function AddProductPage() {
   
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentDispensary) return;
+    if (currentDispensary.dispensaryType !== "Cannibinoid store") {
+      setIsLoadingInitialData(false);
+      return;
+    }
+    
     setIsLoadingInitialData(true);
     try {
         const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
@@ -123,8 +150,7 @@ export default function AddProductPage() {
         if (!querySnapshot.empty) {
             const docSnap = querySnapshot.docs[0];
             const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            const thcCbdData = (categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories');
-            setThcCbdCategories(thcCbdData?.data || null);
+            setCategoryStructure(categoriesDoc.categoriesData || []);
         } else {
             toast({ title: "Configuration Missing", description: "Could not find the product category configuration for 'Cannibinoid store'.", variant: "destructive" });
         }
@@ -136,6 +162,32 @@ export default function AddProductPage() {
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
+  useEffect(() => {
+    if (watchMainCategory) {
+      const mainCat = categoryStructure.find(c => c.name === selectedProductStream?.replace(" Products", "").replace("Accessories", "Smoking Gear"))
+                       ?.subcategories?.find(sc => sc.name === watchMainCategory);
+      setSubCategoryOptions(mainCat?.subcategories?.map(sc => sc.name).sort() || []);
+      form.setValue('subcategory', null);
+      form.setValue('subSubcategory', null);
+    }
+  }, [watchMainCategory, categoryStructure, selectedProductStream, form]);
+
+  useEffect(() => {
+    if (watchSubCategory) {
+      const mainCat = categoryStructure.find(c => c.name === selectedProductStream?.replace(" Products", "").replace("Accessories", "Smoking Gear"))
+                       ?.subcategories?.find(sc => sc.name === watchMainCategory);
+      const subCat = mainCat?.subcategories?.find(sc => sc.name === watchSubCategory);
+      setSubSubCategoryOptions(subCat?.subcategories?.map(ssc => ssc.name).sort() || []);
+      form.setValue('subSubcategory', null);
+    }
+  }, [watchSubCategory, watchMainCategory, categoryStructure, selectedProductStream, form]);
+
+
+  useEffect(() => {
+    const gender = form.getValues('gender'); const system = form.getValues('sizingSystem');
+    if (gender && system && standardSizesData[gender] && standardSizesData[gender][system]) { setAvailableStandardSizes(standardSizesData[gender][system]); } else { setAvailableStandardSizes([]); }
+  }, [watchGender, watchSizingSystem, form]);
+
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser) { toast({ title: "Error", description: "Cannot submit without dispensary data.", variant: "destructive" }); return; }
     setIsLoading(true);
@@ -156,7 +208,7 @@ export default function AddProductPage() {
         }
 
         const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
-        const productData = { ...data, dispensaryId: currentUser.dispensaryId, dispensaryName: currentDispensary.dispensaryName, dispensaryType: currentDispensary.dispensaryType, productOwnerEmail: currentUser.email, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), quantityInStock: totalStock, imageUrls: uploadedImageUrls, labTestReportUrl: uploadedLabTestUrl };
+        const productData = { ...data, category: selectedProductStream, dispensaryId: currentUser.dispensaryId, dispensaryName: currentDispensary.dispensaryName, dispensaryType: currentDispensary.dispensaryType, productOwnerEmail: currentUser.email, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), quantityInStock: totalStock, imageUrls: uploadedImageUrls, labTestReportUrl: uploadedLabTestUrl };
         await addDoc(collection(db, 'products'), productData);
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
         router.push('/dispensary-admin/products');
@@ -175,29 +227,29 @@ export default function AddProductPage() {
     form.setValue('mostCommonTerpene', strainData.most_common_terpene);
     
     const effects: ProductAttribute[] = [];
-    if (strainData.effects) {
-       Object.entries(strainData.effects).forEach(([key, value]) => {
-           if(value && parseInt(value as string) > 0) {
-              effects.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: value as string });
-           }
-       });
-    }
-    
     const medical: ProductAttribute[] = [];
-     if (strainData.medical) {
-       Object.entries(strainData.medical).forEach(([key, value]) => {
-           if(value && parseInt(value as string) > 0) {
-              medical.push({ name: key.toUpperCase(), percentage: value as string });
-           }
-       });
-    }
+    
+    const effectKeys = ["relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "creative", "energetic", "focused", "giggly", "tingly", "aroused", "hungry", "talkative"];
+    effectKeys.forEach(key => {
+        if(strainData[key] && parseInt(strainData[key]) > 0) {
+            effects.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: strainData[key] });
+        }
+    });
+    
+    const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
+    medicalKeys.forEach(key => {
+        const strainKey = key.replace(/[/'\s]+/g, "_");
+        if(strainData[strainKey] && parseInt(strainData[strainKey]) > 0) {
+            medical.push({ name: key.toUpperCase(), percentage: strainData[strainKey] });
+        }
+    });
 
     form.setValue('effects', effects);
     form.setValue('medicalUses', medical);
     
-    if (strainData.flavor) {
-      form.setValue('flavors', strainData.flavor);
-    }
+    const flavorKeywords = ["earthy", "sweet", "citrus", "pungent", "pine", "skunk", "grape", "berry", "flowery", "diesel", "woody", "cheese", "chemical", "nutty", "lemon", "lime", "orange", "tropical", "spicy", "herbal", "honey", "mint", "ammonia", "apple", "apricot", "blueberry", "butter", "chestnut", "coffee", "grapefruit", "lavender", "mango", "menthol", "peach", "pear", "pepper", "plum", "rose", "sage", "strawberry", "tea", "tobacco", "tree", "vanilla", "violet"];
+    const foundFlavors = flavorKeywords.filter(flavor => strainData.description.toLowerCase().includes(flavor));
+    form.setValue('flavors', foundFlavors);
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
     setShowStrainFinder(false);
@@ -207,45 +259,9 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
-  // This check ensures we only render for the specified store type
   if (currentDispensary?.dispensaryType !== "Cannibinoid store") {
-    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">Product workflow for '{currentDispensary?.dispensaryType}' coming soon.</h2></div>
+    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">This page is for Cannibinoid Stores only. Other workflows coming soon.</h2></div>
   }
-
-  const renderCategoryCards = () => {
-      if (!thcCbdCategories || !selectedProductStream) return null;
-      
-      const streamKey = selectedProductStream === 'Cannibinoid (other)' ? 'THC' : 'CBD';
-      const deliveryMethods = thcCbdCategories[streamKey]?.['Delivery Methods'];
-      if (!deliveryMethods) return null;
-
-      return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Object.entries(deliveryMethods).map(([key, value]) => {
-              const items = value as string[];
-              const imageUrlItem = items.find(item => item.startsWith('imageUrl: '));
-              const imageUrl = imageUrlItem?.split(': ')[1];
-              const options = items.filter(item => !item.startsWith('imageUrl: '));
-              
-              return (
-                  <Card key={key} className="p-3">
-                      {imageUrl && <div className="relative h-24 mb-2"><Image src={imageUrl} alt={key} layout="fill" objectFit="cover" /></div>}
-                      <CardTitle className="text-base font-semibold mb-2">{key}</CardTitle>
-                      <Select onValueChange={(val) => {
-                          form.setValue('deliveryMethod', key);
-                          form.setValue('productSubCategory', val);
-                      }} required>
-                          <SelectTrigger><SelectValue placeholder="Select one" /></SelectTrigger>
-                          <SelectContent>
-                              {options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </Card>
-              )
-          })}
-        </div>
-      );
-  };
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
@@ -273,7 +289,7 @@ export default function AddProductPage() {
             </div>
             
             <div className="space-y-6 mt-4">
-                {selectedProductStream === 'Cannibinoid (other)' && (
+                {selectedProductStream === 'THC Products' && (
                  <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
                     <CardHeader><CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle></CardHeader>
                     <CardContent>
@@ -300,14 +316,20 @@ export default function AddProductPage() {
                     />
                 )}
                 
-                {thcCbdCategories && (selectedProductStream === 'CBD' || (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'yes')) && renderCategoryCards()}
+                {selectedProductStream && (selectedProductStream === 'CBD Products' || (selectedProductStream === 'THC Products' && watchStickerProgramOptIn === 'yes')) && (
+                     <Button type="button" onClick={() => setShowStrainFinder(true)}><SearchIcon className="mr-2 h-4 w-4" />Find Strain Info</Button>
+                )}
 
-                {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
+                {(selectedProductStream && (selectedProductStream !== 'THC Products' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <Separator />
                     <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                    {mainCategoryOptions.length > 0 && <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Category *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category..." /></SelectTrigger></FormControl><SelectContent>{mainCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />}
+                    {subCategoryOptions.length > 0 && <FormField control={form.control} name="subcategory" render={({ field }) => (<FormItem><FormLabel>Subcategory</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a subcategory..." /></SelectTrigger></FormControl><SelectContent>{subCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />}
+                    {subSubCategoryOptions.length > 0 && <FormField control={form.control} name="subSubcategory" render={({ field }) => (<FormItem><FormLabel>Sub-Subcategory</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="Select a sub-subcategory..." /></SelectTrigger></FormControl><SelectContent>{subSubCategoryOptions.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />}
                     
                     <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing & Stock *</h2>
                     <div className="space-y-4">
@@ -363,3 +385,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
