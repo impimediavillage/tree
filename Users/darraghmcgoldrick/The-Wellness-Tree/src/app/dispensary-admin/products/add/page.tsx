@@ -44,7 +44,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-
 type CannabinoidStreamKey = 'Cannibinoid (other)' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
 
 const cannibinoidStreamDisplayMapping: Record<CannabinoidStreamKey, { text: string; icon: React.ElementType; color: string }> = {
@@ -125,7 +124,12 @@ export default function AddProductPage() {
   
   
   const fetchInitialData = useCallback(async () => {
-    // Assuming 'Cannibinoid store' type
+    if (authLoading || !currentDispensary) return;
+    if (currentDispensary.dispensaryType !== "Cannibinoid store") {
+      setIsLoadingInitialData(false);
+      return;
+    }
+    
     setIsLoadingInitialData(true);
     try {
         const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
@@ -141,7 +145,7 @@ export default function AddProductPage() {
       console.error("Error fetching initial data:", error);
       toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
     } finally { setIsLoadingInitialData(false); }
-  }, [toast]);
+  }, [toast, authLoading, currentDispensary]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
@@ -200,7 +204,7 @@ export default function AddProductPage() {
     
     const medicalKeys = ["stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus"];
     medicalKeys.forEach(key => {
-        const strainKey = key.replace(/[/'\s]+/g, "_"); // Sanitize key for lookup
+        const strainKey = key.replace(/[/'\s]+/g, "_");
         if(strainData[strainKey] && parseInt(strainData[strainKey]) > 0) {
             medical.push({ name: key.toUpperCase(), percentage: strainData[strainKey] });
         }
@@ -219,6 +223,10 @@ export default function AddProductPage() {
   
   if (authLoading || isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
+  }
+
+  if (currentDispensary?.dispensaryType !== "Cannibinoid store") {
+    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">This page is for Cannibinoid Stores only.</h2></div>
   }
 
   const renderCannibinoidWorkflow = () => (
@@ -364,5 +372,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
