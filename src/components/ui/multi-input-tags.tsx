@@ -78,15 +78,15 @@ export function MultiInputTags({
           <CornerDownLeft className="h-4 w-4" />
         </Button>
       </div>
-      {value.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+       {value.length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed mt-2">
           {value.map((tag, index) => (
             <Badge
               key={index}
               variant="secondary"
               className={cn(
-                "flex items-center gap-1.5 pr-1.5 group border-none", // Make borderless by default
-                getTagClassName ? getTagClassName(tag) : '' // Apply dynamic class
+                "flex items-center gap-1.5 pr-1.5 group border",
+                getTagClassName ? getTagClassName(tag) : 'border-border'
               )}
             >
               {tag}
