@@ -36,6 +36,23 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 
 type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
 
+const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+
+const extractFlavorsFromDescription = (description: string): string[] => {
+    const flavorKeywords = ['earthy', 'sweet', 'citrus', 'pine', 'skunky', 'grape', 'woody', 'diesel', 'berry', 'lemon', 'pungent', 'flowery', 'spicy', 'herbal', 'orange', 'vanilla', 'nutty', 'minty', 'honey', 'lavender', 'fruity'];
+    const foundFlavors = new Set<string>();
+    const lowercasedDescription = description.toLowerCase();
+    
+    flavorKeywords.forEach(flavor => {
+        if (lowercasedDescription.includes(flavor)) {
+            foundFlavors.add(toTitleCase(flavor));
+        }
+    });
+
+    return Array.from(foundFlavors);
+};
+
+
 export default function AddTHCProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -84,29 +101,23 @@ export default function AddTHCProductPage() {
       if (!querySnapshot.empty) {
         const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
 
-        // Correctly parse the nested map structure
-        const thcCbdCategories = docData.categoriesData as any; // Cast to any for easier traversal
-        
-        if (thcCbdCategories && typeof thcCbdCategories === 'object') {
-          const thcData = thcCbdCategories?.thcCbdProductCategories?.THC;
-          const cbdData = thcCbdCategories?.thcCbdProductCategories?.CBD;
-
-          if (thcData && thcData['Delivery Methods'] && Array.isArray(thcData['Delivery Methods'])) {
-            setThcDeliveryMethods(thcData['Delivery Methods']);
-          } else {
-             setThcDeliveryMethods([]);
-          }
-
-          if (cbdData && cbdData['Delivery Methods'] && Array.isArray(cbdData['Delivery Methods'])) {
-            setCbdDeliveryMethods(cbdData['Delivery Methods']);
-          } else {
-             setCbdDeliveryMethods([]);
-          }
-
+        const categoriesData = docData.categoriesData;
+        if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+            const thcCbdCategories = (categoriesData as any).thcCbdProductCategories;
+            if (thcCbdCategories && typeof thcCbdCategories === 'object') {
+                 const thcData = thcCbdCategories.THC;
+                 const cbdData = thcCbdCategories.CBD;
+                 if (thcData && thcData['Delivery Methods'] && Array.isArray(thcData['Delivery Methods'])) {
+                    setThcDeliveryMethods(thcData['Delivery Methods']);
+                 }
+                 if (cbdData && cbdData['Delivery Methods'] && Array.isArray(cbdData['Delivery Methods'])) {
+                    setCbdDeliveryMethods(cbdData['Delivery Methods']);
+                 }
+            } else {
+                 console.warn("thcCbdProductCategories map not found in categoriesData.");
+            }
         } else {
-           setThcDeliveryMethods([]);
-           setCbdDeliveryMethods([]);
-           console.warn("categoriesData is not in the expected format or is missing thcCbdProductCategories.");
+           console.warn("categoriesData is not a map or is missing.");
         }
       } else {
         toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
@@ -123,7 +134,6 @@ export default function AddTHCProductPage() {
   
   const handleCategorySelect = (category: ProductCategory) => {
     form.setValue('category', category.name);
-    // Filter out the imageUrl map before setting options
     const subOptions = category.subcategories?.filter(sc => !sc.hasOwnProperty('imageUrl')).map(sc => sc.name) || [];
     setSubCategoryOptions(subOptions);
     form.setValue('subcategory', null); // Reset subcategory when main category changes
@@ -141,7 +151,7 @@ export default function AddTHCProductPage() {
     if(strainData.effects && typeof strainData.effects === 'object') {
         Object.entries(strainData.effects).forEach(([key, value]) => {
             if (typeof value === 'string' && parseInt(value, 10) > 0) {
-                 effects.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: value });
+                 effects.push({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: value });
             }
         });
     }
@@ -150,7 +160,7 @@ export default function AddTHCProductPage() {
      if(strainData.medical && typeof strainData.medical === 'object') {
         Object.entries(strainData.medical).forEach(([key, value]) => {
             if (typeof value === 'string' && parseInt(value, 10) > 0) {
-                 medical.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: value });
+                 medical.push({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: value });
             }
         });
     }
@@ -158,11 +168,10 @@ export default function AddTHCProductPage() {
     form.setValue('effects', effects);
     form.setValue('medicalUses', medical);
     
-    if (Array.isArray(strainData.flavor)) {
-        form.setValue('flavors', strainData.flavor);
-    } else {
-        form.setValue('flavors', []);
-    }
+    const autoFlavors = extractFlavorsFromDescription(strainData.description);
+    const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
+    form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
+
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
     setShowStrainFinder(false);
@@ -414,5 +423,3 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
-
-    
