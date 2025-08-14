@@ -105,10 +105,10 @@ export default function AddTHCProductPage() {
             if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData) && (categoriesData as any).thcCbdProductCategories) {
                 const thcCbdCategories = (categoriesData as any).thcCbdProductCategories;
                 
-                if (thcCbdCategories.THC?.['Delivery Methods']) {
+                if (thcCbdCategories?.THC?.['Delivery Methods']) {
                     setThcDeliveryMethods(thcCbdCategories.THC['Delivery Methods']);
                 }
-                if (thcCbdCategories.CBD?.['Delivery Methods']) {
+                if (thcCbdCategories?.CBD?.['Delivery Methods']) {
                     setCbdDeliveryMethods(thcCbdCategories.CBD['Delivery Methods']);
                 }
             } else {
@@ -124,14 +124,15 @@ export default function AddTHCProductPage() {
     } finally {
         setIsLoadingInitialData(false);
     }
-}, [toast, authLoading, currentDispensary]);
+  }, [toast, authLoading, currentDispensary]);
 
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
   const handleCategorySelect = (categoryName: string, subCategoryArray: any[]) => {
     form.setValue('category', categoryName);
-    const options = subCategoryArray.slice(0, -1).filter(item => typeof item === 'string');
+    // Filter out the last item if it's the imageUrl object
+    const options = subCategoryArray.filter(item => typeof item === 'string');
     setSubCategoryOptions(options);
     form.setValue('subcategory', null);
   };
@@ -310,16 +311,16 @@ export default function AddTHCProductPage() {
                           
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
-                              const lastItem = subArray[subArray.length - 1];
-                              const imageUrl = (typeof lastItem === 'object' && lastItem.imageUrl) ? lastItem.imageUrl : null;
-                              return (
-                                <Card key={categoryName} onClick={() => handleCategorySelect(categoryName, subArray)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === categoryName && "border-primary ring-2 ring-primary")}>
-                                  <CardHeader className="items-center p-3">
-                                    {imageUrl && <div className="relative h-20 w-20 mb-2"><Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" /></div>}
-                                    <CardTitle className="text-center text-base">{categoryName}</CardTitle>
-                                  </CardHeader>
-                                </Card>
-                              );
+                                const lastItem = subArray.length > 0 ? subArray[subArray.length - 1] : null;
+                                const imageUrl = (lastItem && typeof lastItem === 'object' && lastItem !== null && 'imageUrl' in lastItem) ? (lastItem as { imageUrl: string }).imageUrl : null;
+                                return (
+                                    <Card key={categoryName} onClick={() => handleCategorySelect(categoryName, subArray)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === categoryName && "border-primary ring-2 ring-primary")}>
+                                    <CardHeader className="items-center p-3">
+                                        {imageUrl && <div className="relative h-20 w-20 mb-2"><Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" /></div>}
+                                        <CardTitle className="text-center text-base">{categoryName}</CardTitle>
+                                    </CardHeader>
+                                    </Card>
+                                );
                             })}
                           </div>
 
@@ -363,7 +364,7 @@ export default function AddTHCProductPage() {
                       </div>
                   )}
 
-                  {showProductDetailsForm && (
+                  
                     <div className="space-y-6">
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
@@ -413,7 +414,7 @@ export default function AddTHCProductPage() {
                         </Button>
                       </CardFooter>
                     </div>
-                  )}
+                  
                 </form>
               </Form>
               <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
