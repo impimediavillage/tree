@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function WellnessProductsPage() {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -117,6 +117,11 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
+  const addProductPath = currentDispensary?.dispensaryType === 'Cannibinoid store'
+    ? '/dispensary-admin/products/add/thc'
+    : '/dispensary-admin/products/add';
+
+
   if (isLoading) {
     return (
        <div className="space-y-6">
@@ -152,7 +157,7 @@ export default function WellnessProductsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dispensary-admin/products/add">
+          <Link href={addProductPath}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
           </Link>
         </Button>
