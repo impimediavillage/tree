@@ -212,3 +212,38 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
+
+// New Cloud Function to search for strains
+export const searchStrains = onCall(async (request: CallableRequest<{ searchTerm: string; }>) => {
+    // This function is publicly callable, no auth check needed as per requirements.
+    const { searchTerm } = request.data;
+
+    if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
+        throw new HttpsError('invalid-argument', 'A valid search term must be provided.');
+    }
+    
+    // Capitalize the first letter of each word for case-insensitive-like matching
+    const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    const processedTerm = toTitleCase(searchTerm.trim());
+
+    try {
+        const strainsRef = db.collection('my-seeded-collection');
+        const query = strainsRef
+            .where('name', '>=', processedTerm)
+            .where('name', '<=', processedTerm + '\uf8ff')
+            .limit(10);
+        
+        const snapshot = await query.get();
+        
+        if (snapshot.empty) {
+            return [];
+        }
+
+        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return results;
+
+    } catch (error: any) {
+        logger.error(`Error searching strains with term "${searchTerm}":`, error);
+        throw new HttpsError('internal', 'An error occurred while searching for strains.');
+    }
+});

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -8,11 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
 
@@ -20,7 +20,7 @@ interface StrainFinderProps {
   onStrainSelect: (strain: any) => void;
 }
 
-const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+const searchStrainsCallable = httpsCallable(functions, 'searchStrains');
 
 export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
   const { toast } = useToast();
@@ -39,22 +39,16 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
     setSelectedStrain(null);
 
     try {
-      const processedQuery = toTitleCase(searchTerm.trim());
-      const q = query(
-        collection(db, 'my-seeded-collection'),
-        where('name', '>=', processedQuery),
-        where('name', '<=', processedQuery + '\uf8ff'),
-        limit(10)
-      );
-      const querySnapshot = await getDocs(q);
-      const results = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSearchResults(results);
-      if (results.length === 0) {
+      const result = await searchStrainsCallable({ searchTerm: searchTerm.trim() });
+      const strains = result.data as any[];
+      setSearchResults(strains);
+
+      if (strains.length === 0) {
         toast({ title: 'No Results', description: `No strains found matching "${searchTerm}".`, variant: 'default' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error searching strains:', error);
-      toast({ title: 'Search Error', description: 'Could not perform search.', variant: 'destructive' });
+      toast({ title: 'Search Error', description: error.message || 'Could not perform search.', variant: 'destructive' });
     } finally {
       setIsSearching(false);
     }
@@ -62,19 +56,7 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
 
   const handleStrainClick = async (strain: any) => {
     setSelectedStrain(strain);
-    if (!strain.img_url || strain.img_url === 'none') {
-        setIsGeneratingImage(true);
-        try {
-            toast({ title: 'Generating Image', description: `Creating an image for ${strain.name}...` });
-            const { imageUrl } = await findStrainImage({ strainName: strain.name });
-            setSelectedStrain((prev: any) => ({ ...prev, img_url: imageUrl }));
-        } catch (error) {
-            console.error('Error generating strain image:', error);
-            toast({ title: 'Image Generation Failed', variant: 'destructive' });
-        } finally {
-            setIsGeneratingImage(false);
-        }
-    }
+    // Image generation logic will be added back later if needed
   };
   
   const handleSelectStrain = () => {
@@ -89,6 +71,8 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
     medical: [ "bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800", "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800" ]
   };
 
+  const toTitleCase = (str: string) => str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+
   const filteredEffects = React.useMemo(() => {
     if (!selectedStrain?.effects) return [];
     return Object.entries(selectedStrain.effects)
@@ -102,7 +86,7 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
   const filteredMedical = React.useMemo(() => {
     if (!selectedStrain?.medical) return [];
     return Object.entries(selectedStrain.medical)
-        .map(([name, percentage]) => ({name: toTitleCase(name.replace(/_/g, ' ')), percentage: String(percentage)}))
+        .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
         .filter((med: ProductAttribute) => {
             const percValue = parseInt(med.percentage, 10);
             return !isNaN(percValue) && percValue > 0;
