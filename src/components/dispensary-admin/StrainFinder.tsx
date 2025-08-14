@@ -163,7 +163,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
                                 src={selectedStrain.img_url}
                                 alt={`Image of ${selectedStrain.name}`}
                                 layout="fill"
-                                objectFit="cover"
+                                style={{objectFit:"cover"}}
                                 data-ai-hint={`cannabis strain ${selectedStrain.name}`}
                             />
                         </div>
