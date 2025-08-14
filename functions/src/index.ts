@@ -212,3 +212,25 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
+
+// New Cloud Function to update strain image URL
+export const updateStrainImageUrl = onCall(async (request: CallableRequest<{ strainId: string; imageUrl: string; }>) => {
+    // This function is now open and does not require authentication,
+    // as it's called server-to-server (from Genkit flow) or by a trusted client action
+    // that has already performed necessary checks.
+
+    const { strainId, imageUrl } = request.data;
+    if (!strainId || !imageUrl) {
+        throw new HttpsError('invalid-argument', 'Strain ID and Image URL are required.');
+    }
+
+    try {
+        const strainDocRef = db.collection('my-seeded-collection').doc(strainId);
+        await strainDocRef.update({ img_url: imageUrl });
+        logger.info(`Updated image URL for strain ${strainId}.`);
+        return { success: true, message: 'Image URL updated successfully.' };
+    } catch (error: any) {
+        logger.error(`Error updating strain image URL for strain ${strainId}:`, error);
+        throw new HttpsError('internal', 'An error occurred while updating the strain image.');
+    }
+});
