@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -90,7 +91,7 @@ export default function AddTHCProductPage() {
   const watchCategory = form.watch('category');
 
   const fetchInitialData = useCallback(async () => {
-    if (authLoading || !currentDispensary?.dispensaryType) return;
+    if (authLoading || !currentDispensary?.dispensaryType || !selectedProductStream) return;
     setIsLoadingInitialData(true);
     try {
         const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
@@ -98,23 +99,19 @@ export default function AddTHCProductPage() {
 
         if (!querySnapshot.empty) {
             const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            const categoriesData = docData.categoriesData as any;
-
-            const streamKey = selectedProductStream === 'THC' ? 'THC' : 'CBD';
-            const methods = categoriesData?.thcCbdProductCategories?.[streamKey]?.['Delivery Methods'];
+            
+            // Correctly navigate the nested structure based on user's schema
+            const methods = docData?.categoriesData?.thcCbdProductCategories?.[selectedProductStream]?.['Delivery Methods'];
 
             if (methods && typeof methods === 'object') {
                  setDeliveryMethods(methods);
             } else {
                  setDeliveryMethods({});
-                 if(selectedProductStream){
-                    console.warn(`Could not find 'Delivery Methods' for stream '${selectedProductStream}' in dispensary type '${currentDispensary.dispensaryType}'.`, categoriesData);
-                 }
+                 console.warn(`Could not find 'Delivery Methods' for stream '${selectedProductStream}' in dispensary type '${currentDispensary.dispensaryType}'.`, docData);
+                 toast({ title: "Configuration Warning", description: `Product categories for "${selectedProductStream}" might not be fully configured for this store type.`, variant: "default" });
             }
         } else {
-             if(selectedProductStream){
-                toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set it up in the admin panel.`, variant: "destructive" });
-             }
+            toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set it up in the admin panel.`, variant: "destructive" });
         }
     } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -139,15 +136,13 @@ export default function AddTHCProductPage() {
     form.setValue('mostCommonTerpene', strainData.most_common_terpene);
     
     const effects: ProductAttribute[] = Object.entries(strainData.effects || {})
-        .filter(([, value]) => parseInt(String(value), 10) > 0)
         .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
 
     const medical: ProductAttribute[] = Object.entries(strainData.medical || {})
-        .filter(([, value]) => parseInt(String(value), 10) > 0)
         .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
 
-    form.setValue('effects', effects);
-    form.setValue('medicalUses', medical);
+    form.setValue('effects', effects.filter(e => parseInt(e.percentage, 10) > 0));
+    form.setValue('medicalUses', medical.filter(m => parseInt(m.percentage, 10) > 0));
     
     const autoFlavors = extractFlavorsFromDescription(strainData.description);
     const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
@@ -256,27 +251,23 @@ export default function AddTHCProductPage() {
                     <CardDescription className="text-orange-700/80">Opt-in to include this product in our exclusive sticker promotion. Customers buy a sticker design and get a sample of your product for free!</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Form {...form}>
-                      <form>
-                          <FormField
-                              control={form.control}
-                              name="stickerProgramOptIn"
-                              render={({ field }) => (
-                                  <FormItem>
-                                      <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
-                                      <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
-                                          <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
-                                          <SelectContent>
-                                              <SelectItem value="yes">Yes, include my product</SelectItem>
-                                              <SelectItem value="no">No, this is a standard product</SelectItem>
-                                          </SelectContent>
-                                      </Select>
-                                      <FormMessage />
-                                  </FormItem>
-                              )}
-                          />
-                      </form>
-                  </Form>
+                    <FormField
+                        control={form.control}
+                        name="stickerProgramOptIn"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="yes">Yes, include my product</SelectItem>
+                                        <SelectItem value="no">No, this is a standard product</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </CardContent>
             </Card>
         )}
@@ -295,8 +286,8 @@ export default function AddTHCProductPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
                         const lastItem = Array.isArray(subArray) && subArray.length > 0 ? subArray[subArray.length - 1] : null;
-                        const isObjectWithImageUrl = lastItem && typeof lastItem === 'object' && lastItem !== null && lastItem.hasOwnProperty('imageUrl');
-                        const imageUrl = isObjectWithImageUrl ? lastItem.imageUrl : null;
+                        const isObjectWithImageUrl = lastItem && typeof lastItem === 'object' && lastItem !== null && 'imageUrl' in lastItem;
+                        const imageUrl = isObjectWithImageUrl ? (lastItem as any).imageUrl : null;
                         const subOptions = Array.isArray(subArray) ? (isObjectWithImageUrl ? subArray.slice(0, -1) : subArray) : [];
 
                         return (
@@ -321,22 +312,18 @@ export default function AddTHCProductPage() {
                                     </CardContent>
                                 </Card>
                                 {watchCategory === categoryName && Array.isArray(subOptions) && subOptions.length > 0 && (
-                                    <Form {...form}>
-                                        <form>
-                                            <FormField
-                                                control={form.control}
-                                                name="subcategory"
-                                                render={({ field }) => (
-                                                <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value ?? ''}>
-                                                        <FormControl><SelectTrigger><SelectValue placeholder={`Select ${categoryName} type`} /></SelectTrigger></FormControl>
-                                                        <SelectContent>{subOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
-                                                    </Select>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )} />
-                                        </form>
-                                    </Form>
+                                    <FormField
+                                        control={form.control}
+                                        name="subcategory"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <Select onValueChange={field.onChange} value={field.value ?? ''}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder={`Select ${categoryName} type`} /></SelectTrigger></FormControl>
+                                                <SelectContent>{subOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
                                 )}
                             </div>
                         );
