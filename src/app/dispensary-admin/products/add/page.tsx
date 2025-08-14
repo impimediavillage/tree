@@ -1,7 +1,6 @@
-
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -62,10 +61,10 @@ export default function AddProductStreamSelectionPage() {
     }
   };
 
-  const availableStreams = currentDispensary?.dispensaryType === 'THC - CBD - Mushrooms wellness' 
+  const availableStreams = currentDispensary?.dispensaryType === 'Cannibinoid store' 
     ? [
-        { key: 'THC', title: 'THC Product', description: 'Add THC-dominant flowers, edibles, tinctures, etc. Includes strain finder.', icon: Flame },
-        { key: 'CBD', title: 'CBD Product', description: 'Add CBD-dominant wellness products.', icon: Leaf, disabled: true },
+        { key: 'THC', title: 'Cannibinoid (other)', description: 'Add THC-dominant flowers, edibles, tinctures, etc. Includes strain finder.', icon: Flame },
+        { key: 'CBD', title: 'CBD Product', description: 'Add CBD-dominant wellness products.', icon: Leaf },
         { key: 'Apparel', title: 'Apparel', description: 'T-shirts, hoodies, caps, and other merchandise.', icon: Shirt, disabled: true },
         { key: 'Smoking Gear', title: 'Smoking Gear', description: 'Bongs, pipes, grinders, and other accessories.', icon: Sparkles, disabled: true },
         { key: 'Sticker Promo Set', title: 'Sticker Promo Set', description: 'Special promotional sticker packs.', icon: Gift, disabled: true }
