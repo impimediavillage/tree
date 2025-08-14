@@ -73,7 +73,6 @@ export default function AddProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchCategory = form.watch('category');
   const watchLabTested = form.watch('labTested');
-  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
 
 
   // Fetch Category Structure and other necessary data
@@ -341,18 +340,21 @@ export default function AddProductPage() {
   const renderHomeopathicForm = () => (
       <div className="space-y-6">
         {/* Fields specific to Homeopathy */}
+         <p className="text-muted-foreground p-4 bg-muted rounded-md border">This section is a placeholder for the Homeopathic product workflow. Please define the specific fields required.</p>
       </div>
   );
   
   const renderTraditionalMedicineForm = () => (
       <div className="space-y-6">
           {/* Fields specific to Traditional Medicine */}
+          <p className="text-muted-foreground p-4 bg-muted rounded-md border">This section is a placeholder for the Traditional Medicine product workflow. Please define the specific fields required.</p>
       </div>
   );
 
   const renderPermacultureForm = () => (
        <div className="space-y-6">
           {/* Fields specific to Permaculture */}
+          <p className="text-muted-foreground p-4 bg-muted rounded-md border">This section is a placeholder for the Permaculture product workflow. Please define the specific fields required.</p>
        </div>
   );
   
@@ -362,10 +364,14 @@ export default function AddProductPage() {
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
-      <CardHeader>
+       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center"> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link> </Button>
+            <Button variant="outline" size="sm" asChild>
+                <Link href="/dispensary-admin/products">
+                    <ArrowLeft className="mr-2 h-4 w-4" />Back to Products
+                </Link>
+            </Button>
         </div>
         <CardDescription> Fill in the details for your new product. Fields marked with * are required. </CardDescription>
       </CardHeader>
@@ -433,7 +439,3 @@ export default function AddProductPage() {
     </Card>
   );
 }
-
-    
-
-    
