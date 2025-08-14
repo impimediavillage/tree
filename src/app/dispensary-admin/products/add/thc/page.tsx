@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -58,7 +58,7 @@ export default function AddTHCProductPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
+  const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
   
   const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any[]>>({});
   const [isStrainSelected, setIsStrainSelected] = useState(false);
@@ -91,24 +91,19 @@ export default function AddTHCProductPage() {
   const watchCategory = form.watch('category');
 
   const fetchInitialData = useCallback(async () => {
-    if (authLoading || !currentDispensary?.dispensaryType || !selectedProductStream) return;
+    if (authLoading || !currentDispensary?.dispensaryType) return;
     setIsLoadingInitialData(true);
     try {
-        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
+        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
         const querySnapshot = await getDocs(categoriesQuery);
 
         if (!querySnapshot.empty) {
             const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
             
-            // Correctly navigate the nested structure based on user's schema
-            const methods = docData?.categoriesData?.[0]?.subcategories?.find(sc => sc.name === 'THC')?.subcategories?.find(ssc => ssc.name === 'Delivery Methods')?.subcategories;
-
-            if (methods && Array.isArray(methods)) {
-                 const deliveryMethodsMap = methods.reduce((acc, method) => {
-                    acc[method.name] = method.subcategories?.map(sc => sc.name) || [];
-                    return acc;
-                 }, {} as Record<string, any[]>);
-                 setDeliveryMethods(deliveryMethodsMap);
+            const methods = docData?.categoriesData?.thcCbdProductCategories?.['THC']?.['Delivery Methods'];
+            
+            if (methods && typeof methods === 'object') {
+                 setDeliveryMethods(methods);
             } else {
                  setDeliveryMethods({});
                  console.warn(`Could not find 'Delivery Methods' for stream '${selectedProductStream}' in dispensary type '${currentDispensary.dispensaryType}'.`, docData);
@@ -124,9 +119,9 @@ export default function AddTHCProductPage() {
         setIsLoadingInitialData(false);
     }
   }, [toast, authLoading, currentDispensary, selectedProductStream]);
-
+  
   useEffect(() => { 
-      if(selectedProductStream) {
+      if(selectedProductStream === 'THC') {
         fetchInitialData(); 
       }
   }, [selectedProductStream, fetchInitialData]);
