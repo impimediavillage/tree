@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -110,11 +109,12 @@ export default function AddTHCProductPage() {
                  setDeliveryMethods({});
                  if(selectedProductStream){
                     console.warn(`Could not find 'Delivery Methods' for stream '${selectedProductStream}' in dispensary type '${currentDispensary.dispensaryType}'.`, categoriesData);
-                    toast({ title: "Configuration Error", description: `Product category structure for '${selectedProductStream}' is invalid.`, variant: "destructive" });
                  }
             }
         } else {
-            toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'.`, variant: "destructive" });
+             if(selectedProductStream){
+                toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set it up in the admin panel.`, variant: "destructive" });
+             }
         }
     } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -157,7 +157,7 @@ export default function AddTHCProductPage() {
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please complete the remaining fields.` });
   };
   
-  const handleCategorySelect = (categoryName: string, subcategories: string[]) => {
+  const handleCategorySelect = (categoryName: string) => {
       form.setValue('category', categoryName);
       form.setValue('subcategory', null);
   };
@@ -228,11 +228,12 @@ export default function AddTHCProductPage() {
   return (
     <div className="max-w-4xl mx-auto my-8 space-y-6">
         <div className="flex items-center justify-between">
-            <div>
-                <h1 className="text-3xl font-bold flex items-center gap-3">
-                    <Flame className="text-primary"/> Add Cannabinoid Product
-                </h1>
-                <p className="text-muted-foreground mt-1">Select a product stream to begin.</p>
+            <div className="flex items-center gap-3">
+              <Flame className="h-8 w-8 text-primary"/>
+              <div>
+                  <h1 className="text-3xl font-bold">Add Cannabinoid Product</h1>
+                  <p className="text-muted-foreground mt-1">Select a product stream to begin.</p>
+              </div>
             </div>
             <Button variant="outline" asChild>
                 <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
@@ -247,7 +248,7 @@ export default function AddTHCProductPage() {
                 </Button>
             ))}
         </div>
-
+        
         {selectedProductStream === 'THC' && (
             <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                 <CardHeader>
@@ -255,35 +256,35 @@ export default function AddTHCProductPage() {
                     <CardDescription className="text-orange-700/80">Opt-in to include this product in our exclusive sticker promotion. Customers buy a sticker design and get a sample of your product for free!</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Form {...form}>
-                        <form>
-                            <FormField
-                                control={form.control}
-                                name="stickerProgramOptIn"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="yes">Yes, include my product</SelectItem>
-                                                <SelectItem value="no">No, this is a standard product</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </form>
-                    </Form>
+                  <Form {...form}>
+                      <form>
+                          <FormField
+                              control={form.control}
+                              name="stickerProgramOptIn"
+                              render={({ field }) => (
+                                  <FormItem>
+                                      <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                                      <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
+                                          <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
+                                          <SelectContent>
+                                              <SelectItem value="yes">Yes, include my product</SelectItem>
+                                              <SelectItem value="no">No, this is a standard product</SelectItem>
+                                          </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                      </form>
+                  </Form>
                 </CardContent>
             </Card>
         )}
-
+        
         {watchStickerOptIn === 'yes' && (
-            <div className="animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-              <StrainFinder onStrainSelect={handleStrainSelect} />
-            </div>
+          <div className="animate-fade-in-scale-up">
+             <StrainFinder onStrainSelect={handleStrainSelect} />
+          </div>
         )}
         
         {isStrainSelected && (
@@ -294,16 +295,14 @@ export default function AddTHCProductPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
                         const lastItem = Array.isArray(subArray) && subArray.length > 0 ? subArray[subArray.length - 1] : null;
-                        const isObjectWithImageUrl = lastItem && typeof lastItem === 'object' && lastItem.hasOwnProperty('imageUrl');
+                        const isObjectWithImageUrl = lastItem && typeof lastItem === 'object' && lastItem !== null && lastItem.hasOwnProperty('imageUrl');
                         const imageUrl = isObjectWithImageUrl ? lastItem.imageUrl : null;
-                        const subOptions = Array.isArray(subArray) && isObjectWithImageUrl
-                            ? subArray.slice(0, -1)
-                            : subArray;
+                        const subOptions = Array.isArray(subArray) ? (isObjectWithImageUrl ? subArray.slice(0, -1) : subArray) : [];
 
                         return (
                             <div key={categoryName} className="flex flex-col gap-2">
                                 <Card 
-                                    onClick={() => handleCategorySelect(categoryName, subOptions)} 
+                                    onClick={() => handleCategorySelect(categoryName)} 
                                     className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                 >
                                     <CardHeader className="p-0">

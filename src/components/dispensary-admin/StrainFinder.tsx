@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -7,11 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check } from 'lucide-react';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
@@ -20,12 +18,11 @@ import type { ProductAttribute } from '@/types';
 
 interface StrainFinderProps {
   onStrainSelect: (strain: any) => void;
-  onClose: () => void;
 }
 
-const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
-export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
+export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
@@ -57,7 +54,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
       }
     } catch (error) {
       console.error('Error searching strains:', error);
-      toast({ title: 'Search Error', description: 'Could not perform search. Please check your connection and Firestore rules.', variant: 'destructive' });
+      toast({ title: 'Search Error', description: 'Could not perform search.', variant: 'destructive' });
     } finally {
       setIsSearching(false);
     }
@@ -68,14 +65,9 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
     if (!strain.img_url || strain.img_url === 'none') {
         setIsGeneratingImage(true);
         try {
-            toast({ title: 'Generating Image', description: `Creating an image for ${strain.name}...`, variant: 'default' });
+            toast({ title: 'Generating Image', description: `Creating an image for ${strain.name}...` });
             const { imageUrl } = await findStrainImage({ strainName: strain.name });
             setSelectedStrain((prev: any) => ({ ...prev, img_url: imageUrl }));
-            
-            // Note: Cloud function for updating image is removed, so we don't update DB here.
-            // The generated image is for preview purposes only in this session.
-             console.log(`Image generated for strain: ${strain.id}, URL: ${imageUrl}`);
-
         } catch (error) {
             console.error('Error generating strain image:', error);
             toast({ title: 'Image Generation Failed', variant: 'destructive' });
@@ -118,126 +110,119 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
   }, [selectedStrain]);
   
   return (
-    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><SearchIcon className="text-primary"/> Strain Finder</DialogTitle>
-          <DialogDescription>Search the Leafly database to pre-fill your product information.</DialogDescription>
-        </DialogHeader>
-        
+    <Card className="border-primary/20 shadow-lg">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><SearchIcon className="text-primary"/> Strain Finder</CardTitle>
+        <CardDescription>Search the Leafly database to pre-fill your product information.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
         <form onSubmit={handleSearch} className="flex gap-2">
-          <Input 
-            placeholder="Search for a strain (e.g., Blue Dream)" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button type="submit" disabled={isSearching}>
-            {isSearching ? <Loader2 className="animate-spin" /> : 'Search'}
-          </Button>
+            <Input 
+                placeholder="Search for a strain (e.g., Blue Dream)" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Button type="submit" disabled={isSearching}>
+                {isSearching ? <Loader2 className="animate-spin" /> : 'Search'}
+            </Button>
         </form>
-
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-hidden">
-          <div className="flex flex-col gap-2 lg:col-span-1">
-            <h3 className="font-semibold text-sm text-muted-foreground">Search Results ({searchResults.length})</h3>
-            <ScrollArea className="flex-grow border rounded-md p-2">
-              {searchResults.length > 0 ? (
-                searchResults.map(strain => (
-                  <Card 
-                    key={strain.id} 
-                    className={cn(
-                        "mb-2 cursor-pointer transition-colors hover:bg-muted/50",
-                        selectedStrain?.id === strain.id && "bg-primary/10 border-primary ring-2 ring-primary"
-                    )}
-                    onClick={() => handleStrainClick(strain)}
-                  >
-                    <CardHeader className="flex flex-row items-center gap-3 p-3">
-                        <div className="relative h-14 w-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                           {strain.img_url && strain.img_url !== 'none' ? (
-                                <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
-                           ) : <Leaf className="h-8 w-8 text-muted-foreground/50 m-auto" />}
+        
+        {searchResults.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-2 lg:col-span-1">
+                  <h3 className="font-semibold text-sm text-muted-foreground">Search Results ({searchResults.length})</h3>
+                   <ScrollArea className="flex-grow border rounded-md p-2 h-96">
+                        {searchResults.map(strain => (
+                        <Card 
+                            key={strain.id} 
+                            className={cn(
+                                "mb-2 cursor-pointer transition-colors hover:bg-muted/50",
+                                selectedStrain?.id === strain.id && "bg-primary/10 border-primary ring-2 ring-primary"
+                            )}
+                            onClick={() => handleStrainClick(strain)}
+                        >
+                            <CardHeader className="flex flex-row items-center gap-3 p-3">
+                                <div className="relative h-14 w-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                                {strain.img_url && strain.img_url !== 'none' ? (
+                                        <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
+                                ) : <Leaf className="h-8 w-8 text-muted-foreground/50 m-auto" />}
+                                </div>
+                                <div>
+                                    <CardTitle className="text-base">{strain.name}</CardTitle>
+                                    <Badge variant={strain.type === 'sativa' ? 'default' : strain.type === 'indica' ? 'secondary' : 'outline'} className="capitalize mt-1">{strain.type}</Badge>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                        ))}
+                  </ScrollArea>
+              </div>
+              <div className="flex flex-col gap-2 md:col-span-1 lg:col-span-2">
+                 <h3 className="font-semibold text-sm text-muted-foreground">Strain Preview</h3>
+                 <Card className="flex-grow overflow-hidden h-96">
+                    <ScrollArea className="h-full">
+                        {selectedStrain ? (
+                        <div className="p-4 space-y-4">
+                            {isGeneratingImage ? (
+                                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4 flex items-center justify-center">
+                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    <p className="ml-2 text-muted-foreground">Generating image...</p>
+                                </div>
+                            ) : selectedStrain.img_url && selectedStrain.img_url !== 'none' ? (
+                                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4">
+                                    <Image src={selectedStrain.img_url} alt={`Image of ${selectedStrain.name}`} layout="fill" style={{objectFit:"cover"}} data-ai-hint={`cannabis strain ${selectedStrain.name}`} />
+                                </div>
+                            ) : null}
+                            <CardTitle>{selectedStrain.name}</CardTitle>
+                            <div>
+                                <h4 className="font-semibold text-lg flex items-center gap-2"><Info className="h-5 w-5 text-primary"/>Description</h4>
+                                <p className="text-muted-foreground mt-1 text-sm">{selectedStrain.description || "No description available."}</p>
+                            </div>
+                            <Separator/>
+                            {filteredEffects.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Common Effects</h4>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {filteredEffects.map((eff: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.effect[i % badgeColors.effect.length])}>{eff.name} ({eff.percentage})</Badge>)}
+                                    </div>
+                                </div>
+                            )}
+                            {filteredMedical.length > 0 && <Separator/>}
+                            {filteredMedical.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Brain className="h-5 w-5 text-primary"/>Medical Uses</h4>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                    {filteredMedical.map((med: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.medical[i % badgeColors.medical.length])}>{med.name} ({med.percentage})</Badge>)}
+                                    </div>
+                                </div>
+                            )}
+                            {selectedStrain.flavor?.length > 0 && <Separator/>}
+                            {selectedStrain.flavor?.length > 0 && (
+                                <div>
+                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Leaf className="h-5 w-5 text-primary"/>Flavors</h4>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {selectedStrain.flavor?.map((flav: string, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.flavor[i % badgeColors.flavor.length])}>{flav}</Badge>)}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <div>
-                            <CardTitle className="text-base">{strain.name}</CardTitle>
-                            <Badge variant={strain.type === 'sativa' ? 'default' : strain.type === 'indica' ? 'secondary' : 'outline'} className="capitalize mt-1">{strain.type}</Badge>
+                        ) : (
+                        <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
+                            <p>Select a strain from the results to see details.</p>
                         </div>
-                    </CardHeader>
-                  </Card>
-                ))
-              ) : (
-                <div className="text-center p-4 text-muted-foreground">
-                    {isSearching ? <Loader2 className="animate-spin mx-auto"/> : 'No results to display. Try a search.'}
-                </div>
-              )}
-            </ScrollArea>
+                        )}
+                    </ScrollArea>
+                 </Card>
+              </div>
           </div>
-          <div className="flex flex-col gap-2 md:col-span-1 lg:col-span-2">
-            <h3 className="font-semibold text-sm text-muted-foreground">Strain Preview</h3>
-            <Card className="flex-grow overflow-hidden">
-              <ScrollArea className="h-full">
-                {selectedStrain ? (
-                  <div className="p-4 space-y-4">
-                     {selectedStrain.img_url && selectedStrain.img_url !== 'none' && !isGeneratingImage ? (
-                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4">
-                            <Image src={selectedStrain.img_url} alt={`Image of ${selectedStrain.name}`} layout="fill" style={{objectFit:"cover"}} data-ai-hint={`cannabis strain ${selectedStrain.name}`} />
-                        </div>
-                    ) : (
-                        <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4 flex items-center justify-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="ml-2 text-muted-foreground">Generating image...</p>
-                        </div>
-                    )}
-                    <CardTitle>{selectedStrain.name}</CardTitle>
-                    <div>
-                        <h4 className="font-semibold text-lg flex items-center gap-2"><Info className="h-5 w-5 text-primary"/>Description</h4>
-                        <p className="text-muted-foreground mt-1 text-sm">{selectedStrain.description || "No description available."}</p>
-                    </div>
-                    <Separator/>
-                    {filteredEffects.length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Common Effects</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {filteredEffects.map((eff: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.effect[i % badgeColors.effect.length])}>{eff.name} ({eff.percentage})</Badge>)}
-                            </div>
-                        </div>
-                    )}
-                    {filteredMedical.length > 0 && <Separator/>}
-                    {filteredMedical.length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-lg flex items-center gap-2"><Brain className="h-5 w-5 text-primary"/>Medical Uses</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                            {filteredMedical.map((med: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.medical[i % badgeColors.medical.length])}>{med.name} ({med.percentage})</Badge>)}
-                            </div>
-                        </div>
-                    )}
-                    {selectedStrain.flavor?.length > 0 && <Separator/>}
-                    {selectedStrain.flavor?.length > 0 && (
-                        <div>
-                            <h4 className="font-semibold text-lg flex items-center gap-2"><Leaf className="h-5 w-5 text-primary"/>Flavors</h4>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {selectedStrain.flavor?.map((flav: string, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.flavor[i % badgeColors.flavor.length])}>{flav}</Badge>)}
-                            </div>
-                        </div>
-                    )}
-                     <div className="pt-4">
-                        <Button onClick={handleSelectStrain} disabled={!selectedStrain} className="w-full bg-green-600 hover:bg-green-700">
-                           <Check className="mr-2 h-4 w-4" /> Use This Strain's Data
-                        </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
-                    <p>Select a strain from the results to see details.</p>
-                  </div>
-                )}
-              </ScrollArea>
-            </Card>
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+      </CardContent>
+      {selectedStrain && (
+        <CardFooter>
+            <Button onClick={handleSelectStrain} className="w-full bg-green-600 hover:bg-green-700">
+                <Check className="mr-2 h-4 w-4" /> Use This Strain's Data
+            </Button>
+        </CardFooter>
+      )}
+    </Card>
   );
 }
