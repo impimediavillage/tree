@@ -89,6 +89,7 @@ export default function AddTHCProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
   const watchStickerOptIn = form.watch('stickerProgramOptIn');
+  
   const showProductDetailsForm = (selectedProductStream === 'THC' && watchStickerOptIn === 'yes') || selectedProductStream === 'CBD';
 
   const fetchInitialData = useCallback(async () => {
@@ -102,6 +103,7 @@ export default function AddTHCProductPage() {
             const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
             const categoriesData = docData.categoriesData;
 
+            // This is the corrected data parsing logic for the nested map structure
             if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData) && (categoriesData as any).thcCbdProductCategories) {
                 const thcCbdCategories = (categoriesData as any).thcCbdProductCategories;
                 
@@ -131,9 +133,12 @@ export default function AddTHCProductPage() {
   
   const handleCategorySelect = (categoryName: string, subCategoryArray: any[]) => {
     form.setValue('category', categoryName);
-    // Filter out the last item if it's the imageUrl object
-    const options = subCategoryArray.filter(item => typeof item === 'string');
-    setSubCategoryOptions(options);
+    // Correctly filter out the last item ONLY if it's the imageUrl object
+    const lastItem = subCategoryArray[subCategoryArray.length - 1];
+    const options = (lastItem && typeof lastItem === 'object' && lastItem.imageUrl) 
+      ? subCategoryArray.slice(0, -1) 
+      : subCategoryArray;
+    setSubCategoryOptions(options.filter(item => typeof item === 'string'));
     form.setValue('subcategory', null);
   };
 
@@ -312,7 +317,7 @@ export default function AddTHCProductPage() {
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
                                 const lastItem = subArray.length > 0 ? subArray[subArray.length - 1] : null;
-                                const imageUrl = (lastItem && typeof lastItem === 'object' && lastItem !== null && 'imageUrl' in lastItem) ? (lastItem as { imageUrl: string }).imageUrl : null;
+                                const imageUrl = (lastItem && typeof lastItem === 'object' && lastItem !== null && typeof (lastItem as any).imageUrl === 'string') ? (lastItem as any).imageUrl : null;
                                 return (
                                     <Card key={categoryName} onClick={() => handleCategorySelect(categoryName, subArray)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === categoryName && "border-primary ring-2 ring-primary")}>
                                     <CardHeader className="items-center p-3">
