@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,14 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon } from 'lucide-react';
-import { db, functions } from '@/lib/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
-import { httpsCallable } from 'firebase/functions';
 
 interface StrainFinderProps {
   onStrainSelect: (strain: any) => void;
@@ -71,10 +71,10 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
             const { imageUrl } = await findStrainImage({ strainName: strain.name });
             setSelectedStrain((prev: any) => ({ ...prev, img_url: imageUrl }));
 
-            // Update the image URL in Firestore via a Cloud Function
-             const updateFunction = httpsCallable(functions, 'updateStrainImageUrl');
-             await updateFunction({ strainId: strain.id, imageUrl: imageUrl });
-             console.log(`Successfully triggered update for strain image: ${strain.id}`);
+            // Update the image URL in Firestore directly from the client
+            const strainDocRef = doc(db, 'my-seeded-collection', strain.id);
+            await updateDoc(strainDocRef, { img_url: imageUrl });
+            console.log(`Successfully updated image for strain: ${strain.id}`);
 
         } catch (error) {
             console.error('Error generating strain image:', error);
