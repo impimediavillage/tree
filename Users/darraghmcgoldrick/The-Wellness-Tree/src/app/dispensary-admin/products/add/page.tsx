@@ -21,16 +21,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Gift, Flame, Leaf as LeafIconLucide, Shirt, Sparkles, Search as SearchIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Search as SearchIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -44,16 +41,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-type CannabinoidStreamKey = 'Cannibinoid (other)' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
-
-const cannibinoidStreamDisplayMapping: Record<CannabinoidStreamKey, { text: string; icon: React.ElementType; color: string }> = {
-    'Cannibinoid (other)': { text: 'THC Products', icon: Flame, color: 'text-red-500' },
-    'CBD': { text: 'CBD Products', icon: LeafIconLucide, color: 'text-green-500' },
-    'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
-    'Smoking Gear': { text: 'Accessories', icon: Sparkles, color: 'text-purple-500' },
-    'Sticker Promo Set': { text: 'Sticker Promo', icon: Gift, color: 'text-yellow-500' },
-};
-
 
 export default function AddProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -62,9 +49,10 @@ export default function AddProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [thcCbdCategories, setThcCbdCategories] = useState<any | null>(null);
-
-  const [selectedProductStream, setSelectedProductStream] = useState<CannabinoidStreamKey | null>(null);
+  const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
+  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
+  const [subCategoryL1Options, setSubCategoryL1Options] = useState<string[]>([]);
+  const [subCategoryL2Options, setSubCategoryL2Options] = useState<string[]>([]);
   
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   
@@ -81,7 +69,6 @@ export default function AddProductPage() {
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
-      stickerProgramOptIn: 'no',
       currency: currentDispensary?.currency || 'ZAR',
       effects: [], flavors: [], medicalUses: [],
     },
@@ -94,52 +81,21 @@ export default function AddProductPage() {
   const watchLabTested = form.watch('labTested');
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
-  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
+  const watchCategory = form.watch('category');
+  const watchSubCategory = form.watch('subcategory');
 
-  const handleProductStreamSelect = (streamName: CannabinoidStreamKey) => {
-    setSelectedProductStream(streamName);
-    form.reset({
-      ...productSchema.strip()._def.defaultValue(),
-      currency: currentDispensary?.currency || 'ZAR',
-      category: streamName
-    });
-    setFiles([]); 
-    setLabTestFile(null);
-    setShowStrainFinder(false);
-    
-    if (streamName === 'Cannibinoid (other)') {
-        // Will show opt-in first
-    } else if (streamName === 'CBD') {
-        setShowStrainFinder(true);
-    }
-  };
-
-  useEffect(() => {
-    if (watchStickerProgramOptIn === 'yes') {
-        setShowStrainFinder(true);
-    } else if (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'no') {
-        setShowStrainFinder(false);
-    }
-  }, [watchStickerProgramOptIn, selectedProductStream]);
-  
-  
   const fetchInitialData = useCallback(async () => {
-    if (authLoading || !currentDispensary) return;
-    if (currentDispensary.dispensaryType !== "Cannibinoid store") {
-      setIsLoadingInitialData(false);
-      return;
-    }
-    
+    if (authLoading || !currentDispensary?.dispensaryType) return;
     setIsLoadingInitialData(true);
     try {
-        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
+        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
         const querySnapshot = await getDocs(categoriesQuery);
         if (!querySnapshot.empty) {
-            const docSnap = querySnapshot.docs[0];
-            const categoriesDoc = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-            setThcCbdCategories((categoriesDoc.categoriesData as any)?.find((c: any) => c.name === 'thcCbdProductCategories')?.data || null);
+          const categoriesDoc = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+          setCategoryStructure(categoriesDoc.categoriesData || []);
+          setMainCategoryOptions((categoriesDoc.categoriesData || []).map(c => c.name));
         } else {
-            toast({ title: "Configuration Missing", description: "Could not find the product category configuration for 'Cannibinoid store'.", variant: "destructive" });
+            toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
         }
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -148,6 +104,20 @@ export default function AddProductPage() {
   }, [toast, authLoading, currentDispensary]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+  
+  useEffect(() => {
+    const mainCat = categoryStructure.find(c => c.name === watchCategory);
+    setSubCategoryL1Options(mainCat?.subcategories?.map(sc => sc.name).sort() || []);
+    form.setValue('subcategory', null); // Reset subcategory when main changes
+    form.setValue('subSubcategory', null);
+  }, [watchCategory, categoryStructure, form]);
+
+  useEffect(() => {
+    const mainCat = categoryStructure.find(c => c.name === watchCategory);
+    const subCat = mainCat?.subcategories?.find(sc => sc.name === watchSubCategory);
+    setSubCategoryL2Options(subCat?.subcategories?.map(ssc => ssc.name).sort() || []);
+    form.setValue('subSubcategory', null); // Reset sub-subcategory when sub changes
+  }, [watchSubCategory, watchCategory, categoryStructure, form]);
   
   useEffect(() => {
     const gender = form.getValues('gender'); const system = form.getValues('sizingSystem');
@@ -225,145 +195,83 @@ export default function AddProductPage() {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
-  if (currentDispensary?.dispensaryType !== "Cannibinoid store") {
-    return <div className="p-8 text-center"><h2 className="text-xl font-semibold">This page is for Cannibinoid Stores only. Other workflows coming soon.</h2></div>
-  }
-
-  const renderCannibinoidWorkflow = () => (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-2">
-          {(Object.keys(cannibinoidStreamDisplayMapping) as CannabinoidStreamKey[]).map((stream) => { 
-              const { text, icon: IconComponent, color } = cannibinoidStreamDisplayMapping[stream];
-              return ( 
-                  <Button key={stream} type="button" variant={selectedProductStream === stream ? 'default' : 'outline'} className={cn("h-auto p-4 sm:p-6 text-left flex flex-col items-center justify-center space-y-2 transform transition-all duration-200 hover:scale-105 shadow-md", selectedProductStream === stream && 'ring-2 ring-primary ring-offset-2')} onClick={() => handleProductStreamSelect(stream)}>
-                     <IconComponent className={cn("h-10 w-10 sm:h-12 sm:w-12 mb-2 mx-auto", color)} /> 
-                     <span className="text-lg sm:text-xl font-semibold text-center">{text}</span>
-                  </Button> 
-              );
-          })}
-      </div>
-      
-      {selectedProductStream === 'Cannibinoid (other)' && (
-         <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
-            <CardHeader><CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle></CardHeader>
-            <CardContent>
-                <FormField control={form.control} name="stickerProgramOptIn" render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel className="text-lg font-semibold text-gray-800">Do you want to participate in this programme for this product?</FormLabel>
-                        <FormDescription className="text-orange-900/90 text-sm">The Triple S club allows you to sell a sticker and attach a free sample of your garden delights.</FormDescription>
-                        <FormControl>
-                          <RadioGroup onValueChange={field.onChange} value={field.value ?? 'no'} className="flex flex-col sm:flex-row gap-4 pt-2">
-                            <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"><FormControl><RadioGroupItem value="yes" /></FormControl><FormLabel className="font-normal text-lg text-green-700">Yes, find a strain</FormLabel></FormItem>
-                            <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background flex-1 shadow-sm"><FormControl><RadioGroupItem value="no" /></FormControl><FormLabel className="font-normal text-lg">No, this is a standard product</FormLabel></FormItem>
-                          </RadioGroup>
-                        </FormControl><FormMessage />
-                      </FormItem>
-                  )}/>
-            </CardContent>
-          </Card>
-      )}
-
-      {showStrainFinder && (
-          <StrainFinder
-              onStrainSelect={handleStrainSelect}
-              onClose={() => setShowStrainFinder(false)}
-          />
-      )}
-      
-      {thcCbdCategories && (selectedProductStream === 'CBD' || (selectedProductStream === 'Cannibinoid (other)' && watchStickerProgramOptIn === 'yes')) && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Object.entries(thcCbdCategories[selectedProductStream === 'Cannibinoid (other)' ? 'THC' : 'CBD']['Delivery Methods']).map(([key, value]) => {
-                  const items = value as string[];
-                  const imageUrl = items.find(item => item.startsWith('imageUrl: '))?.split(': ')[1];
-                  const options = items.filter(item => !item.startsWith('imageUrl: '));
-                  return (
-                      <Card key={key} className="p-3">
-                          {imageUrl && <div className="relative h-24 mb-2"><Image src={imageUrl} alt={key} layout="fill" objectFit="cover" /></div>}
-                          <CardTitle className="text-lg">{key}</CardTitle>
-                          <Select onValueChange={(val) => {
-                              form.setValue('deliveryMethod', key);
-                              form.setValue('productSubCategory', val);
-                          }} required>
-                              <SelectTrigger><SelectValue placeholder="Select one" /></SelectTrigger>
-                              <SelectContent>
-                                  {options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                              </SelectContent>
-                          </Select>
-                      </Card>
-                  )
-              })}
-          </div>
-      )}
-    </>
-  );
-
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center"> <PackagePlus className="mr-3 h-8 w-8 text-primary" /> Add New Product </CardTitle>
             <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link> </Button>
         </div>
-        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Select a product stream, then fill in the details. Fields marked with * are required. </CardDescription>
+        <CardDescription> Fill in the details for your new product. Fields marked with * are required. </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            {renderCannibinoidWorkflow()}
+            <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
             
-            {(selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no')) && (
-              <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                <Separator />
-                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
-                
-                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                
-                <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Pricing & Stock *</h2>
-                <div className="space-y-4">
-                  {priceTierFields.map((field, index) => (
-                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative">
-                          <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                          {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                      </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
-                </div>
+            <Separator />
+            <h2 className="text-xl font-semibold border-b pb-2">Categorization</h2>
+            <div className="grid md:grid-cols-3 gap-4">
+              <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Main Category *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select main category" /></SelectTrigger></FormControl><SelectContent>{mainCategoryOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="subcategory" render={({ field }) => (<FormItem><FormLabel>Subcategory (L1)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchCategory || subCategoryL1Options.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Select subcategory" /></SelectTrigger></FormControl><SelectContent>{subCategoryL1Options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="subSubcategory" render={({ field }) => (<FormItem><FormLabel>Subcategory (L2)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchSubCategory || subCategoryL2Options.length === 0}><FormControl><SelectTrigger><SelectValue placeholder="Select sub-subcategory" /></SelectTrigger></FormControl><SelectContent>{subCategoryL2Options.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+            </div>
 
-                <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Images & Tags</h2>
-                 <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Sativa, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
-
-                <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Final Step: Sharing & Visibility</h2>
-                <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other wellness stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                {watchIsAvailableForPool && (
-                  <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other wellness stores.</CardDescription></CardHeader>
-                  <CardContent className="p-0 space-y-2">
-                    {poolPriceTierFields.map((field, index) => (
-                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                        <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                        {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
-                  </CardContent>
-                  </Card>
-                )}
-              </div>
+            {(watchCategory === 'THC' || watchCategory === 'CBD') && (
+              <Button type="button" variant="secondary" onClick={() => setShowStrainFinder(true)}><SearchIcon className="mr-2 h-4 w-4"/>Find Strain Details</Button>
             )}
+             {showStrainFinder && (
+                <StrainFinder
+                    onStrainSelect={handleStrainSelect}
+                    onClose={() => setShowStrainFinder(false)}
+                />
+            )}
+
+            <Separator/>
+            <h2 className="text-xl font-semibold border-b pb-2">Pricing & Stock *</h2>
+            <div className="space-y-4">
+              {priceTierFields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative">
+                      <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                      {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                  </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
+            </div>
             
-            {selectedProductStream && (selectedProductStream !== 'Cannibinoid (other)' || watchStickerProgramOptIn === 'yes' || watchStickerProgramOptIn === 'no') && (
-              <CardFooter>
-                <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                    Add Product
-                </Button>
-              </CardFooter>
+            <Separator/>
+            <h2 className="text-xl font-semibold border-b pb-2">Images & Tags</h2>
+            <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+            
+            <Separator/>
+            <h2 className="text-xl font-semibold border-b pb-2">Final Step: Sharing & Visibility</h2>
+            <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+            {watchIsAvailableForPool && (
+              <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+              <CardContent className="p-0 space-y-2">
+                {poolPriceTierFields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
+                    <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                    {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+              </CardContent>
+              </Card>
             )}
+
+            <CardFooter>
+              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                  Add Product
+              </Button>
+            </CardFooter>
           </form>
         </Form>
         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
