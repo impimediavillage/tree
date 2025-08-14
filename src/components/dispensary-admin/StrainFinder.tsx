@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -17,7 +16,6 @@ import { Separator } from '../ui/separator';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 import { httpsCallable } from 'firebase/functions';
 
 interface StrainFinderProps {
@@ -28,7 +26,6 @@ interface StrainFinderProps {
 const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 
 export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
-  const { currentUser } = useAuth(); // Use the AuthContext
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
@@ -39,11 +36,6 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
     if (e) e.preventDefault();
     if (!searchTerm.trim()) return;
     
-    if (!currentUser) {
-      toast({ title: 'Authentication Error', description: 'You must be logged in to search for strains.', variant: 'destructive' });
-      return;
-    }
-
     setIsSearching(true);
     setSearchResults([]);
     setSelectedStrain(null);
@@ -64,7 +56,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
       }
     } catch (error) {
       console.error('Error searching strains:', error);
-      toast({ title: 'Search Error', description: 'Could not perform search. Check Firestore rules.', variant: 'destructive' });
+      toast({ title: 'Search Error', description: 'Could not perform search. Please check your connection and Firestore rules.', variant: 'destructive' });
     } finally {
       setIsSearching(false);
     }
