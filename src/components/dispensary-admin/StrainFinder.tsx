@@ -30,8 +30,7 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
   const [isSearching, setIsSearching] = React.useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = React.useState(false);
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSearch = async () => {
     if (!searchTerm.trim()) return;
     
     setIsSearching(true);
@@ -100,16 +99,22 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
         <CardDescription>Search the Leafly database to pre-fill your product information.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="flex gap-2">
             <Input 
                 placeholder="Search for a strain (e.g., Blue Dream)" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearch();
+                    }
+                }}
             />
-            <Button type="submit" disabled={isSearching}>
+            <Button type="button" onClick={handleSearch} disabled={isSearching}>
                 {isSearching ? <Loader2 className="animate-spin" /> : 'Search'}
             </Button>
-        </form>
+        </div>
         
         {searchResults.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
