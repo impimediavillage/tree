@@ -82,7 +82,17 @@ export default function AddProductPage() {
         const querySnapshot = await getDocs(categoriesQuery);
         if (!querySnapshot.empty) {
           const categoriesDoc = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-          const categoriesData = categoriesDoc.categoriesData;
+          let categoriesData: ProductCategory[] = [];
+           if (typeof categoriesDoc.categoriesData === 'string') {
+              try {
+                categoriesData = JSON.parse(categoriesDoc.categoriesData);
+              } catch (e) {
+                console.error("Failed to parse categoriesData string:", e);
+                toast({ title: "Data Error", description: "Categories data is corrupted and could not be loaded.", variant: "destructive" });
+              }
+           } else if (Array.isArray(categoriesDoc.categoriesData)) {
+              categoriesData = categoriesDoc.categoriesData;
+           }
           
           if (Array.isArray(categoriesData)) {
             setCategoryStructure(categoriesData);
@@ -268,7 +278,7 @@ export default function AddProductPage() {
             <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
         </div>
         <div className="space-y-4">
-            <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl><FormMessage /></FormItem> )} />
         </div>
