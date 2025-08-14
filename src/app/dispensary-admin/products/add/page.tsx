@@ -82,9 +82,17 @@ export default function AddProductPage() {
         const querySnapshot = await getDocs(categoriesQuery);
         if (!querySnapshot.empty) {
           const categoriesDoc = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-          const categories = categoriesDoc.categoriesData || [];
-          setCategoryStructure(categories);
-          setMainCategoryOptions(categories.map(c => c.name));
+          const categoriesData = categoriesDoc.categoriesData;
+          
+          if (Array.isArray(categoriesData)) {
+            setCategoryStructure(categoriesData);
+            setMainCategoryOptions(categoriesData.map(c => c.name));
+          } else {
+             console.warn("categoriesData is not an array:", categoriesData);
+             setCategoryStructure([]);
+             setMainCategoryOptions([]);
+          }
+
         } else {
             toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
         }
@@ -362,3 +370,5 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
