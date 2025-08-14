@@ -223,3 +223,5 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
     </Dialog>
   );
 }
+
+    
