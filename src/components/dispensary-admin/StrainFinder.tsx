@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon } from 'lucide-react';
+import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
   const [selectedStrain, setSelectedStrain] = React.useState<any>(null);
   const [isSearching, setIsSearching] = React.useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = React.useState(false);
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -64,21 +65,22 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
 
   const handleStrainClick = async (strain: any) => {
     setSelectedStrain(strain);
-    // If the strain has no image, generate one on click
     if (!strain.img_url || strain.img_url === 'none') {
+        setIsGeneratingImage(true);
         try {
             toast({ title: 'Generating Image', description: `Creating an image for ${strain.name}...`, variant: 'default' });
             const { imageUrl } = await findStrainImage({ strainName: strain.name });
             setSelectedStrain((prev: any) => ({ ...prev, img_url: imageUrl }));
-
-            // Update the image URL in Firestore directly from the client
-            const strainDocRef = doc(db, 'my-seeded-collection', strain.id);
-            await updateDoc(strainDocRef, { img_url: imageUrl });
-            console.log(`Successfully updated image for strain: ${strain.id}`);
+            
+            // Note: Cloud function for updating image is removed, so we don't update DB here.
+            // The generated image is for preview purposes only in this session.
+             console.log(`Image generated for strain: ${strain.id}, URL: ${imageUrl}`);
 
         } catch (error) {
             console.error('Error generating strain image:', error);
             toast({ title: 'Image Generation Failed', variant: 'destructive' });
+        } finally {
+            setIsGeneratingImage(false);
         }
     }
   };
@@ -117,7 +119,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
   
   return (
     <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><SearchIcon className="text-primary"/> Strain Finder</DialogTitle>
           <DialogDescription>Search the Leafly database to pre-fill your product information.</DialogDescription>
@@ -134,24 +136,32 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
           </Button>
         </form>
 
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
-          <div className="flex flex-col gap-2">
+        <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-hidden">
+          <div className="flex flex-col gap-2 lg:col-span-1">
             <h3 className="font-semibold text-sm text-muted-foreground">Search Results ({searchResults.length})</h3>
             <ScrollArea className="flex-grow border rounded-md p-2">
               {searchResults.length > 0 ? (
                 searchResults.map(strain => (
-                  <Button 
+                  <Card 
                     key={strain.id} 
-                    variant="ghost" 
-                    onClick={() => handleStrainClick(strain)}
                     className={cn(
-                        "w-full justify-start text-left h-auto py-2 px-3",
-                        selectedStrain?.id === strain.id && "bg-primary/10 text-primary"
+                        "mb-2 cursor-pointer transition-colors hover:bg-muted/50",
+                        selectedStrain?.id === strain.id && "bg-primary/10 border-primary ring-2 ring-primary"
                     )}
+                    onClick={() => handleStrainClick(strain)}
                   >
-                    <Badge variant={strain.type === 'sativa' ? 'default' : strain.type === 'indica' ? 'secondary' : 'outline'} className="mr-2 capitalize">{strain.type}</Badge>
-                    {strain.name}
-                  </Button>
+                    <CardHeader className="flex flex-row items-center gap-3 p-3">
+                        <div className="relative h-14 w-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                           {strain.img_url && strain.img_url !== 'none' ? (
+                                <Image src={strain.img_url} alt={strain.name} layout="fill" objectFit="cover" />
+                           ) : <Leaf className="h-8 w-8 text-muted-foreground/50 m-auto" />}
+                        </div>
+                        <div>
+                            <CardTitle className="text-base">{strain.name}</CardTitle>
+                            <Badge variant={strain.type === 'sativa' ? 'default' : strain.type === 'indica' ? 'secondary' : 'outline'} className="capitalize mt-1">{strain.type}</Badge>
+                        </div>
+                    </CardHeader>
+                  </Card>
                 ))
               ) : (
                 <div className="text-center p-4 text-muted-foreground">
@@ -160,25 +170,20 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
               )}
             </ScrollArea>
           </div>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 md:col-span-1 lg:col-span-2">
             <h3 className="font-semibold text-sm text-muted-foreground">Strain Preview</h3>
             <Card className="flex-grow overflow-hidden">
               <ScrollArea className="h-full">
                 {selectedStrain ? (
                   <div className="p-4 space-y-4">
-                     {selectedStrain.img_url && selectedStrain.img_url !== 'none' ? (
+                     {selectedStrain.img_url && selectedStrain.img_url !== 'none' && !isGeneratingImage ? (
                         <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4">
-                            <Image
-                                src={selectedStrain.img_url}
-                                alt={`Image of ${selectedStrain.name}`}
-                                layout="fill"
-                                style={{objectFit:"cover"}}
-                                data-ai-hint={`cannabis strain ${selectedStrain.name}`}
-                            />
+                            <Image src={selectedStrain.img_url} alt={`Image of ${selectedStrain.name}`} layout="fill" style={{objectFit:"cover"}} data-ai-hint={`cannabis strain ${selectedStrain.name}`} />
                         </div>
                     ) : (
                         <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4 flex items-center justify-center">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="ml-2 text-muted-foreground">Generating image...</p>
                         </div>
                     )}
                     <CardTitle>{selectedStrain.name}</CardTitle>
@@ -213,6 +218,11 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
                             </div>
                         </div>
                     )}
+                     <div className="pt-4">
+                        <Button onClick={handleSelectStrain} disabled={!selectedStrain} className="w-full bg-green-600 hover:bg-green-700">
+                           <Check className="mr-2 h-4 w-4" /> Use This Strain's Data
+                        </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
@@ -226,7 +236,6 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSelectStrain} disabled={!selectedStrain}>Select This Strain</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
