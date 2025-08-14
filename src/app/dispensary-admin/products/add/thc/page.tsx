@@ -43,7 +43,6 @@ export default function AddTHCProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
   const [thcDeliveryMethods, setThcDeliveryMethods] = useState<ProductCategory[]>([]);
   const [cbdDeliveryMethods, setCbdDeliveryMethods] = useState<ProductCategory[]>([]);
 
@@ -79,21 +78,39 @@ export default function AddTHCProductPage() {
     if (authLoading || !currentDispensary?.dispensaryType) return;
     setIsLoadingInitialData(true);
     try {
-        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
-        const querySnapshot = await getDocs(categoriesQuery);
-        if (!querySnapshot.empty) {
-          const docData = querySnapshot.docs[0].data();
-          const categoriesData = (typeof docData.categoriesData === 'string' ? JSON.parse(docData.categoriesData) : docData.categoriesData) || [];
-          setCategoryStructure(categoriesData);
+      const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
+      const querySnapshot = await getDocs(categoriesQuery);
 
-          const thcCategory = categoriesData.find((c: any) => c.name === 'THC');
-          const cbdCategory = categoriesData.find((c: any) => c.name === 'CBD');
+      if (!querySnapshot.empty) {
+        const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
 
-          setThcDeliveryMethods(thcCategory?.subcategories || []);
-          setCbdDeliveryMethods(cbdCategory?.subcategories || []);
+        // Correctly parse the nested map structure
+        const thcCbdCategories = docData.categoriesData as any; // Cast to any for easier traversal
+        
+        if (thcCbdCategories && typeof thcCbdCategories === 'object') {
+          const thcData = thcCbdCategories?.thcCbdProductCategories?.THC;
+          const cbdData = thcCbdCategories?.thcCbdProductCategories?.CBD;
+
+          if (thcData && thcData['Delivery Methods'] && Array.isArray(thcData['Delivery Methods'])) {
+            setThcDeliveryMethods(thcData['Delivery Methods']);
+          } else {
+             setThcDeliveryMethods([]);
+          }
+
+          if (cbdData && cbdData['Delivery Methods'] && Array.isArray(cbdData['Delivery Methods'])) {
+            setCbdDeliveryMethods(cbdData['Delivery Methods']);
+          } else {
+             setCbdDeliveryMethods([]);
+          }
+
         } else {
-            toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
+           setThcDeliveryMethods([]);
+           setCbdDeliveryMethods([]);
+           console.warn("categoriesData is not in the expected format or is missing thcCbdProductCategories.");
         }
+      } else {
+        toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
+      }
     } catch (error) {
       console.error("Error fetching initial data:", error);
       toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
