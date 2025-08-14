@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Search as SearchIcon, Leaf, Flame, Droplets, Microscope } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Search as SearchIcon, Leaf, Flame, Droplets, Microscope, Gift } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -30,6 +30,7 @@ import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -62,6 +63,7 @@ export default function AddProductPage() {
       labTested: false, labTestReportUrl: null,
       currency: currentDispensary?.currency || 'ZAR',
       effects: [], flavors: [], medicalUses: [],
+      stickerProgramOptIn: 'no',
     },
   });
 
@@ -71,6 +73,8 @@ export default function AddProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchCategory = form.watch('category');
   const watchLabTested = form.watch('labTested');
+  const watchStickerProgramOptIn = form.watch('stickerProgramOptIn');
+
 
   // Fetch Category Structure and other necessary data
   const fetchInitialData = useCallback(async () => {
@@ -256,6 +260,37 @@ export default function AddProductPage() {
         )}
         
         {(watchCategory === 'THC Products' || watchCategory === 'CBD Products') && (
+            <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <FormField
+                        control={form.control}
+                        name="stickerProgramOptIn"
+                        render={({ field }) => (
+                            <FormItem className="space-y-3">
+                                <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                                 <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select an option" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="yes">Yes, include my product</SelectItem>
+                                        <SelectItem value="no">No, this is a standard product</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </CardContent>
+            </Card>
+        )}
+
+        {(watchCategory === 'THC Products' || watchCategory === 'CBD Products') && (
             <Button type="button" variant="secondary" onClick={() => setShowStrainFinder(true)}>
                 <SearchIcon className="mr-2 h-4 w-4"/>Find Strain Details from Database
             </Button>
@@ -278,9 +313,27 @@ export default function AddProductPage() {
             <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
         </div>
         <div className="space-y-4">
-             <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl><FormMessage /></FormItem> )} />
+             <FormField control={form.control} name="effects" render={({ field }) => ( 
+                <FormItem>
+                    <FormLabel>Effects</FormLabel>
+                    <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
+                    <FormMessage />
+                </FormItem> 
+            )} />
+            <FormField control={form.control} name="flavors" render={({ field }) => ( 
+                <FormItem>
+                    <FormLabel>Flavors</FormLabel>
+                    <FormControl><MultiInputTags placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )} />
+            <FormField control={form.control} name="medicalUses" render={({ field }) => ( 
+                <FormItem>
+                    <FormLabel>Medical Uses</FormLabel>
+                    <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )} />
         </div>
     </div>
   );
@@ -380,5 +433,7 @@ export default function AddProductPage() {
     </Card>
   );
 }
+
+    
 
     
