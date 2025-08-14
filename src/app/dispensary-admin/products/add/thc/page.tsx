@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -90,6 +89,7 @@ export default function AddTHCProductPage() {
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
   const watchStickerOptIn = form.watch('stickerProgramOptIn');
+  const showProductDetailsForm = (selectedProductStream === 'THC' && watchStickerOptIn === 'yes') || selectedProductStream === 'CBD';
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentDispensary?.dispensaryType) return;
@@ -100,33 +100,20 @@ export default function AddTHCProductPage() {
 
         if (!querySnapshot.empty) {
             const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-
-            // Safely navigate the nested map structure
             const categoriesData = docData.categoriesData;
-            if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+
+            if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData) && (categoriesData as any).thcCbdProductCategories) {
                 const thcCbdCategories = (categoriesData as any).thcCbdProductCategories;
-
-                if (thcCbdCategories && typeof thcCbdCategories === 'object') {
-                    const thcData = thcCbdCategories.THC;
-                    if (thcData && thcData['Delivery Methods'] && typeof thcData['Delivery Methods'] === 'object') {
-                        setThcDeliveryMethods(thcData['Delivery Methods']);
-                    } else {
-                        console.warn("THC Delivery Methods not found or not a map.");
-                    }
-
-                    const cbdData = thcCbdCategories.CBD;
-                    if (cbdData && cbdData['Delivery Methods'] && typeof cbdData['Delivery Methods'] === 'object') {
-                        setCbdDeliveryMethods(cbdData['Delivery Methods']);
-                    } else {
-                        console.warn("CBD Delivery Methods not found or not a map.");
-                    }
-                } else {
-                    console.warn("thcCbdProductCategories map not found in categoriesData.");
-                    toast({ title: "Configuration Warning", description: "Product categories for THC/CBD are not fully configured.", variant: "default" });
+                
+                if (thcCbdCategories.THC?.['Delivery Methods']) {
+                    setThcDeliveryMethods(thcCbdCategories.THC['Delivery Methods']);
+                }
+                if (thcCbdCategories.CBD?.['Delivery Methods']) {
+                    setCbdDeliveryMethods(thcCbdCategories.CBD['Delivery Methods']);
                 }
             } else {
-                console.warn("categoriesData is not a map or is missing.");
-                toast({ title: "Configuration Error", description: "The product category structure is missing or invalid.", variant: "destructive" });
+                console.warn("categoriesData is not a map or is missing 'thcCbdProductCategories'.", categoriesData);
+                toast({ title: "Configuration Error", description: `The product category structure for '${currentDispensary.dispensaryType}' is invalid or missing. Please correct it in the admin panel.`, variant: "destructive" });
             }
         } else {
             toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
@@ -137,18 +124,17 @@ export default function AddTHCProductPage() {
     } finally {
         setIsLoadingInitialData(false);
     }
-  }, [toast, authLoading, currentDispensary]);
+}, [toast, authLoading, currentDispensary]);
+
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
   const handleCategorySelect = (categoryName: string, subCategoryArray: any[]) => {
     form.setValue('category', categoryName);
-    // Filter out the last item if it's the imageUrl object
     const options = subCategoryArray.slice(0, -1).filter(item => typeof item === 'string');
     setSubCategoryOptions(options);
-    form.setValue('subcategory', null); // Reset subcategory when main category changes
+    form.setValue('subcategory', null);
   };
-
 
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
@@ -182,7 +168,6 @@ export default function AddTHCProductPage() {
     const autoFlavors = extractFlavorsFromDescription(strainData.description);
     const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
     form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
-
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
     setShowStrainFinder(false);
@@ -286,144 +271,148 @@ export default function AddTHCProductPage() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {selectedProductStream === 'THC' && (
-                     <FormField
-                          control={form.control}
-                          name="stickerProgramOptIn"
-                          render={({ field }) => (
-                              <FormItem className="p-4 border rounded-lg bg-muted/30">
-                                  <FormLabel className="text-lg font-semibold">Participate in Triple S (Strain-Sticker-Sample) Club?</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
-                                      <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
-                                      <SelectContent>
-                                          <SelectItem value="yes">Yes, include my product</SelectItem>
-                                          <SelectItem value="no">No, this is a standard product</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
+                     <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
+                            <CardDescription className="text-orange-700/80">Opt-in to include this product in our exclusive sticker promotion. Customers buy a sticker design and get a sample of your product for free!</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <FormField
+                                control={form.control}
+                                name="stickerProgramOptIn"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="yes">Yes, include my product</SelectItem>
+                                                <SelectItem value="no">No, this is a standard product</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                    </Card>
                   )}
 
-                  {(watchStickerOptIn === 'yes' || selectedProductStream === 'CBD') && (
-                      <>
+                  {showProductDetailsForm && (
+                      <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                           <Button type="button" variant="secondary" onClick={() => setShowStrainFinder(true)}>
                               <SearchIcon className="mr-2 h-4 w-4"/>Find Strain Details from Database
                           </Button>
                           {showStrainFinder && <StrainFinder onStrainSelect={handleStrainSelect} onClose={() => setShowStrainFinder(false)} />}
-                      </>
+                      
+                          <Separator />
+                          <h3 className="text-xl font-semibold border-b pb-2">Category & Strain Details</h3>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
+                              const lastItem = subArray[subArray.length - 1];
+                              const imageUrl = (typeof lastItem === 'object' && lastItem.imageUrl) ? lastItem.imageUrl : null;
+                              return (
+                                <Card key={categoryName} onClick={() => handleCategorySelect(categoryName, subArray)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === categoryName && "border-primary ring-2 ring-primary")}>
+                                  <CardHeader className="items-center p-3">
+                                    {imageUrl && <div className="relative h-20 w-20 mb-2"><Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" /></div>}
+                                    <CardTitle className="text-center text-base">{categoryName}</CardTitle>
+                                  </CardHeader>
+                                </Card>
+                              );
+                            })}
+                          </div>
+
+                          {subCategoryOptions.length > 0 && (
+                              <FormField control={form.control} name="subcategory" render={({ field }) => (<FormItem><FormLabel>Delivery Method *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="Select delivery method" /></SelectTrigger></FormControl><SelectContent>{subCategoryOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                          )}
+
+                          <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                          
+                          <Separator />
+                          <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
+                          <div className="grid md:grid-cols-3 gap-4">
+                              <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                              <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                              <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                          </div>
+                          <div className="space-y-4">
+                              <FormField control={form.control} name="effects" render={({ field }) => ( 
+                                  <FormItem>
+                                      <FormLabel>Effects</FormLabel>
+                                      <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
+                                      <FormMessage />
+                                  </FormItem> 
+                              )} />
+                              <FormField control={form.control} name="flavors" render={({ field }) => ( 
+                                  <FormItem>
+                                      <FormLabel>Flavors</FormLabel>
+                                      <FormControl><MultiInputTags placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl>
+                                      <FormMessage />
+                                  </FormItem>
+                              )} />
+                              <FormField control={form.control} name="medicalUses" render={({ field }) => ( 
+                                  <FormItem>
+                                      <FormLabel>Medical Uses</FormLabel>
+                                      <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
+                                      <FormMessage />
+                                  </FormItem>
+                              )} />
+                          </div>
+                      </div>
                   )}
-                  
-                  {(watchStickerOptIn === 'yes' || selectedProductStream === 'CBD') && (
+
+                  {showProductDetailsForm && (
                     <div className="space-y-6">
                       <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Category & Strain Details</h3>
+                      <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
                       
-                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
-                          const lastItem = subArray[subArray.length - 1];
-                          const imageUrl = (typeof lastItem === 'object' && lastItem.imageUrl) ? lastItem.imageUrl : null;
-                          return (
-                            <Card key={categoryName} onClick={() => handleCategorySelect(categoryName, subArray)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === categoryName && "border-primary ring-2 ring-primary")}>
-                              <CardHeader className="items-center p-3">
-                                {imageUrl && <div className="relative h-20 w-20 mb-2"><Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" /></div>}
-                                <CardTitle className="text-center text-base">{categoryName}</CardTitle>
-                              </CardHeader>
-                            </Card>
-                          );
-                        })}
+                      <div className="space-y-4">
+                        {priceTierFields.map((field, index) => (
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
+                                <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                            </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
                       </div>
-
-                      {subCategoryOptions.length > 0 && (
-                          <FormField control={form.control} name="subcategory" render={({ field }) => (<FormItem><FormLabel>Delivery Method *</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''}><FormControl><SelectTrigger><SelectValue placeholder="Select delivery method" /></SelectTrigger></FormControl><SelectContent>{subCategoryOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                      
+                      <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                      {watchIsAvailableForPool && (
+                        <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                        <CardContent className="p-0 space-y-2">
+                          {poolPriceTierFields.map((field, index) => (
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
+                              <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                              <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                              {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                            </div>
+                          ))}
+                          <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                        </CardContent>
+                        </Card>
                       )}
 
-                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                      
                       <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
-                      <div className="grid md:grid-cols-3 gap-4">
-                          <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                      </div>
-                      <div className="space-y-4">
-                           <FormField control={form.control} name="effects" render={({ field }) => ( 
-                              <FormItem>
-                                  <FormLabel>Effects</FormLabel>
-                                  <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
-                                  <FormMessage />
-                              </FormItem> 
-                          )} />
-                          <FormField control={form.control} name="flavors" render={({ field }) => ( 
-                              <FormItem>
-                                  <FormLabel>Flavors</FormLabel>
-                                  <FormControl><MultiInputTags placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )} />
-                          <FormField control={form.control} name="medicalUses" render={({ field }) => ( 
-                              <FormItem>
-                                  <FormLabel>Medical Uses</FormLabel>
-                                  <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )} />
-                      </div>
+                      <h3 className="text-xl font-semibold border-b pb-2">Images, Tags & Lab Results</h3>
+                      <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+
+                      <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Lab Tested</FormLabel><FormDescription>Indicate if the product has a lab test report.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                      {watchLabTested && (
+                          <FormField control={form.control} name="labTestReportUrl" render={() => ( <FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={(file) => setLabTestFile(file)} /></FormControl><FormDescription>Upload the lab report PDF or image file.</FormDescription><FormMessage /></FormItem> )} />
+                      )}
+
+                      <CardFooter className="p-0 pt-6">
+                        <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                            Add Product
+                        </Button>
+                      </CardFooter>
                     </div>
-                  )}
-
-                  { (watchStickerOptIn === 'yes' || selectedProductStream === 'CBD') && (
-                    <>
-                    <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
-                    
-                    <div className="space-y-4">
-                      {priceTierFields.map((field, index) => (
-                          <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
-                              <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                              {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                          </div>
-                      ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
-                    </div>
-                    
-                    <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                    {watchIsAvailableForPool && (
-                      <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                      <CardContent className="p-0 space-y-2">
-                        {poolPriceTierFields.map((field, index) => (
-                          <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                            {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                          </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
-                      </CardContent>
-                      </Card>
-                    )}
-
-                    <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Images, Tags & Lab Results</h3>
-                    <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
-
-                    <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Lab Tested</FormLabel><FormDescription>Indicate if the product has a lab test report.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                    {watchLabTested && (
-                         <FormField control={form.control} name="labTestReportUrl" render={() => ( <FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={(file) => setLabTestFile(file)} /></FormControl><FormDescription>Upload the lab report PDF or image file.</FormDescription><FormMessage /></FormItem> )} />
-                    )}
-
-                    <CardFooter className="p-0 pt-6">
-                      <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                          {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                          Add Product
-                      </Button>
-                    </CardFooter>
-                    </>
                   )}
                 </form>
               </Form>
