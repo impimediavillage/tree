@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Search as SearchIcon, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Search as SearchIcon, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -60,9 +60,9 @@ export default function AddTHCProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [thcDeliveryMethods, setThcDeliveryMethods] = useState<Record<string, any[]>>({});
-  const [cbdDeliveryMethods, setCbdDeliveryMethods] = useState<Record<string, any[]>>({});
-
+  const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any[]>>({});
+  const [isStrainSelected, setIsStrainSelected] = useState(false);
+  
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
   
   const [files, setFiles] = useState<File[]>([]);
@@ -89,8 +89,6 @@ export default function AddTHCProductPage() {
   const watchLabTested = form.watch('labTested');
   const watchStickerOptIn = form.watch('stickerProgramOptIn');
   const watchCategory = form.watch('category');
-  
-  const showStrainFinder = selectedProductStream === 'CBD' || (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !currentDispensary?.dispensaryType) return;
@@ -101,20 +99,21 @@ export default function AddTHCProductPage() {
 
         if (!querySnapshot.empty) {
             const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-            const categoriesData = docData.categoriesData as any;
+            const categoriesData = docData.categoriesData as any; // Cast to any to access nested properties safely
 
-            if (categoriesData && categoriesData.thcCbdProductCategories) {
-                const thcCbdCategories = categoriesData.thcCbdProductCategories;
-                if (thcCbdCategories?.THC?.['Delivery Methods']) {
-                    setThcDeliveryMethods(thcCbdCategories.THC['Delivery Methods']);
-                }
-                if (thcCbdCategories?.CBD?.['Delivery Methods']) {
-                    setCbdDeliveryMethods(thcCbdCategories.CBD['Delivery Methods']);
-                }
+            // Defensively access the nested data
+            const methods = categoriesData?.thcCbdProductCategories?.[selectedProductStream === 'THC' ? 'THC' : 'CBD']?.['Delivery Methods'];
+
+            if (methods && typeof methods === 'object') {
+                 setDeliveryMethods(methods);
             } else {
-                console.warn("categoriesData is not a map or is missing 'thcCbdProductCategories'.", categoriesData);
-                toast({ title: "Configuration Error", description: `The product category structure for '${currentDispensary.dispensaryType}' is invalid. Please correct it in the admin panel.`, variant: "destructive" });
+                 setDeliveryMethods({}); // Reset if structure is not as expected
+                 if(selectedProductStream){ // Only show toast if a stream was selected and failed
+                    console.warn(`Could not find valid 'Delivery Methods' for stream '${selectedProductStream}' in dispensary type '${currentDispensary.dispensaryType}'. Data structure:`, categoriesData);
+                    toast({ title: "Configuration Error", description: `Product category structure for '${selectedProductStream}' is invalid. Please correct it in the admin panel.`, variant: "destructive" });
+                 }
             }
+
         } else {
             toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'.`, variant: "destructive" });
         }
@@ -124,10 +123,15 @@ export default function AddTHCProductPage() {
     } finally {
         setIsLoadingInitialData(false);
     }
-  }, [toast, authLoading, currentDispensary]);
+  }, [toast, authLoading, currentDispensary, selectedProductStream]);
 
 
-  useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+  useEffect(() => { 
+      if(selectedProductStream) {
+        fetchInitialData(); 
+      }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProductStream]); 
   
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
@@ -137,23 +141,13 @@ export default function AddTHCProductPage() {
     form.setValue('thcContent', strainData.thc_level);
     form.setValue('mostCommonTerpene', strainData.most_common_terpene);
     
-    const effects: ProductAttribute[] = [];
-    if(strainData.effects && typeof strainData.effects === 'object') {
-        Object.entries(strainData.effects).forEach(([key, value]) => {
-            if (typeof value === 'string' && parseInt(value, 10) > 0) {
-                 effects.push({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: value });
-            }
-        });
-    }
-    
-    const medical: ProductAttribute[] = [];
-     if(strainData.medical && typeof strainData.medical === 'object') {
-        Object.entries(strainData.medical).forEach(([key, value]) => {
-            if (typeof value === 'string' && parseInt(value, 10) > 0) {
-                 medical.push({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: value });
-            }
-        });
-    }
+    const effects: ProductAttribute[] = Object.entries(strainData.effects || {})
+        .filter(([key, value]) => parseInt(String(value), 10) > 0)
+        .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
+
+    const medical: ProductAttribute[] = Object.entries(strainData.medical || {})
+        .filter(([key, value]) => parseInt(String(value), 10) > 0)
+        .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
 
     form.setValue('effects', effects);
     form.setValue('medicalUses', medical);
@@ -162,7 +156,13 @@ export default function AddTHCProductPage() {
     const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
     form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
 
-    toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
+    setIsStrainSelected(true); // This is the key to reveal the rest of the form
+    toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please complete the remaining fields.` });
+  };
+  
+  const handleCategorySelect = (categoryName: string, subcategories: string[]) => {
+      form.setValue('category', categoryName);
+      form.setValue('subcategory', null); // Reset subcategory when main category changes
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -224,16 +224,17 @@ export default function AddTHCProductPage() {
     { key: 'Sticker Promo Set', title: 'Sticker Promo Set', icon: Gift },
   ];
   
-  if (authLoading || isLoadingInitialData) {
-    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> d> </div> );
+  if (authLoading) {
+    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
-
-  const deliveryMethods = selectedProductStream === 'THC' ? thcDeliveryMethods : cbdDeliveryMethods;
 
   return (
     <div className="max-w-4xl mx-auto my-8 space-y-6">
         <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Add Cannabinoid Product</h1>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Flame className="text-primary"/>
+              Add Cannabinoid Product
+            </h1>
             <Button variant="outline" asChild>
                 <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
             </Button>
@@ -277,30 +278,33 @@ export default function AddTHCProductPage() {
             </Card>
         )}
         
+        {selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (
+            <div className="animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+              <StrainFinder onStrainSelect={handleStrainSelect} />
+            </div>
+        )}
+        
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
-              {showStrainFinder && (
+              {(isStrainSelected || selectedProductStream === 'CBD') && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <Separator />
-                    <StrainFinder onStrainSelect={handleStrainSelect} />
-                    <Separator />
-
                     <h3 className="text-xl font-semibold border-b pb-2">Category & Strain Details</h3>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                         {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
-                            const lastItem = subArray.length > 0 ? subArray[subArray.length - 1] : null;
-                            const imageUrl = (lastItem && typeof lastItem === 'object' && lastItem !== null && 'imageUrl' in lastItem) ? (lastItem as any).imageUrl : null;
-                            const subOptions = (lastItem && typeof lastItem === 'object' && 'imageUrl' in lastItem)
+                            const lastItem = Array.isArray(subArray) && subArray.length > 0 ? subArray[subArray.length - 1] : null;
+                            const imageUrl = (lastItem && typeof lastItem === 'object' && 'imageUrl' in lastItem) ? (lastItem as any).imageUrl : null;
+                            const subOptions = (Array.isArray(subArray) && lastItem && typeof lastItem === 'object' && 'imageUrl' in lastItem)
                                 ? subArray.slice(0, -1)
                                 : subArray;
 
                             return (
                                 <div key={categoryName} className="flex flex-col gap-2">
                                     <Card 
-                                        onClick={() => form.setValue('category', categoryName)} 
-                                        className={cn("cursor-pointer hover:border-primary flex-grow", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
+                                        onClick={() => handleCategorySelect(categoryName, subOptions)} 
+                                        className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                     >
                                         <CardHeader className="p-0">
                                             <div className="relative aspect-video w-full">
@@ -313,11 +317,11 @@ export default function AddTHCProductPage() {
                                                 )}
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="p-3">
+                                        <CardContent className="p-3 mt-auto">
                                              <CardTitle className="text-center text-base">{categoryName}</CardTitle>
                                         </CardContent>
                                     </Card>
-                                    {watchCategory === categoryName && subOptions.length > 0 && (
+                                    {watchCategory === categoryName && Array.isArray(subOptions) && subOptions.length > 0 && (
                                          <FormField
                                             control={form.control}
                                             name="subcategory"
