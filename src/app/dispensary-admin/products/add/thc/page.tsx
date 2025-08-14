@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -28,6 +27,7 @@ import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
+import { cn } from '@/lib/utils';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -40,7 +40,6 @@ export default function AddTHCProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
   const [categoryStructure, setCategoryStructure] = useState<ProductCategory[]>([]);
-  const [mainCategoryOptions, setMainCategoryOptions] = useState<string[]>([]);
   const [subCategoryOptions, setSubCategoryOptions] = useState<string[]>([]);
   
   const [files, setFiles] = useState<File[]>([]);
@@ -67,6 +66,7 @@ export default function AddTHCProductPage() {
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchLabTested = form.watch('labTested');
+  const watchStickerOptIn = form.watch('stickerProgramOptIn');
 
   // Fetch Category Structure
   const fetchInitialData = useCallback(async () => {
@@ -119,19 +119,30 @@ export default function AddTHCProductPage() {
     form.setValue('mostCommonTerpene', strainData.most_common_terpene);
     
     const effects: ProductAttribute[] = [];
-    const medical: ProductAttribute[] = [];
+    if(strainData.effects && typeof strainData.effects === 'object') {
+        Object.entries(strainData.effects).forEach(([key, value]) => {
+            if (typeof value === 'string' && parseInt(value, 10) > 0) {
+                 effects.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: value });
+            }
+        });
+    }
     
-    Object.keys(strainData).forEach(key => {
-        if(key !== 'name' && key !== 'id' && key !== 'type' && key !== 'description' && key !== 'thc_level' && key !== 'most_common_terpene' && key !== 'flavor' && parseInt(strainData[key]) > 0) {
-            effects.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: strainData[key] });
-        }
-    });
+    const medical: ProductAttribute[] = [];
+     if(strainData.medical && typeof strainData.medical === 'object') {
+        Object.entries(strainData.medical).forEach(([key, value]) => {
+            if (typeof value === 'string' && parseInt(value, 10) > 0) {
+                 medical.push({ name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), percentage: value });
+            }
+        });
+    }
 
     form.setValue('effects', effects);
-    form.setValue('medicalUses', []); // Clearing this as the data structure may differ
+    form.setValue('medicalUses', medical);
     
     if (Array.isArray(strainData.flavor)) {
         form.setValue('flavors', strainData.flavor);
+    } else {
+        form.setValue('flavors', []);
     }
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in.` });
@@ -197,7 +208,7 @@ export default function AddTHCProductPage() {
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
        <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center"> <Flame className="mr-3 h-8 w-8 text-primary" /> Add New THC/CBD Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center"> <Flame className="mr-3 h-8 w-8 text-primary" /> Add New Cannabinoid Product </CardTitle>
             <Button variant="outline" size="sm" asChild>
                 <Link href="/dispensary-admin/products/add">
                     <ArrowLeft className="mr-2 h-4 w-4" />Back to Streams
@@ -211,11 +222,38 @@ export default function AddTHCProductPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
             <div className="space-y-6">
-                <Button type="button" variant="secondary" onClick={() => setShowStrainFinder(true)}>
-                    <SearchIcon className="mr-2 h-4 w-4"/>Find Strain Details from Database
-                </Button>
-
-                {showStrainFinder && <StrainFinder onStrainSelect={handleStrainSelect} onClose={() => setShowStrainFinder(false)} />}
+                
+                <Separator />
+                <FormField
+                    control={form.control}
+                    name="stickerProgramOptIn"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Participate in Triple S (Strain-Sticker-Sample) Club?</FormLabel>
+                             <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select an option" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="yes">Yes, include my product</SelectItem>
+                                    <SelectItem value="no">No, this is a standard product</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                
+                {watchStickerOptIn === 'yes' && (
+                    <>
+                        <Button type="button" variant="secondary" onClick={() => setShowStrainFinder(true)}>
+                            <SearchIcon className="mr-2 h-4 w-4"/>Find Strain Details from Database
+                        </Button>
+                        {showStrainFinder && <StrainFinder onStrainSelect={handleStrainSelect} onClose={() => setShowStrainFinder(false)} />}
+                    </>
+                )}
                 
                 <Separator />
                 <h3 className="text-xl font-semibold border-b pb-2">Core Product Details</h3>
@@ -254,27 +292,6 @@ export default function AddTHCProductPage() {
                         </FormItem>
                     )} />
                 </div>
-                 <FormField
-                    control={form.control}
-                    name="stickerProgramOptIn"
-                    render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel>Participate in Triple S (Strain-Sticker-Sample) Club?</FormLabel>
-                             <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select an option" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="yes">Yes, include my product</SelectItem>
-                                    <SelectItem value="no">No, this is a standard product</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
             </div>
             
             <Separator />

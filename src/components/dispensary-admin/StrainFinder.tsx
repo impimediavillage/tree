@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -92,17 +91,21 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
 
   const filteredEffects = React.useMemo(() => {
     if (!selectedStrain?.effects) return [];
-    return selectedStrain.effects.filter((eff: ProductAttribute) => {
-      const percentage = parseInt(eff.percentage, 10);
-      return !isNaN(percentage) && percentage > 0;
+    return Object.entries(selectedStrain.effects)
+        .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
+        .filter((eff: ProductAttribute) => {
+            const percValue = parseInt(eff.percentage, 10);
+            return !isNaN(percValue) && percValue > 0;
     });
   }, [selectedStrain]);
 
   const filteredMedical = React.useMemo(() => {
     if (!selectedStrain?.medical) return [];
-    return selectedStrain.medical.filter((med: ProductAttribute) => {
-      const percentage = parseInt(med.percentage, 10);
-      return !isNaN(percentage) && percentage > 0;
+    return Object.entries(selectedStrain.medical)
+        .map(([name, percentage]) => ({name: toTitleCase(name.replace(/_/g, ' ')), percentage: String(percentage)}))
+        .filter((med: ProductAttribute) => {
+            const percValue = parseInt(med.percentage, 10);
+            return !isNaN(percValue) && percValue > 0;
     });
   }, [selectedStrain]);
   
@@ -223,5 +226,3 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
     </Dialog>
   );
 }
-
-    
