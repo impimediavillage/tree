@@ -60,8 +60,8 @@ export default function AddTHCProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [thcDeliveryMethods, setThcDeliveryMethods] = useState<ProductCategory[]>([]);
-  const [cbdDeliveryMethods, setCbdDeliveryMethods] = useState<ProductCategory[]>([]);
+  const [thcDeliveryMethods, setThcDeliveryMethods] = useState<Record<string, any[]>>({});
+  const [cbdDeliveryMethods, setCbdDeliveryMethods] = useState<Record<string, any[]>>({});
 
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
   const [subCategoryOptions, setSubCategoryOptions] = useState<string[]>([]);
@@ -95,49 +95,60 @@ export default function AddTHCProductPage() {
     if (authLoading || !currentDispensary?.dispensaryType) return;
     setIsLoadingInitialData(true);
     try {
-      const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
-      const querySnapshot = await getDocs(categoriesQuery);
+        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', currentDispensary.dispensaryType), limit(1));
+        const querySnapshot = await getDocs(categoriesQuery);
 
-      if (!querySnapshot.empty) {
-        const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+        if (!querySnapshot.empty) {
+            const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
 
-        const categoriesData = docData.categoriesData;
-        if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
-            const thcCbdCategories = (categoriesData as any).thcCbdProductCategories;
-            if (thcCbdCategories && typeof thcCbdCategories === 'object') {
-                 const thcData = thcCbdCategories.THC;
-                 const cbdData = thcCbdCategories.CBD;
-                 if (thcData && thcData['Delivery Methods'] && Array.isArray(thcData['Delivery Methods'])) {
-                    setThcDeliveryMethods(thcData['Delivery Methods']);
-                 }
-                 if (cbdData && cbdData['Delivery Methods'] && Array.isArray(cbdData['Delivery Methods'])) {
-                    setCbdDeliveryMethods(cbdData['Delivery Methods']);
-                 }
+            // Safely navigate the nested map structure
+            const categoriesData = docData.categoriesData;
+            if (categoriesData && typeof categoriesData === 'object' && !Array.isArray(categoriesData)) {
+                const thcCbdCategories = (categoriesData as any).thcCbdProductCategories;
+
+                if (thcCbdCategories && typeof thcCbdCategories === 'object') {
+                    const thcData = thcCbdCategories.THC;
+                    if (thcData && thcData['Delivery Methods'] && typeof thcData['Delivery Methods'] === 'object') {
+                        setThcDeliveryMethods(thcData['Delivery Methods']);
+                    } else {
+                        console.warn("THC Delivery Methods not found or not a map.");
+                    }
+
+                    const cbdData = thcCbdCategories.CBD;
+                    if (cbdData && cbdData['Delivery Methods'] && typeof cbdData['Delivery Methods'] === 'object') {
+                        setCbdDeliveryMethods(cbdData['Delivery Methods']);
+                    } else {
+                        console.warn("CBD Delivery Methods not found or not a map.");
+                    }
+                } else {
+                    console.warn("thcCbdProductCategories map not found in categoriesData.");
+                    toast({ title: "Configuration Warning", description: "Product categories for THC/CBD are not fully configured.", variant: "default" });
+                }
             } else {
-                 console.warn("thcCbdProductCategories map not found in categoriesData.");
+                console.warn("categoriesData is not a map or is missing.");
+                toast({ title: "Configuration Error", description: "The product category structure is missing or invalid.", variant: "destructive" });
             }
         } else {
-           console.warn("categoriesData is not a map or is missing.");
+            toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
         }
-      } else {
-        toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
-      }
     } catch (error) {
-      console.error("Error fetching initial data:", error);
-      toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
+        console.error("Error fetching initial data:", error);
+        toast({ title: "Error", description: "Could not load necessary category data for this store type.", variant: "destructive" });
     } finally {
-      setIsLoadingInitialData(false);
+        setIsLoadingInitialData(false);
     }
   }, [toast, authLoading, currentDispensary]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
-  const handleCategorySelect = (category: ProductCategory) => {
-    form.setValue('category', category.name);
-    const subOptions = category.subcategories?.filter(sc => !sc.hasOwnProperty('imageUrl')).map(sc => sc.name) || [];
-    setSubCategoryOptions(subOptions);
+  const handleCategorySelect = (categoryName: string, subCategoryArray: any[]) => {
+    form.setValue('category', categoryName);
+    // Filter out the last item if it's the imageUrl object
+    const options = subCategoryArray.slice(0, -1).filter(item => typeof item === 'string');
+    setSubCategoryOptions(options);
     form.setValue('subcategory', null); // Reset subcategory when main category changes
   };
+
 
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
@@ -308,17 +319,18 @@ export default function AddTHCProductPage() {
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Category & Strain Details</h3>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {deliveryMethods.map(cat => {
-                           const imageUrl = cat.subcategories?.find(sc => sc.hasOwnProperty('imageUrl'))?.imageUrl;
-                           return (
-                                <Card key={cat.name} onClick={() => handleCategorySelect(cat)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === cat.name && "border-primary ring-2 ring-primary")}>
-                                    <CardHeader className="items-center">
-                                      {imageUrl && <div className="relative h-20 w-20 mb-2"><Image src={imageUrl} alt={cat.name} layout="fill" objectFit="contain" /></div>}
-                                      <CardTitle className="text-center text-base">{cat.name}</CardTitle>
-                                    </CardHeader>
-                                </Card>
-                           );
+                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
+                          const lastItem = subArray[subArray.length - 1];
+                          const imageUrl = (typeof lastItem === 'object' && lastItem.imageUrl) ? lastItem.imageUrl : null;
+                          return (
+                            <Card key={categoryName} onClick={() => handleCategorySelect(categoryName, subArray)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === categoryName && "border-primary ring-2 ring-primary")}>
+                              <CardHeader className="items-center p-3">
+                                {imageUrl && <div className="relative h-20 w-20 mb-2"><Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" /></div>}
+                                <CardTitle className="text-center text-base">{categoryName}</CardTitle>
+                              </CardHeader>
+                            </Card>
+                          );
                         })}
                       </div>
 
