@@ -196,7 +196,21 @@ export default function EditWellnessTypeCategoriesPage() {
         const docSnap = querySnapshot.docs[0];
         setDocumentId(docSnap.id);
         const data = docSnap.data() as DispensaryTypeProductCategoriesDoc;
-        const sanitizedCategories = (data.categoriesData || []).map(cat => ({ 
+
+        // Safely parse categoriesData if it's a string
+        let categoriesData: ProductCategory[] = [];
+        if (typeof data.categoriesData === 'string') {
+          try {
+            categoriesData = JSON.parse(data.categoriesData);
+          } catch (e) {
+            console.error("Failed to parse categoriesData string:", e);
+            toast({ title: "Data Error", description: "Categories data is corrupted and could not be loaded.", variant: "destructive" });
+          }
+        } else if (Array.isArray(data.categoriesData)) {
+          categoriesData = data.categoriesData;
+        }
+
+        const sanitizedCategories = (categoriesData || []).map(cat => ({ 
           ...cat,
           subcategories: (cat.subcategories || []).map(subcat => ({
             ...subcat,
@@ -253,7 +267,7 @@ export default function EditWellnessTypeCategoriesPage() {
 
       await setDoc(docRef, {
         name: wellnessTypeName,
-        categoriesData: categoriesToSave, 
+        categoriesData: categoriesToSave, // Save as a native array of objects
         updatedAt: serverTimestamp(),
       }, { merge: true });
 

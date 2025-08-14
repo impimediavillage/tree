@@ -92,8 +92,21 @@ export default function AddProductPage() {
         const querySnapshot = await getDocs(categoriesQuery);
         if (!querySnapshot.empty) {
           const categoriesDoc = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
-          setCategoryStructure(categoriesDoc.categoriesData || []);
-          setMainCategoryOptions((categoriesDoc.categoriesData || []).map(c => c.name));
+          
+          let categoriesData: ProductCategory[] = [];
+          if (typeof categoriesDoc.categoriesData === 'string') {
+              try {
+                  categoriesData = JSON.parse(categoriesDoc.categoriesData);
+              } catch (e) {
+                  console.error("Failed to parse categoriesData string:", e);
+                  toast({ title: "Data Error", description: "Categories data is corrupted.", variant: "destructive" });
+              }
+          } else if (Array.isArray(categoriesDoc.categoriesData)) {
+              categoriesData = categoriesDoc.categoriesData;
+          }
+
+          setCategoryStructure(categoriesData || []);
+          setMainCategoryOptions((categoriesData || []).map(c => c.name));
         } else {
             toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set this up in the admin panel.`, variant: "destructive" });
         }
