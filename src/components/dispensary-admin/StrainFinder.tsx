@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,13 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { db, functions } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { httpsCallable } from 'firebase/functions';
 
 interface StrainFinderProps {
   onStrainSelect: (strain: any) => void;
@@ -25,6 +28,7 @@ interface StrainFinderProps {
 const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 
 export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
+  const { currentUser } = useAuth(); // Use the AuthContext
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
@@ -34,6 +38,11 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!searchTerm.trim()) return;
+    
+    if (!currentUser) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in to search for strains.', variant: 'destructive' });
+      return;
+    }
 
     setIsSearching(true);
     setSearchResults([]);
@@ -55,7 +64,7 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
       }
     } catch (error) {
       console.error('Error searching strains:', error);
-      toast({ title: 'Search Error', description: 'Could not perform search.', variant: 'destructive' });
+      toast({ title: 'Search Error', description: 'Could not perform search. Check Firestore rules.', variant: 'destructive' });
     } finally {
       setIsSearching(false);
     }
@@ -69,7 +78,12 @@ export function StrainFinder({ onStrainSelect, onClose }: StrainFinderProps) {
             toast({ title: 'Generating Image', description: `Creating an image for ${strain.name}...`, variant: 'default' });
             const { imageUrl } = await findStrainImage({ strainName: strain.name });
             setSelectedStrain((prev: any) => ({ ...prev, img_url: imageUrl }));
-            // Note: This does not save the image URL back to Firestore. That would require a backend function.
+
+            // Update the image URL in Firestore via a Cloud Function
+             const updateFunction = httpsCallable(functions, 'updateStrainImageUrl');
+             await updateFunction({ strainId: strain.id, imageUrl: imageUrl });
+             console.log(`Successfully triggered update for strain image: ${strain.id}`);
+
         } catch (error) {
             console.error('Error generating strain image:', error);
             toast({ title: 'Image Generation Failed', variant: 'destructive' });
