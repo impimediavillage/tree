@@ -231,7 +231,7 @@ export const getCannabinoidProductCategories = onCall({ cors: true }, async (req
             throw new HttpsError('not-found', 'Cannabinoid product category configuration not found.');
         }
 
-        const docData = querySnapshot.docs[0].data();
+        const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
         
         // Correctly navigate the nested map structure
         const deliveryMethods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
