@@ -221,7 +221,9 @@ export default function AddTHCProductPage() {
 
   const showStickerOptInSection = selectedProductStream === 'THC';
   
-  const showStrainFinder = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
+  const showStrainFinder = 
+    (selectedProductStream === 'CBD') || 
+    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
 
   const showCategorySelector =
     (selectedProductStream === 'CBD') ||
