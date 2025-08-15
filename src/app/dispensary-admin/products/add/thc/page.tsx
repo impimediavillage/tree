@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -66,6 +66,7 @@ export default function AddTHCProductPage() {
   
   const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any>>({});
   const [isStrainSelected, setIsStrainSelected] = useState(false);
+  const [isStrainFinderSkipped, setIsStrainFinderSkipped] = useState(false);
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
   
   const [files, setFiles] = useState<File[]>([]);
@@ -117,7 +118,6 @@ export default function AddTHCProductPage() {
   }, [toast, authLoading]);
   
   const handleProductStreamSelect = (stream: ProductStream) => {
-    // Reset selections when stream changes
     form.reset({
       ...form.getValues(),
       name: '', description: '', category: '', subcategory: null,
@@ -127,6 +127,7 @@ export default function AddTHCProductPage() {
       stickerProgramOptIn: 'no',
     });
     setIsStrainSelected(false);
+    setIsStrainFinderSkipped(false);
     setSelectedProductStream(stream);
     fetchInitialData(stream);
   };
@@ -220,14 +221,12 @@ export default function AddTHCProductPage() {
 
   const showStickerOptInSection = selectedProductStream === 'THC';
   
-  const showStrainFinder = 
-    (selectedProductStream === 'CBD') ||
-    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
+  const showStrainFinder = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
 
-  const showCategorySelector = 
-    (selectedProductStream === 'CBD' && isStrainSelected) ||
-    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && isStrainSelected) ||
-    (selectedProductStream === 'THC' && watchStickerOptIn === 'no');
+  const showCategorySelector =
+    (selectedProductStream === 'CBD') ||
+    (selectedProductStream === 'THC' && watchStickerOptIn === 'no') ||
+    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (isStrainSelected || isStrainFinderSkipped));
 
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
 
@@ -287,7 +286,7 @@ export default function AddTHCProductPage() {
           
           {showStrainFinder && (
             <div className="animate-fade-in-scale-up">
-                <StrainFinder onStrainSelect={handleStrainSelect} />
+                <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
             </div>
           )}
           
@@ -312,12 +311,12 @@ export default function AddTHCProductPage() {
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
                                       <CardHeader className="p-0">
-                                          <div className="relative aspect-video w-full">
-                                              {imageUrl && typeof imageUrl === 'string' ? (
-                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="rounded-t-md" />
+                                          <div className="relative aspect-video w-full bg-muted rounded-t-lg overflow-hidden">
+                                              {imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http') ? (
+                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" />
                                               ) : (
-                                                  <div className="w-full h-full bg-muted rounded-t-md flex items-center justify-center">
-                                                      <Flame className="h-12 w-12 text-muted-foreground/30"/>
+                                                  <div className="w-full h-full flex items-center justify-center">
+                                                      <ImageIcon className="h-12 w-12 text-muted-foreground/30"/>
                                                   </div>
                                               )}
                                           </div>
