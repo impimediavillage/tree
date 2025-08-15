@@ -69,6 +69,7 @@ export default function AddTHCProductPage() {
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
   const [showStrainFinder, setShowStrainFinder] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
+  const [showStickerOptInSection, setShowStickerOptInSection] = useState(false);
   
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
@@ -117,30 +118,44 @@ export default function AddTHCProductPage() {
     }
   }, [toast, authLoading]);
   
-  useEffect(() => { 
-      if (selectedProductStream) {
-        fetchInitialData(selectedProductStream);
-        if (selectedProductStream === 'CBD') {
-          setShowStrainFinder(true);
-          form.setValue('stickerProgramOptIn', 'no');
-        } else {
-          setShowStrainFinder(form.getValues('stickerProgramOptIn') === 'yes');
-        }
-      } else {
-        setShowStrainFinder(false);
-      }
-  }, [selectedProductStream, fetchInitialData, form]);
+  const handleProductStreamSelect = (stream: ProductStream) => {
+    // Reset selections when stream changes
+    form.reset({
+      ...form.getValues(),
+      name: '', description: '', category: '', subcategory: null,
+      effects: [], flavors: [], medicalUses: [],
+      thcContent: '', cbdContent: '', mostCommonTerpene: '',
+      strain: '', strainType: '', homeGrow: [], feedingType: undefined,
+      stickerProgramOptIn: 'no',
+    });
+    setIsStrainSelected(false);
+    setShowCategorySelector(false);
 
+    setSelectedProductStream(stream);
+    fetchInitialData(stream);
+
+    if (stream === 'THC') {
+        setShowStickerOptInSection(true);
+        setShowStrainFinder(false); // Hide until opt-in
+    } else if (stream === 'CBD') {
+        setShowStickerOptInSection(false);
+        setShowStrainFinder(true); // Show immediately for CBD
+        setShowCategorySelector(false); // Hide until strain selected
+    }
+  };
+  
+  // Effect for THC Sticker Opt-in
   useEffect(() => {
     if (selectedProductStream === 'THC') {
-        const optInValue = form.getValues('stickerProgramOptIn');
-        setShowStrainFinder(optInValue === 'yes');
-        if (optInValue !== 'yes') {
+        setShowStrainFinder(watchStickerOptIn === 'yes');
+        // Reset selections if they opt-out
+        if (watchStickerOptIn === 'no') {
             setIsStrainSelected(false);
             setShowCategorySelector(false);
         }
     }
-  }, [watchStickerOptIn, selectedProductStream, form]);
+  }, [watchStickerOptIn, selectedProductStream]);
+  
   
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
@@ -164,7 +179,7 @@ export default function AddTHCProductPage() {
     form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
 
     setIsStrainSelected(true);
-    setShowCategorySelector(true);
+    setShowCategorySelector(true); // Show categories after strain is selected
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
   };
   
@@ -229,7 +244,7 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
   
-  const showProductForm = isStrainSelected && form.getValues('category') && form.getValues('subcategory');
+  const showProductForm = (selectedProductStream === 'THC' && watchStickerOptIn === 'no' && form.getValues('category') && form.getValues('subcategory')) || (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && isStrainSelected && form.getValues('category') && form.getValues('subcategory')) || (selectedProductStream === 'CBD' && isStrainSelected && form.getValues('category') && form.getValues('subcategory'));
 
   if (authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
@@ -250,14 +265,14 @@ export default function AddTHCProductPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
               {productStreams.map(stream => (
-                  <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => setSelectedProductStream(stream.key)}>
+                  <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => handleProductStreamSelect(stream.key)}>
                       <stream.icon className="h-8 w-8" />
                       <span>{stream.title}</span>
                   </Button>
               ))}
           </div>
           
-          {selectedProductStream === 'THC' && (
+          {showStickerOptInSection && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -286,12 +301,12 @@ export default function AddTHCProductPage() {
           )}
           
           {showStrainFinder && (
-          <div className="animate-fade-in-scale-up">
-              <StrainFinder onStrainSelect={handleStrainSelect} />
-          </div>
+            <div className="animate-fade-in-scale-up">
+                <StrainFinder onStrainSelect={handleStrainSelect} />
+            </div>
           )}
           
-          {showCategorySelector && (
+          {(showCategorySelector || (selectedProductStream === 'THC' && watchStickerOptIn === 'no')) && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Category Selection *</h3>
@@ -436,3 +451,5 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
+
+    
