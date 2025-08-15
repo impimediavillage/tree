@@ -1,3 +1,4 @@
+
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -33,7 +34,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
+exports.getDispensaryProducts = exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -231,6 +232,10 @@ exports.getCannabinoidProductCategories = (0, https_1.onCall)({ cors: true }, as
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
+    const { stream } = request.data;
+    if (!stream || (stream !== 'THC' && stream !== 'CBD')) {
+        throw new https_1.HttpsError('invalid-argument', 'A valid stream ("THC" or "CBD") must be provided.');
+    }
     try {
         const categoriesRef = db.collection('dispensaryTypeProductCategories');
         const q = categoriesRef.where('name', '==', "Cannibinoid store").limit(1);
@@ -239,11 +244,13 @@ exports.getCannabinoidProductCategories = (0, https_1.onCall)({ cors: true }, as
             throw new https_1.HttpsError('not-found', 'Cannabinoid product category configuration not found.');
         }
         const docData = querySnapshot.docs[0].data();
-        const categories = docData?.categoriesData;
-        if (!categories) {
-            throw new https_1.HttpsError('not-found', 'The category data structure is invalid or missing.');
+        // Navigate through the nested map structure to get to the 'Delivery Methods'
+        const deliveryMethods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
+        if (!deliveryMethods || typeof deliveryMethods !== 'object') {
+            throw new https_1.HttpsError('not-found', `The 'Delivery Methods' structure for the '${stream}' stream is invalid or missing.`);
         }
-        return categories;
+        // Return the specific 'Delivery Methods' map
+        return deliveryMethods;
     }
     catch (error) {
         logger.error("Error fetching cannabinoid product categories:", error);
@@ -279,6 +286,37 @@ exports.searchStrains = (0, https_1.onCall)({ cors: true }, async (request) => {
     catch (error) {
         logger.error(`Error searching strains with term "${searchTerm}":`, error);
         throw new https_1.HttpsError('internal', 'An error occurred while searching for strains.');
+    }
+});
+exports.getDispensaryProducts = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    const dispensaryId = request.auth.token.dispensaryId;
+    if (!dispensaryId) {
+        throw new https_1.HttpsError('failed-precondition', 'User is not associated with a dispensary.');
+    }
+    try {
+        const productsQuery = db.collection('products')
+            .where('dispensaryId', '==', dispensaryId)
+            .orderBy('name');
+        const snapshot = await productsQuery.get();
+        const products = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Convert Firestore Timestamps to ISO strings for serialization
+            const product = {
+                ...data,
+                id: doc.id,
+                createdAt: safeToISOString(data.createdAt),
+                updatedAt: safeToISOString(data.updatedAt),
+            };
+            return product;
+        });
+        return products;
+    }
+    catch (error) {
+        logger.error(`Error fetching products for dispensary ${dispensaryId}:`, error);
+        throw new https_1.HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });
 //# sourceMappingURL=index.js.map
