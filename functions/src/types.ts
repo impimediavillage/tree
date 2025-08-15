@@ -414,14 +414,3 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
-
-export interface ScrapeLog {
-    status: 'started' | 'completed' | 'failed';
-    startTime: any; // Using `any` for FieldValue
-    endTime?: any;
-    itemCount: number;
-    successCount: number;
-    failCount: number;
-    error?: string;
-    messages: string[];
-}
