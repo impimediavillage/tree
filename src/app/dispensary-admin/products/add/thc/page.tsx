@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { DispensaryTypeProductCategoriesDoc, ProductCategory, Product as ProductType } from '@/types';
 
@@ -52,6 +53,9 @@ const extractFlavorsFromDescription = (description: string): string[] => {
     return Array.from(foundFlavors);
 };
 
+// Callable function reference
+const getCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
+
 export default function AddTHCProductPage() {
   const { currentUser, currentDispensary, loading: authLoading, isCannabinoidStore } = useAuth();
   const router = useRouter();
@@ -92,33 +96,28 @@ export default function AddTHCProductPage() {
   const watchCategory = form.watch('category');
 
   const fetchInitialData = useCallback(async (stream: 'THC' | 'CBD') => {
-    if (authLoading || !currentDispensary?.dispensaryType) return;
+    if (authLoading) return;
     setIsLoadingInitialData(true);
     setDeliveryMethods({});
     try {
-        const categoriesQuery = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Cannibinoid store"), limit(1));
-        const querySnapshot = await getDocs(categoriesQuery);
+        const result = await getCategoriesCallable();
+        const allCategories = result.data as any;
 
-        if (!querySnapshot.empty) {
-            const docData = querySnapshot.docs[0].data();
-            const methods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
-            
-            if (methods && typeof methods === 'object') {
-                 setDeliveryMethods(methods);
-            } else {
-                 console.warn(`Could not find 'Delivery Methods' for stream '${stream}' at the specified path.`, docData);
-                 toast({ title: "Configuration Warning", description: `Product categories for "${stream}" might not be fully configured for this store type.`, variant: "default" });
-            }
+        const methods = allCategories?.[stream]?.['Delivery Methods'];
+
+        if (methods && typeof methods === 'object') {
+            setDeliveryMethods(methods);
         } else {
-            toast({ title: "Configuration Missing", description: `Could not find a product category configuration for '${currentDispensary.dispensaryType}'. Please set it up in the admin panel.`, variant: "destructive" });
+            console.warn(`Could not find 'Delivery Methods' for stream '${stream}' in the fetched data.`, allCategories);
+            toast({ title: "Configuration Warning", description: `Product categories for "${stream}" might not be fully configured.`, variant: "default" });
         }
     } catch (error) {
-        console.error("Error fetching initial data:", error);
+        console.error("Error fetching initial data via callable:", error);
         toast({ title: "Error", description: "Could not load necessary category data.", variant: "destructive" });
     } finally {
         setIsLoadingInitialData(false);
     }
-  }, [toast, authLoading, currentDispensary]);
+  }, [toast, authLoading]);
   
   useEffect(() => { 
       if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
@@ -442,3 +441,5 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
+
+    
