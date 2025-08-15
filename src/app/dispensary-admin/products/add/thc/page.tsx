@@ -64,7 +64,7 @@ export default function AddTHCProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
   
-  const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any[]>>({});
+  const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any>>({});
   const [isStrainSelected, setIsStrainSelected] = useState(false);
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
   
@@ -100,7 +100,7 @@ export default function AddTHCProductPage() {
     setDeliveryMethods({});
     try {
         const result = await getCategoriesCallable({ stream });
-        const methods = result.data as Record<string, any[]>;
+        const methods = result.data as Record<string, any>;
 
         if (methods && typeof methods === 'object') {
             setDeliveryMethods(methods);
@@ -298,6 +298,9 @@ export default function AddTHCProductPage() {
                   {isLoadingInitialData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
+                          if (!Array.isArray(items)) {
+                            return null; // Skip if items is not an array
+                          }
                           const imageUrl = items.length > 0 ? items[items.length - 1] : null;
                           const subOptions = items.slice(0, items.length - 1);
 
