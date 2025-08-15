@@ -218,10 +218,16 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
 
-  // UI Visibility Logic
-  const showThcOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = (selectedProductStream === 'THC' && watchStickerOptIn === 'yes') || selectedProductStream === 'CBD';
-  const showCategorySelector = (selectedProductStream === 'THC' && watchStickerOptIn === 'no') || (showStrainFinder && isStrainSelected);
+  // --- UI Visibility Logic based on your requirements ---
+  const showStickerOptInSection = selectedProductStream === 'THC';
+  
+  const showStrainFinder = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
+  
+  const showCategorySelector = 
+    (selectedProductStream === 'CBD' && isStrainSelected) ||
+    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && isStrainSelected) ||
+    (selectedProductStream === 'THC' && watchStickerOptIn === 'no');
+
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
 
   if (authLoading) {
@@ -250,7 +256,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showThcOptInSection && (
+          {showStickerOptInSection && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -291,10 +297,9 @@ export default function AddTHCProductPage() {
                   
                   {isLoadingInitialData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                      {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
-                          const imageUrlItem = Array.isArray(subArray) ? subArray.find(item => typeof item === 'object' && item !== null && 'imageUrl' in item) : null;
-                          const imageUrl = imageUrlItem ? (imageUrlItem as any).imageUrl : null;
-                          const subOptions = Array.isArray(subArray) ? subArray.filter(item => typeof item === 'string') : [];
+                      {Object.entries(deliveryMethods).map(([categoryName, items]) => {
+                          const imageUrl = items.length > 0 ? items[items.length - 1] : null;
+                          const subOptions = items.slice(0, items.length - 1);
 
                           return (
                               <div key={categoryName} className="flex flex-col gap-2">
@@ -304,7 +309,7 @@ export default function AddTHCProductPage() {
                                   >
                                       <CardHeader className="p-0">
                                           <div className="relative aspect-video w-full">
-                                              {imageUrl ? (
+                                              {imageUrl && typeof imageUrl === 'string' ? (
                                                   <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="rounded-t-md" />
                                               ) : (
                                                   <div className="w-full h-full bg-muted rounded-t-md flex items-center justify-center">
