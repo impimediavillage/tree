@@ -3,7 +3,7 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, DispensaryTypeProductCategoriesDoc, Product } from './types';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, Product } from './types';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -231,7 +231,7 @@ export const getCannabinoidProductCategories = onCall({ cors: true }, async (req
             throw new HttpsError('not-found', 'Cannabinoid product category configuration not found.');
         }
 
-        const docData = querySnapshot.docs[0].data() as DispensaryTypeProductCategoriesDoc;
+        const docData = querySnapshot.docs[0].data();
         
         // Correctly navigate the nested map structure
         const deliveryMethods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
