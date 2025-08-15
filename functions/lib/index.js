@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchStrains = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
+exports.updateStrainImageUrl = exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -227,8 +227,33 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onCall)(async (request) => 
         throw new https_1.HttpsError('internal', 'An internal error occurred while processing the transaction.');
     }
 });
-// New Cloud Function to search for strains
-exports.searchStrains = (0, https_1.onCall)(async (request) => {
+exports.getCannabinoidProductCategories = (0, https_1.onCall)({ cors: true }, async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    try {
+        const categoriesRef = db.collection('dispensaryTypeProductCategories');
+        const q = categoriesRef.where('name', '==', "Cannibinoid store").limit(1);
+        const querySnapshot = await q.get();
+        if (querySnapshot.empty) {
+            throw new https_1.HttpsError('not-found', 'Cannabinoid product category configuration not found.');
+        }
+        const docData = querySnapshot.docs[0].data();
+        const categories = docData?.categoriesData?.thcCbdProductCategories;
+        if (!categories) {
+            throw new https_1.HttpsError('not-found', 'The category data structure is invalid or missing.');
+        }
+        return categories;
+    }
+    catch (error) {
+        logger.error("Error fetching cannabinoid product categories:", error);
+        if (error instanceof https_1.HttpsError) {
+            throw error;
+        }
+        throw new https_1.HttpsError('internal', 'An error occurred while fetching product categories.');
+    }
+});
+exports.searchStrains = (0, https_1.onCall)({ cors: true }, async (request) => {
     // This function is publicly callable, no auth check needed as per requirements.
     const { searchTerm } = request.data;
     if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
@@ -255,4 +280,30 @@ exports.searchStrains = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('internal', 'An error occurred while searching for strains.');
     }
 });
+exports.updateStrainImageUrl = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+    // Optional: Add role-based access control if needed
+    // const role = request.auth.token.role;
+    // if (role !== 'DispensaryOwner' && role !== 'Super Admin') {
+    //     throw new HttpsError('permission-denied', 'You do not have permission to update strain images.');
+    // }
+    const { strainId, imageUrl } = request.data;
+    if (!strainId || !imageUrl) {
+        throw new https_1.HttpsError('invalid-argument', 'Strain ID and Image URL are required.');
+    }
+    try {
+        const strainDocRef = db.collection('my-seeded-collection').doc(strainId);
+        await strainDocRef.update({ img_url: imageUrl });
+        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}`);
+        return { success: true, message: 'Image URL updated successfully.' };
+    }
+    catch (error) {
+        logger.error(`Error updating strain image URL for strain ${strainId}:`, error);
+        throw new https_1.HttpsError('internal', 'An error occurred while updating the strain image.');
+    }
+});
 //# sourceMappingURL=index.js.map
+
+    
