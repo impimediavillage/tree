@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check } from 'lucide-react';
-import { functions } from '@/lib/firebase';
+import { db, functions } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
@@ -20,7 +21,9 @@ interface StrainFinderProps {
   onStrainSelect: (strain: any) => void;
 }
 
-const searchStrainsCallable = httpsCallable(functions, 'searchStrains');
+const findStrainImage = httpsCallable(functions, 'findStrainImage');
+
+const toTitleCase = (str: string) => str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
 export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
   const { toast } = useToast();
@@ -38,8 +41,17 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
     setSelectedStrain(null);
 
     try {
-      const result = await searchStrainsCallable({ searchTerm: searchTerm.trim() });
-      const strains = result.data as any[];
+      const processedTerm = toTitleCase(searchTerm.trim());
+      const strainsRef = collection(db, 'my-seeded-collection');
+      const q = query(
+        strainsRef,
+        where('name', '>=', processedTerm),
+        where('name', '<=', processedTerm + '\uf8ff'),
+        limit(20)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const strains = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSearchResults(strains);
 
       if (strains.length === 0) {
@@ -55,7 +67,6 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
 
   const handleStrainClick = async (strain: any) => {
     setSelectedStrain(strain);
-    // Image generation logic will be added back later if needed
   };
   
   const handleSelectStrain = () => {
@@ -69,8 +80,6 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
     effect: [ "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800", "bg-red-100 text-red-800", "bg-orange-100 text-orange-800" ],
     medical: [ "bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800", "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800" ]
   };
-
-  const toTitleCase = (str: string) => str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
   const filteredEffects = React.useMemo(() => {
     if (!selectedStrain?.effects) return [];
