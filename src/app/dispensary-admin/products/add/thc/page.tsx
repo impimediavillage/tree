@@ -67,9 +67,6 @@ export default function AddTHCProductPage() {
   const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any[]>>({});
   const [isStrainSelected, setIsStrainSelected] = useState(false);
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
-  const [showStrainFinder, setShowStrainFinder] = useState(false);
-  const [showCategorySelector, setShowCategorySelector] = useState(false);
-  const [showStickerOptInSection, setShowStickerOptInSection] = useState(false);
   
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
@@ -95,6 +92,7 @@ export default function AddTHCProductPage() {
   const watchLabTested = form.watch('labTested');
   const watchStickerOptIn = form.watch('stickerProgramOptIn');
   const watchCategory = form.watch('category');
+  const watchSubcategory = form.watch('subcategory');
 
   const fetchInitialData = useCallback(async (stream: 'THC' | 'CBD') => {
     if (authLoading) return;
@@ -129,32 +127,9 @@ export default function AddTHCProductPage() {
       stickerProgramOptIn: 'no',
     });
     setIsStrainSelected(false);
-    setShowCategorySelector(false);
-
     setSelectedProductStream(stream);
     fetchInitialData(stream);
-
-    if (stream === 'THC') {
-        setShowStickerOptInSection(true);
-        setShowStrainFinder(false); // Hide until opt-in
-    } else if (stream === 'CBD') {
-        setShowStickerOptInSection(false);
-        setShowStrainFinder(true); // Show immediately for CBD
-        setShowCategorySelector(false); // Hide until strain selected
-    }
   };
-  
-  // Effect for THC Sticker Opt-in
-  useEffect(() => {
-    if (selectedProductStream === 'THC') {
-        setShowStrainFinder(watchStickerOptIn === 'yes');
-        // Reset selections if they opt-out
-        if (watchStickerOptIn === 'no') {
-            setIsStrainSelected(false);
-            setShowCategorySelector(false);
-        }
-    }
-  }, [watchStickerOptIn, selectedProductStream]);
   
   
   const handleStrainSelect = (strainData: any) => {
@@ -179,7 +154,6 @@ export default function AddTHCProductPage() {
     form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
 
     setIsStrainSelected(true);
-    setShowCategorySelector(true); // Show categories after strain is selected
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
   };
   
@@ -240,11 +214,15 @@ export default function AddTHCProductPage() {
   };
   
   const productStreams: { key: ProductStream; title: string; icon: React.ElementType }[] = [
-    { key: 'THC', title: 'Cannabinoid (other)', icon: Flame },
+    { key: 'THC', title: 'Cannibinoid (other)', icon: Flame },
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
-  
-  const showProductForm = (selectedProductStream === 'THC' && watchStickerOptIn === 'no' && form.getValues('category') && form.getValues('subcategory')) || (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && isStrainSelected && form.getValues('category') && form.getValues('subcategory')) || (selectedProductStream === 'CBD' && isStrainSelected && form.getValues('category') && form.getValues('subcategory'));
+
+  // UI Visibility Logic
+  const showThcOptInSection = selectedProductStream === 'THC';
+  const showStrainFinder = (selectedProductStream === 'THC' && watchStickerOptIn === 'yes') || selectedProductStream === 'CBD';
+  const showCategorySelector = (selectedProductStream === 'THC' && watchStickerOptIn === 'no') || (showStrainFinder && isStrainSelected);
+  const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
 
   if (authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
@@ -272,7 +250,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showStickerOptInSection && (
+          {showThcOptInSection && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -306,7 +284,7 @@ export default function AddTHCProductPage() {
             </div>
           )}
           
-          {(showCategorySelector || (selectedProductStream === 'THC' && watchStickerOptIn === 'no')) && (
+          {showCategorySelector && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Category Selection *</h3>
@@ -314,10 +292,9 @@ export default function AddTHCProductPage() {
                   {isLoadingInitialData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {Object.entries(deliveryMethods).map(([categoryName, subArray]) => {
-                          const lastItem = Array.isArray(subArray) && subArray.length > 0 ? subArray[subArray.length - 1] : null;
-                          const isObjectWithImageUrl = lastItem && typeof lastItem === 'object' && lastItem !== null && 'imageUrl' in lastItem;
-                          const imageUrl = isObjectWithImageUrl ? (lastItem as any).imageUrl : null;
-                          const subOptions = Array.isArray(subArray) ? (isObjectWithImageUrl ? subArray.slice(0, -1) : subArray) : [];
+                          const imageUrlItem = Array.isArray(subArray) ? subArray.find(item => typeof item === 'object' && item !== null && 'imageUrl' in item) : null;
+                          const imageUrl = imageUrlItem ? (imageUrlItem as any).imageUrl : null;
+                          const subOptions = Array.isArray(subArray) ? subArray.filter(item => typeof item === 'string') : [];
 
                           return (
                               <div key={categoryName} className="flex flex-col gap-2">
@@ -451,5 +428,3 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
-
-    
