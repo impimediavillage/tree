@@ -3,7 +3,7 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, DispensaryTypeProductCategoriesDoc } from './types';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, DispensaryTypeProductCategoriesDoc, Product } from './types';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -277,5 +277,43 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     } catch (error: any) {
         logger.error(`Error searching strains with term "${searchTerm}":`, error);
         throw new HttpsError('internal', 'An error occurred while searching for strains.');
+    }
+});
+
+export const getDispensaryProducts = onCall(async (request: CallableRequest): Promise<Product[]> => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+
+    const dispensaryId = request.auth.token.dispensaryId;
+
+    if (!dispensaryId) {
+        throw new HttpsError('failed-precondition', 'User is not associated with a dispensary.');
+    }
+
+    try {
+        const productsQuery = db.collection('products')
+            .where('dispensaryId', '==', dispensaryId)
+            .orderBy('name');
+
+        const snapshot = await productsQuery.get();
+        
+        const products = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Convert Firestore Timestamps to ISO strings for serialization
+            const product: Product = {
+                ...data,
+                id: doc.id,
+                createdAt: safeToISOString(data.createdAt),
+                updatedAt: safeToISOString(data.updatedAt),
+            } as Product;
+            return product;
+        });
+
+        return products;
+
+    } catch (error: any) {
+        logger.error(`Error fetching products for dispensary ${dispensaryId}:`, error);
+        throw new HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });
