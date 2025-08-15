@@ -1,11 +1,11 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, deleteDoc, orderBy } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
-import { httpsCallable } from 'firebase/functions';
 import type { Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,8 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-
-const getDispensaryProductsCallable = httpsCallable(functions, 'getDispensaryProducts');
 
 export default function WellnessProductsPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -31,11 +29,16 @@ export default function WellnessProductsPage() {
   
   const dispensaryId = currentUser?.dispensaryId;
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
-        const result = await getDispensaryProductsCallable();
-        const fetchedProducts = result.data as Product[];
+        const productsQuery = query(
+            collection(db, 'products'),
+            where('dispensaryId', '==', id),
+            orderBy('name')
+        );
+        const productsSnapshot = await getDocs(productsQuery);
+        const fetchedProducts = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
         setAllProducts(fetchedProducts);
 
         if (fetchedProducts.length > 0) {
@@ -54,7 +57,7 @@ export default function WellnessProductsPage() {
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
-      fetchProducts();
+      fetchProducts(dispensaryId);
     } else if (!authLoading) {
       // This case handles when a user is loaded but has no dispensaryId
       setIsLoading(false);
@@ -101,7 +104,7 @@ export default function WellnessProductsPage() {
       
       await deleteDoc(doc(db, 'products', productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
-      fetchProducts();
+      fetchProducts(dispensaryId);
       
     } catch (error) {
       console.error("Error deleting product document:", error);
