@@ -8,10 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check } from 'lucide-react';
+import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check, SkipForward } from 'lucide-react';
 import { db, functions } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
@@ -19,13 +18,12 @@ import type { ProductAttribute } from '@/types';
 
 interface StrainFinderProps {
   onStrainSelect: (strain: any) => void;
+  onSkip?: () => void;
 }
-
-const findStrainImage = httpsCallable(functions, 'findStrainImage');
 
 const toTitleCase = (str: string) => str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
-export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
+export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
@@ -104,7 +102,15 @@ export function StrainFinder({ onStrainSelect }: StrainFinderProps) {
   return (
     <Card className="border-primary/20 shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><SearchIcon className="text-primary"/> Strain Finder</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center gap-2"><SearchIcon className="text-primary"/> Strain Finder</CardTitle>
+          {onSkip && (
+            <Button type="button" variant="ghost" onClick={onSkip}>
+              <SkipForward className="mr-2 h-4 w-4"/>
+              Skip for now
+            </Button>
+          )}
+        </div>
         <CardDescription>Search the Leafly database to pre-fill your product information.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
