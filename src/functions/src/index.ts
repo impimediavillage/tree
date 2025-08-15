@@ -102,8 +102,8 @@ export const getUserProfile = onCall(async (request: CallableRequest): Promise<A
         
         let dispensaryData: Dispensary | null = null;
         if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
-            const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
-            const dispensaryDocSnap = await dispensaryDocRef.get();
+            const dispensaryDocRef = doc(db, 'dispensaries', userData.dispensaryId);
+            const dispensaryDocSnap = await getDoc(dispensaryDocRef);
             
             if (dispensaryDocSnap.exists) {
                 const rawDispensaryData = dispensaryDocSnap.data();
@@ -223,9 +223,9 @@ export const getCannabinoidProductCategories = onCall({ cors: true }, async (req
     }
 
     try {
-        const categoriesRef = db.collection('dispensaryTypeProductCategories');
-        const q = categoriesRef.where('name', '==', "Cannibinoid store").limit(1);
-        const querySnapshot = await q.get();
+        const categoriesRef = collection(db, 'dispensaryTypeProductCategories');
+        const q = firestoreQuery(categoriesRef, where('name', '==', "Cannibinoid store"), limit(1));
+        const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
             throw new HttpsError('not-found', 'Cannabinoid product category configuration not found.');
@@ -233,14 +233,12 @@ export const getCannabinoidProductCategories = onCall({ cors: true }, async (req
 
         const docData = querySnapshot.docs[0].data();
         
-        // Navigate through the nested map structure to get to the 'Delivery Methods'
         const deliveryMethods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
         
         if (!deliveryMethods || typeof deliveryMethods !== 'object') {
             throw new HttpsError('not-found', `The 'Delivery Methods' structure for the '${stream}' stream is invalid or missing.`);
         }
         
-        // Return the specific 'Delivery Methods' map
         return deliveryMethods;
 
     } catch (error: any) {
@@ -273,7 +271,7 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
             .where('name', '<=', processedTerm + '\uf8ff')
             .limit(10);
         
-        const snapshot = await query.get();
+        const snapshot = await getDocs(query);
         
         if (snapshot.empty) {
             return [];
