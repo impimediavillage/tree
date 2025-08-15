@@ -218,13 +218,12 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
 
-  // --- UI Visibility Logic based on your requirements ---
   const showStickerOptInSection = selectedProductStream === 'THC';
   
   const showStrainFinder = 
-    (selectedProductStream === 'CBD') || 
+    (selectedProductStream === 'CBD') ||
     (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
-  
+
   const showCategorySelector = 
     (selectedProductStream === 'CBD' && isStrainSelected) ||
     (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && isStrainSelected) ||
