@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,11 +8,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage, functions } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { httpsCallable } from 'firebase/functions';
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { DispensaryTypeProductCategoriesDoc, ProductCategory, Product as ProductType } from '@/types';
+import type { Product as ProductType } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,7 @@ import Image from 'next/image';
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
-type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set';
+type ProductStream = 'THC' | 'CBD';
 
 const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 
@@ -56,7 +57,7 @@ const extractFlavorsFromDescription = (description: string): string[] => {
 const getCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
 
 export default function AddTHCProductPage() {
-  const { currentUser, currentDispensary, loading: authLoading, isCannabinoidStore } = useAuth();
+  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -99,16 +100,13 @@ export default function AddTHCProductPage() {
     setIsLoadingInitialData(true);
     setDeliveryMethods({});
     try {
-        const result = await getCategoriesCallable();
-        const allCategories = result.data as any; // Cast as any to handle complex nested object
-
-        // Correctly navigate the deeply nested structure as specified
-        const methods = allCategories?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
+        const result = await getCategoriesCallable({ stream });
+        const methods = result.data as Record<string, any[]>;
 
         if (methods && typeof methods === 'object') {
             setDeliveryMethods(methods);
         } else {
-            console.warn(`Could not find 'Delivery Methods' for stream '${stream}' in the fetched data.`, allCategories);
+            console.warn(`Could not find 'Delivery Methods' for stream '${stream}' in the fetched data.`, methods);
             toast({ title: "Configuration Warning", description: `Product categories for "${stream}" might not be fully configured.`, variant: "default" });
         }
     } catch (error) {
@@ -120,7 +118,7 @@ export default function AddTHCProductPage() {
   }, [toast, authLoading]);
   
   useEffect(() => { 
-      if (selectedProductStream === 'THC' || selectedProductStream === 'CBD') {
+      if (selectedProductStream) {
         fetchInitialData(selectedProductStream);
         if (selectedProductStream === 'CBD') {
           setShowStrainFinder(true);
@@ -229,9 +227,6 @@ export default function AddTHCProductPage() {
   const productStreams: { key: ProductStream; title: string; icon: React.ElementType }[] = [
     { key: 'THC', title: 'Cannabinoid (other)', icon: Flame },
     { key: 'CBD', title: 'CBD', icon: Leaf },
-    { key: 'Apparel', title: 'Apparel', icon: Shirt },
-    { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
-    { key: 'Sticker Promo Set', title: 'Sticker Promo Set', icon: Gift },
   ];
   
   const showProductForm = isStrainSelected && form.getValues('category') && form.getValues('subcategory');
@@ -253,7 +248,7 @@ export default function AddTHCProductPage() {
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 gap-4">
               {productStreams.map(stream => (
                   <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => setSelectedProductStream(stream.key)}>
                       <stream.icon className="h-8 w-8" />
