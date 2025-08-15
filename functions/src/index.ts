@@ -214,7 +214,7 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
 });
 
 // New Cloud Function to search for strains
-export const searchStrains = onCall(async (request: CallableRequest<{ searchTerm: string; }>) => {
+export const searchStrains = onCall({ cors: true }, async (request: CallableRequest<{ searchTerm: string; }>) => {
     // This function is publicly callable, no auth check needed as per requirements.
     const { searchTerm } = request.data;
 
