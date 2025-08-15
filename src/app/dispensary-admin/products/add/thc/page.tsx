@@ -300,7 +300,7 @@ export default function AddTHCProductPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
                           if (!Array.isArray(items)) {
-                            return null; // Skip if items is not an array
+                            return null;
                           }
                           const imageUrl = items.length > 0 ? items[items.length - 1] : null;
                           const subOptions = items.slice(0, items.length - 1);
