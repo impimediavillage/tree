@@ -279,34 +279,3 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
         throw new HttpsError('internal', 'An error occurred while searching for strains.');
     }
 });
-
-
-// New Cloud Function to update strain image URL
-export const updateStrainImageUrl = onCall(async (request: CallableRequest<{ strainId: string; imageUrl: string; }>) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-    
-    // Optional: Add role-based access control if needed
-    // const role = request.auth.token.role;
-    // if (role !== 'DispensaryOwner' && role !== 'Super Admin') {
-    //     throw new HttpsError('permission-denied', 'You do not have permission to update strain images.');
-    // }
-
-    const { strainId, imageUrl } = request.data;
-    if (!strainId || !imageUrl) {
-        throw new HttpsError('invalid-argument', 'Strain ID and Image URL are required.');
-    }
-
-    try {
-        const strainDocRef = db.collection('my-seeded-collection').doc(strainId);
-        await strainDocRef.update({ img_url: imageUrl });
-        logger.info(`Updated image URL for strain ${strainId} by user ${request.auth.uid}`);
-        return { success: true, message: 'Image URL updated successfully.' };
-    } catch (error: any) {
-        logger.error(`Error updating strain image URL for strain ${strainId}:`, error);
-        throw new HttpsError('internal', 'An error occurred while updating the strain image.');
-    }
-});
-
-    
