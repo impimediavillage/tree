@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
@@ -53,7 +53,7 @@ const extractFlavorsFromDescription = (description: string): string[] => {
 };
 
 export default function AddTHCProductPage() {
-  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { currentUser, currentDispensary, loading: authLoading, isCannabinoidStore } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -100,7 +100,7 @@ export default function AddTHCProductPage() {
         const querySnapshot = await getDocs(categoriesQuery);
 
         if (!querySnapshot.empty) {
-            const docData = querySnapshot.docs[0].data() as any; // Use any to traverse deeply nested structure
+            const docData = querySnapshot.docs[0].data() as any; 
             
             // Correctly traverse the deeply nested structure as per user's last instruction
             const methods = docData?.categoriesData?.thcCbdProductCategories?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
@@ -254,9 +254,9 @@ export default function AddTHCProductPage() {
               <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
           </Button>
         </div>
-
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {productStreams.map(stream => (
                         <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => setSelectedProductStream(stream.key)}>
@@ -441,9 +441,7 @@ export default function AddTHCProductPage() {
                 <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
                 <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
             </form>
-        </Form>
+          </Form>
     </div>
   );
 }
-
-    
