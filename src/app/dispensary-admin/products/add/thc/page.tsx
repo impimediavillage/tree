@@ -100,7 +100,8 @@ export default function AddTHCProductPage() {
         const querySnapshot = await getDocs(categoriesQuery);
 
         if (!querySnapshot.empty) {
-            const docData = querySnapshot.docs[0].data() as any;
+            const docData = querySnapshot.docs[0].data();
+            // Correctly access the deeply nested map
             const methods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
             
             if (methods && typeof methods === 'object') {
