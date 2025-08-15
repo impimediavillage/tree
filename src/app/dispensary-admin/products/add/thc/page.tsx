@@ -100,8 +100,7 @@ export default function AddTHCProductPage() {
         const querySnapshot = await getDocs(categoriesQuery);
 
         if (!querySnapshot.empty) {
-            const docData = querySnapshot.docs[0].data() as any; 
-            
+            const docData = querySnapshot.docs[0].data() as any;
             const methods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
             
             if (methods && typeof methods === 'object') {
@@ -239,23 +238,22 @@ export default function AddTHCProductPage() {
   const showProductForm = isStrainSelected && form.getValues('category');
 
   if (authLoading) {
-    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> d> </div> );
+    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
   return (
     <div className="max-w-4xl mx-auto my-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Add Cannabinoid Product</h1>
+          <p className="text-muted-foreground mt-1">Select a product stream to begin.</p>
+        </div>
+        <Button variant="outline" asChild>
+            <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
+        </Button>
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">Add Cannabinoid Product</h1>
-              <p className="text-muted-foreground mt-1">Select a product stream to begin.</p>
-            </div>
-            <Button variant="outline" asChild>
-                <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
-            </Button>
-          </div>
-          
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {productStreams.map(stream => (
                   <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => setSelectedProductStream(stream.key)}>
