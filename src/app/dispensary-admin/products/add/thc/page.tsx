@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -101,9 +100,10 @@ export default function AddTHCProductPage() {
     setDeliveryMethods({});
     try {
         const result = await getCategoriesCallable();
-        const allCategories = result.data as any;
+        const allCategories = result.data as any; // Cast as any to handle complex nested object
 
-        const methods = allCategories?.[stream]?.['Delivery Methods'];
+        // Correctly navigate the deeply nested structure as specified
+        const methods = allCategories?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
 
         if (methods && typeof methods === 'object') {
             setDeliveryMethods(methods);
@@ -441,5 +441,3 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
-
-    
