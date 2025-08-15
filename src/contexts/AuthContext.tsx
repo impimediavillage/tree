@@ -42,11 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("AuthContext: Fetching user profile for UID:", firebaseUser.uid);
       
-       // --- TEMPORARY DELAY FOR TESTING ---
-       await new Promise(resolve => setTimeout(resolve, 500)); // Add a 500ms delay
-       console.log("AuthContext: Delay finished, calling getUserProfile callable...");
-       // --- END TEMPORARY DELAY ---
-      const result = await getUserProfileCallable();
+      const result = await getUserProfileCallable({}); // Pass empty object as data
       const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
