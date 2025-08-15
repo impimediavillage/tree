@@ -218,14 +218,8 @@ export default function AddTHCProductPage() {
     { key: 'THC', title: 'Cannibinoid (other)', icon: Flame },
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
-
-  const showStickerOptInSection = selectedProductStream === 'THC';
   
-  const showStrainFinder = 
-    (selectedProductStream === 'CBD') || 
-    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes');
-
-  const showCategorySelector =
+  const showCategorySelector = 
     (selectedProductStream === 'CBD') ||
     (selectedProductStream === 'THC' && watchStickerOptIn === 'no') ||
     (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (isStrainSelected || isStrainFinderSkipped));
@@ -258,7 +252,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showStickerOptInSection && (
+          {selectedProductStream === 'THC' && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -285,10 +279,16 @@ export default function AddTHCProductPage() {
                   </CardContent>
               </Card>
           )}
-          
-          {showStrainFinder && (
+
+          {selectedProductStream === 'CBD' && (
             <div className="animate-fade-in-scale-up">
-                <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
+              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
+            </div>
+          )}
+
+          {selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (
+            <div className="animate-fade-in-scale-up">
+              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
             </div>
           )}
           
@@ -300,21 +300,28 @@ export default function AddTHCProductPage() {
                   {isLoadingInitialData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : 
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
-                          if (!Array.isArray(items)) {
-                            return null;
+                          if (!Array.isArray(items)) return null;
+
+                          let imageUrl: string | null = null;
+                          let subOptions: string[] = [];
+
+                          const lastItem = items[items.length - 1];
+                          if (typeof lastItem === 'object' && lastItem !== null && lastItem.imageUrl) {
+                            imageUrl = lastItem.imageUrl;
+                            subOptions = items.slice(0, -1);
+                          } else {
+                            subOptions = [...items];
                           }
-                          const imageUrl = items.length > 0 ? items[items.length - 1] : null;
-                          const subOptions = items.slice(0, items.length - 1);
 
                           return (
                               <div key={categoryName} className="flex flex-col gap-2">
                                   <Card 
                                       onClick={() => handleCategorySelect(categoryName)} 
-                                      className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
+                                      className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
                                       <CardHeader className="p-0">
                                           <div className="relative aspect-video w-full bg-muted rounded-t-lg overflow-hidden">
-                                              {imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http') ? (
+                                              {imageUrl ? (
                                                   <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" />
                                               ) : (
                                                   <div className="w-full h-full flex items-center justify-center">
