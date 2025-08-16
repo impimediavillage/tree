@@ -75,7 +75,7 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
             const active: ProductAttribute[] = [];
             const inactive: string[] = [];
 
-            if (!attributes) return { active, inactive };
+            if (!attributes || typeof attributes !== 'object') return { active, inactive };
 
             for (const key of Object.keys(attributes)) {
                 const name = toTitleCase(key);

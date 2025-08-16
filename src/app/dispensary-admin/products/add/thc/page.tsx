@@ -132,9 +132,9 @@ export default function AddTHCProductPage() {
     form.setValue('thcContent', strainData.thcContent);
     form.setValue('mostCommonTerpene', strainData.mostCommonTerpene);
     
-    form.setValue('effects', strainData.effects || []);
-    form.setValue('medicalUses', strainData.medicalUses || []);
-    form.setValue('flavors', strainData.flavors || []);
+    form.setValue('effects', strainData.effects);
+    form.setValue('medicalUses', strainData.medicalUses);
+    form.setValue('flavors', strainData.flavors);
 
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
@@ -215,7 +215,7 @@ export default function AddTHCProductPage() {
   ];
 
   const showOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = selectedProductStream === 'THC' && watchStickerOptIn !== null;
+  const showStrainFinder = showOptInSection && watchStickerOptIn !== null;
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
   
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
