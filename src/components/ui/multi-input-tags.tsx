@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
 
 interface MultiInputTagsProps {
-  value: ProductAttribute[];
-  onChange: (value: ProductAttribute[]) => void;
+  value?: ProductAttribute[] | string[];
+  onChange: (value: any) => void;
   placeholder?: string;
   maxTags?: number;
   className?: string;
@@ -23,25 +23,35 @@ interface MultiInputTagsProps {
 export function MultiInputTags({
   value = [],
   onChange,
-  placeholder = 'Add an attribute...',
+  placeholder = 'Add a tag...',
   maxTags,
   className,
   disabled,
   getTagClassName,
-  inputType = 'attribute',
+  inputType = 'string',
 }: MultiInputTagsProps) {
   const [inputValue, setInputValue] = React.useState('');
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
   const [editingValue, setEditingValue] = React.useState('');
+
+  const isAttributeType = inputType === 'attribute';
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-  };
+  const processedValue: ProductAttribute[] = React.useMemo(() => {
+    if (isAttributeType) {
+      return (value as ProductAttribute[] || []).map(item => ({
+        name: item.name,
+        percentage: item.percentage || '0%',
+      }));
+    }
+    return (value as string[] || []).map(item => ({ name: item, percentage: '' }));
+  }, [value, isAttributeType]);
 
   const addTag = (tagToAdd: string) => {
     const newTagName = tagToAdd.trim();
-    if (newTagName && !value.some(tag => tag.name === newTagName) && (!maxTags || value.length < maxTags)) {
-      onChange([...value, { name: newTagName, percentage: inputType === 'attribute' ? '1%' : '' }]);
+    if (newTagName && !processedValue.some(tag => tag.name.toLowerCase() === newTagName.toLowerCase()) && (!maxTags || processedValue.length < maxTags)) {
+      const newItem = isAttributeType ? { name: newTagName, percentage: '1%' } : newTagName;
+      const newValue = [...value, newItem];
+      onChange(newValue);
     }
     setInputValue('');
   };
@@ -51,23 +61,36 @@ export function MultiInputTags({
       e.preventDefault();
       addTag(inputValue);
     } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
-      onChange(value.slice(0, -1));
+      const newValue = value.slice(0, -1);
+      onChange(newValue);
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    onChange(value.filter(tag => tag.name !== tagToRemove));
+    const newValue = processedValue.filter(tag => tag.name !== tagToRemove);
+    onChange(isAttributeType ? newValue : newValue.map(item => item.name));
   };
   
   const startEditing = (index: number) => {
     setEditingIndex(index);
-    setEditingValue(value[index].percentage.replace('%', ''));
+    setEditingValue((processedValue[index]?.percentage || '').replace('%', ''));
   };
 
   const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditingValue(e.target.value);
+    setEditingValue(e.target.value.replace(/[^0-9]/g, ''));
   };
   
+  const finishEditing = (index: number) => {
+    if (editingIndex === null) return;
+    const newPercentage = editingValue.trim() ? `${editingValue.trim()}%` : '0%';
+    const updatedTags = [...processedValue];
+    if(updatedTags[index]) {
+      updatedTags[index].percentage = newPercentage;
+    }
+    onChange(updatedTags);
+    setEditingIndex(null);
+  };
+
   const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -77,15 +100,6 @@ export function MultiInputTags({
       setEditingIndex(null);
     }
   };
-  
-  const finishEditing = (index: number) => {
-    const newPercentage = editingValue.trim() ? `${editingValue.trim()}%` : '0%';
-    const updatedTags = [...value];
-    updatedTags[index].percentage = newPercentage;
-    onChange(updatedTags);
-    setEditingIndex(null);
-  };
-
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -93,7 +107,7 @@ export function MultiInputTags({
         <Input
           type="text"
           value={inputValue}
-          onChange={handleInputChange}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="flex-grow"
@@ -110,9 +124,9 @@ export function MultiInputTags({
           <CornerDownLeft className="h-4 w-4" />
         </Button>
       </div>
-       {value.length > 0 && (
+       {processedValue.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed mt-2">
-          {value.map((tag, index) => (
+          {processedValue.map((tag, index) => (
             <Badge
               key={`${tag.name}-${index}`}
               variant="secondary"
@@ -122,7 +136,7 @@ export function MultiInputTags({
               )}
             >
               <span>{tag.name}</span>
-              {inputType === 'attribute' && (
+              {isAttributeType && (
                 <>
                     <span className="text-xs text-muted-foreground">(</span>
                     {editingIndex === index ? (
@@ -136,7 +150,9 @@ export function MultiInputTags({
                         className="w-8 h-4 text-xs p-0 m-0 text-center bg-transparent border-b border-primary focus:ring-0 focus:outline-none"
                         />
                     ) : (
-                        <span onClick={() => !disabled && startEditing(index)} className={cn(!disabled && "cursor-pointer")}>{tag.percentage}</span>
+                        <span onClick={() => !disabled && startEditing(index)} className={cn(!disabled && "cursor-pointer")}>
+                          {tag.percentage}
+                        </span>
                     )}
                     <span className="text-xs text-muted-foreground">)</span>
                 </>

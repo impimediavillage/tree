@@ -21,7 +21,10 @@ interface StrainFinderProps {
   onSkip?: () => void;
 }
 
-const toTitleCase = (str: string) => str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+const toTitleCase = (str: string) => {
+    if (!str) return '';
+    return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+};
 
 export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   const { toast } = useToast();
@@ -68,25 +71,23 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   
   const handleSelectStrain = () => {
     if (selectedStrain) {
-        // This function processes the raw Firestore document into structured arrays
-        const processAttributes = (attributes: Record<string, string | null> | undefined): { withPercentage: ProductAttribute[], withoutPercentage: string[] } => {
-            const withPercentage: ProductAttribute[] = [];
-            const withoutPercentage: string[] = [];
+        const processAttributes = (attributes: Record<string, string | null> | undefined): { active: ProductAttribute[], inactive: string[] } => {
+            const active: ProductAttribute[] = [];
+            const inactive: string[] = [];
 
-            if (!attributes) return { withPercentage, withoutPercentage };
+            if (!attributes) return { active, inactive };
 
             for (const key of Object.keys(attributes)) {
                 const name = toTitleCase(key);
                 const value = attributes[key];
                 
-                // Check if value is a string and not "0%" or empty
                 if (value && typeof value === 'string' && value.trim() && value.trim() !== '0%') {
-                    withPercentage.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
+                    active.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
                 } else {
-                    withoutPercentage.push(name);
+                    inactive.push(name);
                 }
             }
-            return { withPercentage, withoutPercentage };
+            return { active, inactive };
         };
 
         const flavorKeywords = ['earthy', 'sweet', 'citrus', 'pine', 'skunky', 'grape', 'woody', 'diesel', 'berry', 'lemon', 'pungent', 'flowery', 'spicy', 'herbal', 'orange', 'vanilla', 'nutty', 'minty', 'honey', 'lavender', 'fruity'];
@@ -101,8 +102,9 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
             return Array.from(foundFlavors);
         };
         
-        const { withPercentage: activeEffects, withoutPercentage: zeroPercentEffects } = processAttributes(selectedStrain.effects);
-        const { withPercentage: activeMedicalUses, withoutPercentage: zeroPercentMedical } = processAttributes(selectedStrain.medical);
+        const { active: activeEffects, inactive: zeroPercentEffects } = processAttributes(selectedStrain.effects);
+        const { active: activeMedicalUses, inactive: zeroPercentMedical } = processAttributes(selectedStrain.medical);
+        
         const extractedFlavors = extractFlavors(selectedStrain.name || '', selectedStrain.description || '');
         const combinedFlavors = Array.from(new Set([...(selectedStrain.flavor || []), ...extractedFlavors]));
 

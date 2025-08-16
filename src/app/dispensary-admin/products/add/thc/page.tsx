@@ -387,14 +387,14 @@ export default function AddTHCProductPage() {
                                     </Select>
                                 )}
                               </div>
-                              <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
+                              <FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Relaxed, Happy" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
                               <FormMessage />
                           </FormItem> 
                       )} />
                        <FormField control={form.control} name="flavors" render={({ field }) => ( 
                           <FormItem>
                               <FormLabel>Flavors</FormLabel>
-                              <FormControl><MultiInputTags inputType="string" placeholder="e.g., Earthy, Citrus" value={field.value?.map(f => ({name: f, percentage: ''})) || []} onChange={(tags) => field.onChange(tags.map(t => t.name))} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl>
+                              <FormControl><MultiInputTags inputType="string" placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl>
                               <FormMessage />
                           </FormItem>
                       )} />
@@ -411,7 +411,7 @@ export default function AddTHCProductPage() {
                                     </Select>
                                 )}
                               </div>
-                              <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
+                              <FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
                               <FormMessage />
                           </FormItem>
                       )} />
@@ -448,7 +448,7 @@ export default function AddTHCProductPage() {
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Images, Tags & Lab Results</h3>
                       <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value?.map(t=> ({name: t, percentage:''})) || []} onChange={(tags) => field.onChange(tags.map(t => t.name))} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Lab Tested</FormLabel><FormDescription>Indicate if the product has a lab test report.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                       {watchLabTested && (
                           <FormField control={form.control} name="labTestReportUrl" render={() => ( <FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={(file) => setLabTestFile(file)} /></FormControl><FormDescription>Upload the lab report PDF or image file.</FormDescription><FormMessage /></FormItem> )} />
