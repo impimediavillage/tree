@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon, Plus } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -68,6 +68,9 @@ export default function AddTHCProductPage() {
   const [isStrainSelected, setIsStrainSelected] = useState(false);
   const [isStrainFinderSkipped, setIsStrainFinderSkipped] = useState(false);
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
+
+  const [zeroPercentEffects, setZeroPercentEffects] = useState<string[]>([]);
+  const [zeroPercentMedical, setZeroPercentMedical] = useState<string[]>([]);
   
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
@@ -128,6 +131,8 @@ export default function AddTHCProductPage() {
     });
     setIsStrainSelected(false);
     setIsStrainFinderSkipped(false);
+    setZeroPercentEffects([]);
+    setZeroPercentMedical([]);
     setSelectedProductStream(stream);
     fetchInitialData(stream);
   };
@@ -139,11 +144,13 @@ export default function AddTHCProductPage() {
     form.setValue('strainType', strainData.type);
     form.setValue('description', strainData.description);
     form.setValue('thcContent', strainData.thc_level);
-    form.setValue('mostCommonTerpene', strainData.most_common_terpene);
+    form.setValue('mostCommonTerpene', strainData.mostCommonTerpene);
     
     // The processed arrays are now coming directly from the StrainFinder component
     form.setValue('effects', strainData.effects || []);
     form.setValue('medicalUses', strainData.medical || []);
+    setZeroPercentEffects(strainData.zeroPercentEffects || []);
+    setZeroPercentMedical(strainData.zeroPercentMedical || []);
     
     const autoFlavors = extractFlavorsFromDescription(strainData.description);
     const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
@@ -214,12 +221,18 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
   
-  const showCategorySelector = 
-    (selectedProductStream === 'CBD' && (isStrainSelected || isStrainFinderSkipped)) ||
-    (selectedProductStream === 'THC' && watchStickerOptIn === 'no') ||
-    (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (isStrainSelected || isStrainFinderSkipped));
-
+  const showStickerOptIn = selectedProductStream === 'THC';
+  const showStrainFinder = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn !== 'no');
+  const showCategorySelector = (selectedProductStream === 'CBD' && (isStrainSelected || isStrainFinderSkipped)) || (selectedProductStream === 'THC' && (isStrainSelected || isStrainFinderSkipped));
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
+
+  const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
+    if (!name) return;
+    const currentValues = form.getValues(type) || [];
+    if (currentValues.some(item => item.name === name)) return; // Avoid duplicates
+    form.setValue(type, [...currentValues, { name, percentage: '0' }]);
+  };
+
 
   if (authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
@@ -247,7 +260,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {selectedProductStream === 'THC' && (
+          {showStickerOptIn && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -275,19 +288,7 @@ export default function AddTHCProductPage() {
               </Card>
           )}
 
-          {selectedProductStream === 'CBD' && (
-            <div className="animate-fade-in-scale-up">
-              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
-            </div>
-          )}
-
-          {selectedProductStream === 'THC' && watchStickerOptIn === 'no' && (
-             <div className="animate-fade-in-scale-up">
-              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
-            </div>
-          )}
-          
-          {selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (
+          {showStrainFinder && (
             <div className="animate-fade-in-scale-up">
               <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
             </div>
@@ -303,9 +304,10 @@ export default function AddTHCProductPage() {
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
                           if (!Array.isArray(items)) return null;
 
-                          const lastItem = items.length > 0 ? items[items.length - 1] : null;
+                           const lastItem = items.length > 0 ? items[items.length - 1] : null;
                           const imageUrl = (typeof lastItem === 'object' && lastItem !== null && lastItem.imageUrl) ? lastItem.imageUrl : null;
                           const subOptions = imageUrl ? items.slice(0, -1) : [...items];
+
 
                           return (
                               <div key={categoryName} className="flex flex-col gap-2">
@@ -366,7 +368,17 @@ export default function AddTHCProductPage() {
                   <div className="space-y-4">
                       <FormField control={form.control} name="effects" render={({ field }) => ( 
                           <FormItem>
-                              <FormLabel>Effects</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <FormLabel>Effects</FormLabel>
+                                {zeroPercentEffects.length > 0 && (
+                                    <Select onValueChange={(value) => handleAddAttribute('effects', value)}>
+                                        <SelectTrigger className="h-7 w-auto text-xs px-2"><Plus className="h-3 w-3 mr-1" /> Add Effect</SelectTrigger>
+                                        <SelectContent>
+                                            {zeroPercentEffects.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                              </div>
                               <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
                               <FormMessage />
                           </FormItem> 
@@ -380,7 +392,17 @@ export default function AddTHCProductPage() {
                       )} />
                       <FormField control={form.control} name="medicalUses" render={({ field }) => ( 
                           <FormItem>
-                              <FormLabel>Medical Uses</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <FormLabel>Medical Uses</FormLabel>
+                                {zeroPercentMedical.length > 0 && (
+                                     <Select onValueChange={(value) => handleAddAttribute('medicalUses', value)}>
+                                        <SelectTrigger className="h-7 w-auto text-xs px-2"><Plus className="h-3 w-3 mr-1" /> Add Medical Use</SelectTrigger>
+                                        <SelectContent>
+                                            {zeroPercentMedical.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                              </div>
                               <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
                               <FormMessage />
                           </FormItem>
