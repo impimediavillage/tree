@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, Check, SkipForward } from 'lucide-react';
-import { db, functions } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -68,7 +68,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   
   const handleSelectStrain = () => {
     if (selectedStrain) {
-        const processAttributes = (attributes: Record<string, string | null>): { withPercentage: ProductAttribute[], withoutPercentage: string[] } => {
+        // This function processes the raw Firestore document into structured arrays
+        const processAttributes = (attributes: Record<string, string | null> | undefined): { withPercentage: ProductAttribute[], withoutPercentage: string[] } => {
             const withPercentage: ProductAttribute[] = [];
             const withoutPercentage: string[] = [];
 
@@ -78,7 +79,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
                 const name = toTitleCase(key);
                 const value = attributes[key];
                 
-                if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== '0%') {
+                // Check if value is a string and not "0%" or empty
+                if (value && typeof value === 'string' && value.trim() && value.trim() !== '0%') {
                     withPercentage.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
                 } else {
                     withoutPercentage.push(name);
@@ -86,14 +88,33 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
             }
             return { withPercentage, withoutPercentage };
         };
+
+        const flavorKeywords = ['earthy', 'sweet', 'citrus', 'pine', 'skunky', 'grape', 'woody', 'diesel', 'berry', 'lemon', 'pungent', 'flowery', 'spicy', 'herbal', 'orange', 'vanilla', 'nutty', 'minty', 'honey', 'lavender', 'fruity'];
+        const extractFlavors = (name: string, description: string): string[] => {
+            const foundFlavors = new Set<string>();
+            const textToSearch = `${name} ${description}`.toLowerCase();
+            flavorKeywords.forEach(flavor => {
+                if (textToSearch.includes(flavor)) {
+                    foundFlavors.add(toTitleCase(flavor));
+                }
+            });
+            return Array.from(foundFlavors);
+        };
         
-        const { withPercentage: effects, withoutPercentage: zeroPercentEffects } = processAttributes(selectedStrain.effects);
-        const { withPercentage: medicalUses, withoutPercentage: zeroPercentMedical } = processAttributes(selectedStrain.medical);
+        const { withPercentage: activeEffects, withoutPercentage: zeroPercentEffects } = processAttributes(selectedStrain.effects);
+        const { withPercentage: activeMedicalUses, withoutPercentage: zeroPercentMedical } = processAttributes(selectedStrain.medical);
+        const extractedFlavors = extractFlavors(selectedStrain.name || '', selectedStrain.description || '');
+        const combinedFlavors = Array.from(new Set([...(selectedStrain.flavor || []), ...extractedFlavors]));
 
         onStrainSelect({
-            ...selectedStrain,
-            effects,
-            medicalUses,
+            name: selectedStrain.name,
+            strainType: selectedStrain.type,
+            description: selectedStrain.description,
+            thcContent: selectedStrain.thc_level,
+            mostCommonTerpene: selectedStrain.most_common_terpene,
+            effects: activeEffects,
+            medicalUses: activeMedicalUses,
+            flavors: combinedFlavors,
             zeroPercentEffects,
             zeroPercentMedical,
         });
