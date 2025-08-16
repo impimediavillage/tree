@@ -38,10 +38,10 @@ export function MultiInputTags({
   
   const processedValue: ProductAttribute[] = React.useMemo(() => {
     if (isAttributeType) {
-      // Ensure every item is an object, even if it's passed incorrectly
+      // Ensure every item is an object and has a valid percentage
       return (value as any[]).map(item =>
         typeof item === 'string'
-          ? { name: item, percentage: '1%' } // Convert strings to objects if needed
+          ? { name: item, percentage: '1%' } // Default if string is passed
           : { name: item.name, percentage: item.percentage || '1%' }
       );
     }
