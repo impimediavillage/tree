@@ -215,7 +215,7 @@ export default function AddTHCProductPage() {
   ];
 
   const showOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = showOptInSection && watchStickerOptIn !== null;
+  const showStrainFinder = (showOptInSection && watchStickerOptIn !== null) || (selectedProductStream === 'CBD');
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
   
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
@@ -258,32 +258,36 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showOptInSection && (
-              <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
-                  <CardHeader>
-                      <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
-                      <CardDescription className="text-orange-700/80">Opt-in to include this product in our exclusive sticker promotion. Customers buy a sticker design and get a sample of your product for free!</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                      <FormField
-                          control={form.control}
-                          name="stickerProgramOptIn"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                      <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
-                                      <SelectContent>
-                                          <SelectItem value="yes">Yes, include my product</SelectItem>
-                                          <SelectItem value="no">No, this is a standard product</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
-                  </CardContent>
-              </Card>
+          {selectedProductStream === 'THC' && (
+            <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3 text-orange-800">
+                  <Gift className="text-yellow-500 fill-yellow-400" />The Triple S (Strain-Sticker-Sample) Club
+                </CardTitle>
+                <CardDescription className="text-orange-700/80">
+                  Opt-in to include this product in our exclusive sticker promotion. Customers buy a sticker design and get a sample of your product for free!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="stickerProgramOptIn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="yes">Yes, include my product</SelectItem>
+                          <SelectItem value="no">No, this is a standard product</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
           )}
 
           {showStrainFinder && (
@@ -357,7 +361,7 @@ export default function AddTHCProductPage() {
                   
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
-                   <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                  <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
                         <p className="font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5"><Info className="h-4 w-4" /> Percentage Key:</p>
                         <p className="text-muted-foreground leading-snug">
                             Indicates the reported likelihood of an effect or its potential as a medical aid.
