@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -25,6 +24,10 @@ const toTitleCase = (str: string) => {
     if (!str) return '';
     return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
+
+const MEDICAL_USE_FIELDS = [ "stress", "pain", "depression", "anxiety", "insomnia", "ptsd", "fatigue", "lack_of_appetite", "nausea", "headaches", "bipolar_disorder", "cancer", "cramps", "gastrointestinal_disorder", "inflammation", "muscle_spasms", "eye_pressure", "migraines", "asthma", "anorexia", "arthritis", "add/adhd", "muscular_dystrophy", "hypertension", "glaucoma", "pms", "seizures", "spasticity", "spinal_cord_injury", "fibromyalgia", "crohn's_disease", "phantom_limb_pain", "epilepsy", "multiple_sclerosis", "parkinson's", "tourette's_syndrome", "alzheimer's", "hiv/aids", "tinnitus" ];
+const EFFECT_FIELDS = [ "relaxed", "happy", "euphoric", "uplifted", "sleepy", "dry_mouth", "dry_eyes", "dizzy", "paranoid", "anxious", "creative", "energetic", "focused", "giggly", "tingly", "aroused", "hungry", "talkative" ];
+
 
 export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   const { toast } = useToast();
@@ -71,23 +74,20 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   
   const handleSelectStrain = () => {
     if (selectedStrain) {
-        const processAttributes = (attributes: Record<string, string | null> | undefined): { active: ProductAttribute[], inactive: string[] } => {
+        const processAttributes = (fieldList: string[]): { active: ProductAttribute[], inactive: string[] } => {
             const active: ProductAttribute[] = [];
             const inactive: string[] = [];
-            if (!attributes || typeof attributes !== 'object') return { active, inactive };
 
-            for (const key in attributes) {
-                if (Object.prototype.hasOwnProperty.call(attributes, key)) {
-                    const name = toTitleCase(key);
-                    const value = attributes[key];
-                    
-                    if (value && typeof value === 'string' && value.trim() && value.trim() !== '0%') {
-                        active.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
-                    } else {
-                        inactive.push(name);
-                    }
+            fieldList.forEach(field => {
+                const name = toTitleCase(field);
+                const value = selectedStrain[field];
+                
+                if (value && typeof value === 'string' && value.trim() && value.trim() !== '0%') {
+                    active.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
+                } else {
+                    inactive.push(name);
                 }
-            }
+            });
             return { active, inactive };
         };
 
@@ -103,8 +103,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
             return Array.from(foundFlavors);
         };
         
-        const { active: activeEffects, inactive: inactiveEffects } = processAttributes(selectedStrain.effects);
-        const { active: activeMedicalUses, inactive: inactiveMedicalUses } = processAttributes(selectedStrain.medical);
+        const { active: activeEffects, inactive: inactiveEffects } = processAttributes(EFFECT_FIELDS);
+        const { active: activeMedicalUses, inactive: inactiveMedicalUses } = processAttributes(MEDICAL_USE_FIELDS);
         
         const extractedFlavors = extractFlavors(selectedStrain.name || '', selectedStrain.description || '');
         const combinedFlavors = Array.from(new Set([...(selectedStrain.flavor || []), ...extractedFlavors]));
@@ -124,18 +124,17 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
     }
   };
   
-  const getFilteredAttributes = (attributes: Record<string, string | null> | undefined): ProductAttribute[] => {
-    if (!attributes) return [];
-    return Object.entries(attributes)
-        .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
-        .filter((attr: ProductAttribute) => {
-            const percValue = attr.percentage;
-            return percValue && percValue.trim() !== '0%' && percValue.trim() !== '' && percValue.trim() !== 'null';
-    });
+  const getFilteredAttributes = (fieldList: string[]): ProductAttribute[] => {
+    if (!selectedStrain) return [];
+    return fieldList.map(field => {
+      const name = toTitleCase(field);
+      const percentage = selectedStrain[field];
+      return { name, percentage: String(percentage || '0%') };
+    }).filter(attr => attr.percentage && attr.percentage.trim() !== '0%' && attr.percentage.trim() !== 'null' && attr.percentage.trim() !== '');
   };
 
-  const filteredEffects = React.useMemo(() => getFilteredAttributes(selectedStrain?.effects), [selectedStrain]);
-  const filteredMedical = React.useMemo(() => getFilteredAttributes(selectedStrain?.medical), [selectedStrain]);
+  const filteredEffects = React.useMemo(() => getFilteredAttributes(EFFECT_FIELDS), [selectedStrain]);
+  const filteredMedical = React.useMemo(() => getFilteredAttributes(MEDICAL_USE_FIELDS), [selectedStrain]);
   
   return (
     <Card className="border-primary/20 shadow-lg">
