@@ -17,6 +17,7 @@ interface MultiInputTagsProps {
   className?: string;
   disabled?: boolean;
   getTagClassName?: (tag: string) => string;
+  inputType?: 'string' | 'attribute';
 }
 
 export function MultiInputTags({
@@ -27,6 +28,7 @@ export function MultiInputTags({
   className,
   disabled,
   getTagClassName,
+  inputType = 'attribute',
 }: MultiInputTagsProps) {
   const [inputValue, setInputValue] = React.useState('');
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
@@ -39,7 +41,7 @@ export function MultiInputTags({
   const addTag = (tagToAdd: string) => {
     const newTagName = tagToAdd.trim();
     if (newTagName && !value.some(tag => tag.name === newTagName) && (!maxTags || value.length < maxTags)) {
-      onChange([...value, { name: newTagName, percentage: '1%' }]);
+      onChange([...value, { name: newTagName, percentage: inputType === 'attribute' ? '1%' : '' }]);
     }
     setInputValue('');
   };
@@ -120,21 +122,25 @@ export function MultiInputTags({
               )}
             >
               <span>{tag.name}</span>
-              <span className="text-xs text-muted-foreground">(</span>
-              {editingIndex === index ? (
-                <Input 
-                  type="text"
-                  value={editingValue}
-                  onChange={handleEditChange}
-                  onKeyDown={(e) => handleEditKeyDown(e, index)}
-                  onBlur={() => finishEditing(index)}
-                  autoFocus
-                  className="w-8 h-4 text-xs p-0 m-0 text-center bg-transparent border-b border-primary focus:ring-0 focus:outline-none"
-                />
-              ) : (
-                <span onClick={() => !disabled && startEditing(index)} className={cn(!disabled && "cursor-pointer")}>{tag.percentage}</span>
+              {inputType === 'attribute' && (
+                <>
+                    <span className="text-xs text-muted-foreground">(</span>
+                    {editingIndex === index ? (
+                        <Input 
+                        type="text"
+                        value={editingValue}
+                        onChange={handleEditChange}
+                        onKeyDown={(e) => handleEditKeyDown(e, index)}
+                        onBlur={() => finishEditing(index)}
+                        autoFocus
+                        className="w-8 h-4 text-xs p-0 m-0 text-center bg-transparent border-b border-primary focus:ring-0 focus:outline-none"
+                        />
+                    ) : (
+                        <span onClick={() => !disabled && startEditing(index)} className={cn(!disabled && "cursor-pointer")}>{tag.percentage}</span>
+                    )}
+                    <span className="text-xs text-muted-foreground">)</span>
+                </>
               )}
-              <span className="text-xs text-muted-foreground">)</span>
               {!disabled && (
                 <button
                   type="button"

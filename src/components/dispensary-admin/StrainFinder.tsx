@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
 
 interface StrainFinderProps {
-  onStrainSelect: (strain: any) => void;
+  onStrainSelect: (strainData: any) => void;
   onSkip?: () => void;
 }
 
@@ -70,24 +70,25 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   
   const handleSelectStrain = () => {
     if (selectedStrain) {
-        const processAttributes = (attributes: Record<string, string>): { withPercentage: ProductAttribute[], withoutPercentage: string[] } => {
+        const processAttributes = (attributes: Record<string, string | null>): { withPercentage: ProductAttribute[], withoutPercentage: string[] } => {
             const withPercentage: ProductAttribute[] = [];
             const withoutPercentage: string[] = [];
 
             if (!attributes) return { withPercentage, withoutPercentage };
 
-            for (const [key, value] of Object.entries(attributes)) {
+            for (const key of Object.keys(attributes)) {
                 const name = toTitleCase(key);
-                const percentage = String(value).trim();
-                if (percentage && percentage !== '0' && percentage !== '0%') {
-                    withPercentage.push({ name, percentage: percentage.endsWith('%') ? percentage : `${percentage}%` });
+                const value = attributes[key];
+                
+                if (value && typeof value === 'string' && value.trim() !== '' && value.trim() !== '0%') {
+                    withPercentage.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
                 } else {
                     withoutPercentage.push(name);
                 }
             }
             return { withPercentage, withoutPercentage };
         };
-
+        
         const { withPercentage: effects, withoutPercentage: zeroPercentEffects } = processAttributes(selectedStrain.effects);
         const { withPercentage: medicalUses, withoutPercentage: zeroPercentMedical } = processAttributes(selectedStrain.medical);
 
@@ -107,25 +108,18 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
     medical: [ "bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800", "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800" ]
   };
 
-  const filteredEffects = React.useMemo(() => {
-    if (!selectedStrain?.effects) return [];
-    return Object.entries(selectedStrain.effects)
+  const getFilteredAttributes = (attributes: Record<string, string | null> | undefined): ProductAttribute[] => {
+    if (!attributes) return [];
+    return Object.entries(attributes)
         .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
-        .filter((eff: ProductAttribute) => {
-            const percValue = eff.percentage;
-            return percValue && percValue.trim() !== '0%' && percValue.trim() !== '';
+        .filter((attr: ProductAttribute) => {
+            const percValue = attr.percentage;
+            return percValue && percValue.trim() !== '0%' && percValue.trim() !== '' && percValue.trim() !== 'null';
     });
-  }, [selectedStrain]);
+  };
 
-  const filteredMedical = React.useMemo(() => {
-    if (!selectedStrain?.medical) return [];
-    return Object.entries(selectedStrain.medical)
-        .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
-        .filter((med: ProductAttribute) => {
-            const percValue = med.percentage;
-            return percValue && percValue.trim() !== '0%' && percValue.trim() !== '';
-    });
-  }, [selectedStrain]);
+  const filteredEffects = React.useMemo(() => getFilteredAttributes(selectedStrain?.effects), [selectedStrain]);
+  const filteredMedical = React.useMemo(() => getFilteredAttributes(selectedStrain?.medical), [selectedStrain]);
   
   return (
     <Card className="border-primary/20 shadow-lg">
@@ -222,7 +216,7 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
                                     </div>
                                 </div>
                             )}
-                            {selectedStrain.flavor?.length > 0 && <Separator/>}
+                            {selectedStrain.flavor && Array.isArray(selectedStrain.flavor) && selectedStrain.flavor.length > 0 && <Separator/>}
                             {selectedStrain.flavor && Array.isArray(selectedStrain.flavor) && selectedStrain.flavor.length > 0 && (
                                 <div>
                                     <h4 className="font-semibold text-lg flex items-center gap-2"><Leaf className="h-5 w-5 text-primary"/>Flavors</h4>
