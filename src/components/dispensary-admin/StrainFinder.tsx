@@ -77,11 +77,21 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
         const medical: ProductAttribute[] = Object.entries(selectedStrain.medical || {})
             .filter(([, value]) => String(value).trim() !== '' && String(value).trim() !== '0%')
             .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
+
+        const zeroPercentEffects = Object.entries(selectedStrain.effects || {})
+            .filter(([, value]) => String(value).trim() === '' || String(value).trim() === '0%')
+            .map(([key]) => toTitleCase(key.replace(/_/g, ' ')));
+        
+        const zeroPercentMedical = Object.entries(selectedStrain.medical || {})
+            .filter(([, value]) => String(value).trim() === '' || String(value).trim() === '0%')
+            .map(([key]) => toTitleCase(key.replace(/_/g, ' ')));
             
         onStrainSelect({
             ...selectedStrain,
-            effects, // Pass the processed array
-            medical, // Pass the processed array
+            effects,
+            medical,
+            zeroPercentEffects,
+            zeroPercentMedical,
         });
     }
   };
