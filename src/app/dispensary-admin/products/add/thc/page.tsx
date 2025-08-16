@@ -320,12 +320,12 @@ export default function AddTHCProductPage() {
                               <div key={categoryName} className="flex flex-col gap-2">
                                   <Card 
                                       onClick={() => handleCategorySelect(categoryName)} 
-                                      className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
+                                      className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
-                                      <CardHeader className="p-0">
-                                          <div className="relative aspect-video w-full bg-muted rounded-t-lg overflow-hidden">
+                                      <CardHeader className="p-0 flex-grow">
+                                          <div className="relative aspect-[4/3] w-full bg-muted">
                                               {imageUrl ? (
-                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" className="transition-transform group-hover:scale-105 p-2" data-ai-hint={`category ${categoryName}`} />
+                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
                                               ) : (
                                                   <div className="w-full h-full flex items-center justify-center">
                                                       <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
@@ -333,7 +333,7 @@ export default function AddTHCProductPage() {
                                               )}
                                           </div>
                                       </CardHeader>
-                                      <CardContent className="p-3 mt-auto">
+                                      <CardContent className="p-3">
                                           <CardTitle className="text-center text-base">{categoryName}</CardTitle>
                                       </CardContent>
                                   </Card>
