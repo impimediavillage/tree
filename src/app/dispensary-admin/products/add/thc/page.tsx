@@ -50,7 +50,6 @@ export default function AddTHCProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
   
   const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any>>({});
-  const [isStrainFinderSkipped, setIsStrainFinderSkipped] = useState(false);
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
 
   const [zeroPercentEffects, setZeroPercentEffects] = useState<string[]>([]);
@@ -59,6 +58,7 @@ export default function AddTHCProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
+  const [showStrainFinder, setShowStrainFinder] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
 
   const form = useForm<ProductFormData>({
@@ -116,7 +116,7 @@ export default function AddTHCProductPage() {
       stickerProgramOptIn: null,
     });
     setShowCategorySelector(false);
-    setIsStrainFinderSkipped(false);
+    setShowStrainFinder(false);
     setZeroPercentEffects([]);
     setZeroPercentMedical([]);
     setSelectedProductStream(stream);
@@ -144,7 +144,6 @@ export default function AddTHCProductPage() {
   };
 
   const handleSkipStrainFinder = () => {
-    setIsStrainFinderSkipped(true);
     setShowCategorySelector(true);
   }
   
@@ -214,8 +213,6 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
 
-  const showOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = (showOptInSection && watchStickerOptIn !== null) || (selectedProductStream === 'CBD');
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
   
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
@@ -230,6 +227,15 @@ export default function AddTHCProductPage() {
         setZeroPercentMedical(prev => prev.filter(item => item !== name));
     }
   };
+  
+  // New conditional rendering logic
+  useEffect(() => {
+    if (watchStickerOptIn === 'yes' || watchStickerOptIn === 'no') {
+      setShowStrainFinder(true);
+    } else {
+      setShowStrainFinder(false);
+    }
+  }, [watchStickerOptIn]);
 
 
   if (authLoading) {
