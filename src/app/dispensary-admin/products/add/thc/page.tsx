@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -58,6 +58,7 @@ export default function AddTHCProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
+  const [showOptInSection, setShowOptInSection] = useState(false);
   const [showStrainFinder, setShowStrainFinder] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
 
@@ -120,9 +121,16 @@ export default function AddTHCProductPage() {
     setZeroPercentEffects([]);
     setZeroPercentMedical([]);
     setSelectedProductStream(stream);
+
+    if (stream === 'THC') {
+        setShowOptInSection(true);
+    } else {
+        setShowOptInSection(false);
+        setShowStrainFinder(true); // Directly show strain finder for CBD
+    }
+    
     fetchInitialData(stream);
   };
-  
   
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
@@ -153,8 +161,8 @@ export default function AddTHCProductPage() {
   };
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser) {
-      toast({ title: "Error", description: "Cannot submit without dispensary data.", variant: "destructive" });
+    if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
+      toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
@@ -179,13 +187,13 @@ export default function AddTHCProductPage() {
 
         const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
         
-        const finalData = {
-            ...data,
-            flavors: data.flavors || [],
-        };
+        // Sanitize data: convert undefined to null
+        const sanitizedData = Object.fromEntries(
+            Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
+        );
 
         const productData: Omit<ProductType, 'id'> = {
-            ...finalData,
+            ...(sanitizedData as ProductFormData),
             dispensaryId: currentUser.dispensaryId!,
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
@@ -197,8 +205,11 @@ export default function AddTHCProductPage() {
             imageUrl: uploadedImageUrls[0] || null,
             labTestReportUrl: uploadedLabTestUrl,
         };
-        await addDoc(collection(db, 'products'), productData);
-        toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
+
+        const collectionName = currentDispensary.dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+        await addDoc(collection(db, collectionName), productData);
+
+        toast({ title: "Success!", description: `Product "${data.name}" has been created in ${collectionName}.` });
         router.push('/dispensary-admin/products');
     } catch (error) {
         console.error("Error creating product:", error);
@@ -264,7 +275,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {selectedProductStream === 'THC' && (
+          {showOptInSection && (
             <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-orange-800">
@@ -322,8 +333,8 @@ export default function AddTHCProductPage() {
                                       onClick={() => handleCategorySelect(categoryName)} 
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
-                                      <CardHeader className="p-0 flex-grow">
-                                          <div className="relative aspect-[4/3] w-full bg-muted">
+                                      <CardHeader className="p-0 flex-grow h-40">
+                                          <div className="relative h-full w-full bg-muted">
                                               {imageUrl ? (
                                                   <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
                                               ) : (
