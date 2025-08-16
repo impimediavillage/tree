@@ -71,7 +71,7 @@
     },
     {
       "collectionGroup": "products",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "dispensaryId", "order": "ASCENDING" },
         { "fieldPath": "name", "order": "ASCENDING" }
@@ -79,7 +79,7 @@
     },
     {
       "collectionGroup": "products",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "dispensaryId", "order": "ASCENDING" },
         { "fieldPath": "category", "order": "ASCENDING" },
