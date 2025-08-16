@@ -50,7 +50,6 @@ export default function AddTHCProductPage() {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
   
   const [deliveryMethods, setDeliveryMethods] = useState<Record<string, any>>({});
-  const [isStrainSelected, setIsStrainSelected] = useState(false);
   const [isStrainFinderSkipped, setIsStrainFinderSkipped] = useState(false);
   const [selectedProductStream, setSelectedProductStream] = useState<ProductStream | null>(null);
 
@@ -60,6 +59,8 @@ export default function AddTHCProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -114,7 +115,7 @@ export default function AddTHCProductPage() {
       strain: '', strainType: '', homeGrow: [], feedingType: undefined,
       stickerProgramOptIn: null,
     });
-    setIsStrainSelected(false);
+    setShowCategorySelector(false);
     setIsStrainFinderSkipped(false);
     setZeroPercentEffects([]);
     setZeroPercentMedical([]);
@@ -137,10 +138,15 @@ export default function AddTHCProductPage() {
 
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
+    setShowCategorySelector(true);
 
-    setIsStrainSelected(true);
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
   };
+
+  const handleSkipStrainFinder = () => {
+    setIsStrainFinderSkipped(true);
+    setShowCategorySelector(true);
+  }
   
   const handleCategorySelect = (categoryName: string) => {
       form.setValue('category', categoryName, { shouldValidate: true });
@@ -210,7 +216,6 @@ export default function AddTHCProductPage() {
 
   const showOptInSection = selectedProductStream === 'THC';
   const showStrainFinder = selectedProductStream === 'THC' && watchStickerOptIn !== null;
-  const showCategorySelector = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn === 'no' && (isStrainSelected || isStrainFinderSkipped));
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
   
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
@@ -283,7 +288,7 @@ export default function AddTHCProductPage() {
 
           {showStrainFinder && (
             <div className="animate-fade-in-scale-up">
-              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
+              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={handleSkipStrainFinder} />
             </div>
           )}
           
