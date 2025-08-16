@@ -70,7 +70,7 @@ export default function AddTHCProductPage() {
       labTested: false, labTestReportUrl: null,
       currency: currentDispensary?.currency || 'ZAR',
       effects: [], flavors: [], medicalUses: [],
-      stickerProgramOptIn: 'no',
+      stickerProgramOptIn: null,
     },
   });
 
@@ -112,7 +112,7 @@ export default function AddTHCProductPage() {
       effects: [], flavors: [], medicalUses: [],
       thcContent: '', cbdContent: '', mostCommonTerpene: '',
       strain: '', strainType: '', homeGrow: [], feedingType: undefined,
-      stickerProgramOptIn: 'no',
+      stickerProgramOptIn: null,
     });
     setIsStrainSelected(false);
     setIsStrainFinderSkipped(false);
@@ -207,12 +207,12 @@ export default function AddTHCProductPage() {
     { key: 'THC', title: 'Cannibinoid (other)', icon: Flame },
     { key: 'CBD', title: 'CBD', icon: Leaf },
   ];
-  
+
   const showOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = selectedProductStream === 'THC' && (watchStickerOptIn === 'yes' || (watchStickerOptIn === 'no' && !isStrainSelected && !isStrainFinderSkipped));
+  const showStrainFinder = selectedProductStream === 'THC' && watchStickerOptIn !== null;
   const showCategorySelector = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn === 'no' && (isStrainSelected || isStrainFinderSkipped));
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
-
+  
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
     if (!name) return;
     const currentValues = form.getValues(type) || [];
@@ -253,7 +253,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showOptInSection && watchStickerOptIn === null && (
+          {showOptInSection && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
@@ -266,7 +266,7 @@ export default function AddTHCProductPage() {
                           render={({ field }) => (
                               <FormItem>
                                   <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
-                                  <Select onValueChange={field.onChange} value={field.value ?? 'no'}>
+                                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                       <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
                                       <SelectContent>
                                           <SelectItem value="yes">Yes, include my product</SelectItem>
@@ -297,7 +297,7 @@ export default function AddTHCProductPage() {
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
                           if (!Array.isArray(items)) return null;
                           const lastItem = items.length > 0 ? items[items.length - 1] : null;
-                          const isLastItemImageMap = typeof lastItem === 'object' && lastItem !== null && 'imageUrl' in lastItem;
+                          const isLastItemImageMap = typeof lastItem === 'object' && lastItem !== null && lastItem.hasOwnProperty('imageUrl');
                           const imageUrl = isLastItemImageMap ? lastItem.imageUrl : null;
                           const subOptions = isLastItemImageMap ? items.slice(0, -1) : [...items];
 
@@ -310,7 +310,7 @@ export default function AddTHCProductPage() {
                                       <CardHeader className="p-0">
                                           <div className="relative aspect-video w-full bg-muted rounded-t-lg overflow-hidden">
                                               {imageUrl ? (
-                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
+                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" className="transition-transform group-hover:scale-105 p-2" data-ai-hint={`category ${categoryName}`} />
                                               ) : (
                                                   <div className="w-full h-full flex items-center justify-center">
                                                       <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
