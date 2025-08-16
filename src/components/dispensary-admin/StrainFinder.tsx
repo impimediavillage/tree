@@ -23,7 +23,7 @@ interface StrainFinderProps {
 
 const toTitleCase = (str: string) => {
     if (!str) return '';
-    return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+    return str.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
 
 export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
@@ -77,14 +77,16 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
 
             if (!attributes || typeof attributes !== 'object') return { active, inactive };
 
-            for (const key of Object.keys(attributes)) {
-                const name = toTitleCase(key);
-                const value = attributes[key];
-                
-                if (value && typeof value === 'string' && value.trim() && value.trim() !== '0%') {
-                    active.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
-                } else {
-                    inactive.push(name);
+            for (const key in attributes) {
+                if (Object.prototype.hasOwnProperty.call(attributes, key)) {
+                    const name = toTitleCase(key);
+                    const value = attributes[key];
+                    
+                    if (value && typeof value === 'string' && value.trim() && !value.includes('0%')) {
+                        active.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
+                    } else {
+                        inactive.push(name);
+                    }
                 }
             }
             return { active, inactive };

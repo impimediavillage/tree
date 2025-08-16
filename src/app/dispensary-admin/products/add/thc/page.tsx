@@ -228,12 +228,12 @@ export default function AddTHCProductPage() {
     }
   };
   
-  // New conditional rendering logic
   useEffect(() => {
     if (watchStickerOptIn === 'yes' || watchStickerOptIn === 'no') {
       setShowStrainFinder(true);
     } else {
       setShowStrainFinder(false);
+      setShowCategorySelector(false); // Also hide category selector if opt-in is cleared
     }
   }, [watchStickerOptIn]);
 
@@ -367,7 +367,7 @@ export default function AddTHCProductPage() {
                   
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
-                  <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                    <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
                         <p className="font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5"><Info className="h-4 w-4" /> Percentage Key:</p>
                         <p className="text-muted-foreground leading-snug">
                             Indicates the reported likelihood of an effect or its potential as a medical aid.
