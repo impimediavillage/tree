@@ -141,14 +141,9 @@ export default function AddTHCProductPage() {
     form.setValue('thcContent', strainData.thc_level);
     form.setValue('mostCommonTerpene', strainData.most_common_terpene);
     
-    const effects: ProductAttribute[] = Object.entries(strainData.effects || {})
-        .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
-
-    const medical: ProductAttribute[] = Object.entries(strainData.medical || {})
-        .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
-
-    form.setValue('effects', effects.filter(e => parseInt(e.percentage, 10) > 0));
-    form.setValue('medicalUses', medical.filter(m => parseInt(m.percentage, 10) > 0));
+    // The processed arrays are now coming directly from the StrainFinder component
+    form.setValue('effects', strainData.effects || []);
+    form.setValue('medicalUses', strainData.medical || []);
     
     const autoFlavors = extractFlavorsFromDescription(strainData.description);
     const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
@@ -220,7 +215,7 @@ export default function AddTHCProductPage() {
   ];
   
   const showCategorySelector = 
-    (selectedProductStream === 'CBD') ||
+    (selectedProductStream === 'CBD' && (isStrainSelected || isStrainFinderSkipped)) ||
     (selectedProductStream === 'THC' && watchStickerOptIn === 'no') ||
     (selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (isStrainSelected || isStrainFinderSkipped));
 
@@ -286,6 +281,12 @@ export default function AddTHCProductPage() {
             </div>
           )}
 
+          {selectedProductStream === 'THC' && watchStickerOptIn === 'no' && (
+             <div className="animate-fade-in-scale-up">
+              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
+            </div>
+          )}
+          
           {selectedProductStream === 'THC' && watchStickerOptIn === 'yes' && (
             <div className="animate-fade-in-scale-up">
               <StrainFinder onStrainSelect={handleStrainSelect} onSkip={() => setIsStrainFinderSkipped(true)} />
@@ -302,16 +303,9 @@ export default function AddTHCProductPage() {
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
                           if (!Array.isArray(items)) return null;
 
-                          let imageUrl: string | null = null;
-                          let subOptions: string[] = [];
-
-                          const lastItem = items[items.length - 1];
-                          if (typeof lastItem === 'object' && lastItem !== null && lastItem.imageUrl) {
-                            imageUrl = lastItem.imageUrl;
-                            subOptions = items.slice(0, -1);
-                          } else {
-                            subOptions = [...items];
-                          }
+                          const lastItem = items.length > 0 ? items[items.length - 1] : null;
+                          const imageUrl = (typeof lastItem === 'object' && lastItem !== null && lastItem.imageUrl) ? lastItem.imageUrl : null;
+                          const subOptions = imageUrl ? items.slice(0, -1) : [...items];
 
                           return (
                               <div key={categoryName} className="flex flex-col gap-2">

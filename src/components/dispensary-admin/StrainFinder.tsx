@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check, SkipForward } from 'lucide-react';
 import { db, functions } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
@@ -29,7 +31,6 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   const [searchResults, setSearchResults] = React.useState<any[]>([]);
   const [selectedStrain, setSelectedStrain] = React.useState<any>(null);
   const [isSearching, setIsSearching] = React.useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = React.useState(false);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -63,13 +64,25 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
     }
   };
 
-  const handleStrainClick = async (strain: any) => {
+  const handleStrainClick = (strain: any) => {
     setSelectedStrain(strain);
   };
   
   const handleSelectStrain = () => {
     if (selectedStrain) {
-      onStrainSelect(selectedStrain);
+        const effects: ProductAttribute[] = Object.entries(selectedStrain.effects || {})
+            .filter(([, value]) => String(value).trim() !== '' && String(value).trim() !== '0%')
+            .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
+
+        const medical: ProductAttribute[] = Object.entries(selectedStrain.medical || {})
+            .filter(([, value]) => String(value).trim() !== '' && String(value).trim() !== '0%')
+            .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
+            
+        onStrainSelect({
+            ...selectedStrain,
+            effects, // Pass the processed array
+            medical, // Pass the processed array
+        });
     }
   };
   
@@ -84,8 +97,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
     return Object.entries(selectedStrain.effects)
         .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
         .filter((eff: ProductAttribute) => {
-            const percValue = parseInt(eff.percentage, 10);
-            return !isNaN(percValue) && percValue > 0;
+            const percValue = eff.percentage;
+            return percValue && percValue.trim() !== '0%' && percValue.trim() !== '';
     });
   }, [selectedStrain]);
 
@@ -94,8 +107,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
     return Object.entries(selectedStrain.medical)
         .map(([name, percentage]) => ({name: toTitleCase(name), percentage: String(percentage)}))
         .filter((med: ProductAttribute) => {
-            const percValue = parseInt(med.percentage, 10);
-            return !isNaN(percValue) && percValue > 0;
+            const percValue = med.percentage;
+            return percValue && percValue.trim() !== '0%' && percValue.trim() !== '';
     });
   }, [selectedStrain]);
   
@@ -166,12 +179,7 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
                     <ScrollArea className="h-full">
                         {selectedStrain ? (
                         <div className="p-4 space-y-4">
-                            {isGeneratingImage ? (
-                                <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4 flex items-center justify-center">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    <p className="ml-2 text-muted-foreground">Generating image...</p>
-                                </div>
-                            ) : selectedStrain.img_url && selectedStrain.img_url !== 'none' ? (
+                            {selectedStrain.img_url && selectedStrain.img_url !== 'none' ? (
                                 <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted mb-4">
                                     <Image src={selectedStrain.img_url} alt={`Image of ${selectedStrain.name}`} layout="fill" style={{objectFit:"cover"}} data-ai-hint={`cannabis strain ${selectedStrain.name}`} />
                                 </div>
@@ -200,11 +208,11 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
                                 </div>
                             )}
                             {selectedStrain.flavor?.length > 0 && <Separator/>}
-                            {selectedStrain.flavor?.length > 0 && (
+                            {selectedStrain.flavor && Array.isArray(selectedStrain.flavor) && selectedStrain.flavor.length > 0 && (
                                 <div>
                                     <h4 className="font-semibold text-lg flex items-center gap-2"><Leaf className="h-5 w-5 text-primary"/>Flavors</h4>
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {selectedStrain.flavor?.map((flav: string, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.flavor[i % badgeColors.flavor.length])}>{flav}</Badge>)}
+                                        {selectedStrain.flavor.map((flav: string, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.flavor[i % badgeColors.flavor.length])}>{flav}</Badge>)}
                                     </div>
                                 </div>
                             )}
