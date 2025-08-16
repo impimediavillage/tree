@@ -74,7 +74,6 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
         const processAttributes = (attributes: Record<string, string | null> | undefined): { active: ProductAttribute[], inactive: string[] } => {
             const active: ProductAttribute[] = [];
             const inactive: string[] = [];
-
             if (!attributes || typeof attributes !== 'object') return { active, inactive };
 
             for (const key in attributes) {
@@ -82,7 +81,7 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
                     const name = toTitleCase(key);
                     const value = attributes[key];
                     
-                    if (value && typeof value === 'string' && value.trim() && !value.includes('0%')) {
+                    if (value && typeof value === 'string' && value.trim() && value.trim() !== '0%') {
                         active.push({ name, percentage: value.endsWith('%') ? value : `${value}%` });
                     } else {
                         inactive.push(name);
@@ -104,8 +103,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
             return Array.from(foundFlavors);
         };
         
-        const { active: activeEffects, inactive: zeroPercentEffects } = processAttributes(selectedStrain.effects);
-        const { active: activeMedicalUses, inactive: zeroPercentMedical } = processAttributes(selectedStrain.medical);
+        const { active: activeEffects, inactive: inactiveEffects } = processAttributes(selectedStrain.effects);
+        const { active: activeMedicalUses, inactive: inactiveMedicalUses } = processAttributes(selectedStrain.medical);
         
         const extractedFlavors = extractFlavors(selectedStrain.name || '', selectedStrain.description || '');
         const combinedFlavors = Array.from(new Set([...(selectedStrain.flavor || []), ...extractedFlavors]));
@@ -119,8 +118,8 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
             effects: activeEffects,
             medicalUses: activeMedicalUses,
             flavors: combinedFlavors,
-            zeroPercentEffects,
-            zeroPercentMedical,
+            zeroPercentEffects: inactiveEffects,
+            zeroPercentMedical: inactiveMedicalUses,
         });
     }
   };
