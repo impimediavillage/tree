@@ -333,16 +333,16 @@ export default function AddTHCProductPage() {
                                       onClick={() => handleCategorySelect(categoryName)} 
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
-                                      <CardHeader className="p-0 flex-grow h-40">
-                                          <div className="relative h-full w-full bg-muted">
-                                              {imageUrl ? (
-                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
-                                              ) : (
-                                                  <div className="w-full h-full flex items-center justify-center">
-                                                      <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
-                                                  </div>
-                                              )}
-                                          </div>
+                                      <CardHeader className="p-0 flex-grow h-48 relative">
+                                        <div className="relative h-full w-full bg-muted">
+                                          {imageUrl ? (
+                                              <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
+                                          ) : (
+                                              <div className="w-full h-full flex items-center justify-center">
+                                                  <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
+                                              </div>
+                                          )}
+                                        </div>
                                       </CardHeader>
                                       <CardContent className="p-3">
                                           <CardTitle className="text-center text-base">{categoryName}</CardTitle>
@@ -394,6 +394,57 @@ export default function AddTHCProductPage() {
                       <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                   </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="growingMedium"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Growing Medium</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select growing medium" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Organic Soil">Organic Soil</SelectItem>
+                                    <SelectItem value="Hydroponic">Hydroponic</SelectItem>
+                                    <SelectItem value="Coco Coir">Coco Coir</SelectItem>
+                                    <SelectItem value="Aeroponic">Aeroponic</SelectItem>
+                                    <SelectItem value="Living Soil">Living Soil</SelectItem>
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="feedingType"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Feeding Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select feeding type" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Organic feed in Pots">Organic feed in Pots</SelectItem>
+                                    <SelectItem value="Organic feed Hydro">Organic feed Hydro</SelectItem>
+                                    <SelectItem value="Chemical feed in Pots with flush">Chemical feed in Pots with flush</SelectItem>
+                                    <SelectItem value="Chemical feed hydro with flush">Chemical feed hydro with flush</SelectItem>
+                                    <SelectItem value="Organic & Chemical in Pots Flushed">Organic & Chemical in Pots Flushed</SelectItem>
+                                    <SelectItem value="Organic & Chemical hydro Flushed">Organic & Chemical hydro Flushed</SelectItem>
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
                   <div className="space-y-4">
                       <FormField control={form.control} name="effects" render={({ field }) => ( 
                           <FormItem>
