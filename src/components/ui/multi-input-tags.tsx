@@ -38,11 +38,14 @@ export function MultiInputTags({
   
   const processedValue: ProductAttribute[] = React.useMemo(() => {
     if (isAttributeType) {
-      return (value as ProductAttribute[] || []).map(item => ({
-        name: item.name,
-        percentage: item.percentage || '0%',
-      }));
+      // Ensure every item is an object, even if it's passed incorrectly
+      return (value as any[]).map(item =>
+        typeof item === 'string'
+          ? { name: item, percentage: '1%' } // Convert strings to objects if needed
+          : { name: item.name, percentage: item.percentage || '1%' }
+      );
     }
+    // If it's a string type, convert to object array for consistent internal handling
     return (value as string[] || []).map(item => ({ name: item, percentage: '' }));
   }, [value, isAttributeType]);
 
@@ -72,6 +75,7 @@ export function MultiInputTags({
   };
   
   const startEditing = (index: number) => {
+    if(disabled) return;
     setEditingIndex(index);
     setEditingValue((processedValue[index]?.percentage || '').replace('%', ''));
   };
@@ -85,7 +89,7 @@ export function MultiInputTags({
     const newPercentage = editingValue.trim() ? `${editingValue.trim()}%` : '0%';
     const updatedTags = [...processedValue];
     if(updatedTags[index]) {
-      updatedTags[index].percentage = newPercentage;
+      updatedTags[index]!.percentage = newPercentage;
     }
     onChange(updatedTags);
     setEditingIndex(null);
@@ -131,7 +135,7 @@ export function MultiInputTags({
               key={`${tag.name}-${index}`}
               variant="secondary"
               className={cn(
-                "flex items-center gap-1.5 pr-1.5 group border h-7",
+                "flex items-center gap-1.5 pr-1.5 group border h-7 text-sm", // Ensure consistent size and text
                 getTagClassName ? getTagClassName(tag.name) : 'border-border'
               )}
             >
@@ -150,8 +154,8 @@ export function MultiInputTags({
                         className="w-8 h-4 text-xs p-0 m-0 text-center bg-transparent border-b border-primary focus:ring-0 focus:outline-none"
                         />
                     ) : (
-                        <span onClick={() => !disabled && startEditing(index)} className={cn(!disabled && "cursor-pointer")}>
-                          {tag.percentage}
+                        <span onClick={() => startEditing(index)} className={cn(!disabled && "cursor-pointer")}>
+                          {tag.percentage || '0%'}
                         </span>
                     )}
                     <span className="text-xs text-muted-foreground">)</span>
