@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -31,6 +31,7 @@ import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -227,8 +228,8 @@ export default function AddTHCProductPage() {
   ];
   
   const showOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = selectedProductStream && (watchStickerOptIn === 'no' || selectedProductStream === 'CBD') && !isStrainSelected && !isStrainFinderSkipped;
-  const showCategorySelector = selectedProductStream && ( (watchStickerOptIn === 'no' || selectedProductStream === 'CBD') ? (isStrainSelected || isStrainFinderSkipped) : (watchStickerOptIn === 'yes') );
+  const showStrainFinder = selectedProductStream === 'THC' && watchStickerOptIn && !isStrainSelected && !isStrainFinderSkipped;
+  const showCategorySelector = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn && (isStrainSelected || isStrainFinderSkipped));
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
 
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
@@ -246,7 +247,7 @@ export default function AddTHCProductPage() {
 
 
   if (authLoading) {
-    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
+    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> ... </div> );
   }
 
   return (
@@ -370,6 +371,17 @@ export default function AddTHCProductPage() {
                   
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
+                   <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
+                        <p className="font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5"><Info className="h-4 w-4" /> Percentage Key:</p>
+                        <p className="text-muted-foreground leading-snug">
+                            Indicates the reported likelihood of an effect or its potential as a medical aid.
+                        </p>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                            <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
+                            <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
+                            <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
+                        </div>
+                    </div>
                   <div className="grid md:grid-cols-3 gap-4">
                       <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />

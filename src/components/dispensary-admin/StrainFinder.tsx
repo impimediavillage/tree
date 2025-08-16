@@ -11,12 +11,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, Check, SkipForward } from 'lucide-react';
 import { db, functions } from '@/lib/firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
+import { InfoDialog } from '../dialogs/InfoDialog';
 
 interface StrainFinderProps {
   onStrainSelect: (strainData: any) => void;
@@ -102,12 +100,6 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
     }
   };
   
-  const badgeColors = {
-    flavor: [ "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800", "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800", "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800" ],
-    effect: [ "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800", "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800", "bg-red-100 text-red-800", "bg-orange-100 text-orange-800" ],
-    medical: [ "bg-green-100 text-green-800", "bg-teal-100 text-teal-800", "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800", "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800" ]
-  };
-
   const getFilteredAttributes = (attributes: Record<string, string | null> | undefined): ProductAttribute[] => {
     if (!attributes) return [];
     return Object.entries(attributes)
@@ -194,37 +186,14 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
                                 </div>
                             ) : null}
                             <CardTitle>{selectedStrain.name}</CardTitle>
-                            <div>
-                                <h4 className="font-semibold text-lg flex items-center gap-2"><Info className="h-5 w-5 text-primary"/>Description</h4>
-                                <p className="text-muted-foreground mt-1 text-sm">{selectedStrain.description || "No description available."}</p>
+                             <div className="flex flex-wrap gap-2 justify-center">
+                                <InfoDialog title={`Description of ${selectedStrain.name}`} triggerText="Description" icon={Info}>
+                                    <p className="text-muted-foreground mt-1 text-sm">{selectedStrain.description || "No description available."}</p>
+                                </InfoDialog>
+                                <InfoDialog title={`Effects of ${selectedStrain.name}`} triggerText="Effects" items={filteredEffects} itemType="effect" icon={Sparkles} />
+                                <InfoDialog title={`Potential Medical Uses of ${selectedStrain.name}`} triggerText="Medical Uses" items={filteredMedical} itemType="medical" icon={Brain} />
+                                <InfoDialog title={`Flavors in ${selectedStrain.name}`} triggerText="Flavors" items={selectedStrain.flavor || []} itemType="flavor" icon={Leaf} />
                             </div>
-                            <Separator/>
-                            {filteredEffects.length > 0 && (
-                                <div>
-                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/>Common Effects</h4>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {filteredEffects.map((eff: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.effect[i % badgeColors.effect.length])}>{eff.name} ({eff.percentage})</Badge>)}
-                                    </div>
-                                </div>
-                            )}
-                            {filteredMedical.length > 0 && <Separator/>}
-                            {filteredMedical.length > 0 && (
-                                <div>
-                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Brain className="h-5 w-5 text-primary"/>Medical Uses</h4>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                    {filteredMedical.map((med: ProductAttribute, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.medical[i % badgeColors.medical.length])}>{med.name} ({med.percentage})</Badge>)}
-                                    </div>
-                                </div>
-                            )}
-                            {selectedStrain.flavor && Array.isArray(selectedStrain.flavor) && selectedStrain.flavor.length > 0 && <Separator/>}
-                            {selectedStrain.flavor && Array.isArray(selectedStrain.flavor) && selectedStrain.flavor.length > 0 && (
-                                <div>
-                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Leaf className="h-5 w-5 text-primary"/>Flavors</h4>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {selectedStrain.flavor.map((flav: string, i: number) => <Badge key={i} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors.flavor[i % badgeColors.flavor.length])}>{flav}</Badge>)}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                         ) : (
                         <div className="flex items-center justify-center h-full p-4 text-center text-muted-foreground">
