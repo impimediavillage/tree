@@ -1,2 +1,2 @@
-deploy #The Wellness tree
+#The Wellness tree
 THC CBD - Mushroom - Homeopathy  - Permaculture - Traditional Medicine AI advisor and store
