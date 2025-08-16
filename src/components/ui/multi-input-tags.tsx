@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X as XIcon, CornerDownLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { ProductAttribute } from '@/types';
 
 interface MultiInputTagsProps {
-  value: string[];
-  onChange: (value: string[]) => void;
+  value: ProductAttribute[];
+  onChange: (value: ProductAttribute[]) => void;
   placeholder?: string;
   maxTags?: number;
   className?: string;
@@ -21,22 +22,24 @@ interface MultiInputTagsProps {
 export function MultiInputTags({
   value = [],
   onChange,
-  placeholder = 'Add a tag...',
+  placeholder = 'Add an attribute...',
   maxTags,
   className,
   disabled,
   getTagClassName,
 }: MultiInputTagsProps) {
   const [inputValue, setInputValue] = React.useState('');
-
+  const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
+  const [editingValue, setEditingValue] = React.useState('');
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
   };
 
   const addTag = (tagToAdd: string) => {
-    const newTag = tagToAdd.trim();
-    if (newTag && !value.includes(newTag) && (!maxTags || value.length < maxTags)) {
-      onChange([...value, newTag]);
+    const newTagName = tagToAdd.trim();
+    if (newTagName && !value.some(tag => tag.name === newTagName) && (!maxTags || value.length < maxTags)) {
+      onChange([...value, { name: newTagName, percentage: '1%' }]);
     }
     setInputValue('');
   };
@@ -46,14 +49,41 @@ export function MultiInputTags({
       e.preventDefault();
       addTag(inputValue);
     } else if (e.key === 'Backspace' && !inputValue && value.length > 0) {
-      // Remove last tag on backspace if input is empty
       onChange(value.slice(0, -1));
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    onChange(value.filter(tag => tag !== tagToRemove));
+    onChange(value.filter(tag => tag.name !== tagToRemove));
   };
+  
+  const startEditing = (index: number) => {
+    setEditingIndex(index);
+    setEditingValue(value[index].percentage.replace('%', ''));
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingValue(e.target.value);
+  };
+  
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finishEditing(index);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditingIndex(null);
+    }
+  };
+  
+  const finishEditing = (index: number) => {
+    const newPercentage = editingValue.trim() ? `${editingValue.trim()}%` : '0%';
+    const updatedTags = [...value];
+    updatedTags[index].percentage = newPercentage;
+    onChange(updatedTags);
+    setEditingIndex(null);
+  };
+
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -82,20 +112,35 @@ export function MultiInputTags({
         <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed mt-2">
           {value.map((tag, index) => (
             <Badge
-              key={index}
+              key={`${tag.name}-${index}`}
               variant="secondary"
               className={cn(
-                "flex items-center gap-1.5 pr-1.5 group border",
-                getTagClassName ? getTagClassName(tag) : 'border-border'
+                "flex items-center gap-1.5 pr-1.5 group border h-7",
+                getTagClassName ? getTagClassName(tag.name) : 'border-border'
               )}
             >
-              {tag}
+              <span>{tag.name}</span>
+              <span className="text-xs text-muted-foreground">(</span>
+              {editingIndex === index ? (
+                <Input 
+                  type="text"
+                  value={editingValue}
+                  onChange={handleEditChange}
+                  onKeyDown={(e) => handleEditKeyDown(e, index)}
+                  onBlur={() => finishEditing(index)}
+                  autoFocus
+                  className="w-8 h-4 text-xs p-0 m-0 text-center bg-transparent border-b border-primary focus:ring-0 focus:outline-none"
+                />
+              ) : (
+                <span onClick={() => !disabled && startEditing(index)} className={cn(!disabled && "cursor-pointer")}>{tag.percentage}</span>
+              )}
+              <span className="text-xs text-muted-foreground">)</span>
               {!disabled && (
                 <button
                   type="button"
-                  onClick={() => removeTag(tag)}
+                  onClick={() => removeTag(tag.name)}
                   className="rounded-full opacity-50 group-hover:opacity-100 focus:opacity-100 outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  aria-label={`Remove ${tag}`}
+                  aria-label={`Remove ${tag.name}`}
                 >
                   <XIcon className="h-3 w-3" />
                 </button>

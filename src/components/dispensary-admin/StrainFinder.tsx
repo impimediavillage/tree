@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertTriangle, Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, X as XIcon, Check, SkipForward } from 'lucide-react';
+import { Info, Loader2, Search as SearchIcon, Leaf, Brain, Sparkles, Check, SkipForward } from 'lucide-react';
 import { db, functions } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy, limit, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { findStrainImage } from '@/ai/flows/generate-thc-promo-designs';
 import { useToast } from '@/hooks/use-toast';
@@ -70,26 +70,31 @@ export function StrainFinder({ onStrainSelect, onSkip }: StrainFinderProps) {
   
   const handleSelectStrain = () => {
     if (selectedStrain) {
-        const effects: ProductAttribute[] = Object.entries(selectedStrain.effects || {})
-            .filter(([, value]) => String(value).trim() !== '' && String(value).trim() !== '0%')
-            .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
+        const processAttributes = (attributes: Record<string, string>): { withPercentage: ProductAttribute[], withoutPercentage: string[] } => {
+            const withPercentage: ProductAttribute[] = [];
+            const withoutPercentage: string[] = [];
 
-        const medical: ProductAttribute[] = Object.entries(selectedStrain.medical || {})
-            .filter(([, value]) => String(value).trim() !== '' && String(value).trim() !== '0%')
-            .map(([key, value]) => ({ name: toTitleCase(key.replace(/_/g, ' ')), percentage: String(value) }));
+            if (!attributes) return { withPercentage, withoutPercentage };
 
-        const zeroPercentEffects = Object.entries(selectedStrain.effects || {})
-            .filter(([, value]) => String(value).trim() === '' || String(value).trim() === '0%')
-            .map(([key]) => toTitleCase(key.replace(/_/g, ' ')));
-        
-        const zeroPercentMedical = Object.entries(selectedStrain.medical || {})
-            .filter(([, value]) => String(value).trim() === '' || String(value).trim() === '0%')
-            .map(([key]) => toTitleCase(key.replace(/_/g, ' ')));
-            
+            for (const [key, value] of Object.entries(attributes)) {
+                const name = toTitleCase(key);
+                const percentage = String(value).trim();
+                if (percentage && percentage !== '0' && percentage !== '0%') {
+                    withPercentage.push({ name, percentage: percentage.endsWith('%') ? percentage : `${percentage}%` });
+                } else {
+                    withoutPercentage.push(name);
+                }
+            }
+            return { withPercentage, withoutPercentage };
+        };
+
+        const { withPercentage: effects, withoutPercentage: zeroPercentEffects } = processAttributes(selectedStrain.effects);
+        const { withPercentage: medicalUses, withoutPercentage: zeroPercentMedical } = processAttributes(selectedStrain.medical);
+
         onStrainSelect({
             ...selectedStrain,
             effects,
-            medical,
+            medicalUses,
             zeroPercentEffects,
             zeroPercentMedical,
         });

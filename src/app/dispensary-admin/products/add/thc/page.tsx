@@ -39,19 +39,20 @@ type ProductStream = 'THC' | 'CBD';
 
 const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 
-const extractFlavorsFromDescription = (description: string): string[] => {
+const extractFlavorsFromName = (name: string): string[] => {
     const flavorKeywords = ['earthy', 'sweet', 'citrus', 'pine', 'skunky', 'grape', 'woody', 'diesel', 'berry', 'lemon', 'pungent', 'flowery', 'spicy', 'herbal', 'orange', 'vanilla', 'nutty', 'minty', 'honey', 'lavender', 'fruity'];
     const foundFlavors = new Set<string>();
-    const lowercasedDescription = description.toLowerCase();
+    const lowercasedName = name.toLowerCase();
     
     flavorKeywords.forEach(flavor => {
-        if (lowercasedDescription.includes(flavor)) {
+        if (lowercasedName.includes(flavor)) {
             foundFlavors.add(toTitleCase(flavor));
         }
     });
 
     return Array.from(foundFlavors);
 };
+
 
 // Callable function reference
 const getCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
@@ -146,15 +147,14 @@ export default function AddTHCProductPage() {
     form.setValue('thcContent', strainData.thc_level);
     form.setValue('mostCommonTerpene', strainData.mostCommonTerpene);
     
-    // The processed arrays are now coming directly from the StrainFinder component
     form.setValue('effects', strainData.effects || []);
-    form.setValue('medicalUses', strainData.medical || []);
+    form.setValue('medicalUses', strainData.medicalUses || []);
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
     
-    const autoFlavors = extractFlavorsFromDescription(strainData.description);
+    const autoFlavors = extractFlavorsFromName(strainData.name);
     const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
-    form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
+    form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])).map(f => ({ name: f, percentage: '' })));
 
     setIsStrainSelected(true);
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
@@ -191,9 +191,14 @@ export default function AddTHCProductPage() {
         }
 
         const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
+        
+        const finalData = {
+            ...data,
+            flavors: data.flavors?.map(f => f.name) || [], // Convert back to string array for Firestore
+        };
 
         const productData: Omit<ProductType, 'id'> = {
-            ...data,
+            ...finalData,
             dispensaryId: currentUser.dispensaryId!,
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
@@ -222,15 +227,21 @@ export default function AddTHCProductPage() {
   ];
   
   const showStickerOptIn = selectedProductStream === 'THC';
-  const showStrainFinder = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn !== 'no');
-  const showCategorySelector = (selectedProductStream === 'CBD' && (isStrainSelected || isStrainFinderSkipped)) || (selectedProductStream === 'THC' && (isStrainSelected || isStrainFinderSkipped));
+  const showStrainFinder = (selectedProductStream === 'CBD' && !isStrainSelected && !isStrainFinderSkipped) || (selectedProductStream === 'THC' && watchStickerOptIn === 'no' && !isStrainSelected && !isStrainFinderSkipped);
+  const showCategorySelector = (selectedProductStream === 'CBD' && (isStrainSelected || isStrainFinderSkipped)) || (selectedProductStream === 'THC' && (watchStickerOptIn === 'no' && (isStrainSelected || isStrainFinderSkipped)) || watchStickerOptIn === 'yes');
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
 
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
     if (!name) return;
     const currentValues = form.getValues(type) || [];
-    if (currentValues.some(item => item.name === name)) return; // Avoid duplicates
-    form.setValue(type, [...currentValues, { name, percentage: '0' }]);
+    if (currentValues.some(item => item.name === name)) return;
+    form.setValue(type, [...currentValues, { name, percentage: '1%' }]);
+    
+    if (type === 'effects') {
+        setZeroPercentEffects(prev => prev.filter(item => item !== name));
+    } else {
+        setZeroPercentMedical(prev => prev.filter(item => item !== name));
+    }
   };
 
 
@@ -303,11 +314,9 @@ export default function AddTHCProductPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
                           if (!Array.isArray(items)) return null;
-
-                           const lastItem = items.length > 0 ? items[items.length - 1] : null;
+                          const lastItem = items.length > 0 ? items[items.length - 1] : null;
                           const imageUrl = (typeof lastItem === 'object' && lastItem !== null && lastItem.imageUrl) ? lastItem.imageUrl : null;
                           const subOptions = imageUrl ? items.slice(0, -1) : [...items];
-
 
                           return (
                               <div key={categoryName} className="flex flex-col gap-2">
@@ -318,7 +327,7 @@ export default function AddTHCProductPage() {
                                       <CardHeader className="p-0">
                                           <div className="relative aspect-video w-full bg-muted rounded-t-lg overflow-hidden">
                                               {imageUrl ? (
-                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" />
+                                                  <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
                                               ) : (
                                                   <div className="w-full h-full flex items-center justify-center">
                                                       <ImageIcon className="h-12 w-12 text-muted-foreground/30"/>
@@ -379,11 +388,11 @@ export default function AddTHCProductPage() {
                                     </Select>
                                 )}
                               </div>
-                              <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value?.map(e => e.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
+                              <FormControl><MultiInputTags placeholder="e.g., Relaxed, Happy" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-purple-100 text-purple-800 border-purple-300"} /></FormControl>
                               <FormMessage />
                           </FormItem> 
                       )} />
-                      <FormField control={form.control} name="flavors" render={({ field }) => ( 
+                       <FormField control={form.control} name="flavors" render={({ field }) => ( 
                           <FormItem>
                               <FormLabel>Flavors</FormLabel>
                               <FormControl><MultiInputTags placeholder="e.g., Earthy, Citrus" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-sky-100 text-sky-800 border-sky-300"} /></FormControl>
@@ -403,7 +412,7 @@ export default function AddTHCProductPage() {
                                     </Select>
                                 )}
                               </div>
-                              <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value?.map(m => m.name) || []} onChange={(names) => field.onChange(names.map(name => ({name, percentage: '0'})))} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
+                              <FormControl><MultiInputTags placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} getTagClassName={() => "bg-blue-100 text-blue-800 border-blue-300"} /></FormControl>
                               <FormMessage />
                           </FormItem>
                       )} />
@@ -440,7 +449,7 @@ export default function AddTHCProductPage() {
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Images, Tags & Lab Results</h3>
                       <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags placeholder="e.g., Organic, Potent" value={field.value?.map(t=> ({name: t, percentage:''})) || []} onChange={(tags) => field.onChange(tags.map(t => t.name))} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Lab Tested</FormLabel><FormDescription>Indicate if the product has a lab test report.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                       {watchLabTested && (
                           <FormField control={form.control} name="labTestReportUrl" render={() => ( <FormItem><FormLabel>Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={(file) => setLabTestFile(file)} /></FormControl><FormDescription>Upload the lab report PDF or image file.</FormDescription><FormMessage /></FormItem> )} />
