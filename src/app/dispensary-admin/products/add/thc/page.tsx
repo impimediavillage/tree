@@ -38,23 +38,6 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 
 type ProductStream = 'THC' | 'CBD';
 
-const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-
-const extractFlavorsFromName = (name: string): string[] => {
-    const flavorKeywords = ['earthy', 'sweet', 'citrus', 'pine', 'skunky', 'grape', 'woody', 'diesel', 'berry', 'lemon', 'pungent', 'flowery', 'spicy', 'herbal', 'orange', 'vanilla', 'nutty', 'minty', 'honey', 'lavender', 'fruity'];
-    const foundFlavors = new Set<string>();
-    const lowercasedName = name.toLowerCase();
-    
-    flavorKeywords.forEach(flavor => {
-        if (lowercasedName.includes(flavor)) {
-            foundFlavors.add(toTitleCase(flavor));
-        }
-    });
-
-    return Array.from(foundFlavors);
-};
-
-
 // Callable function reference
 const getCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
 
@@ -143,19 +126,17 @@ export default function AddTHCProductPage() {
   const handleStrainSelect = (strainData: any) => {
     form.setValue('name', strainData.name);
     form.setValue('strain', strainData.name);
-    form.setValue('strainType', strainData.type);
+    form.setValue('strainType', strainData.strainType);
     form.setValue('description', strainData.description);
-    form.setValue('thcContent', strainData.thc_level);
+    form.setValue('thcContent', strainData.thcContent);
     form.setValue('mostCommonTerpene', strainData.mostCommonTerpene);
     
     form.setValue('effects', strainData.effects || []);
     form.setValue('medicalUses', strainData.medicalUses || []);
+    form.setValue('flavors', strainData.flavors || []);
+
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
-    
-    const autoFlavors = extractFlavorsFromName(strainData.name);
-    const existingFlavors = Array.isArray(strainData.flavor) ? strainData.flavor : [];
-    form.setValue('flavors', Array.from(new Set([...autoFlavors, ...existingFlavors])));
 
     setIsStrainSelected(true);
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
@@ -195,7 +176,7 @@ export default function AddTHCProductPage() {
         
         const finalData = {
             ...data,
-            flavors: data.flavors || [], // Ensure flavors is an array
+            flavors: data.flavors || [],
         };
 
         const productData: Omit<ProductType, 'id'> = {
@@ -228,8 +209,8 @@ export default function AddTHCProductPage() {
   ];
   
   const showOptInSection = selectedProductStream === 'THC';
-  const showStrainFinder = selectedProductStream === 'THC' && watchStickerOptIn && !isStrainSelected && !isStrainFinderSkipped;
-  const showCategorySelector = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn && (isStrainSelected || isStrainFinderSkipped));
+  const showStrainFinder = selectedProductStream === 'THC' && (watchStickerOptIn === 'yes' || (watchStickerOptIn === 'no' && !isStrainSelected && !isStrainFinderSkipped));
+  const showCategorySelector = (selectedProductStream === 'CBD') || (selectedProductStream === 'THC' && watchStickerOptIn === 'no' && (isStrainSelected || isStrainFinderSkipped));
   const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
 
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
@@ -272,7 +253,7 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showOptInSection && (
+          {showOptInSection && watchStickerOptIn === null && (
               <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-3 text-orange-800"><Gift className="text-yellow-500 fill-yellow-400"/>The Triple S (Strain-Sticker-Sample) Club</CardTitle>
