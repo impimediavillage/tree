@@ -46,7 +46,7 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 };
 
 
-type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art and Furniture';
+type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furniture';
 
 export default function AddTHCProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -219,7 +219,8 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
     { key: 'Apparel', title: 'Apparel', icon: Shirt },
     { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
-    { key: 'Art and Furniture', title: 'Art & Furniture', icon: Brush },
+    { key: 'Art', title: 'Art', icon: Brush },
+    { key: 'Furniture', title: 'Furniture', icon: Brush },
   ];
 
   const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
@@ -273,7 +274,7 @@ export default function AddTHCProductPage() {
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4">
               {productStreams.map(stream => (
                   <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => handleProductStreamSelect(stream.key)}>
                       <stream.icon className="h-8 w-8" />
