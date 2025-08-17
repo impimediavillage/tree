@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { X as XIcon, CornerDownLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProductAttribute } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
 
 interface MultiInputTagsProps {
   value?: ProductAttribute[] | string[];
@@ -18,6 +19,7 @@ interface MultiInputTagsProps {
   disabled?: boolean;
   getTagClassName?: (tag: string) => string;
   inputType?: 'string' | 'attribute';
+  availableStandardSizes?: string[];
 }
 
 export function MultiInputTags({
@@ -29,6 +31,7 @@ export function MultiInputTags({
   disabled,
   getTagClassName,
   inputType = 'string',
+  availableStandardSizes,
 }: MultiInputTagsProps) {
   const [inputValue, setInputValue] = React.useState('');
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
@@ -108,21 +111,36 @@ export function MultiInputTags({
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center gap-2">
-        <Input
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="flex-grow"
-          disabled={disabled || (maxTags !== undefined && value.length >= maxTags)}
-        />
+         {availableStandardSizes && availableStandardSizes.length > 0 ? (
+          <Select onValueChange={(val) => addTag(val)}>
+            <SelectTrigger className="flex-grow">
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {availableStandardSizes.map(size => (
+                <SelectItem key={size} value={size} disabled={processedValue.some(t => t.name === size)}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            className="flex-grow"
+            disabled={disabled || (maxTags !== undefined && value.length >= maxTags)}
+          />
+        )}
         <Button
           type="button"
           variant="outline"
           size="icon"
           onClick={() => addTag(inputValue)}
-          disabled={disabled || !inputValue.trim() || (maxTags !== undefined && value.length >= maxTags)}
+          disabled={disabled || !inputValue.trim() || (maxTags !== undefined && value.length >= maxTags) || (availableStandardSizes && availableStandardSizes.length > 0)}
           aria-label="Add tag"
         >
           <CornerDownLeft className="h-4 w-4" />

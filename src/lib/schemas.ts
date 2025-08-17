@@ -206,13 +206,13 @@ const baseProductObjectSchema = z.object({
   deliveryMethod: z.string().optional().nullable(),
   productSubCategory: z.string().optional().nullable(),
   
-  // Traditional Medicine & Mushroom Specific
+  // Universal fields now optional
   subcategory: z.string().optional().nullable(),
   subSubcategory: z.string().optional().nullable(),
   productType: z.string().optional().nullable(),
-  baseProductData: z.any().optional().nullable(), // For storing the selected mushroom base product
+  baseProductData: z.any().optional().nullable(),
   
-  // Strain details (shared)
+  // Strain details (optional)
   mostCommonTerpene: z.string().optional().nullable(),
   strain: z.string().optional().nullable(),
   strainType: z.string().optional().nullable(),
