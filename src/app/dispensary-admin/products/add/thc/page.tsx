@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, storage, functions } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { httpsCallable } from 'firebase/functions';
@@ -37,7 +37,7 @@ const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "1
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
-const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Pants', 'Other'];
+const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Pants', 'Footwear', 'Underwear', 'Shorts', 'Scarves', 'Socks', 'Jewelry', 'Other'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
@@ -47,8 +47,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 
 
 type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art and Furniture';
-
-const getCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
 
 export default function AddTHCProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -99,28 +97,6 @@ export default function AddTHCProductPage() {
   const watchGender = form.watch('gender');
   const watchSizingSystem = form.watch('sizingSystem');
   
-  const fetchInitialData = useCallback(async (stream: 'THC' | 'CBD') => {
-    if (authLoading) return;
-    setIsLoadingInitialData(true);
-    setDeliveryMethods({});
-    try {
-        const result = await getCategoriesCallable({ stream });
-        const methods = result.data as Record<string, any>;
-
-        if (methods && typeof methods === 'object') {
-            setDeliveryMethods(methods);
-        } else {
-            console.warn(`Could not find 'Delivery Methods' for stream '${stream}' in the fetched data.`, methods);
-            toast({ title: "Configuration Warning", description: `Product categories for "${stream}" might not be fully configured.`, variant: "default" });
-        }
-    } catch (error) {
-        console.error("Error fetching initial data via callable:", error);
-        toast({ title: "Error", description: "Could not load necessary category data.", variant: "destructive" });
-    } finally {
-        setIsLoadingInitialData(false);
-    }
-  }, [toast, authLoading]);
-  
   const handleProductStreamSelect = (stream: ProductStream) => {
     form.reset({
       ...form.getValues(),
@@ -148,10 +124,6 @@ export default function AddTHCProductPage() {
     } else {
       setShowOptInSection(false);
       setShowStrainFinder(false);
-    }
-    
-    if(stream === 'THC' || stream === 'CBD'){
-        fetchInitialData(stream);
     }
   };
   
@@ -430,9 +402,6 @@ export default function AddTHCProductPage() {
                     <>
                         <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
-                        <FormField control={form.control} name="growingMedium" render={({ field }) => ( <FormItem><FormLabel>Growing Medium</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select growing medium" /></SelectTrigger></FormControl><SelectContent> <SelectItem value="Organic Soil">Organic Soil</SelectItem> <SelectItem value="Hydroponic">Hydroponic</SelectItem> <SelectItem value="Coco Coir">Coco Coir</SelectItem> <SelectItem value="Aeroponic">Aeroponic</SelectItem> <SelectItem value="Living Soil">Living Soil</SelectItem> </SelectContent></Select><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="feedingType" render={({ field }) => ( <FormItem><FormLabel>Feeding Type</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select feeding type" /></SelectTrigger></FormControl><SelectContent> <SelectItem value="Organic feed in Pots">Organic feed in Pots</SelectItem> <SelectItem value="Organic feed Hydro">Organic feed Hydro</SelectItem> <SelectItem value="Chemical feed in Pots with flush">Chemical feed in Pots with flush</SelectItem> <SelectItem value="Chemical feed hydro with flush">Chemical feed hydro with flush</SelectItem> <SelectItem value="Organic & Chemical in Pots Flushed">Organic & Chemical in Pots Flushed</SelectItem> <SelectItem value="Organic & Chemical hydro Flushed">Organic & Chemical hydro Flushed</SelectItem> </SelectContent></Select><FormMessage /></FormItem> )} />
-
                         <FormField control={form.control} name="effects" render={({ field }) => (
                            <FormItem><FormLabel>Effects</FormLabel>
                                 <div className="flex items-center gap-2">
@@ -456,7 +425,6 @@ export default function AddTHCProductPage() {
                                <FormControl><MultiInputTags inputType="attribute" placeholder="Or add custom medical use..." value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage />
                            </FormItem>
                         )} />
-
                         <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Pine, Citrus" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     </>
                   )}
