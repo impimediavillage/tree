@@ -132,7 +132,7 @@ export function MultiInputTags({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="flex-grow"
-            disabled={disabled || (maxTags !== undefined && value.length >= maxTags)}
+            disabled={disabled || (maxTags !== undefined && processedValue.length >= maxTags)}
           />
         )}
         <Button
@@ -140,7 +140,7 @@ export function MultiInputTags({
           variant="outline"
           size="icon"
           onClick={() => addTag(inputValue)}
-          disabled={disabled || !inputValue.trim() || (maxTags !== undefined && value.length >= maxTags) || (availableStandardSizes && availableStandardSizes.length > 0)}
+          disabled={disabled || !inputValue.trim() || (maxTags !== undefined && processedValue.length >= maxTags) || (availableStandardSizes && availableStandardSizes.length > 0)}
           aria-label="Add tag"
         >
           <CornerDownLeft className="h-4 w-4" />
@@ -195,7 +195,7 @@ export function MultiInputTags({
       )}
       {maxTags !== undefined && (
          <p className="text-xs text-muted-foreground">
-            {value.length} / {maxTags} tags added.
+            {processedValue.length} / {maxTags} tags added.
         </p>
       )}
     </div>

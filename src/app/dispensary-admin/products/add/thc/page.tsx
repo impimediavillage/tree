@@ -37,6 +37,7 @@ const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "1
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
+const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Pants', 'Other'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
@@ -83,6 +84,7 @@ export default function AddTHCProductPage() {
       effects: [], flavors: [], medicalUses: [],
       stickerProgramOptIn: null,
       gender: undefined, sizingSystem: undefined, sizes: [],
+      growingMedium: undefined, feedingType: undefined
     },
   });
 
@@ -129,6 +131,7 @@ export default function AddTHCProductPage() {
       stickerProgramOptIn: null,
       productType: stream,
       gender: undefined, sizingSystem: undefined, sizes: [],
+      growingMedium: undefined,
     });
 
     setShowCategorySelector(false);
@@ -158,12 +161,13 @@ export default function AddTHCProductPage() {
     form.setValue('strainType', strainData.strainType);
     form.setValue('description', strainData.description);
     form.setValue('thcContent', strainData.thcContent);
+    form.setValue('cbdContent', strainData.cbdContent);
     form.setValue('mostCommonTerpene', strainData.mostCommonTerpene);
     
     form.setValue('effects', strainData.effects);
     form.setValue('medicalUses', strainData.medicalUses);
     form.setValue('flavors', strainData.flavors);
-
+    
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
     setShowCategorySelector(true);
@@ -226,7 +230,7 @@ export default function AddTHCProductPage() {
         };
         
         const collectionName = currentDispensary.dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
-        await addDoc(collection(db, 'products'), productData);
+        await addDoc(collection(db, collectionName), productData);
 
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
         router.push('/dispensary-admin/products');
@@ -246,7 +250,8 @@ export default function AddTHCProductPage() {
     { key: 'Art and Furniture', title: 'Art & Furniture', icon: Brush },
   ];
 
-  const showProductForm = showCategorySelector && watchCategory && watchSubcategory;
+  const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
+  const showProductForm = (selectedProductStream && !isCannabinoidStream) || (isCannabinoidStream && showCategorySelector && watchCategory && watchSubcategory);
   
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
     if (!name) return;
@@ -282,8 +287,6 @@ export default function AddTHCProductPage() {
   if (authLoading) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> ... </div> );
   }
-
-  const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
 
   return (
     <div className="max-w-4xl mx-auto my-8 space-y-6">
@@ -345,7 +348,7 @@ export default function AddTHCProductPage() {
             </div>
           )}
           
-          {showCategorySelector && (
+          {isCannabinoidStream && showCategorySelector && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Category Selection *</h3>
@@ -365,7 +368,7 @@ export default function AddTHCProductPage() {
                                       onClick={() => handleCategorySelect(categoryName)} 
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
-                                      <CardHeader className="p-0 flex-grow h-48 relative">
+                                    <CardHeader className="p-0 flex-grow h-48 relative">
                                         <div className="relative h-full w-full bg-muted">
                                           {imageUrl ? (
                                               <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
@@ -401,7 +404,7 @@ export default function AddTHCProductPage() {
               </div>
           )}
 
-          {(selectedProductStream && (showProductForm || !isCannabinoidStream)) && (
+          {showProductForm && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
@@ -413,10 +416,13 @@ export default function AddTHCProductPage() {
                       <Separator/>
                       <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
                        <div className="grid md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                         </div>
-                        <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
                     </>
                   )}
 
@@ -424,9 +430,34 @@ export default function AddTHCProductPage() {
                     <>
                         <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
-                        <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content (%)</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="growingMedium" render={({ field }) => ( <FormItem><FormLabel>Growing Medium</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select growing medium" /></SelectTrigger></FormControl><SelectContent> <SelectItem value="Organic Soil">Organic Soil</SelectItem> <SelectItem value="Hydroponic">Hydroponic</SelectItem> <SelectItem value="Coco Coir">Coco Coir</SelectItem> <SelectItem value="Aeroponic">Aeroponic</SelectItem> <SelectItem value="Living Soil">Living Soil</SelectItem> </SelectContent></Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="feedingType" render={({ field }) => ( <FormItem><FormLabel>Feeding Type</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select feeding type" /></SelectTrigger></FormControl><SelectContent> <SelectItem value="Organic feed in Pots">Organic feed in Pots</SelectItem> <SelectItem value="Organic feed Hydro">Organic feed Hydro</SelectItem> <SelectItem value="Chemical feed in Pots with flush">Chemical feed in Pots with flush</SelectItem> <SelectItem value="Chemical feed hydro with flush">Chemical feed hydro with flush</SelectItem> <SelectItem value="Organic & Chemical in Pots Flushed">Organic & Chemical in Pots Flushed</SelectItem> <SelectItem value="Organic & Chemical hydro Flushed">Organic & Chemical hydro Flushed</SelectItem> </SelectContent></Select><FormMessage /></FormItem> )} />
+
+                        <FormField control={form.control} name="effects" render={({ field }) => (
+                           <FormItem><FormLabel>Effects</FormLabel>
+                                <div className="flex items-center gap-2">
+                                <Select onValueChange={(val) => handleAddAttribute('effects', val)}>
+                                    <SelectTrigger><SelectValue placeholder="Add an effect..." /></SelectTrigger>
+                                    <SelectContent>{zeroPercentEffects.map(effect => <SelectItem key={effect} value={effect}>{effect}</SelectItem>)}</SelectContent>
+                                </Select>
+                                </div>
+                                <FormControl><MultiInputTags inputType="attribute" placeholder="Or add a custom effect..." value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage />
+                           </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="medicalUses" render={({ field }) => (
+                           <FormItem><FormLabel>Medical Uses</FormLabel>
+                                <div className="flex items-center gap-2">
+                                <Select onValueChange={(val) => handleAddAttribute('medicalUses', val)}>
+                                    <SelectTrigger><SelectValue placeholder="Add a medical use..." /></SelectTrigger>
+                                    <SelectContent>{zeroPercentMedical.map(use => <SelectItem key={use} value={use}>{use}</SelectItem>)}</SelectContent>
+                                </Select>
+                                </div>
+                               <FormControl><MultiInputTags inputType="attribute" placeholder="Or add custom medical use..." value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage />
+                           </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Pine, Citrus" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                     </>
                   )}
                   
