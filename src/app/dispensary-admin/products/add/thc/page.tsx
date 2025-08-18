@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home, Artboard } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -48,6 +48,8 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 
 type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furniture';
 
+const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
+
 export default function AddTHCProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -69,6 +71,12 @@ export default function AddTHCProductPage() {
   const [showStrainFinder, setShowStrainFinder] = useState(false);
   const [showCategorySelector, setShowCategorySelector] = useState(false);
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
+  const [randomTripleSImage, setRandomTripleSImage] = useState<string>('');
+  
+  useEffect(() => {
+    // Select a random image on component mount (client-side only)
+    setRandomTripleSImage(tripleSImages[Math.floor(Math.random() * tripleSImages.length)]!);
+  }, []);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -224,7 +232,7 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
     { key: 'Apparel', title: 'Apparel', icon: Shirt },
     { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
-    { key: 'Art', title: 'Art', icon: Palette },
+    { key: 'Art', title: 'Art', icon: Artboard },
     { key: 'Furniture', title: 'Furniture', icon: Home },
   ];
 
@@ -291,14 +299,18 @@ export default function AddTHCProductPage() {
           {showOptInSection && (
             <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up overflow-hidden">
                 <div className="relative w-full max-w-[768px] mx-auto">
-                    <Image
-                        src="/images/2025-triple-s/t36.jpg"
-                        alt="The Triple S Club banner"
-                        width={768}
-                        height={432}
-                        className="object-contain"
-                        data-ai-hint="cannabis plants creative"
-                    />
+                  {randomTripleSImage ? (
+                      <Image
+                          src={randomTripleSImage}
+                          alt="The Triple S Club banner"
+                          width={768}
+                          height={432}
+                          className="object-contain"
+                          data-ai-hint="cannabis plants creative"
+                      />
+                  ) : (
+                    <div className="w-full max-w-[768px] mx-auto aspect-[16/9] bg-muted animate-pulse"></div>
+                  )}
                 </div>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-orange-800">
@@ -306,17 +318,17 @@ export default function AddTHCProductPage() {
                 </CardTitle>
                  <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
                     <p>
-                        The Wellness Tree fully complies with South African Law and prohibits the sale of THC products. 
+                        The Wellness Tree fully complies with South African Law and prohibits the sale of THC products.
                     </p>
                     <p>
-                        The Triple S Club as an opportunity for Home growers and fellow Cannabis enthusiasts to be able to 
-                        share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product. 
+                        The Triple S Club as an opportunity for Home growers and fellow Cannabis enthusiasts to be able to
+                        share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product.
                     </p>
                     <p>
-                        The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE. 
-                        The sticker price is paid to You less our 25% per transaction. Payments are sent you to Your Payfast sub account 
-                        attached to our main Payfast account once the Leafblower driver has succesfully dropped off the sticker design confirmation and free sample package, 
-                        or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased. 
+                        The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE.
+                        The sticker price is paid to You less our 25% per transaction. Payments are sent you to Your Payfast sub account
+                        attached to our main Payfast account once the Leafblower driver has succesfully dropped off the sticker design confirmation and free sample package,
+                        or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased.
                         We know that Your legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating your products and let the Sticker design sales roll in.
                     </p>
                     <p>
@@ -428,14 +440,48 @@ export default function AddTHCProductPage() {
                     <>
                       <Separator/>
                       <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
-                       <div className="grid md:grid-cols-2 gap-4">
+                       <div className="grid md:grid-cols-3 gap-4">
                             <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
                         </div>
+                        <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
+                    </>
+                  )}
+                  {isCannabinoidStream && (
+                    <>
+                        <Separator/>
+                        <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid Details (Optional)</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                           <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., 22%" /></FormControl><FormMessage /></FormItem> )} />
+                           <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., <1%" /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        <FormField control={form.control} name="mostCommonTerpene" render={({ field }) => ( <FormItem><FormLabel>Most Common Terpene</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., Myrcene" /></FormControl><FormMessage /></FormItem> )} />
+                    
+                        <Separator/>
+                        <h3 className="text-xl font-semibold border-b pb-2">Cultivation Details (Optional)</h3>
+                        <div className="grid md:grid-cols-2 gap-4">
+                             <FormField control={form.control} name="growingMedium" render={({ field }) => ( <FormItem><FormLabel>Growing Medium</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select growing medium" /></SelectTrigger></FormControl><SelectContent>{['Organic Soil', 'Hydroponic', 'Coco Coir', 'Aeroponic', 'Living Soil'].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="feedingType" render={({ field }) => ( <FormItem><FormLabel>Feeding Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select feeding type" /></SelectTrigger></FormControl><SelectContent>{['Organic feed in Pots', 'Organic feed Hydro', 'Chemical feed in Pots with flush', 'Chemical feed hydro with flush', 'Organic & Chemical in Pots Flushed', 'Organic & Chemical hydro Flushed'].map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                        </div>
+                        <FormField control={form.control} name="homeGrow" render={({ field }) => ( <FormItem><FormLabel>Home Grow Conditions</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Indoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+
+                        <Separator />
+                        <h3 className="text-xl font-semibold border-b pb-2">Effects & Flavors (Optional)</h3>
+                        <div className="space-y-4">
+                            <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Happy, Relaxed" value={field.value || []} onChange={field.onChange} /></FormControl><FormDescription>Tags you selected from the strain finder that have a 0% rating will appear below. Add them if they apply.</FormDescription><FormMessage /></FormItem> )} />
+                            {zeroPercentEffects.length > 0 && <div className="flex flex-wrap gap-2 p-2 border-dashed border rounded-md">{zeroPercentEffects.map(name => <Button key={name} type="button" variant="outline" size="sm" onClick={() => handleAddAttribute('effects', name)}>{name} <Plus className="ml-1 h-3 w-3"/></Button>)}</div>}
+                            <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} /></FormControl><FormDescription>Tags you selected from the strain finder that have a 0% rating will appear below. Add them if they apply.</FormDescription><FormMessage /></FormItem> )} />
+                            {zeroPercentMedical.length > 0 && <div className="flex flex-wrap gap-2 p-2 border-dashed border rounded-md">{zeroPercentMedical.map(name => <Button key={name} type="button" variant="outline" size="sm" onClick={() => handleAddAttribute('medicalUses', name)}>{name} <Plus className="ml-1 h-3 w-3"/></Button>)}</div>}
+                            <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Pine, Citrus" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                         <Separator />
+                        <h3 className="text-xl font-semibold border-b pb-2">Lab Testing (Optional)</h3>
+                        <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Lab Tested</FormLabel><FormDescription>Check this if you have a lab report for this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                        {form.watch('labTested') && (
+                        <Card className="p-4 bg-muted/50"><CardContent className="p-0">
+                            <FormField control={form.control} name="labTestReportUrl" render={({}) => ( <FormItem><FormLabel>Upload Lab Report</FormLabel><FormControl><SingleImageDropzone value={labTestFile} onChange={(file) => setLabTestFile(file)} /></FormControl><FormDescription>Upload a PDF or image of the lab test results.</FormDescription><FormMessage /></FormItem> )} />
+                        </CardContent></Card>)}
                     </>
                   )}
 
