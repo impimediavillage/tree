@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -91,7 +91,6 @@ export default function AddTHCProductPage() {
   const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
-  const watchLabTested = form.watch('labTested');
   const watchStickerOptIn = form.watch('stickerProgramOptIn');
   const watchCategory = form.watch('category');
   const watchSubcategory = form.watch('subcategory');
@@ -226,7 +225,7 @@ export default function AddTHCProductPage() {
     { key: 'Apparel', title: 'Apparel', icon: Shirt },
     { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
     { key: 'Art', title: 'Art', icon: Palette },
-    { key: 'Furniture', title: 'Furniture', icon: Brush },
+    { key: 'Furniture', title: 'Furniture', icon: Home },
   ];
 
   const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
@@ -264,7 +263,7 @@ export default function AddTHCProductPage() {
 
 
   if (authLoading) {
-    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> ... </div> );
+    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
   return (
@@ -297,7 +296,6 @@ export default function AddTHCProductPage() {
                         alt="The Triple S Club banner"
                         width={768}
                         height={432}
-                        layout="responsive"
                         className="object-contain"
                         data-ai-hint="cannabis plants creative"
                     />
@@ -306,15 +304,32 @@ export default function AddTHCProductPage() {
                 <CardTitle className="flex items-center gap-3 text-orange-800">
                   <Gift className="text-yellow-500 fill-yellow-400" />The Triple S (Strain-Sticker-Sample) Club
                 </CardTitle>
-                <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
+                 <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
                     <p>
-                        The Wellness Tree fully complies with South African Law and prohibits the sale of THC products. The Wellness Tree offers the The Triple S Club as an opportunity for Home growers and fellow Cannabis enthusiasts to be able to share and their grow with the public by selling strain specific stickers or stickers promoting the strain and Cannabinoid store.
+                        The Wellness Tree fully complies with South African Law and prohibits the sale of THC products. 
                     </p>
                     <p>
-                        The public buys the sticker and recieves the sample amounts you create as a grower for FREE. The sticker price is paid to You less our 20% per transaction. Payments are sent you to Your Payfast sub account attached to our main Payfast account once the Driver has succesfully dropped of the sticker and free sample package, or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased. We know that Yourr legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating.
+                        The Triple S Club as an opportunity for Home growers and fellow Cannabis enthusiasts to be able to 
+                        share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product. 
                     </p>
                     <p>
-                        Whats cool about the Triple S Club is each sticker is uniquely created with the help of  Open AI's Dalle 3, and each sticker is truly unique. We also have a dedicated already created Triple S Sticker card set for fellow ganga enthusiasts to enjoy.
+                        The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE. 
+                        The sticker price is paid to You less our 25% per transaction. Payments are sent you to Your Payfast sub account 
+                        attached to our main Payfast account once the Leafblower driver has succesfully dropped off the sticker design confirmation and free sample package, 
+                        or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased. 
+                        We know that Your legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating your products and let the Sticker design sales roll in.
+                    </p>
+                    <p>
+                        Whats cool about the Triple S Club is each sticker is uniquely created with the help of Open AI&apos;s Dalle 3, and each sticker is truly unique.
+                        We also have a dedicated already created Triple S Sticker card set for fellow ganga enthusiasts to enjoy.
+                    </p>
+                    <p>
+                        The Promo Sticker set Programme is additional fun for You as the grower to create your own tshirts, cap, hoodie, sticker merchandise and promote your grow,
+                        and of course the strains you love to grow.
+                    </p>
+                     <p>
+                        Your create Sticker sets that fellow cannabis entusisasts can then purchase creating an additional revenue generation opportunity for your
+                        Cannabinoid store.
                     </p>
                 </CardDescription>
               </CardHeader>
