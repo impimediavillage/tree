@@ -17,6 +17,11 @@ import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
+const getProductCollectionName = (dispensaryType?: string | null): string => {
+    if (!dispensaryType) return 'products'; // Fallback to default
+    return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+};
+
 export default function WellnessProductsPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -28,12 +33,13 @@ export default function WellnessProductsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   
   const dispensaryId = currentUser?.dispensaryId;
+  const productCollectionName = getProductCollectionName(currentDispensary?.dispensaryType);
 
   const fetchProducts = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
         const productsQuery = query(
-            collection(db, 'products'),
+            collection(db, productCollectionName),
             where('dispensaryId', '==', id),
             orderBy('name')
         );
@@ -53,7 +59,7 @@ export default function WellnessProductsPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, productCollectionName]);
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
@@ -102,7 +108,7 @@ export default function WellnessProductsPage() {
         await Promise.all(deletePromises);
       }
       
-      await deleteDoc(doc(db, 'products', productId));
+      await deleteDoc(doc(db, productCollectionName, productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
       fetchProducts(dispensaryId);
       
@@ -117,9 +123,7 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  const addProductPath = currentDispensary?.dispensaryType === 'Cannibinoid store'
-    ? '/dispensary-admin/products/add/thc'
-    : '/dispensary-admin/products/add';
+  const addProductPath = '/dispensary-admin/products/add/thc';
 
 
   if (isLoading) {
