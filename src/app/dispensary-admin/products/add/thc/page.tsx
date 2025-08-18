@@ -321,8 +321,7 @@ export default function AddTHCProductPage() {
                         The Wellness Tree fully complies with South African Law and prohibits the sale of THC products.
                     </p>
                     <p>
-                        The Triple S Club as an opportunity for Home growers and fellow Cannabis enthusiasts to be able to
-                        share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product.
+                        The Triple S Club is an opportunity for Home growers and fellow Cannabis enthusiasts to share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product.
                     </p>
                     <p>
                         The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE.
