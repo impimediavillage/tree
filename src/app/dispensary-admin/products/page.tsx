@@ -123,9 +123,17 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  const addProductPath = currentDispensary?.dispensaryType === 'Traditional Medicine dispensary'
-      ? '/dispensary-admin/products/add/traditional-medicine'
-      : '/dispensary-admin/products/add';
+  const getAddProductPath = () => {
+    const type = currentDispensary?.dispensaryType;
+    if (type === 'Traditional Medicine dispensary') {
+        return '/dispensary-admin/products/add/traditional-medicine';
+    }
+    if (type === 'Cannibinoid store') {
+        return '/dispensary-admin/products/add/thc';
+    }
+    return '/dispensary-admin/products/add';
+  };
+  const addProductPath = getAddProductPath();
 
 
   if (isLoading) {
