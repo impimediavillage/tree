@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -22,16 +22,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Heart } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Heart, Shirt } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
-import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { cn } from '@/lib/utils';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
+
+const apparelGenders = ['Mens', 'Womens', 'Unisex'];
+const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
+const standardSizesData: Record<string, Record<string, string[]>> = {
+  'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
+  'Womens': { 'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'], 'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'], 'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'], 'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
+  'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
+};
+
 
 interface Category {
   useCase: string;
@@ -55,10 +63,16 @@ export default function AddTraditionalMedicineProductPage() {
   const [categoryStructure, setCategoryStructure] = useState<Category[]>([]);
   const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState<Category | null>(null);
   const [selectedSecondLevelCategory, setSelectedSecondLevelCategory] = useState<SubCategory | null>(null);
+  const [isClothingStream, setIsClothingStream] = useState(false);
   
   const [files, setFiles] = useState<File[]>([]);
-  const [labTestFile, setLabTestFile] = useState<File | null>(null);
   
+  const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
+  
+  const secondStepRef = useRef<HTMLDivElement>(null);
+  const finalFormRef = useRef<HTMLDivElement>(null);
+
+
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -68,7 +82,8 @@ export default function AddTraditionalMedicineProductPage() {
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
       currency: currentDispensary?.currency || 'ZAR',
-      productType: 'Traditional Medicine'
+      productType: 'Traditional Medicine',
+      gender: undefined, sizingSystem: undefined, sizes: [],
     },
   });
 
@@ -76,6 +91,9 @@ export default function AddTraditionalMedicineProductPage() {
   const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
+  const watchGender = form.watch('gender');
+  const watchSizingSystem = form.watch('sizingSystem');
+
 
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
@@ -101,19 +119,38 @@ export default function AddTraditionalMedicineProductPage() {
     fetchCategoryStructure();
   }, [fetchCategoryStructure]);
 
+  const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleTopLevelSelect = (category: Category) => {
+    setIsClothingStream(false);
     setSelectedTopLevelCategory(category);
     form.setValue('category', category.useCase, { shouldValidate: true });
     setSelectedSecondLevelCategory(null);
     form.setValue('subcategory', null);
     form.setValue('subSubcategory', null);
+    setTimeout(() => scrollToRef(secondStepRef), 100);
   };
   
+  const handleClothingSelect = () => {
+    setIsClothingStream(true);
+    setSelectedTopLevelCategory(null);
+    setSelectedSecondLevelCategory(null);
+    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubcategory: null });
+    setTimeout(() => scrollToRef(finalFormRef), 100);
+  };
+
   const handleSecondLevelSelect = (category: SubCategory) => {
     setSelectedSecondLevelCategory(category);
     form.setValue('subcategory', category.type, { shouldValidate: true });
-     form.setValue('subSubcategory', null);
+    form.setValue('subSubcategory', null);
   };
+
+  const handleSubSubCategorySelect = (subType: string) => {
+    form.setValue('subSubcategory', subType, { shouldValidate: true });
+    setTimeout(() => scrollToRef(finalFormRef), 100);
+  }
 
   const getProductCollectionName = (): string => {
     const type = currentDispensary?.dispensaryType;
@@ -169,6 +206,14 @@ export default function AddTraditionalMedicineProductPage() {
         setIsLoading(false);
     }
   };
+  
+   useEffect(() => {
+    if (watchGender && watchSizingSystem && standardSizesData[watchGender] && standardSizesData[watchGender][watchSizingSystem]) {
+        setAvailableStandardSizes(standardSizesData[watchGender][watchSizingSystem]!);
+    } else {
+        setAvailableStandardSizes([]);
+    }
+  }, [watchGender, watchSizingSystem]);
 
   if (authLoading || isLoadingInitialData) {
      return (
@@ -181,6 +226,8 @@ export default function AddTraditionalMedicineProductPage() {
         </div>
      );
   }
+
+  const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubcategory')) || isClothingStream;
 
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-6">
@@ -196,121 +243,136 @@ export default function AddTraditionalMedicineProductPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             
-            {/* Step 1: Top-Level Category */}
             <Card>
-                <CardHeader><CardTitle>Step 1: Select a Use Case</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Step 1: Select a Product Stream</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryStructure.map(cat => (
                         <Card key={cat.useCase} onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
-                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
-                                form.watch('category') === cat.useCase && 'border-primary ring-2 ring-primary'
+                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                                form.watch('category') === cat.useCase && !isClothingStream && 'border-primary ring-2 ring-primary'
                             )}
                         >
                              <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" />
+                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
                             </div>
                             <p className="p-3 text-center font-semibold text-base">{cat.useCase}</p>
                         </Card>
                     ))}
+                     <Card onClick={handleClothingSelect} 
+                        className={cn(
+                            "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                            isClothingStream && 'border-primary ring-2 ring-primary'
+                        )}
+                    >
+                         <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
+                            <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                        </div>
+                        <p className="p-3 text-center font-semibold text-base">Clothing</p>
+                    </Card>
                 </CardContent>
             </Card>
 
-            {/* Step 2: Second-Level Category */}
             {selectedTopLevelCategory && (
-                <Card className="animate-fade-in-scale-up">
-                    <CardHeader><CardTitle>Step 2: Select a Product Type</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {selectedTopLevelCategory.categories.map(cat => (
-                             <Card 
-                                key={cat.type} 
-                                onClick={() => handleSecondLevelSelect(cat)} 
-                                className={cn(
-                                    "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
-                                    form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary'
-                                )}
-                              >
-                                <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                    <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
-                                </div>
-                                <div className="p-3 flex flex-col items-center flex-grow">
-                                  <p className="text-center font-semibold text-base">{cat.type}</p>
-                                  {form.watch('subcategory') === cat.type && (
-                                     <div className="w-full mt-4 animate-fade-in-scale-up">
-                                          <FormField
-                                              control={form.control}
-                                              name="subSubcategory"
-                                              render={({ field }) => (
-                                                  <FormItem>
-                                                      <FormLabel className="sr-only">Specific Product Sub-Type</FormLabel>
-                                                      <Select onValueChange={field.onChange} value={field.value || ''}>
-                                                          <FormControl><SelectTrigger><SelectValue placeholder="Select a specific sub-type" /></SelectTrigger></FormControl>
-                                                          <SelectContent>
-                                                              {cat.subtypes.map(subtype => <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>)}
-                                                          </SelectContent>
-                                                      </Select>
-                                                      <FormMessage />
-                                                  </FormItem>
-                                              )}
-                                          />
-                                      </div>
-                                  )}
-                                </div>
-                            </Card>
-                        ))}
-                    </CardContent>
-                </Card>
+                <div ref={secondStepRef}>
+                    <Card className="animate-fade-in-scale-up">
+                        <CardHeader><CardTitle>Step 2: Select a Product Type</CardTitle></CardHeader>
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {selectedTopLevelCategory.categories.map(cat => (
+                                <Card 
+                                    key={cat.type} 
+                                    onClick={() => handleSecondLevelSelect(cat)} 
+                                    className={cn(
+                                        "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                                        form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary'
+                                    )}
+                                >
+                                    <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
+                                        <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                    </div>
+                                    <div className="p-3 flex flex-col items-center flex-grow">
+                                    <p className="text-center font-semibold text-base">{cat.type}</p>
+                                    {form.watch('subcategory') === cat.type && (
+                                        <div className="w-full mt-4 animate-fade-in-scale-up">
+                                            <Select onValueChange={(value) => handleSubSubCategorySelect(value)}>
+                                                <SelectTrigger><SelectValue placeholder="Select a specific sub-type" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {cat.subtypes.map(subtype => <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    )}
+                                    </div>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
-          {(form.watch('subSubcategory')) && (
-              <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                  <Separator />
-                  <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
-                  <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                  
-                  <div className="space-y-6">
+          <div ref={finalFormRef}>
+              {showFinalForm && (
+                  <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
-                      <div className="space-y-4">
-                      {priceTierFields.map((field, index) => (
-                          <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
-                              <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                              {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                          </div>
-                      ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
-                      </div>
-                      <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                      {watchIsAvailableForPool && (
-                      <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                      <CardContent className="p-0 space-y-2">
-                          {poolPriceTierFields.map((field, index) => (
-                          <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                              <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                              <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                              {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                          </div>
-                          ))}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
-                      </CardContent>
-                      </Card>
+                      <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
+                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                      
+                      {isClothingStream && (
+                        <>
+                          <Separator/>
+                          <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
+                           <div className="grid md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                            </div>
+                            <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
+                        </>
                       )}
-                      <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
-                      <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
-                      <CardFooter className="p-0 pt-6">
-                          <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                              Add Product
-                          </Button>
-                      </CardFooter>
+                      
+                      <div className="space-y-6">
+                          <Separator />
+                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                          <div className="space-y-4">
+                          {priceTierFields.map((field, index) => (
+                              <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
+                                  <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                                  <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                  <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                              </div>
+                          ))}
+                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
+                          </div>
+                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                          {watchIsAvailableForPool && (
+                          <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                          <CardContent className="p-0 space-y-2">
+                              {poolPriceTierFields.map((field, index) => (
+                              <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
+                                  <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                  <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                  {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                              </div>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                          </CardContent>
+                          </Card>
+                          )}
+                          <Separator />
+                          <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
+                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+                          <CardFooter className="p-0 pt-6">
+                              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                                  Add Product
+                              </Button>
+                          </CardFooter>
+                      </div>
                   </div>
-              </div>
-          )}
+              )}
+          </div>
           <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
           <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
         </form>
