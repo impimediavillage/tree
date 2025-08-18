@@ -604,10 +604,19 @@ export default function WellnessStorePage() {
           setIsLoading(false);
           return;
         }
-        setWellness(wellnessSnap.data() as Dispensary);
+        
+        const wellnessData = wellnessSnap.data() as Dispensary;
+        setWellness(wellnessData);
+
+        const getProductCollectionName = (type: string | undefined): string => {
+            if (!type) return 'products'; // Fallback for safety
+            return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+        };
+
+        const productCollectionName = getProductCollectionName(wellnessData.dispensaryType);
 
         const productsQuery = query(
-          collection(db, 'products'),
+          collection(db, productCollectionName),
           where('dispensaryId', '==', wellnessId),
           orderBy('name')
         );
