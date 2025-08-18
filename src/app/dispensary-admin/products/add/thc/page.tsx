@@ -227,13 +227,13 @@ export default function AddTHCProductPage() {
     }
   };
   
-  const productStreams: { key: ProductStream; title: string; icon: React.ElementType }[] = [
-    { key: 'THC', title: 'Cannibinoid (other)', icon: Flame },
-    { key: 'CBD', title: 'CBD', icon: Leaf },
-    { key: 'Apparel', title: 'Apparel', icon: Shirt },
-    { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
-    { key: 'Art', title: 'Art', icon: Paintbrush },
-    { key: 'Furniture', title: 'Furniture', icon: Home },
+  const productStreams: { key: ProductStream; title: string; imageUrl: string; }[] = [
+    { key: 'THC', title: 'Cannibinoid (other)', imageUrl: '/images/cannibinoid-store/canna1.jpg' },
+    { key: 'CBD', title: 'CBD', imageUrl: '/images/cannibinoid-store/cbd1.jpg' },
+    { key: 'Apparel', title: 'Apparel', imageUrl: '/images/cannibinoid-store/apparel1.jpg' },
+    { key: 'Smoking Gear', title: 'Smoking Gear', imageUrl: '/images/cannibinoid-store/gear1.jpg' },
+    { key: 'Art', title: 'Art', imageUrl: '/images/cannibinoid-store/art1.jpg' },
+    { key: 'Furniture', title: 'Furniture', imageUrl: '/images/cannibinoid-store/furn1.jpg' },
   ];
 
   const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
@@ -287,12 +287,29 @@ export default function AddTHCProductPage() {
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {productStreams.map(stream => (
-                  <Button key={stream.key} type="button" variant={selectedProductStream === stream.key ? 'default' : 'outline'} className="h-24 flex-col gap-2" onClick={() => handleProductStreamSelect(stream.key)}>
-                      <stream.icon className="h-8 w-8" />
-                      <span className="text-xs text-center">{stream.title}</span>
-                  </Button>
+                  <Card 
+                    key={stream.key} 
+                    onClick={() => handleProductStreamSelect(stream.key)}
+                    className={cn(
+                        "overflow-hidden cursor-pointer group hover:shadow-lg transition-shadow",
+                        selectedProductStream === stream.key && "ring-2 ring-primary border-primary"
+                    )}
+                  >
+                    <div className="relative aspect-[4/3] w-full bg-muted">
+                       <Image 
+                          src={stream.imageUrl} 
+                          alt={stream.title} 
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                       />
+                    </div>
+                    <CardFooter className="p-3 bg-card/80 backdrop-blur-sm">
+                        <p className="text-center font-semibold w-full text-foreground">{stream.title}</p>
+                    </CardFooter>
+                  </Card>
               ))}
           </div>
           
@@ -316,7 +333,7 @@ export default function AddTHCProductPage() {
                 <CardTitle className="flex items-center gap-3 text-orange-800">
                   <Gift className="text-yellow-500 fill-yellow-400" />The Triple S (Strain-Sticker-Sample) Club
                 </CardTitle>
-                 <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
+                <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
                     <p>
                         The Wellness Tree fully complies with South African Law and prohibits the sale of THC products.
                     </p>
