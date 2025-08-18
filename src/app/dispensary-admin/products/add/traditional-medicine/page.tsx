@@ -175,8 +175,8 @@ export default function AddTraditionalMedicineProductPage() {
         <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
             <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div>
             <Skeleton className="h-8 w-1/2" />
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-                <Skeleton className="h-48 w-full" /><Skeleton className="h-48 w-full" /><Skeleton className="h-48 w-full" /><Skeleton className="h-48 w-full" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+                <Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" />
             </div>
         </div>
      );
@@ -194,18 +194,23 @@ export default function AddTraditionalMedicineProductPage() {
         </Button>
       </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             
             {/* Step 1: Top-Level Category */}
             <Card>
                 <CardHeader><CardTitle>Step 1: Select a Use Case</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryStructure.map(cat => (
-                        <Card key={cat.useCase} onClick={() => handleTopLevelSelect(cat)} className={cn("cursor-pointer hover:border-primary", form.watch('category') === cat.useCase && 'border-primary ring-2 ring-primary')}>
-                            <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-md">
-                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'cover'}} />
+                        <Card key={cat.useCase} onClick={() => handleTopLevelSelect(cat)} 
+                            className={cn(
+                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
+                                form.watch('category') === cat.useCase && 'border-primary ring-2 ring-primary'
+                            )}
+                        >
+                             <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
+                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105" />
                             </div>
-                            <p className="p-2 text-center font-medium text-sm">{cat.useCase}</p>
+                            <p className="p-3 text-center font-semibold text-base">{cat.useCase}</p>
                         </Card>
                     ))}
                 </CardContent>
@@ -215,44 +220,47 @@ export default function AddTraditionalMedicineProductPage() {
             {selectedTopLevelCategory && (
                 <Card className="animate-fade-in-scale-up">
                     <CardHeader><CardTitle>Step 2: Select a Product Type</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {selectedTopLevelCategory.categories.map(cat => (
-                             <Card key={cat.type} onClick={() => handleSecondLevelSelect(cat)} className={cn("cursor-pointer hover:border-primary", form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary')}>
-                                <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-md">
-                                    <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'cover'}} />
+                             <Card 
+                                key={cat.type} 
+                                onClick={() => handleSecondLevelSelect(cat)} 
+                                className={cn(
+                                    "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
+                                    form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary'
+                                )}
+                              >
+                                <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
+                                    <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
                                 </div>
-                                <p className="p-2 text-center font-medium text-sm">{cat.type}</p>
+                                <div className="p-3 flex flex-col items-center flex-grow">
+                                  <p className="text-center font-semibold text-base">{cat.type}</p>
+                                  {form.watch('subcategory') === cat.type && (
+                                     <div className="w-full mt-4 animate-fade-in-scale-up">
+                                          <FormField
+                                              control={form.control}
+                                              name="subSubcategory"
+                                              render={({ field }) => (
+                                                  <FormItem>
+                                                      <FormLabel className="sr-only">Specific Product Sub-Type</FormLabel>
+                                                      <Select onValueChange={field.onChange} value={field.value || ''}>
+                                                          <FormControl><SelectTrigger><SelectValue placeholder="Select a specific sub-type" /></SelectTrigger></FormControl>
+                                                          <SelectContent>
+                                                              {cat.subtypes.map(subtype => <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>)}
+                                                          </SelectContent>
+                                                      </Select>
+                                                      <FormMessage />
+                                                  </FormItem>
+                                              )}
+                                          />
+                                      </div>
+                                  )}
+                                </div>
                             </Card>
                         ))}
                     </CardContent>
                 </Card>
             )}
-
-            {/* Step 3: Sub-Type Dropdown */}
-            {selectedSecondLevelCategory && (
-                 <Card className="animate-fade-in-scale-up">
-                    <CardHeader><CardTitle>Step 3: Select a Sub-Type</CardTitle></CardHeader>
-                    <CardContent>
-                         <FormField
-                            control={form.control}
-                            name="subSubcategory"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Specific Product Sub-Type</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a specific sub-type" /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            {selectedSecondLevelCategory.subtypes.map(subtype => <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </CardContent>
-                </Card>
-            )}
-
 
           {(form.watch('subSubcategory')) && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
