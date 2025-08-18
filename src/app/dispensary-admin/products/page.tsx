@@ -131,6 +131,9 @@ export default function WellnessProductsPage() {
     if (type === 'Cannibinoid store') {
         return '/dispensary-admin/products/add/thc';
     }
+    if (type === 'Homeopathic wellness') {
+        return '/dispensary-admin/products/add/homeopathy';
+    }
     return '/dispensary-admin/products/add';
   };
   const addProductPath = getAddProductPath();

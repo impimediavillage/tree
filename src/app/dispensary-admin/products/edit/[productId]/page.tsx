@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Gift, Brush } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Gift, Brush, Palette, Home } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -43,9 +43,9 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furniture' | 'Sticker Promo Set';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furniture' | 'Sticker Promo Set' | 'Homeopathy' | 'Traditional Medicine';
 
-const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.ElementType; color: string }> = {
+const streamDisplayMapping: Record<string, { text: string; icon: React.ElementType; color: string }> = {
     'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
     'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
     'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
@@ -53,7 +53,10 @@ const streamDisplayMapping: Record<StreamKey, { text: string; icon: React.Elemen
     'Art': { text: 'Art', icon: Brush, color: 'text-pink-500'},
     'Furniture': { text: 'Furniture', icon: Brush, color: 'text-orange-500'},
     'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Gift, color: 'text-yellow-500' },
+    'Homeopathy': { text: 'Homeopathy', icon: LeafIconLucide, color: 'text-teal-500' },
+    'Traditional Medicine': { text: 'Traditional Medicine', icon: Home, color: 'text-amber-600' },
 };
+
 
 const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (!dispensaryType) return 'products'; // Fallback to default
