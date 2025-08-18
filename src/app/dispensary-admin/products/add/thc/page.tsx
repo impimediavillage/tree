@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -225,7 +225,7 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
     { key: 'Apparel', title: 'Apparel', icon: Shirt },
     { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
-    { key: 'Art', title: 'Art', icon: Brush },
+    { key: 'Art', title: 'Art', icon: Palette },
     { key: 'Furniture', title: 'Furniture', icon: Brush },
   ];
 
@@ -291,12 +291,14 @@ export default function AddTHCProductPage() {
           
           {showOptInSection && (
             <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up overflow-hidden">
-                <div className="relative w-full h-40">
+                <div className="relative w-full max-w-[768px] mx-auto">
                     <Image
                         src="/images/2025-triple-s/t36.jpg"
                         alt="The Triple S Club banner"
-                        layout="fill"
-                        objectFit="cover"
+                        width={768}
+                        height={432}
+                        layout="responsive"
+                        className="object-contain"
                         data-ai-hint="cannabis plants creative"
                     />
                 </div>
