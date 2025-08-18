@@ -134,8 +134,8 @@ export default function WellnessProductsPage() {
             <Skeleton className="h-10 w-full sm:w-44" />
         </div>
         <Skeleton className="h-16 w-full" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-            {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6 py-6">
+            {Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-[420px] w-full rounded-lg" />
             ))}
         </div>
@@ -198,7 +198,7 @@ export default function WellnessProductsPage() {
       </div>
       
       {filteredAndSortedProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
           {filteredAndSortedProducts.map((product) => (
             <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
           ))}
