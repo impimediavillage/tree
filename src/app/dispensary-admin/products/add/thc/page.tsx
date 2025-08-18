@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home, Artboard } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home, Paintbrush } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -232,7 +232,7 @@ export default function AddTHCProductPage() {
     { key: 'CBD', title: 'CBD', icon: Leaf },
     { key: 'Apparel', title: 'Apparel', icon: Shirt },
     { key: 'Smoking Gear', title: 'Smoking Gear', icon: Sparkles },
-    { key: 'Art', title: 'Art', icon: Artboard },
+    { key: 'Art', title: 'Art', icon: Paintbrush },
     { key: 'Furniture', title: 'Furniture', icon: Home },
   ];
 
