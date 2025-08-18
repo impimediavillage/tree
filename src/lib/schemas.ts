@@ -1,6 +1,6 @@
 
 import { z } from 'zod';
-import type { ProductCategory as ProductCategoryType } from '../../functions/src/types';
+import type { ProductCategory as ProductCategoryType } from '../functions/src/types';
 
 
 const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -179,7 +179,7 @@ export const priceTierSchema = z.object({
     .positive({ message: "Price must be a positive number." })
     .refine(val => {
         const valueTimes100 = val * 100;
-        return Math.abs(valueTimes100 - Math.round(valueTimes100)) < 0.00001;
+        return Math.abs(valueTimes100 - Math.round(valueTimes100)) < 0.0001;
     }, {
       message: "Price can have at most two decimal places.",
     })
