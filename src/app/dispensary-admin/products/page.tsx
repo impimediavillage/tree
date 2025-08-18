@@ -123,7 +123,9 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  const addProductPath = '/dispensary-admin/products/add';
+  const addProductPath = currentDispensary?.dispensaryType === 'Traditional Medicine dispensary'
+      ? '/dispensary-admin/products/add/traditional-medicine'
+      : '/dispensary-admin/products/add';
 
 
   if (isLoading) {
