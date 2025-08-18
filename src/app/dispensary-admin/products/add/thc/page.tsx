@@ -81,6 +81,7 @@ export default function AddTHCProductPage() {
       currency: currentDispensary?.currency || 'ZAR',
       effects: [], flavors: [], medicalUses: [],
       stickerProgramOptIn: null,
+      productType: '',
       gender: undefined, sizingSystem: undefined, sizes: [],
       growingMedium: undefined, feedingType: undefined
     },
@@ -156,6 +157,11 @@ export default function AddTHCProductPage() {
       form.setValue('subcategory', null);
   };
 
+  const getProductCollectionName = (type: string | undefined): string => {
+      if (!type) return 'products'; // Fallback for safety
+      return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+  };
+
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
       toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
@@ -201,7 +207,7 @@ export default function AddTHCProductPage() {
             labTestReportUrl: uploadedLabTestUrl,
         };
         
-        const collectionName = currentDispensary.dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+        const collectionName = getProductCollectionName(currentDispensary.dispensaryType);
         await addDoc(collection(db, collectionName), productData);
 
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
@@ -284,13 +290,30 @@ export default function AddTHCProductPage() {
           </div>
           
           {showOptInSection && (
-            <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up">
+            <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up overflow-hidden">
+                <div className="relative w-full h-40">
+                    <Image
+                        src="/images/2025-triple-s/t36.jpg"
+                        alt="The Triple S Club banner"
+                        layout="fill"
+                        objectFit="cover"
+                        data-ai-hint="cannabis plants creative"
+                    />
+                </div>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-orange-800">
                   <Gift className="text-yellow-500 fill-yellow-400" />The Triple S (Strain-Sticker-Sample) Club
                 </CardTitle>
-                <CardDescription className="text-orange-700/80">
-                  Opt-in to include this product in our exclusive sticker promotion. Customers buy a sticker design and get a sample of your product for free!
+                <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
+                    <p>
+                        The Wellness Tree fully complies with South African Law and prohibits the sale of THC products. The Wellness Tree offers the The Triple S Club as an opportunity for Home growers and fellow Cannabis enthusiasts to be able to share and their grow with the public by selling strain specific stickers or stickers promoting the strain and Cannabinoid store.
+                    </p>
+                    <p>
+                        The public buys the sticker and recieves the sample amounts you create as a grower for FREE. The sticker price is paid to You less our 20% per transaction. Payments are sent you to Your Payfast sub account attached to our main Payfast account once the Driver has succesfully dropped of the sticker and free sample package, or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased. We know that Yourr legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating.
+                    </p>
+                    <p>
+                        Whats cool about the Triple S Club is each sticker is uniquely created with the help of  Open AI's Dalle 3, and each sticker is truly unique. We also have a dedicated already created Triple S Sticker card set for fellow ganga enthusiasts to enjoy.
+                    </p>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -399,37 +422,6 @@ export default function AddTHCProductPage() {
                     </>
                   )}
 
-                  {isCannabinoidStream && (
-                    <>
-                        <Separator />
-                        <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
-                        <FormField control={form.control} name="effects" render={({ field }) => (
-                           <FormItem><FormLabel>Effects</FormLabel>
-                                <div className="flex items-center gap-2">
-                                <Select onValueChange={(val) => handleAddAttribute('effects', val)}>
-                                    <SelectTrigger><SelectValue placeholder="Add an effect..." /></SelectTrigger>
-                                    <SelectContent>{zeroPercentEffects.map(effect => <SelectItem key={effect} value={effect}>{effect}</SelectItem>)}</SelectContent>
-                                </Select>
-                                </div>
-                                <FormControl><MultiInputTags inputType="attribute" placeholder="Or add a custom effect..." value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage />
-                           </FormItem>
-                        )} />
-
-                        <FormField control={form.control} name="medicalUses" render={({ field }) => (
-                           <FormItem><FormLabel>Medical Uses</FormLabel>
-                                <div className="flex items-center gap-2">
-                                <Select onValueChange={(val) => handleAddAttribute('medicalUses', val)}>
-                                    <SelectTrigger><SelectValue placeholder="Add a medical use..." /></SelectTrigger>
-                                    <SelectContent>{zeroPercentMedical.map(use => <SelectItem key={use} value={use}>{use}</SelectItem>)}</SelectContent>
-                                </Select>
-                                </div>
-                               <FormControl><MultiInputTags inputType="attribute" placeholder="Or add custom medical use..." value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage />
-                           </FormItem>
-                        )} />
-                        <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Pine, Citrus" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
-                    </>
-                  )}
-                  
                   <div className="space-y-6">
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
