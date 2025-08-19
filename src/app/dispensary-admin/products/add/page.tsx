@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Flame, Leaf, Shirt, Sparkles, Gift, Heart, Home as HomeIcon } from 'lucide-react';
+import { ArrowLeft, Flame, Leaf, Shirt, Sparkles, Gift, Heart, Home as HomeIcon, Brain } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Traditional Medicine' | 'Homeopathy';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Traditional Medicine' | 'Homeopathy' | 'Mushroom';
 
 interface StreamCardProps {
   title: string;
@@ -55,6 +55,9 @@ export default function AddProductStreamSelectionPage() {
       case 'Homeopathy':
         router.push('/dispensary-admin/products/add/homeopathy');
         break;
+      case 'Mushroom':
+        router.push('/dispensary-admin/products/add/mushroom');
+        break;
       default:
         // Pointing others to thc page as a placeholder for now
         router.push('/dispensary-admin/products/add/thc');
@@ -80,6 +83,10 @@ export default function AddProductStreamSelectionPage() {
   } else if (dispensaryType === 'Homeopathic store') {
       availableStreams = [
           { stream: 'Homeopathy', title: 'Homeopathy Product', description: 'Add homeopathic remedies, tinctures, and other related products.', icon: HomeIcon, onClick: handleStreamSelection },
+      ]
+  } else if (dispensaryType === 'Mushroom store') {
+      availableStreams = [
+          { stream: 'Mushroom', title: 'Mushroom Product', description: 'Add medicinal, gourmet, or other mushroom-related products.', icon: Brain, onClick: handleStreamSelection },
       ]
   } else {
     // Default stream for other types
