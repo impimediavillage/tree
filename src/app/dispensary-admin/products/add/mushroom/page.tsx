@@ -40,7 +40,8 @@ export default function AddMushroomProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<any[]>([]);
+  const [topLevelCategories, setTopLevelCategories] = useState<any[]>([]);
+  const [selectedTopLevel, setSelectedTopLevel] = useState<any | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   
   const [files, setFiles] = useState<File[]>([]);
@@ -75,7 +76,7 @@ export default function AddMushroomProductPage() {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
         const categories = data?.categoriesData?.mushroomProductCategories || [];
-        setCategoryStructure(categories);
+        setTopLevelCategories(categories);
       } else {
         toast({ title: 'Error', description: 'Could not find category structure for "Mushroom store".', variant: 'destructive' });
       }
@@ -93,6 +94,14 @@ export default function AddMushroomProductPage() {
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  
+  const handleTopLevelSelect = (category: any) => {
+    setSelectedTopLevel(category.category_name === selectedTopLevel?.category_name ? null : category);
+    setSelectedProduct(null); // Reset product selection when top level changes
+    form.setValue('name', '');
+    form.setValue('description', '');
+    form.setValue('subcategory', null);
   };
 
   const handleProductSelect = (product: any, format: string) => {
@@ -162,7 +171,7 @@ export default function AddMushroomProductPage() {
   
   if (authLoading || isLoadingInitialData) {
      return (
-        <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
+        <div className="max-w-5xl mx-auto my-8 p-6 space-y-6">
             <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div>
             <Skeleton className="h-8 w-1/2" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
@@ -171,13 +180,15 @@ export default function AddMushroomProductPage() {
         </div>
      );
   }
+  
+  const showFinalForm = !!selectedProduct;
 
   return (
-    <div className="max-w-5xl mx-auto my-8 space-y-6">
+    <div className="max-w-7xl mx-auto my-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2"><Brain className="h-8 w-8 text-primary"/> Add Mushroom Product</h1>
-          <p className="text-muted-foreground mt-1">Select a base mushroom product to start.</p>
+          <p className="text-muted-foreground mt-1">Follow the steps to add your mushroom product.</p>
         </div>
         <Button variant="outline" asChild>
             <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
@@ -187,21 +198,52 @@ export default function AddMushroomProductPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             
             <Card>
-                <CardHeader><CardTitle>Step 1: Select a Base Product</CardTitle></CardHeader>
-                <CardContent>
-                    <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory py-4 px-2 -mx-2">
-                        {categoryStructure.map((cat, index) => (
-                            <MushroomProductCard key={index} product={cat} onSelect={handleProductSelect} />
-                        ))}
-                    </div>
+                <CardHeader><CardTitle>Step 1: Select a Product Category</CardTitle></CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {topLevelCategories.map((cat, index) => (
+                        <Card 
+                            key={index} 
+                            onClick={() => handleTopLevelSelect(cat)}
+                            className={cn(
+                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
+                                selectedTopLevel?.category_name === cat.category_name && 'border-primary ring-2 ring-primary'
+                            )}
+                        >
+                            <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
+                                <Image src={cat.imageUrl} alt={cat.category_name} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
+                            </div>
+                            <CardContent className="p-4 flex-grow flex flex-col">
+                                <h3 className="text-lg font-semibold">{cat.category_name}</h3>
+                                <p className="text-sm text-muted-foreground mt-1 flex-grow">{cat.description}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </CardContent>
             </Card>
 
+            {selectedTopLevel && (
+                <div className="animate-fade-in-scale-up space-y-6">
+                    <Separator />
+                    <h3 className="text-2xl font-bold">Step 2: Select a Specific Product from <span className="text-primary">{selectedTopLevel.category_name}</span></h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {selectedTopLevel.products.map((product: any, index: number) => (
+                            <MushroomProductCard 
+                                key={index} 
+                                product={product} 
+                                onSelect={handleProductSelect}
+                                isSelected={selectedProduct?.name === product.name}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+
             <div ref={finalFormRef}>
-              {selectedProduct && (
+              {showFinalForm && (
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Step 2: Product Details</h3>
+                      <h3 className="text-2xl font-bold border-b pb-2">Step 3: Finalize Product Details</h3>
                       <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                       
