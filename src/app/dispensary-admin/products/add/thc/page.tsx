@@ -32,6 +32,10 @@ import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import { functions } from '@/lib/firebase';
+
+const getCannabinoidProductCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
+
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -105,6 +109,19 @@ export default function AddTHCProductPage() {
   const watchGender = form.watch('gender');
   const watchSizingSystem = form.watch('sizingSystem');
   
+  const fetchCannabinoidCategories = useCallback(async (stream: 'THC' | 'CBD') => {
+      setIsLoadingInitialData(true);
+      try {
+          const result = await getCannabinoidProductCategoriesCallable({ stream });
+          setDeliveryMethods(result.data as Record<string, any>);
+      } catch (error) {
+          console.error(`Error fetching categories for ${stream}:`, error);
+          toast({ title: 'Error', description: 'Failed to load product categories.', variant: 'destructive' });
+      } finally {
+          setIsLoadingInitialData(false);
+      }
+  }, [toast]);
+
   const handleProductStreamSelect = (stream: ProductStream) => {
     form.reset({
       ...form.getValues(),
@@ -124,11 +141,9 @@ export default function AddTHCProductPage() {
     setZeroPercentMedical([]);
     setSelectedProductStream(stream);
 
-    if (stream === 'THC') {
+    if (stream === 'THC' || stream === 'CBD') {
+        fetchCannabinoidCategories(stream);
         setShowOptInSection(true);
-    } else if (stream === 'CBD') {
-        setShowOptInSection(false);
-        setShowStrainFinder(true);
     } else {
       setShowOptInSection(false);
       setShowStrainFinder(false);
@@ -150,7 +165,7 @@ export default function AddTHCProductPage() {
     
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
-    setShowCategorySelector(true);
+    setShowCategorySelector(true); // <-- This is the key fix
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
   };
@@ -389,7 +404,7 @@ export default function AddTHCProductPage() {
             </div>
           )}
           
-          {isCannabinoidStream && showCategorySelector && (
+          {showCategorySelector && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                   <Separator />
                   <h3 className="text-xl font-semibold border-b pb-2">Category Selection *</h3>
