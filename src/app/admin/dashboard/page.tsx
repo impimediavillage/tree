@@ -100,12 +100,11 @@ export default function AdminDashboardOverviewPage() {
       setIsLoadingStats(true);
       try {
         const usersSnapshot = await getDocs(collection(db, "users"));
-        const wellnessCollection = collection(db, "dispensaries") as CollectionReference<Dispensary, DocumentData>;
+        const wellnessCollection = collection(db, "dispensaries");
         const wellnessSnapshot = await getDocs(wellnessCollection);
         const pendingWellnessQuery = query(wellnessCollection, where("status", "==", "Pending Approval"));
         const pendingWellnessSnapshot = await getDocs(pendingWellnessQuery);
         const productsSnapshot = await getDocs(collection(db, "products")); 
-        }
 
         setStats({
           totalUsers: usersSnapshot.size,
