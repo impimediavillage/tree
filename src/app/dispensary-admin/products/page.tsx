@@ -123,11 +123,7 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  const getAddProductPath = () => {
-    const type = currentDispensary?.dispensaryType;
-    return '/dispensary-admin/products/add';
-  };
-  const addProductPath = getAddProductPath();
+  const addProductPath = '/dispensary-admin/products/add';
 
 
   if (isLoading) {
