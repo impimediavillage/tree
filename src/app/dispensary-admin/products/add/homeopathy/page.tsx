@@ -82,14 +82,9 @@ export default function AddHomeopathyProductPage() {
         const data = docSnap.data();
         
         let categories: HomeopathyCategory[] = [];
-
-        if (data && data.categoriesData && Array.isArray(data.categoriesData)) {
-            const parsedCategories = data.categoriesData.map((cat: any) => ({
-                type: cat.type,
-                imageUrl: cat.imageUrl,
-                examples: Array.isArray(cat.examples) ? cat.examples : []
-            }));
-            categories = parsedCategories;
+        const rawCategories = data?.categoriesData?.homeopathicProducts?.homeopathicProducts;
+        if (rawCategories && typeof rawCategories === 'object') {
+             categories = Object.values(rawCategories) as HomeopathyCategory[];
         } else {
              toast({ title: 'Data Format Error', description: 'Homeopathy category data is in an unexpected format.', variant: 'destructive' });
         }
@@ -117,7 +112,7 @@ export default function AddHomeopathyProductPage() {
   const handleTopLevelSelect = (category: HomeopathyCategory) => {
     setSelectedTopLevelCategory(category);
     form.setValue('category', category.type, { shouldValidate: true });
-    form.setValue('subcategory', null);
+    form.setValue('subcategory', null); // Reset subcategory when top level changes
   };
   
   const handleSubCategorySelect = (subType: string) => {
