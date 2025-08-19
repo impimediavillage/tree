@@ -19,11 +19,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (!dispensaryType) return 'products'; // Fallback to default
-    if (dispensaryType === "Homeopathy store") return 'homeopathy_store_products';
-    if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
-    if (dispensaryType === "Cannibinoid store") return 'cannibinoid_store_products';
-    
-    // Fallback for any other type
+    // Ensure consistent snake_case naming for collections
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -60,7 +56,7 @@ export default function WellnessProductsPage() {
         }
     } catch (error: any) {
         console.error('Error fetching products:', error);
-        // Do not toast here as it causes a render loop error if called during render
+        // This log is for development, toast removed to prevent render loop issues.
     } finally {
         setIsLoading(false);
     }
@@ -70,7 +66,6 @@ export default function WellnessProductsPage() {
     if (!authLoading && dispensaryId) {
       fetchProducts(dispensaryId);
     } else if (!authLoading) {
-      // This case handles when a user is loaded but has no dispensaryId
       setIsLoading(false);
     }
   }, [authLoading, dispensaryId, fetchProducts]);
@@ -139,7 +134,6 @@ export default function WellnessProductsPage() {
     if (type === 'Cannibinoid store') {
       return '/dispensary-admin/products/add/thc';
     }
-    // General fallback for any other store type
     return '/dispensary-admin/products/add/default';
   };
   const addProductPath = getAddProductPath();
