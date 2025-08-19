@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType } from '@/types';
@@ -74,20 +74,24 @@ export default function AddHomeopathyProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const docRef = doc(db, 'dispensaryTypeProductCategories', 'Homeopathy store');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+      const q = query(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Homeopathy store"), limit(1));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
         const categories = data?.categoriesData?.homeopathicProducts?.homeopathicProducts || [];
+        
         if (Array.isArray(categories)) {
             setCategoryStructure(categories);
-        } else {
-            // Handle if it's a map/object instead
+        } else if (typeof categories === 'object' && categories !== null) {
             const categoryArray = Object.values(categories) as HomeopathyCategory[];
             setCategoryStructure(categoryArray);
+        } else {
+             toast({ title: 'Data Error', description: 'Homeopathy category data is in an unexpected format.', variant: 'destructive' });
         }
       } else {
-        toast({ title: 'Error', description: 'Could not find category structure for Homeopathy store.', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Could not find category structure for "Homeopathy store".', variant: 'destructive' });
       }
     } catch (error) {
       console.error("Error fetching category structure:", error);
