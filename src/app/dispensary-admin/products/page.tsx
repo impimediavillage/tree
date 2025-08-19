@@ -134,9 +134,7 @@ export default function WellnessProductsPage() {
     if (type === 'Homeopathic wellness') {
       return '/dispensary-admin/products/add/homeopathy';
     }
-    // Fallback for any other type - point to a default (but now unused) page to avoid errors.
-    // In a perfect world, this case shouldn't be hit with current store types.
-    return '/dispensary-admin/dashboard'; 
+    return '/dispensary-admin/dashboard';
   };
   const addProductPath = getAddProductPath();
 
