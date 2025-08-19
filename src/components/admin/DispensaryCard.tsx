@@ -13,6 +13,7 @@ interface DispensaryCardProps {
   dispensary: Dispensary;
   onEdit: () => void;
   onDelete: (wellnessId: string, wellnessName: string) => Promise<void>;
+  isSuperAdmin: boolean;
 }
 
 const getStatusProps = (status: Dispensary['status']) => {
@@ -30,7 +31,7 @@ const getStatusProps = (status: Dispensary['status']) => {
   }
 };
 
-export function DispensaryCard({ dispensary: wellness, onEdit, onDelete }: DispensaryCardProps) {
+export function DispensaryCard({ dispensary: wellness, onEdit, onDelete, isSuperAdmin }: DispensaryCardProps) {
   const StatusIcon = getStatusProps(wellness.status).VFC;
   const statusBadgeClass = getStatusProps(wellness.status).badgeClass;
 
@@ -89,27 +90,29 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete }: Dispe
         <Button variant="outline" className="w-full" onClick={onEdit}>
             <Edit className="mr-2 h-4 w-4" /> Edit Details
         </Button>
-        <AlertDialog>
-            <AlertDialogTrigger asChild>
-            <Button variant="destructive" className="w-full">
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-            </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the wellness profile &quot;{wellness.dispensaryName}&quot; and all its associated data.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onDelete(wellness.id!, wellness.dispensaryName)}>
-                Yes, delete wellness profile
-                </AlertDialogAction>
-            </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+        {isSuperAdmin && (
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the wellness profile &quot;{wellness.dispensaryName}&quot; and all its associated data.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(wellness.id!, wellness.dispensaryName)}>
+                    Yes, delete wellness profile
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        )}
       </CardFooter>
     </Card>
   );
