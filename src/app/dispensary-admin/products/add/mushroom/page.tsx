@@ -45,6 +45,7 @@ export default function AddMushroomProductPage() {
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   
   const [files, setFiles] = useState<File[]>([]);
+  const secondStepRef = useRef<HTMLDivElement>(null);
   const finalFormRef = useRef<HTMLDivElement>(null);
 
 
@@ -102,6 +103,7 @@ export default function AddMushroomProductPage() {
     form.setValue('name', '');
     form.setValue('description', '');
     form.setValue('subcategory', null);
+    setTimeout(() => scrollToRef(secondStepRef), 100);
   };
 
   const handleProductSelect = (product: any, format: string) => {
@@ -115,8 +117,6 @@ export default function AddMushroomProductPage() {
   };
 
   const getProductCollectionName = (): string => {
-    const type = currentDispensary?.dispensaryType;
-    if (!type) return 'products'; // Fallback
     return 'mushroom_store_products';
   };
 
@@ -222,7 +222,7 @@ export default function AddMushroomProductPage() {
             </Card>
 
             {selectedTopLevel && (
-                <div className="animate-fade-in-scale-up space-y-6">
+                <div className="animate-fade-in-scale-up space-y-6" ref={secondStepRef}>
                     <Separator />
                     <h3 className="text-2xl font-bold">Step 2: Select a Specific Product from <span className="text-primary">{selectedTopLevel.category_name}</span></h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -231,7 +231,6 @@ export default function AddMushroomProductPage() {
                                 key={index} 
                                 product={product} 
                                 onSelect={handleProductSelect}
-                                isSelected={selectedProduct?.name === product.name}
                             />
                         ))}
                     </div>
