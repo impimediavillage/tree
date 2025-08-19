@@ -33,7 +33,12 @@ export default function SignInPage() {
     },
   });
   
-  const handleRedirect = (userProfile: AppUser) => {
+  const handleRedirect = (userProfile: AppUser | null) => {
+    if (!userProfile) {
+        toast({ title: 'Redirect Failed', description: 'Could not verify user role.', variant: 'destructive'});
+        router.push('/');
+        return;
+    }
     if (userProfile.role === 'Super Admin') {
       router.push('/admin/dashboard');
     } else if (userProfile.role === 'DispensaryOwner' || userProfile.role === 'DispensaryStaff') {
@@ -55,12 +60,7 @@ export default function SignInPage() {
       
       const userProfile = await fetchUserProfile(userCredential.user);
 
-      if (userProfile) {
-        handleRedirect(userProfile);
-      } else {
-         // The AuthContext now handles all user-facing error reporting,
-         // including a toast notification if the profile fetch fails after a successful auth.
-      }
+      handleRedirect(userProfile);
 
     } catch (error: any) {
       let errorMessage = "Failed to sign in. Please check your credentials.";
