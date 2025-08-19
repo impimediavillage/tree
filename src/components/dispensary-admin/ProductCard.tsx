@@ -36,7 +36,7 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
         case 'Mushroom store':
             return `/dispensary-admin/products/edit/mushroom/${productId}`;
         case 'Permaculture & gardening store':
-            return `/dispensary-admin/products/edit/default/${productId}`; // Placeholder, can be specialized later
+            return `/dispensary-admin/products/edit/permaculture/${productId}`;
         default:
             return `/dispensary-admin/products/edit/default/${productId}`;
     }
@@ -232,3 +232,5 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
     </>
   );
 }
+
+    

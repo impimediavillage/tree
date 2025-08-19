@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createDispensaryUser = exports.getDispensaryProducts = exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
+exports.adminUpdateUser = exports.createDispensaryUser = exports.getDispensaryProducts = exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -362,7 +362,7 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
                 role: 'DispensaryOwner',
                 dispensaryId: dispensaryId,
                 credits: 0,
-                createdAt: null,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 lastLoginAt: null,
                 status: 'Active',
                 welcomeCreditsAwarded: false,
@@ -382,6 +382,41 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
             throw error;
         }
         throw new https_1.HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
+    }
+});
+exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
+    if (request.auth?.token.role !== 'Super Admin') {
+        throw new https_1.HttpsError('permission-denied', 'Only Super Admins can update users.');
+    }
+    const { userId, password, ...firestoreData } = request.data;
+    if (!userId) {
+        throw new https_1.HttpsError('invalid-argument', 'User ID is required.');
+    }
+    try {
+        // Update Firebase Auth user if a password is provided
+        if (password) {
+            await admin.auth().updateUser(userId, { password: password });
+        }
+        // Update Firestore user document
+        const userDocRef = db.collection('users').doc(userId);
+        // Ensure dispensaryId is null if role is not DispensaryOwner
+        if (firestoreData.role !== 'DispensaryOwner') {
+            firestoreData.dispensaryId = null;
+        }
+        await userDocRef.update({ ...firestoreData, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        logger.info(`Admin successfully updated user ${userId}.`);
+        return { success: true, message: 'User updated successfully.' };
+    }
+    catch (error) {
+        logger.error(`Error in adminUpdateUser for ${userId}:`, error);
+        if (error instanceof https_1.HttpsError) {
+            throw error;
+        }
+        // Handle common auth errors
+        if (error.code === 'auth/user-not-found') {
+            throw new https_1.HttpsError('not-found', 'The specified user does not exist.');
+        }
+        throw new https_1.HttpsError('internal', 'An unexpected server error occurred while updating the user.');
     }
 });
 //# sourceMappingURL=index.js.map
