@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Flame, Leaf, Shirt, Sparkles, Gift, Heart } from 'lucide-react';
+import { ArrowLeft, Flame, Leaf, Shirt, Sparkles, Gift, Heart, Home as HomeIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Traditional Medicine';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Traditional Medicine' | 'Homeopathy';
 
 interface StreamCardProps {
   title: string;
@@ -52,31 +52,39 @@ export default function AddProductStreamSelectionPage() {
       case 'Traditional Medicine':
         router.push('/dispensary-admin/products/add/traditional-medicine');
         break;
+      case 'Homeopathy':
+        router.push('/dispensary-admin/products/add/homeopathy');
+        break;
       default:
-        // Pointing others to thc page as a placeholder
+        // Pointing others to thc page as a placeholder for now
         router.push('/dispensary-admin/products/add/thc');
         break;
     }
   };
   
   let availableStreams: StreamCardProps[] = [];
+  const dispensaryType = currentDispensary?.dispensaryType;
 
-  if (currentDispensary?.dispensaryType === 'Cannibinoid store') {
+  if (dispensaryType === 'Cannibinoid store') {
     availableStreams = [
-      { key: 'THC', title: 'Cannibinoid (other)', description: 'Add THC-dominant flowers, edibles, tinctures, etc. Includes strain finder.', icon: Flame, onClick: handleStreamSelection },
-      { key: 'CBD', title: 'CBD Product', description: 'Add CBD-dominant wellness products.', icon: Leaf, onClick: handleStreamSelection },
-      { key: 'Apparel', title: 'Apparel', description: 'T-shirts, hoodies, caps, and other merchandise.', icon: Shirt, onClick: handleStreamSelection, disabled: true },
-      { key: 'Smoking Gear', title: 'Smoking Gear', description: 'Bongs, pipes, grinders, and other accessories.', icon: Sparkles, onClick: handleStreamSelection, disabled: true },
-      { key: 'Sticker Promo Set', title: 'Sticker Promo Set', description: 'Special promotional sticker packs.', icon: Gift, onClick: handleStreamSelection, disabled: true }
+      { stream: 'THC', title: 'Cannibinoid (other)', description: 'Add THC-dominant flowers, edibles, tinctures, etc. Includes strain finder.', icon: Flame, onClick: handleStreamSelection },
+      { stream: 'CBD', title: 'CBD Product', description: 'Add CBD-dominant wellness products.', icon: Leaf, onClick: handleStreamSelection },
+      { stream: 'Apparel', title: 'Apparel', description: 'T-shirts, hoodies, caps, and other merchandise.', icon: Shirt, onClick: handleStreamSelection, disabled: true },
+      { stream: 'Smoking Gear', title: 'Smoking Gear', description: 'Bongs, pipes, grinders, and other accessories.', icon: Sparkles, onClick: handleStreamSelection, disabled: true },
+      { stream: 'Sticker Promo Set', title: 'Sticker Promo Set', description: 'Special promotional sticker packs.', icon: Gift, onClick: handleStreamSelection, disabled: true }
     ];
-  } else if (currentDispensary?.dispensaryType === 'Traditional Medicine dispensary') {
+  } else if (dispensaryType === 'Traditional Medicine dispensary') {
     availableStreams = [
-      { key: 'Traditional Medicine', title: 'Traditional Medicine', description: 'Add traditional herbs, remedies, and other products.', icon: Heart, onClick: handleStreamSelection },
+      { stream: 'Traditional Medicine', title: 'Traditional Medicine', description: 'Add traditional herbs, remedies, and other products.', icon: Heart, onClick: handleStreamSelection },
     ];
+  } else if (dispensaryType === 'Homeopathic store') {
+      availableStreams = [
+          { stream: 'Homeopathy', title: 'Homeopathy Product', description: 'Add homeopathic remedies, tinctures, and other related products.', icon: HomeIcon, onClick: handleStreamSelection },
+      ]
   } else {
     // Default stream for other types
     availableStreams = [
-       { key: 'THC', title: 'General Product', description: 'Add a new product for your store.', icon: Flame, onClick: handleStreamSelection }
+       { stream: 'THC', title: 'General Product', description: 'Add a new product for your store.', icon: Flame, onClick: handleStreamSelection }
     ];
   }
 
@@ -118,7 +126,7 @@ export default function AddProductStreamSelectionPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {availableStreams.map((stream) => (
           <StreamCard
-            key={stream.key}
+            key={stream.stream}
             {...stream}
           />
         ))}

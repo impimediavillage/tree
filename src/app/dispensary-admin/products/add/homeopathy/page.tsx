@@ -74,7 +74,7 @@ export default function AddHomeopathyProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Homeopathy store"), limit(1));
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Homeopathic store"), limit(1));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
@@ -96,7 +96,7 @@ export default function AddHomeopathyProductPage() {
         setCategoryStructure(categories);
 
       } else {
-        toast({ title: 'Error', description: 'Could not find category structure for "Homeopathy store".', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Could not find category structure for "Homeopathic store".', variant: 'destructive' });
       }
     } catch (error) {
       console.error("Error fetching category structure:", error);
@@ -128,7 +128,7 @@ export default function AddHomeopathyProductPage() {
   const getProductCollectionName = (): string => {
     const type = currentDispensary?.dispensaryType;
     if (!type) return 'products'; // Fallback
-    if (type === "Homeopathy store") return 'homeopathy_store_products';
+    if (type === "Homeopathic store") return 'homeopathy_store_products';
     return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
   };
 
