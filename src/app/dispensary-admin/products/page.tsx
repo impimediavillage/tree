@@ -20,6 +20,7 @@ import { Card, CardContent } from '@/components/ui/card';
 const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (!dispensaryType) return 'products'; 
     if (dispensaryType === "Homeopathic store") return 'homeopathy_store_products';
+    if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -126,6 +127,9 @@ export default function WellnessProductsPage() {
     const type = currentDispensary?.dispensaryType;
     if (type === "Homeopathic store") {
         return '/dispensary-admin/products/add/homeopathy';
+    }
+    if (type === "Mushroom store") {
+        return '/dispensary-admin/products/add/mushroom';
     }
     if (type === 'Traditional Medicine dispensary') {
       return '/dispensary-admin/products/add/traditional-medicine';

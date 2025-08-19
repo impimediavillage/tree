@@ -97,8 +97,10 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
             return `/dispensary-admin/products/edit/thc/${productId}`;
         case 'Traditional Medicine dispensary':
             return `/dispensary-admin/products/edit/traditional-medicine/${productId}`;
-        case 'Homeopathic wellness':
+        case 'Homeopathic store':
             return `/dispensary-admin/products/edit/homeopathy/${productId}`;
+        case 'Mushroom store':
+            return `/dispensary-admin/products/edit/mushroom/${productId}`;
         default:
             return `/dispensary-admin/products/edit/default/${productId}`;
     }
