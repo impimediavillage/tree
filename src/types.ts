@@ -261,7 +261,7 @@ export interface UserDocData {
   role?: string;
   dispensaryId?: string | null;
   status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
-  createdAt?: Timestamp | Date | string | null | firestore.FieldValue; // Include FieldValue
+  createdAt?: Timestamp | Date | string | null | firestore.FieldValue;
   lastLoginAt?: Timestamp | Date | string | null | firestore.FieldValue;
   signupSource?: string;
   welcomeCreditsAwarded?: boolean;

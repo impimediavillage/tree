@@ -362,7 +362,7 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
                 role: 'DispensaryOwner',
                 dispensaryId: dispensaryId,
                 credits: 0,
-                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                createdAt: null,
                 lastLoginAt: null,
                 status: 'Active',
                 welcomeCreditsAwarded: false,

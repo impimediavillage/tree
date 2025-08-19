@@ -1,5 +1,6 @@
 
 import type { Timestamp } from 'firebase/firestore';
+import type { firestore } from 'firebase-admin';
 
 // Price Tier Interface
 export interface PriceTier {
@@ -247,6 +248,7 @@ export interface User {
   preferredDispensaryTypes?: string[];
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
+  updatedAt?: Timestamp | Date | string | null;
 }
 
 // Represents a User document in Firestore (for server-side functions)
@@ -259,11 +261,12 @@ export interface UserDocData {
   role?: string;
   dispensaryId?: string | null;
   status?: 'Active' | 'Suspended' | 'PendingApproval' | 'Rejected';
-  createdAt?: Timestamp | Date | string | null;
-  lastLoginAt?: Timestamp | Date | string | null;
+  createdAt?: Timestamp | Date | string | null | firestore.FieldValue;
+  lastLoginAt?: Timestamp | Date | string | null | firestore.FieldValue;
   signupSource?: string;
   welcomeCreditsAwarded?: boolean;
   preferredDispensaryTypes?: string[];
+  updatedAt?: Timestamp | Date | string | null | firestore.FieldValue;
 }
 
 // Represents a Credit Package document in Firestore

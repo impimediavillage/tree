@@ -3,13 +3,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, auth } from '@/lib/firebase'; 
+import { db, functions } from '@/lib/firebase'; 
+import { httpsCallable } from 'firebase/functions';
 import { collection, getDocs, doc, updateDoc, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import type { User, Dispensary } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card'; 
+import { Card, CardContent } from '@/components/ui/card'; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,8 +20,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UserCard } from '@/components/admin/UserCard';
 import { AddUserDialog } from '@/components/admin/AddUserDialog';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
+const adminUpdateUserCallable = httpsCallable(functions, 'adminUpdateUser');
 
 const userEditSchema = z.object({
   displayName: z.string().min(1, "Display name is required."),
@@ -30,9 +32,17 @@ const userEditSchema = z.object({
   status: z.enum(['Active', 'Suspended', 'PendingApproval']),
   credits: z.coerce.number().int().min(0, "Credits cannot be negative."),
   dispensaryId: z.string().optional().nullable(),
+  newPassword: z.string().optional(),
+  confirmPassword: z.string().optional(),
 }).refine(data => data.role !== 'DispensaryOwner' || (data.role === 'DispensaryOwner' && data.dispensaryId && data.dispensaryId.trim() !== ''), {
   message: "Wellness ID is required for Wellness Owners.",
   path: ["dispensaryId"],
+}).refine(data => data.newPassword === data.confirmPassword, {
+    message: "New passwords do not match.",
+    path: ["confirmPassword"],
+}).refine(data => !data.newPassword || data.newPassword.length >= 6, {
+    message: "New password must be at least 6 characters.",
+    path: ["newPassword"],
 });
 
 type UserEditFormData = z.infer<typeof userEditSchema>;
@@ -54,7 +64,7 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && isOpen) {
       form.reset({
         displayName: user.displayName || '',
         email: user.email,
@@ -62,13 +72,11 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
         status: user.status || 'Active',
         credits: user.credits || 0,
         dispensaryId: user.dispensaryId || null,
-      });
-    } else {
-      form.reset({ 
-        displayName: '', email: '', role: 'LeafUser', status: 'Active', credits: 0, dispensaryId: null,
+        newPassword: '',
+        confirmPassword: '',
       });
     }
-  }, [user, form, isOpen]); 
+  }, [user, isOpen, form]); 
 
   const watchedRole = form.watch('role');
 
@@ -79,25 +87,29 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
   }, [watchedRole, form]);
 
   const onSubmit = async (data: UserEditFormData) => {
-    if (!user) return;
+    if (!user || !user.uid) return;
     setIsSubmitting(true);
+    
+    const updatePayload: any = {
+      userId: user.uid,
+      displayName: data.displayName,
+      role: data.role,
+      status: data.status,
+      credits: data.credits,
+      dispensaryId: data.role === 'DispensaryOwner' ? data.dispensaryId : null,
+    };
+    if (data.newPassword) {
+      updatePayload.password = data.newPassword;
+    }
+
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      const updateData: Partial<User> = {
-        displayName: data.displayName,
-        role: data.role,
-        status: data.status,
-        credits: data.credits,
-        dispensaryId: data.role === 'DispensaryOwner' ? data.dispensaryId : null,
-      };
-      await updateDoc(userDocRef, updateData);
-      
-      toast({ title: "User Updated", description: `${data.displayName}'s profile has been updated.` });
+      await adminUpdateUserCallable(updatePayload);
+      toast({ title: "User Updated", description: `${data.displayName}'s profile has been successfully updated.` });
       onUserUpdate();
       onOpenChange(false); 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating user:", error);
-      toast({ title: "Update Failed", description: "Could not update user.", variant: "destructive" });
+      toast({ title: "Update Failed", description: error.message || "Could not update user.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -107,88 +119,110 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[525px] flex flex-col h-full max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edit User: {user.displayName || user.email}</DialogTitle>
-          <DialogDescription>Modify user details below. Note: Email/Password changes require separate Firebase Auth flows.</DialogDescription>
+          <DialogDescription>Modify user details below. Changes to email require separate Firebase Auth flows.</DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-            <FormField control={form.control} name="displayName" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Display Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-            )} />
-             <FormItem>
-                <FormLabel>Email (Read-only)</FormLabel>
-                <Input value={user.email} readOnly disabled />
-            </FormItem>
-            <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="LeafUser">Leaf User</SelectItem>
-                            <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
-                            <SelectItem value="DispensaryOwner">Wellness Owner</SelectItem>
-                            <SelectItem value="Super Admin">Super Admin</SelectItem>
-                            <SelectItem value="User">User (Generic)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-            )} />
-            {watchedRole === 'DispensaryOwner' && (
-                 <FormField control={form.control} name="dispensaryId" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Associated Wellness Profile</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select wellness profile" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {dispensaries.filter(d => d.status === "Approved").map(d => (
-                                    <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
-                                ))}
-                                {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-wellness" disabled>No approved wellness profiles</SelectItem>}
-                            </SelectContent>
-                        </Select>
-                        <FormDescription>Required if role is Wellness Owner.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-            )}
-             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Suspended">Suspended</SelectItem>
-                            <SelectItem value="PendingApproval">Pending Approval</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-            )} />
-             <FormField control={form.control} name="credits" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Credits</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-            )} />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <ScrollArea className="flex-grow px-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+              <FormField control={form.control} name="displayName" render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Display Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+              )} />
+              <FormItem>
+                  <FormLabel>Email (Read-only)</FormLabel>
+                  <Input value={user.email} readOnly disabled />
+              </FormItem>
+              <FormField control={form.control} name="role" render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select role" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                              <SelectItem value="LeafUser">Leaf User</SelectItem>
+                              <SelectItem value="DispensaryStaff">Wellness Staff</SelectItem>
+                              <SelectItem value="DispensaryOwner">Wellness Owner</SelectItem>
+                              <SelectItem value="Super Admin">Super Admin</SelectItem>
+                              <SelectItem value="User">User (Generic)</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                  </FormItem>
+              )} />
+              {watchedRole === 'DispensaryOwner' && (
+                   <FormField control={form.control} name="dispensaryId" render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Associated Wellness Profile</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select wellness profile" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                  {dispensaries.filter(d => d.status === "Approved").map(d => (
+                                      <SelectItem key={d.id} value={d.id!}>{d.dispensaryName} ({d.id?.substring(0,6)}...)</SelectItem>
+                                  ))}
+                                  {dispensaries.filter(d => d.status === "Approved").length === 0 && <SelectItem value="no-approved-wellness" disabled>No approved wellness profiles</SelectItem>}
+                              </SelectContent>
+                          </Select>
+                          <FormDescription>Required if role is Wellness Owner.</FormDescription>
+                          <FormMessage />
+                      </FormItem>
+                  )} />
+              )}
+               <FormField control={form.control} name="status" render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                              <SelectItem value="Active">Active</SelectItem>
+                              <SelectItem value="Suspended">Suspended</SelectItem>
+                              <SelectItem value="PendingApproval">Pending Approval</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <FormMessage />
+                  </FormItem>
+              )} />
+               <FormField control={form.control} name="credits" render={({ field }) => (
+                  <FormItem>
+                      <FormLabel>Credits</FormLabel>
+                      <FormControl><Input type="number" {...field} /></FormControl>
+                      <FormMessage />
+                  </FormItem>
+              )} />
+              <div className="pt-4 border-t">
+                  <h3 className="font-semibold text-lg">Reset Password</h3>
+                  <FormDescription>Leave blank to keep the current password.</FormDescription>
+                  <div className="space-y-4 mt-2">
+                       <FormField control={form.control} name="newPassword" render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>New Password</FormLabel>
+                              <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )} />
+                       <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Confirm New Password</FormLabel>
+                              <FormControl><Input type="password" {...field} placeholder="••••••••" /></FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )} />
+                  </div>
+              </div>
+              <DialogFooter className="sticky bottom-0 bg-background pt-4 pb-2 -mx-6 px-6 border-t">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
@@ -306,15 +340,15 @@ export default function AdminUsersPage() {
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse bg-card">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-muted rounded-full"></div>
-                <div>
-                  <div className="h-5 w-32 bg-muted rounded mb-1"></div>
-                  <div className="h-4 w-40 bg-muted rounded"></div>
+                <Skeleton className="h-16 w-16 bg-muted rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-3/4 bg-muted" />
+                  <Skeleton className="h-4 w-full bg-muted" />
                 </div>
               </div>
-              <div className="h-4 w-20 bg-muted rounded"></div>
-              <div className="h-4 w-24 bg-muted rounded"></div>
-              <div className="h-10 w-full bg-muted rounded mt-3"></div>
+               <Skeleton className="h-5 w-1/4 bg-muted" />
+               <Skeleton className="h-5 w-1/3 bg-muted" />
+              <Skeleton className="h-10 w-full bg-muted rounded mt-4" />
             </Card>
           ))}
         </div>
@@ -330,18 +364,20 @@ export default function AdminUsersPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-10 col-span-full">
-          <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
-          <h3 className="mt-2 text-xl font-semibold">No Users Found</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {users.length === 0 ? "There are no users in the system yet." : "No users match your current filters."}
-          </p>
-          {users.length > 0 && (
-            <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setFilterRole('all'); setFilterStatus('all');}}>
-              <Filter className="mr-2 h-4 w-4" /> Clear Filters
-            </Button>
-          )}
-        </div>
+        <Card className="text-center py-10 col-span-full">
+          <CardContent>
+            <UsersIcon className="mx-auto h-12 w-12 text-orange-500" />
+            <h3 className="mt-2 text-xl font-semibold">No Users Found</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {users.length === 0 ? "There are no users in the system yet." : "No users match your current filters."}
+            </p>
+            {users.length > 0 && (
+              <Button variant="outline" className="mt-4" onClick={() => {setSearchTerm(''); setFilterRole('all'); setFilterStatus('all');}}>
+                <Filter className="mr-2 h-4 w-4" /> Clear Filters
+              </Button>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <EditUserDialogComponent
