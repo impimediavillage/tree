@@ -226,7 +226,7 @@ export default function WellnessProductsPage() {
             No Products Found
           </h3>
           <p 
-            className="mt-2 text-sm text-foreground"
+            className="text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             {allProducts.length === 0 ? "You haven't added any products yet." : "No products match your current filters."}
