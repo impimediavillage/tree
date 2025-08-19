@@ -199,6 +199,7 @@ export default function AdminWellnessPage() {
                   dispensary={wellness} 
                   onEdit={() => handleEditDispensary(wellness)}
                   onDelete={handleDeleteWellness}
+                  isSuperAdmin={!!isSuperAdmin}
                 />
               ))
             ) : (
