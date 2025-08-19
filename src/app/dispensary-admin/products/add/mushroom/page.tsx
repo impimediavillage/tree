@@ -108,7 +108,7 @@ export default function AddMushroomProductPage() {
   const getProductCollectionName = (): string => {
     const type = currentDispensary?.dispensaryType;
     if (!type) return 'products'; // Fallback
-    return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+    return 'mushroom_store_products';
   };
 
   const onSubmit = async (data: ProductFormData) => {
