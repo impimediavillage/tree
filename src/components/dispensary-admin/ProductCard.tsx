@@ -13,78 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Edit, Trash2, Package, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, Sparkles, Brain, Leaf } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { InfoDialog } from '../dialogs/InfoDialog';
 
 interface ProductCardProps {
   product: Product;
   onDelete: (productId: string, productName: string, imageUrls?: (string | null)[] | null) => Promise<void>;
 }
-
-// New component for displaying info in a dialog
-const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon }: { triggerText: string; title: string; items: (string | ProductAttribute)[]; itemType: 'flavor' | 'effect' | 'medical'; icon: React.ElementType }) => {
-  if (!items || items.length === 0) return null;
-
-  const badgeColors = {
-    flavor: [
-      "bg-sky-100 text-sky-800", "bg-emerald-100 text-emerald-800",
-      "bg-amber-100 text-amber-800", "bg-violet-100 text-violet-800",
-      "bg-rose-100 text-rose-800", "bg-cyan-100 text-cyan-800"
-    ],
-    effect: [
-      "bg-blue-100 text-blue-800", "bg-indigo-100 text-indigo-800",
-      "bg-purple-100 text-purple-800", "bg-pink-100 text-pink-800",
-      "bg-red-100 text-red-800", "bg-orange-100 text-orange-800"
-    ],
-    medical: [
-      "bg-green-100 text-green-800", "bg-teal-100 text-teal-800",
-      "bg-lime-100 text-lime-800", "bg-yellow-100 text-yellow-800",
-      "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
-    ]
-  };
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="text-xs h-7 px-2">
-            <Icon className="mr-1.5 h-3.5 w-3.5" />
-            {triggerText}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {title}</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col items-start gap-2 py-4">
-            <div className="flex flex-wrap gap-2">
-                {items.map((item, index) => {
-                    const isAttribute = typeof item === 'object' && 'name' in item;
-                    const name = isAttribute ? item.name : item;
-                    const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
-
-                    return (
-                    <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType][index % badgeColors[itemType].length])}>
-                        {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
-                    </Badge>
-                    );
-                })}
-            </div>
-            {(itemType === 'effect' || itemType === 'medical') && (
-                <div className="p-2 mt-4 rounded-md border border-dashed bg-muted/50 text-xs w-full">
-                    <p className="font-semibold text-muted-foreground mb-1.5">Percentage Key:</p>
-                    <p className="text-muted-foreground leading-snug">
-                        Indicates the reported likelihood of an effect or its potential as a medical aid.
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                        <Badge variant="outline" className="border-green-300 bg-green-50/50 text-green-800">Low (1-10%)</Badge>
-                        <Badge variant="outline" className="border-yellow-400 bg-yellow-50/50 text-yellow-800">Medium (11-30%)</Badge>
-                        <Badge variant="outline" className="border-red-400 bg-red-50/50 text-red-800">High (31% +)</Badge>
-                    </div>
-                </div>
-            )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 export function ProductCard({ product, onDelete }: ProductCardProps) {
   const { currentDispensary } = useAuth();
@@ -101,6 +35,8 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
             return `/dispensary-admin/products/edit/homeopathy/${productId}`;
         case 'Mushroom store':
             return `/dispensary-admin/products/edit/mushroom/${productId}`;
+        case 'Permaculture & gardening store':
+            return `/dispensary-admin/products/edit/default/${productId}`; // Placeholder, can be specialized later
         default:
             return `/dispensary-admin/products/edit/default/${productId}`;
     }

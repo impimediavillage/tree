@@ -22,6 +22,7 @@ const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (dispensaryType === "Homeopathic store") return 'homeopathy_store_products';
     if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
     if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
+    if (dispensaryType === "Permaculture & gardening store") return 'permaculture_store_products';
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -137,6 +138,9 @@ export default function WellnessProductsPage() {
     }
     if (type === 'Mushroom store') {
         return '/dispensary-admin/products/add/mushroom';
+    }
+    if (type === 'Permaculture & gardening store') {
+        return '/dispensary-admin/products/add/permaculture';
     }
     return '/dispensary-admin/products/add'; 
   };

@@ -9,7 +9,7 @@ import { ArrowLeft, Flame, Leaf, Shirt, Sparkles, Gift, Heart, Home as HomeIcon,
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Traditional Medicine' | 'Homeopathy' | 'Mushroom';
+type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Sticker Promo Set' | 'Traditional Medicine' | 'Homeopathy' | 'Mushroom' | 'Permaculture';
 
 interface StreamCardProps {
   title: string;
@@ -58,6 +58,9 @@ export default function AddProductStreamSelectionPage() {
       case 'Mushroom':
         router.push('/dispensary-admin/products/add/mushroom');
         break;
+      case 'Permaculture':
+        router.push('/dispensary-admin/products/add/permaculture');
+        break;
       default:
         // Pointing others to thc page as a placeholder for now
         router.push('/dispensary-admin/products/add/thc');
@@ -87,6 +90,10 @@ export default function AddProductStreamSelectionPage() {
   } else if (dispensaryType === 'Mushroom store') {
       availableStreams = [
           { stream: 'Mushroom', title: 'Mushroom Product', description: 'Add medicinal, gourmet, or other mushroom-related products.', icon: Brain, onClick: handleStreamSelection },
+      ]
+  } else if (dispensaryType === 'Permaculture & gardening store') {
+      availableStreams = [
+          { stream: 'Permaculture', title: 'Permaculture Product', description: 'Add seeds, tools, organic soils, and other gardening products.', icon: Leaf, onClick: handleStreamSelection },
       ]
   } else {
     // Default stream for other types
