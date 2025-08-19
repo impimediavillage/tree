@@ -21,6 +21,7 @@ const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (!dispensaryType) return 'products'; 
     if (dispensaryType === "Homeopathic store") return 'homeopathy_store_products';
     if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
+    if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -123,8 +124,24 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  const addProductPath = '/dispensary-admin/products/add';
+  const getAddProductPath = () => {
+    const type = currentDispensary?.dispensaryType;
+    if (type === 'Cannibinoid store') {
+      return '/dispensary-admin/products/add/thc';
+    }
+    if (type === 'Traditional Medicine dispensary') {
+      return '/dispensary-admin/products/add/traditional-medicine';
+    }
+    if (type === 'Homeopathic store') {
+        return '/dispensary-admin/products/add/homeopathy';
+    }
+    if (type === 'Mushroom store') {
+        return '/dispensary-admin/products/add/mushroom';
+    }
+    return '/dispensary-admin/products/add'; 
+  };
 
+  const addProductPath = getAddProductPath();
 
   if (isLoading) {
     return (
