@@ -126,13 +126,13 @@ export default function WellnessProductsPage() {
   const getAddProductPath = () => {
     const type = currentDispensary?.dispensaryType;
     if (type === 'Traditional Medicine dispensary') {
-        return '/dispensary-admin/products/add/traditional-medicine';
+      return '/dispensary-admin/products/add/traditional-medicine';
     }
     if (type === 'Cannibinoid store') {
-        return '/dispensary-admin/products/add/thc';
+      return '/dispensary-admin/products/add/thc';
     }
     if (type === 'Homeopathic wellness') {
-        return '/dispensary-admin/products/add/homeopathy';
+      return '/dispensary-admin/products/add/homeopathy';
     }
     return '/dispensary-admin/products/add';
   };
