@@ -396,3 +396,44 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
         throw new HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
     }
 });
+
+export const adminUpdateUser = onCall(async (request) => {
+    if (request.auth?.token.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'Only Super Admins can update users.');
+    }
+
+    const { userId, password, ...firestoreData } = request.data;
+    if (!userId) {
+        throw new HttpsError('invalid-argument', 'User ID is required.');
+    }
+
+    try {
+        // Update Firebase Auth user if a password is provided
+        if (password) {
+            await admin.auth().updateUser(userId, { password: password });
+        }
+
+        // Update Firestore user document
+        const userDocRef = db.collection('users').doc(userId);
+        
+        // Ensure dispensaryId is null if role is not DispensaryOwner
+        if (firestoreData.role !== 'DispensaryOwner') {
+            firestoreData.dispensaryId = null;
+        }
+        
+        await userDocRef.update({ ...firestoreData, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+
+        logger.info(`Admin successfully updated user ${userId}.`);
+        return { success: true, message: 'User updated successfully.' };
+    } catch (error: any) {
+        logger.error(`Error in adminUpdateUser for ${userId}:`, error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        // Handle common auth errors
+        if (error.code === 'auth/user-not-found') {
+            throw new HttpsError('not-found', 'The specified user does not exist.');
+        }
+        throw new HttpsError('internal', 'An unexpected server error occurred while updating the user.');
+    }
+});
