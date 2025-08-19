@@ -325,3 +325,74 @@ export const getDispensaryProducts = onCall(async (request: CallableRequest): Pr
         throw new HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });
+
+
+export const createDispensaryUser = onCall(async (request: CallableRequest<{ email: string; displayName: string; dispensaryId: string; }>) => {
+    if (request.auth?.token.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'Only Super Admins can create dispensary users.');
+    }
+
+    const { email, displayName, dispensaryId } = request.data;
+    if (!email || !displayName || !dispensaryId) {
+        throw new HttpsError('invalid-argument', 'Email, display name, and dispensary ID are required.');
+    }
+
+    try {
+        // Check if a user with this email already exists
+        const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
+
+        if (existingUser) {
+            // User exists, check if they are already linked to a dispensary
+            const userDoc = await db.collection('users').doc(existingUser.uid).get();
+            if (userDoc.exists && userDoc.data()?.dispensaryId) {
+                throw new HttpsError('already-exists', `User with email ${email} already exists and is linked to a dispensary.`);
+            }
+            // User exists but is not linked, so we can link them now
+            await db.collection('users').doc(existingUser.uid).update({
+                dispensaryId: dispensaryId,
+                role: 'DispensaryOwner',
+                status: 'Active',
+            });
+             return { success: true, message: `Existing user ${email} successfully linked as DispensaryOwner.` };
+        } else {
+            // User does not exist, create a new one
+            const temporaryPassword = Math.random().toString(36).slice(-8);
+            const newUserRecord = await admin.auth().createUser({
+                email: email,
+                emailVerified: false,
+                password: temporaryPassword,
+                displayName: displayName,
+                disabled: false,
+            });
+
+            // Create user document in Firestore
+            const userDocData: UserDocData = {
+                uid: newUserRecord.uid,
+                email: email,
+                displayName: displayName,
+                photoURL: null,
+                role: 'DispensaryOwner',
+                dispensaryId: dispensaryId,
+                credits: 0,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                lastLoginAt: null,
+                status: 'Active',
+                welcomeCreditsAwarded: false,
+                signupSource: 'admin_created',
+            };
+            await db.collection('users').doc(newUserRecord.uid).set(userDocData);
+            
+            return {
+                success: true,
+                message: 'New user account created successfully. Please provide them with their temporary password.',
+                temporaryPassword: temporaryPassword
+            };
+        }
+    } catch (error: any) {
+        logger.error(`Error creating dispensary user for ${email}:`, error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
+    }
+});
