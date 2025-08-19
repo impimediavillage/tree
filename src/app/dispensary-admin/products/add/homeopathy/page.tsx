@@ -74,22 +74,17 @@ export default function AddHomeopathyProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = query(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Homeopathy store"), limit(1));
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Homeopathy store"), limit(1));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
         
-        // This is a more robust way to handle potential data structure inconsistencies
-        const categoryData = data?.categoriesData?.homeopathicProducts?.homeopathicProducts;
         let categories: HomeopathyCategory[] = [];
 
-        if (Array.isArray(categoryData)) {
-            categories = categoryData;
-        } else if (typeof categoryData === 'object' && categoryData !== null) {
-            // Handle if data is an object of objects instead of an array
-            categories = Object.values(categoryData);
+        if (data && data.categoriesData && Array.isArray(data.categoriesData)) {
+            categories = data.categoriesData;
         } else {
              toast({ title: 'Data Format Error', description: 'Homeopathy category data is in an unexpected format.', variant: 'destructive' });
         }

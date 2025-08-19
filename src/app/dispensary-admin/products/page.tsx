@@ -134,9 +134,10 @@ export default function WellnessProductsPage() {
     if (type === 'Homeopathy store') {
       return '/dispensary-admin/products/add/homeopathy';
     }
-    // Fallback for any other type to the default edit page (or dashboard)
-    toast({ title: "Unsupported Type", description: "No specialized product form for this store type. Please contact support.", variant: "destructive" });
-    return '/dispensary-admin/dashboard';
+    
+    // Fallback for any other type - ideally should not be hit for specialized stores.
+    toast({ title: "Notice", description: "This store type uses the default product form.", variant: "default" });
+    return '/dispensary-admin/products/add/default';
   };
   const addProductPath = getAddProductPath();
 
