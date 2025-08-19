@@ -80,16 +80,21 @@ export default function AddHomeopathyProductPage() {
       if (!querySnapshot.empty) {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
-        const categories = data?.categoriesData?.homeopathicProducts?.homeopathicProducts || [];
         
-        if (Array.isArray(categories)) {
-            setCategoryStructure(categories);
-        } else if (typeof categories === 'object' && categories !== null) {
-            const categoryArray = Object.values(categories) as HomeopathyCategory[];
-            setCategoryStructure(categoryArray);
+        // This is a more robust way to handle potential data structure inconsistencies
+        const categoryData = data?.categoriesData?.homeopathicProducts?.homeopathicProducts;
+        let categories: HomeopathyCategory[] = [];
+
+        if (Array.isArray(categoryData)) {
+            categories = categoryData;
+        } else if (typeof categoryData === 'object' && categoryData !== null) {
+            // Handle if data is an object of objects instead of an array
+            categories = Object.values(categoryData);
         } else {
-             toast({ title: 'Data Error', description: 'Homeopathy category data is in an unexpected format.', variant: 'destructive' });
+             toast({ title: 'Data Format Error', description: 'Homeopathy category data is in an unexpected format.', variant: 'destructive' });
         }
+        setCategoryStructure(categories);
+
       } else {
         toast({ title: 'Error', description: 'Could not find category structure for "Homeopathy store".', variant: 'destructive' });
       }
