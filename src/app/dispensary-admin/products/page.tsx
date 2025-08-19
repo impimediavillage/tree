@@ -135,8 +135,7 @@ export default function WellnessProductsPage() {
       return '/dispensary-admin/products/add/homeopathy';
     }
     
-    // Fallback for any other type - ideally should not be hit for specialized stores.
-    toast({ title: "Notice", description: "This store type uses the default product form.", variant: "default" });
+    // Fallback for any other type.
     return '/dispensary-admin/products/add/default';
   };
   const addProductPath = getAddProductPath();
