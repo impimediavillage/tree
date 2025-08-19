@@ -42,70 +42,30 @@ const StreamCard: React.FC<StreamCardProps> = ({ title, description, icon: Icon,
 export default function AddProductStreamSelectionPage() {
   const router = useRouter();
   const { currentDispensary, loading: authLoading } = useAuth();
-
-  const handleStreamSelection = (stream: StreamKey) => {
-    switch (stream) {
-      case 'THC':
-      case 'CBD':
-        router.push('/dispensary-admin/products/add/thc');
-        break;
-      case 'Traditional Medicine':
-        router.push('/dispensary-admin/products/add/traditional-medicine');
-        break;
-      case 'Homeopathy':
-        router.push('/dispensary-admin/products/add/homeopathy');
-        break;
-      case 'Mushroom':
-        router.push('/dispensary-admin/products/add/mushroom');
-        break;
-      case 'Permaculture':
-        router.push('/dispensary-admin/products/add/permaculture');
-        break;
-      default:
-        // Pointing others to thc page as a placeholder for now
-        router.push('/dispensary-admin/products/add/thc');
-        break;
-    }
-  };
   
-  let availableStreams: StreamCardProps[] = [];
-  const dispensaryType = currentDispensary?.dispensaryType;
-
-  if (dispensaryType === 'Cannibinoid store') {
-    availableStreams = [
-      { stream: 'THC', title: 'Cannibinoid (other)', description: 'Add THC-dominant flowers, edibles, tinctures, etc. Includes strain finder.', icon: Flame, onClick: handleStreamSelection },
-      { stream: 'CBD', title: 'CBD Product', description: 'Add CBD-dominant wellness products.', icon: Leaf, onClick: handleStreamSelection },
-      { stream: 'Apparel', title: 'Apparel', description: 'T-shirts, hoodies, caps, and other merchandise.', icon: Shirt, onClick: handleStreamSelection, disabled: true },
-      { stream: 'Smoking Gear', title: 'Smoking Gear', description: 'Bongs, pipes, grinders, and other accessories.', icon: Sparkles, onClick: handleStreamSelection, disabled: true },
-      { stream: 'Sticker Promo Set', title: 'Sticker Promo Set', description: 'Special promotional sticker packs.', icon: Gift, onClick: handleStreamSelection, disabled: true }
-    ];
-  } else if (dispensaryType === 'Traditional Medicine dispensary') {
-    availableStreams = [
-      { stream: 'Traditional Medicine', title: 'Traditional Medicine', description: 'Add traditional herbs, remedies, and other products.', icon: Heart, onClick: handleStreamSelection },
-    ];
-  } else if (dispensaryType === 'Homeopathic store') {
-      availableStreams = [
-          { stream: 'Homeopathy', title: 'Homeopathy Product', description: 'Add homeopathic remedies, tinctures, and other related products.', icon: HomeIcon, onClick: handleStreamSelection },
-      ]
-  } else if (dispensaryType === 'Mushroom store') {
-      availableStreams = [
-          { stream: 'Mushroom', title: 'Mushroom Product', description: 'Add medicinal, gourmet, or other mushroom-related products.', icon: Brain, onClick: handleStreamSelection },
-      ]
-  } else if (dispensaryType === 'Permaculture & gardening store') {
-      availableStreams = [
-          { stream: 'Permaculture', title: 'Permaculture Product', description: 'Add seeds, tools, organic soils, and other gardening products.', icon: Leaf, onClick: handleStreamSelection },
-      ]
-  } else {
-    // Default stream for other types
-    availableStreams = [
-       { stream: 'THC', title: 'General Product', description: 'Add a new product for your store.', icon: Flame, onClick: handleStreamSelection }
-    ];
-  }
-
+  const getAddProductPath = () => {
+    const type = currentDispensary?.dispensaryType;
+    if (type === 'Cannibinoid store') {
+      return '/dispensary-admin/products/add/thc';
+    }
+    if (type === 'Traditional Medicine dispensary') {
+      return '/dispensary-admin/products/add/traditional-medicine';
+    }
+    if (type === 'Homeopathic store') {
+        return '/dispensary-admin/products/add/homeopathy';
+    }
+    if (type === 'Mushroom store') {
+        return '/dispensary-admin/products/add/mushroom';
+    }
+    if (type === 'Permaculture & gardening store') {
+        return '/dispensary-admin/products/add/permaculture';
+    }
+    return '/dispensary-admin/products/add/thc'; // Fallback for other types
+  };
 
   if (authLoading) {
      return (
-        <div className="max-w-4xl mx-auto my-8 space-y-6">
+        <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <Skeleton className="h-10 w-64" />
                 <Skeleton className="h-9 w-32" />
@@ -118,6 +78,18 @@ export default function AddProductStreamSelectionPage() {
             </div>
         </div>
      )
+  }
+
+  // If a specific workflow exists, redirect immediately.
+  // This page will only render for types that need a selection (currently none with this logic).
+  if (currentDispensary?.dispensaryType) {
+      router.replace(getAddProductPath());
+      return (
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <p className="ml-2">Redirecting to the correct product flow...</p>
+        </div>
+      );
   }
 
   return (
@@ -136,17 +108,7 @@ export default function AddProductStreamSelectionPage() {
           </Link>
         </Button>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {availableStreams.map((stream) => (
-          <StreamCard
-            key={stream.stream}
-            {...stream}
-          />
-        ))}
-      </div>
+      <p className="text-center text-muted-foreground">No product creation workflow defined for this store type. Please contact support.</p>
     </div>
   );
 }
-
-    
