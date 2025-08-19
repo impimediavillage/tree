@@ -232,5 +232,3 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
     </>
   );
 }
-
-    

@@ -52,6 +52,7 @@ export default function AddPermacultureProductPage() {
   const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState<string | null>(null);
   
   const [files, setFiles] = useState<File[]>([]);
+  const secondStepRef = useRef<HTMLDivElement>(null);
   const finalFormRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<ProductFormData>({
@@ -106,6 +107,7 @@ export default function AddPermacultureProductPage() {
     setSelectedTopLevelCategory(categoryName);
     form.setValue('category', categoryName, { shouldValidate: true });
     form.setValue('subcategory', null); // Reset subcategory when top level changes
+    setTimeout(() => scrollToRef(secondStepRef), 100);
   };
   
   const handleSubCategorySelect = (subCategoryName: string) => {
@@ -182,7 +184,7 @@ export default function AddPermacultureProductPage() {
   const showFinalForm = selectedTopLevelCategory && form.watch('subcategory');
 
   return (
-    <div className="max-w-5xl mx-auto my-8 space-y-6">
+    <div className="max-w-5xl mx-auto my-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="h-8 w-8 text-primary"/> Add Permaculture Product</h1>
@@ -220,7 +222,7 @@ export default function AddPermacultureProductPage() {
             </Card>
 
             {showSubcategories && (
-                <div className="animate-fade-in-scale-up">
+                <div className="animate-fade-in-scale-up" ref={secondStepRef}>
                     <Card>
                         <CardHeader><CardTitle>Step 2: Select a Subcategory</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -305,5 +307,3 @@ export default function AddPermacultureProductPage() {
     </div>
   );
 }
-
-    

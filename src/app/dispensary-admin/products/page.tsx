@@ -23,6 +23,7 @@ const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
     if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
     if (dispensaryType === "Permaculture & gardening store") return 'permaculture_store_products';
+    if (dispensaryType === "Cannibinoid store") return 'cannibinoid_store_products'; // Assuming a typo fix might be needed
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -127,29 +128,28 @@ export default function WellnessProductsPage() {
 
   const getAddProductPath = () => {
     const type = currentDispensary?.dispensaryType;
-    if (type === 'Cannibinoid store') {
-      return '/dispensary-admin/products/add/thc';
-    }
-    if (type === 'Traditional Medicine dispensary') {
-      return '/dispensary-admin/products/add/traditional-medicine';
-    }
-    if (type === 'Homeopathic store') {
+    switch(type) {
+      case 'Cannibinoid store':
+        return '/dispensary-admin/products/add/thc';
+      case 'Traditional Medicine dispensary':
+        return '/dispensary-admin/products/add/traditional-medicine';
+      case 'Homeopathic store':
         return '/dispensary-admin/products/add/homeopathy';
-    }
-    if (type === 'Mushroom store') {
+      case 'Mushroom store':
         return '/dispensary-admin/products/add/mushroom';
-    }
-    if (type === 'Permaculture & gardening store') {
+      case 'Permaculture & gardening store':
         return '/dispensary-admin/products/add/permaculture';
+      default:
+        // A generic fallback for any other store type
+        return '/dispensary-admin/products/add/thc';
     }
-    return '/dispensary-admin/products/add'; 
   };
 
   const addProductPath = getAddProductPath();
 
   if (isLoading) {
-    return (
-       <div className="space-y-6">
+     return (
+        <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="w-full sm:w-1/2 space-y-2"><Skeleton className="h-9 w-1/2" /><Skeleton className="h-5 w-3/4" /></div>
             <Skeleton className="h-10 w-full sm:w-44" />
@@ -244,5 +244,3 @@ export default function WellnessProductsPage() {
     </div>
   );
 }
-
-    
