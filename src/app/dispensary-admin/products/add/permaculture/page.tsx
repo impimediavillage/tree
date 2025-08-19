@@ -209,8 +209,8 @@ export default function AddPermacultureProductPage() {
                                 form.watch('category') === categoryName && 'border-primary ring-2 ring-primary'
                             )}
                         >
-                            <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={categoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`} alt={categoryName} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                            <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
+                                <Image src={categoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`} alt={categoryName} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
                             </div>
                              <CardContent className="p-4 flex-grow flex flex-col">
                                 <h3 className="text-lg font-semibold">{categoryName}</h3>
@@ -235,8 +235,8 @@ export default function AddPermacultureProductPage() {
                                         form.watch('subcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
                                     )}
                                 >
-                                    <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
-                                        <Image src={subCategoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`} alt={subCategoryName} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                    <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
+                                        <Image src={subCategoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`} alt={subCategoryName} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
                                     </div>
                                     <CardContent className="p-4 flex-grow flex flex-col">
                                         <h3 className="text-lg font-semibold">{subCategoryName}</h3>
@@ -307,5 +307,3 @@ export default function AddPermacultureProductPage() {
     </div>
   );
 }
-
-    
