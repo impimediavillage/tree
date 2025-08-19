@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Edit, Trash2, Package, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, Sparkles, Brain, Leaf } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
 
 interface ProductCardProps {
   product: Product;
@@ -86,11 +87,24 @@ const InfoDialog = ({ triggerText, title, items, itemType, icon: Icon }: { trigg
 };
 
 export function ProductCard({ product, onDelete }: ProductCardProps) {
+  const { currentDispensary } = useAuth();
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
 
+  const getEditPath = (dispensaryType: string | undefined | null, productId: string): string => {
+    switch (dispensaryType) {
+        case 'Cannibinoid store':
+            return `/dispensary-admin/products/edit/thc/${productId}`;
+        case 'Traditional Medicine dispensary':
+            return `/dispensary-admin/products/edit/traditional-medicine/${productId}`;
+        case 'Homeopathic wellness':
+            return `/dispensary-admin/products/edit/homeopathy/${productId}`;
+        default:
+            return `/dispensary-admin/products/edit/default/${productId}`;
+    }
+  };
+
   const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
-  const tierUnit = firstPriceTier?.unit;
   const dataAiHintProduct = `product ${product.category} ${product.name.split(" ")[0] || ""}`;
   
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
@@ -102,6 +116,8 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
   
   const gridColsClass = images.length > 1 ? 'grid-cols-2' : 'grid-cols-1';
   const gridRowsClass = images.length > 2 ? 'grid-rows-2' : 'grid-rows-1';
+  
+  const editPath = getEditPath(currentDispensary?.dispensaryType, product.id!);
 
   return (
     <>
@@ -188,7 +204,7 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
         </CardContent>
         <CardFooter className="flex gap-2 border-t pt-3 mt-auto">
           <Button variant="outline" size="sm" className="flex-1" asChild>
-            <Link href={`/dispensary-admin/products/edit/${product.id}${tierUnit ? `?unit=${encodeURIComponent(tierUnit)}` : ''}`}>
+            <Link href={editPath}>
               <Edit className="mr-1.5 h-4 w-4" /> Edit
             </Link>
           </Button>
