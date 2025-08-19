@@ -212,13 +212,13 @@ export default function AddPermacultureProductPage() {
                                     form.watch('category') === categoryName && 'border-primary ring-2 ring-primary'
                                 )}
                             >
-                                <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
+                                <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
                                     <Image 
                                       src={imageUrl} 
                                       alt={categoryName} 
                                       fill 
                                       style={{objectFit: 'contain'}} 
-                                      className="transition-transform duration-300 group-hover:scale-105"
+                                      className="transition-transform duration-300 group-hover:scale-105 p-2"
                                       onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
                                     />
                                 </div>
@@ -249,13 +249,13 @@ export default function AddPermacultureProductPage() {
                                             form.watch('subcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
                                         )}
                                     >
-                                        <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
+                                        <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
                                             <Image 
                                                 src={imageUrl} 
                                                 alt={subCategoryName} 
                                                 fill 
                                                 style={{objectFit: 'contain'}} 
-                                                className="transition-transform duration-300 group-hover:scale-105"
+                                                className="transition-transform duration-300 group-hover:scale-105 p-2"
                                                 onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
                                             />
                                         </div>
