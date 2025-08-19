@@ -210,7 +210,7 @@ export default function AddPermacultureProductPage() {
                             )}
                         >
                             <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={categoryData.imageUrl || 'https://placehold.co/600x400.png'} alt={categoryName} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
+                                <Image src={categoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`} alt={categoryName} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
                             </div>
                              <CardContent className="p-4 flex-grow flex flex-col">
                                 <h3 className="text-lg font-semibold">{categoryName}</h3>
@@ -236,7 +236,7 @@ export default function AddPermacultureProductPage() {
                                     )}
                                 >
                                     <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
-                                        <Image src={subCategoryData.imageUrl || 'https://placehold.co/600x400.png'} alt={subCategoryName} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
+                                        <Image src={subCategoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`} alt={subCategoryName} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
                                     </div>
                                     <CardContent className="p-4 flex-grow flex flex-col">
                                         <h3 className="text-lg font-semibold">{subCategoryName}</h3>
@@ -307,3 +307,5 @@ export default function AddPermacultureProductPage() {
     </div>
   );
 }
+
+    
