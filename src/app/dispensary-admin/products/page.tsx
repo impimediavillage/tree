@@ -19,6 +19,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (!dispensaryType) return 'products'; // Fallback to default
+    if (dispensaryType === "Homeopathy store") return 'homeopathy_store_products';
+    if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
+    if (dispensaryType === "Cannibinoid store") return 'cannibinoid_store_products';
+    
+    // Fallback for any other type
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -134,8 +139,7 @@ export default function WellnessProductsPage() {
     if (type === 'Homeopathy store') {
       return '/dispensary-admin/products/add/homeopathy';
     }
-    
-    // Fallback for any other type.
+    // General fallback
     return '/dispensary-admin/products/add/default';
   };
   const addProductPath = getAddProductPath();

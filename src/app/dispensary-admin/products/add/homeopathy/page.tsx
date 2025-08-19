@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType } from '@/types';
@@ -84,7 +84,12 @@ export default function AddHomeopathyProductPage() {
         let categories: HomeopathyCategory[] = [];
 
         if (data && data.categoriesData && Array.isArray(data.categoriesData)) {
-            categories = data.categoriesData;
+            const parsedCategories = data.categoriesData.map((cat: any) => ({
+                type: cat.type,
+                imageUrl: cat.imageUrl,
+                examples: Array.isArray(cat.examples) ? cat.examples : []
+            }));
+            categories = parsedCategories;
         } else {
              toast({ title: 'Data Format Error', description: 'Homeopathy category data is in an unexpected format.', variant: 'destructive' });
         }
@@ -123,6 +128,7 @@ export default function AddHomeopathyProductPage() {
   const getProductCollectionName = (): string => {
     const type = currentDispensary?.dispensaryType;
     if (!type) return 'products'; // Fallback
+    if (type === "Homeopathy store") return 'homeopathy_store_products';
     return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
   };
 
