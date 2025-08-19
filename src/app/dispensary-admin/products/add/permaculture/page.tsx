@@ -200,24 +200,35 @@ export default function AddPermacultureProductPage() {
             <Card>
                 <CardHeader><CardTitle>Step 1: Select a Top-Level Category</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.entries(categoryStructure).map(([categoryName, categoryData]) => (
-                        <Card 
-                            key={categoryName} 
-                            onClick={() => handleTopLevelSelect(categoryName)} 
-                            className={cn(
-                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
-                                form.watch('category') === categoryName && 'border-primary ring-2 ring-primary'
-                            )}
-                        >
-                            <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={categoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`} alt={categoryName} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
-                            </div>
-                             <CardContent className="p-4 flex-grow flex flex-col">
-                                <h3 className="text-lg font-semibold">{categoryName}</h3>
-                                <p className="text-sm text-muted-foreground mt-1 flex-grow">{categoryData.description}</p>
-                            </CardContent>
-                        </Card>
-                    ))}
+                    {Object.entries(categoryStructure).map(([categoryName, categoryData]) => {
+                         const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`;
+                         const imageUrl = categoryData.imageUrl && categoryData.imageUrl.trim() !== '' ? categoryData.imageUrl : placeholderUrl;
+                        return (
+                            <Card 
+                                key={categoryName} 
+                                onClick={() => handleTopLevelSelect(categoryName)} 
+                                className={cn(
+                                    "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
+                                    form.watch('category') === categoryName && 'border-primary ring-2 ring-primary'
+                                )}
+                            >
+                                <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
+                                    <Image 
+                                      src={imageUrl} 
+                                      alt={categoryName} 
+                                      fill 
+                                      style={{objectFit: 'contain'}} 
+                                      className="transition-transform duration-300 group-hover:scale-105"
+                                      onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
+                                    />
+                                </div>
+                                <CardContent className="p-4 flex-grow flex flex-col">
+                                    <h3 className="text-lg font-semibold">{categoryName}</h3>
+                                    <p className="text-sm text-muted-foreground mt-1 flex-grow">{categoryData.description}</p>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
                 </CardContent>
             </Card>
 
@@ -226,24 +237,35 @@ export default function AddPermacultureProductPage() {
                     <Card>
                         <CardHeader><CardTitle>Step 2: Select a Subcategory</CardTitle></CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {Object.entries(showSubcategories).map(([subCategoryName, subCategoryData]) => (
-                                <Card 
-                                    key={subCategoryName} 
-                                    onClick={() => handleSubCategorySelect(subCategoryName)}
-                                    className={cn(
-                                        "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200",
-                                        form.watch('subcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
-                                    )}
-                                >
-                                    <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                        <Image src={subCategoryData.imageUrl || `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`} alt={subCategoryName} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
-                                    </div>
-                                    <CardContent className="p-4 flex-grow flex flex-col">
-                                        <h3 className="text-lg font-semibold">{subCategoryName}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1 flex-grow">{subCategoryData.description}</p>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                            {Object.entries(showSubcategories).map(([subCategoryName, subCategoryData]) => {
+                                const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`;
+                                const imageUrl = subCategoryData.imageUrl && subCategoryData.imageUrl.trim() !== '' ? subCategoryData.imageUrl : placeholderUrl;
+                                return (
+                                    <Card 
+                                        key={subCategoryName} 
+                                        onClick={() => handleSubCategorySelect(subCategoryName)}
+                                        className={cn(
+                                            "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200",
+                                            form.watch('subcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
+                                        )}
+                                    >
+                                        <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
+                                            <Image 
+                                                src={imageUrl} 
+                                                alt={subCategoryName} 
+                                                fill 
+                                                style={{objectFit: 'contain'}} 
+                                                className="transition-transform duration-300 group-hover:scale-105"
+                                                onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
+                                            />
+                                        </div>
+                                        <CardContent className="p-4 flex-grow flex flex-col">
+                                            <h3 className="text-lg font-semibold">{subCategoryName}</h3>
+                                            <p className="text-sm text-muted-foreground mt-1 flex-grow">{subCategoryData.description}</p>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
                         </CardContent>
                     </Card>
                 </div>
