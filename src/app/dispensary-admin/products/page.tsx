@@ -18,8 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
 const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) return 'products'; // Fallback to default
-    // Ensure consistent snake_case naming for collections
+    if (!dispensaryType) return 'products'; 
+    if (dispensaryType === "Homeopathic store") return 'homeopathy_store_products';
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
@@ -56,7 +56,6 @@ export default function WellnessProductsPage() {
         }
     } catch (error: any) {
         console.error('Error fetching products:', error);
-        // This log is for development, toast removed to prevent render loop issues.
     } finally {
         setIsLoading(false);
     }
@@ -125,7 +124,7 @@ export default function WellnessProductsPage() {
 
   const getAddProductPath = () => {
     const type = currentDispensary?.dispensaryType;
-    if (type === 'Homeopathy store') {
+    if (type === 'Homeopathic store') {
         return '/dispensary-admin/products/add/homeopathy';
     }
     if (type === 'Traditional Medicine dispensary') {
