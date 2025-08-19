@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -74,7 +74,7 @@ export default function AddHomeopathyProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const docRef = doc(db, 'dispensaryTypeProductCategories', 'Homeopathic wellness');
+      const docRef = doc(db, 'dispensaryTypeProductCategories', 'Homeopathy store');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -87,7 +87,7 @@ export default function AddHomeopathyProductPage() {
             setCategoryStructure(categoryArray);
         }
       } else {
-        toast({ title: 'Error', description: 'Could not find category structure for Homeopathic Wellness.', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Could not find category structure for Homeopathy store.', variant: 'destructive' });
       }
     } catch (error) {
       console.error("Error fetching category structure:", error);
