@@ -218,7 +218,7 @@ export default function AddPermacultureProductPage() {
                                       alt={categoryName} 
                                       fill 
                                       style={{objectFit: 'contain'}} 
-                                      className="transition-transform duration-300 group-hover:scale-105 p-2"
+                                      className="transition-transform duration-300 group-hover:scale-105"
                                       onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
                                     />
                                 </div>
@@ -255,7 +255,7 @@ export default function AddPermacultureProductPage() {
                                                 alt={subCategoryName} 
                                                 fill 
                                                 style={{objectFit: 'contain'}} 
-                                                className="transition-transform duration-300 group-hover:scale-105 p-2"
+                                                className="transition-transform duration-300 group-hover:scale-105"
                                                 onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
                                             />
                                         </div>
