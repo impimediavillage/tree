@@ -134,7 +134,9 @@ export default function WellnessProductsPage() {
     if (type === 'Homeopathy store') {
       return '/dispensary-admin/products/add/homeopathy';
     }
-    return '/dispensary-admin/dashboard'; // Fallback to dashboard if type is unknown
+    // Fallback in case of an unknown type, though this should ideally not be reached
+    // with specialized store dashboards.
+    return '/dispensary-admin/dashboard';
   };
   const addProductPath = getAddProductPath();
 
