@@ -124,7 +124,7 @@ export default function WellnessProductsPage() {
 
   const getAddProductPath = () => {
     const type = currentDispensary?.dispensaryType;
-    if (type === 'Homeopathic store') {
+    if (type === "Homeopathic store") {
         return '/dispensary-admin/products/add/homeopathy';
     }
     if (type === 'Traditional Medicine dispensary') {
