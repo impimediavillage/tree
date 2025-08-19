@@ -26,7 +26,7 @@ const InfoBadge = ({ label, value, unit, className }: { label: string, value: st
 );
 
 export function MushroomProductCard({ product, onSelect }: MushroomProductCardProps) {
-  const placeholderImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(product.name)}`;
+  const placeholderImage = `https://placehold.co/600x400.png?text=${encodeURIComponent(product.name || 'Mushroom')}`;
   const imageUrl = product.imageUrl || placeholderImage;
   const [selectedFormat, setSelectedFormat] = React.useState<string>('');
 
@@ -56,7 +56,7 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
         <CardHeader className="p-0 relative h-48 w-full overflow-hidden rounded-t-lg">
             <Image
                 src={imageUrl}
-                alt={product.name}
+                alt={product.name || 'Mushroom product'}
                 layout="fill"
                 objectFit="cover"
                 className="transition-transform duration-300 group-hover:scale-105"
