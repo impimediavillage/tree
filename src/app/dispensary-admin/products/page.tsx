@@ -60,11 +60,11 @@ export default function WellnessProductsPage() {
         }
     } catch (error: any) {
         console.error('Error fetching products:', error);
-        toast({ title: 'Error', description: `Could not fetch your products: ${error.message}`, variant: 'destructive' });
+        // Do not toast here as it causes a render loop error if called during render
     } finally {
         setIsLoading(false);
     }
-  }, [toast, productCollectionName]);
+  }, [productCollectionName]);
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
@@ -130,14 +130,14 @@ export default function WellnessProductsPage() {
 
   const getAddProductPath = () => {
     const type = currentDispensary?.dispensaryType;
+    if (type === 'Homeopathy store') {
+        return '/dispensary-admin/products/add/homeopathy';
+    }
     if (type === 'Traditional Medicine dispensary') {
       return '/dispensary-admin/products/add/traditional-medicine';
     }
     if (type === 'Cannibinoid store') {
       return '/dispensary-admin/products/add/thc';
-    }
-    if (type === 'Homeopathy store') {
-      return '/dispensary-admin/products/add/homeopathy';
     }
     // General fallback for any other store type
     return '/dispensary-admin/products/add/default';
