@@ -12,10 +12,11 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, Save, PlusCircle, ArrowLeft, Building } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, doc, updateDoc, serverTimestamp, getDocs, query as firestoreQuery, orderBy, addDoc } from 'firebase/firestore';
+import { Loader2, Clock, Save, Building } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { db, functions } from '@/lib/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas';
 import type { Dispensary, DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
@@ -77,6 +78,9 @@ interface EditDispensaryDialogProps {
     allDispensaryTypes: DispensaryType[];
     isSuperAdmin: boolean;
 }
+
+const createDispensaryUserCallable = httpsCallable(functions, 'createDispensaryUser');
+
 
 export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispensaryUpdate, allDispensaryTypes, isSuperAdmin }: EditDispensaryDialogProps) {
   const { toast } = useToast();
@@ -147,9 +151,41 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
     if (!dispensary.id || !isSuperAdmin) return;
     setIsSubmitting(true);
     try {
+        const wasPending = dispensary.status === 'Pending Approval';
+        const isNowApproved = data.status === 'Approved';
+
+        if (wasPending && isNowApproved) {
+            // Call the Cloud Function to create the user
+            toast({ title: "Approving application...", description: "Attempting to create owner account." });
+            try {
+                const result = await createDispensaryUserCallable({
+                    email: data.ownerEmail,
+                    displayName: data.fullName,
+                    dispensaryId: dispensary.id,
+                });
+
+                const { message, temporaryPassword } = result.data as { message: string, temporaryPassword?: string };
+                toast({
+                    title: "Approval Success",
+                    description: `${message} ${temporaryPassword ? `Temporary Password: ${temporaryPassword}` : ''}`,
+                    duration: 15000,
+                });
+            } catch (error: any) {
+                 if (error instanceof FunctionsError) {
+                    toast({ title: "User Creation Warning", description: error.message, variant: "destructive", duration: 10000 });
+                 } else {
+                    toast({ title: "User Creation Error", description: "A server error occurred while creating the user.", variant: "destructive", duration: 10000 });
+                 }
+            }
+        }
+        
+        // Update the dispensary document regardless of user creation outcome
         const wellnessDocRef = doc(db, 'dispensaries', dispensary.id);
         const updateData = { ...data, lastActivityDate: serverTimestamp() };
-        delete (updateData as any).applicationDate; // Prevent overwriting application date
+        if (isNowApproved) {
+          (updateData as any).approvedDate = serverTimestamp();
+        }
+        delete (updateData as any).applicationDate;
 
         await updateDoc(wellnessDocRef, updateData as any);
         toast({ title: "Wellness Profile Updated", description: `${data.dispensaryName} has been successfully updated.` });
@@ -253,16 +289,7 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
                     <FormLabel>Owner's Phone</FormLabel>
                     <div className="flex items-center gap-2">
                     <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                        <SelectTrigger className="w-[120px] shrink-0">
-                            {selectedCountryDisplay ? (
-                                <div className="flex items-center gap-1.5">
-                                    <span>{selectedCountryDisplay.flag}</span>
-                                    <span>{selectedCountryDisplay.code}</span>
-                                </div>
-                            ) : (
-                                <SelectValue placeholder="Code" />
-                            )}
-                        </SelectTrigger>
+                        <SelectTrigger className="w-[120px] shrink-0">{selectedCountryDisplay ? <div className="flex items-center gap-1.5"><span>{selectedCountryDisplay.flag}</span><span>{selectedCountryDisplay.code}</span></div> : <SelectValue placeholder="Code" />}</SelectTrigger>
                         <SelectContent>
                             {countryCodes.map(cc => (
                                 <SelectItem key={cc.value} value={cc.value}>
