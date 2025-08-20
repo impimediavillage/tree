@@ -203,7 +203,7 @@ export default function AddTraditionalMedicineProductPage() {
         console.error("Error creating product:", error);
         toast({ title: "Creation Failed", description: "An error occurred while creating the product.", variant: "destructive" });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
   
@@ -253,8 +253,8 @@ export default function AddTraditionalMedicineProductPage() {
                                 form.watch('category') === cat.useCase && !isClothingStream && 'border-primary ring-2 ring-primary'
                             )}
                         >
-                             <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
+                            <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
+                                <Image src={cat.imageUrl} alt={cat.useCase} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
                             </div>
                             <p className="p-3 text-center font-semibold text-base">{cat.useCase}</p>
                         </Card>
@@ -265,8 +265,8 @@ export default function AddTraditionalMedicineProductPage() {
                             isClothingStream && 'border-primary ring-2 ring-primary'
                         )}
                     >
-                         <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                            <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
+                         <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
+                            <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
                         </div>
                         <p className="p-3 text-center font-semibold text-base">Clothing</p>
                     </Card>
@@ -291,8 +291,8 @@ export default function AddTraditionalMedicineProductPage() {
                                         form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary'
                                     )}
                                 >
-                                    <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                        <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
+                                    <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
+                                        <Image src={cat.imageUrl} alt={cat.type} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
                                     </div>
                                     <div className="p-3 flex flex-col items-center flex-grow">
                                     <p className="text-center font-semibold text-base">{cat.type}</p>
@@ -318,8 +318,8 @@ export default function AddTraditionalMedicineProductPage() {
               {showFinalForm && (
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
-                      
+                      <h3 className="text-2xl font-bold border-b pb-2">Step 3: Finalize Product Details</h3>
+
                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
                         <FormItem>
                           <FormLabel>Category</FormLabel>
@@ -336,7 +336,7 @@ export default function AddTraditionalMedicineProductPage() {
                             </FormItem>
                         )}
                       </div>
-
+                      
                       <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                       
