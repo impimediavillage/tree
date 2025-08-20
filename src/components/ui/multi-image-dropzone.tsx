@@ -26,6 +26,8 @@ type InputProps = {
   maxFiles?: number;
   maxSize?: number; // in bytes
   dropzoneOptions?: Omit<DropzoneOptions, 'disabled' | 'maxFiles' | 'maxSize' | 'onDrop'>;
+  existingImageUrls?: string[];
+  onExistingImageDelete?: (url: string) => void;
 };
 
 const ERROR_MESSAGES = {
@@ -35,23 +37,20 @@ const ERROR_MESSAGES = {
 };
 
 const MultiImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ dropzoneOptions, value, className, disabled, onChange, maxFiles = 5, maxSize = 100 * 1024 }, ref) => {
+  ({ dropzoneOptions, value: newFiles = [], className, disabled, onChange, maxFiles = 5, maxSize = 2 * 1024 * 1024, existingImageUrls = [], onExistingImageDelete }, ref) => {
     const [customError, setCustomError] = React.useState<string>();
 
     const onDrop = React.useCallback(
       (acceptedFiles: File[], rejectedFiles: any[]) => {
-        if (!acceptedFiles) {
+        const totalFiles = newFiles.length + existingImageUrls.length + acceptedFiles.length;
+        if (maxFiles && totalFiles > maxFiles) {
+          setCustomError(`Cannot upload more than ${maxFiles} total images.`);
           return;
         }
 
-        const newFiles = value ? [...value, ...acceptedFiles] : acceptedFiles;
-
-        if (maxFiles && newFiles.length > maxFiles) {
-          setCustomError(`Cannot upload more than ${maxFiles} files.`);
-          return;
+        if (onChange) {
+            onChange([...newFiles, ...acceptedFiles]);
         }
-
-        onChange?.(newFiles);
         setCustomError(undefined);
 
         if (rejectedFiles.length > 0) {
@@ -70,7 +69,7 @@ const MultiImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
           setCustomError(errorMessage);
         }
       },
-      [value, onChange, maxFiles, maxSize],
+      [newFiles, existingImageUrls, onChange, maxFiles, maxSize],
     );
 
     const { getRootProps, getInputProps, isDragActive, isDragAccept, isDragReject } =
@@ -95,10 +94,9 @@ const MultiImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
       [isDragActive, isDragAccept, isDragReject, disabled, className],
     );
 
-    const removeFile = (fileIndex: number) => {
-      if (value) {
-        const newFiles = value.filter((_, i) => i !== fileIndex);
-        onChange?.(newFiles);
+    const removeNewFile = (fileIndex: number) => {
+      if (onChange) {
+        onChange(newFiles.filter((_, i) => i !== fileIndex));
       }
     };
 
@@ -109,31 +107,26 @@ const MultiImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
           <div className="flex flex-col items-center justify-center text-xs text-gray-400">
             <UploadCloud className="mb-2 h-7 w-7" />
             <div className="text-gray-400">drag & drop or click to upload</div>
-            <div className="mt-1 text-xs text-muted-foreground/80">Max {maxFiles} files, up to {Math.round(maxSize / 1024)}KB each</div>
+            <div className="mt-1 text-xs text-muted-foreground/80">Max {maxFiles} files, up to {Math.round(maxSize / (1024*1024))}MB each</div>
           </div>
         </div>
         {customError && <p className="mt-2 text-sm text-destructive">{customError}</p>}
-        {(value?.length ?? 0) > 0 && (
+        {(existingImageUrls.length + newFiles.length) > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mt-2">
-            {value?.map((file, i) => (
-              <div key={i} className="relative aspect-square w-full rounded-md shadow-lg">
-                <Image
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  fill
-                  sizes="100px"
-                  style={{ objectFit: 'cover' }}
-                  className="rounded-md"
-                />
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFile(i);
-                  }}
-                >
+            {existingImageUrls.map((url, i) => (
+              <div key={`existing-${i}`} className="relative aspect-square w-full rounded-md shadow-lg">
+                <Image src={url} alt={`Existing image ${i+1}`} fill sizes="100px" style={{ objectFit: 'cover' }} className="rounded-md" />
+                <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={(e) => { e.stopPropagation(); onExistingImageDelete?.(url); }} >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {newFiles.map((file, i) => (
+              <div key={`new-${i}`} className="relative aspect-square w-full rounded-md shadow-lg">
+                <Image src={URL.createObjectURL(file)} alt={file.name} fill sizes="100px" style={{ objectFit: 'cover' }} className="rounded-md" />
+                <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={(e) => { e.stopPropagation(); removeNewFile(i); }} >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
