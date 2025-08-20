@@ -276,7 +276,11 @@ export default function AddTraditionalMedicineProductPage() {
             {selectedTopLevelCategory && (
                 <div ref={secondStepRef}>
                     <Card className="animate-fade-in-scale-up">
-                        <CardHeader><CardTitle>Step 2: Select a Product Type</CardTitle></CardHeader>
+                        <CardHeader>
+                            <CardTitle>
+                                Step 2: Select a Product Type for <span className="text-primary">{selectedTopLevelCategory.useCase}</span>
+                            </CardTitle>
+                        </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {selectedTopLevelCategory.categories.map(cat => (
                                 <Card 
