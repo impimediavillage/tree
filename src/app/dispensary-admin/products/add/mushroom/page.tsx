@@ -21,13 +21,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Brain } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Brain, AlertTriangle } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { cn } from '@/lib/utils';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
+import { Alert } from '@/components/ui/alert';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit", "bottle" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -252,6 +253,18 @@ export default function AddMushroomProductPage() {
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
                       <h3 className="text-2xl font-bold border-b pb-2">Step 3: Finalize Product Details</h3>
+
+                      {selectedTopLevel?.category_name === 'Shamanic Mushrooms' && (
+                        <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                          <CardTitle className="text-red-700 text-lg">Legal & Responsibility Disclaimer</CardTitle>
+                          <CardDescription className="text-red-600 space-y-2 mt-2">
+                            <p>The Wellness Tree complies with South African Law, which prohibits the sale of certain psychoactive substances. Adding any illegal products to your store is strictly forbidden.</p>
+                            <p className="font-semibold">The Wellness Tree does not monitor your store inventory. The sole responsibility for ensuring all listed products are legal rests with you, the store owner.</p>
+                          </CardDescription>
+                        </Alert>
+                      )}
+
                       <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                       
