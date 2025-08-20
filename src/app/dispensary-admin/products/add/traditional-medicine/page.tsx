@@ -249,30 +249,48 @@ export default function AddTraditionalMedicineProductPage() {
                     {categoryStructure.map(cat => (
                         <Card key={cat.useCase} onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
-                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
                                 form.watch('category') === cat.useCase && !isClothingStream && 'border-primary ring-2 ring-primary'
                             )}
                         >
-                             <div className="w-full bg-muted overflow-hidden rounded-t-lg">
-                                <div className="relative w-full aspect-video">
-                                    <Image src={cat.imageUrl} alt={cat.useCase} layout="fill" objectFit="contain" className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                            <CardHeader className="p-0">
+                                <div className="w-full bg-muted">
+                                    <Image
+                                        src={cat.imageUrl}
+                                        alt={cat.useCase}
+                                        width={768}
+                                        height={512}
+                                        layout="responsive"
+                                        className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                    />
                                 </div>
-                            </div>
-                            <p className="p-3 text-center font-semibold text-base">{cat.useCase}</p>
+                            </CardHeader>
+                            <CardContent className="p-3 flex items-center justify-center flex-grow">
+                                <p className="text-center font-semibold text-base">{cat.useCase}</p>
+                            </CardContent>
                         </Card>
                     ))}
                      <Card onClick={handleClothingSelect} 
                         className={cn(
-                            "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                            "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
                             isClothingStream && 'border-primary ring-2 ring-primary'
                         )}
                     >
-                         <div className="w-full bg-muted overflow-hidden rounded-t-lg">
-                            <div className="relative w-full aspect-video">
-                                <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" layout="fill" objectFit="contain" className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                        <CardHeader className="p-0">
+                            <div className="w-full bg-muted">
+                                <Image
+                                    src="/images/traditional-medicine/san1.jpg"
+                                    alt="Clothing"
+                                    width={768}
+                                    height={512}
+                                    layout="responsive"
+                                    className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                />
                             </div>
-                        </div>
-                        <p className="p-3 text-center font-semibold text-base">Clothing</p>
+                        </CardHeader>
+                        <CardContent className="p-3 flex items-center justify-center flex-grow">
+                            <p className="text-center font-semibold text-base">Clothing</p>
+                        </CardContent>
                     </Card>
                 </CardContent>
             </Card>
@@ -291,28 +309,35 @@ export default function AddTraditionalMedicineProductPage() {
                                     key={cat.type} 
                                     onClick={() => handleSecondLevelSelect(cat)} 
                                     className={cn(
-                                        "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                                        "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
                                         form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary'
                                     )}
                                 >
-                                     <div className="w-full bg-muted overflow-hidden rounded-t-lg">
-                                        <div className="relative w-full aspect-video">
-                                            <Image src={cat.imageUrl} alt={cat.type} layout="fill" objectFit="contain" className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                    <CardHeader className="p-0">
+                                        <div className="w-full bg-muted">
+                                            <Image
+                                                src={cat.imageUrl}
+                                                alt={cat.type}
+                                                width={768}
+                                                height={512}
+                                                layout="responsive"
+                                                className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                            />
                                         </div>
-                                    </div>
-                                    <div className="p-3 flex flex-col items-center flex-grow">
-                                    <p className="text-center font-semibold text-base">{cat.type}</p>
-                                    {form.watch('subcategory') === cat.type && (
-                                        <div className="w-full mt-4 animate-fade-in-scale-up">
-                                            <Select onValueChange={(value) => handleSubSubCategorySelect(value)}>
-                                                <SelectTrigger><SelectValue placeholder="Select a specific sub-type" /></SelectTrigger>
-                                                <SelectContent>
-                                                    {cat.subtypes.map(subtype => <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-                                    </div>
+                                    </CardHeader>
+                                    <CardContent className="p-3 flex flex-col items-center flex-grow">
+                                        <p className="text-center font-semibold text-base">{cat.type}</p>
+                                        {form.watch('subcategory') === cat.type && (
+                                            <div className="w-full mt-4 animate-fade-in-scale-up">
+                                                <Select onValueChange={(value) => handleSubSubCategorySelect(value)}>
+                                                    <SelectTrigger><SelectValue placeholder="Select a specific sub-type" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {cat.subtypes.map(subtype => <SelectItem key={subtype} value={subtype}>{subtype}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
+                                    </CardContent>
                                 </Card>
                             ))}
                         </CardContent>

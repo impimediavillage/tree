@@ -212,14 +212,23 @@ export default function AddHomeopathyProductPage() {
                             key={cat.type} 
                             onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
-                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200 min-w-[280px] max-w-[768px]", 
+                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
                                 form.watch('category') === cat.type && 'border-primary ring-2 ring-primary'
                             )}
                         >
-                            <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
-                            </div>
-                            <div className="p-3 flex flex-col items-center flex-grow">
+                            <CardHeader className="p-0">
+                                <div className="w-full bg-muted">
+                                    <Image 
+                                        src={cat.imageUrl} 
+                                        alt={cat.type} 
+                                        width={768}
+                                        height={512}
+                                        layout="responsive"
+                                        className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-3 flex flex-col items-center flex-grow">
                                 <p className="text-center font-semibold text-base">{cat.type}</p>
                                 {form.watch('category') === cat.type && (
                                     <div className="w-full mt-4 animate-fade-in-scale-up">
@@ -231,7 +240,7 @@ export default function AddHomeopathyProductPage() {
                                         </Select>
                                     </div>
                                 )}
-                            </div>
+                            </CardContent>
                         </Card>
                     ))}
                 </CardContent>
