@@ -128,6 +128,8 @@ export interface Product {
   labTested?: boolean;
   labTestReportUrl?: string | null;
   isAvailableForPool?: boolean;
+  poolSharingRule?: 'same_type' | 'all_types' | 'specific_stores' | null;
+  allowedPoolDispensaryIds?: string[] | null;
   tags?: string[] | null;
   
   createdAt: Timestamp | Date | string;
@@ -418,3 +420,5 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
+
+    

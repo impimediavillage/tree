@@ -240,6 +240,8 @@ const baseProductObjectSchema = z.object({
   labTested: z.boolean().default(false).optional(),
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
+  poolSharingRule: z.enum(['same_type', 'all_types', 'specific_stores']).optional().nullable(),
+  allowedPoolDispensaryIds: z.array(z.string()).optional().nullable().default([]),
   tags: z.array(z.string()).optional().nullable().default([]),
 });
 
@@ -250,6 +252,20 @@ export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => 
             code: z.ZodIssueCode.custom,
             message: "Pool pricing is required if the product is available for sharing.",
             path: ["poolPriceTiers"],
+        });
+    }
+    if (data.isAvailableForPool && !data.poolSharingRule) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please select a sharing rule for the product pool.",
+            path: ["poolSharingRule"],
+        });
+    }
+    if (data.poolSharingRule === 'specific_stores' && (!data.allowedPoolDispensaryIds || data.allowedPoolDispensaryIds.length === 0)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please select at least one specific dispensary to share with.",
+            path: ["allowedPoolDispensaryIds"],
         });
     }
 });
@@ -592,3 +608,5 @@ export const stickerSetSchema = z.object({
   createdAt: z.any(),
 });
 export type StickerSetDbData = z.infer<typeof stickerSetSchema>;
+
+    
