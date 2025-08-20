@@ -319,6 +319,24 @@ export default function AddTraditionalMedicineProductPage() {
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <Input value={form.getValues('category')} disabled />
+                        </FormItem>
+                        <FormItem>
+                          <FormLabel>Subcategory</FormLabel>
+                          <Input value={form.getValues('subcategory') || ''} disabled />
+                        </FormItem>
+                        {form.getValues('subSubcategory') && (
+                            <FormItem>
+                                <FormLabel>Type</FormLabel>
+                                <Input value={form.getValues('subSubcategory') || ''} disabled />
+                            </FormItem>
+                        )}
+                      </div>
+
                       <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                       
