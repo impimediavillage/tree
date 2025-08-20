@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import { productSchema, type ProductFormData } from '@/lib/schemas';
+import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
 import type { Product as ProductType } from '@/types';
 
 import { Button } from '@/components/ui/button';
@@ -57,10 +57,8 @@ const streamDisplayMapping: Record<string, { text: string; icon: React.ElementTy
     'Mushroom': { text: 'Mushroom', icon: Brain, color: 'text-indigo-500' },
 };
 
-const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) return 'products';
-    if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
-    return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+const getProductCollectionName = (): string => {
+    return 'cannibinoid_store_products';
 };
 
 export default function EditCannabinoidProductPage() {
@@ -82,7 +80,7 @@ export default function EditCannabinoidProductPage() {
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   const [existingLabTestUrl, setExistingLabTestUrl] = useState<string | null>(null);
 
-  const productCollectionName = getProductCollectionName(currentDispensary?.dispensaryType);
+  const productCollectionName = getProductCollectionName();
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -142,18 +140,30 @@ export default function EditCannabinoidProductPage() {
     }
   }, [watchGender, watchSizingSystem, form]);
 
+  const handleRemoveExistingImage = async (urlToRemove: string) => {
+    try {
+        const imageRef = storageRef(storage, urlToRemove);
+        await deleteObject(imageRef);
+        setExistingImageUrls(prev => prev.filter(url => url !== urlToRemove));
+        toast({ title: "Image Removed", description: "The image has been marked for deletion and will be removed on save." });
+    } catch (error) {
+        console.error("Error removing existing image:", error);
+        toast({ title: "Error", description: "Could not remove the image from storage.", variant: "destructive" });
+    }
+  }
+
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
-        let uploadedImageUrls: string[] = [...existingImageUrls];
+        let finalImageUrls: string[] = [...existingImageUrls];
         if (files.length > 0) {
             toast({ title: "Uploading Images...", description: "Please wait while new product images are uploaded.", variant: "default" });
             const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
             const newUrls = await Promise.all(uploadPromises);
-            uploadedImageUrls = [...uploadedImageUrls, ...newUrls];
+            finalImageUrls = [...finalImageUrls, ...newUrls];
         }
-
+        
         let finalLabTestUrl = existingLabTestUrl;
         if (labTestFile) {
             toast({ title: "Uploading Lab Report...", description: "Please wait while your lab report is uploaded.", variant: "default" });
@@ -172,8 +182,8 @@ export default function EditCannabinoidProductPage() {
         const productData = { 
             ...sanitizedData, 
             updatedAt: serverTimestamp(), 
-            imageUrls: uploadedImageUrls, 
-            imageUrl: uploadedImageUrls[0] || null,
+            imageUrls: finalImageUrls, 
+            imageUrl: finalImageUrls[0] || null,
             labTestReportUrl: finalLabTestUrl, 
             quantityInStock: data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0) 
         };
@@ -198,17 +208,17 @@ export default function EditCannabinoidProductPage() {
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center text-foreground"> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
             <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
         </div>
-        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
+        <CardDescription className="text-foreground"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
             <FormItem>
-              <FormLabel className="text-xl font-semibold text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Stream</FormLabel>
+              <FormLabel className="text-xl font-semibold text-foreground">Product Stream</FormLabel>
               <div className="mt-2 p-3 bg-muted rounded-md border">
                 {selectedProductStream && streamDisplayMapping[selectedProductStream] ? (
                   <div className="flex items-center gap-3">
@@ -221,7 +231,7 @@ export default function EditCannabinoidProductPage() {
             </FormItem>
 
             <div className="space-y-6">
-                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
+                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground">Product Details</h2>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                 
@@ -245,6 +255,16 @@ export default function EditCannabinoidProductPage() {
                       <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Happy, Relaxed" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Pine, Citrus" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="labTested" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Lab Tested</FormLabel><FormDescription>Check this if you have a lab report for this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                      {watchLabTested && (
+                          <Card className="p-4 bg-muted/50"><CardContent className="p-0">
+                              <FormItem><FormLabel>Lab Report</FormLabel>
+                                {existingLabTestUrl && <div className="text-sm my-2"><a href={existingLabTestUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">View current report</a></div>}
+                                <FormControl><SingleImageDropzone value={labTestFile} onChange={(file) => setLabTestFile(file)} /></FormControl>
+                                <FormDescription>{existingLabTestUrl ? "Upload a new file to replace the existing one." : "Upload a PDF or image of the lab test results."}</FormDescription>
+                              </FormItem>
+                          </CardContent></Card>
+                      )}
                   </>
                 )}
                 
@@ -279,7 +299,7 @@ export default function EditCannabinoidProductPage() {
                     )}
                     <Separator />
                     <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
-                    <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={handleRemoveExistingImage} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
             </div>
