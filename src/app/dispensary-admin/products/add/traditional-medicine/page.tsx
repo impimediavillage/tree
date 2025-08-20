@@ -253,8 +253,10 @@ export default function AddTraditionalMedicineProductPage() {
                                 form.watch('category') === cat.useCase && !isClothingStream && 'border-primary ring-2 ring-primary'
                             )}
                         >
-                            <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={cat.imageUrl} alt={cat.useCase} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                             <div className="w-full bg-muted overflow-hidden rounded-t-lg">
+                                <div className="relative w-full aspect-video">
+                                    <Image src={cat.imageUrl} alt={cat.useCase} layout="fill" objectFit="contain" className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                </div>
                             </div>
                             <p className="p-3 text-center font-semibold text-base">{cat.useCase}</p>
                         </Card>
@@ -265,8 +267,10 @@ export default function AddTraditionalMedicineProductPage() {
                             isClothingStream && 'border-primary ring-2 ring-primary'
                         )}
                     >
-                         <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
-                            <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                         <div className="w-full bg-muted overflow-hidden rounded-t-lg">
+                            <div className="relative w-full aspect-video">
+                                <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" layout="fill" objectFit="contain" className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                            </div>
                         </div>
                         <p className="p-3 text-center font-semibold text-base">Clothing</p>
                     </Card>
@@ -291,8 +295,10 @@ export default function AddTraditionalMedicineProductPage() {
                                         form.watch('subcategory') === cat.type && 'border-primary ring-2 ring-primary'
                                     )}
                                 >
-                                    <div className="relative w-full aspect-video bg-muted overflow-hidden rounded-t-lg">
-                                        <Image src={cat.imageUrl} alt={cat.type} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105"/>
+                                     <div className="w-full bg-muted overflow-hidden rounded-t-lg">
+                                        <div className="relative w-full aspect-video">
+                                            <Image src={cat.imageUrl} alt={cat.type} layout="fill" objectFit="contain" className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                        </div>
                                     </div>
                                     <div className="p-3 flex flex-col items-center flex-grow">
                                     <p className="text-center font-semibold text-base">{cat.type}</p>
