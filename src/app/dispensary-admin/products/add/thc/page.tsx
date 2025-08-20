@@ -320,15 +320,17 @@ export default function AddTHCProductPage() {
                         selectedProductStream === stream.key && "ring-2 ring-primary border-primary"
                     )}
                   >
-                    <div className="relative w-full h-40 bg-muted">
-                       <Image 
-                          src={stream.imageUrl} 
-                          alt={stream.title} 
-                          fill
-                          className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
-                          sizes="(max-width: 768px) 50vw, 33vw"
-                       />
-                    </div>
+                    <CardHeader className="p-0">
+                      <div className="w-full bg-muted">
+                        <Image 
+                            src={stream.imageUrl} 
+                            alt={stream.title} 
+                            width={768}
+                            height={512}
+                            className="object-contain transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                    </CardHeader>
                     <CardFooter className="p-3 bg-card/80 backdrop-blur-sm">
                         <p className="text-center font-semibold w-full text-foreground">{stream.title}</p>
                     </CardFooter>
@@ -436,17 +438,24 @@ export default function AddTHCProductPage() {
                                       onClick={() => handleCategorySelect(categoryName)} 
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
-                                    <CardHeader className="p-0 flex-grow relative h-48 bg-muted">
-                                        <div className="relative h-full w-full">
-                                          {imageUrl ? (
-                                              <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" className="transition-transform group-hover:scale-105 p-2" data-ai-hint={`category ${categoryName}`} />
-                                          ) : (
-                                              <div className="w-full h-full flex items-center justify-center">
-                                                  <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
-                                              </div>
-                                          )}
-                                        </div>
-                                      </CardHeader>
+                                    <CardHeader className="p-0">
+                                      <div className="w-full bg-muted">
+                                        {imageUrl ? (
+                                            <Image 
+                                                src={imageUrl} 
+                                                alt={categoryName} 
+                                                width={768} 
+                                                height={512} 
+                                                className="object-contain transition-transform group-hover:scale-105" 
+                                                data-ai-hint={`category ${categoryName}`} 
+                                            />
+                                        ) : (
+                                            <div className="w-full aspect-[4/3] flex items-center justify-center">
+                                                <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
+                                            </div>
+                                        )}
+                                      </div>
+                                    </CardHeader>
                                       <CardContent className="p-3">
                                           <CardTitle className="text-center text-base">{categoryName}</CardTitle>
                                       </CardContent>
