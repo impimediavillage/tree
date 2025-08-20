@@ -81,7 +81,6 @@ export default function AddTHCProductPage() {
   const strainFinderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Select a random image on component mount (client-side only)
     setRandomTripleSImage(tripleSImages[Math.floor(Math.random() * tripleSImages.length)]!);
   }, []);
 
@@ -148,8 +147,8 @@ export default function AddTHCProductPage() {
         setShowStrainFinder(false);
         setTimeout(() => optInSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } else if (stream === 'CBD') {
-        fetchCannabinoidCategories(stream);
         setShowOptInSection(false);
+        fetchCannabinoidCategories(stream);
         setShowStrainFinder(true);
         setTimeout(() => strainFinderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } else {
@@ -173,7 +172,7 @@ export default function AddTHCProductPage() {
     
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
-    setShowCategorySelector(true); // <-- This is the key fix
+    setShowCategorySelector(true); 
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
   };
@@ -188,7 +187,7 @@ export default function AddTHCProductPage() {
   };
 
   const getProductCollectionName = (type: string | undefined): string => {
-      if (!type) return 'products'; // Fallback for safety
+      if (!type) return 'products'; 
       return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
   };
 
@@ -281,7 +280,7 @@ export default function AddTHCProductPage() {
       fetchCannabinoidCategories('THC');
     } else {
       setShowStrainFinder(false);
-      setShowCategorySelector(false); // Also hide category selector if opt-in is cleared
+      setShowCategorySelector(false); 
     }
   }, [watchStickerOptIn, fetchCannabinoidCategories]);
   
@@ -311,7 +310,7 @@ export default function AddTHCProductPage() {
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {productStreams.map(stream => (
                   <Card 
                     key={stream.key} 
@@ -321,13 +320,13 @@ export default function AddTHCProductPage() {
                         selectedProductStream === stream.key && "ring-2 ring-primary border-primary"
                     )}
                   >
-                    <div className="relative aspect-[4/3] w-full bg-muted">
+                    <div className="relative w-full h-40 bg-muted">
                        <Image 
                           src={stream.imageUrl} 
                           alt={stream.title} 
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                          sizes="(max-width: 768px) 50vw, 33vw"
                        />
                     </div>
                     <CardFooter className="p-3 bg-card/80 backdrop-blur-sm">
@@ -423,7 +422,7 @@ export default function AddTHCProductPage() {
                   <h3 className="text-xl font-semibold border-b pb-2">Category Selection *</h3>
                   
                   {isLoadingInitialData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
                           if (!Array.isArray(items)) return null;
                           const lastItem = items.length > 0 ? items[items.length - 1] : null;
@@ -437,8 +436,8 @@ export default function AddTHCProductPage() {
                                       onClick={() => handleCategorySelect(categoryName)} 
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
-                                    <CardHeader className="p-0 flex-grow h-48 relative">
-                                        <div className="relative h-full w-full bg-muted">
+                                    <CardHeader className="p-0 flex-grow relative h-48 bg-muted">
+                                        <div className="relative h-full w-full">
                                           {imageUrl ? (
                                               <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
                                           ) : (
