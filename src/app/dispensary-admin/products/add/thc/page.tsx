@@ -325,7 +325,7 @@ export default function AddTHCProductPage() {
                           src={stream.imageUrl} 
                           alt={stream.title} 
                           fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="object-contain p-2 transition-transform duration-300 group-hover:scale-105"
                           sizes="(max-width: 768px) 50vw, 33vw"
                        />
                     </div>
@@ -439,7 +439,7 @@ export default function AddTHCProductPage() {
                                     <CardHeader className="p-0 flex-grow relative h-48 bg-muted">
                                         <div className="relative h-full w-full">
                                           {imageUrl ? (
-                                              <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="cover" className="transition-transform group-hover:scale-105" data-ai-hint={`category ${categoryName}`} />
+                                              <Image src={imageUrl} alt={categoryName} layout="fill" objectFit="contain" className="transition-transform group-hover:scale-105 p-2" data-ai-hint={`category ${categoryName}`} />
                                           ) : (
                                               <div className="w-full h-full flex items-center justify-center">
                                                   <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
