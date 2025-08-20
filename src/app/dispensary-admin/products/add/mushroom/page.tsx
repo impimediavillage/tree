@@ -209,9 +209,18 @@ export default function AddMushroomProductPage() {
                                 selectedTopLevel?.category_name === cat.category_name && 'border-primary ring-2 ring-primary'
                             )}
                         >
-                            <div className="relative aspect-video w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={cat.imageUrl} alt={cat.category_name} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
-                            </div>
+                            <CardHeader className="p-0">
+                                <div className="w-full bg-muted">
+                                    <Image
+                                        src={cat.imageUrl}
+                                        alt={cat.category_name}
+                                        width={768}
+                                        height={512}
+                                        layout="responsive"
+                                        className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                </div>
+                            </CardHeader>
                             <CardContent className="p-4 flex-grow flex flex-col">
                                 <h3 className="text-lg font-semibold">{cat.category_name}</h3>
                                 <p className="text-sm text-muted-foreground mt-1 flex-grow">{cat.description}</p>

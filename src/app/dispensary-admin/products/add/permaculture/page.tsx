@@ -212,16 +212,19 @@ export default function AddPermacultureProductPage() {
                                     form.watch('category') === categoryName && 'border-primary ring-2 ring-primary'
                                 )}
                             >
-                                <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                    <Image 
-                                      src={imageUrl} 
-                                      alt={categoryName} 
-                                      fill 
-                                      style={{objectFit: 'contain'}} 
-                                      className="transition-transform duration-300 group-hover:scale-105 p-2"
-                                      onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
-                                    />
-                                </div>
+                                <CardHeader className="p-0">
+                                    <div className="w-full bg-muted">
+                                        <Image
+                                            src={imageUrl}
+                                            alt={categoryName}
+                                            width={768}
+                                            height={512}
+                                            layout="responsive"
+                                            className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                            onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
+                                        />
+                                    </div>
+                                </CardHeader>
                                 <CardContent className="p-4 flex-grow flex flex-col">
                                     <h3 className="text-lg font-semibold">{categoryName}</h3>
                                     <p className="text-sm text-muted-foreground mt-1 flex-grow">{categoryData.description}</p>
@@ -253,16 +256,19 @@ export default function AddPermacultureProductPage() {
                                             form.watch('subcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
                                         )}
                                     >
-                                        <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                            <Image 
-                                                src={imageUrl} 
-                                                alt={subCategoryName} 
-                                                fill 
-                                                style={{objectFit: 'contain'}} 
-                                                className="transition-transform duration-300 group-hover:scale-105 p-2"
-                                                onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
-                                            />
-                                        </div>
+                                        <CardHeader className="p-0">
+                                            <div className="w-full bg-muted">
+                                                <Image
+                                                    src={imageUrl}
+                                                    alt={subCategoryName}
+                                                    width={768}
+                                                    height={512}
+                                                    layout="responsive"
+                                                    className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                                    onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
+                                                />
+                                            </div>
+                                        </CardHeader>
                                         <CardContent className="p-4 flex-grow flex flex-col">
                                             <h3 className="text-lg font-semibold">{subCategoryName}</h3>
                                             <p className="text-sm text-muted-foreground mt-1 flex-grow">{subCategoryData.description}</p>
