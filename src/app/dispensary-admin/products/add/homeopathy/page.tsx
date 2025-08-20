@@ -235,7 +235,7 @@ export default function AddHomeopathyProductPage() {
                                         <Select onValueChange={(value) => handleSubCategorySelect(value)}>
                                             <SelectTrigger><SelectValue placeholder="Select a specific condition" /></SelectTrigger>
                                             <SelectContent>
-                                                {cat.examples.map(example => <SelectItem key={example} value={example}>{example}</SelectItem>)}
+                                                {(cat.examples || []).map(example => <SelectItem key={example} value={example}>{example}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>
