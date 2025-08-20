@@ -8,10 +8,10 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, orderBy as orderByFirestore } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Product as ProductType } from '@/types';
+import type { Product as ProductType, Dispensary } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,13 +21,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Gift, Brush, Palette, Home, Brain } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Shirt, Sparkles, Flame, Leaf as LeafIconLucide, Gift, Brush, Palette, Home, Brain, ChevronsUpDown, Check as CheckIcon } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Badge } from '@/components/ui/badge';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -40,21 +42,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
   'Womens': { 'UK/SA': ['3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '9', '10'], 'US': ['5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '11', '12'], 'EURO': ['35.5', '36', '36.5', '37.5', '38', '38.5', '39', '40', '40.5', '41', '42', '43'], 'Alpha (XS-XXXL)': ['XXS','XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
-};
-
-type StreamKey = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furniture' | 'Sticker Promo Set' | 'Homeopathy' | 'Traditional Medicine' | 'Mushroom';
-
-const streamDisplayMapping: Record<string, { text: string; icon: React.ElementType; color: string }> = {
-    'THC': { text: 'Cannibinoid (other)', icon: Flame, color: 'text-red-500' },
-    'CBD': { text: 'CBD', icon: LeafIconLucide, color: 'text-green-500' },
-    'Apparel': { text: 'Apparel', icon: Shirt, color: 'text-blue-500' },
-    'Smoking Gear': { text: 'Smoking Gear', icon: Sparkles, color: 'text-purple-500' },
-    'Art': { text: 'Art', icon: Brush, color: 'text-pink-500'},
-    'Furniture': { text: 'Furniture', icon: Brush, color: 'text-orange-500'},
-    'Sticker Promo Set': { text: 'Sticker Promo Set', icon: Gift, color: 'text-yellow-500' },
-    'Homeopathy': { text: 'Homeopathy', icon: LeafIconLucide, color: 'text-teal-500' },
-    'Traditional Medicine': { text: 'Traditional Medicine', icon: Home, color: 'text-amber-600' },
-    'Mushroom': { text: 'Mushroom', icon: Brain, color: 'text-indigo-500' },
 };
 
 const getProductCollectionName = (): string => {
@@ -71,14 +58,15 @@ export default function EditCannabinoidProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [selectedProductStream, setSelectedProductStream] = useState<StreamKey | null>(null);
-  
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   
   const [files, setFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   const [existingLabTestUrl, setExistingLabTestUrl] = useState<string | null>(null);
+
+  const [allDispensaries, setAllDispensaries] = useState<Dispensary[]>([]);
+  const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(false);
 
   const productCollectionName = getProductCollectionName();
   
@@ -93,12 +81,9 @@ export default function EditCannabinoidProductPage() {
   const watchLabTested = form.watch('labTested');
   const watchSizingSystem = form.watch('sizingSystem');
   const watchGender = form.watch('gender');
+  const watchPoolSharingRule = form.watch('poolSharingRule');
+  const watchAllowedPoolIds = form.watch('allowedPoolDispensaryIds');
 
-  const determineStreamFromCategory = (productType: string | undefined | null): StreamKey | null => {
-    if (!productType) return null;
-    return productType as StreamKey;
-  };
-  
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !productId || !productCollectionName) {
       if (!authLoading) setIsLoadingInitialData(false);
@@ -118,9 +103,6 @@ export default function EditCannabinoidProductPage() {
         form.reset(productData as ProductFormData);
         setExistingImageUrls(productData.imageUrls || []);
         setExistingLabTestUrl(productData.labTestReportUrl || null);
-        
-        const stream = determineStreamFromCategory(productData.productType);
-        setSelectedProductStream(stream);
 
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -129,6 +111,29 @@ export default function EditCannabinoidProductPage() {
   }, [productId, authLoading, toast, router, form, currentUser, productCollectionName]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
+
+  const fetchAllDispensaries = useCallback(async () => {
+    if (watchPoolSharingRule !== 'specific_stores' || allDispensaries.length > 0) return;
+    setIsLoadingDispensaries(true);
+    try {
+      const q = query(
+        collection(db, 'dispensaries'),
+        where('status', '==', 'Approved'),
+        orderByFirestore('dispensaryName')
+      );
+      const querySnapshot = await getDocs(q);
+      const dispensaries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary)).filter(d => d.id !== currentUser?.dispensaryId);
+      setAllDispensaries(dispensaries);
+    } catch (error) {
+      toast({ title: 'Error', description: 'Could not fetch list of dispensaries.', variant: 'destructive'});
+    } finally {
+      setIsLoadingDispensaries(false);
+    }
+  }, [watchPoolSharingRule, allDispensaries.length, toast, currentUser?.dispensaryId]);
+
+  useEffect(() => {
+    fetchAllDispensaries();
+  }, [fetchAllDispensaries]);
   
   useEffect(() => {
     const gender = form.getValues('gender'); 
@@ -201,8 +206,7 @@ export default function EditCannabinoidProductPage() {
   if (isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
-
-  const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
+  const isCannabinoidStream = form.getValues('productType') === 'THC' || form.getValues('productType') === 'CBD';
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
@@ -216,41 +220,32 @@ export default function EditCannabinoidProductPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
-            <FormItem>
-              <FormLabel className="text-xl font-semibold text-foreground">Product Stream</FormLabel>
-              <div className="mt-2 p-3 bg-muted rounded-md border">
-                {selectedProductStream && streamDisplayMapping[selectedProductStream] ? (
-                  <div className="flex items-center gap-3">
-                    <streamDisplayMapping[selectedProductStream]!.icon className={cn("h-8 w-8", streamDisplayMapping[selectedProductStream]!.color)} />
-                    <span className="text-lg font-medium">{streamDisplayMapping[selectedProductStream]!.text}</span>
-                  </div>
-                ) : <span className="text-muted-foreground">Not set</span>}
-              </div>
-              <FormDescription>The product stream cannot be changed after creation.</FormDescription>
-            </FormItem>
-
             <div className="space-y-6">
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground">Product Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
+                    <FormItem><FormLabel>Product Stream</FormLabel><Input value={form.getValues('productType') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
+                    <FormItem><FormLabel>Category</FormLabel><Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
+                    <FormItem><FormLabel>Subcategory</FormLabel><Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
+                </div>
+
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                 
-                {selectedProductStream === 'Apparel' && (
+                {form.getValues('productType') === 'Apparel' && (
                   <>
                     <Separator/>
                     <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
                       <div className="grid md:grid-cols-3 gap-4">
                           <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{apparelSizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                       </div>
                       <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
                   </>
                 )}
-
                 {isCannabinoidStream && (
                   <>
-                      <Separator />
+                      <Separator/>
                       <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
                       <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Happy, Relaxed" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
@@ -284,17 +279,82 @@ export default function EditCannabinoidProductPage() {
                     </div>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
-                    <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                    <CardContent className="p-0 space-y-2">
-                        {poolPriceTierFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                            {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                        </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
-                    </CardContent>
+                    <Card className="p-4 bg-muted/50 space-y-4">
+                        <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                        <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                        <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        {watchPoolSharingRule === 'specific_stores' && (
+                            <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Select Specific Stores</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search for a store..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No stores found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {isLoadingDispensaries ? <div className="p-2 text-center text-sm text-muted-foreground">Loading...</div> :
+                                                            allDispensaries.map(dispensary => (
+                                                                <CommandItem
+                                                                    key={dispensary.id}
+                                                                    value={dispensary.id}
+                                                                    onSelect={(currentValue) => {
+                                                                        const currentIds = field.value || [];
+                                                                        const newIds = currentIds.includes(currentValue)
+                                                                            ? currentIds.filter(id => id !== currentValue)
+                                                                            : [...currentIds, currentValue];
+                                                                        field.onChange(newIds);
+                                                                    }}
+                                                                >
+                                                                    <CheckIcon className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
+                                                                    {dispensary.dispensaryName}
+                                                                </CommandItem>
+                                                            ))
+                                                        }
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <div className="flex flex-wrap gap-1 pt-2">
+                                        {watchAllowedPoolIds?.map(id => {
+                                            const dispensary = allDispensaries.find(d => d.id === id);
+                                            return dispensary ? <Badge key={id} variant="secondary">{dispensary.dispensaryName}</Badge> : null;
+                                        })}
+                                    </div>
+                                    <FormMessage/>
+                                </FormItem>
+                            )}/>
+                        )}
+                        <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                        <CardContent className="p-0 space-y-2">
+                            {poolPriceTierFields.map((field, index) => (
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                            </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                        </CardContent>
                     </Card>
                     )}
                     <Separator />
