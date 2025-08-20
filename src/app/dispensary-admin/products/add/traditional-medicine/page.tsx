@@ -320,19 +320,19 @@ export default function AddTraditionalMedicineProductPage() {
                       <Separator />
                       <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
                         <FormItem>
                           <FormLabel>Category</FormLabel>
-                          <Input value={form.getValues('category')} disabled />
+                          <Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
                         <FormItem>
                           <FormLabel>Subcategory</FormLabel>
-                          <Input value={form.getValues('subcategory') || ''} disabled />
+                          <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
                         {form.getValues('subSubcategory') && (
                             <FormItem>
                                 <FormLabel>Type</FormLabel>
-                                <Input value={form.getValues('subSubcategory') || ''} disabled />
+                                <Input value={form.getValues('subSubcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                             </FormItem>
                         )}
                       </div>
