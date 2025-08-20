@@ -152,7 +152,7 @@ export default function AddTraditionalMedicineProductPage() {
 
   useEffect(() => {
     fetchAllDispensaries();
-  }, [fetchAllDispensaries]);
+  }, [fetchAllDispensaries, watchPoolSharingRule]);
 
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
@@ -540,3 +540,4 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
+

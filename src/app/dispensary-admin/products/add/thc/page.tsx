@@ -144,7 +144,7 @@ export default function AddTHCProductPage() {
 
   useEffect(() => {
     fetchAllDispensaries();
-  }, [fetchAllDispensaries]);
+  }, [fetchAllDispensaries, watchPoolSharingRule]);
   
   const fetchCannabinoidCategories = useCallback(async (stream: 'THC' | 'CBD') => {
       setIsLoadingInitialData(true);
