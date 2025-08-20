@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -77,6 +77,9 @@ export default function AddTHCProductPage() {
   const [availableStandardSizes, setAvailableStandardSizes] = useState<string[]>([]);
   const [randomTripleSImage, setRandomTripleSImage] = useState<string>('');
   
+  const optInSectionRef = useRef<HTMLDivElement>(null);
+  const strainFinderRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Select a random image on component mount (client-side only)
     setRandomTripleSImage(tripleSImages[Math.floor(Math.random() * tripleSImages.length)]!);
@@ -134,16 +137,21 @@ export default function AddTHCProductPage() {
       gender: undefined, sizingSystem: undefined, sizes: [],
       growingMedium: undefined,
     });
-
+    
     setShowCategorySelector(false);
-    setShowStrainFinder(false);
     setZeroPercentEffects([]);
     setZeroPercentMedical([]);
     setSelectedProductStream(stream);
 
-    if (stream === 'THC' || stream === 'CBD') {
-        fetchCannabinoidCategories(stream);
+    if (stream === 'THC') {
         setShowOptInSection(true);
+        setShowStrainFinder(false);
+        setTimeout(() => optInSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    } else if (stream === 'CBD') {
+        fetchCannabinoidCategories(stream);
+        setShowOptInSection(false);
+        setShowStrainFinder(true);
+        setTimeout(() => strainFinderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     } else {
       setShowOptInSection(false);
       setShowStrainFinder(false);
@@ -270,11 +278,12 @@ export default function AddTHCProductPage() {
   useEffect(() => {
     if (watchStickerOptIn === 'yes' || watchStickerOptIn === 'no') {
       setShowStrainFinder(true);
+      fetchCannabinoidCategories('THC');
     } else {
       setShowStrainFinder(false);
       setShowCategorySelector(false); // Also hide category selector if opt-in is cleared
     }
-  }, [watchStickerOptIn]);
+  }, [watchStickerOptIn, fetchCannabinoidCategories]);
   
   useEffect(() => {
     if (watchGender && watchSizingSystem && standardSizesData[watchGender] && standardSizesData[watchGender][watchSizingSystem]) {
@@ -328,81 +337,85 @@ export default function AddTHCProductPage() {
               ))}
           </div>
           
-          {showOptInSection && (
-            <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up overflow-hidden">
-                <div className="relative w-full max-w-[768px] mx-auto">
-                  {randomTripleSImage ? (
-                      <Image
-                          src={randomTripleSImage}
-                          alt="The Triple S Club banner"
-                          width={768}
-                          height={432}
-                          className="object-contain"
-                          data-ai-hint="cannabis plants creative"
-                      />
-                  ) : (
-                    <div className="w-full max-w-[768px] mx-auto aspect-[16/9] bg-muted animate-pulse"></div>
-                  )}
-                </div>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3 text-orange-800">
-                  <Gift className="text-yellow-500 fill-yellow-400" />The Triple S (Strain-Sticker-Sample) Club
-                </CardTitle>
-                <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
-                    <p>
-                        The Wellness Tree fully complies with South African Law and prohibits the sale of THC products.
-                    </p>
-                    <p>
-                        The Triple S Club is an opportunity for Home growers and fellow Cannabis enthusiasts to share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product.
-                    </p>
-                    <p>
-                        The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE.
-                        The sticker price is paid to You less our 25% per transaction. Payments are sent you to Your Payfast sub account
-                        attached to our main Payfast account once the Leafblower driver has succesfully dropped off the sticker design confirmation and free sample package,
-                        or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased.
-                        We know that Your legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating your products and let the Sticker design sales roll in.
-                    </p>
-                    <p>
-                        Whats cool about the Triple S Club is each sticker is uniquely created with the help of Open AI&apos;s Dalle 3, and each sticker is truly unique.
-                        We also have a dedicated already created Triple S Sticker card set for fellow ganga enthusiasts to enjoy.
-                    </p>
-                    <p>
-                        The Promo Sticker set Programme is additional fun for You as the grower to create your own tshirts, cap, hoodie, sticker merchandise and promote your grow,
-                        and of course the strains you love to grow.
-                    </p>
-                     <p>
-                        Your create Sticker sets that fellow cannabis entusisasts can then purchase creating an additional revenue generation opportunity for your
-                        Cannabinoid store.
-                    </p>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FormField
-                  control={form.control}
-                  name="stickerProgramOptIn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes, include my product</SelectItem>
-                          <SelectItem value="no">No, this is a standard product</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-          )}
+          <div ref={optInSectionRef}>
+            {showOptInSection && (
+              <Card className="bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 border-orange-200 shadow-inner animate-fade-in-scale-up overflow-hidden">
+                  <div className="relative w-full max-w-[768px] mx-auto">
+                    {randomTripleSImage ? (
+                        <Image
+                            src={randomTripleSImage}
+                            alt="The Triple S Club banner"
+                            width={768}
+                            height={432}
+                            className="object-contain"
+                            data-ai-hint="cannabis plants creative"
+                        />
+                    ) : (
+                      <div className="w-full max-w-[768px] mx-auto aspect-[16/9] bg-muted animate-pulse"></div>
+                    )}
+                  </div>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-orange-800">
+                    <Gift className="text-yellow-500 fill-yellow-400" />The Triple S (Strain-Sticker-Sample) Club
+                  </CardTitle>
+                  <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
+                      <p>
+                          The Wellness Tree fully complies with South African Law and prohibits the sale of THC products.
+                      </p>
+                      <p>
+                          The Triple S Club is an opportunity for Home growers and fellow Cannabis enthusiasts to share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product.
+                      </p>
+                      <p>
+                          The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE.
+                          The sticker price is paid to You less our 25% per transaction. Payments are sent you to Your Payfast sub account
+                          attached to our main Payfast account once the Leafblower driver has succesfully dropped off the sticker design confirmation and free sample package,
+                          or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased.
+                          We know that Your legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating your products and let the Sticker design sales roll in.
+                      </p>
+                      <p>
+                          Whats cool about the Triple S Club is each sticker is uniquely created with the help of Open AI&apos;s Dalle 3, and each sticker is truly unique.
+                          We also have a dedicated already created Triple S Sticker card set for fellow ganga enthusiasts to enjoy.
+                      </p>
+                      <p>
+                          The Promo Sticker set Programme is additional fun for You as the grower to create your own tshirts, cap, hoodie, sticker merchandise and promote your grow,
+                          and of course the strains you love to grow.
+                      </p>
+                       <p>
+                          Your create Sticker sets that fellow cannabis entusisasts can then purchase creating an additional revenue generation opportunity for your
+                          Cannabinoid store.
+                      </p>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="stickerProgramOptIn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes, include my product</SelectItem>
+                            <SelectItem value="no">No, this is a standard product</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
-          {showStrainFinder && (
-            <div className="animate-fade-in-scale-up">
-              <StrainFinder onStrainSelect={handleStrainSelect} onSkip={handleSkipStrainFinder} />
-            </div>
-          )}
+          <div ref={strainFinderRef}>
+            {showStrainFinder && (
+              <div className="animate-fade-in-scale-up">
+                <StrainFinder onStrainSelect={handleStrainSelect} onSkip={handleSkipStrainFinder} />
+              </div>
+            )}
+          </div>
           
           {showCategorySelector && (
               <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
