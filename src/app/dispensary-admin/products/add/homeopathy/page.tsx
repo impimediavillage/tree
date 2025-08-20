@@ -250,7 +250,17 @@ export default function AddHomeopathyProductPage() {
               {showFinalForm && (
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
-                      <h3 className="text-xl font-semibold border-b pb-2">Product Details</h3>
+                      <h3 className="text-2xl font-bold border-b pb-2">Step 2: Product Details</h3>
+                      <div className="grid grid-cols-2 gap-4 bg-muted/50 p-3 rounded-md border">
+                        <FormItem>
+                          <FormLabel>Category</FormLabel>
+                          <Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                        </FormItem>
+                        <FormItem>
+                          <FormLabel>Subcategory</FormLabel>
+                          <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                        </FormItem>
+                      </div>
                       <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                       
