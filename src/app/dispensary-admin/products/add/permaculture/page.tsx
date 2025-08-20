@@ -235,7 +235,11 @@ export default function AddPermacultureProductPage() {
             {showSubcategories && (
                 <div className="animate-fade-in-scale-up" ref={secondStepRef}>
                     <Card>
-                        <CardHeader><CardTitle>Step 2: Select a Subcategory</CardTitle></CardHeader>
+                        <CardHeader>
+                          <CardTitle>
+                            Step 2: Select a Subcategory for <span className="text-primary">{selectedTopLevelCategory}</span>
+                          </CardTitle>
+                        </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {Object.entries(showSubcategories).map(([subCategoryName, subCategoryData]) => {
                                 const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`;
