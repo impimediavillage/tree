@@ -33,6 +33,7 @@ const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "1
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
+const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Pants', 'Footwear', 'Underwear', 'Shorts', 'Scarves', 'Socks', 'Jewelry', 'Other'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
@@ -137,7 +138,7 @@ export default function AddTraditionalMedicineProductPage() {
     setIsClothingStream(true);
     setSelectedTopLevelCategory(null);
     setSelectedSecondLevelCategory(null);
-    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubcategory: null });
+    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubcategory: null, productType: 'Apparel' });
     setTimeout(() => scrollToRef(finalFormRef), 100);
   };
 
@@ -247,7 +248,9 @@ export default function AddTraditionalMedicineProductPage() {
                 <CardHeader><CardTitle>Step 1: Select a Product Stream</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryStructure.map(cat => (
-                        <Card key={cat.useCase} onClick={() => handleTopLevelSelect(cat)} 
+                        <Card 
+                            key={cat.useCase} 
+                            onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
                                 "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
                                 form.watch('category') === cat.useCase && !isClothingStream && 'border-primary ring-2 ring-primary'
@@ -270,7 +273,8 @@ export default function AddTraditionalMedicineProductPage() {
                             </CardContent>
                         </Card>
                     ))}
-                     <Card onClick={handleClothingSelect} 
+                     <Card 
+                        onClick={handleClothingSelect} 
                         className={cn(
                             "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
                             isClothingStream && 'border-primary ring-2 ring-primary'
@@ -375,7 +379,8 @@ export default function AddTraditionalMedicineProductPage() {
                         <>
                           <Separator/>
                           <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
-                           <div className="grid md:grid-cols-2 gap-4">
+                           <div className="grid md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             </div>
