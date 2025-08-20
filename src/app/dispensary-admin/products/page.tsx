@@ -23,7 +23,7 @@ const getProductCollectionName = (dispensaryType?: string | null): string => {
     if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
     if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
     if (dispensaryType === "Permaculture & gardening store") return 'permaculture_store_products';
-    if (dispensaryType === "Cannibinoid store") return 'cannibinoid_store_products'; // Assuming a typo fix might be needed
+    if (dispensaryType === "Cannibinoid store") return 'cannibinoid_store_products';
     return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
 };
 
