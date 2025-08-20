@@ -125,8 +125,8 @@ export default function AddTHCProductPage() {
       }
   }, [toast]);
   
-  const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const scrollToRef = (ref: React.RefObject<HTMLDivElement>, block: 'start' | 'center' = 'center') => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block });
   };
 
   const handleProductStreamSelect = (stream: ProductStream) => {
@@ -160,7 +160,7 @@ export default function AddTHCProductPage() {
       setShowOptInSection(false);
       setShowStrainFinder(false);
       form.setValue('category', stream, { shouldValidate: true });
-      setTimeout(() => scrollToRef(productDetailsRef), 100);
+      setTimeout(() => scrollToRef(productDetailsRef, 'start'), 100);
     }
   };
   
@@ -195,7 +195,7 @@ export default function AddTHCProductPage() {
   
    const handleSubcategorySelect = () => {
     setTimeout(() => {
-        productDetailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        scrollToRef(productDetailsRef, 'start');
     }, 100);
   };
 
@@ -341,7 +341,7 @@ export default function AddTHCProductPage() {
                             width={768}
                             height={432}
                             layout="responsive"
-                            className="object-contain transition-transform duration-300 group-hover:scale-105"
+                            className="object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>
                     </CardHeader>
@@ -453,21 +453,19 @@ export default function AddTHCProductPage() {
                                       className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
                                   >
                                     <CardHeader className="p-0">
-                                      <div className="w-full bg-muted">
+                                      <div className="relative w-full">
                                         {imageUrl ? (
-                                          <div className="relative w-full">
                                             <Image 
                                                 src={imageUrl} 
                                                 alt={categoryName} 
                                                 width={768}
                                                 height={512}
                                                 layout="responsive"
-                                                className="object-contain transition-transform group-hover:scale-105"
+                                                className="object-cover transition-transform group-hover:scale-105"
                                                 data-ai-hint={`category ${categoryName}`} 
                                             />
-                                          </div>
                                         ) : (
-                                            <div className="w-full aspect-video flex items-center justify-center">
+                                            <div className="w-full aspect-video flex items-center justify-center bg-muted">
                                                 <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
                                             </div>
                                         )}
