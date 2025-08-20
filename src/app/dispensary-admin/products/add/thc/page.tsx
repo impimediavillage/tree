@@ -201,7 +201,7 @@ export default function AddTHCProductPage() {
 
   const getProductCollectionName = (type: string | undefined): string => {
       if (!type) return 'products'; 
-      return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+      return 'cannibinoid_store_products';
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -334,13 +334,13 @@ export default function AddTHCProductPage() {
                     )}
                   >
                     <CardHeader className="p-0">
-                      <div className="relative w-full aspect-video bg-muted">
+                      <div className="relative w-full">
                         <Image 
                             src={stream.imageUrl} 
                             alt={stream.title} 
-                            layout="responsive"
                             width={768}
                             height={432}
+                            layout="responsive"
                             className="object-contain transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>
@@ -455,11 +455,13 @@ export default function AddTHCProductPage() {
                                     <CardHeader className="p-0">
                                       <div className="w-full bg-muted">
                                         {imageUrl ? (
-                                          <div className="relative w-full aspect-video">
+                                          <div className="relative w-full">
                                             <Image 
                                                 src={imageUrl} 
                                                 alt={categoryName} 
-                                                layout="fill"
+                                                width={768}
+                                                height={512}
+                                                layout="responsive"
                                                 className="object-contain transition-transform group-hover:scale-105"
                                                 data-ai-hint={`category ${categoryName}`} 
                                             />
