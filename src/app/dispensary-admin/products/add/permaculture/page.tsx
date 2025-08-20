@@ -290,11 +290,11 @@ export default function AddPermacultureProductPage() {
                       <div className="grid grid-cols-2 gap-4 bg-muted/50 p-3 rounded-md border">
                         <FormItem>
                           <FormLabel>Category</FormLabel>
-                          <Input value={form.getValues('category')} disabled />
+                          <Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
                         <FormItem>
                           <FormLabel>Subcategory</FormLabel>
-                          <Input value={form.getValues('subcategory') || ''} disabled />
+                          <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
                       </div>
 
