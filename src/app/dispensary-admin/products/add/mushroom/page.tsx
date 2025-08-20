@@ -127,7 +127,7 @@ export default function AddMushroomProductPage() {
 
   useEffect(() => {
     fetchAllDispensaries();
-  }, [fetchAllDispensaries]);
+  }, [fetchAllDispensaries, watchPoolSharingRule]);
 
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
@@ -421,4 +421,5 @@ export default function AddMushroomProductPage() {
     </div>
   );
 }
+
 

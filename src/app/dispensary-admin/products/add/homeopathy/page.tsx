@@ -135,7 +135,7 @@ export default function AddHomeopathyProductPage() {
 
   useEffect(() => {
     fetchAllDispensaries();
-  }, [fetchAllDispensaries]);
+  }, [fetchAllDispensaries, watchPoolSharingRule]);
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
