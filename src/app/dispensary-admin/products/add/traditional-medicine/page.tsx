@@ -254,7 +254,7 @@ export default function AddTraditionalMedicineProductPage() {
                             )}
                         >
                              <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                <Image src={cat.imageUrl} alt={cat.useCase} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
                             </div>
                             <p className="p-3 text-center font-semibold text-base">{cat.useCase}</p>
                         </Card>
@@ -266,7 +266,7 @@ export default function AddTraditionalMedicineProductPage() {
                         )}
                     >
                          <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                            <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                            <Image src="/images/traditional-medicine/san1.jpg" alt="Clothing" fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
                         </div>
                         <p className="p-3 text-center font-semibold text-base">Clothing</p>
                     </Card>
@@ -292,7 +292,7 @@ export default function AddTraditionalMedicineProductPage() {
                                     )}
                                 >
                                     <div className="relative aspect-square w-full bg-muted overflow-hidden rounded-t-lg">
-                                        <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'contain'}} className="transition-transform duration-300 group-hover:scale-105 p-2"/>
+                                        <Image src={cat.imageUrl} alt={cat.type} fill style={{objectFit: 'cover'}} className="transition-transform duration-300 group-hover:scale-105"/>
                                     </div>
                                     <div className="p-3 flex flex-col items-center flex-grow">
                                     <p className="text-center font-semibold text-base">{cat.type}</p>
