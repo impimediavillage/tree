@@ -2,72 +2,67 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Default to secure: deny all reads and writes unless explicitly allowed.
+    
+    // Default to secure: deny all reads and writes
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users can read and update their own profile. Super Admins can read/write any profile.
+    // Users can read/update their own profiles. Admins can do anything.
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow read, write: if request.auth != null && request.auth.token.role == 'Super Admin';
+      allow read, update: if request.auth.uid == userId;
+      allow create, list, delete: if request.auth.token.role == 'Super Admin';
     }
 
-    // Any authenticated user can read the list of dispensaries. Only Admins can write.
+    // Public read for dispensaries, write restricted to Super Admins
     match /dispensaries/{dispensaryId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+        allow read: if request.auth != null;
+        allow write: if request.auth.token.role == 'Super Admin';
     }
 
-    // Any authenticated user can read the product category structures. Only Admins can write.
+    // Public read for dispensary types, write restricted to Super Admins
+    match /dispensaryTypes/{typeId} {
+        allow read: if request.auth != null;
+        allow write: if request.auth.token.role == 'Super Admin';
+    }
+
+    // Authenticated users can read product categories
     match /dispensaryTypeProductCategories/{docId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
-    }
-    
-    // Any authenticated user can read dispensary types. Only Admins can write.
-     match /dispensaryTypes/{typeId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+      allow write: if request.auth.token.role == 'Super Admin';
     }
 
-    // Allow owners/staff to manage products within their own dispensary.
-    // This uses a wildcard to match all product collections like 'cannibinoid_store_products', etc.
-    match /{collectionId}/{productId} {
-      allow read: if true; // Public read for products
-      allow create, update, delete: if request.auth != null && request.auth.token.dispensaryId == resource.data.dispensaryId;
-    }
-
-    // Public can search strains, but only admins can modify the master list.
-    match /my-seeded-collection/{strainId} {
-      allow read: if true;
-      allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
-    }
-    
-    // Secure other collections
-    match /productRequests/{requestId} {
-      allow read, write: if request.auth != null && (request.auth.token.dispensaryId == resource.data.requesterDispensaryId || request.auth.token.dispensaryId == resource.data.productOwnerDispensaryId);
-      allow read, write: if request.auth != null && request.auth.token.role == 'Super Admin';
-    }
-
-    match /poolIssues/{issueId} {
-        allow read, write: if request.auth != null; // Allow any authenticated user to read/create, server will handle logic.
-    }
-
-    match /aiInteractionsLog/{logId} {
-        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth != null && (request.auth.uid == resource.data.userId || request.auth.token.role == 'Super Admin');
-    }
-
+    // Credit packages can be read by any authenticated user, written only by admins
     match /creditPackages/{packageId} {
-        allow read: if true; // Publicly readable
-        allow write: if request.auth != null && request.auth.token.role == 'Super Admin';
+      allow read: if request.auth != null;
+      allow write: if request.auth.token.role == 'Super Admin';
     }
-     match /stickersets/{setId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update, delete: if request.auth != null && (request.auth.uid == resource.data.creatorUid || request.auth.token.role == 'Super Admin');
+    
+    // AI interaction logs can only be created by the user themselves.
+    match /aiInteractionsLog/{logId} {
+        allow create: if request.auth.uid == request.resource.data.userId;
     }
+
+    // Rule for all product collections (ending in _products)
+    match /{collectionId}_products/{productId} {
+      allow read: if request.auth != null;
+      allow write: if (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff')
+                    && request.resource.data.dispensaryId == request.auth.token.dispensaryId;
+    }
+    
+    // Fallback for the main 'products' collection
+    match /products/{productId} {
+       allow read: if request.auth != null;
+       allow write: if (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff')
+                    && request.resource.data.dispensaryId == request.auth.token.dispensaryId;
+    }
+
+    // Authenticated users can read sticker sets
+    match /stickersets/{stickerId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.creatorUid;
+      allow update, delete: if request.auth.uid == resource.data.creatorUid;
+    }
+    
   }
 }
