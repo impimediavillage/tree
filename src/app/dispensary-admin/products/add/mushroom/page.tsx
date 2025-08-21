@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Brain, AlertTriangle, ChevronsUpDown, Check as CheckIcon } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Brain, AlertTriangle, ChevronsUpDown, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -340,7 +340,7 @@ export default function AddMushroomProductPage() {
                                                                           field.onChange(newIds);
                                                                       }}
                                                                   >
-                                                                      <CheckIcon className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
+                                                                      <Check className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
                                                                       {dispensary.dispensaryName}
                                                                   </CommandItem>
                                                               ))}

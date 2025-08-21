@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDispensaryAdmin } from '@/contexts/DispensaryAdminContext';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
@@ -20,11 +21,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, Leaf } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Leaf, ChevronsUpDown, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "seedling", "cutting", "plant", "bag" ];
 const poolUnits = [ "10kg", "25kg", "50kg", "100 litres", "200 litres", "pallet", "crate" ];
@@ -34,7 +40,8 @@ const getProductCollectionName = (): string => {
 };
 
 export default function EditPermacultureProductPage() {
-  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
   const router = useRouter();
   const params = useParams();
   const productId = params.productId as string;
@@ -56,6 +63,8 @@ export default function EditPermacultureProductPage() {
   const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
+  const watchPoolSharingRule = form.watch('poolSharingRule');
+  const watchAllowedPoolIds = form.watch('allowedPoolDispensaryIds');
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !productId || !productCollectionName) {
@@ -97,7 +106,7 @@ export default function EditPermacultureProductPage() {
   }
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
+    if (!currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
         let finalImageUrls: string[] = [...existingImageUrls];
@@ -171,17 +180,80 @@ export default function EditPermacultureProductPage() {
                     </div>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
-                    <Card className="p-4 bg-muted/50"><CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                    <CardContent className="p-0 space-y-2">
-                        {poolPriceTierFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                            {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                        </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
-                    </CardContent>
+                    <Card className="p-4 bg-muted/50 space-y-4">
+                        <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                        <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                        <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        {watchPoolSharingRule === 'specific_stores' && (
+                           <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Select Specific Stores</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoadingDispensaries}>
+                                                {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
+                                                {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                                <CommandInput placeholder="Search for a store..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No stores found.</CommandEmpty>
+                                                    <CommandGroup>
+                                                        {allDispensaries.map(dispensary => (
+                                                            <CommandItem
+                                                                key={dispensary.id}
+                                                                value={dispensary.id}
+                                                                onSelect={(currentValue) => {
+                                                                    const currentIds = field.value || [];
+                                                                    const newIds = currentIds.includes(currentValue)
+                                                                        ? currentIds.filter(id => id !== currentValue)
+                                                                        : [...currentIds, currentValue];
+                                                                    field.onChange(newIds);
+                                                                }}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
+                                                                {dispensary.dispensaryName}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <div className="flex flex-wrap gap-1 pt-2">
+                                        {watchAllowedPoolIds?.map(id => {
+                                            const dispensary = allDispensaries.find(d => d.id === id);
+                                            return dispensary ? <Badge key={id} variant="secondary">{dispensary.dispensaryName}</Badge> : null;
+                                        })}
+                                    </div>
+                                    <FormMessage/>
+                                </FormItem>
+                            )}/>
+                        )}
+                        <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                        <CardContent className="p-0 space-y-2">
+                            {poolPriceTierFields.map((field, index) => (
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                            </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                        </CardContent>
                     </Card>
                     )}
                     <Separator />
