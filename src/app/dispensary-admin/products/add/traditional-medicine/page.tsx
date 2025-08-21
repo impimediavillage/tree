@@ -257,9 +257,9 @@ export default function AddTraditionalMedicineProductPage() {
             <Card>
                 <CardHeader><CardTitle>Step 1: Select a Product Stream</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryStructure.map(cat => (
+                    {categoryStructure.map((cat, index) => (
                         <Card 
-                            key={cat.useCase} 
+                            key={cat.useCase || index} 
                             onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
                                 "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
