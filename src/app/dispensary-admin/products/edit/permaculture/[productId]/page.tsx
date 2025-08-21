@@ -215,12 +215,12 @@ export default function EditPermacultureProductPage() {
                                                         {allDispensaries.map(dispensary => (
                                                             <CommandItem
                                                                 key={dispensary.id}
-                                                                value={dispensary.id}
-                                                                onSelect={(currentValue) => {
+                                                                onSelect={(e) => {
+                                                                    e.preventDefault();
                                                                     const currentIds = field.value || [];
-                                                                    const newIds = currentIds.includes(currentValue)
-                                                                        ? currentIds.filter(id => id !== currentValue)
-                                                                        : [...currentIds, currentValue];
+                                                                    const newIds = currentIds.includes(dispensary.id!)
+                                                                        ? currentIds.filter(id => id !== dispensary.id)
+                                                                        : [...currentIds, dispensary.id!];
                                                                     field.onChange(newIds);
                                                                 }}
                                                             >
@@ -275,3 +275,4 @@ export default function EditPermacultureProductPage() {
     </Card>
   );
 }
+

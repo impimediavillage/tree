@@ -313,7 +313,7 @@ export default function AddHomeopathyProductPage() {
                                               <PopoverTrigger asChild>
                                                   <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoadingDispensaries}>
                                                       {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
-                                                      {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+                                                      {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                                   </Button>
                                               </PopoverTrigger>
                                               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
@@ -325,12 +325,12 @@ export default function AddHomeopathyProductPage() {
                                                               {allDispensaries.map(dispensary => (
                                                                   <CommandItem
                                                                       key={dispensary.id}
-                                                                      value={dispensary.id}
-                                                                      onSelect={(currentValue) => {
+                                                                      onSelect={(e) => {
+                                                                          e.preventDefault();
                                                                           const currentIds = field.value || [];
-                                                                          const newIds = currentIds.includes(currentValue)
-                                                                              ? currentIds.filter(id => id !== currentValue)
-                                                                              : [...currentIds, currentValue];
+                                                                          const newIds = currentIds.includes(dispensary.id!)
+                                                                              ? currentIds.filter(id => id !== dispensary.id)
+                                                                              : [...currentIds, dispensary.id!];
                                                                           field.onChange(newIds);
                                                                       }}
                                                                   >
