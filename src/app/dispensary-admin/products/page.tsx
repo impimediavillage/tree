@@ -108,6 +108,10 @@ export default function WellnessProductsPage() {
     if (!dispensaryId || !currentDispensary?.dispensaryType) return;
 
     const productCollectionName = getProductCollectionName(currentDispensary.dispensaryType);
+    if (!productCollectionName) {
+        toast({ title: "Error", description: "Could not determine product collection.", variant: "destructive" });
+        return;
+    }
 
     try {
       if (imageUrls && imageUrls.length > 0) {
