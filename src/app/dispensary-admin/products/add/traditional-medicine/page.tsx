@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDispensaryAdmin } from '@/contexts/DispensaryAdminContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, getDocs, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
@@ -24,7 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Shirt, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Shirt } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -46,16 +46,17 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
 };
 
 
-interface Category {
-  useCase: string;
-  imageUrl: string;
-  categories: SubCategory[];
-}
 interface SubCategory {
   type: string;
   imageUrl: string;
   subtypes: string[];
 }
+interface TopLevelCategory {
+  useCase: string;
+  imageUrl: string;
+  categories: SubCategory[];
+}
+
 
 export default function AddTraditionalMedicineProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -66,8 +67,8 @@ export default function AddTraditionalMedicineProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
   
-  const [categoryStructure, setCategoryStructure] = useState<Category[]>([]);
-  const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState<Category | null>(null);
+  const [categoryStructure, setCategoryStructure] = useState<TopLevelCategory[]>([]);
+  const [selectedTopLevelCategory, setSelectedTopLevelCategory] = useState<TopLevelCategory | null>(null);
   const [selectedSecondLevelCategory, setSelectedSecondLevelCategory] = useState<SubCategory | null>(null);
   const [isClothingStream, setIsClothingStream] = useState(false);
   
@@ -111,9 +112,11 @@ export default function AddTraditionalMedicineProductPage() {
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
         const categoriesObject = data?.categoriesData?.traditionalMedicineCategories;
+
         if (categoriesObject && typeof categoriesObject === 'object') {
-          // Correctly convert the object of categories into an array
-          setCategoryStructure(Object.values(categoriesObject));
+           // This is the key fix: convert the object of categories into an array
+          const categoriesArray = Object.values(categoriesObject) as TopLevelCategory[];
+          setCategoryStructure(categoriesArray);
         } else {
           setCategoryStructure([]);
           toast({ title: 'Error', description: 'Category data for Traditional Medicine is missing or in the wrong format.', variant: 'destructive' });
@@ -138,7 +141,7 @@ export default function AddTraditionalMedicineProductPage() {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleTopLevelSelect = (category: Category) => {
+  const handleTopLevelSelect = (category: TopLevelCategory) => {
     setIsClothingStream(false);
     setSelectedTopLevelCategory(category);
     form.setValue('category', category.useCase, { shouldValidate: true });
@@ -257,9 +260,9 @@ export default function AddTraditionalMedicineProductPage() {
             <Card>
                 <CardHeader><CardTitle>Step 1: Select a Product Stream</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryStructure.map((cat, index) => (
+                    {categoryStructure.map((cat) => (
                         <Card 
-                            key={cat.useCase || index}
+                            key={cat.useCase} 
                             onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
                                 "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
@@ -320,7 +323,7 @@ export default function AddTraditionalMedicineProductPage() {
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             {selectedTopLevelCategory.categories.map((cat, index) => (
                                 <Card 
-                                    key={cat.type || index}
+                                    key={`${cat.type}-${index}`}
                                     onClick={() => handleSecondLevelSelect(cat)} 
                                     className={cn(
                                         "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
@@ -374,7 +377,7 @@ export default function AddTraditionalMedicineProductPage() {
                           <FormLabel>Subcategory</FormLabel>
                           <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
-                        {form.getValues('subSubcategory') && (
+                        {form.getValues('subSubcategory') && !isClothingStream && (
                             <FormItem>
                                 <FormLabel>Type</FormLabel>
                                 <Input value={form.getValues('subSubcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
@@ -473,4 +476,3 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
-
