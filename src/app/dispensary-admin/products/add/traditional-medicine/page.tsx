@@ -106,11 +106,11 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine Dispensary"), limit(1));
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
-        const categories = data?.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories || [];
+        const categories = data?.categoriesData?.traditionalMedicineCategories || [];
         setCategoryStructure(categories);
       } else {
         toast({ title: 'Error', description: 'Could not find category structure for Traditional Medicine.', variant: 'destructive' });
@@ -468,3 +468,4 @@ export default function AddTraditionalMedicineProductPage() {
   );
 }
 
+    
