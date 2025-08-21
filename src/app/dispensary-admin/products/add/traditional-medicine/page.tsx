@@ -14,6 +14,7 @@ import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQue
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
+import { getProductCollectionName } from '@/lib/utils'; 
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -160,12 +161,6 @@ export default function AddTraditionalMedicineProductPage() {
     setTimeout(() => scrollToRef(finalFormRef), 100);
   }
 
-  const getProductCollectionName = (): string => {
-    const type = currentDispensary?.dispensaryType;
-    if (!type) return 'products'; // Fallback
-    return type.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
-  };
-
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
       toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
@@ -202,7 +197,7 @@ export default function AddTraditionalMedicineProductPage() {
             imageUrl: uploadedImageUrls[0] || null,
         };
         
-        const collectionName = getProductCollectionName();
+        const collectionName = getProductCollectionName(currentDispensary.dispensaryType);
         await addDoc(collection(db, collectionName), productData);
 
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
