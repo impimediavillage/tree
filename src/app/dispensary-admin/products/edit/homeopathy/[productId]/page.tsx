@@ -144,7 +144,9 @@ export default function EditHomeopathyProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground"> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Homeopathy Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+            </Button>
         </div>
         <CardDescription className="text-foreground"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
       </CardHeader>
@@ -202,18 +204,12 @@ export default function EditHomeopathyProductPage() {
                             )}
                         />
                         {watchPoolSharingRule === 'specific_stores' && (
-                           <Controller
-                            control={form.control}
-                            name="allowedPoolDispensaryIds"
-                            render={({ field }) => (
-                                <DispensarySelector 
-                                    allDispensaries={allDispensaries}
-                                    isLoading={isLoadingDispensaries}
-                                    selectedIds={field.value || []}
-                                    onSelectionChange={field.onChange}
-                                />
-                            )}
-                          />
+                           <DispensarySelector 
+                                allDispensaries={allDispensaries}
+                                isLoading={isLoadingDispensaries}
+                                selectedIds={form.watch('allowedPoolDispensaryIds') || []}
+                                onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
+                           />
                         )}
                         <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
                         <CardContent className="p-0 space-y-2">
@@ -247,3 +243,5 @@ export default function EditHomeopathyProductPage() {
     </Card>
   );
 }
+
+    

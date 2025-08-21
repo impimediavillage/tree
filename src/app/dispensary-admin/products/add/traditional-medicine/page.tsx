@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -80,7 +80,7 @@ export default function AddTraditionalMedicineProductPage() {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
+      name: '', description: '', category: '', subcategory: null, subSubCategory: null,
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
@@ -137,7 +137,7 @@ export default function AddTraditionalMedicineProductPage() {
     form.setValue('category', category.useCase, { shouldValidate: true });
     setSelectedSecondLevelCategory(null);
     form.setValue('subcategory', null);
-    form.setValue('subSubcategory', null);
+    form.setValue('subSubCategory', null);
     setTimeout(() => scrollToRef(secondStepRef), 100);
   };
   
@@ -145,18 +145,18 @@ export default function AddTraditionalMedicineProductPage() {
     setIsClothingStream(true);
     setSelectedTopLevelCategory(null);
     setSelectedSecondLevelCategory(null);
-    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubcategory: null, productType: 'Apparel' });
+    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubCategory: null, productType: 'Apparel' });
     setTimeout(() => scrollToRef(finalFormRef), 100);
   };
 
   const handleSecondLevelSelect = (category: SubCategory) => {
     setSelectedSecondLevelCategory(category);
     form.setValue('subcategory', category.type, { shouldValidate: true });
-    form.setValue('subSubcategory', null);
+    form.setValue('subSubCategory', null);
   };
 
   const handleSubSubCategorySelect = (subType: string) => {
-    form.setValue('subSubcategory', subType, { shouldValidate: true });
+    form.setValue('subSubCategory', subType, { shouldValidate: true });
     setTimeout(() => scrollToRef(finalFormRef), 100);
   }
 
@@ -235,7 +235,7 @@ export default function AddTraditionalMedicineProductPage() {
      );
   }
 
-  const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubcategory')) || isClothingStream;
+  const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubCategory')) || isClothingStream;
 
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-6">
@@ -244,8 +244,8 @@ export default function AddTraditionalMedicineProductPage() {
           <h1 className="text-3xl font-bold">Add Traditional Medicine Product</h1>
           <p className="text-muted-foreground mt-1">Follow the steps to categorize and add your product.</p>
         </div>
-        <Button variant="outline" asChild>
-            <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
+        <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />Back to Products
         </Button>
       </div>
       <Form {...form}>
@@ -360,7 +360,7 @@ export default function AddTraditionalMedicineProductPage() {
               {showFinalForm && (
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
-                      <h3 className="text-2xl font-bold border-b pb-2">Step 3: Finalize Product Details</h3>
+                      <h3 className="text-2xl font-semibold border-b pb-2">Step 3: Finalize Product Details</h3>
 
                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
                         <FormItem>
@@ -371,10 +371,10 @@ export default function AddTraditionalMedicineProductPage() {
                           <FormLabel>Subcategory</FormLabel>
                           <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
-                        {form.getValues('subSubcategory') && (
+                        {form.getValues('subSubCategory') && (
                             <FormItem>
                                 <FormLabel>Type</FormLabel>
-                                <Input value={form.getValues('subSubcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                                <Input value={form.getValues('subSubCategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                             </FormItem>
                         )}
                       </div>
@@ -428,14 +428,12 @@ export default function AddTraditionalMedicineProductPage() {
                               )}/>
 
                               {watchPoolSharingRule === 'specific_stores' && (
-                                <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
-                                    <DispensarySelector 
-                                        allDispensaries={allDispensaries}
-                                        isLoading={isLoadingDispensaries}
-                                        selectedIds={field.value || []}
-                                        onSelectionChange={field.onChange}
-                                    />
-                                  )}/>
+                                <DispensarySelector 
+                                    allDispensaries={allDispensaries}
+                                    isLoading={isLoadingDispensaries}
+                                    selectedIds={form.watch('allowedPoolDispensaryIds') || []}
+                                    onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
+                                />
                               )}
                           
                               <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
@@ -473,3 +471,4 @@ export default function AddTraditionalMedicineProductPage() {
   );
 }
 
+    
