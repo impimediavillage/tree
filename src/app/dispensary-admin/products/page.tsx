@@ -10,32 +10,13 @@ import type { Product, PriceTier } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PackageSearch, Loader2, Search, FilterX, AlertTriangle } from 'lucide-react';
+import { PlusCircle, PackageSearch, Loader2, Search, FilterX } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-
-const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) return 'products'; // Fallback for safety, though should be avoided
-    switch (dispensaryType) {
-        case "Cannibinoid store":
-            return "cannibinoid_store_products";
-        case "Traditional Medicine dispensary":
-            return "traditional_medicine_dispensary_products";
-        case "Homeopathic store":
-            return "homeopathy_store_products";
-        case "Mushroom store":
-            return "mushroom_store_products";
-        case "Permaculture & gardening store":
-            return "permaculture_store_products";
-        // This default is a fallback, but we should aim to have all types explicitly defined.
-        default:
-            console.warn(`[getProductCollectionName] Using fallback for dispensary type: ${dispensaryType}`);
-            return 'products';
-    }
-};
+import { getProductCollectionName } from '@/lib/utils';
 
 export default function WellnessProductsPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
