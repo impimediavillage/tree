@@ -18,13 +18,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
 const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) return 'products'; 
-    if (dispensaryType === "Homeopathic store") return 'homeopathy_store_products';
-    if (dispensaryType === "Mushroom store") return 'mushroom_store_products';
-    if (dispensaryType === "Traditional Medicine dispensary") return 'traditional_medicine_dispensary_products';
-    if (dispensaryType === "Permaculture & gardening store") return 'permaculture_store_products';
-    if (dispensaryType === "Cannibinoid store") return 'cannibinoid_store_products';
-    return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+    if (!dispensaryType) return 'products'; // Fallback, though should be avoided
+    switch (dispensaryType) {
+        case "Cannibinoid store": return "cannibinoid_store_products";
+        case "Traditional Medicine dispensary": return "traditional_medicine_dispensary_products";
+        case "Homeopathic store": return "homeopathy_store_products";
+        case "Mushroom store": return "mushroom_store_products";
+        case "Permaculture & gardening store": return "permaculture_store_products";
+        // Add any other specific dispensary types here
+        default:
+            // This fallback is kept but should ideally not be used if all types are mapped.
+            return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+    }
 };
 
 export default function WellnessProductsPage() {
