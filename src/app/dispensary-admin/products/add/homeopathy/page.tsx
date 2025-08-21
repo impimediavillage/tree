@@ -109,13 +109,9 @@ export default function AddHomeopathyProductPage() {
       setIsLoadingInitialData(false);
     }
   }, [toast]);
-
-  useEffect(() => {
-    fetchCategoryStructure();
-  }, [fetchCategoryStructure]);
-
+  
   const fetchAllDispensaries = useCallback(async () => {
-    if (watchPoolSharingRule !== 'specific_stores' || allDispensaries.length > 0) return;
+    if (allDispensaries.length > 0) return;
     setIsLoadingDispensaries(true);
     try {
       const q = query(
@@ -131,11 +127,13 @@ export default function AddHomeopathyProductPage() {
     } finally {
       setIsLoadingDispensaries(false);
     }
-  }, [watchPoolSharingRule, allDispensaries.length, toast, currentUser?.dispensaryId]);
+  }, [allDispensaries.length, toast, currentUser?.dispensaryId]);
 
   useEffect(() => {
+    fetchCategoryStructure();
     fetchAllDispensaries();
-  }, [fetchAllDispensaries, watchPoolSharingRule]);
+  }, [fetchCategoryStructure, fetchAllDispensaries]);
+
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });

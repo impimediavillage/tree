@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, orderBy as orderByFirestore } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, orderBy as orderByFirestore, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
@@ -95,11 +95,9 @@ export default function DefaultEditProductPage() {
       toast({ title: "Error", description: "Could not load data for editing.", variant: "destructive" });
     } finally { setIsLoadingInitialData(false); }
   }, [productId, authLoading, toast, router, form, currentUser, productCollectionName]);
-
-  useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
-
+  
   const fetchAllDispensaries = useCallback(async () => {
-    if (watchPoolSharingRule !== 'specific_stores' || allDispensaries.length > 0) return;
+    if (allDispensaries.length > 0) return;
     setIsLoadingDispensaries(true);
     try {
       const q = query(
@@ -115,12 +113,12 @@ export default function DefaultEditProductPage() {
     } finally {
       setIsLoadingDispensaries(false);
     }
-  }, [watchPoolSharingRule, allDispensaries.length, toast, currentUser?.dispensaryId]);
+  }, [allDispensaries.length, toast, currentUser?.dispensaryId]);
 
-  useEffect(() => {
+  useEffect(() => { 
+    fetchInitialData(); 
     fetchAllDispensaries();
-  }, [fetchAllDispensaries]);
-
+  }, [fetchInitialData, fetchAllDispensaries]);
   
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
@@ -292,4 +290,5 @@ export default function DefaultEditProductPage() {
     </Card>
   );
 }
+
 

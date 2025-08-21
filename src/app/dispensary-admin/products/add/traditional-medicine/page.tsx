@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, orderBy as orderByFirestore } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where, orderBy as orderByFirestore, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
@@ -126,13 +126,9 @@ export default function AddTraditionalMedicineProductPage() {
       setIsLoadingInitialData(false);
     }
   }, [toast]);
-
-  useEffect(() => {
-    fetchCategoryStructure();
-  }, [fetchCategoryStructure]);
-
+  
   const fetchAllDispensaries = useCallback(async () => {
-    if (watchPoolSharingRule !== 'specific_stores' || allDispensaries.length > 0) return;
+    if (allDispensaries.length > 0) return;
     setIsLoadingDispensaries(true);
     try {
       const q = query(
@@ -148,11 +144,12 @@ export default function AddTraditionalMedicineProductPage() {
     } finally {
       setIsLoadingDispensaries(false);
     }
-  }, [watchPoolSharingRule, allDispensaries.length, toast, currentUser?.dispensaryId]);
+  }, [allDispensaries.length, toast, currentUser?.dispensaryId]);
 
   useEffect(() => {
+    fetchCategoryStructure();
     fetchAllDispensaries();
-  }, [fetchAllDispensaries, watchPoolSharingRule]);
+  }, [fetchCategoryStructure, fetchAllDispensaries]);
 
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
@@ -540,4 +537,5 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
+
 

@@ -101,13 +101,9 @@ export default function AddMushroomProductPage() {
       setIsLoadingInitialData(false);
     }
   }, [toast]);
-
-  useEffect(() => {
-    fetchCategoryStructure();
-  }, [fetchCategoryStructure]);
-
+  
   const fetchAllDispensaries = useCallback(async () => {
-    if (watchPoolSharingRule !== 'specific_stores' || allDispensaries.length > 0) return;
+    if (allDispensaries.length > 0) return;
     setIsLoadingDispensaries(true);
     try {
       const q = query(
@@ -123,11 +119,12 @@ export default function AddMushroomProductPage() {
     } finally {
       setIsLoadingDispensaries(false);
     }
-  }, [watchPoolSharingRule, allDispensaries.length, toast, currentUser?.dispensaryId]);
+  }, [allDispensaries.length, toast, currentUser?.dispensaryId]);
 
   useEffect(() => {
+    fetchCategoryStructure();
     fetchAllDispensaries();
-  }, [fetchAllDispensaries, watchPoolSharingRule]);
+  }, [fetchCategoryStructure, fetchAllDispensaries]);
 
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
@@ -421,5 +418,6 @@ export default function AddMushroomProductPage() {
     </div>
   );
 }
+
 
 
