@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -10,7 +9,7 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDispensaryAdmin } from '@/contexts/DispensaryAdminContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, doc, getDoc, query as firestoreQuery, where } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, getDocs, limit } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
@@ -106,11 +105,10 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      // Corrected document ID
-      const docRef = doc(db, 'dispensaryTypeProductCategories', 'Traditional Medicine Dispensary');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const data = querySnapshot.docs[0].data();
         const categories = data?.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories || [];
         setCategoryStructure(categories);
       } else {
@@ -187,7 +185,7 @@ export default function AddTraditionalMedicineProductPage() {
 
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as ProductFormData),
-            dispensaryId: currentUser.dispensaryId, // Explicitly set the correct dispensaryId
+            dispensaryId: currentUser.dispensaryId,
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
             productOwnerEmail: currentUser.email,
@@ -466,4 +464,3 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
-
