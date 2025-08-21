@@ -30,12 +30,13 @@ export const DispensaryAdminProvider = ({ children }: { children: ReactNode }) =
         orderBy('dispensaryName')
       );
       const querySnapshot = await getDocs(q);
-      // Filter out the current user's own dispensary from the list
       const dispensaries = querySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Dispensary))
-        .filter(d => d.id !== currentUser?.dispensaryId);
+        .map(doc => ({ id: doc.id, ...doc.data() } as Dispensary));
 
-      setAllDispensaries(dispensaries);
+      // Filter out the current user's own dispensary from the list
+      const filteredDispensaries = dispensaries.filter(d => d.id !== currentUser?.dispensaryId);
+      setAllDispensaries(filteredDispensaries);
+
     } catch (error) {
       toast({ title: 'Error Fetching Stores', description: 'Could not fetch list of other dispensaries for sharing.', variant: 'destructive'});
       console.error("Error fetching all dispensaries:", error);
@@ -45,11 +46,10 @@ export const DispensaryAdminProvider = ({ children }: { children: ReactNode }) =
   }, [toast, currentUser?.dispensaryId]);
 
   useEffect(() => {
-    // Only fetch if a user is logged in
     if (currentUser) {
       fetchAllDispensaries();
     } else {
-        // If no user, there's nothing to load
+        setAllDispensaries([]); // Clear list if no user
         setIsLoadingDispensaries(false);
     }
   }, [currentUser, fetchAllDispensaries]);
