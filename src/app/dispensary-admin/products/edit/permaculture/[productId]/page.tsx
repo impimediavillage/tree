@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
@@ -21,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, Leaf, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Leaf, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -177,29 +177,37 @@ export default function EditPermacultureProductPage() {
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
                     <Card className="p-4 bg-muted/50 space-y-4">
-                        <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
-                                        <SelectItem value="all_types">Share with all Wellness types</SelectItem>
-                                        <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
+                        <FormField
+                            control={form.control}
+                            name="poolSharingRule"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                            <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                            <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         {watchPoolSharingRule === 'specific_stores' && (
-                           <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
+                           <Controller
+                            control={form.control}
+                            name="allowedPoolDispensaryIds"
+                            render={({ field }) => (
                                 <DispensarySelector 
                                     allDispensaries={allDispensaries}
                                     isLoading={isLoadingDispensaries}
                                     selectedIds={field.value || []}
                                     onSelectionChange={field.onChange}
                                 />
-                            )}/>
+                            )}
+                          />
                         )}
                         <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
                         <CardContent className="p-0 space-y-2">
@@ -233,4 +241,3 @@ export default function EditPermacultureProductPage() {
     </Card>
   );
 }
-
