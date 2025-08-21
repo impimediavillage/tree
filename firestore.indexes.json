@@ -87,6 +87,23 @@
       ]
     },
     {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isAvailableForPool", "order": "ASCENDING" },
+        { "fieldPath": "poolSharingRule", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "products",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isAvailableForPool", "order": "ASCENDING" },
+        { "fieldPath": "poolSharingRule", "order": "ASCENDING" },
+        { "fieldPath": "allowedPoolDispensaryIds", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
       "collectionGroup": "productRequests",
       "queryScope": "COLLECTION",
       "fields": [
