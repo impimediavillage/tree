@@ -8,8 +8,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDispensaryAdmin } from '@/contexts/DispensaryAdminContext';
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs, orderBy as orderByFirestore } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
@@ -40,6 +41,7 @@ const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 gr
 
 export default function AddMushroomProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -54,10 +56,6 @@ export default function AddMushroomProductPage() {
   const secondStepRef = useRef<HTMLDivElement>(null);
   const finalFormRef = useRef<HTMLDivElement>(null);
   
-  const [allDispensaries, setAllDispensaries] = useState<Dispensary[]>([]);
-  const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(false);
-
-
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -101,30 +99,10 @@ export default function AddMushroomProductPage() {
       setIsLoadingInitialData(false);
     }
   }, [toast]);
-  
-  const fetchAllDispensaries = useCallback(async () => {
-    if (allDispensaries.length > 0) return;
-    setIsLoadingDispensaries(true);
-    try {
-      const q = query(
-        collection(db, 'dispensaries'),
-        where('status', '==', 'Approved'),
-        orderByFirestore('dispensaryName')
-      );
-      const querySnapshot = await getDocs(q);
-      const dispensaries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary)).filter(d => d.id !== currentUser?.dispensaryId);
-      setAllDispensaries(dispensaries);
-    } catch (error) {
-      toast({ title: 'Error', description: 'Could not fetch list of dispensaries.', variant: 'destructive'});
-    } finally {
-      setIsLoadingDispensaries(false);
-    }
-  }, [allDispensaries.length, toast, currentUser?.dispensaryId]);
 
   useEffect(() => {
     fetchCategoryStructure();
-    fetchAllDispensaries();
-  }, [fetchCategoryStructure, fetchAllDispensaries]);
+  }, [fetchCategoryStructure]);
 
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
@@ -339,9 +317,9 @@ export default function AddMushroomProductPage() {
                                           <FormLabel>Select Specific Stores</FormLabel>
                                           <Popover>
                                               <PopoverTrigger asChild>
-                                                  <Button variant="outline" role="combobox" className="w-full justify-between">
+                                                  <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoadingDispensaries}>
                                                       {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
-                                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                      {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin"/> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                                   </Button>
                                               </PopoverTrigger>
                                               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
@@ -350,24 +328,22 @@ export default function AddMushroomProductPage() {
                                                       <CommandList>
                                                           <CommandEmpty>No stores found.</CommandEmpty>
                                                           <CommandGroup>
-                                                              {isLoadingDispensaries ? <div className="p-2 text-center text-sm text-muted-foreground">Loading...</div> :
-                                                                  allDispensaries.map(dispensary => (
-                                                                      <CommandItem
-                                                                          key={dispensary.id}
-                                                                          value={dispensary.id}
-                                                                          onSelect={(currentValue) => {
-                                                                              const currentIds = field.value || [];
-                                                                              const newIds = currentIds.includes(currentValue)
-                                                                                  ? currentIds.filter(id => id !== currentValue)
-                                                                                  : [...currentIds, currentValue];
-                                                                              field.onChange(newIds);
-                                                                          }}
-                                                                      >
-                                                                          <CheckIcon className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
-                                                                          {dispensary.dispensaryName}
-                                                                      </CommandItem>
-                                                                  ))
-                                                              }
+                                                              {allDispensaries.map(dispensary => (
+                                                                  <CommandItem
+                                                                      key={dispensary.id}
+                                                                      value={dispensary.id}
+                                                                      onSelect={(currentValue) => {
+                                                                          const currentIds = field.value || [];
+                                                                          const newIds = currentIds.includes(currentValue)
+                                                                              ? currentIds.filter(id => id !== currentValue)
+                                                                              : [...currentIds, currentValue];
+                                                                          field.onChange(newIds);
+                                                                      }}
+                                                                  >
+                                                                      <CheckIcon className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
+                                                                      {dispensary.dispensaryName}
+                                                                  </CommandItem>
+                                                              ))}
                                                           </CommandGroup>
                                                       </CommandList>
                                                   </Command>
@@ -418,6 +394,3 @@ export default function AddMushroomProductPage() {
     </div>
   );
 }
-
-
-
