@@ -162,7 +162,7 @@ export default function AddTraditionalMedicineProductPage() {
   }
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
+    if (!currentDispensary || !currentUser?.dispensaryId || !currentDispensary.dispensaryType) {
       toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
       return;
     }
@@ -186,7 +186,7 @@ export default function AddTraditionalMedicineProductPage() {
 
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as ProductFormData),
-            dispensaryId: currentUser.dispensaryId!,
+            dispensaryId: currentUser.dispensaryId, // Explicitly set the correct dispensaryId
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
             productOwnerEmail: currentUser.email,
@@ -465,5 +465,3 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
-
-    
