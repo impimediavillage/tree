@@ -22,7 +22,7 @@ const productCollectionNames = [
     "homeopathy_store_products",
     "mushroom_store_products",
     "permaculture_store_products",
-    "products" // A fallback, just in case
+    "products" 
 ];
 
 export default function BrowsePoolPage() {
@@ -44,6 +44,7 @@ export default function BrowsePoolPage() {
         return;
     }
     setIsLoading(true);
+    console.log(`[Browse Pool] Starting fetch for dispensary ${currentUser.dispensaryId} of type ${currentDispensary.dispensaryType}`);
 
     const myDispensaryId = currentUser.dispensaryId;
     const myDispensaryType = currentDispensary.dispensaryType;
@@ -51,51 +52,62 @@ export default function BrowsePoolPage() {
 
     try {
         for (const collectionName of productCollectionNames) {
+            console.log(`[Browse Pool] Querying collection: ${collectionName}`);
             const productsCollectionRef = collection(db, collectionName);
 
-            const queries = [
-                // Rule 1: Shared with 'same_type' and matches my type
-                query(productsCollectionRef, 
+            // Rule 1: Shared with 'same_type' and matches my type
+            const sameTypeQuery = query(productsCollectionRef, 
                       where('isAvailableForPool', '==', true), 
                       where('poolSharingRule', '==', 'same_type'), 
-                      where('dispensaryType', '==', myDispensaryType)),
-                // Rule 2: Shared with 'all_types'
-                query(productsCollectionRef, 
+                      where('dispensaryType', '==', myDispensaryType));
+            
+            // Rule 2: Shared with 'all_types'
+            const allTypesQuery = query(productsCollectionRef, 
                       where('isAvailableForPool', '==', true), 
-                      where('poolSharingRule', '==', 'all_types')),
-                // Rule 3: Shared specifically with me
-                query(productsCollectionRef, 
+                      where('poolSharingRule', '==', 'all_types'));
+                      
+            // Rule 3: Shared specifically with me
+            const specificStoresQuery = query(productsCollectionRef, 
                       where('isAvailableForPool', '==', true), 
                       where('poolSharingRule', '==', 'specific_stores'), 
-                      where('allowedPoolDispensaryIds', 'array-contains', myDispensaryId)),
-            ];
+                      where('allowedPoolDispensaryIds', 'array-contains', myDispensaryId));
 
-            const querySnapshots = await Promise.all(queries.map(q => getDocs(q).catch(e => {
-                console.warn(`Query failed for ${collectionName}:`, e.message); // Log error but don't fail all
-                return null;
-            })));
+            const [sameTypeSnapshot, allTypesSnapshot, specificStoresSnapshot] = await Promise.all([
+                getDocs(sameTypeQuery).catch(e => { console.warn(`Query (same_type) failed for ${collectionName}:`, e.message); return null; }),
+                getDocs(allTypesQuery).catch(e => { console.warn(`Query (all_types) failed for ${collectionName}:`, e.message); return null; }),
+                getDocs(specificStoresQuery).catch(e => { console.warn(`Query (specific_stores) failed for ${collectionName}:`, e.message); return null; })
+            ]);
 
-            for (const snapshot of querySnapshots) {
-                if (!snapshot) continue; // Skip failed queries
-                snapshot.docs.forEach((doc) => {
-                    const product = { id: doc.id, ...doc.data() } as Product;
-                    // Exclude own products and avoid duplicates
-                    if (product.dispensaryId !== myDispensaryId && !productsMap.has(doc.id)) {
-                        productsMap.set(doc.id, product);
-                    }
-                });
-            }
+            console.log(`[${collectionName}] same_type query found: ${sameTypeSnapshot?.docs.length ?? 0} docs`);
+            sameTypeSnapshot?.forEach(doc => {
+              if (doc.data().dispensaryId !== myDispensaryId) productsMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
+            });
+
+            console.log(`[${collectionName}] all_types query found: ${allTypesSnapshot?.docs.length ?? 0} docs`);
+            allTypesSnapshot?.forEach(doc => {
+              if (doc.data().dispensaryId !== myDispensaryId) productsMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
+            });
+            
+            console.log(`[${collectionName}] specific_stores query found: ${specificStoresSnapshot?.docs.length ?? 0} docs`);
+            specificStoresSnapshot?.forEach(doc => {
+              if (doc.data().dispensaryId !== myDispensaryId) productsMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
+            });
         }
         
         const allFetchedProducts = Array.from(productsMap.values());
+        console.log(`[Browse Pool] Total unique products fetched: ${allFetchedProducts.length}`);
+        console.log('[Browse Pool] Final fetched products:', allFetchedProducts);
+
         setPoolProducts(allFetchedProducts);
 
-        const uniqueCategories = Array.from(new Set(allFetchedProducts.map(p => p.category).filter(Boolean)));
-        setCategories(['all', ...uniqueCategories.sort()]);
+        if (allFetchedProducts.length > 0) {
+            const uniqueCategories = Array.from(new Set(allFetchedProducts.map(p => p.category).filter(Boolean)));
+            setCategories(['all', ...uniqueCategories.sort()]);
+        }
 
     } catch (error) {
-        console.error("Error fetching pool products:", error);
-        toast({ title: "Error", description: "Failed to load products from the pool.", variant: "destructive" });
+        console.error("[Browse Pool] Critical error during fetch:", error);
+        toast({ title: "Error", description: "A critical error occurred while loading products from the pool.", variant: "destructive" });
     } finally {
         setIsLoading(false);
     }
@@ -196,7 +208,7 @@ export default function BrowsePoolPage() {
           <Card className="col-span-full">
             <CardContent className="pt-10 pb-10 text-center text-muted-foreground">
                 <Truck className="mx-auto h-12 w-12 mb-4 text-orange-500" />
-                <h3 className="text-2xl font-semibold mb-2">The Pool is Empty</h3>
+                <h3 className="text-2xl font-semibold">The Pool is Empty</h3>
                 <p>No products are currently available in the pool that match your criteria or store type.</p>
             </CardContent>
         </Card>
@@ -211,7 +223,6 @@ export default function BrowsePoolPage() {
           requesterDispensary={currentDispensary}
           onSuccess={() => {
             setIsRequestDialogOpen(false);
-            // Optionally, you can refetch or just show a toast
             toast({ title: 'Request Sent!', description: 'Your product request has been sent to the owner.' });
           }}
         />
