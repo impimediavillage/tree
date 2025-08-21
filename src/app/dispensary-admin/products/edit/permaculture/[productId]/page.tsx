@@ -27,10 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 
 const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "seedling", "cutting", "plant", "bag" ];
 const poolUnits = [ "10kg", "25kg", "50kg", "100 litres", "200 litres", "pallet", "crate" ];
@@ -64,7 +61,6 @@ export default function EditPermacultureProductPage() {
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchPoolSharingRule = form.watch('poolSharingRule');
-  const watchAllowedPoolIds = form.watch('allowedPoolDispensaryIds');
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !productId || !productCollectionName) {
@@ -197,50 +193,12 @@ export default function EditPermacultureProductPage() {
                         )}/>
                         {watchPoolSharingRule === 'specific_stores' && (
                            <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Select Specific Stores</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoadingDispensaries}>
-                                                {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
-                                                {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search for a store..." />
-                                                <CommandList>
-                                                    <CommandEmpty>No stores found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        {allDispensaries.map(dispensary => (
-                                                            <CommandItem
-                                                                key={dispensary.id}
-                                                                onSelect={(e) => {
-                                                                    e.preventDefault();
-                                                                    const currentIds = field.value || [];
-                                                                    const newIds = currentIds.includes(dispensary.id!)
-                                                                        ? currentIds.filter(id => id !== dispensary.id)
-                                                                        : [...currentIds, dispensary.id!];
-                                                                    field.onChange(newIds);
-                                                                }}
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
-                                                                {dispensary.dispensaryName}
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                    <div className="flex flex-wrap gap-1 pt-2">
-                                        {watchAllowedPoolIds?.map(id => {
-                                            const dispensary = allDispensaries.find(d => d.id === id);
-                                            return dispensary ? <Badge key={id} variant="secondary">{dispensary.dispensaryName}</Badge> : null;
-                                        })}
-                                    </div>
-                                    <FormMessage/>
-                                </FormItem>
+                                <DispensarySelector 
+                                    allDispensaries={allDispensaries}
+                                    isLoading={isLoadingDispensaries}
+                                    selectedIds={field.value || []}
+                                    onSelectionChange={field.onChange}
+                                />
                             )}/>
                         )}
                         <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
