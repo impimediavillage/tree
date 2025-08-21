@@ -18,17 +18,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 
 const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) return 'products'; // Fallback, though should be avoided
+    if (!dispensaryType) return 'products'; // Fallback for safety, though should be avoided
     switch (dispensaryType) {
-        case "Cannibinoid store": return "cannibinoid_store_products";
-        case "Traditional Medicine dispensary": return "traditional_medicine_dispensary_products";
-        case "Homeopathic store": return "homeopathy_store_products";
-        case "Mushroom store": return "mushroom_store_products";
-        case "Permaculture & gardening store": return "permaculture_store_products";
-        // Add any other specific dispensary types here
+        case "Cannibinoid store":
+            return "cannibinoid_store_products";
+        case "Traditional Medicine dispensary":
+            return "traditional_medicine_dispensary_products";
+        case "Homeopathic store":
+            return "homeopathy_store_products";
+        case "Mushroom store":
+            return "mushroom_store_products";
+        case "Permaculture & gardening store":
+            return "permaculture_store_products";
+        // This default is a fallback, but we should aim to have all types explicitly defined.
         default:
-            // This fallback is kept but should ideally not be used if all types are mapped.
-            return dispensaryType.toLowerCase().replace(/[\s-&]+/g, '_') + '_products';
+            console.warn(`[getProductCollectionName] Using fallback for dispensary type: ${dispensaryType}`);
+            return 'products';
     }
 };
 
@@ -47,6 +52,7 @@ export default function WellnessProductsPage() {
 
   const fetchProducts = useCallback(async (id: string) => {
     setIsLoading(true);
+    console.log(`[ProductsPage] Fetching products from collection: ${productCollectionName} for dispensaryId: ${id}`);
     try {
         const productsQuery = query(
             collection(db, productCollectionName),
@@ -63,12 +69,14 @@ export default function WellnessProductsPage() {
         } else {
             setCategories(['all']);
         }
+        console.log(`[ProductsPage] Fetched ${fetchedProducts.length} products.`);
     } catch (error: any) {
         console.error('Error fetching products:', error);
+        toast({ title: "Error Fetching Products", description: `Could not load products from '${productCollectionName}'. Please check permissions or collection name.`, variant: "destructive"});
     } finally {
         setIsLoading(false);
     }
-  }, [productCollectionName]);
+  }, [productCollectionName, toast]);
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
