@@ -630,7 +630,7 @@ export default function AddTHCProductPage() {
                                                                         field.onChange(newIds);
                                                                     }}
                                                                 >
-                                                                    <CheckIcon className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
+                                                                    <Check className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
                                                                     {dispensary.dispensaryName}
                                                                 </CommandItem>
                                                             ))}

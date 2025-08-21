@@ -7,8 +7,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDispensaryAdmin } from '@/contexts/DispensaryAdminContext';
 import { db, storage } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, orderBy as orderByFirestore, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
@@ -20,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, ChevronsUpDown, Check as CheckIcon } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, ChevronsUpDown, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -43,6 +44,7 @@ const getProductCollectionName = (dispensaryType?: string | null): string => {
 
 export default function DefaultEditProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
   const router = useRouter();
   const params = useParams();
   const productId = params.productId as string;
@@ -54,8 +56,6 @@ export default function DefaultEditProductPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
 
-  const [allDispensaries, setAllDispensaries] = useState<Dispensary[]>([]);
-  const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(false);
   
   const productCollectionName = getProductCollectionName(currentDispensary?.dispensaryType);
   
@@ -96,29 +96,10 @@ export default function DefaultEditProductPage() {
     } finally { setIsLoadingInitialData(false); }
   }, [productId, authLoading, toast, router, form, currentUser, productCollectionName]);
   
-  const fetchAllDispensaries = useCallback(async () => {
-    if (allDispensaries.length > 0) return;
-    setIsLoadingDispensaries(true);
-    try {
-      const q = query(
-        collection(db, 'dispensaries'),
-        where('status', '==', 'Approved'),
-        orderByFirestore('dispensaryName')
-      );
-      const querySnapshot = await getDocs(q);
-      const dispensaries = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary)).filter(d => d.id !== currentUser?.dispensaryId);
-      setAllDispensaries(dispensaries);
-    } catch (error) {
-      toast({ title: 'Error', description: 'Could not fetch list of dispensaries.', variant: 'destructive'});
-    } finally {
-      setIsLoadingDispensaries(false);
-    }
-  }, [allDispensaries.length, toast, currentUser?.dispensaryId]);
 
   useEffect(() => { 
     fetchInitialData(); 
-    fetchAllDispensaries();
-  }, [fetchInitialData, fetchAllDispensaries]);
+  }, [fetchInitialData]);
   
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
@@ -214,9 +195,9 @@ export default function DefaultEditProductPage() {
                                     <FormLabel>Select Specific Stores</FormLabel>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" className="w-full justify-between">
+                                            <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoadingDispensaries}>
                                                 {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
@@ -225,24 +206,22 @@ export default function DefaultEditProductPage() {
                                                 <CommandList>
                                                     <CommandEmpty>No stores found.</CommandEmpty>
                                                     <CommandGroup>
-                                                        {isLoadingDispensaries ? <div className="p-2 text-center text-sm text-muted-foreground">Loading...</div> :
-                                                            allDispensaries.map(dispensary => (
-                                                                <CommandItem
-                                                                    key={dispensary.id}
-                                                                    value={dispensary.id}
-                                                                    onSelect={(currentValue) => {
-                                                                        const currentIds = field.value || [];
-                                                                        const newIds = currentIds.includes(currentValue)
-                                                                            ? currentIds.filter(id => id !== currentValue)
-                                                                            : [...currentIds, currentValue];
-                                                                        field.onChange(newIds);
-                                                                    }}
-                                                                >
-                                                                    <CheckIcon className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
-                                                                    {dispensary.dispensaryName}
-                                                                </CommandItem>
-                                                            ))
-                                                        }
+                                                        {allDispensaries.map(dispensary => (
+                                                            <CommandItem
+                                                                key={dispensary.id}
+                                                                value={dispensary.id}
+                                                                onSelect={(currentValue) => {
+                                                                    const currentIds = field.value || [];
+                                                                    const newIds = currentIds.includes(currentValue)
+                                                                        ? currentIds.filter(id => id !== currentValue)
+                                                                        : [...currentIds, currentValue];
+                                                                    field.onChange(newIds);
+                                                                }}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
+                                                                {dispensary.dispensaryName}
+                                                            </CommandItem>
+                                                        ))}
                                                     </CommandGroup>
                                                 </CommandList>
                                             </Command>
@@ -290,5 +269,6 @@ export default function DefaultEditProductPage() {
     </Card>
   );
 }
+
 
 
