@@ -106,7 +106,8 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const docRef = doc(db, 'dispensaryTypeProductCategories', 'Traditional Medicine dispensary');
+      // Corrected document ID
+      const docRef = doc(db, 'dispensaryTypeProductCategories', 'Traditional Medicine Dispensary');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -465,3 +466,4 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
+
