@@ -24,7 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Heart, Shirt, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Shirt, ChevronsUpDown, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -102,12 +102,12 @@ export default function AddTraditionalMedicineProductPage() {
   const watchSizingSystem = form.watch('sizingSystem');
   const watchPoolSharingRule = form.watch('poolSharingRule');
 
-
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
       const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
       const querySnapshot = await getDocs(q);
+      
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
         const categoriesObject = data?.categoriesData?.traditionalMedicineCategories;
@@ -144,7 +144,7 @@ export default function AddTraditionalMedicineProductPage() {
     form.setValue('category', category.useCase, { shouldValidate: true });
     setSelectedSecondLevelCategory(null);
     form.setValue('subcategory', null);
-    form.setValue('subSubCategory', null);
+    form.setValue('subSubcategory', null);
     setTimeout(() => scrollToRef(secondStepRef), 100);
   };
   
@@ -152,18 +152,18 @@ export default function AddTraditionalMedicineProductPage() {
     setIsClothingStream(true);
     setSelectedTopLevelCategory(null);
     setSelectedSecondLevelCategory(null);
-    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubCategory: null, productType: 'Apparel' });
+    form.reset({ ...form.getValues(), category: 'Clothing', subcategory: null, subSubcategory: null, productType: 'Apparel' });
     setTimeout(() => scrollToRef(finalFormRef), 100);
   };
 
   const handleSecondLevelSelect = (category: SubCategory) => {
     setSelectedSecondLevelCategory(category);
     form.setValue('subcategory', category.type, { shouldValidate: true });
-    form.setValue('subSubCategory', null);
+    form.setValue('subSubcategory', null);
   };
 
   const handleSubSubCategorySelect = (subType: string) => {
-    form.setValue('subSubCategory', subType, { shouldValidate: true });
+    form.setValue('subSubcategory', subType, { shouldValidate: true });
     setTimeout(() => scrollToRef(finalFormRef), 100);
   }
 
@@ -178,7 +178,7 @@ export default function AddTraditionalMedicineProductPage() {
         if (files.length > 0) {
             toast({ title: "Uploading Images...", description: "Please wait...", variant: "default" });
             const uploadPromises = files.map(file => {
-                const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`);
+                const sRef = storageRef(storage, `products/${currentUser!.uid}/${Date.now()}_${file.name}`);
                 return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref));
             });
             uploadedImageUrls = await Promise.all(uploadPromises);
@@ -236,7 +236,7 @@ export default function AddTraditionalMedicineProductPage() {
      );
   }
 
-  const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubCategory')) || isClothingStream;
+  const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubcategory')) || isClothingStream;
   
   const availableDispensaries = allDispensaries.filter(d => d.id !== currentUser?.dispensaryId);
 
@@ -259,7 +259,7 @@ export default function AddTraditionalMedicineProductPage() {
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryStructure.map((cat, index) => (
                         <Card 
-                            key={cat.useCase || index} 
+                            key={cat.useCase || index}
                             onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
                                 "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
@@ -318,9 +318,9 @@ export default function AddTraditionalMedicineProductPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {selectedTopLevelCategory.categories.map(cat => (
+                            {selectedTopLevelCategory.categories.map((cat, index) => (
                                 <Card 
-                                    key={cat.type} 
+                                    key={cat.type || index}
                                     onClick={() => handleSecondLevelSelect(cat)} 
                                     className={cn(
                                         "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
@@ -374,10 +374,10 @@ export default function AddTraditionalMedicineProductPage() {
                           <FormLabel>Subcategory</FormLabel>
                           <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
-                        {form.getValues('subSubCategory') && (
+                        {form.getValues('subSubcategory') && (
                             <FormItem>
                                 <FormLabel>Type</FormLabel>
-                                <Input value={form.getValues('subSubCategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                                <Input value={form.getValues('subSubcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
                             </FormItem>
                         )}
                       </div>
@@ -473,3 +473,5 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
+
+    
