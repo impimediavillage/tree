@@ -32,6 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -190,7 +191,9 @@ export default function EditCannabinoidProductPage() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-foreground"> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
-            <Button variant="outline" size="sm" asChild> <Link href="/dispensary-admin/products"> <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products </Link> </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+            </Button>
         </div>
         <CardDescription className="text-foreground"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
       </CardHeader>
@@ -215,7 +218,7 @@ export default function EditCannabinoidProductPage() {
                       <div className="grid md:grid-cols-3 gap-4">
                           <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{apparelSizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                       </div>
                       <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
                   </>
@@ -272,52 +275,12 @@ export default function EditCannabinoidProductPage() {
                             </FormItem>
                         )}/>
                         {watchPoolSharingRule === 'specific_stores' && (
-                            <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Select Specific Stores</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" className="w-full justify-between" disabled={isLoadingDispensaries}>
-                                                {watchAllowedPoolIds && watchAllowedPoolIds.length > 0 ? `${watchAllowedPoolIds.length} store(s) selected` : "Select stores..."}
-                                                {isLoadingDispensaries ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                            <Command>
-                                                <CommandInput placeholder="Search for a store..." />
-                                                <CommandList>
-                                                    <CommandEmpty>No stores found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        {allDispensaries.map(dispensary => (
-                                                            <CommandItem
-                                                                key={dispensary.id}
-                                                                onSelect={(e) => {
-                                                                    e.preventDefault();
-                                                                    const currentIds = field.value || [];
-                                                                    const newIds = currentIds.includes(dispensary.id!)
-                                                                        ? currentIds.filter(id => id !== dispensary.id)
-                                                                        : [...currentIds, dispensary.id!];
-                                                                    field.onChange(newIds);
-                                                                }}
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4", field.value?.includes(dispensary.id!) ? "opacity-100" : "opacity-0")} />
-                                                                {dispensary.dispensaryName}
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                    <div className="flex flex-wrap gap-1 pt-2">
-                                        {watchAllowedPoolIds?.map(id => {
-                                            const dispensary = allDispensaries.find(d => d.id === id);
-                                            return dispensary ? <Badge key={id} variant="secondary">{dispensary.dispensaryName}</Badge> : null;
-                                        })}
-                                    </div>
-                                    <FormMessage/>
-                                </FormItem>
-                            )}/>
+                             <DispensarySelector
+                                allDispensaries={allDispensaries}
+                                isLoading={isLoadingDispensaries}
+                                selectedIds={form.watch('allowedPoolDispensaryIds') || []}
+                                onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
+                            />
                         )}
                         <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
                         <CardContent className="p-0 space-y-2">
@@ -351,3 +314,5 @@ export default function EditCannabinoidProductPage() {
     </Card>
   );
 }
+
+    
