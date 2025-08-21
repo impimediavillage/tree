@@ -7,8 +7,8 @@ import type { Product, PriceTier } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Gift, Flame, Tag, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Gift, Flame, Tag, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, X, Truck } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext'; 
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InfoDialog } from '../dialogs/InfoDialog';
@@ -17,10 +17,11 @@ import { InfoDialog } from '../dialogs/InfoDialog';
 interface PublicProductCardProps {
   product: Product;
   tier: PriceTier;
-  onGenerateDesigns: (product: Product, tier: PriceTier) => void;
+  onGenerateDesigns?: (product: Product, tier: PriceTier) => void;
+  onRequestProduct?: (product: Product, tier: PriceTier) => void;
 }
 
-export function PublicProductCard({ product, tier, onGenerateDesigns }: PublicProductCardProps) {
+export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
@@ -37,7 +38,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns }: PublicPr
   
   const dataAiHintProduct = `${product.category} ${product.name.split(" ")[0] || ""}`;
 
-  const tierStock = tier.quantityInStock ?? 0;
+  const tierStock = tier.quantityInStock ?? 999;
   
   const cartItemId = `${product.id}-${tier.unit}`;
   const itemInCart = cartItems.find(item => item.id === cartItemId);
@@ -165,7 +166,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns }: PublicPr
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
                   disabled={tierStock <= 0}
-                  onClick={() => onGenerateDesigns(product, tier)}
+                  onClick={() => onGenerateDesigns?.(product, tier)}
                   aria-label={`Buy design for ${product.name}`}
                 >
                   <Sparkles className="h-5 w-5" />
@@ -174,7 +175,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns }: PublicPr
               </div>
             </>
           ) : (
-            <>
+             <>
                 <div className="w-full text-right">
                     <p className="text-2xl font-bold text-black dark:text-white">
                         <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
@@ -185,15 +186,24 @@ export function PublicProductCard({ product, tier, onGenerateDesigns }: PublicPr
                     </div>
                 </div>
                 <div className="w-full">
-                <Button
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
-                    disabled={tierStock <= 0 || !canAddToCart}
-                    onClick={handleAddToCartClick}
-                    aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-                >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-                </Button>
+                {onRequestProduct ? (
+                    <Button 
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-md font-semibold"
+                        onClick={() => onRequestProduct(product, tier)}
+                    >
+                        <Truck className="mr-2 h-5 w-5" /> Request Product
+                    </Button>
+                ) : (
+                    <Button
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                        disabled={tierStock <= 0 || !canAddToCart}
+                        onClick={handleAddToCartClick}
+                        aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+                    >
+                        <ShoppingCart className="mr-2 h-5 w-5" />
+                        {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                    </Button>
+                )}
                 </div>
             </>
           )}
@@ -201,7 +211,6 @@ export function PublicProductCard({ product, tier, onGenerateDesigns }: PublicPr
         </CardFooter>
       </Card>
       
-      {/* Viewer Dialog */}
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
         <DialogContent className="max-w-4xl p-2 sm:p-4">
           <DialogHeader>
