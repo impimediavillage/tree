@@ -12,7 +12,7 @@ export const getProductCollectionName = (dispensaryType?: string | null, forAddP
         return forAddPage ? '/dispensary-admin/products/add/thc' : 'products';
     }
     
-    // This is for page routing
+    // This is for page routing for the "Add Product" pages
     if (forAddPage) {
         switch(dispensaryType) {
             case 'Cannibinoid store':
