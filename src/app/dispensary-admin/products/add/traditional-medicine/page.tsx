@@ -174,10 +174,11 @@ export default function AddTraditionalMedicineProductPage() {
   }
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
-      toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
-      return;
+    if (!currentDispensary || !currentUser?.uid || !currentDispensary.id || !currentDispensary.dispensaryType) {
+        toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
+        return;
     }
+
     setIsLoading(true);
     try {
         let uploadedImageUrls: string[] = [];
@@ -198,7 +199,7 @@ export default function AddTraditionalMedicineProductPage() {
 
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as ProductFormData),
-            dispensaryId: currentUser.dispensaryId!,
+            dispensaryId: currentDispensary.id,
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
             productOwnerEmail: currentUser.email!,
@@ -479,4 +480,3 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
-
