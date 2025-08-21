@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -583,42 +583,55 @@ export default function AddTHCProductPage() {
                         <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                         {watchIsAvailableForPool && (
                           <Card className="p-4 bg-muted/50 space-y-4">
-                            <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
+                            <FormField
+                              control={form.control}
+                              name="poolSharingRule"
+                              render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
-                                            <SelectItem value="all_types">Share with all Wellness types</SelectItem>
-                                            <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
+                                  <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                  <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                    <FormControl>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select how to share this product" />
+                                      </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                      <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                      <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                      <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <FormMessage />
                                 </FormItem>
-                            )}/>
-
+                              )}
+                            />
                             {watchPoolSharingRule === 'specific_stores' && (
-                                <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
-                                    <DispensarySelector 
-                                        allDispensaries={allDispensaries}
-                                        isLoading={isLoadingDispensaries}
-                                        selectedIds={field.value || []}
-                                        onSelectionChange={field.onChange}
-                                    />
-                                )}/>
+                              <Controller
+                                control={form.control}
+                                name="allowedPoolDispensaryIds"
+                                render={({ field }) => (
+                                  <DispensarySelector
+                                    allDispensaries={allDispensaries}
+                                    isLoading={isLoadingDispensaries}
+                                    selectedIds={field.value || []}
+                                    onSelectionChange={field.onChange}
+                                  />
+                                )}
+                              />
                             )}
-
-                            <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                            <CardHeader className="p-0 mb-2">
+                              <CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle>
+                              <CardDescription>Define pricing for bulk transfers to other stores.</CardDescription>
+                            </CardHeader>
                             <CardContent className="p-0 space-y-2">
-                                {poolPriceTierFields.map((field, index) => (
+                              {poolPriceTierFields.map((field, index) => (
                                 <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                                    <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                    {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                  <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                  <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                  {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                                 </div>
-                                ))}
-                                <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
                             </CardContent>
                           </Card>
                         )}
@@ -643,4 +656,3 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
-
