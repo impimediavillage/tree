@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import type { Product, ProductAttribute } from '@/types';
+import type { Product, PriceTier } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,10 +17,11 @@ import { InfoDialog } from '../dialogs/InfoDialog';
 
 interface ProductCardProps {
   product: Product;
+  tier: PriceTier;
   onDelete: (productId: string, productName: string, imageUrls?: (string | null)[] | null) => Promise<void>;
 }
 
-export function ProductCard({ product, onDelete }: ProductCardProps) {
+export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
   const { currentDispensary } = useAuth();
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
@@ -42,7 +43,6 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
     }
   };
 
-  const firstPriceTier = product.priceTiers && product.priceTiers.length > 0 ? product.priceTiers[0] : null;
   const dataAiHintProduct = `product ${product.category} ${product.name.split(" ")[0] || ""}`;
   
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
@@ -121,17 +121,17 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
           <p className="text-muted-foreground line-clamp-2 leading-relaxed h-10" title={product.description}>
             {product.description}
           </p>
-          {firstPriceTier && (
+          {tier && (
             <div className="flex items-baseline gap-1.5 text-foreground">
               <span className="font-medium text-muted-foreground">{product.currency}</span>
-              <span className="text-xl font-bold text-green-600">{firstPriceTier.price.toFixed(2)}</span>
-              <span className="text-xs text-muted-foreground">/ {firstPriceTier.unit}</span>
+              <span className="text-xl font-bold text-green-600">{tier.price.toFixed(2)}</span>
+              <span className="text-xs text-muted-foreground">/ {tier.unit}</span>
             </div>
           )}
            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span>Stock:</span>
-              <span className={`font-semibold ${product.quantityInStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {product.quantityInStock}
+              <span>Stock for this tier:</span>
+              <span className={`font-semibold ${tier.quantityInStock && tier.quantityInStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {tier.quantityInStock ?? 0}
               </span>
           </div>
            <div className="flex flex-wrap gap-2 pt-2">
@@ -156,13 +156,13 @@ export function ProductCard({ product, onDelete }: ProductCardProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and its associated images from storage.
+                  This action cannot be undone. This will permanently delete the product &quot;{product.name}&quot; and all its pricing tiers and images from storage.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => onDelete(product.id!, product.name, product.imageUrls)}>
-                  Yes, delete
+                  Yes, delete product
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
