@@ -4,8 +4,8 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
-import type { Product, PriceTier, ProductRequest } from '@/types';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import type { Product, PriceTier } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,25 +47,36 @@ export default function BrowsePoolPage() {
 
     const myDispensaryId = currentUser.dispensaryId;
     const myDispensaryType = currentDispensary.dispensaryType;
+    const productsMap = new Map<string, Product>();
 
     try {
-        const productsMap = new Map<string, Product>();
-
         for (const collectionName of productCollectionNames) {
             const productsCollectionRef = collection(db, collectionName);
 
             const queries = [
                 // Rule 1: Shared with 'same_type' and matches my type
-                query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'same_type'), where('dispensaryType', '==', myDispensaryType)),
+                query(productsCollectionRef, 
+                      where('isAvailableForPool', '==', true), 
+                      where('poolSharingRule', '==', 'same_type'), 
+                      where('dispensaryType', '==', myDispensaryType)),
                 // Rule 2: Shared with 'all_types'
-                query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'all_types')),
+                query(productsCollectionRef, 
+                      where('isAvailableForPool', '==', true), 
+                      where('poolSharingRule', '==', 'all_types')),
                 // Rule 3: Shared specifically with me
-                query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'specific_stores'), where('allowedPoolDispensaryIds', 'array-contains', myDispensaryId)),
+                query(productsCollectionRef, 
+                      where('isAvailableForPool', '==', true), 
+                      where('poolSharingRule', '==', 'specific_stores'), 
+                      where('allowedPoolDispensaryIds', 'array-contains', myDispensaryId)),
             ];
 
-            const querySnapshots = await Promise.all(queries.map(q => getDocs(q)));
+            const querySnapshots = await Promise.all(queries.map(q => getDocs(q).catch(e => {
+                console.warn(`Query failed for ${collectionName}:`, e.message); // Log error but don't fail all
+                return null;
+            })));
 
             for (const snapshot of querySnapshots) {
+                if (!snapshot) continue; // Skip failed queries
                 snapshot.docs.forEach((doc) => {
                     const product = { id: doc.id, ...doc.data() } as Product;
                     // Exclude own products and avoid duplicates
