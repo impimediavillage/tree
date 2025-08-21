@@ -106,20 +106,24 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
+      const q = firestoreQuery(
+        collection(db, 'dispensaryTypeProductCategories'),
+        where('name', '==', "Traditional Medicine dispensary"),
+        limit(1)
+      );
       const querySnapshot = await getDocs(q);
       
       if (!querySnapshot.empty) {
-        const data = querySnapshot.docs[0].data();
-        const categoriesObject = data?.categoriesData?.traditionalMedicineCategories;
-
-        if (categoriesObject && typeof categoriesObject === 'object') {
-           // This is the key fix: convert the object of categories into an array
-          const categoriesArray = Object.values(categoriesObject) as TopLevelCategory[];
+        const docData = querySnapshot.docs[0].data();
+        // Correctly access the nested array
+        const categoriesArray = docData?.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories;
+        
+        if (Array.isArray(categoriesArray)) {
           setCategoryStructure(categoriesArray);
         } else {
+          console.error("Fetched data is not an array:", categoriesArray);
+          toast({ title: 'Data Structure Error', description: 'The category structure for Traditional Medicine is not in the expected format.', variant: 'destructive' });
           setCategoryStructure([]);
-          toast({ title: 'Error', description: 'Category data for Traditional Medicine is missing or in the wrong format.', variant: 'destructive' });
         }
       } else {
         toast({ title: 'Error', description: 'Could not find category structure for "Traditional Medicine dispensary".', variant: 'destructive' });
@@ -198,7 +202,7 @@ export default function AddTraditionalMedicineProductPage() {
             dispensaryId: currentUser.dispensaryId,
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
-            productOwnerEmail: currentUser.email,
+            productOwnerEmail: currentUser.email!,
             createdAt: serverTimestamp() as any,
             updatedAt: serverTimestamp() as any,
             quantityInStock: totalStock,
@@ -260,9 +264,9 @@ export default function AddTraditionalMedicineProductPage() {
             <Card>
                 <CardHeader><CardTitle>Step 1: Select a Product Stream</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryStructure.map((cat) => (
+                    {categoryStructure.map((cat, index) => (
                         <Card 
-                            key={cat.useCase} 
+                            key={`${cat.useCase}-${index}`} 
                             onClick={() => handleTopLevelSelect(cat)} 
                             className={cn(
                                 "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
