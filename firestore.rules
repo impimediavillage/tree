@@ -1,68 +1,128 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default to secure: deny all reads and writes
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Helper functions
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.role == 'Super Admin';
+    }
+    function isDispensaryOwner() {
+      return request.auth != null && request.auth.token.role == 'DispensaryOwner';
+    }
+     function isDispensaryStaff() {
+      return request.auth != null && request.auth.token.role == 'DispensaryStaff';
+    }
+    function isOwnerOrStaff(dispensaryId) {
+        return request.auth != null &&
+               (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff') &&
+               request.auth.token.dispensaryId == dispensaryId;
+    }
+    function isAnyAuthenticatedUser() {
+      return request.auth != null;
     }
 
-    // Users can read/update their own profiles. Admins can do anything.
+    // Rules for 'users' collection
     match /users/{userId} {
+      // Admins can read/write any user document
+      allow read, write: if isSuperAdmin();
+      // Users can read/write their own document
       allow read, update: if request.auth.uid == userId;
-      allow create, list, delete: if request.auth.token.role == 'Super Admin';
     }
 
-    // Public read for dispensaries, write restricted to Super Admins
+    // Rules for 'dispensaries' collection
     match /dispensaries/{dispensaryId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth.token.role == 'Super Admin';
-    }
-
-    // Public read for dispensary types, write restricted to Super Admins
-    match /dispensaryTypes/{typeId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth.token.role == 'Super Admin';
-    }
-
-    // Authenticated users can read product categories
-    match /dispensaryTypeProductCategories/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.token.role == 'Super Admin';
-    }
-
-    // Credit packages can be read by any authenticated user, written only by admins
-    match /creditPackages/{packageId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.token.role == 'Super Admin';
+      // Anyone can read approved dispensaries
+      allow get: if resource.data.status == 'Approved';
+      allow list: if true;
+      // Owners/Staff can read their own dispensary doc regardless of status
+      allow get: if isOwnerOrStaff(dispensaryId);
+      // Only admins can create/update/delete
+      allow create, update, delete: if isSuperAdmin();
     }
     
-    // AI interaction logs can only be created by the user themselves.
+    // Rules for 'dispensaryTypes' collection
+    match /dispensaryTypes/{typeId} {
+      allow read: if true;
+      // Only admins can write to types
+      allow write: if isSuperAdmin();
+    }
+
+    // Rules for 'dispensaryTypeProductCategories' collection
+    match /dispensaryTypeProductCategories/{docId} {
+        allow read: if isAnyAuthenticatedUser();
+        allow write: if isSuperAdmin();
+    }
+    
+    // Rules for 'my-seeded-collection' (strains)
+    match /my-seeded-collection/{strainId} {
+        allow read: if true;
+        allow write: if isSuperAdmin();
+    }
+
+    // Rules for 'creditPackages' collection
+    match /creditPackages/{packageId} {
+        allow read: if true;
+        allow write: if isSuperAdmin();
+    }
+
+    // Rules for 'productRequests' collection
+    match /productRequests/{requestId} {
+        allow read: if request.auth.uid == resource.data.requesterId || isOwnerOrStaff(resource.data.productOwnerDispensaryId) || isSuperAdmin();
+        allow create: if isOwnerOrStaff(request.resource.data.requesterDispensaryId);
+        allow update: if isOwnerOrStaff(resource.data.requesterDispensaryId) || isOwnerOrStaff(resource.data.productOwnerDispensaryId) || isSuperAdmin();
+    }
+    
+     // Rules for 'poolIssues' collection
+    match /poolIssues/{issueId} {
+      allow read, write: if isSuperAdmin();
+      allow create: if isOwnerOrStaff(request.resource.data.reporterDispensaryId);
+    }
+    
+     // Rules for 'aiInteractionsLog' collection
     match /aiInteractionsLog/{logId} {
+        allow read: if isSuperAdmin() || request.auth.uid == resource.data.userId;
         allow create: if request.auth.uid == request.resource.data.userId;
     }
 
-    // Rule for all product collections (ending in _products)
-    match /{collectionId}_products/{productId} {
-      allow read: if request.auth != null;
-      allow write: if (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff')
-                    && request.resource.data.dispensaryId == request.auth.token.dispensaryId;
-    }
-    
-    // Fallback for the main 'products' collection
-    match /products/{productId} {
-       allow read: if request.auth != null;
-       allow write: if (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff')
-                    && request.resource.data.dispensaryId == request.auth.token.dispensaryId;
+    // Rules for 'stickersets' collection
+    match /stickersets/{setId} {
+        allow read: if resource.data.isPublic == true || request.auth.uid == resource.data.creatorUid;
+        allow create: if request.auth.uid == request.resource.data.creatorUid;
+        allow update, delete: if request.auth.uid == resource.data.creatorUid;
     }
 
-    // Authenticated users can read sticker sets
-    match /stickersets/{stickerId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.creatorUid;
-      allow update, delete: if request.auth.uid == resource.data.creatorUid;
+    // --- Product Collections Rules ---
+    function canWriteProduct() {
+        return request.auth != null &&
+               (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff') &&
+               request.resource.data.dispensaryId == request.auth.token.dispensaryId;
     }
-    
+
+    match /cannibinoid_store_products/{productId} {
+      allow read: if true;
+      allow write: if canWriteProduct();
+    }
+    match /homeopathy_store_products/{productId} {
+        allow read: if true;
+        allow write: if canWriteProduct();
+    }
+    match /mushroom_store_products/{productId} {
+        allow read: if true;
+        allow write: if canWriteProduct();
+    }
+    match /permaculture_store_products/{productId} {
+        allow read: if true;
+        allow write: if canWriteProduct();
+    }
+    match /traditional_medicine_dispensary_products/{productId} {
+        allow read: if true;
+        allow write: if canWriteProduct();
+    }
+    match /products/{productId} { // Fallback/generic product collection
+        allow read: if true;
+        allow write: if canWriteProduct();
+    }
   }
 }
