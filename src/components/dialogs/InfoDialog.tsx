@@ -40,6 +40,8 @@ export const InfoDialog = ({ triggerText, title, icon: Icon, children, items, it
       "bg-stone-200 text-stone-800", "bg-gray-200 text-gray-800"
     ]
   };
+  
+  const isDescription = triggerText === 'Full Description';
 
   return (
     <Dialog>
@@ -49,12 +51,18 @@ export const InfoDialog = ({ triggerText, title, icon: Icon, children, items, it
             {triggerText}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className={cn(isDescription ? 'sm:max-w-xl' : 'sm:max-w-md')}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Icon className="h-5 w-5 text-primary" /> {title}</DialogTitle>
+          {isDescription && <DialogDescription>Full Product Details</DialogDescription>}
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-            {children}
+            {typeof children === 'string' ? (
+                <div className="py-2 whitespace-pre-wrap text-sm text-foreground">
+                    {children}
+                </div>
+            ) : children}
+
             {children && items && items.length > 0 && <Separator className="my-4" />}
             {items && items.length > 0 && (
               <div className="flex flex-col items-start gap-2 py-4">
@@ -65,7 +73,7 @@ export const InfoDialog = ({ triggerText, title, icon: Icon, children, items, it
                       const percentage = isAttribute ? (item as ProductAttribute).percentage : null;
 
                       return (
-                      <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", badgeColors[itemType!][index % badgeColors[itemType!].length])}>
+                      <Badge key={index} variant="secondary" className={cn("text-sm font-medium border-none py-1 px-3", itemType && badgeColors[itemType][index % badgeColors[itemType].length])}>
                           {name} {percentage && <span className="ml-1.5 font-semibold">({percentage})</span>}
                       </Badge>
                       );
