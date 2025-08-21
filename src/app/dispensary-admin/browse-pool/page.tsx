@@ -15,6 +15,8 @@ import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ShoppingBasket, FilterX, AlertTriangle, Truck } from 'lucide-react';
 import { RequestProductDialog } from '@/components/dispensary-admin/RequestProductDialog';
+import { getProductCollectionName } from '@/lib/utils';
+
 
 const productCollectionNames = [
     "cannibinoid_store_products",
