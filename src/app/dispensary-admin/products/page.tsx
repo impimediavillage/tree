@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { db, storage } from '@/lib/firebase';
 import { collection, query, where, getDocs, doc, deleteDoc, orderBy } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
-import type { Product } from '@/types';
+import type { Product, PriceTier } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -78,7 +78,7 @@ export default function WellnessProductsPage() {
     }
   }, [authLoading, dispensaryId, fetchProducts]);
   
-  const filteredAndSortedProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => {
     let filtered = [...allProducts];
 
     if (searchTerm) {
@@ -96,6 +96,19 @@ export default function WellnessProductsPage() {
     }
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
   }, [allProducts, searchTerm, selectedCategory]);
+
+  const displayItems = useMemo(() => {
+    return filteredProducts.flatMap(product => {
+      if (Array.isArray(product.priceTiers) && product.priceTiers.length > 0) {
+        return product.priceTiers.map((tier, index) => ({
+          product,
+          tier,
+          key: `${product.id}-${tier.unit}-${index}`
+        }));
+      }
+      return []; // Return an empty array if there are no price tiers
+    });
+  }, [filteredProducts]);
 
 
   const handleDeleteProduct = async (productId: string, productName: string, imageUrls?: (string | null)[] | null) => {
@@ -223,10 +236,10 @@ export default function WellnessProductsPage() {
         )}
       </div>
       
-      {filteredAndSortedProducts.length > 0 ? (
+      {displayItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
-          {filteredAndSortedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onDelete={handleDeleteProduct} />
+          {displayItems.map((item) => (
+            <ProductCard key={item.key} product={item.product} tier={item.tier} onDelete={handleDeleteProduct} />
           ))}
         </div>
       ) : (
