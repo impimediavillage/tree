@@ -6,7 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) return 'products'; // Fallback for safety
+    if (!dispensaryType) {
+        console.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
+        return 'products'; // Fallback for safety
+    }
     switch (dispensaryType) {
         case "Cannibinoid store":
             return "cannibinoid_store_products";
@@ -20,7 +23,7 @@ export const getProductCollectionName = (dispensaryType?: string | null): string
             return "permaculture_store_products";
         // This default is a fallback, but we should aim to have all types explicitly defined.
         default:
-            console.warn(`[getProductCollectionName] Using fallback for dispensary type: ${dispensaryType}`);
+            console.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
             return 'products';
     }
 };
