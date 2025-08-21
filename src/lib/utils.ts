@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 
 export const getProductCollectionName = (dispensaryType?: string | null, forAddPage: boolean = false): string => {
     if (!dispensaryType) {
-        console.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
+        console.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products' or a default add page.");
         return forAddPage ? '/dispensary-admin/products/add/thc' : 'products';
     }
     

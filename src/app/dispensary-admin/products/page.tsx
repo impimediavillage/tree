@@ -35,13 +35,13 @@ export default function WellnessProductsPage() {
   const dispensaryId = currentUser?.dispensaryId;
 
   const fetchProducts = useCallback(async () => {
-    if (!dispensaryId) {
+    if (!dispensaryId || !currentDispensary) {
         setIsLoading(false);
         return;
     }
     
     setIsLoading(true);
-    console.log(`[ProductsPage] Fetching products for dispensaryId: ${dispensaryId}`);
+    console.log(`[ProductsPage] Fetching products for dispensaryId: ${dispensaryId} of type ${currentDispensary.dispensaryType}`);
 
     try {
         const result = await getDispensaryProductsCallable();
@@ -61,7 +61,7 @@ export default function WellnessProductsPage() {
     } finally {
         setIsLoading(false);
     }
-  }, [dispensaryId, toast]);
+  }, [dispensaryId, currentDispensary, toast]);
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
@@ -99,6 +99,8 @@ export default function WellnessProductsPage() {
           key: `${product.id}-${tier.unit}-${index}`
         }));
       }
+      // If no price tiers, maybe show the product once with a note?
+      // For now, only showing products with price tiers.
       return [];
     });
   }, [filteredProducts]);
