@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -105,7 +106,7 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine Dispensary"), limit(1));
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
@@ -230,6 +231,8 @@ export default function AddTraditionalMedicineProductPage() {
   }
 
   const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubCategory')) || isClothingStream;
+  
+  const availableDispensaries = allDispensaries.filter(d => d.id !== currentUser?.dispensaryId);
 
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-6">
@@ -423,7 +426,7 @@ export default function AddTraditionalMedicineProductPage() {
 
                               {watchPoolSharingRule === 'specific_stores' && (
                                 <DispensarySelector 
-                                    allDispensaries={allDispensaries}
+                                    allDispensaries={availableDispensaries}
                                     isLoading={isLoadingDispensaries}
                                     selectedIds={form.watch('allowedPoolDispensaryIds') || []}
                                     onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
@@ -464,3 +467,4 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
+
