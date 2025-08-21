@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle 
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { DispensaryAdminProvider } from '@/contexts/DispensaryAdminContext';
 
 interface NavItem {
   title: string;
@@ -274,6 +275,8 @@ export default function DispensaryAdminRootLayout({
   children: ReactNode;
 }) {
   return (
-      <WellnessAdminLayoutContent>{children}</WellnessAdminLayoutContent>
+      <DispensaryAdminProvider>
+        <WellnessAdminLayoutContent>{children}</WellnessAdminLayoutContent>
+      </DispensaryAdminProvider>
   );
 }
