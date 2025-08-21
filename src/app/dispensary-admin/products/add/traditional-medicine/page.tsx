@@ -106,12 +106,13 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine Dispensary"), limit(1));
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
         const categoriesObject = data?.categoriesData?.traditionalMedicineCategories;
         if (categoriesObject && typeof categoriesObject === 'object') {
+          // Convert the object of categories into an array
           setCategoryStructure(Object.values(categoriesObject));
         } else {
           setCategoryStructure([]);
