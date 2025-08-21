@@ -29,15 +29,21 @@ export default function WellnessProductsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   
   const dispensaryId = currentUser?.dispensaryId;
-  const productCollectionName = getProductCollectionName(currentDispensary?.dispensaryType);
 
-  const fetchProducts = useCallback(async (id: string) => {
+  const fetchProducts = useCallback(async () => {
+    if (!dispensaryId || !currentDispensary?.dispensaryType) {
+        setIsLoading(false);
+        return;
+    }
+    
     setIsLoading(true);
-    console.log(`[ProductsPage] Fetching products from collection: ${productCollectionName} for dispensaryId: ${id}`);
+    const productCollectionName = getProductCollectionName(currentDispensary.dispensaryType);
+    console.log(`[ProductsPage] Fetching products from collection: ${productCollectionName} for dispensaryId: ${dispensaryId}`);
+
     try {
         const productsQuery = query(
             collection(db, productCollectionName),
-            where('dispensaryId', '==', id),
+            where('dispensaryId', '==', dispensaryId),
             orderBy('name')
         );
         const productsSnapshot = await getDocs(productsQuery);
@@ -50,18 +56,18 @@ export default function WellnessProductsPage() {
         } else {
             setCategories(['all']);
         }
-        console.log(`[ProductsPage] Fetched ${fetchedProducts.length} products.`);
+        console.log(`[ProductsPage] Fetched ${fetchedProducts.length} products from ${productCollectionName}.`);
     } catch (error: any) {
-        console.error('Error fetching products:', error);
-        toast({ title: "Error Fetching Products", description: `Could not load products from '${productCollectionName}'. Please check permissions or collection name.`, variant: "destructive"});
+        console.error(`Error fetching products from ${productCollectionName}:`, error);
+        toast({ title: "Error Fetching Products", description: `Could not load products. Please check console for details.`, variant: "destructive"});
     } finally {
         setIsLoading(false);
     }
-  }, [productCollectionName, toast]);
+  }, [dispensaryId, currentDispensary, toast]);
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
-      fetchProducts(dispensaryId);
+      fetchProducts();
     } else if (!authLoading) {
       setIsLoading(false);
     }
@@ -95,15 +101,16 @@ export default function WellnessProductsPage() {
           key: `${product.id}-${tier.unit}-${index}`
         }));
       }
-      // If a product has no price tiers, it will not be displayed.
-      // This is often desired behavior, but could be changed if needed.
       return [];
     });
   }, [filteredProducts]);
 
 
   const handleDeleteProduct = async (productId: string, productName: string, imageUrls?: (string | null)[] | null) => {
-    if (!dispensaryId) return;
+    if (!dispensaryId || !currentDispensary?.dispensaryType) return;
+
+    const productCollectionName = getProductCollectionName(currentDispensary.dispensaryType);
+
     try {
       if (imageUrls && imageUrls.length > 0) {
         const deletePromises = imageUrls.map(url => {
@@ -122,7 +129,7 @@ export default function WellnessProductsPage() {
       
       await deleteDoc(doc(db, productCollectionName, productId));
       toast({ title: "Product Deleted", description: `"${productName}" has been removed.` });
-      fetchProducts(dispensaryId);
+      fetchProducts();
       
     } catch (error) {
       console.error("Error deleting product document:", error);
