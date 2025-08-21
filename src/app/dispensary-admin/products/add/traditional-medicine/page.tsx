@@ -81,7 +81,7 @@ export default function AddTraditionalMedicineProductPage() {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '', description: '', category: '', subcategory: null, subSubCategory: null,
+      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
@@ -106,14 +106,19 @@ export default function AddTraditionalMedicineProductPage() {
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
-      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
+      const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine Dispensary"), limit(1));
       const querySnapshot = await getDocs(q);
       if (!querySnapshot.empty) {
         const data = querySnapshot.docs[0].data();
-        const categories = data?.categoriesData?.traditionalMedicineCategories || [];
-        setCategoryStructure(categories);
+        const categoriesObject = data?.categoriesData?.traditionalMedicineCategories;
+        if (categoriesObject && typeof categoriesObject === 'object') {
+          setCategoryStructure(Object.values(categoriesObject));
+        } else {
+          setCategoryStructure([]);
+          toast({ title: 'Error', description: 'Category data for Traditional Medicine is missing or in the wrong format.', variant: 'destructive' });
+        }
       } else {
-        toast({ title: 'Error', description: 'Could not find category structure for Traditional Medicine.', variant: 'destructive' });
+        toast({ title: 'Error', description: 'Could not find category structure for "Traditional Medicine dispensary".', variant: 'destructive' });
       }
     } catch (error) {
       console.error("Error fetching category structure:", error);
@@ -467,5 +472,3 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
-
-    
