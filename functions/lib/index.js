@@ -72,7 +72,19 @@ exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId
         ? afterData.role
         : 'User'; // Default to 'User'
     const dispensaryId = afterData.dispensaryId || null;
-    const claims = { role, dispensaryId };
+    let dispensaryType = null;
+    if (dispensaryId) {
+        try {
+            const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
+            if (dispensaryDoc.exists) {
+                dispensaryType = dispensaryDoc.data()?.dispensaryType || null;
+            }
+        }
+        catch (error) {
+            logger.error(`Failed to fetch dispensary type for dispensaryId ${dispensaryId}:`, error);
+        }
+    }
+    const claims = { role, dispensaryId, dispensaryType };
     try {
         await admin.auth().setCustomUserClaims(userId, claims);
         logger.info(`Successfully set custom claims for user ${userId}:`, claims);
@@ -318,8 +330,9 @@ exports.getDispensaryProducts = (0, https_1.onCall)(async (request) => {
     if (!dispensaryId) {
         throw new https_1.HttpsError('failed-precondition', 'User is not associated with a dispensary.');
     }
-    // Determine the correct product collection name based on the user's dispensary type
+    // Determine the correct product collection name based on the user's dispensary type from the auth token
     const productCollectionName = getProductCollectionName(dispensaryType);
+    logger.info(`Fetching products for dispensary ${dispensaryId} from collection: ${productCollectionName}`);
     try {
         const productsQuery = db.collection(productCollectionName)
             .where('dispensaryId', '==', dispensaryId)
