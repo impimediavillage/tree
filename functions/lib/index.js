@@ -112,6 +112,28 @@ const safeToISOString = (date) => {
     logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
     return null;
 };
+// ============== HELPER FUNCTION for Product Collection Name ==============
+const getProductCollectionName = (dispensaryType) => {
+    if (!dispensaryType) {
+        logger.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
+        return 'products';
+    }
+    switch (dispensaryType) {
+        case "Cannibinoid store":
+            return "cannibinoid_store_products";
+        case "Traditional Medicine dispensary":
+            return "traditional_medicine_dispensary_products";
+        case "Homeopathic store":
+            return "homeopathy_store_products";
+        case "Mushroom store":
+            return "mushroom_store_products";
+        case "Permaculture & gardening store":
+            return "permaculture_store_products";
+        default:
+            logger.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
+            return 'products';
+    }
+};
 // ============== Callable Functions (v2) ==============
 exports.getUserProfile = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
@@ -292,11 +314,14 @@ exports.getDispensaryProducts = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
     const dispensaryId = request.auth.token.dispensaryId;
+    const dispensaryType = request.auth.token.dispensaryType;
     if (!dispensaryId) {
         throw new https_1.HttpsError('failed-precondition', 'User is not associated with a dispensary.');
     }
+    // Determine the correct product collection name based on the user's dispensary type
+    const productCollectionName = getProductCollectionName(dispensaryType);
     try {
-        const productsQuery = db.collection('products')
+        const productsQuery = db.collection(productCollectionName)
             .where('dispensaryId', '==', dispensaryId)
             .orderBy('name');
         const snapshot = await productsQuery.get();
@@ -314,7 +339,7 @@ exports.getDispensaryProducts = (0, https_1.onCall)(async (request) => {
         return products;
     }
     catch (error) {
-        logger.error(`Error fetching products for dispensary ${dispensaryId}:`, error);
+        logger.error(`Error fetching products for dispensary ${dispensaryId} from collection ${productCollectionName}:`, error);
         throw new https_1.HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });

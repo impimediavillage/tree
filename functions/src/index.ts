@@ -42,7 +42,20 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         : 'User'; // Default to 'User'
         
     const dispensaryId = afterData.dispensaryId || null;
-    const claims: { [key: string]: any } = { role, dispensaryId };
+    let dispensaryType: string | null = null;
+
+    if (dispensaryId) {
+        try {
+            const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
+            if (dispensaryDoc.exists) {
+                dispensaryType = dispensaryDoc.data()?.dispensaryType || null;
+            }
+        } catch (error) {
+            logger.error(`Failed to fetch dispensary type for dispensaryId ${dispensaryId}:`, error);
+        }
+    }
+    
+    const claims: { [key: string]: any } = { role, dispensaryId, dispensaryType };
 
     try {
         await admin.auth().setCustomUserClaims(userId, claims);
@@ -323,8 +336,9 @@ export const getDispensaryProducts = onCall(async (request: CallableRequest): Pr
         throw new HttpsError('failed-precondition', 'User is not associated with a dispensary.');
     }
     
-    // Determine the correct product collection name based on the user's dispensary type
+    // Determine the correct product collection name based on the user's dispensary type from the auth token
     const productCollectionName = getProductCollectionName(dispensaryType);
+    logger.info(`Fetching products for dispensary ${dispensaryId} from collection: ${productCollectionName}`);
 
     try {
         const productsQuery = db.collection(productCollectionName)
