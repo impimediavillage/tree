@@ -3,7 +3,8 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { db, storage } from '@/lib/firebase';
+import { db, storage, functions } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { collection, query, where, getDocs, doc, deleteDoc, orderBy } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
 import type { Product, PriceTier } from '@/types';
@@ -18,6 +19,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProductCollectionName } from '@/lib/utils';
 
+// Get a reference to the callable function
+const getDispensaryProductsCallable = httpsCallable(functions, 'getDispensaryProducts');
+
 export default function WellnessProductsPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -31,23 +35,17 @@ export default function WellnessProductsPage() {
   const dispensaryId = currentUser?.dispensaryId;
 
   const fetchProducts = useCallback(async () => {
-    if (!dispensaryId || !currentDispensary?.dispensaryType) {
+    if (!dispensaryId) {
         setIsLoading(false);
         return;
     }
     
     setIsLoading(true);
-    const productCollectionName = getProductCollectionName(currentDispensary.dispensaryType);
-    console.log(`[ProductsPage] Fetching products from collection: ${productCollectionName} for dispensaryId: ${dispensaryId}`);
+    console.log(`[ProductsPage] Fetching products for dispensaryId: ${dispensaryId}`);
 
     try {
-        const productsQuery = query(
-            collection(db, productCollectionName),
-            where('dispensaryId', '==', dispensaryId),
-            orderBy('name')
-        );
-        const productsSnapshot = await getDocs(productsQuery);
-        const fetchedProducts = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        const result = await getDispensaryProductsCallable();
+        const fetchedProducts = result.data as Product[];
         setAllProducts(fetchedProducts);
 
         if (fetchedProducts.length > 0) {
@@ -56,14 +54,14 @@ export default function WellnessProductsPage() {
         } else {
             setCategories(['all']);
         }
-        console.log(`[ProductsPage] Fetched ${fetchedProducts.length} products from ${productCollectionName}.`);
+        console.log(`[ProductsPage] Fetched ${fetchedProducts.length} products via Cloud Function.`);
     } catch (error: any) {
-        console.error(`Error fetching products from ${productCollectionName}:`, error);
+        console.error(`Error fetching products via Cloud Function:`, error);
         toast({ title: "Error Fetching Products", description: `Could not load products. Please check console for details.`, variant: "destructive"});
     } finally {
         setIsLoading(false);
     }
-  }, [dispensaryId, currentDispensary, toast]);
+  }, [dispensaryId, toast]);
 
   useEffect(() => {
     if (!authLoading && dispensaryId) {
