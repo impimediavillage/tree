@@ -112,7 +112,7 @@ export default function AddTraditionalMedicineProductPage() {
         const data = querySnapshot.docs[0].data();
         const categoriesObject = data?.categoriesData?.traditionalMedicineCategories;
         if (categoriesObject && typeof categoriesObject === 'object') {
-          // Convert the object of categories into an array
+          // Correctly convert the object of categories into an array
           setCategoryStructure(Object.values(categoriesObject));
         } else {
           setCategoryStructure([]);
@@ -473,5 +473,3 @@ export default function AddTraditionalMedicineProductPage() {
     </div>
   );
 }
-
-    
