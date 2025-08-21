@@ -133,26 +133,7 @@ export default function WellnessProductsPage() {
     setSelectedCategory('all');
   };
 
-  const getAddProductPath = () => {
-    const type = currentDispensary?.dispensaryType;
-    switch(type) {
-      case 'Cannibinoid store':
-        return '/dispensary-admin/products/add/thc';
-      case 'Traditional Medicine dispensary':
-        return '/dispensary-admin/products/add/traditional-medicine';
-      case 'Homeopathic store':
-        return '/dispensary-admin/products/add/homeopathy';
-      case 'Mushroom store':
-        return '/dispensary-admin/products/add/mushroom';
-      case 'Permaculture & gardening store':
-        return '/dispensary-admin/products/add/permaculture';
-      default:
-        // A generic fallback for any other store type
-        return '/dispensary-admin/products/add/thc';
-    }
-  };
-
-  const addProductPath = getAddProductPath();
+  const addProductPath = getProductCollectionName(currentDispensary?.dispensaryType, true);
 
   if (isLoading) {
      return (

@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -5,11 +6,32 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const getProductCollectionName = (dispensaryType?: string | null): string => {
+export const getProductCollectionName = (dispensaryType?: string | null, forAddPage: boolean = false): string => {
     if (!dispensaryType) {
         console.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
-        return 'products'; // Fallback for safety
+        return forAddPage ? '/dispensary-admin/products/add/thc' : 'products';
     }
+    
+    // This is for page routing
+    if (forAddPage) {
+        switch(dispensaryType) {
+            case 'Cannibinoid store':
+              return '/dispensary-admin/products/add/thc';
+            case 'Traditional Medicine dispensary':
+              return '/dispensary-admin/products/add/traditional-medicine';
+            case 'Homeopathic store':
+              return '/dispensary-admin/products/add/homeopathy';
+            case 'Mushroom store':
+              return '/dispensary-admin/products/add/mushroom';
+            case 'Permaculture & gardening store':
+              return '/dispensary-admin/products/add/permaculture';
+            default:
+              console.warn(`[getProductCollectionName] No specific add page for type: ${dispensaryType}. Defaulting.`);
+              return '/dispensary-admin/products/add/thc';
+        }
+    }
+
+    // This is for Firestore collection names
     switch (dispensaryType) {
         case "Cannibinoid store":
             return "cannibinoid_store_products";
@@ -21,7 +43,6 @@ export const getProductCollectionName = (dispensaryType?: string | null): string
             return "mushroom_store_products";
         case "Permaculture & gardening store":
             return "permaculture_store_products";
-        // This default is a fallback, but we should aim to have all types explicitly defined.
         default:
             console.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
             return 'products';

@@ -46,7 +46,6 @@ export default function BrowsePoolPage() {
         return;
     }
     setIsLoading(true);
-    console.log(`[Browse Pool] Starting fetch for dispensary ${currentUser.dispensaryId} of type ${currentDispensary.dispensaryType}`);
 
     const myDispensaryId = currentUser.dispensaryId;
     const myDispensaryType = currentDispensary.dispensaryType;
