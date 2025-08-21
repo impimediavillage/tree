@@ -4,17 +4,26 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collectionGroup, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, collectionGroup } from 'firebase/firestore';
 import type { Product, PriceTier, ProductRequest } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ShoppingBasket, FilterX, AlertTriangle, Truck } from 'lucide-react';
 import { RequestProductDialog } from '@/components/dispensary-admin/RequestProductDialog';
+
+const productCollectionNames = [
+    "cannibinoid_store_products",
+    "traditional_medicine_dispensary_products",
+    "homeopathy_store_products",
+    "mushroom_store_products",
+    "permaculture_store_products",
+    "products" // A fallback, just in case
+];
 
 export default function BrowsePoolPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -35,43 +44,37 @@ export default function BrowsePoolPage() {
         return;
     }
     setIsLoading(true);
-    try {
-        // Query for products shared with the same type OR all types
-        const typeQuery = query(
-            collectionGroup(db, 'products'),
-            where('isAvailableForPool', '==', true),
-            where('poolSharingRule', 'in', ['same_type', 'all_types'])
-        );
-        
-        // Query for products shared specifically with this store
-        const specificQuery = query(
-            collectionGroup(db, 'products'),
-            where('isAvailableForPool', '==', true),
-            where('poolSharingRule', '==', 'specific_stores'),
-            where('allowedPoolDispensaryIds', 'array-contains', currentUser.dispensaryId)
-        );
 
-        const [typeSnapshot, specificSnapshot] = await Promise.all([
-            getDocs(typeQuery),
-            getDocs(specificQuery)
-        ]);
-        
+    const myDispensaryId = currentUser.dispensaryId;
+    const myDispensaryType = currentDispensary.dispensaryType;
+
+    try {
         const productsMap = new Map<string, Product>();
 
-        const processSnapshot = (snapshot: any) => {
-            snapshot.docs.forEach((doc: any) => {
-                const product = { id: doc.id, ...doc.data() } as Product;
-                // Exclude own products and filter by type if rule is 'same_type'
-                if (product.dispensaryId !== currentUser.dispensaryId && !productsMap.has(doc.id)) {
-                    if (product.poolSharingRule !== 'same_type' || (product.poolSharingRule === 'same_type' && product.dispensaryType === currentDispensary.dispensaryType)) {
-                         productsMap.set(doc.id, product);
+        for (const collectionName of productCollectionNames) {
+            const productsCollectionRef = collection(db, collectionName);
+
+            const queries = [
+                // Rule 1: Shared with 'same_type' and matches my type
+                query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'same_type'), where('dispensaryType', '==', myDispensaryType)),
+                // Rule 2: Shared with 'all_types'
+                query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'all_types')),
+                // Rule 3: Shared specifically with me
+                query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'specific_stores'), where('allowedPoolDispensaryIds', 'array-contains', myDispensaryId)),
+            ];
+
+            const querySnapshots = await Promise.all(queries.map(q => getDocs(q)));
+
+            for (const snapshot of querySnapshots) {
+                snapshot.docs.forEach((doc) => {
+                    const product = { id: doc.id, ...doc.data() } as Product;
+                    // Exclude own products and avoid duplicates
+                    if (product.dispensaryId !== myDispensaryId && !productsMap.has(doc.id)) {
+                        productsMap.set(doc.id, product);
                     }
-                }
-            });
-        };
-        
-        processSnapshot(typeSnapshot);
-        processSnapshot(specificSnapshot);
+                });
+            }
+        }
         
         const allFetchedProducts = Array.from(productsMap.values());
         setPoolProducts(allFetchedProducts);
@@ -86,6 +89,7 @@ export default function BrowsePoolPage() {
         setIsLoading(false);
     }
   }, [currentUser, currentDispensary, toast]);
+
 
   useEffect(() => {
     if (!authLoading) {
