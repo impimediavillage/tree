@@ -95,7 +95,9 @@ export default function WellnessProductsPage() {
           key: `${product.id}-${tier.unit}-${index}`
         }));
       }
-      return []; // Return an empty array if there are no price tiers
+      // If a product has no price tiers, it will not be displayed.
+      // This is often desired behavior, but could be changed if needed.
+      return [];
     });
   }, [filteredProducts]);
 

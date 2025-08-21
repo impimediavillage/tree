@@ -15,8 +15,6 @@ import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ShoppingBasket, FilterX, AlertTriangle, Truck } from 'lucide-react';
 import { RequestProductDialog } from '@/components/dispensary-admin/RequestProductDialog';
-import { getProductCollectionName } from '@/lib/utils';
-
 
 const productCollectionNames = [
     "cannibinoid_store_products",
@@ -53,7 +51,6 @@ export default function BrowsePoolPage() {
 
     try {
         for (const collectionName of productCollectionNames) {
-            console.log(`[Browse Pool] Querying collection: ${collectionName}`);
             const productsCollectionRef = collection(db, collectionName);
 
             // Rule 1: Shared with 'same_type' and matches my type
@@ -79,26 +76,20 @@ export default function BrowsePoolPage() {
                 getDocs(specificStoresQuery).catch(e => { console.warn(`Query (specific_stores) failed for ${collectionName}:`, e.message); return null; })
             ]);
 
-            console.log(`[${collectionName}] same_type query found: ${sameTypeSnapshot?.docs.length ?? 0} docs`);
             sameTypeSnapshot?.forEach(doc => {
               if (doc.data().dispensaryId !== myDispensaryId) productsMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
             });
 
-            console.log(`[${collectionName}] all_types query found: ${allTypesSnapshot?.docs.length ?? 0} docs`);
             allTypesSnapshot?.forEach(doc => {
               if (doc.data().dispensaryId !== myDispensaryId) productsMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
             });
             
-            console.log(`[${collectionName}] specific_stores query found: ${specificStoresSnapshot?.docs.length ?? 0} docs`);
             specificStoresSnapshot?.forEach(doc => {
               if (doc.data().dispensaryId !== myDispensaryId) productsMap.set(doc.id, { id: doc.id, ...doc.data() } as Product);
             });
         }
         
         const allFetchedProducts = Array.from(productsMap.values());
-        console.log(`[Browse Pool] Total unique products fetched: ${allFetchedProducts.length}`);
-        console.log('[Browse Pool] Final fetched products:', allFetchedProducts);
-
         setPoolProducts(allFetchedProducts);
 
         if (allFetchedProducts.length > 0) {
