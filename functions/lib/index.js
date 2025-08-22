@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.adminUpdateUser = exports.createDispensaryUser = exports.getDispensaryProducts = exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
+exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -77,6 +77,7 @@ exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId
         try {
             const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
             if (dispensaryDoc.exists) {
+                // Safely access dispensaryType, defaulting to null if it's missing.
                 dispensaryType = dispensaryDoc.data()?.dispensaryType || null;
             }
         }
@@ -84,7 +85,12 @@ exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId
             logger.error(`Failed to fetch dispensary type for dispensaryId ${dispensaryId}:`, error);
         }
     }
-    const claims = { role, dispensaryId, dispensaryType };
+    // Ensure claims object is always created, even if dispensaryType is null.
+    const claims = {
+        role,
+        dispensaryId,
+        dispensaryType
+    };
     try {
         await admin.auth().setCustomUserClaims(userId, claims);
         logger.info(`Successfully set custom claims for user ${userId}:`, claims);
@@ -319,41 +325,6 @@ exports.searchStrains = (0, https_1.onCall)({ cors: true }, async (request) => {
     catch (error) {
         logger.error(`Error searching strains with term "${searchTerm}":`, error);
         throw new https_1.HttpsError('internal', 'An error occurred while searching for strains.');
-    }
-});
-exports.getDispensaryProducts = (0, https_1.onCall)(async (request) => {
-    if (!request.auth) {
-        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-    const dispensaryId = request.auth.token.dispensaryId;
-    const dispensaryType = request.auth.token.dispensaryType;
-    if (!dispensaryId) {
-        throw new https_1.HttpsError('failed-precondition', 'User is not associated with a dispensary.');
-    }
-    // Determine the correct product collection name based on the user's dispensary type from the auth token
-    const productCollectionName = getProductCollectionName(dispensaryType);
-    logger.info(`Fetching products for dispensary ${dispensaryId} from collection: ${productCollectionName}`);
-    try {
-        const productsQuery = db.collection(productCollectionName)
-            .where('dispensaryId', '==', dispensaryId)
-            .orderBy('name');
-        const snapshot = await productsQuery.get();
-        const products = snapshot.docs.map(doc => {
-            const data = doc.data();
-            // Convert Firestore Timestamps to ISO strings for serialization
-            const product = {
-                ...data,
-                id: doc.id,
-                createdAt: safeToISOString(data.createdAt),
-                updatedAt: safeToISOString(data.updatedAt),
-            };
-            return product;
-        });
-        return products;
-    }
-    catch (error) {
-        logger.error(`Error fetching products for dispensary ${dispensaryId} from collection ${productCollectionName}:`, error);
-        throw new https_1.HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });
 exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {

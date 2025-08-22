@@ -3,7 +3,7 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, Product } from './types';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody } from './types';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -97,30 +97,6 @@ const safeToISOString = (date: any): string | null => {
     }
     logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
     return null;
-};
-
-// ============== HELPER FUNCTION for Product Collection Name ==============
-const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) {
-        logger.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
-        return 'products';
-    }
-
-    switch (dispensaryType) {
-        case "Cannibinoid store":
-            return "cannibinoid_store_products";
-        case "Traditional Medicine dispensary":
-            return "traditional_medicine_dispensary_products";
-        case "Homeopathic store":
-            return "homeopathy_store_products";
-        case "Mushroom store":
-            return "mushroom_store_products";
-        case "Permaculture & gardening store":
-            return "permaculture_store_products";
-        default:
-            logger.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
-            return 'products';
-    }
 };
 
 // ============== Callable Functions (v2) ==============
@@ -305,14 +281,14 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     }
     
     // Capitalize the first letter of each word for case-insensitive-like matching
-    const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    const toTitleCase = (str: string) => str.replace(/\\w\\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     const processedTerm = toTitleCase(searchTerm.trim());
 
     try {
         const strainsRef = db.collection('my-seeded-collection');
         const query = strainsRef
             .where('name', '>=', processedTerm)
-            .where('name', '<=', processedTerm + '\uf8ff')
+            .where('name', '<=', processedTerm + '\\uf8ff')
             .limit(10);
         
         const snapshot = await query.get();
