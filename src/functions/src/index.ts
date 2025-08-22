@@ -93,29 +93,6 @@ const safeToISOString = (date: any): string | null => {
     return null;
 };
 
-// ============== HELPER FUNCTION for Product Collection Name ==============
-const getProductCollectionName = (dispensaryType?: string | null): string => {
-    if (!dispensaryType) {
-        logger.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
-        return 'products';
-    }
-
-    switch (dispensaryType) {
-        case "Cannibinoid store":
-            return "cannibinoid_store_products";
-        case "Traditional Medicine dispensary":
-            return "traditional_medicine_dispensary_products";
-        case "Homeopathic store":
-            return "homeopathy_store_products";
-        case "Mushroom store":
-            return "mushroom_store_products";
-        case "Permaculture & gardening store":
-            return "permaculture_store_products";
-        default:
-            logger.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
-            return 'products';
-    }
-};
 
 // ============== Callable Functions (v2) ==============
 
@@ -321,49 +298,6 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     } catch (error: any) {
         logger.error(`Error searching strains with term "${searchTerm}":`, error);
         throw new HttpsError('internal', 'An error occurred while searching for strains.');
-    }
-});
-
-export const getDispensaryProducts = onCall(async (request: CallableRequest): Promise<Product[]> => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-
-    const dispensaryId = request.auth.token.dispensaryId;
-    const dispensaryType = request.auth.token.dispensaryType as string | null;
-
-    if (!dispensaryId) {
-        throw new HttpsError('failed-precondition', 'User is not associated with a dispensary.');
-    }
-    
-    // Determine the correct product collection name based on the user's dispensary type from the auth token
-    const productCollectionName = getProductCollectionName(dispensaryType);
-    logger.info(`Fetching products for dispensary ${dispensaryId} from collection: ${productCollectionName}`);
-
-    try {
-        const productsQuery = db.collection(productCollectionName)
-            .where('dispensaryId', '==', dispensaryId)
-            .orderBy('name');
-
-        const snapshot = await productsQuery.get();
-        
-        const products = snapshot.docs.map(doc => {
-            const data = doc.data();
-            // Convert Firestore Timestamps to ISO strings for serialization
-            const product: Product = {
-                ...data,
-                id: doc.id,
-                createdAt: safeToISOString(data.createdAt),
-                updatedAt: safeToISOString(data.updatedAt),
-            } as Product;
-            return product;
-        });
-
-        return products;
-
-    } catch (error: any) {
-        logger.error(`Error fetching products for dispensary ${dispensaryId} from collection ${productCollectionName}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });
 
