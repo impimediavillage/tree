@@ -103,44 +103,33 @@ export default function AddTraditionalMedicineProductPage() {
   const watchSizingSystem = form.watch('sizingSystem');
   const watchPoolSharingRule = form.watch('poolSharingRule');
 
-  const fetchCategoryStructure = useCallback(async () => {
-    setIsLoadingInitialData(true);
-    try {
-      const q = firestoreQuery(
-        collection(db, 'dispensaryTypeProductCategories'),
-        where('name', '==', "Traditional Medicine dispensary"),
-        limit(1)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const docData = querySnapshot.docs[0].data();
-        const categoriesArray = docData?.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories;
-        
-        if (Array.isArray(categoriesArray)) {
-          setCategoryStructure(categoriesArray);
-        } else {
-          console.error("Fetched data is not an array:", categoriesArray);
-          toast({ title: 'Data Structure Error', description: 'The category structure for Traditional Medicine is not in the expected format.', variant: 'destructive' });
-          setCategoryStructure([]);
-        }
-      } else {
-        toast({ title: 'Error', description: 'Could not find category structure for "Traditional Medicine dispensary".', variant: 'destructive' });
-      }
-    } catch (error) {
-      console.error("Error fetching category structure:", error);
-      toast({ title: 'Error', description: 'Failed to load product categories.', variant: 'destructive' });
-    } finally {
-      setIsLoadingInitialData(false);
+const fetchCategoryStructure = useCallback(async () => {
+  setIsLoadingInitialData(true);
+  try {
+    const q = firestoreQuery(collection(db, 'dispensaryTypeProductCategories'), where('name', '==', "Traditional Medicine dispensary"), limit(1));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      const docSnap = querySnapshot.docs[0];
+      const data = docSnap.data();
+      const categories = data?.categoriesData?.traditionalMedicineCategories?.traditionalMedicineCategories;
+      setCategoryStructure(categories);
+    } else {
+      toast({ title: 'Error', description: 'Could not find category structure for "Traditional Medicine dispensary".', variant: 'destructive' });
     }
-  }, [toast]);
-  
-  useEffect(() => {
-    fetchCategoryStructure();
-  }, [fetchCategoryStructure]);
+  } catch (error) {
+    console.error("Error fetching category structure:", error);
+    toast({ title: 'Error', description: 'Failed to load product categories.', variant: 'destructive' });
+  } finally {
+    setIsLoadingInitialData(false);
+  }
+}, [toast]);
 
+useEffect(() => {
+  fetchCategoryStructure();
+}, [fetchCategoryStructure]);
 
-  const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
+ const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -174,7 +163,7 @@ export default function AddTraditionalMedicineProductPage() {
   }
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser?.uid || !currentDispensary.id || !currentDispensary.dispensaryType) {
+    if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
         toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
         return;
     }
