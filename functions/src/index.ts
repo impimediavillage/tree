@@ -48,6 +48,7 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         try {
             const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
             if (dispensaryDoc.exists) {
+                // Safely access dispensaryType, defaulting to null if it's missing.
                 dispensaryType = dispensaryDoc.data()?.dispensaryType || null;
             }
         } catch (error) {
@@ -55,7 +56,12 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         }
     }
     
-    const claims: { [key: string]: any } = { role, dispensaryId, dispensaryType };
+    // Ensure claims object is always created, even if dispensaryType is null.
+    const claims: { [key: string]: any } = { 
+        role, 
+        dispensaryId, 
+        dispensaryType 
+    };
 
     try {
         await admin.auth().setCustomUserClaims(userId, claims);
@@ -321,49 +327,6 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     } catch (error: any) {
         logger.error(`Error searching strains with term "${searchTerm}":`, error);
         throw new HttpsError('internal', 'An error occurred while searching for strains.');
-    }
-});
-
-export const getDispensaryProducts = onCall(async (request: CallableRequest): Promise<Product[]> => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
-    }
-
-    const dispensaryId = request.auth.token.dispensaryId;
-    const dispensaryType = request.auth.token.dispensaryType as string | null;
-
-    if (!dispensaryId) {
-        throw new HttpsError('failed-precondition', 'User is not associated with a dispensary.');
-    }
-    
-    // Determine the correct product collection name based on the user's dispensary type from the auth token
-    const productCollectionName = getProductCollectionName(dispensaryType);
-    logger.info(`Fetching products for dispensary ${dispensaryId} from collection: ${productCollectionName}`);
-
-    try {
-        const productsQuery = db.collection(productCollectionName)
-            .where('dispensaryId', '==', dispensaryId)
-            .orderBy('name');
-
-        const snapshot = await productsQuery.get();
-        
-        const products = snapshot.docs.map(doc => {
-            const data = doc.data();
-            // Convert Firestore Timestamps to ISO strings for serialization
-            const product: Product = {
-                ...data,
-                id: doc.id,
-                createdAt: safeToISOString(data.createdAt),
-                updatedAt: safeToISOString(data.updatedAt),
-            } as Product;
-            return product;
-        });
-
-        return products;
-
-    } catch (error: any) {
-        logger.error(`Error fetching products for dispensary ${dispensaryId} from collection ${productCollectionName}:`, error);
-        throw new HttpsError('internal', 'An error occurred while fetching dispensary products.');
     }
 });
 
