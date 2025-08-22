@@ -76,7 +76,7 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
             note: data.note,
             byName: currentUser.displayName || 'Requester',
             senderRole: 'requester',
-            timestamp: serverTimestamp() as any,
+            timestamp: new Date(), // Use client-side date for arrays
         }] : [],
         productDetails: {
           name: product.name,
