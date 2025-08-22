@@ -10,9 +10,9 @@ import { MapPin, Trees } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const hardcodedTypeImages: Record<string, string> = {
-  "THC - CBD - Mushrooms wellness": "/images/dispensary-types/thc-cbd-mushroom-banner.jpg",
-  "Homeopathic wellness": "/images/dispensary-types/homeopathy-banner.jpg",
-  "African Traditional Medicine wellness": "/images/dispensary-types/traditional-banner.jpg",
+  "Cannibinoid store": "/images/dispensary-types/thc-cbd-mushroom-banner.jpg",
+  "Homeopathic store": "/images/dispensary-types/homeopathy-banner.jpg",
+  "Traditional Medicine dispensary": "/images/dispensary-types/traditional-banner.jpg",
   "Permaculture & gardening store": "/images/dispensary-types/permaculture-banner.jpg",
   "Flower Store": "/images/dispensary-types/flower-store-banner.jpg",
 };
