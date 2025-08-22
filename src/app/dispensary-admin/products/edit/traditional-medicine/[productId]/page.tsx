@@ -1,8 +1,8 @@
-
+// This file is intentionally being replaced. The old content is deleted.
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
@@ -21,7 +21,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, Leaf, Shirt, Check } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Leaf, Shirt } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -272,4 +272,3 @@ export default function EditTraditionalMedicineProductPage() {
     </Card>
   );
 }
-
