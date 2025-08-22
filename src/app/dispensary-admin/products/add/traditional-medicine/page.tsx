@@ -1,8 +1,8 @@
-
+// This file is intentionally being replaced. The old content is deleted.
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,8 +13,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, query as firestoreQuery, where, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
-import type { Product as ProductType, Dispensary } from '@/types';
-import { getProductCollectionName } from '@/lib/utils'; 
+import type { Product as ProductType } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +30,6 @@ import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { cn } from '@/lib/utils';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
-
 
 const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
@@ -162,6 +160,10 @@ useEffect(() => {
     setTimeout(() => scrollToRef(finalFormRef), 100);
   }
 
+  const getProductCollectionName = (): string => {
+    return 'traditional_medicine_dispensary_products';
+  };
+
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
         toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
@@ -188,7 +190,7 @@ useEffect(() => {
 
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as ProductFormData),
-            dispensaryId: currentDispensary.id,
+            dispensaryId: currentDispensary.id!,
             dispensaryName: currentDispensary.dispensaryName,
             dispensaryType: currentDispensary.dispensaryType,
             productOwnerEmail: currentUser.email!,
@@ -199,7 +201,7 @@ useEffect(() => {
             imageUrl: uploadedImageUrls[0] || null,
         };
         
-        const collectionName = getProductCollectionName(currentDispensary.dispensaryType);
+        const collectionName = getProductCollectionName();
         await addDoc(collection(db, collectionName), productData);
 
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
@@ -428,7 +430,7 @@ useEffect(() => {
 
                               {watchPoolSharingRule === 'specific_stores' && (
                                 <DispensarySelector 
-                                    allDispensaries={availableDispensaries}
+                                    allDispensaries={allDispensaries}
                                     isLoading={isLoadingDispensaries}
                                     selectedIds={form.watch('allowedPoolDispensaryIds') || []}
                                     onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
