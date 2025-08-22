@@ -130,28 +130,6 @@ const safeToISOString = (date) => {
     logger.warn(`Unsupported date type encountered for conversion: ${typeof date}`);
     return null;
 };
-// ============== HELPER FUNCTION for Product Collection Name ==============
-const getProductCollectionName = (dispensaryType) => {
-    if (!dispensaryType) {
-        logger.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products'.");
-        return 'products';
-    }
-    switch (dispensaryType) {
-        case "Cannibinoid store":
-            return "cannibinoid_store_products";
-        case "Traditional Medicine dispensary":
-            return "traditional_medicine_dispensary_products";
-        case "Homeopathic store":
-            return "homeopathy_store_products";
-        case "Mushroom store":
-            return "mushroom_store_products";
-        case "Permaculture & gardening store":
-            return "permaculture_store_products";
-        default:
-            logger.warn(`[getProductCollectionName] Using fallback 'products' collection for unknown dispensary type: ${dispensaryType}`);
-            return 'products';
-    }
-};
 // ============== Callable Functions (v2) ==============
 exports.getUserProfile = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
@@ -307,13 +285,13 @@ exports.searchStrains = (0, https_1.onCall)({ cors: true }, async (request) => {
         throw new https_1.HttpsError('invalid-argument', 'A valid search term must be provided.');
     }
     // Capitalize the first letter of each word for case-insensitive-like matching
-    const toTitleCase = (str) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    const toTitleCase = (str) => str.replace(/\\w\\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     const processedTerm = toTitleCase(searchTerm.trim());
     try {
         const strainsRef = db.collection('my-seeded-collection');
         const query = strainsRef
             .where('name', '>=', processedTerm)
-            .where('name', '<=', processedTerm + '\uf8ff')
+            .where('name', '<=', processedTerm + '\\uf8ff')
             .limit(10);
         const snapshot = await query.get();
         if (snapshot.empty) {
