@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -7,11 +6,12 @@ import type { Product, PriceTier } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Gift, Flame, Tag, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, X, Truck } from 'lucide-react';
+import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Gift, Flame, Tag, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, X, Truck, Handshake } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext'; 
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InfoDialog } from '../dialogs/InfoDialog';
+import { DesignViewerDialog } from '../dialogs/DesignViewerDialog';
 
 
 interface PublicProductCardProps {
@@ -19,9 +19,11 @@ interface PublicProductCardProps {
   tier: PriceTier;
   onGenerateDesigns?: (product: Product, tier: PriceTier) => void;
   onRequestProduct?: (product: Product, tier: PriceTier) => void;
+  requestStatus?: 'negotiating';
+  requestCount?: number;
 }
 
-export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct }: PublicProductCardProps) {
+export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
@@ -122,8 +124,13 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                   </Badge>
               )}
           </div>
-           {tierStock > 0 ? (
-              <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">In Stock</Badge>
+           {requestStatus === 'negotiating' ? (
+                <Badge variant="default" className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600 text-white backdrop-blur-sm text-xs px-2 py-1 shadow flex items-center gap-1">
+                    <Handshake className="h-3.5 w-3.5" />
+                    Negotiating ({requestCount})
+                </Badge>
+           ) : tierStock > 0 ? (
+              <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">Active</Badge>
           ) : (
               <Badge variant="destructive" className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm text-xs px-2 py-1 shadow">Out of Stock</Badge>
           )}
@@ -190,8 +197,9 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                     <Button 
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white text-md font-semibold"
                         onClick={() => onRequestProduct(product, tier)}
+                        disabled={requestStatus === 'negotiating'}
                     >
-                        <Truck className="mr-2 h-5 w-5" /> Request Product
+                        {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : <><Truck className="mr-2 h-5 w-5" /> Request Product</>}
                     </Button>
                 ) : (
                     <Button
