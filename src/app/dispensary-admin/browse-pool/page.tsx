@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
@@ -68,7 +69,7 @@ export default function BrowsePoolPage() {
             const [sameTypeSnapshot, allTypesSnapshot, specificStoresSnapshot] = await Promise.all([
                 getDocs(sameTypeQuery).catch(e => { console.warn(`Query (same_type) failed for ${collectionName}:`, e.message); return null; }),
                 getDocs(allTypesQuery).catch(e => { console.warn(`Query (all_types) failed for ${collectionName}:`, e.message); return null; }),
-                getDocs(specificStoresSnapshot).catch(e => { console.warn(`Query (specific_stores) failed for ${collectionName}:`, e.message); return null; })
+                getDocs(specificStoresQuery).catch(e => { console.warn(`Query (specific_stores) failed for ${collectionName}:`, e.message); return null; })
             ]);
 
             const processSnapshot = (snapshot: any) => {
