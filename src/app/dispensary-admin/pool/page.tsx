@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -71,6 +70,8 @@ export default function WellnessPoolPage() {
   };
 
   const incomingPendingCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
+  const outgoingNegotiatingCount = outgoingRequests.filter(r => ['pending_owner_approval', 'accepted'].includes(r.requestStatus)).length;
+
 
   if (authLoading || (!dispensaryId && isLoading)) {
     return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
@@ -122,8 +123,13 @@ export default function WellnessPoolPage() {
                 </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="outgoing-requests">
+          <TabsTrigger value="outgoing-requests" className="relative">
             <Send className="mr-2 h-4 w-4" /> Outgoing Requests
+            {outgoingNegotiatingCount > 0 && (
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-white text-xs font-bold">
+                    {outgoingNegotiatingCount}
+                </span>
+            )}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="incoming-requests">
