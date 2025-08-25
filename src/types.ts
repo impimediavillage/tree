@@ -168,6 +168,7 @@ export interface ProductRequest {
   requesterEmail: string;
 
   quantityRequested: number;
+  requestedTier?: PriceTier | null;
   preferredDeliveryDate?: string | null;
   deliveryAddress: string;
   contactPerson: string;
