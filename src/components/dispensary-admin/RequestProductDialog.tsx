@@ -67,6 +67,7 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
         requesterDispensaryName: requesterDispensary.dispensaryName,
         requesterEmail: currentUser.email,
         quantityRequested: data.quantityRequested,
+        requestedTier: tier, // Add the requested tier info
         preferredDeliveryDate: data.preferredDeliveryDate || null,
         deliveryAddress: data.deliveryAddress,
         contactPerson: data.contactPerson,
@@ -76,7 +77,7 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
             note: data.note,
             byName: currentUser.displayName || 'Requester',
             senderRole: 'requester',
-            timestamp: new Date(), // Use client-side date for arrays
+            timestamp: new Date(), 
         }] : [],
         productDetails: {
           name: product.name,

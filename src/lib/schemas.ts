@@ -285,6 +285,7 @@ export const productRequestSchema = z.object({
   requesterEmail: z.string().email(),
 
   quantityRequested: z.number().int().positive("Quantity must be positive."),
+  requestedTier: priceTierSchema.optional().nullable(),
   preferredDeliveryDate: z.string().optional().nullable(),
   deliveryAddress: z.string().min(5, "Delivery address is required."),
   contactPerson: z.string().min(2, "Contact person name is required."),

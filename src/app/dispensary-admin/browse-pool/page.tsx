@@ -31,6 +31,7 @@ type ProductWithRequestInfo = {
     key: string;
     requestStatus?: 'negotiating';
     requestCount: number;
+    totalRequestedByUser: number;
 };
 
 export default function BrowsePoolPage() {
@@ -59,7 +60,6 @@ export default function BrowsePoolPage() {
     const productsMap = new Map<string, Product>();
 
     try {
-        // Fetch all relevant products
         for (const collectionName of productCollectionNames) {
             const productsCollectionRef = collection(db, collectionName);
             const sameTypeQuery = query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'same_type'), where('dispensaryType', '==', myDispensaryType));
@@ -90,7 +90,6 @@ export default function BrowsePoolPage() {
             setCategories(['all', ...uniqueCategories.sort()]);
         }
         
-        // Fetch my open requests
         const openRequestStatuses: ProductRequest['requestStatus'][] = ['pending_owner_approval', 'accepted', 'fulfilled_by_sender'];
         const requestsQuery = query(collection(db, 'productRequests'), 
             where('requesterDispensaryId', '==', myDispensaryId),
@@ -127,13 +126,15 @@ export default function BrowsePoolPage() {
     return filteredProducts.flatMap(product => {
       if (Array.isArray(product.poolPriceTiers) && product.poolPriceTiers.length > 0) {
         return product.poolPriceTiers.map((tier, index) => {
-          const requestsForThisProduct = myOpenRequests.filter(req => req.productId === product.id);
+          const requestsForThisTier = myOpenRequests.filter(req => req.productId === product.id && req.requestedTier?.unit === tier.unit);
+          const totalRequestedByUser = requestsForThisTier.reduce((sum, req) => sum + req.quantityRequested, 0);
           return {
             product,
             tier,
             key: `${product.id}-${tier.unit}-${index}`,
-            requestStatus: requestsForThisProduct.length > 0 ? 'negotiating' : undefined,
-            requestCount: requestsForThisProduct.length,
+            requestStatus: requestsForThisTier.length > 0 ? 'negotiating' : undefined,
+            requestCount: requestsForThisTier.length,
+            totalRequestedByUser,
           } as ProductWithRequestInfo;
         });
       }
@@ -208,6 +209,7 @@ export default function BrowsePoolPage() {
                 onRequestProduct={handleRequestClick} 
                 requestStatus={item.requestStatus}
                 requestCount={item.requestCount}
+                totalRequestedByUser={item.totalRequestedByUser}
               />
             ))}
           </div>
@@ -230,7 +232,7 @@ export default function BrowsePoolPage() {
           requesterDispensary={currentDispensary}
           onSuccess={() => {
             setIsRequestDialogOpen(false);
-            fetchPoolData(); // Refetch data to update negotiating status
+            fetchPoolData(); 
             toast({ title: 'Request Sent!', description: 'Your product request has been sent to the owner.' });
           }}
         />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -21,9 +22,10 @@ interface PublicProductCardProps {
   onRequestProduct?: (product: Product, tier: PriceTier) => void;
   requestStatus?: 'negotiating';
   requestCount?: number;
+  totalRequestedByUser?: number;
 }
 
-export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount }: PublicProductCardProps) {
+export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount, totalRequestedByUser = 0 }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
@@ -51,6 +53,25 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   
   const handleAddToCartClick = () => {
     addToCart(product, tier, 1);
+  };
+  
+  const getBadgeContent = () => {
+    if (requestStatus === 'negotiating') {
+      return (
+        <Badge variant="default" className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600 text-white backdrop-blur-sm text-xs px-2 py-1 shadow flex items-center gap-1">
+          <Handshake className="h-3.5 w-3.5" />
+          Negotiating ({requestCount})
+        </Badge>
+      );
+    }
+    if (tierStock > 0) {
+      return (
+        <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">Active</Badge>
+      );
+    }
+    return (
+      <Badge variant="destructive" className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm text-xs px-2 py-1 shadow">Out of Stock</Badge>
+    );
   };
 
   const effectsClasses = "border-transparent bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-200 dark:hover:bg-purple-800/70";
@@ -112,27 +133,16 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               <ImageIconLucide className="h-16 w-16 text-muted-foreground/30" />
             </div>
           )}
-          <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-              {product.thcContent && (
-                  <Badge variant="secondary" className="bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                      <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
-                  </Badge>
-              )}
-              {product.cbdContent && (
-                  <Badge variant="secondary" className="bg-blue-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                      <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}
-                  </Badge>
-              )}
-          </div>
-           {requestStatus === 'negotiating' ? (
-                <Badge variant="default" className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600 text-white backdrop-blur-sm text-xs px-2 py-1 shadow flex items-center gap-1">
-                    <Handshake className="h-3.5 w-3.5" />
-                    Negotiating ({requestCount})
-                </Badge>
-           ) : tierStock > 0 ? (
-              <Badge variant="default" className="absolute top-2 right-2 bg-green-600/90 hover:bg-green-700 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">Active</Badge>
-          ) : (
-              <Badge variant="destructive" className="absolute top-2 right-2 bg-destructive/90 text-destructive-foreground backdrop-blur-sm text-xs px-2 py-1 shadow">Out of Stock</Badge>
+          {getBadgeContent()}
+           {product.thcContent && (
+              <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
+                  <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
+              </Badge>
+          )}
+          {product.cbdContent && (
+              <Badge variant="secondary" className="absolute bottom-2 right-2 z-10 bg-blue-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
+                  <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}
+              </Badge>
           )}
         </div>
         <CardHeader className="pb-2 pt-4">
@@ -146,6 +156,12 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             <div className="flex-grow">
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
             </div>
+             {requestStatus === 'negotiating' && (
+              <div className="text-xs space-y-1 pt-1">
+                <p className="font-semibold text-muted-foreground">You requested: <span className="font-bold text-orange-600">{totalRequestedByUser} {tier.unit}</span></p>
+                <p className="font-semibold text-muted-foreground">Remaining stock: <span className="font-bold text-primary">{tierStock - totalRequestedByUser} {tier.unit}</span></p>
+              </div>
+            )}
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 mt-auto">
           {isThcProduct ? (
@@ -197,9 +213,9 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                     <Button 
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white text-md font-semibold"
                         onClick={() => onRequestProduct(product, tier)}
-                        disabled={requestStatus === 'negotiating'}
+                        disabled={requestStatus === 'negotiating' || tierStock <= 0}
                     >
-                        {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : <><Truck className="mr-2 h-5 w-5" /> Request Product</>}
+                        {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Truck className="mr-2 h-5 w-5" /> Request Product</>}
                     </Button>
                 ) : (
                     <Button
