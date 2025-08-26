@@ -149,43 +149,51 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                     ) : (<p className="text-sm text-center text-muted-foreground py-4">No notes yet.</p>)}
                                     <div ref={notesEndRef} />
                                 </div>
-                                <Form {...form}>
-                                    <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2 mt-4">
-                                        <FormField control={form.control} name="note" render={({ field }) => (
-                                            <FormItem><FormLabel className="sr-only">Add a Note</FormLabel><FormControl><Textarea placeholder="Type your message to respond..." {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <Button type="submit" size="sm" disabled={isSubmitting}>
-                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                            Add Note
-                                        </Button>
-                                    </form>
-                                </Form>
                             </div>
                         </div>
                     </ScrollArea>
-                    <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0">
-                    <div className="w-full space-y-2">
-                        <h4 className="font-semibold mb-2 text-sm">Update Status</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
-                                    <>
-                                        <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
-                                        <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
-                                    </>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
-                                    <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
-                                )}
-                                {type === 'incoming' && request.requestStatus === 'accepted' && (
-                                    <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
-                                    <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
-                                )}
-                            </div>
+                    <div className="px-6 py-4 border-t shrink-0 bg-background">
+                      <Form {...form}>
+                          <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2">
+                              <FormField control={form.control} name="note" render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="sr-only">Add a Note</FormLabel>
+                                    <FormControl>
+                                      <Textarea placeholder="Type your message to respond..." {...field} className="text-sm"/>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                              )} />
+                              <Button type="submit" size="sm" disabled={isSubmitting}>
+                                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                  Add Note
+                              </Button>
+                          </form>
+                      </Form>
                     </div>
-                    </DialogFooter>
                 </div>
+                <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0 bg-muted/30">
+                <div className="w-full space-y-2">
+                    <h4 className="font-semibold mb-2 text-sm">Update Status</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
+                                <>
+                                    <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
+                                    <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
+                                </>
+                            )}
+                            {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
+                                <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
+                            )}
+                            {type === 'incoming' && request.requestStatus === 'accepted' && (
+                                <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
+                            )}
+                            {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
+                                <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
+                            )}
+                        </div>
+                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
