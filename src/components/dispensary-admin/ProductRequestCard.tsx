@@ -88,11 +88,11 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             note: data.note,
             byName: currentUser.displayName || 'Unnamed User',
             senderRole: type === 'incoming' ? 'owner' : 'requester',
-            timestamp: serverTimestamp() as any,
+            timestamp: new Date(),
         };
         try {
             const requestRef = doc(db, 'productRequests', request.id);
-            await updateDoc(requestRef, { notes: arrayUnion(newNote) });
+            await updateDoc(requestRef, { notes: arrayUnion(newNote), updatedAt: serverTimestamp() });
             toast({ title: "Note Added", description: "Your note has been added to the request." });
             form.reset();
             onUpdate();
@@ -129,7 +129,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                             <h4 className="font-semibold mb-2">Notes</h4>
                             <div className="space-y-3 text-sm max-h-48 overflow-y-auto pr-2 rounded-md bg-muted/50 p-2">
                                 {request.notes && request.notes.length > 0 ? (
-                                    request.notes.sort((a,b) => (a.timestamp as any).toMillis() - (b.timestamp as any).toMillis()).map((note, idx) => {
+                                    request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
                                         const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
                                         return (
                                             <div key={idx} className={cn("flex w-full", isCurrentUser ? "justify-end" : "justify-start")}>
@@ -154,7 +154,10 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                      <FormField control={form.control} name="note" render={({ field }) => (
                                          <FormItem><FormLabel>Add a Note</FormLabel><FormControl><Textarea placeholder="Type your message..." {...field} /></FormControl><FormMessage /></FormItem>
                                      )} />
-                                     <Button type="submit" size="sm" disabled={isSubmitting}>Add Note</Button>
+                                     <Button type="submit" size="sm" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Add Note
+                                     </Button>
                                 </form>
                             </Form>
                         </div>
@@ -199,7 +202,7 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
     const [isSoldOutLoading, setIsSoldOutLoading] = React.useState(false);
 
     const handleMarkAsSoldOut = async () => {
-        if (!request.productDetails) {
+        if (!request.productDetails || !request.productDetails.dispensaryType) {
             toast({ title: "Error", description: "Missing product details to update stock.", variant: "destructive" });
             return;
         }
@@ -263,7 +266,7 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
                         </div>
                      )}
                 </div>
-                 <Badge className={`${color} self-start`}>
+                 <Badge className={cn("self-start", color)}>
                     {icon}
                     <span className="ml-1.5">{request.requestStatus.replace(/_/g, ' ')}</span>
                 </Badge>
