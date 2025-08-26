@@ -132,50 +132,50 @@ export default function DefaultEditProductPage() {
   };
   
   if (isLoadingInitialData) {
-    return ( <div class="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div class="flex items-center justify-between"> <Skeleton class="h-10 w-1/3" /> <Skeleton class="h-9 w-24" /> </div> <Skeleton class="h-8 w-1/2" /> <Card class="shadow-xl animate-pulse"> <CardHeader><Skeleton class="h-8 w-1/3" /><Skeleton class="h-5 w-2/3 mt-1" /></CardHeader> <CardContent class="p-6 space-y-6"> <Skeleton class="h-10 w-full" /> <Skeleton class="h-24 w-full" /> <Skeleton class="h-10 w-full" /> </CardContent> <CardFooter><Skeleton class="h-12 w-full" /></CardFooter> </Card> </div> );
+    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
 
   return (
-    <Card class="max-w-4xl mx-auto my-8 shadow-xl">
+    <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
-        <div class="flex items-center justify-between">
-            <CardTitle class="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <Save class="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
+        <div className="flex items-center justify-between">
+            <CardTitle className="text-3xl flex items-center text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <ArrowLeft class="mr-2 h-4 w-4" /> Back to Products
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
         </div>
-        <CardDescription class="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
+        <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} class="space-y-6">
-            <div class="space-y-6">
-                <h2 class="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-6">
+                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Product Details</h2>
                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Subcategory</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem> )} />
 
-                <div class="space-y-6">
+                <div className="space-y-6">
                     <Separator />
-                    <h3 class="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
-                    <div class="space-y-4">
+                    <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                    <div className="space-y-4">
                     {priceTierFields.map((field, index) => (
-                        <div key={field.id} class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
-                            <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem class="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem class="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem class="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                            {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} class="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 class="h-4 w-4" /></Button>}
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
+                            <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                            {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                         </div>
                     ))}
                     <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
                     </div>
-                    <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem class="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div class="space-y-0.5"><FormLabel class="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
-                    <Card class="p-4 bg-muted/50 space-y-4">
+                    <Card className="p-4 bg-muted/50 space-y-4">
                         <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
                             <FormItem>
-                                <FormLabel class="text-base">Pool Sharing Rule *</FormLabel>
+                                <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
                                     <SelectContent>
@@ -195,14 +195,14 @@ export default function DefaultEditProductPage() {
                                 onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
                             />
                         )}
-                        <CardHeader class="p-0 mb-2"><CardTitle class="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                        <CardContent class="p-0 space-y-2">
+                        <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                        <CardContent className="p-0 space-y-2">
                             {poolPriceTierFields.map((field, index) => (
-                            <div key={field.id} class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-background">
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-background">
                                 <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem class="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} class="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 class="h-4 w-4" /></Button>}
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                             </div>
                             ))}
                             <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
@@ -210,15 +210,15 @@ export default function DefaultEditProductPage() {
                     </Card>
                     )}
                     <Separator />
-                    <h3 class="text-xl font-semibold border-b pb-2">Images & Tags</h3>
+                    <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
                     <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
             </div>
             
             <CardFooter>
-                <Button type="submit" size="lg" class="w-full text-lg" disabled={isLoading}>
-                    {isLoading ? <Loader2 class="mr-2 h-5 w-5 animate-spin" /> : <Save class="mr-2 h-5 w-5" />}
+                <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                     Save Changes
                 </Button>
             </CardFooter>
