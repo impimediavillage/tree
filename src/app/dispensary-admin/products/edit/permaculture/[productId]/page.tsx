@@ -227,10 +227,12 @@ export default function EditPermacultureProductPage() {
             </div>
             
             <CardFooter>
-                <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                    Save Changes
-                </Button>
+                <div className="flex w-full">
+                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                        Save Changes
+                    </Button>
+                </div>
             </CardFooter>
           </form>
         </Form>

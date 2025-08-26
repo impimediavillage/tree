@@ -177,7 +177,7 @@ export default function EditCannabinoidProductPage() {
     } finally { setIsLoading(false); }
   };
   
-  if (authLoading) {
+  if (isLoadingInitialData) {
     return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
   }
   const isCannabinoidStream = form.getValues('productType') === 'THC' || form.getValues('productType') === 'CBD';
@@ -300,10 +300,12 @@ export default function EditCannabinoidProductPage() {
             </div>
             
             <CardFooter>
-                <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                    Save Changes
-                </Button>
+              <div className="flex w-full">
+                  <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                      {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                      Save Changes
+                  </Button>
+              </div>
             </CardFooter>
           </form>
         </Form>
