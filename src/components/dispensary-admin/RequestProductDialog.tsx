@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
+import { ScrollArea } from '../ui/scroll-area';
 
 const requestProductSchema = z.object({
   quantityRequested: z.coerce.number().int().positive("Quantity must be a positive number."),
@@ -67,7 +68,7 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
         requesterDispensaryName: requesterDispensary.dispensaryName,
         requesterEmail: currentUser.email,
         quantityRequested: data.quantityRequested,
-        requestedTier: tier, // Add the requested tier info
+        requestedTier: tier,
         preferredDeliveryDate: data.preferredDeliveryDate || null,
         deliveryAddress: data.deliveryAddress,
         contactPerson: data.contactPerson,
@@ -106,44 +107,46 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="sm:max-w-lg flex flex-col h-full max-h-[90vh] p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>Request: {product.name}</DialogTitle>
           <DialogDescription>
             Requesting <span className="font-bold">{tier.unit}</span> at <span className="font-bold">{tier.price.toFixed(2)} {product.currency}</span> per unit.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="quantityRequested" render={({ field }) => (
-                <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            <FormField control={form.control} name="deliveryAddress" render={({ field }) => (
-                <FormItem><FormLabel>Delivery Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="contactPerson" render={({ field }) => (
-                    <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                    <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-            </div>
-             <FormField control={form.control} name="preferredDeliveryDate" render={({ field }) => (
-                <FormItem><FormLabel>Preferred Delivery Date (Optional)</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-             <FormField control={form.control} name="note" render={({ field }) => (
-                <FormItem><FormLabel>Note (Optional)</FormLabel><FormControl><Textarea placeholder="Any special instructions or notes..." {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send Request
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        <ScrollArea className="flex-grow px-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+              <FormField control={form.control} name="quantityRequested" render={({ field }) => (
+                  <FormItem><FormLabel>Quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="deliveryAddress" render={({ field }) => (
+                  <FormItem><FormLabel>Delivery Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="contactPerson" render={({ field }) => (
+                      <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="contactPhone" render={({ field }) => (
+                      <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+              </div>
+              <FormField control={form.control} name="preferredDeliveryDate" render={({ field }) => (
+                  <FormItem><FormLabel>Preferred Delivery Date (Optional)</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="note" render={({ field }) => (
+                  <FormItem><FormLabel>Note (Optional)</FormLabel><FormControl><Textarea placeholder="Any special instructions or notes..." {...field} /></FormControl><FormMessage /></FormItem>
+              )} />
+            </form>
+          </Form>
+        </ScrollArea>
+        <DialogFooter className="px-6 py-4 border-t sticky bottom-0 bg-background">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Send Request
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
