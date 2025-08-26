@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -114,8 +113,7 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
             Requesting <span className="font-bold">{tier.unit}</span> at <span className="font-bold">{tier.price.toFixed(2)} {product.currency}</span> per unit.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto">
-          <ScrollArea className="h-full px-6">
+        <ScrollArea className="h-full px-6">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                 <FormField control={form.control} name="quantityRequested" render={({ field }) => (
@@ -138,17 +136,17 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
                 <FormField control={form.control} name="note" render={({ field }) => (
                     <FormItem><FormLabel>Note (Optional)</FormLabel><FormControl><Textarea placeholder="Any special instructions or notes..." {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
+                
+                <DialogFooter className="pt-4">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Request
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
           </ScrollArea>
-        </div>
-        <DialogFooter className="px-6 py-4 border-t sticky bottom-0 bg-background shrink-0">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send Request
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
