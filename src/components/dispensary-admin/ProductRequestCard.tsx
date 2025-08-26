@@ -108,83 +108,84 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm" className="w-full"><Eye className="mr-2 h-4 w-4" />Manage</Button></DialogTrigger>
             <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                     <DialogTitle>Manage Request: {request.productName}</DialogTitle>
                     <DialogDescription>
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-grow px-6 py-4">
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
-                        </div>
-                        <Separator />
-                        <div>
-                            <h4 className="font-semibold mb-2">Notes</h4>
-                            <div className="space-y-3 text-sm max-h-48 overflow-y-auto pr-2 rounded-md bg-muted/50 p-2">
-                                {request.notes && request.notes.length > 0 ? (
-                                    request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
-                                        const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
-                                        return (
-                                            <div key={idx} className={cn("flex w-full", isCurrentUser ? "justify-end" : "justify-start")}>
-                                                <div className={cn("max-w-xs md:max-w-md p-3 rounded-lg", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-background border")}>
-                                                    <p className={cn("font-semibold text-xs", isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                                        {note.byName} 
-                                                        <span className="ml-2 text-xs">
-                                                            ({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'MMM d, h:mm a') : '...'})
-                                                        </span>
-                                                    </p>
-                                                    <p className="whitespace-pre-wrap mt-1">{note.note}</p>
-                                                </div>
-                                            </div>
-                                        )
-                                    })
-                                ) : (<p className="text-sm text-center text-muted-foreground py-4">No notes yet.</p>)}
-                                <div ref={notesEndRef} />
+                <div className="flex-grow flex flex-col min-h-0">
+                    <ScrollArea className="flex-grow px-6 py-4">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
                             </div>
-                            
-                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2 mt-4">
-                                     <FormField control={form.control} name="note" render={({ field }) => (
-                                         <FormItem><FormLabel>Add a Note</FormLabel><FormControl><Textarea placeholder="Type your message..." {...field} /></FormControl><FormMessage /></FormItem>
-                                     )} />
-                                     <Button type="submit" size="sm" disabled={isSubmitting}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                        Add Note
-                                     </Button>
-                                </form>
-                            </Form>
+                            <Separator />
+                            <div>
+                                <h4 className="font-semibold mb-2">Notes</h4>
+                                <div className="space-y-3 text-sm max-h-48 overflow-y-auto pr-2 rounded-md bg-muted/50 p-2">
+                                    {request.notes && request.notes.length > 0 ? (
+                                        request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
+                                            const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
+                                            return (
+                                                <div key={idx} className={cn("flex w-full", isCurrentUser ? "justify-end" : "justify-start")}>
+                                                    <div className={cn("max-w-xs md:max-w-md p-3 rounded-lg", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-background border")}>
+                                                        <p className={cn("font-semibold text-xs", isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                                            {note.byName} 
+                                                            <span className="ml-2 text-xs">
+                                                                ({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'MMM d, h:mm a') : '...'})
+                                                            </span>
+                                                        </p>
+                                                        <p className="whitespace-pre-wrap mt-1">{note.note}</p>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })
+                                    ) : (<p className="text-sm text-center text-muted-foreground py-4">No notes yet.</p>)}
+                                    <div ref={notesEndRef} />
+                                </div>
+                                <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2 mt-4">
+                                        <FormField control={form.control} name="note" render={({ field }) => (
+                                            <FormItem><FormLabel className="sr-only">Add a Note</FormLabel><FormControl><Textarea placeholder="Type your message to respond..." {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <Button type="submit" size="sm" disabled={isSubmitting}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                            Add Note
+                                        </Button>
+                                    </form>
+                                </Form>
+                            </div>
                         </div>
+                    </ScrollArea>
+                    <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0">
+                    <div className="w-full space-y-2">
+                        <h4 className="font-semibold mb-2 text-sm">Update Status</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
+                                    <>
+                                        <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
+                                        <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
+                                    </>
+                                )}
+                                {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
+                                    <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
+                                )}
+                                {type === 'incoming' && request.requestStatus === 'accepted' && (
+                                    <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
+                                )}
+                                {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
+                                    <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
+                                )}
+                            </div>
                     </div>
-                </ScrollArea>
-                 <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0">
-                   <div className="w-full space-y-2">
-                       <h4 className="font-semibold mb-2 text-sm">Update Status</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                            {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
-                                <>
-                                    <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
-                                    <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
-                                </>
-                            )}
-                            {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
-                                <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
-                            )}
-                            {type === 'incoming' && request.requestStatus === 'accepted' && (
-                                <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
-                            )}
-                            {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
-                                <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
-                            )}
-                        </div>
-                   </div>
-                </DialogFooter>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );
@@ -287,7 +288,7 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
                 <ManageRequestDialog request={request} type={type} onUpdate={onUpdate} />
-                {type === 'incoming' && (
+                {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
                     <Button 
                         variant="destructive" 
                         size="sm" 
