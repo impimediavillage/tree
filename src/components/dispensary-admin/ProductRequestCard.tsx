@@ -1,10 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import type { ProductRequest, NoteData } from '@/types';
+import type { ProductRequest, NoteData, Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { z } from 'zod';
@@ -20,7 +20,8 @@ import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin } from 'lucide-react';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2 } from 'lucide-react';
+import { getProductCollectionName } from '@/lib/utils';
 
 
 const addNoteSchema = z.object({
@@ -96,14 +97,14 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm" className="w-full"><Eye className="mr-2 h-4 w-4" />Manage</Button></DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b">
                     <DialogTitle>Manage Request: {request.productName}</DialogTitle>
                     <DialogDescription>
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-grow pr-4 -mr-4">
+                <ScrollArea className="flex-grow px-6 py-4">
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
@@ -117,8 +118,8 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         <div>
                             <h4 className="font-semibold mb-2">Notes</h4>
                             {request.notes && request.notes.length > 0 ? (
-                                <div className="space-y-2 text-sm">
-                                    {request.notes.map((note, idx) => (
+                                <div className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
+                                    {request.notes.sort((a,b) => (b.timestamp as any).toMillis() - (a.timestamp as any).toMillis()).map((note, idx) => (
                                         <div key={idx} className="bg-muted p-2 rounded-md">
                                             <p className="font-semibold text-xs">{note.byName} <span className="text-muted-foreground">({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'PPp') : '...'})</span></p>
                                             <p className="whitespace-pre-wrap">{note.note}</p>
@@ -136,29 +137,30 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                 </form>
                             </Form>
                         </div>
-                         <Separator />
-                        <div>
-                            <h4 className="font-semibold mb-2">Actions</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
-                                    <>
-                                        <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
-                                        <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
-                                    </>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
-                                    <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
-                                )}
-                                {type === 'incoming' && request.requestStatus === 'accepted' && (
-                                    <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
-                                    <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
-                                )}
-                            </div>
-                        </div>
                     </div>
                 </ScrollArea>
+                 <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0">
+                   <div className="w-full space-y-2">
+                       <h4 className="font-semibold mb-2 text-sm">Actions</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
+                                <>
+                                    <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
+                                    <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
+                                </>
+                            )}
+                            {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
+                                <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
+                            )}
+                            {type === 'incoming' && request.requestStatus === 'accepted' && (
+                                <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
+                            )}
+                            {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
+                                <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
+                            )}
+                        </div>
+                   </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
@@ -172,6 +174,62 @@ interface ProductRequestCardProps {
 
 export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request, type, onUpdate }) => {
     const { color, icon } = getStatusProps(request.requestStatus);
+    const { toast } = useToast();
+    const [isSoldOutLoading, setIsSoldOutLoading] = React.useState(false);
+
+    const handleMarkAsSoldOut = async () => {
+        if (!request.productDetails) {
+            toast({ title: "Error", description: "Missing product details to update stock.", variant: "destructive" });
+            return;
+        }
+
+        setIsSoldOutLoading(true);
+
+        const collectionName = getProductCollectionName(request.productDetails.dispensaryType);
+        if (!collectionName) {
+            toast({ title: "Error", description: `Cannot determine database collection for type: ${request.productDetails.dispensaryType}`, variant: "destructive" });
+            setIsSoldOutLoading(false);
+            return;
+        }
+
+        try {
+            const productRef = doc(db, collectionName, request.productId);
+            const productSnap = await getDoc(productRef);
+
+            if (!productSnap.exists()) {
+                throw new Error("The original product could not be found.");
+            }
+
+            const productData = productSnap.data() as Product;
+            const updatedPriceTiers = productData.priceTiers.map(tier => {
+                if (tier.unit === request.requestedTier?.unit) {
+                    return { ...tier, quantityInStock: 0 };
+                }
+                return tier;
+            });
+            const updatedPoolPriceTiers = (productData.poolPriceTiers || []).map(tier => {
+                if (tier.unit === request.requestedTier?.unit) {
+                    return { ...tier, quantityInStock: 0 };
+                }
+                return tier;
+            });
+            
+            await updateDoc(productRef, { 
+                priceTiers: updatedPriceTiers,
+                poolPriceTiers: updatedPoolPriceTiers,
+             });
+
+            toast({ title: "Stock Updated", description: `${request.productName} (${request.requestedTier?.unit}) has been marked as sold out.` });
+            onUpdate();
+
+        } catch (error: any) {
+            console.error("Error marking as sold out:", error);
+            toast({ title: "Update Failed", description: error.message || "Could not update the product stock.", variant: "destructive" });
+        } finally {
+            setIsSoldOutLoading(false);
+        }
+    };
+
 
     return (
         <Card className="flex flex-col shadow-md hover:shadow-lg transition-shadow bg-card">
@@ -203,8 +261,20 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
                     <span className="text-muted-foreground"> x {request.requestedTier?.unit || 'unit'}</span>
                 </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-2">
                 <ManageRequestDialog request={request} type={type} onUpdate={onUpdate} />
+                {type === 'incoming' && (
+                    <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={handleMarkAsSoldOut}
+                        disabled={isSoldOutLoading}
+                    >
+                         {isSoldOutLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Mark Tier as Sold Out
+                    </Button>
+                )}
             </CardFooter>
         </Card>
     );
