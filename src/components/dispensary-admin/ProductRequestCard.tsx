@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -59,7 +58,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
 
     React.useEffect(() => {
         if (isOpen) {
-            notesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            setTimeout(() => notesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         }
     }, [isOpen, request.notes]);
 
@@ -114,6 +113,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
+
                 <div className="flex-grow flex flex-col min-h-0">
                     <ScrollArea className="flex-grow px-6 py-4">
                         <div className="space-y-4">
@@ -126,9 +126,9 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                 <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
                             </div>
                             <Separator />
-                            <div>
+                             <div>
                                 <h4 className="font-semibold mb-2">Notes</h4>
-                                <div className="space-y-3 text-sm max-h-48 overflow-y-auto pr-2 rounded-md bg-muted/50 p-2">
+                                <div className="space-y-3 text-sm rounded-md bg-muted/50 p-2 min-h-[100px]">
                                     {request.notes && request.notes.length > 0 ? (
                                         request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
                                             const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
