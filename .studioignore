@@ -1,13 +1,19 @@
+# Firebase
+firebase-debug.log
+firebase-debug.*.log
+
+# Dependencies
 node_modules/
+
+# Build outputs
 .next/
 dist/
-internal/
-context_backup/
-firebase-debug.log
-*.node
-*.wasm
-*.log
-*.map
-.git/
+
+# Lockfiles
 package-lock.json
 
+# Local files
+.DS_Store
+.git/
+internal/
+context_backup/
