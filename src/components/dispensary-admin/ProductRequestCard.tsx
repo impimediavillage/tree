@@ -1,25 +1,27 @@
-
 'use client';
 
 import * as React from 'react';
 import type { ProductRequest, NoteData } from '@/types';
-import { DataTable, type ColumnDef } from '@/components/ui/data-table';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
-import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Textarea } from '../ui/textarea';
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { useAuth } from '@/contexts/AuthContext';
-import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
+
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '../ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin } from 'lucide-react';
+
 
 const addNoteSchema = z.object({
   note: z.string().min(1, "Note cannot be empty.").max(1000, "Note is too long."),
@@ -93,31 +95,32 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild><Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4" />Manage</Button></DialogTrigger>
-            <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col">
+            <DialogTrigger asChild><Button variant="outline" size="sm" className="w-full"><Eye className="mr-2 h-4 w-4" />Manage</Button></DialogTrigger>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Manage Request: {request.productName}</DialogTitle>
                     <DialogDescription>
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-grow pr-4">
+                <ScrollArea className="flex-grow pr-4 -mr-4">
                     <div className="space-y-4">
-                        {/* Details */}
-                        <div className="text-sm space-y-2">
-                           <p><strong>Quantity:</strong> {request.quantityRequested}</p>
-                           <p><strong>Delivery Address:</strong> {request.deliveryAddress}</p>
-                           <p><strong>Contact:</strong> {request.contactPerson} at {request.contactPhone}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
+                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
                         </div>
                         <Separator />
-                        {/* Notes */}
                         <div>
                             <h4 className="font-semibold mb-2">Notes</h4>
                             {request.notes && request.notes.length > 0 ? (
                                 <div className="space-y-2 text-sm">
                                     {request.notes.map((note, idx) => (
                                         <div key={idx} className="bg-muted p-2 rounded-md">
-                                            <p className="font-semibold">{note.byName} <span className="text-xs text-muted-foreground">({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'PPp') : '...'})</span></p>
+                                            <p className="font-semibold text-xs">{note.byName} <span className="text-muted-foreground">({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'PPp') : '...'})</span></p>
                                             <p className="whitespace-pre-wrap">{note.note}</p>
                                         </div>
                                     ))}
@@ -134,7 +137,6 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                             </Form>
                         </div>
                          <Separator />
-                        {/* Actions */}
                         <div>
                             <h4 className="font-semibold mb-2">Actions</h4>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -157,68 +159,53 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         </div>
                     </div>
                 </ScrollArea>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 };
 
-interface ProductRequestTableProps {
-  data: ProductRequest[];
+interface ProductRequestCardProps {
+  request: ProductRequest;
   type: 'incoming' | 'outgoing';
   onUpdate: () => void;
 }
 
-export const ProductRequestTable: React.FC<ProductRequestTableProps> = ({ data, type, onUpdate }) => {
+export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request, type, onUpdate }) => {
+    const { color, icon } = getStatusProps(request.requestStatus);
 
-    const columns: ColumnDef<ProductRequest>[] = [
-        {
-          accessorKey: 'productName',
-          header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Product <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
-        },
-        {
-          accessorKey: type === 'incoming' ? 'requesterDispensaryName' : 'productOwnerEmail',
-          header: type === 'incoming' ? 'From' : 'To (Owner Email)',
-        },
-        {
-          accessorKey: 'quantityRequested',
-          header: 'Quantity',
-        },
-        {
-          accessorKey: 'requestStatus',
-          header: 'Status',
-          cell: ({ row }) => {
-            const { color, icon } = getStatusProps(row.original.requestStatus);
-            return (
-              <Badge className={color}>
-                {icon}
-                <span className="ml-1.5">{row.original.requestStatus.replace(/_/g, ' ').toUpperCase()}</span>
-              </Badge>
-            );
-          },
-        },
-        {
-            accessorKey: "createdAt",
-            header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Date <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
-            cell: ({ row }) => {
-                const date = (row.original.createdAt as any)?.toDate ? (row.original.createdAt as any).toDate() : new Date();
-                return format(date, 'MMM d, yyyy');
-            },
-        },
-        {
-          id: 'actions',
-          cell: ({ row }) => <ManageRequestDialog request={row.original} type={type} onUpdate={onUpdate} />,
-        },
-    ];
-
-  return (
-    <DataTable
-      columns={columns}
-      data={data}
-      searchColumn="productName"
-      searchPlaceholder="Filter by product name..."
-    />
-  );
+    return (
+        <Card className="flex flex-col shadow-md hover:shadow-lg transition-shadow bg-card">
+            <CardHeader>
+                <div className="flex justify-between items-start gap-2">
+                     <CardTitle className="text-lg font-semibold truncate" title={request.productName}>{request.productName}</CardTitle>
+                     {request.productImage && (
+                        <div className="relative h-14 w-14 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                           <Image src={request.productImage} alt={request.productName} layout="fill" objectFit="cover" />
+                        </div>
+                     )}
+                </div>
+                 <Badge className={`${color} self-start`}>
+                    {icon}
+                    <span className="ml-1.5">{request.requestStatus.replace(/_/g, ' ')}</span>
+                </Badge>
+            </CardHeader>
+            <CardContent className="flex-grow text-sm space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    {type === 'incoming' ? <Inbox className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                    <span>{type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}</span>
+                </div>
+                 <div className="flex items-center gap-2 text-muted-foreground">
+                    <Calendar className="h-4 w-4"/>
+                    <span>Requested on: {request.createdAt ? format((request.createdAt as any).toDate(), 'PP') : 'N/A'}</span>
+                </div>
+                <div className="pt-1">
+                    <span className="font-semibold text-primary">{request.quantityRequested}</span>
+                    <span className="text-muted-foreground"> x {request.requestedTier?.unit || 'unit'}</span>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <ManageRequestDialog request={request} type={type} onUpdate={onUpdate} />
+            </CardFooter>
+        </Card>
+    );
 };

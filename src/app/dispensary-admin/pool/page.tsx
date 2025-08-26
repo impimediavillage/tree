@@ -8,9 +8,9 @@ import type { ProductRequest } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProductRequestTable } from '@/components/dispensary-admin/ProductRequestTable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { History, Inbox, Send, AlertTriangle, Loader2 } from 'lucide-react';
+import { ProductRequestCard } from '@/components/dispensary-admin/ProductRequestCard';
 
 export default function WellnessPoolPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -94,6 +94,37 @@ export default function WellnessPoolPage() {
     );
   }
 
+  const renderRequestGrid = (requests: ProductRequest[], type: 'incoming' | 'outgoing') => {
+    if (isLoading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-lg" />
+          ))}
+        </div>
+      );
+    }
+    if (requests.length === 0) {
+      return (
+        <div className="text-center py-10 text-muted-foreground">
+          <p>No {type} requests found.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {requests.map(request => (
+          <ProductRequestCard 
+            key={request.id} 
+            request={request} 
+            type={type} 
+            onUpdate={handleRequestUpdate} 
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-lg bg-card border-primary/30">
@@ -132,43 +163,11 @@ export default function WellnessPoolPage() {
             )}
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="incoming-requests">
-          <Card>
-            <CardHeader>
-              <CardTitle>Incoming Requests</CardTitle>
-              <CardDescription>Requests from other wellness stores for your products.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-[200px] w-full" />
-              ) : (
-                <ProductRequestTable 
-                  data={incomingRequests} 
-                  type="incoming" 
-                  onUpdate={handleRequestUpdate} 
-                />
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="incoming-requests" className="pt-4">
+          {renderRequestGrid(incomingRequests, 'incoming')}
         </TabsContent>
-        <TabsContent value="outgoing-requests">
-          <Card>
-            <CardHeader>
-              <CardTitle>Outgoing Requests</CardTitle>
-              <CardDescription>Requests you have made for products from other wellness stores.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-[200px] w-full" />
-              ) : (
-                <ProductRequestTable 
-                  data={outgoingRequests} 
-                  type="outgoing" 
-                  onUpdate={handleRequestUpdate} 
-                />
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="outgoing-requests" className="pt-4">
+          {renderRequestGrid(outgoingRequests, 'outgoing')}
         </TabsContent>
       </Tabs>
     </div>
