@@ -46,7 +46,7 @@ const getProductCollectionName = (): string => {
 };
 
 export default function EditTraditionalMedicineProductPage() {
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
   const router = useRouter();
   const params = useParams();
