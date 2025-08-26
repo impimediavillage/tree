@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -133,7 +134,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                      <FormField control={form.control} name="note" render={({ field }) => (
                                          <FormItem><FormLabel>Add a Note</FormLabel><FormControl><Textarea placeholder="Type your message..." {...field} /></FormControl><FormMessage /></FormItem>
                                      )} />
-                                     <Button type="submit" size="sm" disabled={isSubmitting}>Add Note</Button>
+                                     <Button type="submit" size="sm" disabled={isSubmitting}>Add Note & Respond</Button>
                                 </form>
                             </Form>
                         </div>
