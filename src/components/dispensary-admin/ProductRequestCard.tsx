@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2 } from 'lucide-react';
 import { getProductCollectionName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 
 const addNoteSchema = z.object({
@@ -49,11 +50,19 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const { toast } = useToast();
     const { currentUser } = useAuth();
+    const notesEndRef = React.useRef<HTMLDivElement>(null);
 
     const form = useForm<AddNoteFormData>({
         resolver: zodResolver(addNoteSchema),
         defaultValues: { note: '' },
     });
+
+    React.useEffect(() => {
+        if (isOpen) {
+            notesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [isOpen, request.notes]);
+
 
     const handleStatusUpdate = async (newStatus: ProductRequest['requestStatus']) => {
         if (!request.id) return;
@@ -118,23 +127,34 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         <Separator />
                         <div>
                             <h4 className="font-semibold mb-2">Notes</h4>
-                            {request.notes && request.notes.length > 0 ? (
-                                <div className="space-y-2 text-sm max-h-48 overflow-y-auto pr-2">
-                                    {request.notes.sort((a,b) => (b.timestamp as any).toMillis() - (a.timestamp as any).toMillis()).map((note, idx) => (
-                                        <div key={idx} className="bg-muted p-2 rounded-md">
-                                            <p className="font-semibold text-xs">{note.byName} <span className="text-muted-foreground">({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'PPp') : '...'})</span></p>
-                                            <p className="whitespace-pre-wrap">{note.note}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (<p className="text-sm text-muted-foreground">No notes yet.</p>)}
+                            <div className="space-y-3 text-sm max-h-48 overflow-y-auto pr-2 rounded-md bg-muted/50 p-2">
+                                {request.notes && request.notes.length > 0 ? (
+                                    request.notes.sort((a,b) => (a.timestamp as any).toMillis() - (b.timestamp as any).toMillis()).map((note, idx) => {
+                                        const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
+                                        return (
+                                            <div key={idx} className={cn("flex w-full", isCurrentUser ? "justify-end" : "justify-start")}>
+                                                <div className={cn("max-w-xs md:max-w-md p-3 rounded-lg", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-background border")}>
+                                                    <p className={cn("font-semibold text-xs", isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                                        {note.byName} 
+                                                        <span className="ml-2 text-xs">
+                                                            ({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'MMM d, h:mm a') : '...'})
+                                                        </span>
+                                                    </p>
+                                                    <p className="whitespace-pre-wrap mt-1">{note.note}</p>
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                ) : (<p className="text-sm text-center text-muted-foreground py-4">No notes yet.</p>)}
+                                <div ref={notesEndRef} />
+                            </div>
                             
                              <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2 mt-4">
                                      <FormField control={form.control} name="note" render={({ field }) => (
                                          <FormItem><FormLabel>Add a Note</FormLabel><FormControl><Textarea placeholder="Type your message..." {...field} /></FormControl><FormMessage /></FormItem>
                                      )} />
-                                     <Button type="submit" size="sm" disabled={isSubmitting}>Add Note & Respond</Button>
+                                     <Button type="submit" size="sm" disabled={isSubmitting}>Add Note</Button>
                                 </form>
                             </Form>
                         </div>
@@ -142,7 +162,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 </ScrollArea>
                  <DialogFooter className="px-6 py-4 border-t mt-auto shrink-0">
                    <div className="w-full space-y-2">
-                       <h4 className="font-semibold mb-2 text-sm">Actions</h4>
+                       <h4 className="font-semibold mb-2 text-sm">Update Status</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                             {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
                                 <>
