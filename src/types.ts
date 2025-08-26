@@ -1,3 +1,4 @@
+'use server';
 
 import type { Timestamp } from 'firebase/firestore';
 import type { firestore } from 'firebase-admin';
@@ -194,6 +195,7 @@ export interface ProductRequest {
     currency: string;
     priceTiers: PriceTier[]; 
     imageUrl?: string | null;
+    dispensaryType: string;
   } | null;
 }
 
@@ -421,5 +423,3 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
-
-    

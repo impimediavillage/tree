@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 import type { ProductCategory as ProductCategoryType } from '../functions/src/types';
 
@@ -307,6 +306,15 @@ export const productRequestSchema = z.object({
     senderRole: z.enum(['requester', 'owner', 'super_admin']),
     timestamp: z.any()
   })).optional().default([]),
+  
+  productDetails: z.object({ 
+    name: z.string(),
+    category: z.string(),
+    currency: z.string(),
+    priceTiers: z.array(priceTierSchema), 
+    imageUrl: z.string().url().optional().nullable(),
+    dispensaryType: z.string(),
+  }).optional().nullable(),
 });
 export type ProductRequestFormData = z.infer<typeof productRequestSchema>;
 
@@ -609,5 +617,3 @@ export const stickerSetSchema = z.object({
   createdAt: z.any(),
 });
 export type StickerSetDbData = z.infer<typeof stickerSetSchema>;
-
-    
