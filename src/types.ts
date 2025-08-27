@@ -31,6 +31,7 @@ export interface Dispensary {
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];
+  shippingMethods?: string[]; // <-- New field
   location: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -124,6 +125,8 @@ export interface Product {
   
   currency: string; 
   priceTiers: PriceTier[]; 
+  shippingMethods?: string[]; // <-- New field
+  poolShippingMethods?: string[]; // <-- New field
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
   imageUrls?: string[] | null;

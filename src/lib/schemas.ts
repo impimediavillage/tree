@@ -17,6 +17,7 @@ const baseWellnessSchema = z.object({
   openTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   closeTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   operatingDays: z.array(z.string()).min(1, { message: "Select at least one operating day." }),
+  shippingMethods: z.array(z.string()).min(1, { message: "Select at least one shipping method." }).optional().default([]), // <-- New field
   location: z.string().min(5, { message: "Location address must be at least 5 characters." }),
   latitude: z.number({invalid_type_error: "Invalid latitude"}).optional().nullable(),
   longitude: z.number({invalid_type_error: "Invalid longitude"}).optional().nullable(),
@@ -232,8 +233,10 @@ const baseProductObjectSchema = z.object({
   
   // Generic / Core
   currency: z.string().min(3, "Currency code required (e.g., ZAR, USD).").max(3, "Currency code too long."),
-  priceTiers: z.array(priceTierSchema).min(1, "At least one price tier is required."),
+  priceTiers: z.array(priceTierSchema).optional().default([]),
   poolPriceTiers: z.array(priceTierSchema).optional().nullable(),
+  shippingMethods: z.array(z.string()).optional().default([]),
+  poolShippingMethods: z.array(z.string()).optional().default([]),
   quantityInStock: z.coerce.number().int().min(0, "Stock cannot be negative.").optional(),
   imageUrls: z.array(z.string().url()).max(5, "You can upload a maximum of 5 images.").optional().nullable().default([]),
   labTested: z.boolean().default(false).optional(),
@@ -246,25 +249,37 @@ const baseProductObjectSchema = z.object({
 
 
 export const productSchema = baseProductObjectSchema.superRefine((data, ctx) => {
-    if (data.isAvailableForPool && (!data.poolPriceTiers || data.poolPriceTiers.length === 0)) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Pool pricing is required if the product is available for sharing.",
-            path: ["poolPriceTiers"],
-        });
+    if (data.isAvailableForPool) {
+        if (!data.poolPriceTiers || data.poolPriceTiers.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Pool pricing is required if the product is available for sharing.",
+                path: ["poolPriceTiers"],
+            });
+        }
+        if (!data.poolSharingRule) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please select a sharing rule for the product pool.",
+                path: ["poolSharingRule"],
+            });
+        }
+        if (data.poolSharingRule === 'specific_stores' && (!data.allowedPoolDispensaryIds || data.allowedPoolDispensaryIds.length === 0)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Please select at least one specific dispensary to share with.",
+                path: ["allowedPoolDispensaryIds"],
+            });
+        }
     }
-    if (data.isAvailableForPool && !data.poolSharingRule) {
+    // New validation logic: If it's a pool-only product, priceTiers is not required.
+    if (data.isAvailableForPool && data.poolPriceTiers && data.poolPriceTiers.length > 0) {
+        // This condition is met, so we don't require priceTiers
+    } else if (!data.priceTiers || data.priceTiers.length === 0) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Please select a sharing rule for the product pool.",
-            path: ["poolSharingRule"],
-        });
-    }
-    if (data.poolSharingRule === 'specific_stores' && (!data.allowedPoolDispensaryIds || data.allowedPoolDispensaryIds.length === 0)) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Please select at least one specific dispensary to share with.",
-            path: ["allowedPoolDispensaryIds"],
+            message: "At least one regular price tier is required unless it's a pool-only product.",
+            path: ["priceTiers"],
         });
     }
 });
@@ -314,6 +329,7 @@ export const productRequestSchema = z.object({
     priceTiers: z.array(priceTierSchema), 
     imageUrl: z.string().url().optional().nullable(),
     dispensaryType: z.string(),
+    dispensaryName: z.string(),
   }).optional().nullable(),
 });
 export type ProductRequestFormData = z.infer<typeof productRequestSchema>;
