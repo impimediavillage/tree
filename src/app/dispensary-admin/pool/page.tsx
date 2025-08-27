@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -164,9 +165,15 @@ export default function WellnessPoolPage() {
           </TabsTrigger>
         </TabsList>
         <TabsContent value="incoming-requests" className="pt-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            These are requests from other stores for products you have listed in the sharing pool. Review and manage them here.
+          </p>
           {renderRequestGrid(incomingRequests, 'incoming')}
         </TabsContent>
         <TabsContent value="outgoing-requests" className="pt-4">
+           <p className="text-sm text-muted-foreground mb-4">
+            These are requests you have made for products from other stores. Track their status and communicate with the product owner.
+          </p>
           {renderRequestGrid(outgoingRequests, 'outgoing')}
         </TabsContent>
       </Tabs>
