@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -40,6 +41,14 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from store" },
+  { id: "in_house", label: "In-house delivery service" },
+];
 
 const getProductCollectionName = (): string => {
     return 'traditional_medicine_dispensary_products';
@@ -211,6 +220,36 @@ export default function EditTraditionalMedicineProductPage() {
                     ))}
                     <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
                     </div>
+                     <Separator />
+                           <h3 className="text-xl font-semibold border-b pb-2">Shipping</h3>
+                            <FormField control={form.control} name="shippingMethods" render={() => (
+                            <FormItem>
+                                <FormLabel>Public Shipping Methods</FormLabel>
+                                <FormDescription>Select shipping options for direct customer sales.</FormDescription>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {allShippingMethods.map((method) => (
+                                    <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(method.id)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...(field.value || []), method.id])
+                                                : field.onChange(field.value?.filter((value) => value !== method.id))
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                                    </FormItem>
+                                    )}/>
+                                ))}
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                            )}/>
+                          <Separator />
+                    <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
                     <Card className="p-4 bg-muted/50 space-y-4">
@@ -252,6 +291,32 @@ export default function EditTraditionalMedicineProductPage() {
                             ))}
                             <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
                         </CardContent>
+                        <FormField control={form.control} name="poolShippingMethods" render={() => (
+                                <FormItem className="pt-4 border-t">
+                                    <FormLabel>Pool Shipping Methods</FormLabel>
+                                    <FormDescription>Select shipping options for store-to-store transfers.</FormDescription>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {allShippingMethods.map((method) => (
+                                        <FormField key={method.id} control={form.control} name="poolShippingMethods" render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-background">
+                                            <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(method.id)}
+                                                onCheckedChange={(checked) => {
+                                                return checked
+                                                    ? field.onChange([...(field.value || []), method.id])
+                                                    : field.onChange(field.value?.filter((value) => value !== method.id))
+                                                }}
+                                            />
+                                            </FormControl>
+                                            <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                                        </FormItem>
+                                        )}/>
+                                    ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                                )}/>
                     </Card>
                     )}
                     <Separator />
@@ -262,12 +327,12 @@ export default function EditTraditionalMedicineProductPage() {
             </div>
             
             <CardFooter>
-              <div className="flex w-full">
-                <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                    Save Changes
-                </Button>
-              </div>
+                <div className="flex w-full">
+                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                        Save Changes
+                    </Button>
+                </div>
             </CardFooter>
           </form>
         </Form>
