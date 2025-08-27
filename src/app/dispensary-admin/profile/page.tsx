@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -12,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, Save, ArrowLeft, Store as StoreIcon } from 'lucide-react';
+import { Loader2, Clock, Save, ArrowLeft, Store as StoreIcon, Truck } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -66,6 +67,15 @@ const countryCodes = [
   { value: "+1",  flag: "🇺🇸", shortName: "US", code: "+1" },
   { value: "+44", flag: "🇬🇧", shortName: "GB", code: "+44" },
   { value: "+61", flag: "🇦🇺", shortName: "AU", code: "+61" },
+];
+
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from store" },
+  { id: "in_house", label: "In-house delivery service" },
 ];
 
 function parseTimeToComponents(time24?: string): { hour?: string, minute?: string, amPm?: string } {
@@ -186,6 +196,7 @@ export default function WellnessOwnerProfilePage() {
                 latitude: currentDispensary.latitude === null ? undefined : currentDispensary.latitude,
                 longitude: currentDispensary.longitude === null ? undefined : currentDispensary.longitude,
                 operatingDays: currentDispensary.operatingDays || [],
+                shippingMethods: currentDispensary.shippingMethods || [],
             });
             
             const openTimeComps = parseTimeToComponents(currentDispensary.openTime);
@@ -312,9 +323,37 @@ export default function WellnessOwnerProfilePage() {
                                 </FormItem>
                             )} />
                         </div>
-                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
                         
                         <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Operations</h2>
+                        
+                        <FormField control={form.control} name="shippingMethods" render={() => (
+                          <FormItem>
+                            <FormLabel>Shipping Methods Offered</FormLabel>
+                            <FormDescription>Select all shipping methods your store supports. This will affect options available when you add products.</FormDescription>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {allShippingMethods.map((method) => (
+                                <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
+                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(method.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...(field.value || []), method.id])
+                                            : field.onChange(field.value?.filter((value) => value !== method.id))
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                                  </FormItem>
+                                )}/>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}/>
+                        
                         <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name="bulkDeliveryRadius" render={({ field }) => (<FormItem><FormLabel>Bulk Order Delivery</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />

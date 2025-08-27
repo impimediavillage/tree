@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock } from 'lucide-react';
+import { Loader2, Clock, Truck } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { db } from '@/lib/firebase';
@@ -76,6 +77,15 @@ const countryCodes = [
   { value: "+33", flag: "🇫🇷", shortName: "FR", code: "+33" },
 ];
 
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from store" },
+  { id: "in_house", label: "In-house delivery service" },
+];
+
 export default function WellnessSignupPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -107,7 +117,7 @@ export default function WellnessSignupPage() {
       operatingDays: [], location: '', latitude: undefined, longitude: undefined,
       deliveryRadius: undefined, bulkDeliveryRadius: undefined, collectionOnly: false,
       orderType: undefined, participateSharing: undefined, leadTime: undefined,
-      message: '', acceptTerms: false,
+      message: '', acceptTerms: false, shippingMethods: [],
     },
   });
 
@@ -406,8 +416,7 @@ export default function WellnessSignupPage() {
             <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="openTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
-                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl>
-                        <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
+                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal">
                             <Clock className="mr-2 h-4 w-4 opacity-50" />
                             {field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}
                         </Button></FormControl></PopoverTrigger>
@@ -420,8 +429,7 @@ export default function WellnessSignupPage() {
                 </FormItem>)} />
                 <FormField control={form.control} name="closeTime" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
-                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl>
-                        <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
+                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal">
                             <Clock className="mr-2 h-4 w-4 opacity-50" />
                             {field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}
                         </Button></FormControl></PopoverTrigger>
@@ -436,7 +444,7 @@ export default function WellnessSignupPage() {
 
             <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
                 {weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                       <FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {
                             return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day));
                           }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div>
@@ -444,6 +452,32 @@ export default function WellnessSignupPage() {
             </FormItem>)}/>
 
             <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
+            <FormField control={form.control} name="shippingMethods" render={() => (
+              <FormItem>
+                <FormLabel>Shipping Methods Offered</FormLabel>
+                <FormDescription>Select all shipping methods your store will support.</FormDescription>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {allShippingMethods.map((method) => (
+                    <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(method.id)}
+                            onCheckedChange={(checked) => {
+                              return checked
+                                ? field.onChange([...(field.value || []), method.id])
+                                : field.onChange(field.value?.filter((value) => value !== method.id))
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                      </FormItem>
+                    )}/>
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}/>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
                 <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
