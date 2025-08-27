@@ -15,7 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -111,7 +111,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                     <DialogTitle>Manage Request: {request.productName}</DialogTitle>
                     <DialogDescription>
-                        {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
+                        {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productDetails?.dispensaryName || request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-grow min-h-0">
@@ -279,7 +279,7 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
             <CardContent className="flex-grow text-sm space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                     {type === 'incoming' ? <Inbox className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-                    <span>{type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}</span>
+                    <span>{type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productDetails?.dispensaryName || request.productOwnerEmail}`}</span>
                 </div>
                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4"/>

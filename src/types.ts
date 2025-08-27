@@ -1,3 +1,4 @@
+
 'use server';
 
 import type { Timestamp } from 'firebase/firestore';
@@ -196,6 +197,7 @@ export interface ProductRequest {
     priceTiers: PriceTier[]; 
     imageUrl?: string | null;
     dispensaryType: string;
+    dispensaryName: string;
   } | null;
 }
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -85,6 +86,8 @@ export function RequestProductDialog({ isOpen, onOpenChange, product, tier, requ
           currency: product.currency,
           priceTiers: product.poolPriceTiers || [],
           imageUrl: product.imageUrl || null,
+          dispensaryType: product.dispensaryType,
+          dispensaryName: product.dispensaryName,
         }
     };
 
