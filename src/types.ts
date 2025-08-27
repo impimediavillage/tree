@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import type { Timestamp } from 'firebase/firestore';
@@ -175,6 +176,9 @@ export interface ProductRequest {
   deliveryAddress: string;
   contactPerson: string;
   contactPhone: string;
+  
+  requesterConfirmed?: boolean; // Requester agrees to the accepted terms
+  ownerConfirmed?: boolean;   // Owner confirms after requester, finalizing order
 
   requestStatus:
     | "pending_owner_approval"
@@ -183,7 +187,8 @@ export interface ProductRequest {
     | "cancelled"
     | "fulfilled_by_sender"
     | "received_by_requester"
-    | "issue_reported";
+    | "issue_reported"
+    | "ordered"; // New status for completed pool orders
 
   notes?: NoteData[];
 
