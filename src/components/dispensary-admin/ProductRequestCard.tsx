@@ -114,8 +114,9 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-grow px-6">
-                    <div className="py-4 space-y-6">
+                
+                <ScrollArea className="flex-1 min-h-0">
+                    <div className="px-6 py-4 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
                             <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
