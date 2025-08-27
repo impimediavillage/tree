@@ -230,7 +230,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                         </Button>
                                     </>
                                 )}
-                                {type === 'outgoing' && request.requesterConfirmed && (
+                                {type === 'outgoing' && request.requestStatus === 'accepted' && request.requesterConfirmed && (
                                     <Badge color="blue">You have confirmed. Awaiting owner to finalize.</Badge>
                                 )}
 
