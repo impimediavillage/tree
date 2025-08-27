@@ -122,6 +122,22 @@
       ]
     },
     {
+        "collectionGroup": "productPoolOrders",
+        "queryScope": "COLLECTION",
+        "fields": [
+            { "fieldPath": "productOwnerDispensaryId", "order": "ASCENDING" },
+            { "fieldPath": "orderDate", "order": "DESCENDING" }
+        ]
+    },
+    {
+        "collectionGroup": "productPoolOrders",
+        "queryScope": "COLLECTION",
+        "fields": [
+            { "fieldPath": "requesterDispensaryId", "order": "ASCENDING" },
+            { "fieldPath": "orderDate", "order": "DESCENDING" }
+        ]
+    },
+    {
       "collectionGroup": "poolIssues",
       "queryScope": "COLLECTION",
       "fields": [

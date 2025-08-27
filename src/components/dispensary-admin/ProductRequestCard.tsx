@@ -5,7 +5,7 @@ import * as React from 'react';
 import type { ProductRequest, NoteData, Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc, addDoc, collection, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { z } from 'zod';
@@ -21,7 +21,7 @@ import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '../ui/separator';
 import Image from 'next/image';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2 } from 'lucide-react';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { getProductCollectionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +41,7 @@ const getStatusProps = (status: ProductRequest['requestStatus']) => {
         case 'fulfilled_by_sender': return { color: 'bg-purple-100 text-purple-800 border-purple-300', icon: <Truck className="h-3 w-3" /> };
         case 'received_by_requester': return { color: 'bg-green-100 text-green-800 border-green-300', icon: <Package className="h-3 w-3" /> };
         case 'issue_reported': return { color: 'bg-orange-100 text-orange-800 border-orange-300', icon: <AlertTriangle className="h-3 w-3" /> };
+        case 'ordered': return { color: 'bg-green-200 text-green-900 border-green-400', icon: <Check className="h-3 w-3" /> };
         default: return { color: 'bg-gray-200 text-gray-800 border-gray-400', icon: <MessageSquare className="h-3 w-3" /> };
     }
 };
@@ -69,8 +70,25 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         setIsSubmitting(true);
         try {
             const requestRef = doc(db, 'productRequests', request.id);
-            await updateDoc(requestRef, { requestStatus: newStatus, updatedAt: serverTimestamp() });
-            toast({ title: "Status Updated", description: `Request status set to ${newStatus.replace(/_/g, ' ')}.` });
+            
+            if (type === 'incoming' && newStatus === 'accepted' && request.requesterConfirmed) {
+                // Final confirmation: create order
+                const batch = writeBatch(db);
+                
+                const orderData = { ...request, orderDate: serverTimestamp(), requestStatus: 'ordered' };
+                const newOrderRef = doc(collection(db, 'productPoolOrders'));
+                batch.set(newOrderRef, orderData);
+                
+                batch.update(requestRef, { requestStatus: 'ordered', ownerConfirmed: true, updatedAt: serverTimestamp() });
+                
+                await batch.commit();
+                toast({ title: "Order Confirmed!", description: `Order for ${request.productName} has been created.` });
+
+            } else {
+                 await updateDoc(requestRef, { requestStatus: newStatus, updatedAt: serverTimestamp() });
+                 toast({ title: "Status Updated", description: `Request status set to ${newStatus.replace(/_/g, ' ')}.` });
+            }
+
             onUpdate();
             setIsOpen(false);
         } catch (error) {
@@ -81,6 +99,23 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         }
     };
     
+    const handleRequesterConfirm = async () => {
+        if (!request.id) return;
+        setIsSubmitting(true);
+        try {
+            const requestRef = doc(db, 'productRequests', request.id);
+            await updateDoc(requestRef, { requesterConfirmed: true, updatedAt: serverTimestamp() });
+            toast({ title: "Order Confirmed", description: "Your confirmation has been sent to the owner." });
+            onUpdate();
+        } catch (error) {
+            console.error("Error confirming request:", error);
+            toast({ title: "Confirmation Failed", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+
     const onNoteSubmit = async (data: AddNoteFormData) => {
         if (!request.id || !currentUser) return;
         setIsSubmitting(true);
@@ -170,16 +205,35 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         <Separator />
                         <div className="w-full space-y-2">
                             <h4 className="font-semibold text-sm">Update Status</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                 {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
                                     <>
                                         <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
                                         <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
                                     </>
                                 )}
+                                {type === 'incoming' && request.requestStatus === 'accepted' && (
+                                    <Button onClick={() => handleStatusUpdate('accepted')} disabled={!request.requesterConfirmed || isSubmitting}>
+                                        {request.requesterConfirmed ? 'Finalize Order' : 'Awaiting Requester Confirmation'}
+                                    </Button>
+                                )}
                                 {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
                                     <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
                                 )}
+                                {type === 'outgoing' && request.requestStatus === 'accepted' && !request.requesterConfirmed && (
+                                    <>
+                                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleRequesterConfirm} disabled={isSubmitting}>
+                                            <ThumbsUp className="mr-2 h-4 w-4" /> Accept and Place Order
+                                        </Button>
+                                        <Button variant="destructive" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>
+                                            <ThumbsDown className="mr-2 h-4 w-4" /> Cancel Request
+                                        </Button>
+                                    </>
+                                )}
+                                {type === 'outgoing' && request.requesterConfirmed && (
+                                    <Badge color="blue">You have confirmed. Awaiting owner to finalize.</Badge>
+                                )}
+
                                 {type === 'incoming' && request.requestStatus === 'accepted' && (
                                     <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
                                 )}
