@@ -114,8 +114,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
-                
-                <ScrollArea className="flex-1 min-h-0">
+                <ScrollArea className="flex-grow min-h-0">
                     <div className="px-6 py-4 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
@@ -128,7 +127,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         <Separator />
                         <div>
                             <h4 className="font-semibold mb-2">Notes</h4>
-                            <div className="space-y-3 text-sm rounded-md bg-muted/50 p-3 min-h-[150px]">
+                            <div className="space-y-4 text-sm bg-muted/50 p-3 rounded-md min-h-[150px]">
                                 {request.notes && request.notes.length > 0 ? (
                                     request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
                                         const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
@@ -141,7 +140,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                                             ({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'MMM d, h:mm a') : '...'})
                                                         </span>
                                                     </p>
-                                                    <p className="whitespace-pre-wrap mt-1">{note.note}</p>
+                                                    <p className="whitespace-pre-wrap mt-1 text-sm">{note.note}</p>
                                                 </div>
                                             </div>
                                         )
