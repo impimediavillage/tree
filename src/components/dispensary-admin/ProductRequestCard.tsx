@@ -1,11 +1,10 @@
-
 'use client';
 
 import * as React from 'react';
 import type { ProductRequest, NoteData, Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc, addDoc, collection, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, serverTimestamp, getDoc, addDoc, collection, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { z } from 'zod';
@@ -64,6 +63,34 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         }
     }, [isOpen, request.notes]);
 
+    const handleOwnerFinalAccept = async () => {
+        if (!request.id) return;
+        setIsSubmitting(true);
+        try {
+            const batch = writeBatch(db);
+            
+            // 1. Create a new document in productPoolOrders
+            const orderData = { ...request, orderDate: serverTimestamp(), requestStatus: 'ordered' };
+            const newOrderRef = doc(collection(db, 'productPoolOrders'));
+            batch.set(newOrderRef, orderData);
+            
+            // 2. Delete the original request from productRequests
+            const requestRef = doc(db, 'productRequests', request.id);
+            batch.delete(requestRef);
+            
+            await batch.commit();
+            toast({ title: "Order Confirmed!", description: `Order for ${request.productName} has been created and finalized.` });
+
+            onUpdate();
+            setIsOpen(false);
+        } catch (error) {
+            console.error("Error finalizing order:", error);
+            toast({ title: "Finalization Failed", variant: "destructive", description: "Could not create the final order." });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     const handleStatusUpdate = async (newStatus: ProductRequest['requestStatus']) => {
         if (!request.id) return;
@@ -71,24 +98,27 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         try {
             const requestRef = doc(db, 'productRequests', request.id);
             
-            if (type === 'incoming' && newStatus === 'accepted' && request.requesterConfirmed) {
-                // Final confirmation: create order
-                const batch = writeBatch(db);
-                
-                const orderData = { ...request, orderDate: serverTimestamp(), requestStatus: 'ordered' };
-                const newOrderRef = doc(collection(db, 'productPoolOrders'));
-                batch.set(newOrderRef, orderData);
-                
-                batch.update(requestRef, { requestStatus: 'ordered', ownerConfirmed: true, updatedAt: serverTimestamp() });
-                
-                await batch.commit();
-                toast({ title: "Order Confirmed!", description: `Order for ${request.productName} has been created.` });
-
-            } else {
+            // Owner initial accept
+            if (type === 'incoming' && newStatus === 'accepted' && !request.requesterConfirmed) {
+                await updateDoc(requestRef, { requestStatus: 'accepted', updatedAt: serverTimestamp() });
+                toast({ title: "Request Accepted", description: "Waiting for the requester to confirm the order." });
+            } 
+            // Owner rejects (only possible after requester confirms)
+            else if (type === 'incoming' && newStatus === 'rejected') {
+                 await updateDoc(requestRef, { requestStatus: 'rejected', updatedAt: serverTimestamp() });
+                 toast({ title: "Request Rejected", variant: "destructive" });
+            }
+            // Requester cancels
+            else if (type === 'outgoing' && newStatus === 'cancelled') {
+                 await updateDoc(requestRef, { requestStatus: 'cancelled', updatedAt: serverTimestamp() });
+                 toast({ title: "Request Cancelled" });
+            }
+            // Other status updates (fulfillment, etc.)
+            else {
                  await updateDoc(requestRef, { requestStatus: newStatus, updatedAt: serverTimestamp() });
                  toast({ title: "Status Updated", description: `Request status set to ${newStatus.replace(/_/g, ' ')}.` });
             }
-
+            
             onUpdate();
             setIsOpen(false);
         } catch (error) {
@@ -105,7 +135,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         try {
             const requestRef = doc(db, 'productRequests', request.id);
             await updateDoc(requestRef, { requesterConfirmed: true, updatedAt: serverTimestamp() });
-            toast({ title: "Order Confirmed", description: "Your confirmation has been sent to the owner." });
+            toast({ title: "Order Confirmed", description: "Your confirmation has been sent to the owner for final approval." });
             onUpdate();
         } catch (error) {
             console.error("Error confirming request:", error);
@@ -149,101 +179,102 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                         {type === 'incoming' ? `From: ${request.requesterDispensaryName}` : `To: ${request.productDetails?.dispensaryName || request.productOwnerEmail}`}
                     </DialogDescription>
                 </DialogHeader>
-                <ScrollArea className="flex-grow min-h-0">
-                    <div className="px-6 py-4 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
-                            <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
-                        </div>
-                        <Separator />
-                        <div>
-                            <h4 className="font-semibold mb-2">Notes</h4>
-                            <div className="space-y-4 text-sm bg-muted/50 p-3 rounded-md min-h-[150px]">
-                                {request.notes && request.notes.length > 0 ? (
-                                    request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
-                                        const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
-                                        return (
-                                            <div key={idx} className={cn("flex w-full", isCurrentUser ? "justify-end" : "justify-start")}>
-                                                <div className={cn("max-w-xs md:max-w-md p-3 rounded-lg shadow-sm", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-background border")}>
-                                                    <p className={cn("font-semibold text-xs", isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                                                        {note.byName} 
-                                                        <span className="ml-2 text-xs">
-                                                            ({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'MMM d, h:mm a') : '...'})
-                                                        </span>
-                                                    </p>
-                                                    <p className="whitespace-pre-wrap mt-1 text-sm">{note.note}</p>
+                 <div className="flex-grow min-h-0">
+                    <ScrollArea className="h-full">
+                        <div className="px-6 py-4 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
+                            </div>
+                            <Separator />
+                            <div>
+                                <h4 className="font-semibold mb-2">Notes</h4>
+                                <div className="space-y-4 text-sm bg-muted/50 p-3 rounded-md min-h-[150px]">
+                                    {request.notes && request.notes.length > 0 ? (
+                                        request.notes.sort((a,b) => ((a.timestamp as any)?.seconds || 0) - ((b.timestamp as any)?.seconds || 0)).map((note, idx) => {
+                                            const isCurrentUser = (type === 'incoming' && note.senderRole === 'owner') || (type === 'outgoing' && note.senderRole === 'requester');
+                                            return (
+                                                <div key={idx} className={cn("flex w-full", isCurrentUser ? "justify-end" : "justify-start")}>
+                                                    <div className={cn("max-w-xs md:max-w-md p-3 rounded-lg shadow-sm", isCurrentUser ? "bg-primary text-primary-foreground" : "bg-background border")}>
+                                                        <p className={cn("font-semibold text-xs", isCurrentUser ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                                            {note.byName} 
+                                                            <span className="ml-2 text-xs">
+                                                                ({(note.timestamp as any)?.toDate ? format((note.timestamp as any).toDate(), 'MMM d, h:mm a') : '...'})
+                                                            </span>
+                                                        </p>
+                                                        <p className="whitespace-pre-wrap mt-1 text-sm">{note.note}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    })
-                                ) : (<p className="text-sm text-center text-muted-foreground py-4">No notes yet.</p>)}
-                                <div ref={notesEndRef} />
+                                            )
+                                        })
+                                    ) : (<p className="text-sm text-center text-muted-foreground py-4">No notes yet.</p>)}
+                                    <div ref={notesEndRef} />
+                                </div>
                             </div>
-                        </div>
-                        <Separator />
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2">
-                                <FormField control={form.control} name="note" render={({ field }) => (
-                                    <FormItem>
-                                      <FormLabel className="font-semibold">Respond</FormLabel>
-                                      <FormControl>
-                                        <Textarea placeholder="Type your message to respond..." {...field} className="text-sm"/>
-                                      </FormControl>
-                                      <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <Button type="submit" size="sm" disabled={isSubmitting}>
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                    Add Note
-                                </Button>
-                            </form>
-                        </Form>
-                        <Separator />
-                        <div className="w-full space-y-2">
-                            <h4 className="font-semibold text-sm">Update Status</h4>
-                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
-                                    <>
-                                        <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept</Button>
-                                        <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject</Button>
-                                    </>
-                                )}
-                                {type === 'incoming' && request.requestStatus === 'accepted' && (
-                                    <Button onClick={() => handleStatusUpdate('accepted')} disabled={!request.requesterConfirmed || isSubmitting}>
-                                        {request.requesterConfirmed ? 'Finalize Order' : 'Awaiting Requester Confirmation'}
+                             <Separator />
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2">
+                                    <FormField control={form.control} name="note" render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel className="font-semibold">Respond</FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Type your message to respond..." {...field} className="text-sm"/>
+                                        </FormControl>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <Button type="submit" size="sm" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Add Note
                                     </Button>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
-                                    <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'accepted' && !request.requesterConfirmed && (
-                                    <>
-                                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleRequesterConfirm} disabled={isSubmitting}>
-                                            <ThumbsUp className="mr-2 h-4 w-4" /> Accept and Place Order
-                                        </Button>
-                                        <Button variant="destructive" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>
-                                            <ThumbsDown className="mr-2 h-4 w-4" /> Cancel Request
-                                        </Button>
-                                    </>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'accepted' && request.requesterConfirmed && (
-                                    <Badge color="blue">You have confirmed. Awaiting owner to finalize.</Badge>
-                                )}
+                                </form>
+                            </Form>
+                            <Separator />
+                            <div className="w-full space-y-2">
+                                <h4 className="font-semibold text-sm">Update Status</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
+                                        <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept Request</Button>
+                                    )}
+                                    {type === 'incoming' && request.requestStatus === 'accepted' && !request.requesterConfirmed && (
+                                        <Badge className="col-span-full justify-center">Awaiting Requester Confirmation</Badge>
+                                    )}
+                                    {type === 'incoming' && request.requestStatus === 'accepted' && request.requesterConfirmed && (
+                                         <>
+                                            <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleOwnerFinalAccept} disabled={isSubmitting}>
+                                                <ThumbsUp className="mr-2 h-4 w-4" /> Finalize & Create Order
+                                            </Button>
+                                            <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>
+                                                <ThumbsDown className="mr-2 h-4 w-4" /> Reject Order
+                                            </Button>
+                                        </>
+                                    )}
 
-                                {type === 'incoming' && request.requestStatus === 'accepted' && (
-                                    <Button onClick={() => handleStatusUpdate('fulfilled_by_sender')} disabled={isSubmitting}>Mark as Fulfilled</Button>
-                                )}
-                                {type === 'outgoing' && request.requestStatus === 'fulfilled_by_sender' && (
-                                    <Button onClick={() => handleStatusUpdate('received_by_requester')} disabled={isSubmitting}>Mark as Received</Button>
-                                )}
+                                    {type === 'outgoing' && request.requestStatus === 'pending_owner_approval' && (
+                                        <Button variant="secondary" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>Cancel Request</Button>
+                                    )}
+                                    {type === 'outgoing' && request.requestStatus === 'accepted' && !request.requesterConfirmed && (
+                                        <>
+                                            <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleRequesterConfirm} disabled={isSubmitting}>
+                                                <ThumbsUp className="mr-2 h-4 w-4" /> Accept and Place Order
+                                            </Button>
+                                            <Button variant="destructive" onClick={() => handleStatusUpdate('cancelled')} disabled={isSubmitting}>
+                                                <ThumbsDown className="mr-2 h-4 w-4" /> Cancel Request
+                                            </Button>
+                                        </>
+                                    )}
+                                    {type === 'outgoing' && request.requestStatus === 'accepted' && request.requesterConfirmed && (
+                                        <Badge color="blue" className="col-span-full justify-center">You have confirmed. Awaiting owner to finalize.</Badge>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </ScrollArea>
+                    </ScrollArea>
+                </div>
             </DialogContent>
         </Dialog>
     );
