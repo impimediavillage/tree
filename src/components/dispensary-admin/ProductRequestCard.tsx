@@ -107,7 +107,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild><Button variant="outline" size="sm" className="w-full"><Eye className="mr-2 h-4 w-4" />Manage</Button></DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-2xl h-[90vh] flex flex-col p-0">
                 <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                     <DialogTitle>Manage Request: {request.productName}</DialogTitle>
                     <DialogDescription>
