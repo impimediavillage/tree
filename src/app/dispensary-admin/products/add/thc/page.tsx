@@ -58,14 +58,14 @@ type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furni
 
 const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
 
-const shippingMethodsMap: { [key: string]: string } = {
-  "dtd": "DTD - Door to Door (The Courier Guy)",
-  "dtl": "DTL - Door to Locker (Pudo)",
-  "ltd": "LTD - Locker to Door (Pudo)",
-  "ltl": "LTL - Locker to Locker (Pudo)",
-  "collection": "Collection from store",
-  "in_house": "In-house delivery service"
-};
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from store" },
+  { id: "in_house", label: "In-house delivery service" },
+];
 
 
 export default function AddTHCProductPage() {
@@ -601,22 +601,22 @@ export default function AddTHCProductPage() {
                         <FormField control={form.control} name="shippingMethods" render={() => (
                           <FormItem>
                             <FormLabel>Public Shipping Methods</FormLabel>
-                            <FormDescription>Select shipping options for direct customer sales. These options are based on your main store profile settings.</FormDescription>
+                            <FormDescription>Select shipping options for direct customer sales.</FormDescription>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {(currentDispensary?.shippingMethods || []).map((methodId) => (
-                                <FormField key={methodId} control={form.control} name="shippingMethods" render={({ field }) => (
+                              {allShippingMethods.map((method) => (
+                                <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
                                   <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
                                     <FormControl>
                                       <Checkbox
-                                        checked={field.value?.includes(methodId)}
+                                        checked={field.value?.includes(method.id)}
                                         onCheckedChange={(checked) => {
                                           return checked
-                                            ? field.onChange([...(field.value || []), methodId])
-                                            : field.onChange(field.value?.filter((value) => value !== methodId))
+                                            ? field.onChange([...(field.value || []), method.id])
+                                            : field.onChange(field.value?.filter((value) => value !== method.id))
                                         }}
                                       />
                                     </FormControl>
-                                    <FormLabel className="font-normal text-sm">{shippingMethodsMap[methodId] || methodId}</FormLabel>
+                                    <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
                                   </FormItem>
                                 )}/>
                               ))}
@@ -686,20 +686,20 @@ export default function AddTHCProductPage() {
                                 <FormLabel>Pool Shipping Methods</FormLabel>
                                 <FormDescription>Select shipping options for store-to-store transfers.</FormDescription>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  {(currentDispensary?.shippingMethods || []).map((methodId) => (
-                                    <FormField key={methodId} control={form.control} name="poolShippingMethods" render={({ field }) => (
+                                  {allShippingMethods.map((method) => (
+                                    <FormField key={method.id} control={form.control} name="poolShippingMethods" render={({ field }) => (
                                       <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-background">
                                         <FormControl>
                                           <Checkbox
-                                            checked={field.value?.includes(methodId)}
+                                            checked={field.value?.includes(method.id)}
                                             onCheckedChange={(checked) => {
                                               return checked
-                                                ? field.onChange([...(field.value || []), methodId])
-                                                : field.onChange(field.value?.filter((value) => value !== methodId))
+                                                ? field.onChange([...(field.value || []), method.id])
+                                                : field.onChange(field.value?.filter((value) => value !== method.id))
                                             }}
                                           />
                                         </FormControl>
-                                        <FormLabel className="font-normal text-sm">{shippingMethodsMap[methodId] || methodId}</FormLabel>
+                                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
                                       </FormItem>
                                     )}/>
                                   ))}
@@ -731,3 +731,4 @@ export default function AddTHCProductPage() {
     </div>
   );
 }
+
