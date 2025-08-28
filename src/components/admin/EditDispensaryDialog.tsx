@@ -330,8 +330,6 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
                 <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
-
-                <FormField control={form.control} name="collectionOnly" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if wellness entity only offers order collection.</FormDescription></div><FormMessage /></FormItem>)} />
                 
                 <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
                 

@@ -313,9 +313,9 @@ export default function WellnessOwnerProfilePage() {
                                 </FormItem>
                             )} />
                         </div>
-                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
                         
-                        <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Operations</h2>
+                        <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Operations & Delivery</h2>
                         
                         <FormField control={form.control} name="shippingMethods" render={() => (
                           <FormItem>
@@ -347,7 +347,6 @@ export default function WellnessOwnerProfilePage() {
                         <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         </div>
-                        <FormField control={form.control} name="collectionOnly" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if you only offer order collection.</FormDescription></div><FormMessage /></FormItem>)} />
                         
                         <FormField control={form.control} name="message" render={({ field }) => (
                         <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
