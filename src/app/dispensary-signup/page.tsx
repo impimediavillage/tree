@@ -20,7 +20,7 @@ import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 
 import type { DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', Fri', Sat', Sun']; 
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; 
 
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" },
