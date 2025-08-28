@@ -1,3 +1,4 @@
+
 'use server';
 
 import type { Timestamp } from 'firebase/firestore';
@@ -36,7 +37,7 @@ export interface Dispensary {
   deliveryRadius?: string | null;
   message?: string | null;
   status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
-  applicationDate: Timestamp | Date | string | null; // Changed to allow null
+  applicationDate: Timestamp | Date | string | null;
   approvedDate?: Timestamp | Date | string | null;
   lastActivityDate?: Timestamp | Date | string | null;
   publicStoreUrl?: string | null;
@@ -78,6 +79,7 @@ export interface ProductAttribute {
 // Represents a Product document in Firestore
 export interface Product {
   id?: string;
+  creatorUid: string;
   dispensaryId: string;
   dispensaryName: string;
   dispensaryType: string; 
@@ -118,8 +120,8 @@ export interface Product {
   
   currency: string; 
   priceTiers: PriceTier[]; 
-  shippingMethods?: string[]; // <-- New field
-  poolShippingMethods?: string[]; // <-- New field
+  shippingMethods?: string[];
+  poolShippingMethods?: string[];
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
   imageUrls?: string[] | null;
@@ -426,3 +428,5 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
+
+    
