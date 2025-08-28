@@ -22,7 +22,6 @@ const baseWellnessSchema = z.object({
   latitude: z.number({invalid_type_error: "Invalid latitude"}).optional().nullable(),
   longitude: z.number({invalid_type_error: "Invalid longitude"}).optional().nullable(),
   deliveryRadius: z.string().optional().nullable(),
-  collectionOnly: z.boolean().default(false).optional(),
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
 });
 
@@ -464,7 +463,7 @@ export const dispensaryTypeDbSchema = z.object({
   ),
   image: z.preprocess(
     (val) => (val === "" ? undefined : val),
-    z.string().url({ message: "Please enter a valid URL for the image." }).optional().nullable()
+    z.string().url({ message: "Invalid URL for the image." }).optional().nullable()
   ),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
   createdAt: z.any().optional(),

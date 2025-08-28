@@ -32,7 +32,6 @@ export interface Dispensary {
   latitude?: number | null;
   longitude?: number | null;
   deliveryRadius?: string | null;
-  collectionOnly?: boolean;
   message?: string | null;
   status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
   applicationDate: Timestamp | Date | string | null; // Changed to allow null
