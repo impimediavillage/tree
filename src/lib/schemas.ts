@@ -22,11 +22,7 @@ const baseWellnessSchema = z.object({
   latitude: z.number({invalid_type_error: "Invalid latitude"}).optional().nullable(),
   longitude: z.number({invalid_type_error: "Invalid longitude"}).optional().nullable(),
   deliveryRadius: z.string().optional().nullable(),
-  bulkDeliveryRadius: z.string().optional().nullable(),
   collectionOnly: z.boolean().default(false).optional(),
-  orderType: z.enum(["small", "bulk", "both"], { required_error: "Please select an order type." }).optional().nullable(),
-  participateSharing: z.enum(["yes", "no"], { required_error: "Please select participation preference." }).optional().nullable(),
-  leadTime: z.string().optional().nullable(),
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
 });
 
@@ -35,13 +31,6 @@ export const dispensarySignupSchema = baseWellnessSchema.extend({
     message: "You must accept the terms and conditions.",
   }),
 }).superRefine((data, ctx) => {
-  if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Lead time is required if participating in product sharing.",
-      path: ["leadTime"],
-    });
-  }
   if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -61,13 +50,6 @@ export type DispensarySignupFormData = z.infer<typeof dispensarySignupSchema>;
 export const adminCreateDispensarySchema = baseWellnessSchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
 }).superRefine((data, ctx) => {
-  if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Lead time is required if participating in product sharing.",
-      path: ["leadTime"],
-    });
-  }
    if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -88,13 +70,6 @@ export const editDispensarySchema = baseWellnessSchema.extend({
   status: z.enum(['Pending Approval', 'Approved', 'Rejected', 'Suspended'], { required_error: "Please select a status." }),
   applicationDate: z.any().optional(), // Allow any type for applicationDate
 }).superRefine((data, ctx) => {
-  if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Lead time is required if participating in product sharing.",
-      path: ["leadTime"],
-    });
-  }
    if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -115,13 +90,6 @@ export const ownerEditDispensarySchema = baseWellnessSchema.omit({
   fullName: true,
 }).extend({
 }).superRefine((data, ctx) => {
-  if (data.participateSharing === "yes" && (!data.leadTime || data.leadTime.trim() === "")) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Lead time is required if participating in product sharing.",
-      path: ["leadTime"],
-    });
-  }
    if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

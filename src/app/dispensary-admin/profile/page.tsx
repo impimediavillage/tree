@@ -39,16 +39,6 @@ const deliveryRadiusOptions = [
   { value: "100", label: "100 km" },
 ];
 
-const bulkDeliveryRadiusOptions = [
-  { value: "none", label: "None" }, { value: "national", label: "Nationwide" },
-  { value: "global", label: "Global" }, { value: "off-planet", label: "My products are strong!)" },
-];
-
-const leadTimeOptions = [
-  { value: "same-day", label: "Same day" }, { value: "1-3", label: "1–3 days" },
-  { value: "3-7", label: "3–7 days" }, { value: "7-21", label: "7–21 days" }, { value: "21-36", label: "21–36 days" },
-];
-
 const hourOptions = Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString().padStart(2, '0') }));
 const minuteOptions = [ { value: "00", label: "00" }, { value: "15", label: "15" }, { value: "30", label: "30" }, { value: "45", label: "45" }];
 const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
@@ -356,10 +346,12 @@ export default function WellnessOwnerProfilePage() {
                         
                         <div className="grid md:grid-cols-2 gap-6">
                             <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="bulkDeliveryRadius" render={({ field }) => (<FormItem><FormLabel>Bulk Order Delivery</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         </div>
                         <FormField control={form.control} name="collectionOnly" render={({ field }) => (<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm"><FormControl><Checkbox checked={!!field.value} onCheckedChange={field.onChange} /></FormControl><div className="space-y-1 leading-none"><FormLabel>Collection Only</FormLabel><FormDescription>Check if you only offer order collection.</FormDescription></div><FormMessage /></FormItem>)} />
                         
+                        <FormField control={form.control} name="message" render={({ field }) => (
+                        <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+
                         <div className="flex gap-4 pt-4">
                             <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || (form.formState.isSubmitted && !form.formState.isValid)}><Save className="mr-2 h-5 w-5" /> Save Changes</Button>
                         </div>
