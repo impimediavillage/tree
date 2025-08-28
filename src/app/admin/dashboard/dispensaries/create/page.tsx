@@ -36,16 +36,6 @@ const deliveryRadiusOptions = [
   { value: "100", label: "100 km" },
 ];
 
-const bulkDeliveryRadiusOptions = [
-  { value: "none", label: "None" }, { value: "national", label: "Nationwide" },
-  { value: "global", label: "Global" }, { value: "off-planet", label: "My products are strong!)" },
-];
-
-const leadTimeOptions = [
-  { value: "same-day", label: "Same day" }, { value: "1-3", label: "1–3 days" },
-  { value: "3-7", label: "3–7 days" }, { value: "7-21", label: "7–21 days" }, { value: "21-36", label: "21–36 days" },
-];
-
 const hourOptions = Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString().padStart(2, '0') }));
 const minuteOptions = [ { value: "00", label: "00" }, { value: "15", label: "15" }, { value: "30", label: "30" }, { value: "45", label: "45" }];
 const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
@@ -109,8 +99,7 @@ export default function AdminCreateWellnessPage() {
       fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
       dispensaryType: undefined, currency: undefined, openTime: '', closeTime: '',
       operatingDays: [], location: '', latitude: undefined, longitude: undefined,
-      deliveryRadius: undefined, bulkDeliveryRadius: undefined, collectionOnly: false,
-      orderType: undefined, participateSharing: undefined, leadTime: undefined,
+      deliveryRadius: undefined, collectionOnly: false,
       message: '', status: 'Pending Approval',
     },
   });
@@ -331,9 +320,6 @@ export default function AdminCreateWellnessPage() {
         applicationDate: Timestamp.fromDate(new Date()),
         latitude: data.latitude ?? null,
         longitude: data.longitude ?? null,
-        orderType: data.orderType ?? null,
-        participateSharing: data.participateSharing ?? null,
-        leadTime: data.leadTime ?? null,
       };
       await addDoc(collection(db, 'dispensaries'), wellnessData);
       toast({
@@ -575,10 +561,6 @@ export default function AdminCreateWellnessPage() {
                 <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl>
                     <SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="bulkDeliveryRadius" render={({ field }) => (
-                <FormItem><FormLabel>Bulk Order Delivery Radius</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl>
-                    <SelectContent>{bulkDeliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
 
             <FormField control={form.control} name="collectionOnly" render={({ field }) => (
@@ -588,24 +570,6 @@ export default function AdminCreateWellnessPage() {
                 <FormMessage />
               </FormItem>
             )} />
-
-            <FormField control={form.control} name="orderType" render={({ field }) => (
-              <FormItem><FormLabel>Order Types Fulfilled</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select order type" /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="small">Small orders</SelectItem><SelectItem value="bulk">Bulk orders</SelectItem><SelectItem value="both">Both</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-
-            <FormField control={form.control} name="participateSharing" render={({ field }) => (
-              <FormItem><FormLabel>Participate in Product Sharing Pool?</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select participation" /></SelectTrigger></FormControl>
-                  <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select>
-                <FormDescription>Allows sharing products with wellness entities of the same type.</FormDescription><FormMessage /></FormItem>)} />
-
-            {form.watch("participateSharing") === "yes" && (
-              <FormField control={form.control} name="leadTime" render={({ field }) => (
-                <FormItem><FormLabel>Lead Time for Product Transfers</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select lead time" /></SelectTrigger></FormControl>
-                    <SelectContent>{leadTimeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                  <FormDescription>Time needed to get products to other wellness entities.</FormDescription><FormMessage /></FormItem>)} />)}
 
             <FormField control={form.control} name="message" render={({ field }) => (
               <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />

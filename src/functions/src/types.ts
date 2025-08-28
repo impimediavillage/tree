@@ -1,6 +1,4 @@
 
-'use server';
-
 import type { Timestamp } from 'firebase/firestore';
 import type { firestore } from 'firebase-admin';
 
@@ -30,7 +28,6 @@ export interface Dispensary {
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];
-  shippingMethods?: string[];
   location: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -120,8 +117,6 @@ export interface Product {
   
   currency: string; 
   priceTiers: PriceTier[]; 
-  shippingMethods?: string[]; // <-- New field
-  poolShippingMethods?: string[]; // <-- New field
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
   imageUrls?: string[] | null;
@@ -129,8 +124,6 @@ export interface Product {
   labTested?: boolean;
   labTestReportUrl?: string | null;
   isAvailableForPool?: boolean;
-  poolSharingRule?: 'same_type' | 'all_types' | 'specific_stores' | null;
-  allowedPoolDispensaryIds?: string[] | null;
   tags?: string[] | null;
   
   createdAt: Timestamp | Date | string;
@@ -169,14 +162,10 @@ export interface ProductRequest {
   requesterEmail: string;
 
   quantityRequested: number;
-  requestedTier?: PriceTier | null;
   preferredDeliveryDate?: string | null;
   deliveryAddress: string;
   contactPerson: string;
   contactPhone: string;
-  
-  requesterConfirmed?: boolean; // Requester agrees to the accepted terms
-  ownerConfirmed?: boolean;   // Owner confirms after requester, finalizing order
 
   requestStatus:
     | "pending_owner_approval"
@@ -185,8 +174,7 @@ export interface ProductRequest {
     | "cancelled"
     | "fulfilled_by_sender"
     | "received_by_requester"
-    | "issue_reported"
-    | "ordered"; // New status for completed pool orders
+    | "issue_reported";
 
   notes?: NoteData[];
 
@@ -199,8 +187,6 @@ export interface ProductRequest {
     currency: string;
     priceTiers: PriceTier[]; 
     imageUrl?: string | null;
-    dispensaryType: string;
-    dispensaryName: string;
   } | null;
 }
 
