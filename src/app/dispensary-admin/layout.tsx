@@ -129,28 +129,31 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             </Button>
             ))}
             <Separator className="my-2" />
-            {managementSidebarNavItems.map((item) => (
-            <Button
-                key={item.title}
-                variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
-                className={cn(
-                'w-full justify-start text-sm',
-                 (pathname.startsWith(item.href) || (item.disabled && isDispensaryStaff))
-                    ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                    : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
-                (item.disabled || (item.title === 'Manage Staff' && isDispensaryStaff)) && 'opacity-50 cursor-not-allowed'
-                )}
-                asChild
-                onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
-                disabled={item.disabled || (item.title === 'Manage Staff' && isDispensaryStaff)}
-            >
-                <Link href={item.disabled ? '#' : item.href}>
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.title}
-                {item.badge && <Badge className="ml-auto">{item.badge}</Badge>}
-                </Link>
-            </Button>
-            ))}
+            {managementSidebarNavItems.map((item) => {
+              const itemDisabled = item.disabled || (item.title === 'Manage Staff' && isDispensaryStaff);
+              return (
+              <Button
+                  key={item.title}
+                  variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'}
+                  className={cn(
+                  'w-full justify-start text-sm',
+                  pathname.startsWith(item.href)
+                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                      : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                  itemDisabled && 'opacity-50 cursor-not-allowed'
+                  )}
+                  asChild
+                  onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                  disabled={itemDisabled}
+              >
+                  <Link href={itemDisabled ? '#' : item.href}>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.title}
+                  {item.badge && <Badge className="ml-auto">{item.badge}</Badge>}
+                  </Link>
+              </Button>
+              )
+            })}
             <Separator className="my-2" />
              {settingsSidebarNavItems.map((item) => (
             <Button
