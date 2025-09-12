@@ -89,6 +89,100 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       </div>
     </div>
   );
+  
+  const renderFooterContent = () => {
+    // If onRequestProduct is provided, we are in the "Browse Pool" context.
+    // ALWAYS show the "Request Product" button in this case.
+    if (onRequestProduct) {
+      return (
+        <>
+          <div className="w-full text-right">
+              <p className="text-2xl font-bold text-black dark:text-white">
+                  <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                  {tier.price.toFixed(2)}
+              </p>
+              <div className="flex items-center justify-end text-xs text-muted-foreground">
+                  <span className="mr-1">/ {tier.unit}</span>
+              </div>
+          </div>
+          <div className="w-full">
+              <Button 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-md font-semibold"
+                  onClick={() => onRequestProduct(product, tier)}
+                  disabled={requestStatus === 'negotiating' || tierStock <= 0}
+              >
+                  {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Truck className="mr-2 h-5 w-5" /> Request Product</>}
+              </Button>
+          </div>
+        </>
+      );
+    }
+
+    // Otherwise, we are in the public store view. Use the original logic.
+    if (isThcProduct) {
+       return (
+        <>
+          <div className="w-full text-right">
+            <p className="text-2xl font-bold text-black dark:text-white">
+              <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+              {tier.price.toFixed(2)}
+            </p>
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+              <span>{tier.unit}</span>
+              <span className="mx-1">/</span>
+              <span>Sticker price</span>
+            </div>
+            <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
+              FREE SAMPLE with this sticker
+            </p>
+          </div>
+          <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
+            <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+              Press Buy Design below to buy a strain sticker and receive your free sample.
+            </p>
+          </div>
+          <div className="w-full space-y-2">
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
+              disabled={tierStock <= 0}
+              onClick={() => onGenerateDesigns?.(product, tier)}
+              aria-label={`Buy design for ${product.name}`}
+            >
+              <Sparkles className="h-5 w-5" />
+              Buy design
+            </Button>
+          </div>
+        </>
+      );
+    }
+    
+    // Default case for regular products in public store view.
+    return (
+      <>
+        <div className="w-full text-right">
+            <p className="text-2xl font-bold text-black dark:text-white">
+                <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                {tier.price.toFixed(2)}
+            </p>
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+                <span className="mr-1">/ {tier.unit}</span>
+            </div>
+        </div>
+        <div className="w-full">
+            <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                disabled={tierStock <= 0 || !canAddToCart}
+                onClick={handleAddToCartClick}
+                aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
+            >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+            </Button>
+        </div>
+      </>
+    );
+  };
+
 
   return (
     <>
@@ -164,74 +258,8 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             )}
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 mt-auto">
-          {isThcProduct ? (
-            <>
-              <div className="w-full text-right">
-                <p className="text-2xl font-bold text-black dark:text-white">
-                  <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
-                  {tier.price.toFixed(2)}
-                </p>
-                <div className="flex items-center justify-end text-xs text-muted-foreground">
-                  <span>{tier.unit}</span>
-                  <span className="mx-1">/</span>
-                  <span>Sticker price</span>
-                </div>
-                <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
-                  FREE SAMPLE with this sticker
-                </p>
-              </div>
-              <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
-                <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-                  Press Buy Design below to buy a strain sticker and receive your free sample.
-                </p>
-              </div>
-              <div className="w-full space-y-2">
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
-                  disabled={tierStock <= 0}
-                  onClick={() => onGenerateDesigns?.(product, tier)}
-                  aria-label={`Buy design for ${product.name}`}
-                >
-                  <Sparkles className="h-5 w-5" />
-                  Buy design
-                </Button>
-              </div>
-            </>
-          ) : (
-             <>
-                <div className="w-full text-right">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                        <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
-                        {tier.price.toFixed(2)}
-                    </p>
-                    <div className="flex items-center justify-end text-xs text-muted-foreground">
-                        <span className="mr-1">/ {tier.unit}</span>
-                    </div>
-                </div>
-                <div className="w-full">
-                {onRequestProduct ? (
-                    <Button 
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white text-md font-semibold"
-                        onClick={() => onRequestProduct(product, tier)}
-                        disabled={requestStatus === 'negotiating' || tierStock <= 0}
-                    >
-                        {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Truck className="mr-2 h-5 w-5" /> Request Product</>}
-                    </Button>
-                ) : (
-                    <Button
-                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
-                        disabled={tierStock <= 0 || !canAddToCart}
-                        onClick={handleAddToCartClick}
-                        aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
-                    >
-                        <ShoppingCart className="mr-2 h-5 w-5" />
-                        {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </Button>
-                )}
-                </div>
-            </>
-          )}
-          {infoButtons}
+            {renderFooterContent()}
+            {infoButtons}
         </CardFooter>
       </Card>
       
