@@ -34,7 +34,7 @@ export interface Dispensary {
   deliveryRadius?: string | null;
   message?: string | null;
   status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
-  applicationDate: Timestamp | Date | string | null; // Changed to allow null
+  applicationDate: Timestamp | Date | string | null; 
   approvedDate?: Timestamp | Date | string | null;
   lastActivityDate?: Timestamp | Date | string | null;
   publicStoreUrl?: string | null;
@@ -76,6 +76,7 @@ export interface ProductAttribute {
 // Represents a Product document in Firestore
 export interface Product {
   id?: string;
+  creatorUid: string;
   dispensaryId: string;
   dispensaryName: string;
   dispensaryType: string; 
@@ -161,10 +162,15 @@ export interface ProductRequest {
   requesterEmail: string;
 
   quantityRequested: number;
+  requestedTier?: PriceTier | null;
   preferredDeliveryDate?: string | null;
+  actualDeliveryDate?: string | null;
   deliveryAddress: string;
   contactPerson: string;
   contactPhone: string;
+  
+  requesterConfirmed?: boolean; // Requester agrees to the accepted terms
+  ownerConfirmed?: boolean;   // Owner confirms after requester, finalizing order
 
   requestStatus:
     | "pending_owner_approval"
@@ -173,7 +179,8 @@ export interface ProductRequest {
     | "cancelled"
     | "fulfilled_by_sender"
     | "received_by_requester"
-    | "issue_reported";
+    | "issue_reported"
+    | "ordered";
 
   notes?: NoteData[];
 
@@ -187,6 +194,7 @@ export interface ProductRequest {
     priceTiers: PriceTier[]; 
     imageUrl?: string | null;
   } | null;
+  orderDate?: Timestamp | Date | string;
 }
 
 // Represents a Pool Issue document in Firestore
