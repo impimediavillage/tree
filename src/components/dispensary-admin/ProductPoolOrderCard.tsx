@@ -44,6 +44,12 @@ export const ProductPoolOrderCard: React.FC<ProductPoolOrderCardProps> = ({ orde
                         <Calendar className="h-4 w-4"/>
                         <span>Ordered on: {order.orderDate ? format((order.orderDate as any).toDate(), 'PP') : 'N/A'}</span>
                     </div>
+                    {order.actualDeliveryDate && (
+                      <div className="flex items-center gap-2 text-orange-600 font-semibold text-xs p-2 bg-orange-50 rounded-md border border-orange-200">
+                          <Truck className="h-4 w-4"/>
+                          <span>Seller delivery by date: {format(new Date(order.actualDeliveryDate), 'PP')}</span>
+                      </div>
+                    )}
                     <div className="pt-2 grid grid-cols-2 gap-4">
                         <div className="flex flex-col">
                             <span className="text-xs text-muted-foreground">Quantity</span>
@@ -52,7 +58,6 @@ export const ProductPoolOrderCard: React.FC<ProductPoolOrderCardProps> = ({ orde
                          <div className="flex flex-col">
                             <span className="text-xs text-muted-foreground">Total Value</span>
                             <span className="font-semibold text-green-600 flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
                                 {(order.quantityRequested * (order.requestedTier?.price || 0)).toFixed(2)}
                                 <span className="text-xs text-muted-foreground ml-1">{order.productDetails?.currency}</span>
                             </span>
