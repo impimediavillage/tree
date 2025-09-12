@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -23,10 +24,12 @@ import Image from 'next/image';
 import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { getProductCollectionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { Input } from '../ui/input';
 
 
 const addNoteSchema = z.object({
   note: z.string().min(1, "Note cannot be empty.").max(1000, "Note is too long."),
+  actualDeliveryDate: z.string().optional(),
 });
 type AddNoteFormData = z.infer<typeof addNoteSchema>;
 
@@ -54,14 +57,15 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
 
     const form = useForm<AddNoteFormData>({
         resolver: zodResolver(addNoteSchema),
-        defaultValues: { note: '' },
+        defaultValues: { note: '', actualDeliveryDate: request.actualDeliveryDate || '' },
     });
 
     React.useEffect(() => {
         if (isOpen) {
+            form.reset({ note: '', actualDeliveryDate: request.actualDeliveryDate || '' });
             setTimeout(() => notesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
         }
-    }, [isOpen, request.notes]);
+    }, [isOpen, request.notes, request.actualDeliveryDate, form]);
 
     const handleOwnerFinalAccept = async () => {
         if (!request.id) return;
@@ -69,12 +73,10 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         try {
             const batch = writeBatch(db);
             
-            // 1. Create a new document in productPoolOrders
             const orderData = { ...request, orderDate: serverTimestamp(), requestStatus: 'ordered' };
             const newOrderRef = doc(collection(db, 'productPoolOrders'));
             batch.set(newOrderRef, orderData);
             
-            // 2. Delete the original request from productRequests
             const requestRef = doc(db, 'productRequests', request.id);
             batch.delete(requestRef);
             
@@ -98,22 +100,18 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         try {
             const requestRef = doc(db, 'productRequests', request.id);
             
-            // Owner initial accept
             if (type === 'incoming' && newStatus === 'accepted' && !request.requesterConfirmed) {
                 await updateDoc(requestRef, { requestStatus: 'accepted', updatedAt: serverTimestamp() });
                 toast({ title: "Request Accepted", description: "Waiting for the requester to confirm the order." });
             } 
-            // Owner rejects (only possible after requester confirms)
             else if (type === 'incoming' && newStatus === 'rejected') {
                  await updateDoc(requestRef, { requestStatus: 'rejected', updatedAt: serverTimestamp() });
                  toast({ title: "Request Rejected", variant: "destructive" });
             }
-            // Requester cancels
             else if (type === 'outgoing' && newStatus === 'cancelled') {
                  await updateDoc(requestRef, { requestStatus: 'cancelled', updatedAt: serverTimestamp() });
                  toast({ title: "Request Cancelled" });
             }
-            // Other status updates (fulfillment, etc.)
             else {
                  await updateDoc(requestRef, { requestStatus: newStatus, updatedAt: serverTimestamp() });
                  toast({ title: "Status Updated", description: `Request status set to ${newStatus.replace(/_/g, ' ')}.` });
@@ -149,21 +147,34 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
     const onNoteSubmit = async (data: AddNoteFormData) => {
         if (!request.id || !currentUser) return;
         setIsSubmitting(true);
-        const newNote: NoteData = {
-            note: data.note,
-            byName: currentUser.displayName || 'Unnamed User',
-            senderRole: type === 'incoming' ? 'owner' : 'requester',
-            timestamp: new Date(),
+        
+        const updatePayload: any = {
+            updatedAt: serverTimestamp(),
         };
+
+        if(data.note.trim()) {
+            const newNote: NoteData = {
+                note: data.note,
+                byName: currentUser.displayName || 'Unnamed User',
+                senderRole: type === 'incoming' ? 'owner' : 'requester',
+                timestamp: new Date(),
+            };
+            updatePayload.notes = arrayUnion(newNote);
+        }
+
+        if(type === 'incoming' && data.actualDeliveryDate) {
+            updatePayload.actualDeliveryDate = data.actualDeliveryDate;
+        }
+
         try {
             const requestRef = doc(db, 'productRequests', request.id);
-            await updateDoc(requestRef, { notes: arrayUnion(newNote), updatedAt: serverTimestamp() });
-            toast({ title: "Note Added", description: "Your note has been added to the request." });
+            await updateDoc(requestRef, updatePayload);
+            toast({ title: "Request Updated", description: "Your note and/or date has been saved." });
             form.reset();
             onUpdate();
         } catch (error) {
-            console.error("Error adding note:", error);
-            toast({ title: "Error", description: "Could not add your note.", variant: "destructive" });
+            console.error("Error updating request:", error);
+            toast({ title: "Error", description: "Could not update the request.", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -188,7 +199,16 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                 <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
                                 <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
                                 <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
-                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
+                                
+                                <div>
+                                    <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Requester's Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
+                                    {request.actualDeliveryDate && (
+                                        <div className="mt-2 p-2 bg-orange-100 border border-orange-200 rounded-md text-orange-800">
+                                            <p className="font-semibold text-xs">Seller's Actual Date:</p>
+                                            <p className="font-bold">{request.actualDeliveryDate}</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <Separator />
                             <div>
@@ -217,19 +237,30 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                             </div>
                              <Separator />
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-2">
+                                <form onSubmit={form.handleSubmit(onNoteSubmit)} className="space-y-4">
+                                     {type === 'incoming' && (
+                                        <FormField control={form.control} name="actualDeliveryDate" render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel className="font-semibold">Set Actual Delivery Date</FormLabel>
+                                            <FormControl>
+                                                <Input type="date" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    )}
                                     <FormField control={form.control} name="note" render={({ field }) => (
                                         <FormItem>
-                                        <FormLabel className="font-semibold">Respond</FormLabel>
+                                        <FormLabel className="font-semibold">Add a Note</FormLabel>
                                         <FormControl>
-                                            <Textarea placeholder="Type your message to respond..." {...field} className="text-sm"/>
+                                            <Textarea placeholder="Type your message..." {...field} className="text-sm"/>
                                         </FormControl>
                                         <FormMessage />
                                         </FormItem>
                                     )} />
                                     <Button type="submit" size="sm" disabled={isSubmitting}>
                                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                        Add Note
+                                        Save Note & Date
                                     </Button>
                                 </form>
                             </Form>

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 import type { ProductCategory as ProductCategoryType } from '../functions/src/types';
 
@@ -164,6 +165,7 @@ const attributeSchema = z.object({
 });
 
 const baseProductObjectSchema = z.object({
+  creatorUid: z.string().optional(), // Added for staff tracking
   name: z.string().min(2, "Product name must be at least 2 characters."),
   description: z.string().min(10, "Description must be at least 10 characters.").max(1000, "Description too long."),
   
@@ -268,6 +270,7 @@ export const productRequestSchema = z.object({
   quantityRequested: z.number().int().positive("Quantity must be positive."),
   requestedTier: priceTierSchema.optional().nullable(),
   preferredDeliveryDate: z.string().optional().nullable(),
+  actualDeliveryDate: z.string().optional().nullable(),
   deliveryAddress: z.string().min(5, "Delivery address is required."),
   contactPerson: z.string().min(2, "Contact person name is required."),
   contactPhone: z.string().min(10, "Valid contact phone is required."),
@@ -279,7 +282,8 @@ export const productRequestSchema = z.object({
     "cancelled",
     "fulfilled_by_sender",
     "received_by_requester",
-    "issue_reported"
+    "issue_reported",
+    "ordered"
   ]).default("pending_owner_approval"),
 
   notes: z.array(z.object({
@@ -298,14 +302,13 @@ export const productRequestSchema = z.object({
     dispensaryType: z.string(),
     dispensaryName: z.string(),
   }).optional().nullable(),
+  orderDate: z.any().optional(),
 });
 export type ProductRequestFormData = z.infer<typeof productRequestSchema>;
 
 
 export const addProductRequestNoteSchema = z.object({
   note: z.string().min(1, "Note cannot be empty.").max(500, "Note is too long."),
-  byName: z.string(),
-  senderRole: z.enum(['requester', 'owner', 'super_admin']),
 });
 export type AddProductRequestNoteFormData = z.infer<typeof addProductRequestNoteSchema>;
 

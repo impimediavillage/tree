@@ -171,6 +171,7 @@ export interface ProductRequest {
   quantityRequested: number;
   requestedTier?: PriceTier | null;
   preferredDeliveryDate?: string | null;
+  actualDeliveryDate?: string | null;
   deliveryAddress: string;
   contactPerson: string;
   contactPhone: string;
@@ -202,6 +203,7 @@ export interface ProductRequest {
     dispensaryType: string;
     dispensaryName: string;
   } | null;
+  orderDate?: Timestamp | Date | string;
 }
 
 // Represents a Pool Issue document in Firestore
@@ -428,5 +430,3 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
-
-    
