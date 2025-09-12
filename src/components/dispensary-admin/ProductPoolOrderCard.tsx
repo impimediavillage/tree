@@ -38,7 +38,7 @@ export const ProductPoolOrderCard: React.FC<ProductPoolOrderCardProps> = ({ orde
                 <CardContent className="flex-grow text-sm space-y-2">
                      <div className="flex items-center gap-2 text-muted-foreground">
                         {type === 'incoming' ? <Inbox className="h-4 w-4" /> : <Send className="h-4 w-4" />}
-                        <span>{type === 'incoming' ? `Sold To: ${order.requesterDispensaryName}` : `Purchased From: ${order.productDetails?.dispensaryName}`}</span>
+                        <span>{type === 'incoming' ? `Sold To: ${order.requesterDispensaryName}` : `Purchased From: ${order.productDetails?.dispensaryName || 'N/A'}`}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-4 w-4"/>
