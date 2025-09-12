@@ -55,7 +55,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
         role: 'DispensaryStaff', 
         dispensaryId: dispensaryId, // Correctly use the passed dispensaryId
         credits: 0, 
-        status: 'PendingApproval', 
+        status: data.status, 
         createdAt: serverTimestamp() as any,
         lastLoginAt: null,
         welcomeCreditsAwarded: false, // Staff don't get welcome credits
@@ -64,7 +64,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newStaffUserData);
 
-      toast({ title: "Wellness Staff Added", description: `${data.displayName} has been added and is pending your approval.` });
+      toast({ title: "Wellness Staff Added", description: `${data.displayName} has been added with status: ${data.status}.` });
       onUserAdded();
       setIsOpen(false);
       form.reset();
@@ -90,7 +90,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Wellness Staff</DialogTitle>
-          <DialogDescription>Create an account for a new staff member for your wellness profile. They will start as 'Pending Approval'.</DialogDescription>
+          <DialogDescription>Create an account for a new staff member for your wellness profile.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -106,7 +106,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
             <FormField control={form.control} name="status" render={({ field }) => (
               <FormItem>
                 <FormLabel>Initial Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="PendingApproval">Pending Approval</SelectItem>
