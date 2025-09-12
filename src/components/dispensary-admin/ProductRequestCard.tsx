@@ -21,10 +21,11 @@ import { Textarea } from '../ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '../ui/separator';
 import Image from 'next/image';
-import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowUpDown, Eye, MessageSquare, Check, X, Ban, Truck, Package, AlertTriangle, Inbox, Send, Calendar, User, Phone, MapPin, Loader2, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
 import { getProductCollectionName } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { Input } from '../ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 const addNoteSchema = z.object({
@@ -269,7 +270,10 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                 <h4 className="font-semibold text-sm">Update Status</h4>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                                     {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
-                                        <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept Request</Button>
+                                        <>
+                                            <Button onClick={() => handleStatusUpdate('accepted')} disabled={isSubmitting}>Accept Request</Button>
+                                            <Button variant="destructive" onClick={() => handleStatusUpdate('rejected')} disabled={isSubmitting}>Reject Request</Button>
+                                        </>
                                     )}
                                     {type === 'incoming' && request.requestStatus === 'accepted' && !request.requesterConfirmed && (
                                         <Badge className="col-span-full justify-center">Awaiting Requester Confirmation</Badge>
@@ -315,9 +319,10 @@ interface ProductRequestCardProps {
   request: ProductRequest;
   type: 'incoming' | 'outgoing';
   onUpdate: () => void;
+  onDelete: (requestId: string) => void;
 }
 
-export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request, type, onUpdate }) => {
+export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request, type, onUpdate, onDelete }) => {
     const { color, icon } = getStatusProps(request.requestStatus);
     const { toast } = useToast();
     const [isSoldOutLoading, setIsSoldOutLoading] = React.useState(false);
@@ -408,17 +413,36 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
                 <ManageRequestDialog request={request} type={type} onUpdate={onUpdate} />
-                {type === 'incoming' && request.requestStatus === 'pending_owner_approval' && (
-                    <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        className="w-full"
-                        onClick={handleMarkAsSoldOut}
-                        disabled={isSoldOutLoading}
-                    >
-                         {isSoldOutLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Mark Tier as Sold Out
-                    </Button>
+                {type === 'incoming' && (
+                    <div className="w-full flex gap-2">
+                        {request.requestStatus === 'pending_owner_approval' && (
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                className="w-full"
+                                onClick={handleMarkAsSoldOut}
+                                disabled={isSoldOutLoading}
+                            >
+                                {isSoldOutLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Mark Tier Sold Out
+                            </Button>
+                        )}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm" className="w-full"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This will permanently delete this request. This action cannot be undone.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => onDelete(request.id!)}>Delete Request</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
                 )}
             </CardFooter>
         </Card>

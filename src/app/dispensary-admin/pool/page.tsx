@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import type { ProductRequest } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,6 +70,17 @@ export default function WellnessPoolPage() {
     }
   };
 
+  const handleDeleteRequest = async (requestId: string) => {
+    try {
+        await deleteDoc(doc(db, 'productRequests', requestId));
+        toast({title: "Request Deleted", description: "The request has been permanently removed."});
+        fetchRequests(dispensaryId!);
+    } catch(error) {
+        toast({title: "Error", description: "Could not delete the request.", variant: "destructive"});
+        console.error("Error deleting request:", error);
+    }
+  }
+
   const incomingPendingCount = incomingRequests.filter(r => r.requestStatus === 'pending_owner_approval').length;
   const outgoingNegotiatingCount = outgoingRequests.filter(r => ['pending_owner_approval', 'accepted'].includes(r.requestStatus)).length;
 
@@ -119,7 +130,8 @@ export default function WellnessPoolPage() {
             key={request.id} 
             request={request} 
             type={type} 
-            onUpdate={handleRequestUpdate} 
+            onUpdate={handleRequestUpdate}
+            onDelete={handleDeleteRequest}
           />
         ))}
       </div>
