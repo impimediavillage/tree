@@ -59,6 +59,7 @@ export default function EditHomeopathyProductPage() {
   
   const [files, setFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [originalImageUrls, setOriginalImageUrls] = useState<string[]>([]);
   
   const productCollectionName = getProductCollectionName();
   
@@ -89,7 +90,9 @@ export default function EditHomeopathyProductPage() {
 
         const productData = productSnap.data() as ProductType;
         form.reset(productData as ProductFormData);
-        setExistingImageUrls(productData.imageUrls || []);
+        const imageUrls = productData.imageUrls || [];
+        setExistingImageUrls(imageUrls);
+        setOriginalImageUrls(imageUrls);
         
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -99,29 +102,35 @@ export default function EditHomeopathyProductPage() {
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
-  const handleRemoveExistingImage = async (urlToRemove: string) => {
-    try {
-        const imageRef = storageRef(storage, urlToRemove);
-        await deleteObject(imageRef);
-        setExistingImageUrls(prev => prev.filter(url => url !== urlToRemove));
-        toast({ title: "Image Removed", description: "The image has been marked for deletion and will be removed on save." });
-    } catch (error) {
-        console.error("Error removing existing image:", error);
-        toast({ title: "Error", description: "Could not remove the image from storage.", variant: "destructive" });
-    }
-  }
-  
   const onSubmit = async (data: ProductFormData) => {
     if (!currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
-        let finalImageUrls: string[] = [...existingImageUrls];
-        if (files.length > 0) {
-            toast({ title: "Uploading Images...", description: "Please wait while new product images are uploaded.", variant: "default" });
-            const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
-            const newUrls = await Promise.all(uploadPromises);
-            finalImageUrls = [...finalImageUrls, ...newUrls];
+        // --- Image Deletion Logic ---
+        const imagesToDelete = originalImageUrls.filter(url => !existingImageUrls.includes(url));
+        if (imagesToDelete.length > 0) {
+            toast({ title: "Deleting Old Images...", description: `Removing ${imagesToDelete.length} image(s).`, variant: "default" });
+            const deletePromises = imagesToDelete.map(url => {
+                try {
+                    const imageRef = storageRef(storage, url);
+                    return deleteObject(imageRef);
+                } catch (error) {
+                    console.warn(`Failed to create ref for old image ${url}, it might have already been deleted.`, error);
+                    return Promise.resolve(); // Continue if a ref fails
+                }
+            });
+            await Promise.all(deletePromises);
         }
+
+        // --- New Image Upload Logic ---
+        let newImageUrls: string[] = [];
+        if (files.length > 0) {
+            toast({ title: "Uploading New Images...", description: "Please wait while new product images are uploaded.", variant: "default" });
+            const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
+            newImageUrls = await Promise.all(uploadPromises);
+        }
+        
+        const finalImageUrls = [...existingImageUrls, ...newImageUrls];
         
         const sanitizedData = Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
@@ -293,7 +302,7 @@ export default function EditHomeopathyProductPage() {
                     )}
                     <Separator />
                     <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
-                    <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={handleRemoveExistingImage} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
             </div>

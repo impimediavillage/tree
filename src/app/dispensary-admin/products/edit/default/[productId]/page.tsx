@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDispensaryAdmin } from '@/contexts/DispensaryAdminContext';
 import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
 import { productSchema, type ProductFormData } from '@/lib/schemas';
 import type { Product as ProductType, Dispensary } from '@/types';
 
@@ -62,6 +62,7 @@ export default function DefaultEditProductPage() {
   
   const [files, setFiles] = useState<File[]>([]);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [originalImageUrls, setOriginalImageUrls] = useState<string[]>([]);
 
   
   const productCollectionName = getProductCollectionName(currentDispensary?.dispensaryType);
@@ -94,7 +95,9 @@ export default function DefaultEditProductPage() {
 
         const productData = productSnap.data() as ProductType;
         form.reset(productData as ProductFormData);
-        setExistingImageUrls(productData.imageUrls || []);
+        const imageUrls = productData.imageUrls || [];
+        setExistingImageUrls(imageUrls);
+        setOriginalImageUrls(imageUrls);
         
     } catch (error) {
       console.error("Error fetching initial data:", error);
@@ -111,13 +114,31 @@ export default function DefaultEditProductPage() {
     if (!currentDispensary || !currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
-        let uploadedImageUrls: string[] = [...existingImageUrls];
-        if (files.length > 0) {
-            toast({ title: "Uploading Images...", description: "Please wait while new product images are uploaded.", variant: "default" });
-            const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
-            const newUrls = await Promise.all(uploadPromises);
-            uploadedImageUrls = [...uploadedImageUrls, ...newUrls];
+        // --- Image Deletion Logic ---
+        const imagesToDelete = originalImageUrls.filter(url => !existingImageUrls.includes(url));
+        if (imagesToDelete.length > 0) {
+            toast({ title: "Deleting Old Images...", description: `Removing ${imagesToDelete.length} image(s).`, variant: "default" });
+            const deletePromises = imagesToDelete.map(url => {
+                try {
+                    const imageRef = storageRef(storage, url);
+                    return deleteObject(imageRef);
+                } catch (error) {
+                    console.warn(`Failed to create ref for old image ${url}, it might have already been deleted.`, error);
+                    return Promise.resolve(); // Continue if a ref fails (e.g., malformed URL)
+                }
+            });
+            await Promise.all(deletePromises);
         }
+
+        // --- New Image Upload Logic ---
+        let newImageUrls: string[] = [];
+        if (files.length > 0) {
+            toast({ title: "Uploading New Images...", description: "Please wait while new product images are uploaded.", variant: "default" });
+            const uploadPromises = files.map(file => { const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`); return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref)); });
+            newImageUrls = await Promise.all(uploadPromises);
+        }
+
+        const finalImageUrls = [...existingImageUrls, ...newImageUrls];
         
         const sanitizedData = Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
@@ -126,8 +147,8 @@ export default function DefaultEditProductPage() {
         const productData = { 
             ...sanitizedData, 
             updatedAt: serverTimestamp(), 
-            imageUrls: uploadedImageUrls, 
-            imageUrl: uploadedImageUrls[0] || null,
+            imageUrls: finalImageUrls, 
+            imageUrl: finalImageUrls[0] || null,
             quantityInStock: data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0) 
         };
         

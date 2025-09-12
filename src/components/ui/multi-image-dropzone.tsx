@@ -116,7 +116,7 @@ const MultiImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
             {existingImageUrls.map((url, i) => (
               <div key={`existing-${i}`} className="relative aspect-square w-full rounded-md shadow-lg">
                 <Image src={url} alt={`Existing image ${i+1}`} fill sizes="100px" style={{ objectFit: 'cover' }} className="rounded-md" />
-                <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                   onClick={(e) => { e.stopPropagation(); onExistingImageDelete?.(url); }} >
                   <X className="h-4 w-4" />
                 </Button>
@@ -125,7 +125,7 @@ const MultiImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
             {newFiles.map((file, i) => (
               <div key={`new-${i}`} className="relative aspect-square w-full rounded-md shadow-lg">
                 <Image src={URL.createObjectURL(file)} alt={file.name} fill sizes="100px" style={{ objectFit: 'cover' }} className="rounded-md" />
-                <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
                   onClick={(e) => { e.stopPropagation(); removeNewFile(i); }} >
                   <X className="h-4 w-4" />
                 </Button>
