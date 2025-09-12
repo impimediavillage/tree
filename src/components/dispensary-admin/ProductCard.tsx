@@ -171,14 +171,14 @@ export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
       </Card>
 
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-4xl p-2 sm:p-4">
-          <DialogHeader>
+        <DialogContent className="max-w-xl w-full p-2 sm:p-4">
+          <DialogHeader className="p-2">
             <DialogTitle>{product.name}</DialogTitle>
             <DialogDescription>
               Image {selectedImageIndex + 1} of {images.length}
             </DialogDescription>
           </DialogHeader>
-          <div className="relative aspect-video w-full">
+          <div className="relative aspect-square w-full">
             {images[selectedImageIndex] && (
               <Image
                 src={images[selectedImageIndex]!}
@@ -205,7 +205,7 @@ export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
                     <button
                       key={url}
                       className={cn(
-                        "h-16 w-16 rounded-md border-2 flex-shrink-0",
+                        "h-14 w-14 rounded-md border-2 flex-shrink-0",
                         i === selectedImageIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                       )}
                       onClick={() => setSelectedImageIndex(i)}
