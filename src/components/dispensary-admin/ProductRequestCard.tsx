@@ -204,7 +204,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                                     <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-4 w-4"/>Requester's Preferred Date</p><p>{request.preferredDeliveryDate || 'Not specified'}</p></div>
                                     {request.actualDeliveryDate && (
                                         <div className="mt-2 p-2 bg-orange-100 border border-orange-200 rounded-md text-orange-800">
-                                            <p className="font-semibold text-xs">Seller's Actual Date:</p>
+                                            <p className="font-semibold text-xs">Seller's Actual delivery Date:</p>
                                             <p className="font-bold">{request.actualDeliveryDate}</p>
                                         </div>
                                     )}
