@@ -171,7 +171,7 @@ export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
       </Card>
 
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-xl w-full p-2 sm:p-4">
+        <DialogContent className="max-w-lg w-full p-2 sm:p-4">
           <DialogHeader className="p-2">
             <DialogTitle>{product.name}</DialogTitle>
             <DialogDescription>
@@ -232,3 +232,4 @@ export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
     </>
   );
 }
+    
