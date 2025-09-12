@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ const mainSidebarNavItems: NavItem[] = [
   { title: 'Promo Collections', href: '/dispensary-admin/promotions', icon: Palette },
   { title: 'Browse Pool', href: '/dispensary-admin/browse-pool', icon: ShoppingBasket, ownerOnly: true },
   { title: 'My Pool Activity', href: '/dispensary-admin/pool', icon: History, ownerOnly: true },
+  { title: 'Pool Orders', href: '/dispensary-admin/product-pool-orders', icon: PackageCheck, ownerOnly: true },
   { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered, disabled: true, badge: 'Soon' },
 ];
 
