@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { Truck, PackageCheck, Calendar, DollarSign, Inbox, Send } from 'lucide-react';
+import { Truck, PackageCheck, Calendar, Inbox, Send } from 'lucide-react';
 import { ManageShippingDialog } from './ManageShippingDialog';
 
 interface ProductPoolOrderCardProps {
