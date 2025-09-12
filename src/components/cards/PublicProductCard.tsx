@@ -114,18 +114,17 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                     </div>
                     <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
                         <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-                            Press Buy Design below to request this product for your store.
+                            Press Buy Design Pack below to request this product for your store.
                         </p>
                     </div>
                     <div className="w-full space-y-2">
                         <Button
                             className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
                             disabled={tierStock <= 0 || requestStatus === 'negotiating'}
-                            // ...but the onClick action triggers the product request flow.
                             onClick={() => onRequestProduct(product, tier)}
                             aria-label={`Request product ${product.name}`}
                         >
-                          {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Sparkles className="h-5 w-5" /> Buy design</>}
+                          {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Sparkles className="h-5 w-5" /> Buy Design Pack</>}
                         </Button>
                     </div>
                 </>
@@ -176,7 +175,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           </div>
           <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
             <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-              Press Buy Design below to buy a strain sticker and receive your free sample.
+              Press Buy Design Pack below to buy a strain sticker and receive your free sample.
             </p>
           </div>
           <div className="w-full space-y-2">
@@ -187,7 +186,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               aria-label={`Buy design for ${product.name}`}
             >
               <Sparkles className="h-5 w-5" />
-              Buy design
+              Buy Design Pack
             </Button>
           </div>
         </>
