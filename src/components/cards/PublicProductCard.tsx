@@ -114,7 +114,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                     </div>
                     <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
                         <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-                            Press Buy Design Pack below to request this product for your store.
+                           Press Buy Design Pack below to request this product for your store.
                         </p>
                     </div>
                     <div className="w-full space-y-2">
@@ -170,12 +170,12 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               <span>Sticker price</span>
             </div>
             <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
-              FREE SAMPLE with this sticker
+              FREE SAMPLE with this sticker set.
             </p>
           </div>
           <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
             <p className="text-xs font-semibold text-green-700 dark:text-green-300">
-              Press Buy Design Pack below to buy a strain sticker and receive your free sample.
+              Press Buy Design Pack below to create your Unique strain sticker set and receive your free sample.
             </p>
           </div>
           <div className="w-full space-y-2">
