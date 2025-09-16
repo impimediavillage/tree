@@ -33,7 +33,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The background environment of the artwork must be a dynamic, artistic representation of its flavors: ${flavors.join(', ')}.`
+        ? `The background environment must be a **hyper-animated, artistic representation of its flavors**: ${flavors.join(', ')}.`
         : 'The background environment of the artwork should be a clean, studio-quality environment with subtle, colorful influences.';
 
     const dispensaryNameUpper = dispensaryName.toUpperCase();
@@ -44,7 +44,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
 
     **Central Artwork:**
     - Create a **hyper-animated, 3D isometric, modeling clay presentation** of a cannabis bud (flower) for the strain "${strainName}".
-    - The clay style must be exaggerated, colorful, and vibrant, featuring intricate details like **visibly oozing THC resin** and exaggerated trichomes.
+    - The clay style must be exaggerated, colorful, and vibrant, featuring intricate details like **visibly oozing THC resin and honey** and exaggerated trichomes.
     - **Crucially, the artwork and its background environment must fill the entire circular sticker area, edge to edge.** There should be no separate internal background; the text will overlay this artwork.
     - ${flavorPrompt}
 
@@ -53,7 +53,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Top Arc Text:** Include "${dispensaryNameUpper}" following the **inside top curve** of the circle.
     - **Bottom Arc Text:** Include "${wellnessTreeText}" following the **inside bottom curve** of the circle.
     - The text must be **overlaid directly on top of the central artwork**.
-    - The font should be a clean, modern, sans-serif style that complements the 3D clay aesthetic.
+    - The font should be a **bold, clean, modern, sans-serif style** that complements the 3D clay aesthetic.
     - **The text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable against the colorful image behind it.
     - Ensure text is perfectly spaced and follows the circular path flawlessly.
 
