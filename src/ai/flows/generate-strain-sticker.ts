@@ -33,27 +33,29 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The background should be a subtle, artistic representation of its flavors: ${flavors.join(', ')}.`
-        : 'The background should be a clean, studio-quality environment with subtle, colorful influences.';
+        ? `The background environment of the artwork should be a subtle, artistic representation of its flavors: ${flavors.join(', ')}.`
+        : 'The background environment of the artwork should be a clean, studio-quality environment with subtle, colorful influences.';
 
     const dispensaryNameUpper = dispensaryName.toUpperCase();
     const wellnessTreeText = "The Wellness Tree".toUpperCase();
 
     return `
-    Generate a single, high-resolution (1000x1000 pixels), HD, studio-quality circular logo on a solid white background.
-    
+    Generate a single, high-resolution (1024x1024 pixels), HD, studio-quality circular sticker design on a solid white background.
+
     **Central Artwork:**
-    Create a hyper-realistic, 3D, isometric, modeling clay presentation of a cannabis bud (flower) for the strain "${strainName}". The design must be colorful and vibrant.
-    ${flavorPrompt}
+    - Create a hyper-realistic, 3D isometric, modeling clay presentation of a cannabis bud (flower) for the strain "${strainName}".
+    - The design must be colorful and vibrant.
+    - **Crucially, the artwork and its background environment must fill the entire circular sticker area, edge to edge.** There should be no separate internal background; the text will overlay this artwork.
+    - ${flavorPrompt}
 
     **Text and Border Rules:**
-    The design must be enclosed in a precise circular border.
-
-    - **Top Arc Text:** Include "${dispensaryNameUpper}" following the **inside top curve** of the circle. The text must be perfectly spaced, starting from the left-center and arcing across the top to the right-center.
-
-    - **Bottom Arc Text:** Include "${wellnessTreeText}" following the **inside bottom curve** of the circle. The text must be perfectly spaced, starting from the left-center (just below the top text's start) and arcing down and around to the right-center.
-    
-    The font for both texts should be a clean, modern, sans-serif style that complements the 3D clay aesthetic. Ensure text is readable and follows the circular path flawlessly.
+    - The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
+    - **Top Arc Text:** Include "${dispensaryNameUpper}" following the **inside top curve** of the circle.
+    - **Bottom Arc Text:** Include "${wellnessTreeText}" following the **inside bottom curve** of the circle.
+    - The text must be **overlaid directly on top of the central artwork**.
+    - The font should be a clean, modern, sans-serif style that complements the 3D clay aesthetic.
+    - **The text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable against the colorful image behind it.
+    - Ensure text is perfectly spaced and follows the circular path flawlessly.
 
     **Final Output Guidelines:**
     - The sticker must be perfectly circular on a solid white background.
