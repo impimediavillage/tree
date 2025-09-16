@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 
 
-const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${'i' + 1}.jpg`);
+const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
 
 interface DesignPackDialogProps {
   isOpen: boolean;
