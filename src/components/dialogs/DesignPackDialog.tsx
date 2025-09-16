@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift, X } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 
@@ -42,7 +42,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
     // State for the image viewer
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-    const [viewingImage, setViewingImage] = useState<string | null>(null);
+    const [viewingImageIndex, setViewingImageIndex] = useState<number>(0);
 
     const maxSelectable = product && tier ? Math.ceil(tier.price / 100) : 1;
 
@@ -75,9 +75,8 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         });
     };
 
-    const handleViewImage = (e: React.MouseEvent, imageUrl: string) => {
-        e.stopPropagation(); // Prevent card's onClick from firing
-        setViewingImage(imageUrl);
+    const handleViewImage = (index: number) => {
+        setViewingImageIndex(index);
         setIsImageViewerOpen(true);
     };
 
@@ -134,6 +133,16 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         onOpenChange(false);
     };
 
+    const handleNavigateViewer = (direction: 'next' | 'prev') => {
+        const newIndex = direction === 'next'
+            ? (viewingImageIndex + 1) % tripleSImages.length
+            : (viewingImageIndex - 1 + tripleSImages.length) % tripleSImages.length;
+        setViewingImageIndex(newIndex);
+    };
+
+    const viewingImage = tripleSImages[viewingImageIndex];
+    const isViewingImageSelected = viewingImage ? selectedTripleS.includes(viewingImage) : false;
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -164,17 +173,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                     "cursor-pointer transition-all duration-200 overflow-hidden relative group aspect-square",
                                                     !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                                 )}
-                                                onClick={(e) => handleViewImage(e, imgSrc)}
+                                                onClick={() => handleViewImage(index)}
                                             >
                                                 <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => { e.stopPropagation(); handleSelectTripleS(imgSrc); }}
-                                                    className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110"
-                                                    aria-label={`Select sticker ${index + 1}`}
-                                                >
-                                                    {isSelected ? <CheckSquare className="h-6 w-6 text-white bg-primary rounded-md p-0.5"/> : <Square className="h-6 w-6 text-background/50 bg-background/50 backdrop-blur-sm rounded-md"/>}
-                                                </button>
                                             </Card>
                                         );
                                     })}
@@ -240,12 +241,30 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-lg p-2">
-                     <DialogHeader className="p-2">
-                        <DialogTitle>Triple S Canna club design</DialogTitle>
-                    </DialogHeader>
+                <DialogContent className="max-w-lg p-0">
                     <div className="relative aspect-square w-full">
-                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" />}
+                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-4"/>}
+                        <div className="absolute top-2 right-2 z-20 flex items-center gap-2">
+                            <Button
+                                size="sm"
+                                variant={isViewingImageSelected ? 'default' : 'secondary'}
+                                onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
+                                disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
+                            >
+                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5 mr-2" /> : <Square className="h-5 w-5 mr-2" />}
+                                {isViewingImageSelected ? 'Selected' : 'Select'}
+                            </Button>
+                        </div>
+                    </div>
+                     <div className="absolute inset-y-0 left-0 flex items-center">
+                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleNavigateViewer('prev')}>
+                            <ChevronLeft className="h-8 w-8" />
+                        </Button>
+                    </div>
+                    <div className="absolute inset-y-0 right-0 flex items-center">
+                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleNavigateViewer('next')}>
+                            <ChevronRight className="h-8 w-8" />
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
