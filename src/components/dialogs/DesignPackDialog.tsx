@@ -292,6 +292,14 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             </Button>
                         </div>
                     </div>
+                     <DialogFooter className="p-2 border-t bg-background/80">
+                        <div className="flex w-full justify-between items-center">
+                            <p className="text-sm text-muted-foreground">
+                                Selected: {selectedTripleS.length} / {maxSelectable}
+                            </p>
+                            <Button variant="secondary" onClick={() => setIsImageViewerOpen(false)}>Done</Button>
+                        </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
