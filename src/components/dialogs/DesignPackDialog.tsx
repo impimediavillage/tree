@@ -101,19 +101,19 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const handleAddToCart = () => {
         if (!product || !tier || !generatedStickerUrl) return;
 
-        // Combine selected and generated images
-        const allImageUrls = [generatedStickerUrl, ...selectedTripleS];
-
         // Create a special description to identify this item in the cart
-        const specialDescription = `DESIGN_PACK|${product.name}|${tier.unit}|${JSON.stringify(allImageUrls)}`;
+        // The image URLs are too long for description, so we'll handle them differently if needed.
+        // For now, the key is the generated image and knowing it's a design pack.
+        const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
         
         const designPackProduct: Product = {
             ...product,
             id: `design-${product.id}-${tier.unit}`, // Unique ID for this design pack instance in cart
-            name: `Design Pack: ${product.name}`,
-            description: specialDescription,
-            category: `Sticker Design Pack`,
-            imageUrl: generatedStickerUrl,
+            name: `Sticker Design: ${product.name}`,
+            description: specialDescription, // Special identifier
+            category: `Digital Design (${'custom'})`, // A way to identify the theme/type
+            imageUrl: generatedStickerUrl, // The main AI-generated image
+            imageUrls: [generatedStickerUrl, ...selectedTripleS], // All images for reference if needed
             priceTiers: [],
             quantityInStock: 999, // Digital product
             createdAt: new Date(),
@@ -159,9 +159,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                 !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                             )}
                                         >
-                                            <CardContent className="p-0 aspect-square">
-                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" className="p-2"/>
-                                                <div className="absolute top-2 right-2">
+                                            <CardContent className="p-0 aspect-square relative">
+                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" />
+                                                <div className="absolute top-2 right-2 z-10">
                                                     {isSelected ? <CheckSquare className="h-6 w-6 text-white bg-primary rounded-md p-0.5"/> : <Square className="h-6 w-6 text-background/50 bg-background/50 backdrop-blur-sm rounded-md"/>}
                                                 </div>
                                             </CardContent>
