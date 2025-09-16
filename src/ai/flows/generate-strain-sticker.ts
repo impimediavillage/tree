@@ -33,7 +33,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The background must be a **hyper-animated, artistic representation of its flavors**: ${flavors.join(', ')}.`
+        ? `The flavors of **${flavors.join(', ')}** must be visualized as colorful, hyper-animated elements **oozing and swirling directly out from the bud**, blending into the dynamic background.`
         : 'The background should be a dynamic and colorful abstract environment.';
 
     return `
@@ -44,24 +44,22 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     **Central Artwork (Focal Point):**
     - **Subject:** At the absolute center, create a cannabis bud for the strain "${strainName}".
     - **Style:** It must be a **hyper-animated, 3D isometric, modeling clay presentation**. The style should be exaggerated, colorful, and vibrant.
-    - **Details:** The bud must feature intricate details like **visibly oozing THC resin and honey**. It should have **rainbows bursting out from within it**. The trichomes must be exaggerated and colorful.
+    - **Details:** The bud must feature intricate details like **extra thick, visibly oozing and dripping THC resin and honey**. It must have **rainbows bursting out from within it**, and the trichomes must be exaggerated and colorful.
 
     **Background:**
-    - **Full Bleed:** The background must be a **full-bleed, hyper-detailed, flavor-inspired environment that covers the entire circular area of the sticker**. There should be no separate internal background; the text will overlay this artwork.
-    - **Dynamic Elements:** The background itself must be animated and dynamic, appearing to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**. There should also be **rays of light bursting outward from the center**.
-    - **Flavors:** ${flavorPrompt}
+    - **Full Bleed & Flavor Integration:** The background must be a **full-bleed, hyper-detailed environment that covers the entire circular area**. ${flavorPrompt} The background itself must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**.
 
     **Text and Border Rules (CRITICAL ACCURACY):**
     - **Border:** The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
     - **Text Elements & Placement:** There are three text elements with specific placements. They must be perfectly curved along the border.
-        1. **Top-Left Arc:** Place **"${dispensaryName}"** along the top-left curve.
-        2. **Top-Right Arc:** Place **"${strainName}"** along the top-right curve.
-        3. **Bottom Arc:** Place **"The Wellness Tree"** centered along the bottom curve.
+        1.  **Top-Left Arc:** Place **"${dispensaryName}"** along the top-left curve.
+        2.  **Top-Right Arc:** Place **"${strainName}"** along the top-right curve.
+        3.  **Bottom Arc:** Place **"The Wellness Tree"** centered along the bottom curve.
     - **IMPORTANT:** The text above must be spelled **EXACTLY** as written. Pay special attention to ensure perfect accuracy.
     - **Font & Style:**
-        - The font must be a **bold, clean, modern, sans-serif style**.
+        - The font must be a **bold, clean, modern, sans-serif style** that is easy to read.
         - **Crucially, all text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable and stands out against the colorful image behind it.
-    - **Positioning:** Text must be perfectly curved to follow the circular path flawlessly.
+    - **Positioning:** Text must be perfectly curved to follow the circular path flawlessly, with proper letter spacing to ensure it spans its designated arc gracefully.
 
     **Final Output Checklist:**
     1.  **Single Object:** The output is one single, perfectly circular sticker.
