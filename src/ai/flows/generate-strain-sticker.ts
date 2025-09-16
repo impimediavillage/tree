@@ -33,7 +33,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The flavors of **${flavors.join(', ')}** must be visualized as colorful, hyper-animated elements **oozing and swirling directly out from the bud**, creating a dynamic background that the bud merges into.`
+        ? `The flavors of **${flavors.join(', ')}** must be visualized as colorful, hyper-animated elements **oozing, dripping, and bursting directly out from the bud and its stem**, creating a dynamic background that the bud merges into.`
         : 'The background should be a dynamic and colorful abstract environment that the central bud merges into.';
 
     return `
@@ -44,7 +44,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     **Central Artwork (Focal Point):**
     - **Subject:** At the absolute center, create a **characterful, cartoonish cannabis bud** for the strain "${strainName}". It should have a playful and humorous personality, as if it's a character in a 3D animation.
     - **Style:** It must be a **hyper-animated, 3D isometric, modeling clay creation, like a frame from a high-end 3D animation**. The style should be exaggerated, colorful, and vibrant.
-    - **Details:** The bud must feature intricate details like **extra thick, visibly oozing and dripping THC resin and honey**. It must have **rainbows bursting out from within it**, and the trichomes must be exaggerated and colorful.
+    - **Details:** The bud and its stem must feature intricate details like **extra thick, visibly oozing, dripping, and bursting THC resin and honey**. It must have **rainbows bursting out from within it**, and the trichomes must be exaggerated and colorful. The oozing effect should originate from both the bud and its stem.
 
     **Background:**
     - **Full Bleed & Integration:** The background must be a **full-bleed, hyper-detailed environment that covers the entire circular area of the sticker**. ${flavorPrompt} The background must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**. Critically, the central bud must **merge seamlessly** into this background, not look like it's placed on top of it.
