@@ -50,7 +50,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Full Bleed & Integration:** The background must be a **full-bleed, hyper-detailed environment that covers the entire circular area of the sticker**. ${flavorPrompt} The background must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**. Critically, the central bud must **merge seamlessly** into this background, not look like it's placed on top of it.
 
     **Text and Border Rules (CRITICAL ACCURACY):**
-    - **Border:** The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
+    - **Border:** The entire design must be enclosed in a precise, **clean, white circular border with an embroidered or stitched texture**, matching the modeling clay style.
     - **Text Elements & Placement:** There are three text elements with specific placements. They must be perfectly curved along the border.
         1.  **Top-Left Arc:** Place **"${dispensaryName}"** along the top-left curve.
         2.  **Top-Right Arc:** Place **"${strainName}"** along the top-right curve.
