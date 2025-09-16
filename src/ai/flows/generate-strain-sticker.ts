@@ -33,7 +33,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The background environment of the artwork should be a subtle, artistic representation of its flavors: ${flavors.join(', ')}.`
+        ? `The background environment of the artwork must be a dynamic, artistic representation of its flavors: ${flavors.join(', ')}.`
         : 'The background environment of the artwork should be a clean, studio-quality environment with subtle, colorful influences.';
 
     const dispensaryNameUpper = dispensaryName.toUpperCase();
@@ -43,8 +43,8 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     Generate a single, high-resolution (1024x1024 pixels), HD, studio-quality circular sticker design on a solid white background.
 
     **Central Artwork:**
-    - Create a hyper-realistic, 3D isometric, modeling clay presentation of a cannabis bud (flower) for the strain "${strainName}".
-    - The design must be colorful and vibrant.
+    - Create a **hyper-animated, 3D isometric, modeling clay presentation** of a cannabis bud (flower) for the strain "${strainName}".
+    - The clay style must be exaggerated, colorful, and vibrant, featuring intricate details like **visibly oozing THC resin** and exaggerated trichomes.
     - **Crucially, the artwork and its background environment must fill the entire circular sticker area, edge to edge.** There should be no separate internal background; the text will overlay this artwork.
     - ${flavorPrompt}
 
@@ -60,7 +60,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     **Final Output Guidelines:**
     - The sticker must be perfectly circular on a solid white background.
     - No external shadows, noise, or watermarks.
-    - High contrast, rich texture, and clean layering to emphasize depth.
+    - High contrast, rich texture, and clean layering to emphasize depth and the 'hype' animated effect.
     `;
 };
 
