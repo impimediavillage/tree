@@ -255,7 +255,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                     <DialogHeader className="p-4 border-b">
                         <DialogTitle>Triple S Canna club design</DialogTitle>
                          <DialogDescription>
-                            Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s).
+                            Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique AI-generated design.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="relative aspect-square w-full">
