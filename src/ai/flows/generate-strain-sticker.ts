@@ -5,13 +5,13 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { GenerateStrainStickerInputSchema, GenerateStrainStickerOutputSchema } from '@/lib/schemas';
 import type { GenerateStrainStickerInput, GenerateStrainStickerOutput } from '@/types';
+import { GenerateStrainStickerInputSchema, GenerateStrainStickerOutputSchema } from '@/lib/schemas';
 
 
 async function generateImage(prompt: string): Promise<string> {
     const { media } = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
+        model: 'googleai/gemini-pro-vision',
         prompt,
         config: {
             safetySettings: [

@@ -27,7 +27,7 @@ import type {
 
 async function generateImage(prompt: string | ({ media: { url: string; }; } | { text: string; })[]): Promise<string> {
     const { media } = await ai.generate({
-        model: 'googleai/imagen-4.0-fast-generate-001',
+        model: 'googleai/gemini-pro-vision',
         prompt: prompt,
         config: {
             safetySettings: [
