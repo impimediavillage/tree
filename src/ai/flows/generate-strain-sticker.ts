@@ -53,11 +53,13 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
 
     **Text and Border Rules:**
     - **Border:** The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
-    - **Top Text:** Include the text "${dispensaryName}" following the **inside top curve** of the circle. The text must be exactly as written.
-    - **Bottom Text:** Include the text "The Wellness Tree" following the **inside bottom curve** of the circle. The text must be exactly as written.
+    - **Text Elements:** There will be three text elements. They must be spaced equally around the circumference of the circle (like points of a triangle).
+        1. **"${dispensaryName}"**
+        2. **"${strainName}"**
+        3. **"The Wellness Tree"**
     - **Font & Style:**
         - The font must be a **bold, clean, modern, sans-serif style**.
-        - **Crucially, the text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable and stands out against the colorful image behind it.
+        - **Crucially, all text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable and stands out against the colorful image behind it.
     - **Positioning:** Text must be perfectly spaced and follow the circular path flawlessly, creating a balanced composition.
 
     **Final Output Checklist:**
@@ -65,7 +67,8 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     2.  **Background:** The sticker is on a solid, plain white background.
     3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker.
     4.  **Style:** The entire design (bud, background, border, text) is a cohesive, hyper-animated, 3D modeling clay style.
-    5.  **Text Readability:** Text is bold, outlined in white, and clearly legible over the artwork.
+    5.  **Text Readability:** All three text elements are bold, have a white outline, and are clearly legible over the artwork.
+    6.  **Text Spacing:** The three text elements are spaced equally around the circle's edge.
     `;
 };
 
