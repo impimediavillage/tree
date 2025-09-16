@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -169,7 +168,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             <Card
                                                 key={index}
                                                 className={cn(
-                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group aspect-square",
+                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square",
                                                     "border-2",
                                                     selectedTripleS.includes(imgSrc) ? "border-primary" : "border-transparent"
                                                 )}
@@ -242,31 +241,35 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             </Dialog>
              <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-lg p-0">
-                    <DialogHeader className="p-4 border-b">
-                        <DialogTitle>Triple S Canna Club Design</DialogTitle>
-                        <DialogDescription>A closer look at the sticker design. You can select up to {maxSelectable} designs.</DialogDescription>
+                     <DialogHeader className="p-4 border-b">
+                        <DialogTitle>Triple S Canna Club design</DialogTitle>
+                        <DialogDescription>A closer look at the sticker design.</DialogDescription>
                     </DialogHeader>
                     <div className="relative aspect-square w-full">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-4"/>}
-                        <div className="absolute top-2 right-2 z-20 flex items-center gap-2">
-                            <Button
+                        <div className="absolute top-2 right-2 z-20">
+                             <Button
                                 size="sm"
                                 variant={isViewingImageSelected ? 'default' : 'secondary'}
                                 onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
                                 disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
+                                className={cn(
+                                    "flex items-center gap-2 shadow-md",
+                                    isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-background/80 text-foreground"
+                                )}
                             >
-                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5 mr-2" /> : <Square className="h-5 w-5 mr-2" />}
+                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
                                 {isViewingImageSelected ? 'Selected' : 'Select'}
                             </Button>
                         </div>
                     </div>
-                     <div className="absolute inset-y-0 left-0 flex items-center">
-                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleNavigateViewer('prev')}>
+                     <div className="absolute inset-y-0 left-0 flex items-center p-4">
+                        <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('prev')}>
                             <ChevronLeft className="h-8 w-8" />
                         </Button>
                     </div>
-                    <div className="absolute inset-y-0 right-0 flex items-center">
-                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full" onClick={() => handleNavigateViewer('next')}>
+                    <div className="absolute inset-y-0 right-0 flex items-center p-4">
+                        <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('next')}>
                             <ChevronRight className="h-8 w-8" />
                         </Button>
                     </div>
