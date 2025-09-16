@@ -33,34 +33,39 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The background environment must be a **hyper-animated, artistic representation of its flavors**: ${flavors.join(', ')}.`
-        : 'The background environment of the artwork should be a clean, studio-quality environment with subtle, colorful influences.';
-
-    const dispensaryNameUpper = dispensaryName.toUpperCase();
-    const wellnessTreeText = "The Wellness Tree".toUpperCase();
+        ? `The background must be a **hyper-animated, artistic representation of its flavors**: ${flavors.join(', ')}.`
+        : 'The background should be a dynamic and colorful abstract environment.';
 
     return `
     Generate a single, high-resolution (1024x1024 pixels), HD, studio-quality circular sticker design on a solid white background.
 
-    **Central Artwork:**
-    - Create a **hyper-animated, 3D isometric, modeling clay presentation** of a cannabis bud (flower) for the strain "${strainName}".
-    - The clay style must be exaggerated, colorful, and vibrant, featuring intricate details like **visibly oozing THC resin and honey** and exaggerated trichomes.
-    - **Crucially, the artwork and its background environment must fill the entire circular sticker area, edge to edge.** There should be no separate internal background; the text will overlay this artwork.
-    - ${flavorPrompt}
+    **Core Concept:** A hyper-animated, 3D isometric, modeling clay world contained within a sticker.
+
+    **Central Artwork (Focal Point):**
+    - **Subject:** At the absolute center, create a cannabis bud for the strain "${strainName}".
+    - **Style:** It must be a **hyper-animated, 3D isometric, modeling clay presentation**. The style should be exaggerated, colorful, and vibrant.
+    - **Details:** The bud must feature intricate details like **visibly oozing THC resin and honey**. It should have **rainbows bursting out from within it**. The trichomes must be exaggerated and colorful.
+
+    **Background:**
+    - **Full Bleed:** The background must be a **full-bleed, flavor-inspired environment that covers the entire circular area of the sticker**. There should be no separate internal background; the text will overlay this artwork.
+    - **Dynamic Elements:** The background itself must be animated and dynamic, appearing to be **oozing with colorful THC and featuring rainbows bursting towards and around the central bud**. There should also be **rays of light bursting outward from the center**.
+    - **Flavors:** ${flavorPrompt}
 
     **Text and Border Rules:**
-    - The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
-    - **Top Arc Text:** Include "${dispensaryNameUpper}" following the **inside top curve** of the circle.
-    - **Bottom Arc Text:** Include "${wellnessTreeText}" following the **inside bottom curve** of the circle.
-    - The text must be **overlaid directly on top of the central artwork**.
-    - The font should be a **bold, clean, modern, sans-serif style** that complements the 3D clay aesthetic.
-    - **The text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable against the colorful image behind it.
-    - Ensure text is perfectly spaced and follows the circular path flawlessly.
+    - **Border:** The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
+    - **Top Text:** Include the text "${dispensaryName}" following the **inside top curve** of the circle. The text must be exactly as written.
+    - **Bottom Text:** Include the text "The Wellness Tree" following the **inside bottom curve** of the circle. The text must be exactly as written.
+    - **Font & Style:**
+        - The font must be a **bold, clean, modern, sans-serif style**.
+        - **Crucially, the text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable and stands out against the colorful image behind it.
+    - **Positioning:** Text must be perfectly spaced and follow the circular path flawlessly, creating a balanced composition.
 
-    **Final Output Guidelines:**
-    - The sticker must be perfectly circular on a solid white background.
-    - No external shadows, noise, or watermarks.
-    - High contrast, rich texture, and clean layering to emphasize depth and the 'hype' animated effect.
+    **Final Output Checklist:**
+    1.  **Single Object:** The output is one single, perfectly circular sticker.
+    2.  **Background:** The sticker is on a solid, plain white background.
+    3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker.
+    4.  **Style:** The entire design (bud, background, border, text) is a cohesive, hyper-animated, 3D modeling clay style.
+    5.  **Text Readability:** Text is bold, outlined in white, and clearly legible over the artwork.
     `;
 };
 
