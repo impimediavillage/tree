@@ -168,20 +168,22 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                         return (
                                             <Card
                                                 key={index}
-                                                className={cn(
-                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square",
-                                                    "border-2",
-                                                    selectedTripleS.includes(imgSrc) ? "border-primary" : "border-transparent"
-                                                )}
+                                                className="cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square"
                                                 onClick={() => handleViewImage(index)}
                                             >
                                                 <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
-                                                <div className={cn(
-                                                    "absolute top-1 right-1 h-6 w-6 rounded-md flex items-center justify-center border transition-colors",
-                                                    selectedTripleS.includes(imgSrc)
-                                                        ? 'bg-primary border-primary-foreground/50'
-                                                        : 'bg-black/40 border-white/50'
-                                                )}>
+                                                <div 
+                                                    className={cn(
+                                                        "absolute top-1 right-1 h-6 w-6 rounded-md flex items-center justify-center border transition-colors z-10",
+                                                        selectedTripleS.includes(imgSrc)
+                                                            ? 'bg-primary border-primary-foreground/50'
+                                                            : 'bg-black/40 border-white/50'
+                                                    )}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSelectTripleS(imgSrc);
+                                                    }}
+                                                >
                                                     <CheckSquare className={cn("h-4 w-4", selectedTripleS.includes(imgSrc) ? 'text-white' : 'text-transparent')} />
                                                 </div>
                                             </Card>
@@ -251,11 +253,11 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-lg p-0">
                     <DialogHeader className="p-4 border-b">
-                        <DialogTitle>Triple S Canna Club design</DialogTitle>
+                        <DialogTitle>Triple S Canna club design</DialogTitle>
                         <DialogDescription>A closer look at the sticker design.</DialogDescription>
                     </DialogHeader>
                     <div className="relative aspect-square w-full">
-                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-4"/>}
+                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-0"/>}
                         <div className="absolute top-2 right-2 z-20">
                              <Button
                                 size="sm"
