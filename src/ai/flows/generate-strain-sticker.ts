@@ -14,6 +14,7 @@ async function generateImage(prompt: string): Promise<string> {
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt,
         config: {
+            responseModalities: ['TEXT', 'IMAGE'],
             safetySettings: [
                 { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
                 { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
