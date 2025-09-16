@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -175,6 +176,14 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                 onClick={() => handleViewImage(index)}
                                             >
                                                 <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                <div className={cn(
+                                                    "absolute top-1 right-1 h-6 w-6 rounded-md flex items-center justify-center border transition-colors",
+                                                    selectedTripleS.includes(imgSrc)
+                                                        ? 'bg-primary border-primary-foreground/50'
+                                                        : 'bg-black/40 border-white/50'
+                                                )}>
+                                                    <CheckSquare className={cn("h-4 w-4", selectedTripleS.includes(imgSrc) ? 'text-white' : 'text-transparent')} />
+                                                </div>
                                             </Card>
                                         );
                                     })}
@@ -239,9 +248,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
                 </DialogContent>
             </Dialog>
-             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+            <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-lg p-0">
-                     <DialogHeader className="p-4 border-b">
+                    <DialogHeader className="p-4 border-b">
                         <DialogTitle>Triple S Canna Club design</DialogTitle>
                         <DialogDescription>A closer look at the sticker design.</DialogDescription>
                     </DialogHeader>
@@ -262,16 +271,16 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                 {isViewingImageSelected ? 'Selected' : 'Select'}
                             </Button>
                         </div>
-                    </div>
-                     <div className="absolute inset-y-0 left-0 flex items-center p-4">
-                        <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('prev')}>
-                            <ChevronLeft className="h-8 w-8" />
-                        </Button>
-                    </div>
-                    <div className="absolute inset-y-0 right-0 flex items-center p-4">
-                        <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('next')}>
-                            <ChevronRight className="h-8 w-8" />
-                        </Button>
+                        <div className="absolute inset-y-0 left-0 flex items-center p-4">
+                            <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('prev')}>
+                                <ChevronLeft className="h-8 w-8" />
+                            </Button>
+                        </div>
+                        <div className="absolute inset-y-0 right-0 flex items-center p-4">
+                            <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('next')}>
+                                <ChevronRight className="h-8 w-8" />
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
