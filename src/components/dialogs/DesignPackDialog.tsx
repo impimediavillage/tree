@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -15,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 
@@ -39,6 +38,10 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const [selectedTripleS, setSelectedTripleS] = useState<string[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedStickerUrl, setGeneratedStickerUrl] = useState<string | null>(null);
+
+    // State for the image viewer
+    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+    const [viewingImage, setViewingImage] = useState<string | null>(null);
 
     const maxSelectable = product && tier ? Math.ceil(tier.price / 100) : 1;
 
@@ -71,6 +74,12 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         });
     };
 
+    const handleViewImage = (e: React.MouseEvent, imageUrl: string) => {
+        e.stopPropagation(); // Prevent card's onClick from firing
+        setViewingImage(imageUrl);
+        setIsImageViewerOpen(true);
+    };
+
     const handleStartGeneration = () => {
         setStep('generate');
         generateSticker();
@@ -101,21 +110,18 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const handleAddToCart = () => {
         if (!product || !tier || !generatedStickerUrl) return;
 
-        // Create a special description to identify this item in the cart
-        // The image URLs are too long for description, so we'll handle them differently if needed.
-        // For now, the key is the generated image and knowing it's a design pack.
         const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
         
         const designPackProduct: Product = {
             ...product,
-            id: `design-${product.id}-${tier.unit}`, // Unique ID for this design pack instance in cart
+            id: `design-${product.id}-${tier.unit}`,
             name: `Sticker Design: ${product.name}`,
-            description: specialDescription, // Special identifier
-            category: `Digital Design (${'custom'})`, // A way to identify the theme/type
-            imageUrl: generatedStickerUrl, // The main AI-generated image
-            imageUrls: [generatedStickerUrl, ...selectedTripleS], // All images for reference if needed
+            description: specialDescription, 
+            category: `Digital Design (${'custom'})`,
+            imageUrl: generatedStickerUrl, 
+            imageUrls: [generatedStickerUrl, ...selectedTripleS],
             priceTiers: [],
-            quantityInStock: 999, // Digital product
+            quantityInStock: 999, 
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -128,106 +134,118 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-                {step === 'select' && (
-                    <>
-                        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                            <DialogTitle>Create Your Triple S Canna Club Pack</DialogTitle>
-                             <DialogDescription>
-                                Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique AI-generated design.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <Alert className="mx-6 my-4 bg-primary/10 border-primary/20 text-primary-foreground">
-                            <Gift className="h-5 w-5 text-primary" />
-                            <AlertTitle className="text-primary font-bold">Welcome to the Triple S Canna Club!</AlertTitle>
-                            <AlertDescription className="text-primary/90">
-                                Select your favorite sticker designs as a FREE gift from The Wellness Tree to go with your custom creation!
-                            </AlertDescription>
-                        </Alert>
-                        <ScrollArea className="flex-grow px-6">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
-                                {tripleSImages.map((imgSrc, index) => {
-                                    const isSelected = selectedTripleS.includes(imgSrc);
-                                    return (
-                                        <Card 
-                                            key={index}
-                                            onClick={() => handleSelectTripleS(imgSrc)}
-                                            className={cn(
-                                                "cursor-pointer transition-all duration-200 overflow-hidden relative group",
-                                                isSelected ? "ring-2 ring-primary border-primary" : "hover:border-primary/50",
-                                                !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
-                                            )}
-                                        >
-                                            <CardContent className="p-0 aspect-square">
-                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
-                                                <div className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110">
+        <>
+            <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+                    {step === 'select' && (
+                        <>
+                            <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                                <DialogTitle>Create Your Triple S Canna Club Pack</DialogTitle>
+                                <DialogDescription>
+                                    Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique AI-generated design.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <Alert className="mx-6 my-4 bg-primary/10 border-primary/20 text-primary-foreground">
+                                <Gift className="h-5 w-5 text-primary" />
+                                <AlertTitle className="text-primary font-bold">Welcome to the Triple S Canna Club!</AlertTitle>
+                                <AlertDescription className="text-primary/90">
+                                    Select your favorite sticker designs as a FREE gift from The Wellness Tree to go with your custom creation!
+                                </AlertDescription>
+                            </Alert>
+                            <ScrollArea className="flex-grow px-6">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
+                                    {tripleSImages.map((imgSrc, index) => {
+                                        const isSelected = selectedTripleS.includes(imgSrc);
+                                        return (
+                                             <Card 
+                                                key={index}
+                                                className={cn(
+                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group",
+                                                    !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
+                                                )}
+                                             >
+                                                <CardContent className="p-0 aspect-square" onClick={(e) => handleViewImage(e, imgSrc)}>
+                                                    <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                </CardContent>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSelectTripleS(imgSrc)}
+                                                    className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110"
+                                                    aria-label={`Select sticker ${index + 1}`}
+                                                >
                                                     {isSelected ? <CheckSquare className="h-6 w-6 text-white bg-primary rounded-md p-0.5"/> : <Square className="h-6 w-6 text-background/50 bg-background/50 backdrop-blur-sm rounded-md"/>}
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        </ScrollArea>
-                        <DialogFooter className="p-6 border-t">
-                             <Button size="lg" className="w-full" onClick={handleStartGeneration}>
-                                <Sparkles className="mr-2 h-5 w-5" />
-                                Next: Create My Strain Sticker!
-                             </Button>
-                        </DialogFooter>
-                    </>
-                )}
+                                                </button>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+                            </ScrollArea>
+                            <DialogFooter className="p-6 border-t">
+                                <Button size="lg" className="w-full" onClick={handleStartGeneration}>
+                                    <Sparkles className="mr-2 h-5 w-5" />
+                                    Next: Create My Strain Sticker!
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
 
-                {step === 'generate' && (
-                    <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
-                        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                        <p className="text-lg text-muted-foreground">Crafting your unique sticker...</p>
-                        <p className="text-sm text-center max-w-sm">Our AI is mixing 3D clay, cannabis essence, and your strain's unique flavors. This can take a moment.</p>
-                    </div>
-                )}
+                    {step === 'generate' && (
+                        <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
+                            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                            <p className="text-lg text-muted-foreground">Crafting your unique sticker...</p>
+                            <p className="text-sm text-center max-w-sm">Our AI is mixing 3D clay, cannabis essence, and your strain's unique flavors. This can take a moment.</p>
+                        </div>
+                    )}
 
-                {step === 'result' && generatedStickerUrl && (
-                    <>
-                        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                            <DialogTitle>Your Unique Sticker Is Ready!</DialogTitle>
-                             <DialogDescription>
-                                Here is your AI-generated sticker for &quot;{product?.name}&quot;.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <ScrollArea className="flex-grow">
-                            <div className="p-6 flex flex-col md:flex-row items-center justify-center gap-8">
-                                <div className="flex-shrink-0 w-full max-w-sm">
-                                    <h3 className="font-semibold text-center mb-2">Your Custom AI Sticker</h3>
-                                    <div className="relative aspect-square w-full bg-muted rounded-lg overflow-hidden border">
-                                        <Image src={generatedStickerUrl} alt="AI Generated Sticker" layout="fill" objectFit="contain" className="p-4"/>
+                    {step === 'result' && generatedStickerUrl && (
+                        <>
+                            <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                                <DialogTitle>Your Unique Sticker Is Ready!</DialogTitle>
+                                <DialogDescription>
+                                    Here is your AI-generated sticker for &quot;{product?.name}&quot;.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ScrollArea className="flex-grow">
+                                <div className="p-6 flex flex-col md:flex-row items-center justify-center gap-8">
+                                    <div className="flex-shrink-0 w-full max-w-sm">
+                                        <h3 className="font-semibold text-center mb-2">Your Custom AI Sticker</h3>
+                                        <div className="relative aspect-square w-full bg-muted rounded-lg overflow-hidden border">
+                                            <Image src={generatedStickerUrl} alt="AI Generated Sticker" layout="fill" objectFit="contain" className="p-4"/>
+                                        </div>
+                                    </div>
+                                    <div className="flex-shrink-0 w-full max-w-sm">
+                                        <h3 className="font-semibold text-center mb-2">Your Selected Triple S Stickers ({selectedTripleS.length})</h3>
+                                        {selectedTripleS.length > 0 ? (
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {selectedTripleS.map((url) => (
+                                                    <div key={url} className="relative aspect-square w-full bg-muted rounded-md overflow-hidden border">
+                                                        <Image src={url} alt="Selected Triple S Sticker" layout="fill" objectFit="cover" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">No extra stickers selected.</div>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex-shrink-0 w-full max-w-sm">
-                                    <h3 className="font-semibold text-center mb-2">Your Selected Triple S Stickers ({selectedTripleS.length})</h3>
-                                    {selectedTripleS.length > 0 ? (
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {selectedTripleS.map((url) => (
-                                                <div key={url} className="relative aspect-square w-full bg-muted rounded-md overflow-hidden border">
-                                                    <Image src={url} alt="Selected Triple S Sticker" layout="fill" objectFit="cover" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full text-sm text-muted-foreground">No extra stickers selected.</div>
-                                    )}
-                                </div>
-                            </div>
-                        </ScrollArea>
-                        <DialogFooter className="p-6 border-t">
-                             <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart}>
-                                <ShoppingCart className="mr-2 h-5 w-5" /> Add Design Pack to Cart
-                             </Button>
-                        </DialogFooter>
-                    </>
-                )}
+                            </ScrollArea>
+                            <DialogFooter className="p-6 border-t">
+                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart}>
+                                    <ShoppingCart className="mr-2 h-5 w-5" /> Add Design Pack to Cart
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
 
-            </DialogContent>
-        </Dialog>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+                <DialogContent className="max-w-[350px] p-2">
+                    <div className="relative aspect-square w-full">
+                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" />}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 };
