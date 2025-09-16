@@ -179,7 +179,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                             ? 'bg-primary border-primary-foreground/50'
                                                             : 'bg-black/40 border-white/50'
                                                     )}
-                                                    onClick={(e) => {
+                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleSelectTripleS(imgSrc);
                                                     }}
@@ -250,7 +250,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
                 </DialogContent>
             </Dialog>
-            <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-lg p-0">
                     <DialogHeader className="p-4 border-b">
                         <DialogTitle>Triple S Canna club design</DialogTitle>
@@ -275,12 +275,12 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                 {isViewingImageSelected ? 'Selected' : 'Select'}
                             </Button>
                         </div>
-                        <div className="absolute inset-y-0 left-0 flex items-center p-4">
+                        <div className="absolute inset-y-0 left-0 flex items-center justify-center p-4">
                             <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('prev')}>
                                 <ChevronLeft className="h-8 w-8" />
                             </Button>
                         </div>
-                        <div className="absolute inset-y-0 right-0 flex items-center p-4">
+                        <div className="absolute inset-y-0 right-0 flex items-center justify-center p-4">
                             <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('next')}>
                                 <ChevronRight className="h-8 w-8" />
                             </Button>
