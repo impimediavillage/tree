@@ -12,7 +12,7 @@ import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InfoDialog } from '../dialogs/InfoDialog';
-import { DesignViewerDialog } from '../dialogs/DesignViewerDialog';
+import { DesignPackDialog } from '../dialogs/DesignPackDialog';
 
 
 interface PublicProductCardProps {
@@ -28,6 +28,7 @@ interface PublicProductCardProps {
 export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount, totalRequestedByUser = 0 }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
+  const [isDesignPackOpen, setIsDesignPackOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
@@ -93,9 +94,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   const renderFooterContent = () => {
     // If onRequestProduct is provided, we are in the "Browse Pool" context.
     if (onRequestProduct) {
-        // If it's a THC product in the pool context...
         if (isThcProduct) {
-            // ...show the "Buy Design" UI...
             return (
                 <>
                     <div className="w-full text-right">
@@ -130,7 +129,6 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                 </>
             );
         }
-        // For non-THC products in the pool, show the standard "Request Product" button.
         return (
             <>
                 <div className="w-full text-right">
@@ -182,7 +180,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             <Button
               className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
               disabled={tierStock <= 0}
-              onClick={() => onGenerateDesigns?.(product, tier)}
+              onClick={() => setIsDesignPackOpen(true)}
               aria-label={`Buy design for ${product.name}`}
             >
               <Sparkles className="h-5 w-5" />
@@ -301,14 +299,14 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       </Card>
       
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-4xl p-2 sm:p-4">
-          <DialogHeader>
+        <DialogContent className="max-w-lg w-full p-2 sm:p-4">
+          <DialogHeader className="p-2">
             <DialogTitle>{product.name}</DialogTitle>
             <DialogDescription>
               Image {selectedImageIndex + 1} of {images.length}
             </DialogDescription>
           </DialogHeader>
-          <div className="relative aspect-video w-full">
+          <div className="relative aspect-square w-full">
             {images[selectedImageIndex] && (
               <Image
                 src={images[selectedImageIndex]!}
@@ -321,17 +319,52 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           </div>
           {images.length > 1 && (
             <div className="flex items-center justify-center gap-2 pt-2">
-              <Button variant="outline" size="icon" onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)} aria-label="Previous image"><ChevronLeft className="h-4 w-4" /></Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
               <div className="flex items-center gap-2 overflow-x-auto p-1">
                 {images.map((url, i) => (
-                  url && ( <button key={url} className={cn("h-16 w-16 rounded-md border-2 flex-shrink-0", i === selectedImageIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100")} onClick={() => setSelectedImageIndex(i)}><div className="relative h-full w-full rounded overflow-hidden"><Image src={url} alt={`Thumbnail ${i+1}`} fill className="object-cover"/></div></button>)
+                  url && (
+                    <button
+                      key={url}
+                      className={cn(
+                        "h-14 w-14 rounded-md border-2 flex-shrink-0",
+                        i === selectedImageIndex ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
+                      )}
+                      onClick={() => setSelectedImageIndex(i)}
+                    >
+                      <div className="relative h-full w-full rounded overflow-hidden">
+                        <Image src={url} alt={`Thumbnail ${i+1}`} fill className="object-cover"/>
+                      </div>
+                    </button>
+                  )
                 ))}
               </div>
-              <Button variant="outline" size="icon" onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)} aria-label="Next image"><ChevronRight className="h-4 w-4" /></Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </DialogContent>
       </Dialog>
+       {product && tier && (
+        <DesignPackDialog
+          isOpen={isDesignPackOpen}
+          onOpenChange={setIsDesignPackOpen}
+          product={product}
+          tier={tier}
+        />
+      )}
     </>
   );
 }

@@ -13,3 +13,4 @@ import '@/ai/flows/qigong-advice.ts';
 import '@/ai/flows/flower-power-advice.ts';
 import '@/ai/flows/aromatherapy-advice.ts';
 import '@/ai/flows/vegan-food-advice.ts';
+import '@/ai/flows/generate-strain-sticker.ts';
