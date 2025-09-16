@@ -33,13 +33,13 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     const { strainName, dispensaryName, flavors } = input;
     
     const flavorPrompt = (flavors && flavors.length > 0) 
-        ? `The flavors of **${flavors.join(', ')}** must be visualized as colorful, hyper-animated elements **oozing and swirling directly out from the bud**, blending into the dynamic background.`
-        : 'The background should be a dynamic and colorful abstract environment.';
+        ? `The flavors of **${flavors.join(', ')}** must be visualized as colorful, hyper-animated elements **oozing and swirling directly out from the bud**, creating a dynamic background that the bud merges into.`
+        : 'The background should be a dynamic and colorful abstract environment that the central bud merges into.';
 
     return `
     Generate a single, high-resolution (1024x1024 pixels), HD, studio-quality circular sticker design on a solid white background.
 
-    **Core Concept:** A hyper-animated, 3D isometric, modeling clay world contained within a sticker.
+    **Core Concept:** A hyper-animated, 3D isometric, modeling clay world contained within a sticker. The artwork should be a single, cohesive image where the subject and background are seamlessly integrated.
 
     **Central Artwork (Focal Point):**
     - **Subject:** At the absolute center, create a **characterful, cartoonish cannabis bud** for the strain "${strainName}". It should have a playful and humorous personality, as if it's a character in a 3D animation.
@@ -47,7 +47,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Details:** The bud must feature intricate details like **extra thick, visibly oozing and dripping THC resin and honey**. It must have **rainbows bursting out from within it**, and the trichomes must be exaggerated and colorful.
 
     **Background:**
-    - **Full Bleed & Flavor Integration:** The background must be a **full-bleed, hyper-detailed environment that covers the entire circular area**. ${flavorPrompt} The background itself must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**.
+    - **Full Bleed & Integration:** The background must be a **full-bleed, hyper-detailed environment that covers the entire circular area of the sticker**. ${flavorPrompt} The background must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**. Critically, the central bud must **merge seamlessly** into this background, not look like it's placed on top of it.
 
     **Text and Border Rules (CRITICAL ACCURACY):**
     - **Border:** The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
@@ -64,7 +64,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     **Final Output Checklist:**
     1.  **Single Object:** The output is one single, perfectly circular sticker.
     2.  **Background:** The sticker is on a solid, plain white background.
-    3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker.
+    3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker. The bud and background are one cohesive, merged image.
     4.  **Style:** The entire design (bud, background, border, text) is a cohesive, hyper-animated, 3D modeling clay style.
     5.  **Text Readability:** All three text elements are bold, have a white outline, and are clearly legible over the artwork.
     6.  **Text Accuracy & Placement:** The three text elements are spelled exactly as specified and placed in their designated positions (top-left, top-right, bottom).
