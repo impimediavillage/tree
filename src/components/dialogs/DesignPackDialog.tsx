@@ -146,7 +146,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             </AlertDescription>
                         </Alert>
                         <ScrollArea className="flex-grow px-6">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-4">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-4">
                                 {tripleSImages.map((imgSrc, index) => {
                                     const isSelected = selectedTripleS.includes(imgSrc);
                                     return (
@@ -160,7 +160,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             )}
                                         >
                                             <CardContent className="p-0 aspect-square">
-                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" className="p-2"/>
                                                 <div className="absolute top-2 right-2">
                                                     {isSelected ? <CheckSquare className="h-6 w-6 text-white bg-primary rounded-md p-0.5"/> : <Square className="h-6 w-6 text-background/50 bg-background/50 backdrop-blur-sm rounded-md"/>}
                                                 </div>
