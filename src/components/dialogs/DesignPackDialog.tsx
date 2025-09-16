@@ -161,15 +161,13 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             <Card
                                                 key={index}
                                                 className={cn(
-                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group",
+                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group aspect-square",
                                                     !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                                 )}
                                                 onClick={(e) => handleViewImage(e, imgSrc)}
                                             >
-                                                <CardContent className="p-0 aspect-square">
-                                                  <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" />
-                                                </CardContent>
-                                                 <button
+                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                <button
                                                     type="button"
                                                     onClick={(e) => { e.stopPropagation(); handleSelectTripleS(imgSrc); }}
                                                     className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110"
