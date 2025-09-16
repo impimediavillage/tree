@@ -254,7 +254,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 <DialogContent className="max-w-lg p-0">
                     <DialogHeader className="p-4 border-b">
                         <DialogTitle>Triple S Canna club design</DialogTitle>
-                        <DialogDescription>A closer look at the sticker design.</DialogDescription>
+                         <DialogDescription>
+                            Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s).
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="relative aspect-square w-full">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-0"/>}
