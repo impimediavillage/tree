@@ -10,7 +10,7 @@ import { generateStrainSticker } from '@/ai/flows/generate-strain-sticker';
 import type { Product, PriceTier, CartItem, GenerateStrainStickerInput } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -164,12 +164,12 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                     "cursor-pointer transition-all duration-200 overflow-hidden relative group",
                                                     !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                                 )}
-                                                 onClick={(e) => handleViewImage(e, imgSrc)}
+                                                onClick={(e) => handleViewImage(e, imgSrc)}
                                             >
                                                 <CardContent className="p-0 aspect-square">
-                                                    <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                  <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" />
                                                 </CardContent>
-                                                <button
+                                                 <button
                                                     type="button"
                                                     onClick={(e) => { e.stopPropagation(); handleSelectTripleS(imgSrc); }}
                                                     className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110"
@@ -242,10 +242,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-3xl p-2">
+                <DialogContent className="max-w-lg p-2">
                     <DialogHeader>
-                        <DialogTitle>Sticker Preview</DialogTitle>
-                        <DialogDescription>A closer look at the sticker design.</DialogDescription>
+                        <DialogTitle>Triple S Canna club design</DialogTitle>
                     </DialogHeader>
                     <div className="relative aspect-square w-full">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" />}
