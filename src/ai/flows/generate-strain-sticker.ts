@@ -50,7 +50,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Full Bleed & Integration:** The background must be a **full-bleed, hyper-detailed environment that extends to the inner edge of the border**. ${flavorPrompt} The background must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**. Critically, the central bud must **merge seamlessly** into this background, not look like it's placed on top of it.
 
     **Text and Border Rules (CRITICAL ACCURACY):**
-    - **Border:** The entire design must be enclosed in a precise, **clean, white circular border with an embroidered or stitched texture**. This border is the absolute edge of the sticker. There should be no additional borders or backgrounds outside of this one.
+    - **Border:** The entire design must be enclosed in a precise, **thin, clean, white circular border**. This border is the absolute edge of the sticker and should cast a **subtle, soft drop shadow** onto the white background. There must be no other borders.
     - **Text Elements & Placement:** There are three text elements with specific placements. They must be perfectly curved along the inside of the border.
         1.  **Top-Left Arc:** Place **"${dispensaryName}"** along the top-left curve.
         2.  **Top-Right Arc:** Place **"${strainName}"** along the top-right curve.
@@ -58,16 +58,17 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **IMPORTANT:** The text above must be spelled **EXACTLY** as written. Pay special attention to ensure perfect accuracy.
     - **Font & Style:**
         - The font must be a **bold, clean, modern, and highly readable sans-serif style**.
-        - The font color must be a **bright, contrasting color** that is clearly legible against the colorful artwork behind it, while still blending harmoniously with the modeling clay aesthetic.
-    - **CRITICAL TEXT INSTRUCTION**: The text MUST overlay the colorful background artwork directly. DO NOT create a separate white band, ring, or area for the text. The background artwork must be visible behind and around the text.
+        - The font color must be a **bright, contrasting color** that is clearly legible against the colorful artwork behind it.
+    - **CRITICAL TEXT INSTRUCTION**: The text MUST overlay the colorful background artwork directly. **DO NOT** create a separate white band, ring, or area for the text. The background artwork must be visible behind and around the text.
 
     **Final Output Checklist:**
     1.  **Single Object:** The output is one single, perfectly circular sticker.
     2.  **Background:** The sticker is on a solid, plain white background.
     3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker up to the border. The bud and background are one cohesive, merged image.
-    4.  **Style:** The entire design (bud, background, border, text) is a cohesive, hyper-animated, 3D modeling clay style.
+    4.  **Style:** The entire design (bud, background, text) is a cohesive, hyper-animated, 3D modeling clay style.
     5.  **Text Readability:** All three text elements are bold, bright, and clearly legible over the artwork.
     6.  **Text Accuracy & Placement:** The three text elements are spelled exactly as specified and placed in their designated positions (top-left, top-right, bottom).
+    7.  **Border:** A single, thin white border with a soft drop shadow is the outermost edge.
     `;
 };
 
