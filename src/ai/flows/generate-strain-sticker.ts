@@ -47,16 +47,17 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Details:** The bud must feature intricate details like **visibly oozing THC resin and honey**. It should have **rainbows bursting out from within it**. The trichomes must be exaggerated and colorful.
 
     **Background:**
-    - **Full Bleed:** The background must be a **full-bleed, flavor-inspired environment that covers the entire circular area of the sticker**. There should be no separate internal background; the text will overlay this artwork.
-    - **Dynamic Elements:** The background itself must be animated and dynamic, appearing to be **oozing with colorful THC and featuring rainbows bursting towards and around the central bud**. There should also be **rays of light bursting outward from the center**.
+    - **Full Bleed:** The background must be a **full-bleed, hyper-detailed, flavor-inspired environment that covers the entire circular area of the sticker**. There should be no separate internal background; the text will overlay this artwork.
+    - **Dynamic Elements:** The background itself must be animated and dynamic, appearing to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**. There should also be **rays of light bursting outward from the center**.
     - **Flavors:** ${flavorPrompt}
 
-    **Text and Border Rules:**
+    **Text and Border Rules (CRITICAL ACCURACY):**
     - **Border:** The entire design must be enclosed in a precise, clean, circular border that matches the modeling clay style.
     - **Text Elements:** There will be three text elements. They must be spaced equally around the circumference of the circle (like points of a triangle).
         1. **"${dispensaryName}"**
         2. **"${strainName}"**
         3. **"The Wellness Tree"**
+    - **IMPORTANT:** The text above must be spelled **EXACTLY** as written. Pay special attention to ensure perfect accuracy.
     - **Font & Style:**
         - The font must be a **bold, clean, modern, sans-serif style**.
         - **Crucially, all text must have a subtle but clear white stroke or outline** to ensure it is perfectly readable and stands out against the colorful image behind it.
@@ -68,7 +69,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker.
     4.  **Style:** The entire design (bud, background, border, text) is a cohesive, hyper-animated, 3D modeling clay style.
     5.  **Text Readability:** All three text elements are bold, have a white outline, and are clearly legible over the artwork.
-    6.  **Text Spacing:** The three text elements are spaced equally around the circle's edge.
+    6.  **Text Accuracy & Spacing:** The three text elements are spelled exactly as specified and spaced equally around the circle's edge.
     `;
 };
 
