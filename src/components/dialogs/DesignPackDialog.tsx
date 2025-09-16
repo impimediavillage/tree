@@ -158,19 +158,20 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                     {tripleSImages.map((imgSrc, index) => {
                                         const isSelected = selectedTripleS.includes(imgSrc);
                                         return (
-                                             <Card 
+                                            <Card
                                                 key={index}
                                                 className={cn(
                                                     "cursor-pointer transition-all duration-200 overflow-hidden relative group",
                                                     !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                                 )}
-                                             >
-                                                <CardContent className="p-0 aspect-square" onClick={(e) => handleViewImage(e, imgSrc)}>
-                                                    <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" />
+                                                onClick={() => handleViewImage(new MouseEvent('click'), imgSrc)}
+                                            >
+                                                <CardContent className="p-0 aspect-square">
+                                                    <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
                                                 </CardContent>
                                                 <button
                                                     type="button"
-                                                    onClick={() => handleSelectTripleS(imgSrc)}
+                                                    onClick={(e) => { e.stopPropagation(); handleSelectTripleS(imgSrc); }}
                                                     className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110"
                                                     aria-label={`Select sticker ${index + 1}`}
                                                 >
