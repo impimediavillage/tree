@@ -11,7 +11,7 @@ import { GenerateStrainStickerInputSchema, GenerateStrainStickerOutputSchema } f
 
 async function generateImage(prompt: string): Promise<string> {
     const { media } = await ai.generate({
-        model: 'googleai/gemini-pro-vision',
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt,
         config: {
             safetySettings: [

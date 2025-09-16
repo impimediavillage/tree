@@ -33,7 +33,7 @@ const GenerateThemeAssetsOutputSchema = z.object({
 // Helper function for a single image generation call
 async function generateImage(prompt: string | ({ media: { url: string; }; } | { text: string; })[]): Promise<string> {
     const { media } = await ai.generate({
-        model: 'googleai/gemini-pro-vision',
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt: prompt,
         config: {
             safetySettings: [
