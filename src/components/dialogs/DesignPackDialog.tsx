@@ -146,7 +146,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             </AlertDescription>
                         </Alert>
                         <ScrollArea className="flex-grow px-6">
-                            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
                                 {tripleSImages.map((imgSrc, index) => {
                                     const isSelected = selectedTripleS.includes(imgSrc);
                                     return (
@@ -154,14 +154,14 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             key={index}
                                             onClick={() => handleSelectTripleS(imgSrc)}
                                             className={cn(
-                                                "cursor-pointer transition-all duration-200 overflow-hidden relative",
+                                                "cursor-pointer transition-all duration-200 overflow-hidden relative group",
                                                 isSelected ? "ring-2 ring-primary border-primary" : "hover:border-primary/50",
                                                 !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                             )}
                                         >
-                                            <CardContent className="p-0 aspect-square relative">
-                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" />
-                                                <div className="absolute top-2 right-2 z-10">
+                                            <CardContent className="p-0 aspect-square">
+                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                <div className="absolute top-2 right-2 z-10 transition-transform duration-200 group-hover:scale-110">
                                                     {isSelected ? <CheckSquare className="h-6 w-6 text-white bg-primary rounded-md p-0.5"/> : <Square className="h-6 w-6 text-background/50 bg-background/50 backdrop-blur-sm rounded-md"/>}
                                                 </div>
                                             </CardContent>
