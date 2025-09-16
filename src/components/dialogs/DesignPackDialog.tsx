@@ -165,13 +165,13 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             <ScrollArea className="flex-grow px-6">
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
                                     {tripleSImages.map((imgSrc, index) => {
-                                        const isSelected = selectedTripleS.includes(imgSrc);
                                         return (
                                             <Card
                                                 key={index}
                                                 className={cn(
                                                     "cursor-pointer transition-all duration-200 overflow-hidden relative group aspect-square",
-                                                    !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
+                                                    "border-2",
+                                                    selectedTripleS.includes(imgSrc) ? "border-primary" : "border-transparent"
                                                 )}
                                                 onClick={() => handleViewImage(index)}
                                             >
@@ -240,8 +240,12 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
                 </DialogContent>
             </Dialog>
-            <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-lg p-0">
+                    <DialogHeader className="p-4 border-b">
+                        <DialogTitle>Triple S Canna Club Design</DialogTitle>
+                        <DialogDescription>A closer look at the sticker design. You can select up to {maxSelectable} designs.</DialogDescription>
+                    </DialogHeader>
                     <div className="relative aspect-square w-full">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-4"/>}
                         <div className="absolute top-2 right-2 z-20 flex items-center gap-2">
