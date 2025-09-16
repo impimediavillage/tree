@@ -42,8 +42,8 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     **Core Concept:** A hyper-animated, 3D isometric, modeling clay world contained within a sticker.
 
     **Central Artwork (Focal Point):**
-    - **Subject:** At the absolute center, create a cannabis bud for the strain "${strainName}".
-    - **Style:** It must be a **hyper-animated, 3D isometric, modeling clay presentation**. The style should be exaggerated, colorful, and vibrant.
+    - **Subject:** At the absolute center, create a **characterful, cartoonish cannabis bud** for the strain "${strainName}". It should have a playful and humorous personality, as if it's a character in a 3D animation.
+    - **Style:** It must be a **hyper-animated, 3D isometric, modeling clay creation, like a frame from a high-end 3D animation**. The style should be exaggerated, colorful, and vibrant.
     - **Details:** The bud must feature intricate details like **extra thick, visibly oozing and dripping THC resin and honey**. It must have **rainbows bursting out from within it**, and the trichomes must be exaggerated and colorful.
 
     **Background:**
