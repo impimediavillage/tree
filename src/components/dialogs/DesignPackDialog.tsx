@@ -164,7 +164,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                     "cursor-pointer transition-all duration-200 overflow-hidden relative group",
                                                     !isSelected && selectedTripleS.length >= maxSelectable && "opacity-50 cursor-not-allowed"
                                                 )}
-                                                onClick={() => handleViewImage(new MouseEvent('click'), imgSrc)}
+                                                 onClick={(e) => handleViewImage(e, imgSrc)}
                                             >
                                                 <CardContent className="p-0 aspect-square">
                                                     <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
@@ -242,7 +242,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-[350px] p-2">
+                <DialogContent className="max-w-3xl p-2">
                     <DialogHeader>
                         <DialogTitle>Sticker Preview</DialogTitle>
                         <DialogDescription>A closer look at the sticker design.</DialogDescription>
