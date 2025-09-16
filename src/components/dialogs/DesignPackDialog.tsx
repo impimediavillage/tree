@@ -217,26 +217,32 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                 </DialogDescription>
                             </DialogHeader>
                             <ScrollArea className="flex-grow">
-                                <div className="p-6 flex flex-col md:flex-row items-center justify-center gap-8">
+                                <div className="p-6 flex flex-col md:flex-row items-start justify-center gap-8">
                                     <div className="flex-shrink-0 w-full max-w-sm">
                                         <h3 className="font-semibold text-center mb-2">Your Custom AI Sticker</h3>
                                         <div className="relative aspect-square w-full bg-muted rounded-lg overflow-hidden border">
                                             <Image src={generatedStickerUrl} alt="AI Generated Sticker" layout="fill" objectFit="contain" className="p-4"/>
                                         </div>
                                     </div>
-                                    <div className="flex-shrink-0 w-full max-w-sm">
-                                        <h3 className="font-semibold text-center mb-2">Your Selected Triple S Stickers ({selectedTripleS.length})</h3>
-                                        {selectedTripleS.length > 0 ? (
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {selectedTripleS.map((url) => (
-                                                    <div key={url} className="relative aspect-square w-full bg-muted rounded-md overflow-hidden border">
-                                                        <Image src={url} alt="Selected Triple S Sticker" layout="fill" objectFit="cover" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">No extra stickers selected.</div>
-                                        )}
+                                    <div className="flex-shrink-0 w-full max-w-sm space-y-4">
+                                        <div>
+                                            <h3 className="font-semibold text-center mb-2">Your Selected Triple S Stickers ({selectedTripleS.length})</h3>
+                                            {selectedTripleS.length > 0 ? (
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {selectedTripleS.map((url) => (
+                                                        <div key={url} className="relative aspect-square w-full bg-muted rounded-md overflow-hidden border">
+                                                            <Image src={url} alt="Selected Triple S Sticker" layout="fill" objectFit="cover" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-4 bg-muted/50 rounded-md">No extra stickers selected.</div>
+                                            )}
+                                        </div>
+                                         <div className="p-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
+                                            <p>When You checkout and fill in shippin details, a Leaf user account will be created for you to place and track orders, generate your own sticker promo sets and create your own Green Merch like Caps, T shirts, hoodies, backpacks with custom Canniibinoid images you xreate with our AI.</p>
+                                            <p>You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all out Large language models and Merchandise Generation . Print on demand items with your custom &quot;Green&quot; designs.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </ScrollArea>
