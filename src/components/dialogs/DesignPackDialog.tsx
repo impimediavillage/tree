@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -19,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 
 
-const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
+const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${'i' + 1}.jpg`);
 
 interface DesignPackDialogProps {
   isOpen: boolean;
@@ -165,7 +166,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                 )}
                                              >
                                                 <CardContent className="p-0 aspect-square" onClick={(e) => handleViewImage(e, imgSrc)}>
-                                                    <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                                    <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="contain" />
                                                 </CardContent>
                                                 <button
                                                     type="button"
@@ -241,6 +242,10 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-[350px] p-2">
+                    <DialogHeader>
+                        <DialogTitle>Sticker Preview</DialogTitle>
+                        <DialogDescription>A closer look at the sticker design.</DialogDescription>
+                    </DialogHeader>
                     <div className="relative aspect-square w-full">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" />}
                     </div>
