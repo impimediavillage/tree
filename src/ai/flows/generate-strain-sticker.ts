@@ -43,7 +43,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     Generate a single, high-resolution (1000x1000 pixels), HD, studio-quality circular logo on a solid white background.
     
     **Central Artwork:**
-    Create a hyper-realistic, 3D, isometric, modeling clay presentation of a cannabis bud (flower) for the strain "${strainName}".
+    Create a hyper-realistic, 3D, isometric, modeling clay presentation of a cannabis bud (flower) for the strain "${strainName}". The design must be colorful and vibrant.
     ${flavorPrompt}
 
     **Text and Border Rules:**
