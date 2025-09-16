@@ -37,9 +37,9 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
         : 'The background should be a dynamic and colorful abstract environment that the central bud merges into.';
 
     return `
-    Generate a single, high-resolution (1024x1024 pixels), HD, studio-quality circular sticker design on a solid white background.
+    Generate a single, high-resolution (1024x1024 pixels), HD, studio-quality circular sticker design. The final output must be a single circular object on a solid white background.
 
-    **Core Concept:** A hyper-animated, 3D isometric, modeling clay world contained within a sticker. The artwork should be a single, cohesive image where the subject and background are seamlessly integrated.
+    **Core Concept:** A hyper-animated, 3D isometric, modeling clay world contained within the sticker's border. The artwork should be a single, cohesive image where the subject and background are seamlessly integrated.
 
     **Central Artwork (Focal Point):**
     - **Subject:** At the absolute center, create a **voluptuous, characterful, cartoonish cannabis bud** for the strain "${strainName}". It should have a playful and humorous personality, as if it's a character in a 3D animation.
@@ -47,11 +47,11 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Details:** The bud and its stem must feature intricate details like **extra thick, visibly oozing, dripping, and bursting THC resin and honey**. It must have **rainbows bursting out from within it**, and the trichomes must be exaggerated and colorful. The oozing effect should originate from both the bud and its stem.
 
     **Background:**
-    - **Full Bleed & Integration:** The background must be a **full-bleed, hyper-detailed environment that covers the entire circular area of the sticker**. ${flavorPrompt} The background must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**. Critically, the central bud must **merge seamlessly** into this background, not look like it's placed on top of it.
+    - **Full Bleed & Integration:** The background must be a **full-bleed, hyper-detailed environment that extends to the inner edge of the border**. ${flavorPrompt} The background must appear to be **oozing with extra colorful honey and THC resin, featuring rainbows bursting towards and around the central bud**, and have **rays of light bursting outward from the center**. Critically, the central bud must **merge seamlessly** into this background, not look like it's placed on top of it.
 
     **Text and Border Rules (CRITICAL ACCURACY):**
-    - **Border:** The entire design must be enclosed in a precise, **clean, white circular border with an embroidered or stitched texture**, matching the modeling clay style.
-    - **Text Elements & Placement:** There are three text elements with specific placements. They must be perfectly curved along the border.
+    - **Border:** The entire design must be enclosed in a precise, **clean, white circular border with an embroidered or stitched texture**. This border is the absolute edge of the sticker. There should be no additional borders or backgrounds outside of this one.
+    - **Text Elements & Placement:** There are three text elements with specific placements. They must be perfectly curved along the inside of the border.
         1.  **Top-Left Arc:** Place **"${dispensaryName}"** along the top-left curve.
         2.  **Top-Right Arc:** Place **"${strainName}"** along the top-right curve.
         3.  **Bottom Arc:** Place **"The Wellness Tree"** centered along the bottom curve.
@@ -63,7 +63,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     **Final Output Checklist:**
     1.  **Single Object:** The output is one single, perfectly circular sticker.
     2.  **Background:** The sticker is on a solid, plain white background.
-    3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker. The bud and background are one cohesive, merged image.
+    3.  **Composition:** The cannabis bud is centered, and the background fills the entire sticker up to the border. The bud and background are one cohesive, merged image.
     4.  **Style:** The entire design (bud, background, border, text) is a cohesive, hyper-animated, 3D modeling clay style.
     5.  **Text Readability:** All three text elements are bold, bright, and clearly legible over the artwork.
     6.  **Text Accuracy & Placement:** The three text elements are spelled exactly as specified and placed in their designated positions (top-left, top-right, bottom).
