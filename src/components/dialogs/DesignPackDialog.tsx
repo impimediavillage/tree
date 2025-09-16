@@ -239,10 +239,10 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                 <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-4 bg-muted/50 rounded-md">No extra stickers selected.</div>
                                             )}
                                         </div>
-                                         <div className="p-4 bg-orange-100 border border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
-                                            <p>When You checkout and fill in shippin details, a Leaf user account will be created for you to place and track orders, generate your own sticker promo sets and create your own Green Merch like Caps, T shirts, hoodies, backpacks with custom Canniibinoid images you xreate with our AI.</p>
-                                            <p>You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all out Large language models and Merchandise Generation . Print on demand items with your custom &quot;Green&quot; designs.</p>
-                                        </div>
+                                         <Alert className="bg-orange-100 border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
+                                            <p>After you have completed your shipping details, a Leaf user account will be created for You.  As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI. </p>
+                                            <p>You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
+                                        </Alert>
                                     </div>
                                 </div>
                             </ScrollArea>
