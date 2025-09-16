@@ -59,6 +59,7 @@ const getStickerPrompt = (input: GenerateStrainStickerInput): string => {
     - **Font & Style:**
         - The font must be a **bold, clean, modern, and highly readable sans-serif style**.
         - The font color must be a **bright, contrasting color** that is clearly legible against the colorful artwork behind it, while still blending harmoniously with the modeling clay aesthetic.
+    - **CRITICAL TEXT INSTRUCTION**: The text MUST overlay the colorful background artwork directly. DO NOT create a separate white band, ring, or area for the text. The background artwork must be visible behind and around the text.
 
     **Final Output Checklist:**
     1.  **Single Object:** The output is one single, perfectly circular sticker.
