@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateStrainSticker } from '@/ai/flows/generate-strain-sticker';
-import type { Product, PriceTier, CartItem } from '@/types';
+import type { Product, PriceTier, CartItem, GenerateStrainStickerInput } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -80,11 +80,12 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         if (!product) return;
         setIsGenerating(true);
         try {
-            const result = await generateStrainSticker({
+            const input: GenerateStrainStickerInput = {
                 strainName: product.strain || product.name,
                 dispensaryName: product.dispensaryName,
                 flavors: product.flavors || [],
-            });
+            };
+            const result = await generateStrainSticker(input);
             setGeneratedStickerUrl(result.imageUrl);
             setStep('result');
             toast({ title: 'Design Generated!', description: 'Your unique sticker is ready.' });

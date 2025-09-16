@@ -603,3 +603,14 @@ export const stickerSetSchema = z.object({
   createdAt: z.any(),
 });
 export type StickerSetDbData = z.infer<typeof stickerSetSchema>;
+
+// Schemas for Strain Sticker Generation
+export const GenerateStrainStickerInputSchema = z.object({
+  strainName: z.string().describe('The name of the cannabis strain.'),
+  dispensaryName: z.string().describe('The name of the dispensary selling the product.'),
+  flavors: z.array(z.string()).optional().describe('A list of flavors associated with the strain to influence the background.'),
+});
+
+export const GenerateStrainStickerOutputSchema = z.object({
+  imageUrl: z.string().url().describe('The URL of the generated circular sticker image.'),
+});
