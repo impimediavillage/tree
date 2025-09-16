@@ -3,6 +3,8 @@
 
 import type { Timestamp } from 'firebase/firestore';
 import type { firestore } from 'firebase-admin';
+import { z } from 'zod';
+import { GenerateStrainStickerInputSchema, GenerateStrainStickerOutputSchema } from '@/lib/schemas';
 
 // Price Tier Interface
 export interface PriceTier {
@@ -430,3 +432,7 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
+
+// Types for Strain Sticker Generation
+export type GenerateStrainStickerInput = z.infer<typeof GenerateStrainStickerInputSchema>;
+export type GenerateStrainStickerOutput = z.infer<typeof GenerateStrainStickerOutputSchema>;
