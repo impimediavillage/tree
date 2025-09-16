@@ -146,7 +146,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                     Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique AI-generated design.
                                 </DialogDescription>
                             </DialogHeader>
-                            <Alert className="my-4 bg-primary/10 border-primary/20 text-primary-foreground">
+                             <Alert className="bg-primary/10 border-primary/20 text-primary-foreground mx-6">
                                 <Gift className="h-5 w-5 text-primary" />
                                 <AlertTitle className="text-primary font-bold">Welcome to the Triple S Canna Club!</AlertTitle>
                                 <AlertDescription className="text-primary/90">
@@ -240,8 +240,8 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-3xl p-2">
-                    <DialogHeader>
+                <DialogContent className="max-w-lg p-2">
+                     <DialogHeader className="p-2">
                         <DialogTitle>Triple S Canna club design</DialogTitle>
                     </DialogHeader>
                     <div className="relative aspect-square w-full">
