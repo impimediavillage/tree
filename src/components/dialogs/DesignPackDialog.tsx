@@ -247,13 +247,13 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
                     {step === 'result' && generatedStickerUrl && (
                         <>
-                            <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
                                 <DialogTitle>Your Unique Sticker Is Ready!</DialogTitle>
                                 <DialogDescription>
                                     Here is your AI-generated sticker for &quot;{product?.name}&quot;.
                                 </DialogDescription>
                             </DialogHeader>
-                            <ScrollArea className="flex-grow">
+                            <ScrollArea className="flex-1 px-6">
                                 <div className="p-6 flex flex-col md:flex-row items-start justify-center gap-8">
                                     <div className="flex-shrink-0 w-full max-w-sm">
                                         <h3 className="font-semibold text-center mb-2">Your Custom AI Sticker</h3>
@@ -282,7 +282,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                     </div>
                                 </div>
                             </ScrollArea>
-                            <DialogFooter className="p-6 border-t">
+                            <DialogFooter className="p-6 border-t mt-auto shrink-0">
                                 <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart}>
                                     {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
                                     Add Design Pack to Cart
@@ -305,24 +305,26 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>}
                     </div>
                      <DialogFooter className="p-4 border-t bg-background/80 flex-shrink-0">
-                        <div className="flex w-full justify-between items-center">
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleNavigateViewer('prev')}>
+                        <div className="relative w-full flex justify-between items-center">
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full z-10 absolute left-0 top-1/2 -translate-y-1/2" onClick={() => handleNavigateViewer('prev')}>
                                 <ChevronLeft className="h-6 w-6" />
                             </Button>
-                            <Button
-                                size="lg"
-                                variant={isViewingImageSelected ? 'default' : 'secondary'}
-                                onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
-                                disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
-                                className={cn(
-                                    "flex items-center gap-2 shadow-md",
-                                    isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                                )}
-                            >
-                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
-                                {isViewingImageSelected ? 'Selected' : 'Select This Design'}
-                            </Button>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleNavigateViewer('next')}>
+                            <div className="flex-grow flex justify-center">
+                                <Button
+                                    size="lg"
+                                    variant={isViewingImageSelected ? 'default' : 'secondary'}
+                                    onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
+                                    disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
+                                    className={cn(
+                                        "flex items-center gap-2 shadow-md",
+                                        isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                                    )}
+                                >
+                                    {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
+                                    {isViewingImageSelected ? 'Selected' : 'Select This Design'}
+                                </Button>
+                            </div>
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full z-10 absolute right-0 top-1/2 -translate-y-1/2" onClick={() => handleNavigateViewer('next')}>
                                 <ChevronRight className="h-6 w-6" />
                             </Button>
                         </div>
