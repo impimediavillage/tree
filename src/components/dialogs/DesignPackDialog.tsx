@@ -246,11 +246,11 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                     )}
 
                     {step === 'result' && generatedStickerUrl && (
-                        <>
+                         <div className="flex flex-col flex-grow min-h-0">
                             <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-                                <DialogTitle>Your Unique Sticker Is Ready!</DialogTitle>
+                                <DialogTitle>Your Unique design Is Ready!</DialogTitle>
                                 <DialogDescription>
-                                    Here is your AI-generated sticker for &quot;{product?.name}&quot;.
+                                    Here is your AI-generated design for &quot;{product?.name}&quot;.
                                 </DialogDescription>
                             </DialogHeader>
                              <ScrollArea className="flex-1 px-6">
@@ -282,19 +282,19 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                     </div>
                                 </div>
                             </ScrollArea>
-                            <DialogFooter className="p-6 border-t mt-auto shrink-0">
+                            <DialogFooter className="p-6 border-t shrink-0">
                                 <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart}>
                                     {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
                                     Add Design Pack to Cart
                                 </Button>
                             </DialogFooter>
-                        </>
+                        </div>
                     )}
 
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[90vh] sm:h-[90vh] max-h-[800px]">
+                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[90vh] sm:h-auto sm:max-h-[800px]">
                     <DialogHeader className="p-4 border-b shrink-0">
                         <DialogTitle>Triple S Canna Club Design</DialogTitle>
                          <DialogDescription>
