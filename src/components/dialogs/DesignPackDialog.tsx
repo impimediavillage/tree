@@ -277,7 +277,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             )}
                                         </div>
                                          <Alert className="bg-orange-100 border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
-                                            <p>After you have completed your shipping details, a Leaf user account will be created for You.  As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI.  You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
+                                            <p>After you have completed your shipping details, a Leaf user account will be created for You. As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI. You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
                                         </Alert>
                                     </div>
                                 </div>
@@ -294,47 +294,42 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
              <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-lg p-0">
+                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[90vh] max-h-[800px]">
                     <DialogHeader className="p-4 border-b">
-                        <DialogTitle>Triple S Canna club design</DialogTitle>
+                        <DialogTitle>Triple S Canna Club Design</DialogTitle>
                          <DialogDescription>
-                            Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique AI-generated design.
+                            Selected: {selectedTripleS.length} / {maxSelectable} sticker(s).
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="relative aspect-square w-full">
-                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-0"/>}
-                        <div className="absolute top-2 right-2 z-20">
-                             <Button
-                                size="sm"
+                    <div className="relative flex-grow min-h-0">
+                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>}
+                         <div className="absolute inset-y-0 left-0 flex items-center justify-center p-2">
+                            <Button variant="default" size="icon" className="h-10 w-10 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('prev')}>
+                                <ChevronLeft className="h-6 w-6" />
+                            </Button>
+                        </div>
+                        <div className="absolute inset-y-0 right-0 flex items-center justify-center p-2">
+                            <Button variant="default" size="icon" className="h-10 w-10 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('next')}>
+                                <ChevronRight className="h-6 w-6" />
+                            </Button>
+                        </div>
+                    </div>
+                     <DialogFooter className="p-2 border-t bg-background/80 flex-shrink-0">
+                        <div className="flex w-full justify-between items-center">
+                            <Button variant="secondary" onClick={() => setIsImageViewerOpen(false)}>Done</Button>
+                            <Button
+                                size="lg"
                                 variant={isViewingImageSelected ? 'default' : 'secondary'}
                                 onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
                                 disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
                                 className={cn(
                                     "flex items-center gap-2 shadow-md",
-                                    isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-background/80 text-foreground"
+                                    isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                                 )}
                             >
                                 {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
-                                {isViewingImageSelected ? 'Selected' : 'Select'}
+                                {isViewingImageSelected ? 'Selected' : 'Select This Design'}
                             </Button>
-                        </div>
-                        <div className="absolute inset-y-0 left-0 flex items-center justify-center p-4">
-                            <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('prev')}>
-                                <ChevronLeft className="h-8 w-8" />
-                            </Button>
-                        </div>
-                        <div className="absolute inset-y-0 right-0 flex items-center justify-center p-4">
-                            <Button variant="default" size="icon" className="h-12 w-12 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground active:bg-primary/90" onClick={() => handleNavigateViewer('next')}>
-                                <ChevronRight className="h-8 w-8" />
-                            </Button>
-                        </div>
-                    </div>
-                     <DialogFooter className="p-2 border-t bg-background/80">
-                        <div className="flex w-full justify-between items-center">
-                            <p className="text-sm text-muted-foreground">
-                                Selected: {selectedTripleS.length} / {maxSelectable}
-                            </p>
-                            <Button variant="secondary" onClick={() => setIsImageViewerOpen(false)}>Done</Button>
                         </div>
                     </DialogFooter>
                 </DialogContent>
