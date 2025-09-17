@@ -293,8 +293,8 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
                 </DialogContent>
             </Dialog>
-             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[90vh] max-h-[800px]">
+            <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+                <DialogContent className="max-w-2xl w-full p-0 flex flex-col h-[90vh] max-h-[800px]">
                     <DialogHeader className="p-4 border-b shrink-0">
                         <DialogTitle>Triple S Canna Club Design</DialogTitle>
                          <DialogDescription>
@@ -303,12 +303,15 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                     </DialogHeader>
                     <div className="relative flex-grow min-h-0">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>}
+                        <Button variant="default" size="icon" className="h-10 w-10 rounded-full absolute left-2 top-1/2 -translate-y-1/2" onClick={() => handleNavigateViewer('prev')}>
+                            <ChevronLeft className="h-6 w-6" />
+                        </Button>
+                        <Button variant="default" size="icon" className="h-10 w-10 rounded-full absolute right-2 top-1/2 -translate-y-1/2" onClick={() => handleNavigateViewer('next')}>
+                            <ChevronRight className="h-6 w-6" />
+                        </Button>
                     </div>
-                     <DialogFooter className="p-2 border-t bg-background/80 flex-shrink-0">
-                        <div className="flex w-full justify-between items-center">
-                            <Button variant="default" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleNavigateViewer('prev')}>
-                                <ChevronLeft className="h-6 w-6" />
-                            </Button>
+                     <DialogFooter className="p-4 border-t bg-background/80 flex-shrink-0">
+                        <div className="flex w-full justify-center items-center">
                             <Button
                                 size="lg"
                                 variant={isViewingImageSelected ? 'default' : 'secondary'}
@@ -321,9 +324,6 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             >
                                 {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
                                 {isViewingImageSelected ? 'Selected' : 'Select This Design'}
-                            </Button>
-                            <Button variant="default" size="icon" className="h-10 w-10 rounded-full" onClick={() => handleNavigateViewer('next')}>
-                                <ChevronRight className="h-6 w-6" />
                             </Button>
                         </div>
                     </DialogFooter>
