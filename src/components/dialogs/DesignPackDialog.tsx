@@ -253,7 +253,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                     Here is your AI-generated sticker for &quot;{product?.name}&quot;.
                                 </DialogDescription>
                             </DialogHeader>
-                            <ScrollArea className="flex-1 px-6">
+                             <ScrollArea className="flex-1 px-6">
                                 <div className="p-6 flex flex-col md:flex-row items-start justify-center gap-8">
                                     <div className="flex-shrink-0 w-full max-w-sm">
                                         <h3 className="font-semibold text-center mb-2">Your Custom AI Sticker</h3>
@@ -277,7 +277,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             )}
                                         </div>
                                          <Alert className="bg-orange-100 border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
-                                            <p>After you have completed your shipping details, a Leaf user account will be created for You. As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI. You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
+                                            <p>After you have completed your shipping details, a Leaf user account will be created for You.  As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI.  You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
                                         </Alert>
                                     </div>
                                 </div>
@@ -294,7 +294,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[85vh] sm:h-[90vh] max-h-[800px]">
+                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[90vh] sm:h-[90vh] max-h-[800px]">
                     <DialogHeader className="p-4 border-b shrink-0">
                         <DialogTitle>Triple S Canna Club Design</DialogTitle>
                          <DialogDescription>
@@ -303,29 +303,35 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                     </DialogHeader>
                     <div className="relative flex-grow min-h-0">
                         {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>}
+                         <Button
+                            variant="default" size="icon"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full z-10 bg-green-600/80 hover:bg-green-500 text-white shadow-lg"
+                            onClick={() => handleNavigateViewer('prev')}
+                        >
+                            <ChevronLeft className="h-6 w-6" />
+                        </Button>
+                        <Button
+                            variant="default" size="icon"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full z-10 bg-green-600/80 hover:bg-green-500 text-white shadow-lg"
+                            onClick={() => handleNavigateViewer('next')}
+                        >
+                            <ChevronRight className="h-6 w-6" />
+                        </Button>
                     </div>
                      <DialogFooter className="p-4 border-t bg-background/80 flex-shrink-0">
-                        <div className="relative w-full flex justify-between items-center">
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full z-10 absolute left-0 top-1/2 -translate-y-1/2" onClick={() => handleNavigateViewer('prev')}>
-                                <ChevronLeft className="h-6 w-6" />
-                            </Button>
-                            <div className="flex-grow flex justify-center">
-                                <Button
-                                    size="lg"
-                                    variant={isViewingImageSelected ? 'default' : 'secondary'}
-                                    onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
-                                    disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
-                                    className={cn(
-                                        "flex items-center gap-2 shadow-md",
-                                        isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                                    )}
-                                >
-                                    {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
-                                    {isViewingImageSelected ? 'Selected' : 'Select This Design'}
-                                </Button>
-                            </div>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full z-10 absolute right-0 top-1/2 -translate-y-1/2" onClick={() => handleNavigateViewer('next')}>
-                                <ChevronRight className="h-6 w-6" />
+                        <div className="w-full flex justify-center">
+                            <Button
+                                size="lg"
+                                variant={isViewingImageSelected ? 'default' : 'secondary'}
+                                onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
+                                disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
+                                className={cn(
+                                    "flex items-center gap-2 shadow-md",
+                                    isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                                )}
+                            >
+                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
+                                {isViewingImageSelected ? 'Selected' : 'Select This Design'}
                             </Button>
                         </div>
                     </DialogFooter>
