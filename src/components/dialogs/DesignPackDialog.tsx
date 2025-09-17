@@ -15,9 +15,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
+import JSZip from 'jszip';
 
 
 const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
@@ -38,6 +39,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const [step, setStep] = useState<'select' | 'generate' | 'result'>('select');
     const [selectedTripleS, setSelectedTripleS] = useState<string[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isProcessingCart, setIsProcessingCart] = React.useState(false);
     const [generatedStickerUrl, setGeneratedStickerUrl] = useState<string | null>(null);
 
     // State for the image viewer
@@ -107,8 +109,42 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         }
     }, [product, toast]);
 
-    const handleAddToCart = () => {
+     const handleAddToCart = async () => {
         if (!product || !tier || !generatedStickerUrl) return;
+        
+        setIsProcessingCart(true);
+
+        if (selectedTripleS.length > 0) {
+            toast({ title: "Downloading Free Stickers...", description: "Your bonus Triple S stickers are being prepared for download."});
+            try {
+                const zip = new JSZip();
+                
+                const imageFetchPromises = selectedTripleS.map(async (url) => {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+                    const blob = await response.blob();
+                    const filename = url.split('/').pop() || 'sticker.jpg';
+                    zip.file(filename, blob);
+                });
+
+                await Promise.all(imageFetchPromises);
+                
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(zipBlob);
+                link.download = `TripleS_Sticker_Pack_${product.name.replace(/\s+/g, '_')}.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+                 toast({ title: "Download Started", description: "Check your browser downloads for the ZIP file.", variant: "default" });
+            } catch (error) {
+                 console.error("Failed to create ZIP and download:", error);
+                 toast({ title: "Download Failed", description: "Could not download the bonus stickers. Please try again.", variant: "destructive" });
+                 setIsProcessingCart(false);
+                 return;
+            }
+        }
 
         const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
         
@@ -119,7 +155,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             description: specialDescription, 
             category: `Digital Design (${'custom'})`,
             imageUrl: generatedStickerUrl, 
-            imageUrls: [generatedStickerUrl, ...selectedTripleS],
+            imageUrls: [generatedStickerUrl], // Only the main generated sticker
             priceTiers: [],
             quantityInStock: 999, 
             createdAt: new Date(),
@@ -131,6 +167,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         addToCart(designPackProduct, designPackTier, 1);
         toast({ title: "Design Pack Added!", description: `Your custom "${product.name}" pack is in your cart.` });
         onOpenChange(false);
+        setIsProcessingCart(false);
     };
 
     const handleNavigateViewer = (direction: 'next' | 'prev') => {
@@ -240,15 +277,15 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                             )}
                                         </div>
                                          <Alert className="bg-orange-100 border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
-                                            <p>After you have completed your shipping details, a Leaf user account will be created for You.  As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI. </p>
-                                            <p>You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
+                                            <p>After you have completed your shipping details, a Leaf user account will be created for You.  As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI.  You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
                                         </Alert>
                                     </div>
                                 </div>
                             </ScrollArea>
                             <DialogFooter className="p-6 border-t">
-                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart}>
-                                    <ShoppingCart className="mr-2 h-5 w-5" /> Add Design Pack to Cart
+                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart}>
+                                    {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
+                                    Add Design Pack to Cart
                                 </Button>
                             </DialogFooter>
                         </>
