@@ -282,7 +282,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                     </div>
                                 </div>
                             </ScrollArea>
-                            <DialogFooter className="p-6 border-t shrink-0">
+                            <DialogFooter className="p-6 border-t bg-background shrink-0">
                                 <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart}>
                                     {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
                                     Add Design Pack to Cart
@@ -294,25 +294,29 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-[90vh] sm:h-auto sm:max-h-[800px]">
+                <DialogContent className="max-w-xl w-full p-0 flex flex-col h-auto sm:h-[90vh] sm:max-h-[800px]">
                     <DialogHeader className="p-4 border-b shrink-0">
                         <DialogTitle>Triple S Canna Club Design</DialogTitle>
                          <DialogDescription>
                             Selected: {selectedTripleS.length} / {maxSelectable} sticker(s).
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="relative flex-grow min-h-0">
-                        {viewingImage && <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>}
-                         <Button
+                    <div className="relative flex-grow flex items-center justify-center">
+                        {viewingImage && (
+                            <div className="relative w-full h-full max-h-[60vh] sm:max-h-full">
+                                <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>
+                            </div>
+                        )}
+                        <Button
                             variant="default" size="icon"
-                            className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full z-10 bg-green-600/80 hover:bg-green-500 text-white shadow-lg"
+                            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full z-10 bg-green-600/80 hover:bg-green-500 text-white shadow-lg"
                             onClick={() => handleNavigateViewer('prev')}
                         >
                             <ChevronLeft className="h-6 w-6" />
                         </Button>
                         <Button
                             variant="default" size="icon"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full z-10 bg-green-600/80 hover:bg-green-500 text-white shadow-lg"
+                            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full z-10 bg-green-600/80 hover:bg-green-500 text-white shadow-lg"
                             onClick={() => handleNavigateViewer('next')}
                         >
                             <ChevronRight className="h-6 w-6" />
