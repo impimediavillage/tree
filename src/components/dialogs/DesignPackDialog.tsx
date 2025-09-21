@@ -2,26 +2,66 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { generateStrainSticker } from '@/ai/flows/generate-strain-sticker';
-import type { Product, PriceTier, CartItem, GenerateStrainStickerInput } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, Sparkles, ShoppingCart, Info, CheckSquare, Square, Gift, X, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Loader2, Sparkles, ShoppingCart, CheckSquare, Square, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import JSZip from 'jszip';
+import type { Product, PriceTier } from '@/types';
 
+const allTripleSImages = Array.from({ length: 81 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
+const allTripleS400Images = [
+    '/images/2025-triple-s-400/1.png', '/images/2025-triple-s-400/10.png', 
+    '/images/2025-triple-s-400/103.png', '/images/2025-triple-s-400/11.png', 
+    '/images/2025-triple-s-400/110.png', '/images/2025-triple-s-400/111.png', 
+    '/images/2025-triple-s-400/112.png', '/images/2025-triple-s-400/113.png', 
+    '/images/2025-triple-s-400/114.png', '/images/2025-triple-s-400/115.png', 
+    '/images/2025-triple-s-400/116.png', '/images/2025-triple-s-400/117.png', 
+    '/images/2025-triple-s-400/118.png', '/images/2025-triple-s-400/119.png', 
+    '/images/2025-triple-s-400/12.png', '/images/2025-triple-s-400/120.png', 
+    '/images/2025-triple-s-400/121.png', '/images/2025-triple-s-400/122.png', 
+    '/images/2025-triple-s-400/123.png', '/images/2025-triple-s-400/124.png', 
+    '/images/2025-triple-s-400/125.png', '/images/2025-triple-s-400/126.png', 
+    '/images/2025-triple-s-400/127.png', '/images/2025-triple-s-400/128.png', 
+    '/images/2025-triple-s-400/129.png', '/images/2025-triple-s-400/13.png', 
+    '/images/2025-triple-s-400/130.png', '/images/2025-triple-s-400/131.png', 
+    '/images/2025-triple-s-400/132.png', '/images/2025-triple-s-400/133.png', 
+    '/images/2025-triple-s-400/134.png', '/images/2025-triple-s-400/135.png', 
+    '/images/2025-triple-s-400/136.png', '/images/2025-triple-s-400/137.png', 
+    '/images/2025-triple-s-400/138.png', '/images/2025-triple-s-400/139.png', 
+    '/images/2025-triple-s-400/14.png', '/images/2025-triple-s-400/140.png', 
+    '/images/2025-triple-s-400/141.png', '/images/2025-triple-s-400/142.png', 
+    '/images/2025-triple-s-400/143.png', '/images/2025-triple-s-400/144.png', 
+    '/images/2025-triple-s-400/145.png', '/images/2025-triple-s-400/146.png', 
+    '/images/2025-triple-s-400/147.png', '/images/2025-triple-s-400/148.png', 
+    '/images/2025-triple-s-400/149.png', '/images/2025-triple-s-400/15.png', 
+    '/images/2025-triple-s-400/150.png', '/images/2025-triple-s-400/151.png', 
+    '/images/2025-triple-s-400/152.png', '/images/2025-triple-s-400/153.png', 
+    '/images/2025-triple-s-400/154.png', '/images/2025-triple-s-400/155.png', 
+    '/images/2025-triple-s-400/156.png', '/images/2025-triple-s-400/157.png', 
+    '/images/2025-triple-s-400/158.png', '/images/2025-triple-s-400/159.png', 
+    '/images/2025-triple-s-400/16.png', '/images/2025-triple-s-400/160.png',
+    '/images/2025-triple-s-400/nav1.jpg', '/images/2025-triple-s-400/nav2.jpg',
+    '/images/2025-triple-s-400/peak1.jpg', '/images/2025-triple-s-400/peak2.jpg',
+    '/images/2025-triple-s-400/soar1.jpg', '/images/2025-triple-s-400/soar2.jpg'
+];
 
-const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
+const shuffleArray = (array: any[]) => {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+};
 
 interface DesignPackDialogProps {
   isOpen: boolean;
@@ -31,37 +71,37 @@ interface DesignPackDialogProps {
 }
 
 export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOpenChange, product, tier }) => {
-    const router = useRouter();
-    const { currentUser } = useAuth();
     const { toast } = useToast();
     const { addToCart } = useCart();
     
-    const [step, setStep] = useState<'select' | 'generate' | 'result'>('select');
-    const [selectedTripleS, setSelectedTripleS] = useState<string[]>([]);
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [step, setStep] = useState<'select_freebies' | 'select_strain'>('select_freebies');
+    const [selectedFreebies, setSelectedFreebies] = useState<string[]>([]);
     const [isProcessingCart, setIsProcessingCart] = React.useState(false);
-    const [generatedStickerUrl, setGeneratedStickerUrl] = useState<string | null>(null);
+    
+    const [randomStrainImages, setRandomStrainImages] = useState<string[]>([]);
+    const [selectedSticker, setSelectedSticker] = useState<string | null>(null);
 
-    // State for the image viewer
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [viewingImageIndex, setViewingImageIndex] = useState<number>(0);
 
     const maxSelectable = product && tier ? Math.ceil(tier.price / 100) : 1;
 
     useEffect(() => {
-        if (!isOpen) {
-            // Reset state when dialog closes
+        if (isOpen) {
+            const shuffled = shuffleArray([...allTripleS400Images]);
+            setRandomStrainImages(shuffled.slice(0, 33));
+        } else {
             setTimeout(() => {
-                setStep('select');
-                setSelectedTripleS([]);
-                setIsGenerating(false);
-                setGeneratedStickerUrl(null);
+                setStep('select_freebies');
+                setSelectedFreebies([]);
+                setSelectedSticker(null);
+                setRandomStrainImages([]);
             }, 300);
         }
     }, [isOpen]);
 
-    const handleSelectTripleS = (imageUrl: string) => {
-        setSelectedTripleS(prev => {
+    const handleSelectFreebie = (imageUrl: string) => {
+        setSelectedFreebies(prev => {
             if (prev.includes(imageUrl)) {
                 return prev.filter(item => item !== imageUrl);
             }
@@ -77,49 +117,32 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         });
     };
 
+    const handleSelectSticker = (imageUrl: string) => {
+        setSelectedSticker(prev => prev === imageUrl ? null : imageUrl);
+    };
+
     const handleViewImage = (index: number) => {
         setViewingImageIndex(index);
         setIsImageViewerOpen(true);
     };
 
-    const handleStartGeneration = () => {
-        setStep('generate');
-        generateSticker();
+    const handleProceedToStrains = () => {
+        setStep('select_strain');
     };
 
-    const generateSticker = useCallback(async () => {
-        if (!product) return;
-        setIsGenerating(true);
-        try {
-            const input: GenerateStrainStickerInput = {
-                strainName: product.strain || product.name,
-                dispensaryName: product.dispensaryName,
-                flavors: product.flavors || [],
-            };
-            const result = await generateStrainSticker(input);
-            setGeneratedStickerUrl(result.imageUrl);
-            setStep('result');
-            toast({ title: 'Design Generated!', description: 'Your unique sticker is ready.' });
-        } catch (error) {
-            console.error("AI sticker generation failed:", error);
-            toast({ title: "Generation Failed", description: "Could not create your custom sticker. Please try again.", variant: 'destructive'});
-            setStep('select'); // Go back to selection on failure
-        } finally {
-            setIsGenerating(false);
+    const handleAddToCart = async () => {
+        if (!product || !tier || !selectedSticker) {
+             toast({ title: "No Strain Sticker Selected", description: "Please select your primary strain design first.", variant: "destructive" });
+            return;
         }
-    }, [product, toast]);
-
-     const handleAddToCart = async () => {
-        if (!product || !tier || !generatedStickerUrl) return;
         
         setIsProcessingCart(true);
 
-        if (selectedTripleS.length > 0) {
-            toast({ title: "Downloading Free Stickers...", description: "Your bonus Triple S stickers are being prepared for download."});
+        if (selectedFreebies.length > 0) {
+            toast({ title: "Downloading Free Stickers...", description: `Preparing ${selectedFreebies.length} freebie(s) for download.`});
             try {
                 const zip = new JSZip();
-                
-                const imageFetchPromises = selectedTripleS.map(async (url) => {
+                const imageFetchPromises = selectedFreebies.map(async (url) => {
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`Failed to fetch ${url}`);
                     const blob = await response.blob();
@@ -137,12 +160,10 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
-                 toast({ title: "Download Started", description: "Check your browser downloads for the ZIP file.", variant: "default" });
+                 toast({ title: "Download Started", description: "Your free stickers are downloading.", variant: "default" });
             } catch (error) {
                  console.error("Failed to create ZIP and download:", error);
-                 toast({ title: "Download Failed", description: "Could not download the bonus stickers. Please try again.", variant: "destructive" });
-                 setIsProcessingCart(false);
-                 return;
+                 toast({ title: "Download Failed", description: "Could not download the bonus stickers. They will be available in your account.", variant: "destructive" });
             }
         }
 
@@ -153,9 +174,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             id: `design-${product.id}-${tier.unit}`,
             name: `Sticker Design: ${product.name}`,
             description: specialDescription, 
-            category: `Digital Design (${'custom'})`,
-            imageUrl: generatedStickerUrl, 
-            imageUrls: [generatedStickerUrl], // Only the main generated sticker
+            category: `Digital Design ('custom')`,
+            imageUrl: selectedSticker, 
+            imageUrls: [selectedSticker],
             priceTiers: [],
             quantityInStock: 999, 
             createdAt: new Date(),
@@ -172,120 +193,101 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
     const handleNavigateViewer = (direction: 'next' | 'prev') => {
         const newIndex = direction === 'next'
-            ? (viewingImageIndex + 1) % tripleSImages.length
-            : (viewingImageIndex - 1 + tripleSImages.length) % tripleSImages.length;
+            ? (viewingImageIndex + 1) % allTripleSImages.length
+            : (viewingImageIndex - 1 + allTripleSImages.length) % allTripleSImages.length;
         setViewingImageIndex(newIndex);
     };
 
-    const viewingImage = tripleSImages[viewingImageIndex];
-    const isViewingImageSelected = viewingImage ? selectedTripleS.includes(viewingImage) : false;
+    const viewingImage = allTripleSImages[viewingImageIndex];
+    const isViewingImageSelected = viewingImage ? selectedFreebies.includes(viewingImage) : false;
 
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-                    {step === 'select' && (
+                <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
+                    {step === 'select_freebies' && (
                         <>
                             <DialogHeader className="px-6 pt-6 pb-4 border-b">
                                 <DialogTitle>Create Your Triple S Canna Club Pack</DialogTitle>
                                 <DialogDescription>
-                                    Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique AI-generated design.
+                                    Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique Triple S bud generated design.
                                 </DialogDescription>
                             </DialogHeader>
-                             <Alert className="bg-primary/10 border-primary/20 text-primary-foreground mx-6">
-                                <Gift className="h-5 w-5 text-primary" />
-                                <AlertTitle className="text-primary font-bold">Welcome to the Triple S Canna Club!</AlertTitle>
-                                <AlertDescription className="text-primary/90">
-                                    Select your favorite sticker designs as a FREE gift from The Wellness Tree to go with your custom creation!
-                                </AlertDescription>
-                            </Alert>
-                            <ScrollArea className="flex-grow px-6">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 py-4">
-                                    {tripleSImages.map((imgSrc, index) => {
-                                        return (
-                                            <Card
-                                                key={index}
-                                                className="cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square"
-                                                onClick={() => handleViewImage(index)}
+                            <ScrollArea className="flex-grow px-6 pt-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+                                    {allTripleSImages.map((imgSrc, index) => (
+                                        <Card
+                                            key={index}
+                                            className="cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square"
+                                            onClick={() => handleViewImage(index)}
+                                        >
+                                            <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                            <div 
+                                                className={cn(
+                                                    "absolute top-1 right-1 h-6 w-6 rounded-md flex items-center justify-center border transition-colors z-10",
+                                                    selectedFreebies.includes(imgSrc)
+                                                        ? 'bg-primary border-primary-foreground/50'
+                                                        : 'bg-black/40 border-white/50'
+                                                )}
+                                                 onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSelectFreebie(imgSrc);
+                                                }}
                                             >
-                                                <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
-                                                <div 
-                                                    className={cn(
-                                                        "absolute top-1 right-1 h-6 w-6 rounded-md flex items-center justify-center border transition-colors z-10",
-                                                        selectedTripleS.includes(imgSrc)
-                                                            ? 'bg-primary border-primary-foreground/50'
-                                                            : 'bg-black/40 border-white/50'
-                                                    )}
-                                                     onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleSelectTripleS(imgSrc);
-                                                    }}
-                                                >
-                                                    <CheckSquare className={cn("h-4 w-4", selectedTripleS.includes(imgSrc) ? 'text-white' : 'text-transparent')} />
-                                                </div>
-                                            </Card>
-                                        );
-                                    })}
+                                                <CheckSquare className={cn("h-4 w-4", selectedFreebies.includes(imgSrc) ? 'text-white' : 'text-transparent')}/>
+                                            </div>
+                                        </Card>
+                                    ))}
                                 </div>
                             </ScrollArea>
                             <DialogFooter className="p-6 border-t">
-                                <Button size="lg" className="w-full" onClick={handleStartGeneration}>
+                                <Button size="lg" className="w-full" onClick={handleProceedToStrains}>
                                     <Sparkles className="mr-2 h-5 w-5" />
-                                    Next: Create My Strain Sticker!
+                                    Next: Select Your Strain Sticker
                                 </Button>
                             </DialogFooter>
                         </>
                     )}
 
-                    {step === 'generate' && (
-                        <div className="flex flex-col items-center justify-center flex-grow h-full gap-4">
-                            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                            <p className="text-lg text-muted-foreground">Crafting your unique sticker...</p>
-                            <p className="text-sm text-center max-w-sm">Our AI is mixing 3D clay, cannabis essence, and your strain's unique flavors. This can take a moment.</p>
-                        </div>
-                    )}
-
-                    {step === 'result' && generatedStickerUrl && (
-                         <div className="flex flex-col flex-grow min-h-0">
-                            <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-                                <DialogTitle>Your Unique design Is Ready!</DialogTitle>
+                    {step === 'select_strain' && (
+                        <div className="flex flex-col flex-grow min-h-0">
+                             <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+                                <DialogTitle>Select Your Strain Sticker</DialogTitle>
                                 <DialogDescription>
-                                    Here is your AI-generated design for &quot;{product?.name}&quot;.
+                                    You've selected {selectedFreebies.length} freebie sticker(s). Now, select your primary strain design from the collection below.
                                 </DialogDescription>
                             </DialogHeader>
-                             <ScrollArea className="flex-1 px-6">
-                                <div className="p-6 flex flex-col md:flex-row items-start justify-center gap-8">
-                                    <div className="flex-shrink-0 w-full max-w-sm">
-                                        <h3 className="font-semibold text-center mb-2">Your Custom AI Sticker</h3>
-                                        <div className="relative aspect-square w-full bg-muted rounded-lg overflow-hidden border">
-                                            <Image src={generatedStickerUrl} alt="AI Generated Sticker" layout="fill" objectFit="contain" className="p-4"/>
-                                        </div>
-                                    </div>
-                                    <div className="flex-shrink-0 w-full max-w-sm space-y-4">
-                                        <div>
-                                            <h3 className="font-semibold text-center mb-2">Your Selected Triple S Stickers ({selectedTripleS.length})</h3>
-                                            {selectedTripleS.length > 0 ? (
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    {selectedTripleS.map((url) => (
-                                                        <div key={url} className="relative aspect-square w-full bg-muted rounded-md overflow-hidden border">
-                                                            <Image src={url} alt="Selected Triple S Sticker" layout="fill" objectFit="cover" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-4 bg-muted/50 rounded-md">No extra stickers selected.</div>
+                            <ScrollArea className="flex-grow w-full">
+                                <div className="flex space-x-4 p-6">
+                                    {randomStrainImages.map((imgSrc) => (
+                                        <Card
+                                            key={imgSrc}
+                                            className={cn(
+                                                "cursor-pointer transition-all duration-200 overflow-hidden relative group shrink-0 w-64 h-64 border-4",
+                                                selectedSticker === imgSrc ? 'border-primary' : 'border-transparent'
                                             )}
-                                        </div>
-                                         <Alert className="bg-orange-100 border-orange-200 text-orange-800 rounded-lg text-xs space-y-2">
-                                            <p>After you have completed your shipping details, a Leaf user account will be created for You.  As a leaf user you can place and track orders, generate your own sticker promo sets and create your own "Cannabis enthusiast" print on demand clothing and merchandise including caps, T shirts, hoodies, and backpacks with custom Cannibinoid images you create with our AI. Funk out your own clothing gear with the Wellness tree Image Generation AI.  You also get access to all our AI advisors to assist your Wellness Lifestyle. Buy credits to gain access to all our Large language models and Cannabis Merchandise Generation . Print on demand items with your custom "Green" designs. Irieness</p>
-                                        </Alert>
-                                    </div>
+                                            onClick={() => handleSelectSticker(imgSrc)}
+                                        >
+                                            <Image src={imgSrc} alt="Strain Sticker" layout="fill" objectFit="cover" />
+                                            <div 
+                                                className={cn(
+                                                    "absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all",
+                                                    selectedSticker === imgSrc
+                                                        ? 'bg-primary border-primary-foreground'
+                                                        : 'bg-black/40 border-white/60'
+                                                )}
+                                            >
+                                                <CheckSquare className={cn("h-5 w-5", selectedSticker === imgSrc ? 'text-white' : 'text-transparent')} />
+                                            </div>
+                                        </Card>
+                                    ))}
                                 </div>
+                                <ScrollBar orientation="horizontal" />
                             </ScrollArea>
                             <DialogFooter className="p-6 border-t bg-background shrink-0">
-                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart}>
+                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart || !selectedSticker}>
                                     {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
-                                    Add Design Pack to Cart
+                                    Add Design to Cart
                                 </Button>
                             </DialogFooter>
                         </div>
@@ -298,7 +300,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                     <DialogHeader className="p-4 border-b shrink-0">
                         <DialogTitle>Triple S Canna Club Design</DialogTitle>
                          <DialogDescription>
-                            Selected: {selectedTripleS.length} / {maxSelectable} sticker(s).
+                            Selected: {selectedFreebies.length} / {maxSelectable} sticker(s).
                         </DialogDescription>
                     </DialogHeader>
                     <div className="relative flex-grow flex items-center justify-center">
@@ -327,8 +329,8 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             <Button
                                 size="lg"
                                 variant={isViewingImageSelected ? 'default' : 'secondary'}
-                                onClick={() => viewingImage && handleSelectTripleS(viewingImage)}
-                                disabled={!isViewingImageSelected && selectedTripleS.length >= maxSelectable}
+                                onClick={() => viewingImage && handleSelectFreebie(viewingImage)}
+                                disabled={!isViewingImageSelected && selectedFreebies.length >= maxSelectable}
                                 className={cn(
                                     "flex items-center gap-2 shadow-md",
                                     isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"

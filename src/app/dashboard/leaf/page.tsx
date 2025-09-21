@@ -183,7 +183,7 @@ export default function LeafDashboardOverviewPage() {
             <CardHeader><CardTitle className="flex items-center gap-2"><Tag className="text-accent h-6 w-6" />AI Advisors</CardTitle></CardHeader>
             <CardContent>
                 <p className="text-muted-foreground mb-4">Discover insights by consulting our specialized AI advisors.</p>
-                <Button asChild className="w-full bg-primary text-primary-foreground"><Link href="/">See All Advisors</Link></Button>
+                <Button asChild className="w-full bg-primary text-primary-foreground"><Link href="/dashboard/advisors">See All Advisors</Link></Button>
             </CardContent>
             </Card>
         </div>

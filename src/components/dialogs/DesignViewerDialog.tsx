@@ -246,12 +246,9 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-7xl h-[95vh] flex flex-col p-0">
                 <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                    <DialogTitle>Preview Designs for: {product?.name}</DialogTitle>
+                    <DialogTitle>Create Your Triple S Canna Club Pack</DialogTitle>
                      <DialogDescription>
-                        {activeTierCartItem 
-                            ? 'You have already added a design for this product tier to your cart.'
-                            : 'Select a theme tab to preview a logo concept.'
-                        }
+                        Select from our range of apparel, smoking gear, art, and furniture to bundle with your unique Triple S bud generated design.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -284,7 +281,7 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
                                         {assets && (
                                             <div className="sticky top-0 z-10 py-2 mb-4 bg-background/80 backdrop-blur-sm">
                                                 <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 text-primary-foreground" onClick={() => handleAddToCart()} disabled={!!activeTierCartItem}>
-                                                    {activeTierCartItem ? 'Design already in cart' : <><ShoppingCart className="mr-2 h-4 w-4" /> Add This Design To Cart</>}
+                                                    {activeTierCartItem ? 'Design already in cart' : <><ShoppingCart className="mr-2 h-4 w-4" /> Next: Select Triple S bud sticker!</>}
                                                 </Button>
                                             </div>
                                         )}
