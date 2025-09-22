@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext'; // Import CartProvider
 import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
+import BackgroundVideo from '@/components/layout/BackgroundVideo';
 
 export const metadata: Metadata = {
   title: 'The Wellness Tree - AI-Powered Wellness & Cannabis Hub',
@@ -22,7 +23,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className={`antialiased flex flex-col min-h-screen bg-background text-foreground`}>
+      <body className={`antialiased flex flex-col min-h-screen bg-transparent text-foreground`}>
+       <BackgroundVideo />
         <AuthProvider>
           <CartProvider> {/* Wrap with CartProvider */}
             <Header />

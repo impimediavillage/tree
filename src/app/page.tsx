@@ -6,10 +6,10 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide, ArrowDown } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import type { User, StickerSet } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,6 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { FeaturedStickerCard } from '@/components/cards/FeaturedStickerCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 
 interface AdvisorCardProps {
   title: string;
@@ -238,6 +237,11 @@ export default function HolisticAiHubPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const [featuredStickerSets, setFeaturedStickerSets] = useState<StickerSet[]>([]);
   const [isLoadingSets, setIsLoadingSets] = useState(true);
+  const advisorsRef = useRef<HTMLElement>(null);
+
+  const handleScrollToAdvisors = () => {
+    advisorsRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const fetchFeaturedStickerSets = useCallback(async () => {
     setIsLoadingSets(true);
@@ -286,22 +290,56 @@ export default function HolisticAiHubPage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
 
-      <div className="p-6 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
-        <div className="text-center">
-          
-          <h1
-            className="text-5xl font-extrabold tracking-tight text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            The Wellness Tree
-          </h1>
-          <p 
-            className="text-xl text-foreground mt-3 max-w-2xl mx-auto"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Your AI-powered holistic wellness hub. Explore cannabis, natural remedies, and ancient wisdom with our specialized AI advisors.
-          </p>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
+            <CardHeader>
+                 <CardTitle className="text-3xl font-extrabold tracking-tight text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>The Wellness Tree</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow">
+                <p className="text-lg text-foreground mt-2" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
+                    Your holistic & natural wellness hub. Explore cannabis, natural remedies & homeopathy, permaculture & organic farming, Fungi, Traditional Medicine & ancient wisdom with our specialized AI advisors.
+                </p>
+            </CardContent>
+            <CardFooter>
+                <Button onClick={handleScrollToAdvisors} size="lg" className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg">
+                    <ArrowDown className="mr-2 h-5 w-5" />
+                    Explore AI models
+                </Button>
+            </CardFooter>
+        </Card>
+
+        {authLoading ? (
+            <div className="flex justify-center items-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : !currentUser && (
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
+                <CardHeader>
+                    <CardTitle className="text-3xl font-bold text-foreground tracking-tight" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Join Our Growing Ecosystem</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-lg text-foreground mt-2" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
+                        Whether you're a wellness store looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
+                    </p>
+                </CardContent>
+                 <CardFooter>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <Link href="/dispensary-signup">
+                                <Store className="mr-2 h-5 w-5" />
+                                Wellness Store Signup
+                            </Link>
+                        </Button>
+                        <Button asChild className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                             <Link href="/auth/signup">
+                                <Leaf className="mr-2 h-5 w-5" />
+                                Leaf User Signup
+                            </Link>
+                        </Button>
+                    </div>
+                </CardFooter>
+            </Card>
+        )}
       </div>
       
       {authLoading ? (
@@ -310,20 +348,7 @@ export default function HolisticAiHubPage() {
         </div>
       ) : !currentUser && (
         <div className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
-          <div className="text-center mb-8">
-            <h2
-              className="text-3xl font-bold text-foreground tracking-tight"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              Join Our Growing Ecosystem
-            </h2>
-            <p
-              className="text-lg text-foreground max-w-xl mx-auto mt-2"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              Whether you're a wellness store looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
-            </p>
-          </div>
+         
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <SignupBenefitCard
               title="Benefits of signing up as a virtual wellness store:"
@@ -398,7 +423,7 @@ export default function HolisticAiHubPage() {
             >
               Your current balance: <Badge variant="secondary" className="text-md px-2 py-0.5">{currentUser.credits ?? 0} Credits</Badge>
             </CardDescription>
-          </CardHeader>
+          </Header>
           <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg" asChild>
               <Link href="/dashboard/leaf">My Dashboard</Link>
@@ -410,7 +435,7 @@ export default function HolisticAiHubPage() {
         </Card>
       )}
 
-      <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
+      <section ref={advisorsRef} className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
           <h2 
             className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"

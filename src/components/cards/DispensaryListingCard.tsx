@@ -6,7 +6,7 @@ import Image from 'next/image';
 import type { Dispensary } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Trees } from 'lucide-react';
+import { MapPin, Trees, Route } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const hardcodedTypeImages: Record<string, string> = {
@@ -20,9 +20,10 @@ const hardcodedTypeImages: Record<string, string> = {
 interface DispensaryListingCardProps {
   dispensary: Dispensary;
   typeBannerImageUrl?: string | null; 
+  distance?: number;
 }
 
-export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: DispensaryListingCardProps) {
+export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance }: DispensaryListingCardProps) {
   const placeholderText = encodeURIComponent(dispensary.dispensaryName);
   const defaultPlaceholderUrl = `https://placehold.co/600x400.png?text=${placeholderText}`;
   
@@ -64,6 +65,12 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl }: Dispen
           data-ai-hint={`${dispensary.dispensaryName} storefront`}
           onError={handleImageError}
         />
+        {distance !== undefined && (
+            <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold py-1 px-2 rounded-full flex items-center gap-1 shadow-lg">
+                <Route className="h-4 w-4" />
+                {distance.toFixed(1)} km away
+            </div>
+        )}
       </div>
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-semibold text-primary truncate" title={dispensary.dispensaryName}>

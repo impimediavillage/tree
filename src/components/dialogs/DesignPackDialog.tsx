@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Sparkles, ShoppingCart, CheckSquare, Square, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
@@ -17,41 +16,6 @@ import JSZip from 'jszip';
 import type { Product, PriceTier } from '@/types';
 
 const allTripleSImages = Array.from({ length: 81 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
-const allTripleS400Images = [
-    '/images/2025-triple-s-400/1.png', '/images/2025-triple-s-400/10.png', 
-    '/images/2025-triple-s-400/103.png', '/images/2025-triple-s-400/11.png', 
-    '/images/2025-triple-s-400/110.png', '/images/2025-triple-s-400/111.png', 
-    '/images/2025-triple-s-400/112.png', '/images/2025-triple-s-400/113.png', 
-    '/images/2025-triple-s-400/114.png', '/images/2025-triple-s-400/115.png', 
-    '/images/2025-triple-s-400/116.png', '/images/2025-triple-s-400/117.png', 
-    '/images/2025-triple-s-400/118.png', '/images/2025-triple-s-400/119.png', 
-    '/images/2025-triple-s-400/12.png', '/images/2025-triple-s-400/120.png', 
-    '/images/2025-triple-s-400/121.png', '/images/2025-triple-s-400/122.png', 
-    '/images/2025-triple-s-400/123.png', '/images/2025-triple-s-400/124.png', 
-    '/images/2025-triple-s-400/125.png', '/images/2025-triple-s-400/126.png', 
-    '/images/2025-triple-s-400/127.png', '/images/2025-triple-s-400/128.png', 
-    '/images/2025-triple-s-400/129.png', '/images/2025-triple-s-400/13.png', 
-    '/images/2025-triple-s-400/130.png', '/images/2025-triple-s-400/131.png', 
-    '/images/2025-triple-s-400/132.png', '/images/2025-triple-s-400/133.png', 
-    '/images/2025-triple-s-400/134.png', '/images/2025-triple-s-400/135.png', 
-    '/images/2025-triple-s-400/136.png', '/images/2025-triple-s-400/137.png', 
-    '/images/2025-triple-s-400/138.png', '/images/2025-triple-s-400/139.png', 
-    '/images/2025-triple-s-400/14.png', '/images/2025-triple-s-400/140.png', 
-    '/images/2025-triple-s-400/141.png', '/images/2025-triple-s-400/142.png', 
-    '/images/2025-triple-s-400/143.png', '/images/2025-triple-s-400/144.png', 
-    '/images/2025-triple-s-400/145.png', '/images/2025-triple-s-400/146.png', 
-    '/images/2025-triple-s-400/147.png', '/images/2025-triple-s-400/148.png', 
-    '/images/2025-triple-s-400/149.png', '/images/2025-triple-s-400/15.png', 
-    '/images/2025-triple-s-400/150.png', '/images/2025-triple-s-400/151.png', 
-    '/images/2025-triple-s-400/152.png', '/images/2025-triple-s-400/153.png', 
-    '/images/2025-triple-s-400/154.png', '/images/2025-triple-s-400/155.png', 
-    '/images/2025-triple-s-400/156.png', '/images/2025-triple-s-400/157.png', 
-    '/images/2025-triple-s-400/158.png', '/images/2025-triple-s-400/159.png', 
-    '/images/2025-triple-s-400/16.png', '/images/2025-triple-s-400/160.png',
-    '/images/2025-triple-s-400/nav1.jpg', '/images/2025-triple-s-400/nav2.jpg',
-    '/images/2025-triple-s-400/peak1.jpg', '/images/2025-triple-s-400/peak2.jpg',
-    '/images/2025-triple-s-400/soar1.jpg', '/images/2025-triple-s-400/soar2.jpg'
-];
 
 const shuffleArray = (array: any[]) => {
   let currentIndex = array.length, randomIndex;
@@ -79,6 +43,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const [isProcessingCart, setIsProcessingCart] = React.useState(false);
     
     const [randomStrainImages, setRandomStrainImages] = useState<string[]>([]);
+    const [isRandomSetReady, setIsRandomSetReady] = useState(false);
     const [selectedSticker, setSelectedSticker] = useState<string | null>(null);
 
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
@@ -88,17 +53,30 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
     useEffect(() => {
         if (isOpen) {
-            const shuffled = shuffleArray([...allTripleS400Images]);
-            setRandomStrainImages(shuffled.slice(0, 33));
+            setIsRandomSetReady(false);
+            fetch('/api/list-images')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        toast({ title: "Error", description: "Could not load Triple S designs. Please try again.", variant: "destructive" });
+                        return;
+                    }
+                    const imagePaths = data.map((name: string) => `/images/2025-triple-s-400/${name}`);
+                    const shuffled = shuffleArray(imagePaths);
+                    setRandomStrainImages(shuffled.slice(0, 33));
+                    setIsRandomSetReady(true);
+                })
+                .catch(() => toast({ title: "Error", description: "Failed to fetch designs. Please check your connection.", variant: "destructive" }));
         } else {
             setTimeout(() => {
                 setStep('select_freebies');
                 setSelectedFreebies([]);
                 setSelectedSticker(null);
                 setRandomStrainImages([]);
+                setIsRandomSetReady(false);
             }, 300);
         }
-    }, [isOpen]);
+    }, [isOpen, toast]);
 
     const handleSelectFreebie = (imageUrl: string) => {
         setSelectedFreebies(prev => {
@@ -172,7 +150,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         const designPackProduct: Product = {
             ...product,
             id: `design-${product.id}-${tier.unit}`,
-            name: `Sticker Design: ${product.name}`,
+            name: `Sticker Design: ${product.name} (${tier.unit})`,
             description: specialDescription, 
             category: `Digital Design ('custom')`,
             imageUrl: selectedSticker, 
@@ -243,7 +221,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             <DialogFooter className="p-6 border-t">
                                 <Button size="lg" className="w-full" onClick={handleProceedToStrains}>
                                     <Sparkles className="mr-2 h-5 w-5" />
-                                    Next: Select Your Strain Sticker
+                                    Next. Select Your Triple S bud sticker design
                                 </Button>
                             </DialogFooter>
                         </>
@@ -252,40 +230,48 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                     {step === 'select_strain' && (
                         <div className="flex flex-col flex-grow min-h-0">
                              <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-                                <DialogTitle>Select Your Strain Sticker</DialogTitle>
+                                <DialogTitle>Select your Triple S bud sticker</DialogTitle>
                                 <DialogDescription>
-                                    You've selected {selectedFreebies.length} freebie sticker(s). Now, select your primary strain design from the collection below.
+                                You've selected {selectedFreebies.length} freebie design(s). Now select your bud sticker. A high res design will be emailed to You and your free garden delight sample will sent to you after succesful check out.
                                 </DialogDescription>
                             </DialogHeader>
-                            <ScrollArea className="flex-grow w-full">
-                                <div className="flex space-x-4 p-6">
-                                    {randomStrainImages.map((imgSrc) => (
-                                        <Card
-                                            key={imgSrc}
-                                            className={cn(
-                                                "cursor-pointer transition-all duration-200 overflow-hidden relative group shrink-0 w-64 h-64 border-4",
-                                                selectedSticker === imgSrc ? 'border-primary' : 'border-transparent'
-                                            )}
-                                            onClick={() => handleSelectSticker(imgSrc)}
-                                        >
-                                            <Image src={imgSrc} alt="Strain Sticker" layout="fill" objectFit="cover" />
-                                            <div 
-                                                className={cn(
-                                                    "absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all",
-                                                    selectedSticker === imgSrc
-                                                        ? 'bg-primary border-primary-foreground'
-                                                        : 'bg-black/40 border-white/60'
-                                                )}
-                                            >
-                                                <CheckSquare className={cn("h-5 w-5", selectedSticker === imgSrc ? 'text-white' : 'text-transparent')} />
-                                            </div>
-                                        </Card>
-                                    ))}
+                            
+                            {!isRandomSetReady ? (
+                                <div className="flex-grow flex items-center justify-center">
+                                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
                                 </div>
-                                <ScrollBar orientation="horizontal" />
-                            </ScrollArea>
+                            ) : (
+                                <ScrollArea className="flex-grow w-full">
+                                    <div className="flex space-x-4 p-6">
+                                        {randomStrainImages.map((imgSrc) => (
+                                            <Card
+                                                key={imgSrc}
+                                                className={cn(
+                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group shrink-0 w-64 h-64 border-4",
+                                                    selectedSticker === imgSrc ? 'border-primary' : 'border-transparent'
+                                                )}
+                                                onClick={() => handleSelectSticker(imgSrc)}
+                                            >
+                                                <Image src={imgSrc} alt="Strain Sticker" layout="fill" objectFit="cover" />
+                                                <div 
+                                                    className={cn(
+                                                        "absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all",
+                                                        selectedSticker === imgSrc
+                                                            ? 'bg-primary border-primary-foreground'
+                                                            : 'bg-black/40 border-white/60'
+                                                    )}
+                                                >
+                                                    <CheckSquare className={cn("h-5 w-5", selectedSticker === imgSrc ? 'text-white' : 'text-transparent')} />
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                    <ScrollBar orientation="horizontal" />
+                                </ScrollArea>
+                            )}
+
                             <DialogFooter className="p-6 border-t bg-background shrink-0">
-                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart || !selectedSticker}>
+                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart || !selectedSticker || !isRandomSetReady}>
                                     {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
                                     Add Design to Cart
                                 </Button>
