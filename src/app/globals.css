@@ -124,3 +124,18 @@ body {
   }
   /* body already styled with background image and base text color */
 }
+
+@layer utilities {
+  .animate-scroll {
+    animation: scroll linear infinite;
+  }
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

@@ -1,15 +1,13 @@
-
 'use client';
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide, ArrowDown } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { User, StickerSet } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -237,11 +235,6 @@ export default function HolisticAiHubPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const [featuredStickerSets, setFeaturedStickerSets] = useState<StickerSet[]>([]);
   const [isLoadingSets, setIsLoadingSets] = useState(true);
-  const advisorsRef = useRef<HTMLElement>(null);
-
-  const handleScrollToAdvisors = () => {
-    advisorsRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const fetchFeaturedStickerSets = useCallback(async () => {
     setIsLoadingSets(true);
@@ -271,10 +264,7 @@ export default function HolisticAiHubPage() {
     { text: "Full e-commerce platform with a unique public URL for your e-store.", icon: Globe },
     { text: "Engage in private, inter-store trading and bulk product transactions.", icon: Truck },
     { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
-    { text: "FREE Onboarding assistance with Payfast merchant split payment set up. Payouts go directly to your own Payfast account connected to our set up.", icon: Gift },
-    { text: "Paid Google wallet onboarding assistance.", icon: DollarSign },
-    { text: "Paid Stripe onboarding assistance", icon: DollarSign },
-    { text: "Paid Bitcoin payment provider option", icon: Bitcoin },
+    { text: "Payouts paid out once a week direct to your bank account.", icon: DollarSign },
   ];
 
   const leafUserBenefits = [
@@ -283,63 +273,28 @@ export default function HolisticAiHubPage() {
     { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
-    { text: "Design your own strain stickers set and Promo images on caps, hoodies and tshirts to 420 your outfit with your favorite strain.", icon: Palette },
   ];
 
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
-            <CardHeader>
-                 <CardTitle className="text-3xl font-extrabold tracking-tight text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>The Wellness Tree</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow">
-                <p className="text-lg text-foreground mt-2" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
-                    Your holistic & natural wellness hub. Explore cannabis, natural remedies & homeopathy, permaculture & organic farming, Fungi, Traditional Medicine & ancient wisdom with our specialized AI advisors.
-                </p>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleScrollToAdvisors} size="lg" className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg">
-                    <ArrowDown className="mr-2 h-5 w-5" />
-                    Explore AI models
-                </Button>
-            </CardFooter>
-        </Card>
-
-        {authLoading ? (
-            <div className="flex justify-center items-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        ) : !currentUser && (
-            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
-                <CardHeader>
-                    <CardTitle className="text-3xl font-bold text-foreground tracking-tight" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Join Our Growing Ecosystem</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-lg text-foreground mt-2" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
-                        Whether you're a wellness store looking to expand your reach or an individual seeking wellness insights, The Wellness Tree has a place for you.
-                    </p>
-                </CardContent>
-                 <CardFooter>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                            <Link href="/dispensary-signup">
-                                <Store className="mr-2 h-5 w-5" />
-                                Wellness Store Signup
-                            </Link>
-                        </Button>
-                        <Button asChild className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                             <Link href="/auth/signup">
-                                <Leaf className="mr-2 h-5 w-5" />
-                                Leaf User Signup
-                            </Link>
-                        </Button>
-                    </div>
-                </CardFooter>
-            </Card>
-        )}
+      <div className="p-8 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
+        <div className="text-center">
+          
+          <h1
+            className="text-5xl font-extrabold tracking-tight text-foreground"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >
+            The Wellness Tree
+          </h1>
+          <p 
+            className="text-xl text-foreground mt-3 max-w-2xl mx-auto"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >
+            Your holistic wellness hub. Learn - plan - grow with our holistic and informative AI advisors in all things Cannibinoid, Nutritional Mushroom AI (The FunGuy AI), Homeopathy / Natural Medicine, Permaculture and organic farming and building, Qi gong AI, Aromatherapy AI, Vegan food guru AI, and a flower power AI for flower lovers and gardeners. (More Deep research AI models coming soon.)
+          </p>
+        </div>
       </div>
       
       {authLoading ? (
@@ -347,12 +302,25 @@ export default function HolisticAiHubPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : !currentUser && (
-        <div className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
-         
+        <div className="animate-fade-in-scale-up p-8 bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
+          <div className="text-center mb-8">
+            <h2
+              className="text-3xl font-bold text-foreground tracking-tight"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+            >
+              Join Our Growing Ecosystem
+            </h2>
+            <p
+              className="text-lg text-foreground max-w-xl mx-auto mt-2"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+            >
+              Sign up and trade your natural remedies online. You can sign up as a Cannibnoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or a Mushroom store. 
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <SignupBenefitCard
-              title="Benefits of signing up as a virtual wellness store:"
-              buttonText="Become a Virtual Wellness Store"
+              title="Benefits of creating a store or club:"
+              buttonText="Create a store"
               buttonLink="/dispensary-signup"
               buttonIcon={Store}
               benefits={wellnessBenefits}
@@ -423,7 +391,7 @@ export default function HolisticAiHubPage() {
             >
               Your current balance: <Badge variant="secondary" className="text-md px-2 py-0.5">{currentUser.credits ?? 0} Credits</Badge>
             </CardDescription>
-          </Header>
+          </CardHeader>
           <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg" asChild>
               <Link href="/dashboard/leaf">My Dashboard</Link>
@@ -435,7 +403,7 @@ export default function HolisticAiHubPage() {
         </Card>
       )}
 
-      <section ref={advisorsRef} className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
+      <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
           <h2 
             className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"
@@ -505,3 +473,4 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
+

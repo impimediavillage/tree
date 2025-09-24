@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -213,7 +212,7 @@ export default function WellnessStorePage() {
         <Card className="mb-8 bg-primary/10 border-primary/20">
           <CardContent className="p-4 text-center">
             <p className="font-bold text-primary flex items-center justify-center gap-2">
-              <Gift className="h-5 w-5"/> FREE cannabis products with your THC strain sticker, cap, t-shirt, &amp; hoodie designs.
+              <Gift className="h-5 w-5"/> Free smokables with each Triple S Club design pack purchased.
             </p>
           </CardContent>
         </Card>

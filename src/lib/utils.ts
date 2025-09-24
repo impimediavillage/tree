@@ -6,6 +6,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Shuffles an array in place using the Fisher-Yates algorithm.
+ * Creates a new array to avoid modifying the original.
+ * @param array The array to shuffle.
+ * @returns A new shuffled array.
+ */
+export const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  let currentIndex = newArray.length, randomIndex;
+
+  while (currentIndex > 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    [newArray[currentIndex], newArray[randomIndex]] = [
+      newArray[randomIndex], newArray[currentIndex]];
+  }
+
+  return newArray;
+};
+
+
 export const getProductCollectionName = (dispensaryType?: string | null, forAddPage: boolean = false): string => {
     if (!dispensaryType) {
         console.warn("[getProductCollectionName] Dispensary type is null or undefined, defaulting to 'products' or a default add page.");

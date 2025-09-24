@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -18,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator as DropdownMenuSeparatorComponent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { DispensaryAdminProvider } from '@/contexts/DispensaryAdminContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface NavItem {
   title: string;
@@ -107,37 +107,39 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             <p className="text-xs text-muted-foreground">My Store Panel</p> 
           </div>
         </div>
-        <nav className="flex flex-col space-y-1 p-2">
-            {[...mainSidebarNavItems, ...managementSidebarNavItems, ...settingsSidebarNavItems].map((item, index) => {
-               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
-               const needsSeparator = (item.title === 'Orders' && managementSidebarNavItems.length > 0) || 
-                                      (item.title === 'Marketing' && settingsSidebarNavItems.length > 0);
-              return (
-                <React.Fragment key={item.title}>
-                  <Button
-                      variant={pathname.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard' ? 'secondary' : (pathname === item.href ? 'secondary' : 'ghost')}
-                      className={cn(
-                      'w-full justify-start text-sm',
-                      (pathname.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') || pathname === item.href
-                          ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                          : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
-                      itemDisabled && 'opacity-50 cursor-not-allowed'
-                      )}
-                      asChild
-                      onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
-                      disabled={itemDisabled}
-                  >
-                      <Link href={itemDisabled ? '#' : item.href}>
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.title}
-                      {item.badge && <Badge className="ml-auto">{item.badge}</Badge>}
-                      </Link>
-                  </Button>
-                  {needsSeparator && <Separator className="my-2" />}
-                </React.Fragment>
-              )
-            })}
-        </nav>
+        <ScrollArea className="flex-1">
+          <nav className="flex flex-col space-y-1 p-2">
+              {[...mainSidebarNavItems, ...managementSidebarNavItems, ...settingsSidebarNavItems].map((item, index) => {
+                 const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+                 const needsSeparator = (item.title === 'Orders' && managementSidebarNavItems.length > 0) || 
+                                        (item.title === 'Marketing' && settingsSidebarNavItems.length > 0);
+                return (
+                  <React.Fragment key={item.title}>
+                    <Button
+                        variant={pathname.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard' ? 'secondary' : (pathname === item.href ? 'secondary' : 'ghost')}
+                        className={cn(
+                        'w-full justify-start text-sm',
+                        (pathname.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') || pathname === item.href
+                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                            : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                        itemDisabled && 'opacity-50 cursor-not-allowed'
+                        )}
+                        asChild
+                        onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                        disabled={itemDisabled}
+                    >
+                        <Link href={itemDisabled ? '#' : item.href}>
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.title}
+                        {item.badge && <Badge className="ml-auto">{item.badge}</Badge>}
+                        </Link>
+                    </Button>
+                    {needsSeparator && <Separator className="my-2" />}
+                  </React.Fragment>
+                )
+              })}
+          </nav>
+        </ScrollArea>
         <div className="mt-auto p-2 border-t border-border">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -243,5 +245,3 @@ export default function DispensaryAdminRootLayout({
       </DispensaryAdminProvider>
   );
 }
-
-    

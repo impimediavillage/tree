@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -8,9 +7,10 @@ import { collection, query, where, getDocs, orderBy, doc, getDoc, limit } from '
 import type { Dispensary, DispensaryType } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, Store, ArrowLeft, Search, LocateFixed } from 'lucide-react';
+import { Loader2, AlertTriangle, Store, ArrowLeft, LocateFixed } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard';
+import TripleSShowcase from '@/components/features/TripleSShowcase';
 
 // Haversine formula to calculate distance between two lat/lon points
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -95,8 +95,8 @@ export default function PublicWellnessProfilesByTypePage() {
         toast({ title: "Location Found!", description: "Sorting stores by your location." });
 
         const sortedProfiles = [...wellnessProfiles].map(profile => {
-            if (profile.geoLocation) {
-                const [lat, lon] = profile.geoLocation.split(',').map(Number);
+            if (profile.location) {
+                const [lat, lon] = profile.location.split(',').map(Number);
                 if (!isNaN(lat) && !isNaN(lon)) {
                     profile.distance = getDistance(latitude, longitude, lat, lon);
                 }
@@ -129,9 +129,8 @@ export default function PublicWellnessProfilesByTypePage() {
     return (
       <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-             <Button variant="outline" onClick={() => router.push('/browse-dispensary-types')} className="mb-4 sm:mb-0">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Wellness Types
-            </Button>
+             <div className="h-10 w-48 bg-muted rounded animate-pulse"></div>
+             <div className="h-10 w-32 bg-muted rounded animate-pulse"></div>
         </div>
         <div className="w-full h-24 rounded-lg bg-muted animate-pulse mb-6"></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -153,21 +152,30 @@ export default function PublicWellnessProfilesByTypePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <Button variant="outline" onClick={() => router.push('/browse-dispensary-types')}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to All Wellness Types
-        </Button>
-        <h1 
-          className="text-3xl font-bold text-foreground text-center"
-          style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >
-            {wellnessTypeName}
-        </h1>
+        <div className="text-center mb-6">
+            <h1 
+            className="text-4xl font-extrabold text-foreground tracking-tight"
+            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+            >
+                {wellnessTypeName}
+            </h1>
+      </div>
+
+      <div className="flex justify-between items-center mb-8 gap-4">
         <Button onClick={handleGeoSearch} disabled={isLocating} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           {isLocating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <LocateFixed className="mr-2 h-5 w-5" />}
           Search near me
         </Button>
+        <Button variant="outline" onClick={() => router.push('/browse-dispensary-types')}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        </Button>
       </div>
+
+      {wellnessTypeName === 'Cannibinoid store' && (
+        <div className="mb-12">
+          <TripleSShowcase />
+        </div>
+      )}
 
       {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
