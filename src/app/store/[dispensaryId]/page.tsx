@@ -1,30 +1,20 @@
 'use client';
 
 import * as React from 'react';
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { db, functions } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
-import type { Dispensary, Product, ProductAttribute, PriceTier, CartItem } from '@/types';
-import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import type { Dispensary, Product, PriceTier } from '@/types';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertTriangle, MapPin, Clock, Tag, ShoppingCart, Info, Search, FilterX, Leaf as LeafIcon, Flame, Zap, ChevronLeft, ChevronRight, X, ImageIcon as ImageIconLucide, Sparkles, Brain, Gift, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, MapPin, Clock, Tag, Search, FilterX, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCart } from '@/contexts/CartContext'; 
-import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogTrigger, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InfoDialog } from '@/components/dialogs/InfoDialog';
-import { StickerSetDetailDialog } from '@/components/dialogs/StickerSetDetailDialog';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { DesignViewerDialog } from '@/components/dialogs/DesignViewerDialog';
-
+import TripleSShowcase from '@/components/features/TripleSShowcase'; // Import the showcase component
 
 export default function WellnessStorePage() {
   const params = useParams();
@@ -137,7 +127,7 @@ export default function WellnessStorePage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
         <p className="text-xl text-muted-foreground">Loading Wellness Profile...</p>
       </div>
@@ -146,9 +136,9 @@ export default function WellnessStorePage() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-        <AlertTriangle className="h-16 w-16 text-orange-500 mb-4" />
-        <h2 className="text-2xl font-semibold text-destructive-foreground mb-2">{error}</h2>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-background">
+        <AlertTriangle className="h-16 w-16 text-destructive mb-4" />
+        <h2 className="text-2xl font-semibold text-foreground mb-2">{error}</h2>
         <p className="text-muted-foreground mb-6">This e-store might be temporarily unavailable or no longer exists.</p>
         <Button onClick={() => router.push('/')}>Back to Home</Button>
       </div>
@@ -159,66 +149,7 @@ export default function WellnessStorePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-      <Card className="mb-8 shadow-xl bg-card text-card-foreground border-primary/20">
-        <CardHeader className="pb-4">
-          <CardTitle 
-            className="text-4xl font-extrabold text-foreground tracking-tight"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            {wellness.dispensaryName}
-          </CardTitle>
-          <CardDescription 
-            className="text-lg text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            {wellness.dispensaryType}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {wellness.message && (
-            <p 
-                className="italic text-foreground/90"
-                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >&quot;{wellness.message}&quot;</p>
-          )}
-          <div 
-            className="flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <MapPin className="h-4 w-4" /> <span>{wellness.location}</span>
-          </div>
-          {(wellness.openTime || wellness.closeTime) && (
-            <div 
-                className="flex items-center gap-2 text-foreground"
-                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              <Clock className="h-4 w-4" />
-              <span>Hours: {wellness.openTime || 'N/A'} - {wellness.closeTime || 'N/A'}</span>
-            </div>
-          )}
-          {wellness.operatingDays && wellness.operatingDays.length > 0 && (
-            <div 
-                className="flex items-center gap-2 text-foreground"
-                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-               <Tag className="h-4 w-4" />
-               <span>Open: {wellness.operatingDays.join(', ')}</span>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {wellness.dispensaryType === "Cannibinoid store" && (
-        <Card className="mb-8 bg-primary/10 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <p className="font-bold text-primary flex items-center justify-center gap-2">
-              <Gift className="h-5 w-5"/> Free smokables with each Triple S Club design pack purchased.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="mb-8 p-4 border rounded-lg bg-card shadow-sm flex flex-col sm:flex-row gap-4 items-center">
+      <div className="mb-8 p-4 border rounded-lg bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 shadow-sm flex flex-col sm:flex-row gap-4 items-center">
         <div className="relative w-full sm:flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input 
@@ -226,11 +157,11 @@ export default function WellnessStorePage() {
                 placeholder="Search products by name, description, or tags..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full"
+                className="pl-10 w-full bg-background/50"
             />
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectTrigger className="w-full sm:w-[220px] bg-background/50">
                 <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
@@ -243,7 +174,6 @@ export default function WellnessStorePage() {
         </Select>
       </div>
 
-
       {displayItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {displayItems.map(item => (
@@ -252,12 +182,9 @@ export default function WellnessStorePage() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <Info className="mx-auto h-12 w-12 text-orange-500 mb-4" />
+          <Info className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold text-foreground">No Products Found</h3>
-          <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <p className="text-muted-foreground">
             {products.length === 0 ? "This wellness store hasn't listed any products yet." : "No products match your current filters."}
           </p>
           {(searchTerm || selectedCategory !== 'all') && (
@@ -265,6 +192,43 @@ export default function WellnessStorePage() {
                 <FilterX className="mr-2 h-4 w-4" /> Clear Filters
             </Button>
           )}
+        </div>
+      )}
+
+      <Card className="mb-8 shadow-xl bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-4xl font-extrabold text-foreground tracking-tight">
+            {wellness.dispensaryName}
+          </CardTitle>
+          <CardDescription className="text-lg text-muted-foreground">
+            {wellness.dispensaryType}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-foreground">
+          {wellness.message && (
+            <p className="italic text-foreground/90">&quot;{wellness.message}&quot;</p>
+          )}
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground" /> <span>{wellness.location}</span>
+          </div>
+          {(wellness.openTime || wellness.closeTime) && (
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span>Hours: {wellness.openTime || 'N/A'} - {wellness.closeTime || 'N/A'}</span>
+            </div>
+          )}
+          {wellness.operatingDays && wellness.operatingDays.length > 0 && (
+            <div className="flex items-center gap-2">
+               <Tag className="h-4 w-4 text-muted-foreground" />
+               <span>Open: {wellness.operatingDays.join(', ')}</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {wellness.dispensaryType === "Cannibinoid store" && (
+        <div className="mb-8">
+          <TripleSShowcase quoteText="Create your own club or canna store. Create custom (black only for now) caps, tshirts, hoodies, beanies, and sticker sets with your own unique & funky designs. Public E store with weekly out payments from HQ and a R100 annual membership fee + The Wellness tree charges a 25% comm on all transaction and 5% comm on Product Pool wholesaler trading."/>
         </div>
       )}
 

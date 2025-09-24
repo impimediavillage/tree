@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide } from 'lucide-react';
+import { Leaf, Sprout, Brain, ShieldCheck, HandHelping, UserCircle, ShoppingCart, Settings, Briefcase, DollarSign, CheckCircle, LogIn, LogOut, Gift, Truck, Globe, Bitcoin, Users, Zap, Eye, ListPlus, Store, Loader2, Palette, Sparkles, Image as ImageIconLucide, ArrowDown } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState, useCallback } from 'react';
@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { FeaturedStickerCard } from '@/components/cards/FeaturedStickerCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface AdvisorCardProps {
   title: string;
@@ -178,58 +179,6 @@ const advisors: AdvisorCardProps[] = [
   },
 ];
 
-interface SignupBenefitCardProps {
-  title: string;
-  buttonText: string;
-  buttonLink: string;
-  buttonIcon: React.ElementType;
-  benefits: { text: string; icon: React.ElementType }[];
-  delay?: number;
-  dataAiHint?: string;
-  cornerBadgeText?: string;
-  cornerBadgeIcon?: React.ElementType;
-}
-
-const SignupBenefitCard: React.FC<SignupBenefitCardProps> = ({ title, buttonText, buttonLink, buttonIcon: ButtonIcon, benefits, delay = 0, dataAiHint, cornerBadgeText, cornerBadgeIcon: CornerBadgeIcon }) => (
-  <Card
-    className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md relative"
-    style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
-    data-ai-hint={dataAiHint || title.toLowerCase().replace(/\s+/g, '-')}
-  >
-    {cornerBadgeText && CornerBadgeIcon && (
-      <Badge
-        variant="default"
-        className="absolute top-1 right-1 z-10 bg-accent text-accent-foreground px-2.5 py-1 text-xs shadow-md flex items-center gap-1"
-      >
-        <CornerBadgeIcon className="h-3.5 w-3.5" />
-        {cornerBadgeText}
-      </Badge>
-    )}
-    <CardHeader className="bg-muted/30 p-4 border-b border-primary/20">
-      <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md">
-        <Link href={buttonLink}>
-          <ButtonIcon className="mr-2 h-5 w-5" />
-          {buttonText}
-        </Link>
-      </Button>
-    </CardHeader>
-    <CardContent className="p-6 flex-grow">
-      <h3 className="text-lg font-semibold text-foreground mb-4">{title}</h3>
-      <ul className="space-y-3">
-        {benefits.map((benefit, index) => (
-          <li
-            key={index}
-            className="flex items-start gap-3 bg-muted/20 dark:bg-muted/10 p-3 rounded-lg border border-border/30 shadow-sm hover:bg-card/60 dark:hover:bg-card/70 transition-colors duration-200"
-          >
-            <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" />
-            <span className="text-sm text-muted-foreground">{benefit.text}</span>
-          </li>
-        ))}
-      </ul>
-    </CardContent>
-  </Card>
-);
-
 
 export default function HolisticAiHubPage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -278,77 +227,104 @@ export default function HolisticAiHubPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8 space-y-12">
-
-      <div className="p-8 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.1s' }}>
-        <div className="text-center">
-          
-          <h1
-            className="text-5xl font-extrabold tracking-tight text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            The Wellness Tree
-          </h1>
-          <p 
-            className="text-xl text-foreground mt-3 max-w-2xl mx-auto"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Your holistic wellness hub. Learn - plan - grow with our holistic and informative AI advisors in all things Cannibinoid, Nutritional Mushroom AI (The FunGuy AI), Homeopathy / Natural Medicine, Permaculture and organic farming and building, Qi gong AI, Aromatherapy AI, Vegan food guru AI, and a flower power AI for flower lovers and gardeners. (More Deep research AI models coming soon.)
-          </p>
-        </div>
-      </div>
-      
       {authLoading ? (
-         <div className="flex justify-center items-center py-10">
+        <div className="flex justify-center items-center py-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : !currentUser && (
-        <div className="animate-fade-in-scale-up p-8 bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.2s' }}>
-          <div className="text-center mb-8">
-            <h2
-              className="text-3xl font-bold text-foreground tracking-tight"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              Join Our Growing Ecosystem
-            </h2>
-            <p
-              className="text-lg text-foreground max-w-xl mx-auto mt-2"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              Sign up and trade your natural remedies online. You can sign up as a Cannibnoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or a Mushroom store. 
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <SignupBenefitCard
-              title="Benefits of creating a store or club:"
-              buttonText="Create a store"
-              buttonLink="/dispensary-signup"
-              buttonIcon={Store}
-              benefits={wellnessBenefits}
-              delay={100}
-              dataAiHint="wellness store signup benefits"
-            />
-            <SignupBenefitCard
-              title="Benefits of signing up as a Leaf on our Tree:"
-              buttonText="Become a Leaf on our Tree"
-              buttonLink="/auth/signup"
-              buttonIcon={Leaf}
-              benefits={leafUserBenefits}
-              delay={200}
-              dataAiHint="leaf user signup benefits"
-              cornerBadgeText="FREE"
-              cornerBadgeIcon={Gift}
-            />
-          </div>
+      ) : !currentUser ? (
+        <>
+        <PageHeader 
+            title="The Wellness Tree"
+            description={<p>Your holistic wellness hub. Get Wellness assistance instantly and learn - plan - grow with our holistic and informative AI advisors.</p>}
+        >
+            <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-semibold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <Link href="#advisors-section">
+                    <ArrowDown className="mr-2 h-5 w-5" />
+                    Explore AI Advisors
+                </Link>
+            </Button>
+        </PageHeader>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Card 2: Create a Store */}
+          <Card className="p-8 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-foreground tracking-tight">
+                Join Our Growing Ecosystem
+              </h2>
+              <p className="text-lg text-foreground mt-2">
+                Create you own Cannibnoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or a Mushroom store.
+              </p>
+            </div>
+            <div className="mt-8 space-y-4 text-center">
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground w-full">
+                <Link href="/dispensary-signup">Create store</Link>
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">Learn more</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Benefits of creating a store or club:</DialogTitle>
+                  </DialogHeader>
+                  <ul className="space-y-3 p-4">
+                    {wellnessBenefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-muted-foreground">{benefit.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </Card>
+
+          {/* Card 3: Become a Leaf User */}
+          <Card className="p-8 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-foreground tracking-tight">
+                Need Wellness help now?
+              </h2>
+              <p className="text-lg text-foreground mt-2">
+                Get instant assistance now. Sign up as Leaf user and get 20 free credits. Make your own Clothing gear and much so more...
+              </p>
+            </div>
+            <div className="mt-8 space-y-4 text-center">
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground w-full">
+                <Link href="/auth/signup">Create Free leaf account</Link>
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">Learn more</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Benefits of signing up as a Leaf on our Tree:</DialogTitle>
+                  </DialogHeader>
+                  <ul className="space-y-3 p-4">
+                    {leafUserBenefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" />
+                        <span className="text-sm text-muted-foreground">{benefit.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </Card>
         </div>
+        </>
+      ) : (
+        <div/>
       )}
 
       {currentUser && currentUser.role === 'Super Admin' && (
         <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
           <CardHeader>
-            <CardTitle 
-              className="text-2xl text-foreground flex items-center gap-2"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
+            <CardTitle className="text-2xl text-foreground flex items-center gap-2">
               <Settings className="h-7 w-7 text-primary" /> Welcome, Super Admin!
             </CardTitle>
           </CardHeader>
@@ -363,10 +339,7 @@ export default function HolisticAiHubPage() {
       {currentUser && (currentUser.role === 'DispensaryOwner' || currentUser.role === 'DispensaryStaff') && (
          <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
           <CardHeader>
-            <CardTitle 
-              className="text-2xl text-foreground flex items-center gap-2"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
+            <CardTitle className="text-2xl text-foreground flex items-center gap-2">
               <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Team!
             </CardTitle>
           </CardHeader>
@@ -379,42 +352,28 @@ export default function HolisticAiHubPage() {
       )}
 
       {currentUser && (currentUser.role === 'User' || currentUser.role === 'LeafUser') && (
-         <Card className="shadow-xl animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
-          <CardHeader className="text-center">
-            <CardTitle 
-              className="text-2xl font-semibold text-foreground"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Welcome Back, {currentUser.displayName || currentUser.email?.split('@')[0]}!</CardTitle>
-             <CardDescription 
-              className="text-foreground"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              Your current balance: <Badge variant="secondary" className="text-md px-2 py-0.5">{currentUser.credits ?? 0} Credits</Badge>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg" asChild>
-              <Link href="/dashboard/leaf">My Dashboard</Link>
-            </Button>
-             <Button variant="outline" size="lg" className="text-lg" asChild>
-                <Link href="/pricing">Buy More Credits</Link>
-            </Button>
-          </CardContent>
-        </Card>
+         <PageHeader
+            title={`Welcome Back, ${currentUser.displayName || currentUser.email?.split('@')[0]}!`}
+            description={<span>Your current balance: <Badge variant="secondary" className="text-md px-2 py-0.5">{currentUser.credits ?? 0} Credits</Badge></span>}
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg" asChild>
+                <Link href="/dashboard/leaf">My Dashboard</Link>
+                </Button>
+                <Button variant="outline" size="lg" className="text-lg" asChild>
+                    <Link href="/pricing">Buy More Credits</Link>
+                </Button>
+            </div>
+          </PageHeader>
       )}
 
-      <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
+      <div id="advisors-section" style={{ scrollMarginTop: '100px' }} />
+      <section className="p-8 rounded-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
-          <h2 
-            className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <h2 className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2">
             <Brain className="h-10 w-10 text-primary"/> Explore Our AI Advisors
           </h2>
-          <p 
-            className="text-lg text-foreground max-w-2xl mx-auto mt-3"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <p className="text-lg text-foreground max-w-2xl mx-auto mt-3">
             Get specialized insights and recommendations across various domains of holistic wellness and knowledge.
           </p>
         </div>
@@ -451,16 +410,10 @@ export default function HolisticAiHubPage() {
       {featuredStickerSets.length > 0 && (
         <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.5s' }}>
           <div className="text-center mb-10">
-            <h2
-              className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
+            <h2 className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2">
               <ImageIconLucide className="h-10 w-10 text-primary" /> Featured Sticker Sets
             </h2>
-            <p
-              className="text-lg text-foreground max-w-2xl mx-auto mt-3"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
+            <p className="text-lg text-foreground max-w-2xl mx-auto mt-3">
               Check out the latest designs created by our community.
             </p>
           </div>
@@ -473,4 +426,3 @@ export default function HolisticAiHubPage() {
     </div>
   );
 }
-

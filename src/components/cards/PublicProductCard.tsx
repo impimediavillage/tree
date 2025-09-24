@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -7,7 +6,7 @@ import type { Product, PriceTier } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Gift, Flame, Tag, CheckCircle, XCircle, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, X, Truck, Handshake } from 'lucide-react';
+import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Flame, Tag, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, Truck, Handshake } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext'; 
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -92,14 +91,13 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   );
   
   const renderFooterContent = () => {
-    // If onRequestProduct is provided, we are in the "Browse Pool" context.
     if (onRequestProduct) {
         if (isThcProduct) {
             return (
                 <>
                     <div className="w-full text-right">
-                        <p className="text-2xl font-bold text-black dark:text-white">
-                            <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                        <p className="text-2xl font-bold text-foreground">
+                            <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
                             {tier.price.toFixed(2)}
                         </p>
                         <div className="flex items-center justify-end text-xs text-muted-foreground">
@@ -107,18 +105,18 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                             <span className="mx-1">/</span>
                             <span>Sticker price</span>
                         </div>
-                        <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
+                        <p className="text-xs font-semibold text-primary mt-1">
                             FREE SAMPLE with this sticker
                         </p>
                     </div>
-                    <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
-                        <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+                    <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
+                        <p className="text-xs font-semibold text-primary">
                            Press Buy Design Pack below to request this product for your store.
                         </p>
                     </div>
                     <div className="w-full space-y-2">
                         <Button
-                            className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-bold flex items-center justify-center gap-2.5"
                             disabled={tierStock <= 0 || requestStatus === 'negotiating'}
                             onClick={() => onRequestProduct(product, tier)}
                             aria-label={`Request product ${product.name}`}
@@ -132,8 +130,8 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         return (
             <>
                 <div className="w-full text-right">
-                    <p className="text-2xl font-bold text-black dark:text-white">
-                        <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+                    <p className="text-2xl font-bold text-foreground">
+                        <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
                         {tier.price.toFixed(2)}
                     </p>
                     <div className="flex items-center justify-end text-xs text-muted-foreground">
@@ -153,13 +151,12 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         );
     }
 
-    // Default public store view logic
     if (isThcProduct) {
        return (
         <>
           <div className="w-full text-right">
-            <p className="text-2xl font-bold text-black dark:text-white">
-              <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+            <p className="text-2xl font-bold text-foreground">
+              <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
               {tier.price.toFixed(2)}
             </p>
             <div className="flex items-center justify-end text-xs text-muted-foreground">
@@ -167,18 +164,18 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               <span className="mx-1">/</span>
               <span>Sticker price</span>
             </div>
-            <p className="text-xs font-semibold text-green-600 dark:text-green-400 mt-1">
+            <p className="text-xs font-semibold text-primary mt-1">
               FREE SAMPLE with this sticker set.
             </p>
           </div>
-          <div className="w-full p-2 text-center bg-green-500/10 border border-green-500/20 rounded-md">
-            <p className="text-xs font-semibold text-green-700 dark:text-green-300">
+          <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
+            <p className="text-xs font-semibold text-primary">
               Press Buy Design Pack below to create your Unique strain sticker set and receive your free sample.
             </p>
           </div>
           <div className="w-full space-y-2">
             <Button
-              className="w-full bg-green-600 hover:bg-green-700 text-white text-md font-bold flex items-center justify-center gap-2.5"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-bold flex items-center justify-center gap-2.5"
               disabled={tierStock <= 0}
               onClick={() => setIsDesignPackOpen(true)}
               aria-label={`Buy design for ${product.name}`}
@@ -191,12 +188,11 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       );
     }
     
-    // Default case for regular products in public store view.
     return (
       <>
         <div className="w-full text-right">
-            <p className="text-2xl font-bold text-black dark:text-white">
-                <span className="text-sm font-semibold text-green-600 align-top">{product.currency} </span>
+            <p className="text-2xl font-bold text-foreground">
+                <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
                 {tier.price.toFixed(2)}
             </p>
             <div className="flex items-center justify-end text-xs text-muted-foreground">
@@ -218,15 +214,14 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
     );
   };
 
-
   return (
     <>
       <Card 
-          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card text-card-foreground group border border-border hover:border-primary/60 animate-fade-in-scale-up"
+          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 group animate-fade-in-scale-up"
           style={{ animationFillMode: 'backwards' }}
           data-ai-hint={dataAiHintProduct}
       >
-        <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted group">
+        <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted/30 group">
           {images.length > 0 ? (
             <div className={cn('grid h-full w-full gap-0.5', gridColsClass, gridRowsClass)}>
               {images.slice(0, 4).map((url, i) => (
@@ -258,7 +253,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               ))}
             </div>
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
+            <div className="flex h-full w-full items-center justify-center bg-muted/30">
               <ImageIconLucide className="h-16 w-16 text-muted-foreground/30" />
             </div>
           )}
@@ -299,7 +294,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       </Card>
       
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-lg w-full p-2 sm:p-4">
+        <DialogContent className="max-w-lg w-full p-2 sm:p-4 bg-card/80 backdrop-blur-md">
           <DialogHeader className="p-2">
             <DialogTitle>{product.name}</DialogTitle>
             <DialogDescription>

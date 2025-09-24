@@ -1,9 +1,9 @@
 
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, Trees, ShoppingCart } from 'lucide-react';
+import { Loader2, AlertTriangle, Trees } from 'lucide-react';
 import type { DispensaryType } from '@/types';
 import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
@@ -11,6 +11,7 @@ import { collection, getDocs, orderBy, query as firestoreQuery } from 'firebase/
 import { useToast } from '@/hooks/use-toast';
 import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard';
 import Link from 'next/link';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function BrowseWellnessTypesPage() {
   const [allWellnessTypes, setAllWellnessTypes] = useState<DispensaryType[]>([]);
@@ -42,48 +43,34 @@ export default function BrowseWellnessTypesPage() {
 
   return (
     <div className="container mx-auto py-12 px-4 md:px-6 lg:px-8">
-      <div className="mb-12">
-        <div className="bg-card/70 dark:bg-card/80 backdrop-blur-md rounded-xl shadow-lg p-6 md:p-8 text-center max-w-3xl mx-auto border border-border/50">
-          <Trees className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 
-            className="text-5xl font-extrabold tracking-tight text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Explore Wellness Types
-          </h1>
-          <p 
-            className="text-xl text-foreground/90 dark:text-foreground/80 mt-3 max-w-2xl mx-auto"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Discover a variety of wellness stores offering unique products and services. Click on a type to see available options.
-          </p>
-        </div>
-      </div>
+        <PageHeader 
+            title={<> <Trees className="inline-block h-12 w-12 text-primary mr-4" /> Explore Wellness Worlds</>}
+            description="Discover a vibrant ecosystem of specialized e-stores. Each category offers unique products and services to support your holistic journey."
+        />
 
       {isLoadingTypes ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {[1,2,3,4].map(i => 
-            <Card key={i} className="h-[380px] animate-pulse"> 
-              <CardContent className="flex items-center justify-center h-full">
-                <Loader2 className="h-10 w-10 animate-spin text-primary/50"/>
-              </CardContent>
+            <Card key={i} className="h-[380px] bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 flex items-center justify-center"> 
+              <Loader2 className="h-10 w-10 animate-spin text-primary/50"/>
             </Card>
           )}
         </div>
       ) : allWellnessTypes.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {allWellnessTypes.map((type) => (
+          {allWellnessTypes.map((type, index) => (
             <DispensaryTypeCard 
               key={type.id} 
               dispensaryType={type} 
               basePath="/dispensaries/by-type" 
+              delay={index * 100} // Staggered animation
             />
           ))}
         </div>
       ) : (
-        <Card className="col-span-full"> 
+        <Card className="col-span-full bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50"> 
           <CardContent className="pt-10 pb-10 text-center text-muted-foreground">
-            <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-orange-500" />
+            <AlertTriangle className="mx-auto h-12 w-12 mb-4 text-accent" />
             <h3 className="text-2xl font-semibold mb-2">No Wellness Types Found</h3>
             <p className="mb-6">It looks like no wellness types have been set up yet. Please check back later.</p>
             <Button asChild variant="outline">

@@ -171,14 +171,8 @@ export default function PublicWellnessProfilesByTypePage() {
         </Button>
       </div>
 
-      {wellnessTypeName === 'Cannibinoid store' && (
-        <div className="mb-12">
-          <TripleSShowcase />
-        </div>
-      )}
-
       {wellnessProfiles.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
           {wellnessProfiles.map(wellness => (
             <DispensaryListingCard 
               key={wellness.id} 
@@ -189,13 +183,19 @@ export default function PublicWellnessProfilesByTypePage() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="mb-12">
           <CardContent className="pt-6 text-center text-muted-foreground">
             <Store className="mx-auto h-12 w-12 mb-3" />
             <h3 className="text-xl font-semibold">No Wellness Profiles Found</h3>
             <p>There are currently no approved wellness profiles listed for the &quot;{wellnessTypeName}&quot; type.</p>
           </CardContent>
         </Card>
+      )}
+
+      {wellnessTypeName === 'Cannibinoid store' && (
+        <div className="mb-12">
+          <TripleSShowcase />
+        </div>
       )}
     </div>
   );

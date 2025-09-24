@@ -71,6 +71,9 @@ export default {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		keyframes: {
+        'scroll': {
+          'to': { transform: 'translateX(-50%)' },
+        },
   			'accordion-down': {
   				from: {
   					height: '0'
@@ -101,6 +104,9 @@ export default {
         },
   		},
   		animation: {
+        'scroll-slow': 'scroll 30s linear infinite',
+        'scroll-normal': 'scroll 300s linear infinite',
+        'scroll-fast': 'scroll 120s linear infinite',
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-scale-up': 'fade-in-scale-up 0.4s ease-out forwards',

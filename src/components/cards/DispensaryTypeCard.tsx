@@ -3,106 +3,75 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import type { DispensaryType } from '@/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import type { DispensaryType } from '@/types';
+import { ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Store } from 'lucide-react'; 
-import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
-  isPreferred?: boolean;
   basePath: string;
+  delay?: number;
 }
 
-export function DispensaryTypeCard({ dispensaryType, isPreferred, basePath }: DispensaryTypeCardProps) {
-  const [defaultBannerUrl, setDefaultBannerUrl] = useState('');
-  const [currentBannerUrl, setCurrentBannerUrl] = useState('');
+export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: DispensaryTypeCardProps) {
+  const { name, description, storeCount } = dispensaryType;
   
-  useEffect(() => {
-    const newDefaultBannerUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(dispensaryType.name)}`;
-    setDefaultBannerUrl(newDefaultBannerUrl);
+  // To robustly handle potential inconsistencies in the Firestore data,
+  // we intelligently search for the image URL across common property names.
+  // This ensures the card displays an image if one is available, even if the field name varies.
+  const imageUrl = dispensaryType.image || (dispensaryType as any).imageUrl || (dispensaryType as any).iconPath || null;
 
-    let bannerPath = dispensaryType.image;
-    let finalBannerPathToUse = newDefaultBannerUrl; 
-
-    if (bannerPath && typeof bannerPath === 'string' && bannerPath.trim() !== "") {
-      if (!bannerPath.startsWith('/') && !bannerPath.toLowerCase().startsWith('http')) {
-        finalBannerPathToUse = '/' + bannerPath.replace(/^\/+/, '');
-      } else {
-        finalBannerPathToUse = bannerPath;
-      }
-    }
-    
-    setCurrentBannerUrl(finalBannerPathToUse);
-  }, [dispensaryType.name, dispensaryType.image]);
-
-
-  const handleBannerImageError = () => {
-    if (currentBannerUrl !== defaultBannerUrl) {
-      setCurrentBannerUrl(defaultBannerUrl);
-    }
-  };
-  
-  const dataAiHint = `wellness type ${dispensaryType.name.toLowerCase().replace(/\s+/g, ' ')}`;
+  const linkHref = `${basePath}/${encodeURIComponent(name)}`;
 
   return (
-    <Card
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card/70 dark:bg-card/80 backdrop-blur-md text-card-foreground border border-border/50 relative animate-fade-in-scale-up"
-        style={{ animationFillMode: 'backwards' }}
-        data-ai-hint={dataAiHint}
+    <Card 
+        className="group relative flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-[380px] bg-card/60 dark:bg-card/70 backdrop-blur-sm border-border/30 hover:border-primary/50 animate-fade-in-scale-up"
+        style={{ animationDelay: `${delay}ms`, animationFillMode: 'backwards' }}
+        data-ai-hint={`dispensary type ${name.toLowerCase()}`}
     >
-      {isPreferred && (
-        <div className="absolute top-2 right-2 z-10">
-          <Badge variant="default" className="bg-pink-500 hover:bg-pink-600 text-white px-2 py-1 text-xs">
-            <Heart className="mr-1 h-3 w-3" /> Preferred
-          </Badge>
+        <div className="absolute inset-0 z-0">
+            {imageUrl ? (
+                <Image 
+                    src={imageUrl}
+                    alt={name}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+            ) : (
+                <div className="w-full h-full bg-muted"></div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent"></div>
         </div>
-      )}
-      <Link href={`${basePath}/${encodeURIComponent(dispensaryType.name)}`} className="flex flex-col h-full group">
-        <div className="relative w-full h-48">
-          {currentBannerUrl && (
-            <Image
-              src={currentBannerUrl}
-              alt={dispensaryType.name}
-              fill
-              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 30vw"
-              style={{ objectFit: 'cover' }}
-              className="transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={dataAiHint + " banner"}
-              onError={handleBannerImageError}
-              priority={isPreferred}
-            />
-          )}
-        </div>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl font-semibold text-primary truncate" title={dispensaryType.name}>
-            {dispensaryType.name}
-          </CardTitle>
-        </CardHeader>
-        
-        {dispensaryType.description && dispensaryType.description.trim() !== "" && (
-          <CardContent className="pb-2 pt-0">
-            <CardDescription className="text-sm text-muted-foreground line-clamp-3" title={dispensaryType.description}>
-              {dispensaryType.description}
-            </CardDescription>
-          </CardContent>
-        )}
 
-        <div className="p-4 pt-2 mt-auto">
-            <Button 
-                variant="ghost" 
-                className="w-full h-auto p-4 flex flex-col items-center justify-center text-foreground hover:bg-transparent focus-visible:ring-primary"
-            >
-                
-                <span className="bg-primary text-primary-foreground font-semibold text-lg px-4 py-2 rounded-md text-center">
-                    View stores
-                </span>
-            </Button>
+        <div className="relative z-10 flex flex-col h-full p-6 text-white">
+            <CardHeader className="p-0">
+                <CardTitle className="text-2xl font-bold tracking-tight text-white shadow-text leading-tight">
+                    {name}
+                </CardTitle>
+                {storeCount !== undefined && (
+                    <Badge variant="secondary" className="mt-2 w-fit bg-primary/20 text-primary-foreground backdrop-blur-sm border border-primary/30">
+                        {storeCount} {storeCount === 1 ? 'Store' : 'Stores'}
+                    </Badge>
+                )}
+            </CardHeader>
+
+            <CardContent className="p-0 flex-grow mt-3">
+                <p className="text-sm text-gray-200 line-clamp-4 shadow-text">
+                    {description}
+                </p>
+            </CardContent>
+
+            <CardFooter className="p-0 mt-auto">
+                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold group-hover:bg-primary/95 transition-colors">
+                    <Link href={linkHref}>
+                        View Stores <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                </Button>
+            </CardFooter>
         </div>
-      </Link>
     </Card>
   );
 }

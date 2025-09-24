@@ -126,8 +126,14 @@ body {
 }
 
 @layer utilities {
-  .animate-scroll {
-    animation: scroll linear infinite;
+  .animate-scroll-slow {
+    animation: scroll 200s linear infinite;
+  }
+  .animate-scroll-normal {
+    animation: scroll 100s linear infinite;
+  }
+  .animate-scroll-fast {
+    animation: scroll 50s linear infinite;
   }
 }
 
