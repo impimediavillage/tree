@@ -147,6 +147,14 @@ export interface Product {
     linkedStrainId?: string | null;
     theme?: string | null;
   } | null;
+
+  // Fields for Shipping
+  weight?: number; // in kg
+  dimensions?: {
+    length: number; // in cm
+    width: number; // in cm
+    height: number; // in cm
+  };
 }
 
 
@@ -250,6 +258,7 @@ export interface User {
   uid: string;
   email: string;
   displayName?: string | null;
+  phoneNumber?: string | null;
   photoURL?: string | null;
   role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
   dispensaryId?: string | null;
@@ -263,7 +272,15 @@ export interface User {
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
   updatedAt?: Timestamp | Date | string | null;
+  shippingAddress?: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  } | null;
 }
+
+// This will be the main profile type used in the application context
+export type UserProfile = User;
 
 // Represents a User document in Firestore (for server-side functions)
 export interface UserDocData {
@@ -383,6 +400,13 @@ export interface CartItem {
   quantity: number;
   quantityInStock: number;
   imageUrl?: string | null;
+  // Fields for Shipping
+  weight?: number; // in kg
+  dimensions?: {
+    length: number; // in cm
+    width: number; // in cm
+    height: number; // in cm
+  };
 }
 
 // Types for generated brand assets
