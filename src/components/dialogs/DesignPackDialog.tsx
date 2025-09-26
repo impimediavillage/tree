@@ -10,14 +10,12 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Loader2, Sparkles, ShoppingCart, CheckSquare, Square, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn, shuffleArray } from '@/lib/utils'; // CORRECT: Importing the centralized shuffle function
+import { cn, shuffleArray } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import JSZip from 'jszip';
 import type { Product, PriceTier } from '@/types';
 
 const allTripleSImages = Array.from({ length: 81 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
-
-// REMOVED: The local shuffleArray function is no longer needed here.
 
 interface DesignPackDialogProps {
   isOpen: boolean;
@@ -54,7 +52,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                         return;
                     }
                     const imagePaths = data.map((name: string) => `/images/2025-triple-s-400/${name}`);
-                    const shuffled = shuffleArray(imagePaths); // CORRECT: Using the imported utility
+                    const shuffled = shuffleArray(imagePaths);
                     setRandomStrainImages(shuffled.slice(0, 33));
                     setIsRandomSetReady(true);
                 })
@@ -153,7 +151,11 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             updatedAt: new Date(),
         };
         
-        const designPackTier: PriceTier = { ...tier, price: tier.price };
+        const designPackTier: PriceTier = {
+          ...tier,
+          price: tier.price,
+          unit: tier.unit
+        };
         
         addToCart(designPackProduct, designPackTier, 1);
         toast({ title: "Design Pack Added!", description: `Your custom "${product.name}" pack is in your cart.` });

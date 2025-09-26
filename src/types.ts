@@ -12,6 +12,7 @@ export interface PriceTier {
   price: number;
   quantityInStock?: number | null;
   description?: string | null;
+  sampleAmount?: number;
 }
 
 // Updated ProductCategory to support nesting
@@ -400,6 +401,7 @@ export interface CartItem {
   quantity: number;
   quantityInStock: number;
   imageUrl?: string | null;
+  sampleAmount?: number;
   // Fields for Shipping
   weight?: number; // in kg
   dimensions?: {

@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { UserPlus, Mail, Lock, ArrowLeft, CheckSquare, Square, Loader2, ListFilter } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -17,16 +17,19 @@ import { userSignupSchema, type UserSignupFormData } from '@/lib/schemas';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, collection, getDocs, query as firestoreQuery, orderBy } from 'firebase/firestore';
-import type { User, DispensaryType } from '@/types';
+import type { User, DispensaryType, CartItem } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { fetchUserProfile } = useAuth();
+  const { loadCart, cartItems } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -41,16 +44,29 @@ export default function SignUpPage() {
     },
   });
 
+  useEffect(() => {
+    const cartQueryParam = searchParams.get('cart');
+    if (cartQueryParam && cartItems.length === 0) { // Only load if cart is currently empty
+      try {
+        const decodedCartString = atob(decodeURIComponent(cartQueryParam));
+        const parsedCartItems: CartItem[] = JSON.parse(decodedCartString);
+        if (parsedCartItems && parsedCartItems.length > 0) {
+          loadCart(parsedCartItems);
+          toast({ title: 'Cart Restored', description: 'Your shopping cart is waiting for you.' });
+        }
+      } catch (error) {
+        console.error("Failed to parse and load cart from URL on signup page:", error);
+      }
+    }
+  }, [searchParams, loadCart, toast, cartItems.length]);
+
   const fetchWellnessTypes = useCallback(async () => {
     setIsLoadingTypes(true);
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
       const q = firestoreQuery(typesCollectionRef, orderBy('name'));
       const querySnapshot = await getDocs(q);
-      const fetchedTypes: DispensaryType[] = querySnapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      } as DispensaryType));
+      const fetchedTypes: DispensaryType[] = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data(), } as DispensaryType));
       setWellnessTypes(fetchedTypes);
     } catch (error) {
       console.error("Error fetching wellness types for signup:", error);
@@ -88,16 +104,15 @@ export default function SignUpPage() {
       };
       await setDoc(userDocRef, newUserDocData);
       
-      toast({
-        title: 'Account Created!',
-        description: "You've been successfully signed up and logged in. Welcome!",
-      });
+      toast({ title: 'Account Created!', description: "You've been successfully signed up. Welcome!" });
       
-      const userProfile = await fetchUserProfile(firebaseUser);
-      if (userProfile) {
-        router.push('/dashboard/leaf');
+      await fetchUserProfile(firebaseUser); // This will set the user in the AuthContext
+
+      const redirectUrl = searchParams.get('redirect');
+      if (redirectUrl) {
+          router.push(redirectUrl);
       } else {
-        throw new Error("Could not fetch profile for new user, even after creation.");
+          router.push('/dashboard/leaf');
       }
  
     } catch (error: any) {
@@ -106,29 +121,29 @@ export default function SignUpPage() {
        if (error.code) {
         switch (error.code) {
           case 'auth/email-already-in-use':
-            errorMessage = 'This email address is already in use.';
-            break;
+            errorMessage = 'This email address is already in use. Try signing in instead.'; break;
           case 'auth/invalid-email':
-            errorMessage = 'Please enter a valid email address.';
-            break;
+            errorMessage = 'Please enter a valid email address.'; break;
           case 'auth/weak-password':
-            errorMessage = 'The password is too weak. Please choose a stronger password.';
-            break;
+            errorMessage = 'The password is too weak. Please choose a stronger password.'; break;
           default:
             errorMessage = `Signup failed: ${error.message}`;
         }
       }
-      toast({
-        title: 'Sign Up Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Sign Up Failed', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const selectedTypes = form.watch('preferredDispensaryTypes') || [];
+  const redirectParam = searchParams.get('redirect');
+  const cartParam = searchParams.get('cart');
+  let signInHref = '/auth/signin';
+  const signInParams = new URLSearchParams();
+  if (redirectParam) signInParams.append('redirect', redirectParam);
+  if (cartParam) signInParams.append('cart', cartParam);
+  if (signInParams.toString()) signInHref += `?${signInParams.toString()}`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12">
@@ -138,185 +153,94 @@ export default function SignUpPage() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
-          <CardTitle 
-            className="text-3xl font-bold text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >Create Your Leaf User Account</CardTitle>
-          <CardDescription 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >Join The Wellness Tree community and explore wellness.</CardDescription>
+          <CardTitle className="text-3xl font-bold text-foreground">Create Your Leaf User Account</CardTitle>
+          <CardDescription className="text-foreground">Join The Wellness Tree community.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
+              <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Email Address</FormLabel>
-                     <FormControl>
-                      <div className="relative">
+                     <FormControl><div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input 
-                          type="email" 
-                          placeholder="you@example.com" 
-                          {...field} 
-                          className="pl-10 text-base h-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </FormControl>
+                        <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base h-12" disabled={isLoading}/>
+                      </div></FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
+                  </FormItem>)}
               />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
+              <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
+                    <FormControl><div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input 
-                          type="password" 
-                          placeholder="Create a strong password" 
-                          {...field} 
-                          className="pl-10 text-base h-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </FormControl>
+                        <Input type="password" placeholder="Create a strong password" {...field} className="pl-10 text-base h-12" disabled={isLoading} />
+                      </div></FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
+                  </FormItem>)}
               />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
+              <FormField control={form.control} name="confirmPassword" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Confirm Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
+                    <FormControl><div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input 
-                          type="password" 
-                          placeholder="Re-enter your password" 
-                          {...field} 
-                          className="pl-10 text-base h-12"
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </FormControl>
+                        <Input type="password" placeholder="Re-enter your password" {...field} className="pl-10 text-base h-12" disabled={isLoading} />
+                      </div></FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
+                  </FormItem>)}
               />
-
-              <Controller
-                control={form.control}
-                name="preferredDispensaryTypes"
-                render={({ field }) => (
+              <Controller control={form.control} name="preferredDispensaryTypes" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Wellness Type Preferences (Optional)</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="w-full justify-between h-12 text-base font-normal"
-                          disabled={isLoadingTypes || isLoading}
-                        >
-                          <div className="flex items-center gap-2">
-                            <ListFilter className="h-5 w-5 text-muted-foreground" />
+                        <Button variant="outline" role="combobox" className="w-full justify-between h-12 text-base font-normal" disabled={isLoadingTypes || isLoading}>
+                          <div className="flex items-center gap-2"><ListFilter className="h-5 w-5 text-muted-foreground" />
                             {selectedTypes.length > 0 ? `${selectedTypes.length} type(s) selected` : "Select preferred types..."}
                           </div>
                            {isLoadingTypes && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <ScrollArea className="max-h-60">
-                          <div className="p-2 space-y-1">
-                            {wellnessTypes.length === 0 && !isLoadingTypes && (
-                                <p className="p-2 text-sm text-muted-foreground">No wellness types available.</p>
-                            )}
+                        <ScrollArea className="max-h-60"><div className="p-2 space-y-1">
+                            {wellnessTypes.length === 0 && !isLoadingTypes && (<p className="p-2 text-sm text-muted-foreground">No wellness types available.</p>)}
                             {wellnessTypes.map((type) => (
-                              <Button
-                                key={type.id}
-                                variant="ghost"
-                                className="w-full justify-start h-auto py-2 px-3"
-                                onClick={() => {
+                              <Button key={type.id} variant="ghost" className="w-full justify-start h-auto py-2 px-3" onClick={() => {
                                   const currentSelection = field.value || [];
-                                  const newSelection = currentSelection.includes(type.name)
-                                    ? currentSelection.filter((item) => item !== type.name)
-                                    : [...currentSelection, type.name];
+                                  const newSelection = currentSelection.includes(type.name) ? currentSelection.filter((item) => item !== type.name) : [...currentSelection, type.name];
                                   field.onChange(newSelection);
-                                }}
-                                disabled={isLoading}
-                              >
-                                {selectedTypes.includes(type.name) ? (
-                                  <CheckSquare className="mr-2 h-5 w-5 text-primary" />
-                                ) : (
-                                  <Square className="mr-2 h-5 w-5 text-muted-foreground" />
-                                )}
+                                }} disabled={isLoading}>
+                                {selectedTypes.includes(type.name) ? <CheckSquare className="mr-2 h-5 w-5 text-primary" /> : <Square className="mr-2 h-5 w-5 text-muted-foreground" />}
                                 <div className="flex flex-col items-start">
                                   <span className="text-sm">{type.name}</span>
                                   {type.description && <span className="text-xs text-muted-foreground text-left">{type.description}</span>}
                                 </div>
-                              </Button>
-                            ))}
-                             <Button
-                                key="all-types"
-                                variant="ghost"
-                                className="w-full justify-start h-auto py-2 px-3 font-semibold"
-                                onClick={() => {
+                              </Button>))}
+                             <Button key="all-types" variant="ghost" className="w-full justify-start h-auto py-2 px-3 font-semibold" onClick={() => {
                                   const allTypeNames = wellnessTypes.map(dt => dt.name);
-                                  const newSelection = selectedTypes.length === allTypeNames.length 
-                                    ? [] 
-                                    : allTypeNames;
+                                  const newSelection = selectedTypes.length === allTypeNames.length ? [] : allTypeNames;
                                   field.onChange(newSelection);
-                                }}
-                                disabled={isLoading}
-                              >
-                                 {selectedTypes.length === wellnessTypes.length && wellnessTypes.length > 0 ? (
-                                  <CheckSquare className="mr-2 h-5 w-5 text-primary" />
-                                ) : (
-                                  <Square className="mr-2 h-5 w-5 text-muted-foreground" />
-                                )}
+                                }} disabled={isLoading}>
+                                 {selectedTypes.length === wellnessTypes.length && wellnessTypes.length > 0 ? <CheckSquare className="mr-2 h-5 w-5 text-primary" /> : <Square className="mr-2 h-5 w-5 text-muted-foreground" />}
                                 All Wellness Types (Recommended)
                               </Button>
-                          </div>
-                        </ScrollArea>
+                          </div></ScrollArea>
                       </PopoverContent>
                     </Popover>
-                    <FormDescription 
-                        className="text-foreground"
-                        style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-                    >
+                    <FormDescription className="text-foreground">
                       Select types of wellness entities you're interested in to personalize your experience.
                     </FormDescription>
                     <FormMessage />
-                  </FormItem>
-                )}
+                  </FormItem>)}
               />
-
-
-              <Button 
-                type="submit" 
-                className="w-full text-lg py-6" 
-                disabled={isLoading || isLoadingTypes}
-              >
+              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || isLoadingTypes}>
                 {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Creating Account...</> : 'Sign Up'}
               </Button>
             </form>
           </Form>
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/auth/signin" className="font-semibold text-primary hover:underline">
+            <Link href={signInHref} className="font-semibold text-primary hover:underline">
               Sign In
             </Link>
           </div>

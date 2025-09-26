@@ -2,7 +2,7 @@
 'use client';
 
 import type { Product, CartItem, PriceTier } from '@/types';
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface CartContextType {
@@ -16,6 +16,7 @@ interface CartContextType {
   isCartOpen: boolean;
   setIsCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   toggleCart: () => void;
+  loadCart: (items: CartItem[]) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -33,8 +34,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (storedCart) {
       try {
         const parsedCart = JSON.parse(storedCart) as CartItem[];
-        // Basic validation: Ensure items have necessary fields
-        const validItems = parsedCart.filter(item => item.id && item.productId && item.name && typeof item.price === 'number' && typeof item.quantity === 'number');
+        const validItems = parsedCart.filter(item => 
+          item && item.id && item.productId && item.name && typeof item.price === 'number' && typeof item.quantity === 'number'
+        );
         setCartItems(validItems);
         if (validItems.length !== parsedCart.length) {
           console.warn("Some invalid cart items were removed from localStorage.");
@@ -49,16 +51,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Save cart to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+      if (cartItems.length > 0) {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+      } else {
+        localStorage.removeItem(CART_STORAGE_KEY);
+      }
     } catch (error) {
-      console.error("Error saving cart to localStorage (might be full):", error);
+      console.error("Error saving cart to localStorage:", error);
       toast({
         title: "Cart Save Error",
-        description: "Could not save the cart, it might be full. Please consider removing some items.",
+        description: "Could not save the cart. Please consider removing some items.",
         variant: "destructive"
       });
     }
   }, [cartItems, toast]);
+
+  const loadCart = useCallback((items: CartItem[]) => {
+      if (Array.isArray(items)) {
+        const validItems = items.filter(item => 
+          item && item.id && item.productId && item.name && typeof item.price === 'number' && typeof item.quantity === 'number'
+        );
+        setCartItems(validItems);
+      }
+  }, []);
 
   const addToCart = (product: Product, tier: PriceTier, quantityToAdd: number = 1) => {
     if (!tier || tier.price === undefined) {
@@ -66,7 +81,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const tierStock = tier.quantityInStock ?? 999; // Assume high stock for items without explicit stock
+    const tierStock = tier.quantityInStock ?? 999;
     if (tierStock <= 0) {
       setTimeout(() => toast({ title: "Out of Stock", description: `${product.name} (${tier.unit}) is currently out of stock.`, variant: "destructive"}), 0);
       return;
@@ -92,10 +107,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           }
         } else {
           let finalQuantityToAdd = quantityToAdd;
-          let toastMessage: { title: string; description: string; variant: 'default' | 'destructive' } | null = null;
           if (quantityToAdd > tierStock) {
             finalQuantityToAdd = tierStock;
-            toastMessage = { title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available. Added max to cart.`, variant: "destructive"};
+            setTimeout(() => toast({ title: "Stock Limit Reached", description: `Cannot add ${quantityToAdd} of ${product.name} (${tier.unit}). Only ${tierStock} available.`, variant: "destructive"}), 0);
+          } else {
+             setTimeout(() => toast({ title: `Added to Cart!`, description: `${product.name} (${tier.unit}) has been added to your cart.`, variant: "default" }), 0);
           }
 
           const newItem: CartItem = {
@@ -107,17 +123,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             strain: product.strain,
             dispensaryId: product.dispensaryId,
             dispensaryName: product.dispensaryName,
+            dispensaryType: product.dispensaryType,
+            productOwnerEmail: product.productOwnerEmail,
             currency: product.currency,
             price: tier.price,
             unit: tier.unit,
             quantity: finalQuantityToAdd,
             quantityInStock: tierStock,
             imageUrl: product.imageUrl ?? null,
+            weight: product.weight, 
+            dimensions: product.dimensions,
+            sampleAmount: tier.sampleAmount,
           };
-          if (!toastMessage) {
-              toastMessage = { title: `Added to Cart!`, description: `${newItem.name} (${newItem.unit}) has been added to your cart.`, variant: "default" };
-          }
-          setTimeout(() => toast(toastMessage!), 0);
+          
           return [...prevItems, newItem];
         }
     });
@@ -125,15 +143,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   
   const removeFromCart = (cartItemId: string) => {
     let itemToRemoveName = '';
-
     setCartItems(prevItems => {
         const itemToRemove = prevItems.find(item => item.id === cartItemId);
-        if (itemToRemove) {
-          itemToRemoveName = `${itemToRemove.name} (${itemToRemove.unit})`;
-        }
+        if (itemToRemove) itemToRemoveName = `${itemToRemove.name} (${itemToRemove.unit})`;
         return prevItems.filter(item => item.id !== cartItemId);
     });
-
     if(itemToRemoveName) {
       setTimeout(() => toast({ title: "Item Removed", description: `${itemToRemoveName} removed from your cart.`, variant: "default" }), 0);
     }
@@ -185,7 +199,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   return (
     <CartContext.Provider
       value={{
-        cartItems,
+        cartItems: cartItems as CartItem[],
         addToCart,
         removeFromCart,
         updateQuantity,
@@ -195,6 +209,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         isCartOpen,
         setIsCartOpen,
         toggleCart,
+        loadCart,
       }}
     >
       {children}
@@ -209,5 +224,3 @@ export const useCart = (): CartContextType => {
   }
   return context;
 };
-
-    

@@ -5,6 +5,9 @@ import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody } from './types';
 
+// Import the new shipping function
+import { getShiplogicRates } from './shipping';
+
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
     try {
@@ -414,6 +417,9 @@ export const adminUpdateUser = onCall(async (request) => {
         if (error.code === 'auth/user-not-found') {
             throw new HttpsError('not-found', 'The specified user does not exist.');
         }
-        throw new HttpsError('internal', 'An unexpected server error occurred while updating the user.');
+        throw new HttpsError('internal', 'An unexpected error occurred while updating the user.');
     }
 });
+
+// Export the new function so it can be deployed and called from the client.
+export { getShiplogicRates };

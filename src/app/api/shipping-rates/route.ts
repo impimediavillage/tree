@@ -1,79 +1,120 @@
+
 import { NextResponse } from 'next/server';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase'; // Assuming you have a firebase config file
+import type { NextRequest } from 'next/server';
+import type { CartItem, Dispensary } from '@/types';
+import * as admin from 'firebase-admin';
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { cart, dispensaryId, deliveryAddress } = body;
-
-    if (!cart || !dispensaryId || !deliveryAddress) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+const initializeFirebaseAdmin = () => {
+    if (!admin.apps.length) {
+        try {
+            console.log('Initializing Firebase Admin...');
+            const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string);
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+            console.log('Firebase Admin initialized successfully.');
+        } catch (e: any) {
+            console.error("Firebase Admin initialization error:", e.message);
+            throw new Error("Firebase Admin initialization failed.");
+        }
     }
+    return admin.firestore();
+};
 
-    // 1. Fetch dispensary details from Firestore to get the collection_address
-    const dispensaryRef = doc(db, 'dispensaries', dispensaryId);
-    const dispensarySnap = await getDoc(dispensaryRef);
+interface RequestBody { cart: CartItem[]; dispensaryId: string; deliveryAddress: { street_number?: string; route?: string; locality?: string; administrative_area_level_1?: string; country?: string; postal_code?: string; };}
+interface ShipLogicRate { id: number; courier_name: string; rate: string; service_level: { name: string; description: string; }; estimated_delivery: string; }
 
-    if (!dispensarySnap.exists()) {
-      return NextResponse.json({ error: 'Dispensary not found' }, { status: 404 });
+const parseLocationString = (location: string) => {
+    console.log(`Parsing location string: "${location}"`);
+    const parts = location.split(',').map(part => part.trim());
+    if (parts.length < 4) {
+        console.warn(`Location string is not detailed. Parts found: ${parts.length}`);
+        return { street_address: parts[0] || '', city: parts[1] || parts[0] || '', postal_code: parts[2] || '', local_area: parts[1] || '' };
     }
+    const address = { street_address: parts[0], local_area: parts[1], city: parts[2], postal_code: parts[3] };
+    console.log('Parsed location:', address);
+    return address;
+};
 
-    const dispensaryData = dispensarySnap.data();
-    // IMPORTANT: Ensure the dispensary address is in the format Shiplogic expects.
-    // You might need to adapt this based on your Firestore data structure.
-    const collectionAddress = {
-        "street_number": dispensaryData.address.street_number,
-        "route": dispensaryData.address.route,
-        "locality": dispensaryData.address.locality,
-        "administrative_area_level_1": dispensaryData.address.administrative_area_level_1,
-        "country": dispensaryData.address.country,
-        "postal_code": dispensaryData.address.postal_code
-    };
+export async function POST(request: NextRequest) {
+    console.log('\n--- New Shipping Rate Request ---');
+    try {
+        console.log('Step 1: Initializing DB');
+        const db = initializeFirebaseAdmin();
 
-    // 2. Format the parcels array from the cart data
-    // IMPORTANT: Your products in Firestore MUST have these dimension and weight fields.
-    const parcels = cart.map((item: any) => ({
-      submitted_length_cm: item.dimensions?.length || 10, // Default values as a fallback
-      submitted_width_cm: item.dimensions?.width || 10,
-      submitted_height_cm: item.dimensions?.height || 10,
-      submitted_weight_kg: item.weight || 1,
-    }));
+        console.log('Step 2: Parsing request body');
+        const body: RequestBody = await request.json();
+        console.log('Request body parsed:', { dispensaryId: body.dispensaryId, deliveryAddress: body.deliveryAddress });
 
-    const declared_value = cart.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
+        if (!body.cart || !body.dispensaryId || !body.deliveryAddress) {
+            return NextResponse.json({ error: 'Missing cart, dispensary, or delivery address information' }, { status: 400 });
+        }
 
-    // 3. Construct the request body for ShipLogic API
-    const shiplogicRequestBody = {
-      collection_address: collectionAddress,
-      delivery_address: deliveryAddress, // This comes from the user in the checkout form
-      parcels,
-      declared_value,
-      service_level: "economy" // Or other service levels as needed
-    };
+        console.log(`Step 3: Fetching dispensary '${body.dispensaryId}'`);
+        const dispensaryRef = db.collection('dispensaries').doc(body.dispensaryId);
+        const dispensaryDoc = await dispensaryRef.get();
 
-    // 4. Call the ShipLogic API
-    const shiplogicResponse = await fetch('https://api.shiplogic.com/v2/rates', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.SHIPLOGIC_API_KEY}`,
-      },
-      body: JSON.stringify(shiplogicRequestBody),
-    });
+        if (!dispensaryDoc.exists) {
+            console.error('Dispensary not found.');
+            return NextResponse.json({ error: 'Dispensary not found' }, { status: 404 });
+        }
+        const dispensaryData = dispensaryDoc.data() as Dispensary;
+        console.log('Dispensary data fetched:', { name: dispensaryData.dispensaryName, location: dispensaryData.location });
 
-    if (!shiplogicResponse.ok) {
-      const errorText = await shiplogicResponse.text();
-      console.error("ShipLogic API Error:", errorText);
-      return NextResponse.json({ error: `ShipLogic API error: ${errorText}` }, { status: shiplogicResponse.status });
+        if (!dispensaryData.location || !dispensaryData.dispensaryName) {
+             return NextResponse.json({ error: 'Dispensary address or name is missing.' }, { status: 500 });
+        }
+        
+        const parsedCollectionAddress = parseLocationString(dispensaryData.location);
+
+        console.log('Step 4: Preparing ShipLogic payload');
+        const collectionAddress = { company: dispensaryData.dispensaryName, street_address: parsedCollectionAddress.street_address, local_area: parsedCollectionAddress.local_area, city: parsedCollectionAddress.city, postal_code: parsedCollectionAddress.postal_code, country: 'ZA' };
+        const deliveryAddress = { street_address: `${body.deliveryAddress.street_number || ''} ${body.deliveryAddress.route || ''}`.trim(), local_area: body.deliveryAddress.locality || '', city: body.deliveryAddress.locality || '', postal_code: body.deliveryAddress.postal_code || '', country: 'ZA' };
+        const parcel = { width: 20, height: 20, length: 20, weight: 2 };
+        const shipLogicPayload = { collection_address: collectionAddress, delivery_address: deliveryAddress, parcels: [parcel], declared_value: body.cart.reduce((total, item) => total + (item.price * item.quantity), 0), service_level: 'economy' };
+        console.log('ShipLogic payload ready:', JSON.stringify(shipLogicPayload, null, 2));
+
+        console.log('Step 5: Calling ShipLogic API');
+        const shipLogicResponse = await fetch('https://api.shiplogic.com/v2/rates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.SHIPLOGIC_API_KEY}` },
+            body: JSON.stringify(shipLogicPayload),
+        });
+        console.log(`ShipLogic API response status: ${shipLogicResponse.status}`);
+
+        if (!shipLogicResponse.ok) {
+            const errorBody = await shipLogicResponse.text(); // Use text() to avoid JSON parsing errors
+            console.error('ShipLogic API Error Response:', errorBody);
+            const errorMessage = 'Failed to fetch shipping rates from provider.';
+            try {
+                const jsonError = JSON.parse(errorBody);
+                const message = jsonError.error?.message || errorMessage;
+                return NextResponse.json({ error: message, details: jsonError }, { status: shipLogicResponse.status });
+            } catch (e) {
+                return NextResponse.json({ error: errorMessage, details: errorBody }, { status: shipLogicResponse.status });
+            }
+        }
+
+        console.log('Step 6: Processing ShipLogic response');
+        const shipLogicData = await shipLogicResponse.json();
+
+        const formattedRates = shipLogicData.map((rate: ShipLogicRate) => ({ id: rate.id, name: rate.service_level.name, rate: parseFloat(rate.rate), service_level: rate.service_level.name, delivery_time: rate.service_level.description, courier_name: rate.courier_name }));
+        
+        if (formattedRates.length === 0) {
+            console.warn('No shipping rates were returned from ShipLogic.');
+            return NextResponse.json({ error: "No shipping rates could be found for the provided address. Please check the address and try again." }, { status: 404 });
+        }
+        
+        console.log(`Step 7: Successfully returning ${formattedRates.length} rates.`);
+        return NextResponse.json({ rates: formattedRates });
+
+    } catch (error: any) {
+        console.error('--- Unhandled Exception in shipping-rates endpoint ---');
+        console.error(error);
+        return NextResponse.json({ error: `An unexpected internal server error occurred: ${error.message}` }, { status: 500 });
     }
+}
 
-    const data = await shiplogicResponse.json();
-
-    // 5. Return the rates to the client
-    return NextResponse.json(data);
-
-  } catch (error: any) {
-    console.error("Error in shipping-rates API route:", error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
-  }
+export async function OPTIONS() {
+    return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } });
 }

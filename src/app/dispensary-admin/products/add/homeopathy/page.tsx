@@ -70,7 +70,7 @@ export default function AddHomeopathyProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      priceTiers: [],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
@@ -285,17 +285,27 @@ export default function AddHomeopathyProductPage() {
                       
                       <div className="space-y-6">
                           <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                          <h3 className="text-xl font-semibold border-b pb-2">Pricing & Stock</h3>
                           <div className="space-y-4">
                           {priceTierFields.map((field, index) => (
-                              <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
-                                  <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                  <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                              </div>
+                              <Card key={field.id} className="p-4 bg-muted/30 relative">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+                                    <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
+                                <Separator className="my-4" />
+                                <h4 className="text-md font-semibold mb-2">Packaging Details</h4>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
+                                   <FormField control={form.control} name={`priceTiers.${index}.weight`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.001" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                   <FormField control={form.control} name={`priceTiers.${index}.length`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                   <FormField control={form.control} name={`priceTiers.${index}.width`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                   <FormField control={form.control} name={`priceTiers.${index}.height`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
+                                {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                              </Card>
                           ))}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
+                           <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: null, length: null, width: null, height: null })}>Add Price Tier</Button>
                           </div>
                           <Separator />
                            <h3 className="text-xl font-semibold border-b pb-2">Shipping</h3>
@@ -359,14 +369,24 @@ export default function AddHomeopathyProductPage() {
                               <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
                               <CardContent className="p-0 space-y-2">
                                   {poolPriceTierFields.map((field, index) => (
-                                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-background">
+                                   <Card key={field.id} className="p-4 bg-background relative">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                                       <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
                                       <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                      <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                  </div>
+                                      <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                    </div>
+                                    <Separator className="my-4" />
+                                    <h4 className="text-md font-semibold mb-2">Packaging Details</h4>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
+                                       <FormField control={form.control} name={`poolPriceTiers.${index}.weight`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.001" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                       <FormField control={form.control} name={`poolPriceTiers.${index}.length`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                       <FormField control={form.control} name={`poolPriceTiers.${index}.width`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                       <FormField control={form.control} name={`poolPriceTiers.${index}.height`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                    </div>
+                                    {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                  </Card>
                                   ))}
-                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
+                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: null, length: null, width: null, height: null })}>Add Pool Price Tier</Button>
                               </CardContent>
                                 <FormField control={form.control} name="poolShippingMethods" render={() => (
                                 <FormItem className="pt-4 border-t">
@@ -389,26 +409,26 @@ export default function AddHomeopathyProductPage() {
                                             <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
                                         </FormItem>
                                         )}/>
-                                    ))}
+                                    ))}\
                                     </div>
                                     <FormMessage />
                                 </FormItem>
                                 )}/>
                             </Card>
-                          )}
+                          )}\
                           <Separator />
                           <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
                           <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. The first image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                           <CardFooter className="p-0 pt-6">
                               <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}\
                                   Add Product
                               </Button>
                           </CardFooter>
                       </div>
                   </div>
-              )}
+              )}\
           </div>
           <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
           <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
