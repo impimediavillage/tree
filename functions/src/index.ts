@@ -3,10 +3,8 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody } from './types';
-
-// Import the new shipping function
-import { getShiplogicRates } from './shipping';
+import { defineSecret } from 'firebase-functions/params';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem } from './types';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============
 if (admin.apps.length === 0) {
@@ -284,14 +282,14 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     }
     
     // Capitalize the first letter of each word for case-insensitive-like matching
-    const toTitleCase = (str: string) => str.replace(/\\w\\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     const processedTerm = toTitleCase(searchTerm.trim());
 
     try {
         const strainsRef = db.collection('my-seeded-collection');
         const query = strainsRef
             .where('name', '>=', processedTerm)
-            .where('name', '<=', processedTerm + '\\uf8ff')
+            .where('name', '<=', processedTerm + '\uf8ff')
             .limit(10);
         
         const snapshot = await query.get();
@@ -421,5 +419,165 @@ export const adminUpdateUser = onCall(async (request) => {
     }
 });
 
-// Export the new function so it can be deployed and called from the client.
-export { getShiplogicRates };
+// ============== SHIPPING FUNCTION (getShiplogicRates) ==============
+
+const shiplogicApiKeySecret = defineSecret('SHIPLOGIC_API_KEY');
+
+// --- Interfaces for Incoming Shipping Data ---
+interface AddressData {
+    address: string;
+    street_number?: string;
+    route?: string;
+    locality?: string;
+    administrative_area_level_1?: string;
+    country?: string;
+    postal_code?: string;
+}
+
+interface CustomerData {
+    name: string;
+    email: string;
+    phone: string;
+}
+
+interface RequestPayload {
+    cart: CartItem[];
+    dispensaryId: string;
+    deliveryAddress: AddressData;
+    customer: CustomerData;
+}
+
+// A helper to parse the dispensary's location string from Firestore
+const parseLocationString = (location: string) => {
+    logger.info(`Parsing location string: "${location}"`);
+    const parts = location.split(',').map(part => part.trim());
+    if (parts.length < 4) {
+        logger.warn(`Location string "${location}" is not detailed. Parts found: ${parts.length}`);
+        return { street_address: parts[0] || '', city: parts[1] || parts[0] || '', postal_code: parts[2] || '', local_area: parts[1] || '' };
+    }
+    const address = { street_address: parts[0], local_area: parts[1], city: parts[2], postal_code: parts[3] };
+    logger.info('Parsed location:', address);
+    return address;
+};
+
+const SHIPLOGIC_API_URL = 'https://api.shiplogic.com/v2/rates';
+
+export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors: true }, async (request: CallableRequest<RequestPayload>) => {
+    logger.info("getShiplogicRates function invoked. This is a new deployment."); // Added this line
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+    }
+
+    const data = request.data;
+    logger.info("Function called with data:", { data });
+
+    // --- Data Validation ---
+    if (!data.cart || !data.dispensaryId || !data.deliveryAddress || !data.customer) {
+        throw new HttpsError('invalid-argument', 'Missing cart, dispensaryId, deliveryAddress, or customer information.');
+    }
+
+    const shiplogicApiKey = shiplogicApiKeySecret.value();
+    if (!shiplogicApiKey) {
+        throw new HttpsError('internal', "The ShipLogic API key is not configured on the server.");
+    }
+
+    try {
+        // --- Step 1: Fetch Dispensary Data (Collection Address) ---
+        const dispensaryRef = db.collection('dispensaries').doc(data.dispensaryId);
+        const dispensaryDoc = await dispensaryRef.get();
+
+        if (!dispensaryDoc.exists) {
+            throw new HttpsError('not-found', `Dispensary with ID '${data.dispensaryId}' not found.`);
+        }
+        const dispensary = dispensaryDoc.data() as Dispensary;
+        if (!dispensary.location || !dispensary.dispensaryName || !dispensary.phone) {
+            throw new HttpsError('failed-precondition', 'The dispensary is missing required location, name, or contact information.');
+        }
+
+        const parsedCollectionAddress = parseLocationString(dispensary.location);
+
+        // --- Step 2: Construct ShipLogic Payload ---
+        const totalCartValue = data.cart.reduce((total, item) => total + (item.price || 0) * item.quantity, 0);
+
+        const shipLogicPayload = {
+            collection_address: {
+                company: dispensary.dispensaryName,
+                street_address: parsedCollectionAddress.street_address,
+                local_area: parsedCollectionAddress.local_area,
+                city: parsedCollectionAddress.city,
+                postal_code: parsedCollectionAddress.postal_code,
+                country: 'ZA',
+            },
+            collection_contact: {
+                name: dispensary.dispensaryName,
+                telephone: dispensary.phone,
+                email: dispensary.ownerEmail || 'no-email@example.com', // Use a fallback email
+            },
+            delivery_address: {
+                street_address: `${data.deliveryAddress.street_number || ''} ${data.deliveryAddress.route || ''}`.trim(),
+                local_area: data.deliveryAddress.locality || '',
+                city: data.deliveryAddress.locality || '', // Often the same as local_area for ShipLogic
+                postal_code: data.deliveryAddress.postal_code || '',
+                country: 'ZA',
+            },
+            recipient_contact: {
+                name: data.customer.name,
+                telephone: data.customer.phone,
+                email: data.customer.email,
+            },
+            // Simplified parcel logic. Assumes one box for the whole order.
+            // For more accuracy, you could iterate through cart items if they have dimensions.
+            parcels: [{
+                description: 'Cannabis Products Order',
+                weight: 0.5, // Default weight in kg
+                length: 20,  // Default dimensions in cm
+                width: 15,
+                height: 10,
+            }],
+            declared_value: totalCartValue,
+            service_level: 'economy', // Or parameterize if needed
+        };
+
+        logger.info("Sending payload to ShipLogic:", { payload: shipLogicPayload });
+
+        // --- Step 3: Call ShipLogic API ---
+        const response = await fetch(SHIPLOGIC_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${shiplogicApiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(shipLogicPayload)
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            logger.error('ShipLogic API returned an error:', { status: response.status, data: responseData });
+            const errorMessage = responseData.error?.message || 'Failed to get rates from provider.';
+            throw new HttpsError('internal', errorMessage);
+        }
+        
+        // --- Step 4: Format and Return Rates ---
+        const formattedRates = responseData.map((rate: any) => ({
+            id: rate.id,
+            name: rate.service_level.name,
+            rate: parseFloat(rate.rate),
+            service_level: rate.service_level.name,
+            delivery_time: rate.service_level.description,
+            courier_name: rate.courier_name,
+        }));
+
+        logger.info(`Successfully fetched ${formattedRates.length} rates.`);
+        return { rates: formattedRates };
+
+    } catch (error: any) {
+        logger.error('Error in getShiplogicRates function:', error);
+        if (error instanceof HttpsError) {
+            throw error; // Re-throw HttpsError directly
+        }
+        // For other errors, return a generic internal error
+        throw new HttpsError('internal', 'An unexpected error occurred while fetching shipping rates.');
+    }
+});
+

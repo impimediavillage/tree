@@ -3,9 +3,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import { db, functions } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
-import { useAuth } from '@/contexts/AuthContext';
+import { db, functions } from '@/lib/firebase'; // Import functions
+import { httpsCallable } from 'firebase/functions'; // Import httpsCallable
 import { doc, getDoc } from 'firebase/firestore';
 import type { CartItem } from '@/types';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -15,16 +14,18 @@ import { Loader } from '@googlemaps/js-api-loader';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Label } from "@/components/ui/label";
-import { PaymentStep } from './PaymentStep';
+import { PaymentStep } from '@/components/checkout/PaymentStep';
+import { useRouter } from 'next/navigation';
 
 const addressSchema = z.object({
   fullName: z.string().min(3, 'Full name is required'),
+  email: z.string().email('Invalid email address'),
   phoneNumber: z.string().min(10, 'A valid phone number is required'),
   shippingAddress: z.object({
     address: z.string().min(5, 'Please enter a valid address.'),
@@ -150,10 +151,11 @@ const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; 
     return (
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onContinue)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                </div>
+                    <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="you@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 </div>
+                 <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
 
                 <FormField
                     control={form.control}
@@ -226,9 +228,9 @@ const ShippingMethodStep = ({ rates, isLoading, error, onBack, onContinue, selec
     );
 };
 
-export function CheckoutFlow() {
+export default function CheckoutPage() {
     const { cartItems, loading: cartLoading, getCartTotal } = useCart();
-    const { user } = useAuth();
+    const { toast } = useToast();
     const [step, setStep] = useState(1);
     const [dispensaryId, setDispensaryId] = useState<string | null>(null);
     const [addressData, setAddressData] = useState<AddressValues | null>(null);
@@ -237,11 +239,13 @@ export function CheckoutFlow() {
     const [isLoadingRates, setIsLoadingRates] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
     const [isDispensaryLoading, setIsDispensaryLoading] = useState(true);
+    const router = useRouter();
 
     const form = useForm<AddressValues>({
         resolver: zodResolver(addressSchema),
         defaultValues: {
             fullName: '',
+            email: '',
             phoneNumber: '',
             shippingAddress: { address: '', latitude: 0, longitude: 0 }
         },
@@ -255,10 +259,17 @@ export function CheckoutFlow() {
                 if (id) setDispensaryId(id);
                 else setApiError("Dispensary information is missing from your cart.");
             } else {
-                setApiError("Your cart is empty.");
+                 if(!cartLoading){
+                    toast({
+                        title: "Your Cart is Empty",
+                        description: "You will be redirected to the home page.",
+                        variant: "destructive"
+                    });
+                    setTimeout(() => router.push('/'), 2000);
+                }
             }
         }
-    }, [cartItems, cartLoading]);
+    }, [cartItems, cartLoading, router, toast]);
     
     useEffect(() => {
         if (dispensaryId) {
@@ -280,51 +291,49 @@ export function CheckoutFlow() {
     const handleTierSelection = async (tier: string) => {
         setApiError(null);
         if (tier === 'Door-to-Door Delivery') {
-            if (!addressData || !dispensaryId || !user) {
-                setApiError('Address, dispensary, and user data are required to fetch shipping rates.');
-                return;
+            if (!addressData || !dispensaryId) { 
+                setApiError('Address and dispensary data are required.'); 
+                return; 
             }
-
+            
             setIsLoadingRates(true);
             setShippingRates([]);
             try {
                 const getShiplogicRates = httpsCallable(functions, 'getShiplogicRates');
-                
-                const payload = {
+                const result: any = await getShiplogicRates({
                     cart: cartItems,
                     dispensaryId,
                     deliveryAddress: addressData.shippingAddress,
-                    customer: {
-                        name: addressData.fullName,
-                        email: user.email,
-                        phone: addressData.phoneNumber
-                    }
-                };
-                
-                const result = await getShiplogicRates(payload);
-                const data = result.data as { rates: ShippingRate[] };
+                    customer: { email: addressData.email, name: addressData.fullName, phone: addressData.phoneNumber }
+                });
+
+                const data = result.data as { rates?: ShippingRate[], error?: string };
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
 
                 if (data.rates && data.rates.length > 0) {
                     setShippingRates(data.rates);
-                    setSelectedRate(data.rates[0]); // Auto-select the first rate
+                    setSelectedRate(data.rates[0]);
                 } else {
                     setApiError("No shipping rates could be found for the provided address.");
                 }
+
             } catch (err: any) {
-                console.error("Error calling getShiplogicRates:", err);
-                setApiError(err.message || 'An unknown error occurred while fetching rates.');
+                console.error("Error calling getShiplogicRates function:", err);
+                setApiError(err.message || "An unknown error occurred while fetching shipping rates.");
             } finally {
                 setIsLoadingRates(false);
             }
-            setStep(3); // Move to the next step to show rates or errors
+            setStep(3);
         } else {
             setShippingRates([]); 
             setSelectedRate(null);
             setApiError(`'${tier}' is not yet supported.`);
-            // You might want to move to the next step or handle this differently
         }
     };
-    
+
     const handleShippingMethodContinue = () => {
         if (selectedRate) {
             setStep(4);
@@ -352,80 +361,79 @@ export function CheckoutFlow() {
             );
         }
 
-        return (
-            <>
-                <div style={{ display: step === 1 ? 'block' : 'none' }}>
-                    <AddressStep form={form} onContinue={handleAddressContinue} />
-                </div>
-                <div style={{ display: step === 2 ? 'block' : 'none' }}>
-                    <ShippingTierStep onSelectTier={handleTierSelection} onBack={() => setStep(1)} />
-                </div>
-                <div style={{ display: step === 3 ? 'block' : 'none' }}>
-                    <ShippingMethodStep 
-                        rates={shippingRates} 
-                        isLoading={isLoadingRates} 
-                        error={apiError} 
-                        onBack={() => { setApiError(null); setStep(2); }} 
-                        onContinue={handleShippingMethodContinue} 
-                        selectedRate={selectedRate} 
-                        onSelectRate={setSelectedRate} />
-                </div>
-                <div style={{ display: step === 4 ? 'block' : 'none' }}>
-                    {addressData && selectedRate && (
-                        <PaymentStep 
-                            cart={cartItems} 
-                            shippingMethod={selectedRate}
-                            shippingAddress={addressData}
-                            onBack={() => setStep(3)} />
-                    )}
-                </div>
-            </>
-        );
+        switch(step) {
+            case 1:
+                return <AddressStep form={form} onContinue={handleAddressContinue} />;
+            case 2:
+                return <ShippingTierStep onSelectTier={handleTierSelection} onBack={() => setStep(1)} />;
+            case 3:
+                return <ShippingMethodStep 
+                    rates={shippingRates} 
+                    isLoading={isLoadingRates} 
+                    error={apiError} 
+                    onBack={() => { setApiError(null); setStep(2); }} 
+                    onContinue={handleShippingMethodContinue} 
+                    selectedRate={selectedRate} 
+                    onSelectRate={setSelectedRate} />;
+            case 4:
+                return addressData && selectedRate && (
+                    <PaymentStep 
+                        cart={cartItems} 
+                        shippingMethod={selectedRate}
+                        shippingAddress={addressData}
+                        onBack={() => setStep(3)} />
+                );
+            default:
+                return null;
+        }
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-            <div className="lg:col-span-2">
-                <Card className="border-0 shadow-none">
-                    <CardHeader>
-                        <CardDescription>Step {step} of 4 - {step === 1 ? 'Shipping Details' : step === 2 ? 'Delivery Option' : step === 3 ? 'Finalize Delivery' : 'Payment'}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {renderContent()}
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-1">
-                <Card className="sticky top-24 bg-muted/30">
-                    <CardHeader><p className='font-semibold text-lg'>Order Summary</p></CardHeader>
-                    <CardContent>
-                        {cartItems.length > 0 ? (
-                            <div className="space-y-3">
-                                {cartItems.map((item) => (
-                                    <div key={item.id} className="flex justify-between items-start">
-                                        <div>
-                                            <p className="font-semibold">{item.name}</p>
-                                            <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+        <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                <div className="lg:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Checkout</CardTitle>
+                            <CardDescription>Step {step} of 4 - {step === 1 ? 'Shipping Details' : step === 2 ? 'Delivery Option' : step === 3 ? 'Finalize Delivery' : 'Payment'}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {renderContent()}
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="lg:col-span-1">
+                    <Card className="sticky top-24 bg-muted/30">
+                        <CardHeader><p className='font-semibold text-lg'>Order Summary</p></CardHeader>
+                        <CardContent>
+                            {cartItems.length > 0 ? (
+                                <div className="space-y-3">
+                                    {cartItems.map((item) => (
+                                        <div key={item.id} className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-semibold">{item.name}</p>
+                                                <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                            </div>
+                                            <span>R{((item.price || 0) * item.quantity).toFixed(2)}</span>
                                         </div>
-                                        <span>R{((item.price || 0) * item.quantity).toFixed(2)}</span>
+                                    ))}
+                                    <hr className="my-2" />
+                                    <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between"><span>Subtotal</span><span>R{getCartTotal().toFixed(2)}</span></div>
+                                        {selectedRate && (
+                                             <div className="flex justify-between"><span>Shipping</span><span>R{selectedRate.rate.toFixed(2)}</span></div>
+                                        )}
                                     </div>
-                                ))}\
-                                <hr className="my-2" />
-                                <div className="space-y-1 text-sm">
-                                    <div className="flex justify-between"><span>Subtotal</span><span>R{getCartTotal().toFixed(2)}</span></div>
-                                    {selectedRate && (
-                                         <div className="flex justify-between"><span>Shipping</span><span>R{selectedRate.rate.toFixed(2)}</span></div>
-                                    )}
+                                    <hr className="my-2" />
+                                    <div className="flex justify-between font-bold text-lg">
+                                        <span>Total</span>
+                                        <span>R{(getCartTotal() + (selectedRate?.rate || 0)).toFixed(2)}</span>
+                                    </div>
                                 </div>
-                                <hr className="my-2" />
-                                <div className="flex justify-between font-bold text-lg">
-                                    <span>Total</span>
-                                    <span>R{(getCartTotal() + (selectedRate?.rate || 0)).toFixed(2)}</span>
-                                </div>
-                            </div>
-                        ) : <p>Your cart is empty.</p>}
-                    </CardContent>
-                </Card>
+                            ) : <p>Your cart is empty.</p>}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );
