@@ -228,7 +228,7 @@ const ShippingMethodStep = ({ rates, isLoading, error, onBack, onContinue, selec
 
 export function CheckoutFlow() {
     const { cartItems, loading: cartLoading, getCartTotal } = useCart();
-    const { user } = useAuth();
+    const { firebaseUser, currentUser } = useAuth(); // Use firebaseUser for auth checks
     const [step, setStep] = useState(1);
     const [dispensaryId, setDispensaryId] = useState<string | null>(null);
     const [addressData, setAddressData] = useState<AddressValues | null>(null);
@@ -280,8 +280,8 @@ export function CheckoutFlow() {
     const handleTierSelection = async (tier: string) => {
         setApiError(null);
         if (tier === 'Door-to-Door Delivery') {
-            if (!addressData || !dispensaryId || !user) {
-                setApiError('Address, dispensary, and user data are required to fetch shipping rates.');
+            if (!addressData || !dispensaryId || !firebaseUser) { // Check firebaseUser
+                setApiError('You must be signed in to fetch shipping rates.');
                 return;
             }
 
@@ -296,7 +296,7 @@ export function CheckoutFlow() {
                     deliveryAddress: addressData.shippingAddress,
                     customer: {
                         name: addressData.fullName,
-                        email: user.email,
+                        email: currentUser?.email, // Still use currentUser for profile info
                         phone: addressData.phoneNumber
                     }
                 };
@@ -321,7 +321,6 @@ export function CheckoutFlow() {
             setShippingRates([]); 
             setSelectedRate(null);
             setApiError(`'${tier}' is not yet supported.`);
-            // You might want to move to the next step or handle this differently
         }
     };
     
@@ -409,7 +408,7 @@ export function CheckoutFlow() {
                                         </div>
                                         <span>R{((item.price || 0) * item.quantity).toFixed(2)}</span>
                                     </div>
-                                ))}\
+                                ))}
                                 <hr className="my-2" />
                                 <div className="space-y-1 text-sm">
                                     <div className="flex justify-between"><span>Subtotal</span><span>R{getCartTotal().toFixed(2)}</span></div>
