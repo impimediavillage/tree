@@ -1,5 +1,12 @@
 import { z } from 'zod';
 
+export const userSigninSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
+});
+
+export type UserSigninFormData = z.infer<typeof userSigninSchema>;
+
 export const PriceTierSchema = z.object({
   unit: z.string().min(1, 'Unit is required'),
   price: z.preprocess(
