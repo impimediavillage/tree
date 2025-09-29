@@ -163,11 +163,6 @@ export interface ProductRequest {
 
   quantityRequested: number;
   requestedTier?: PriceTier | null;
-  preferredDeliveryDate?: string | null;
-  actualDeliveryDate?: string | null;
-  deliveryAddress: string;
-  contactPerson: string;
-  contactPhone: string;
   
   requesterConfirmed?: boolean; // Requester agrees to the accepted terms
   ownerConfirmed?: boolean;   // Owner confirms after requester, finalizing order
@@ -257,7 +252,7 @@ export interface User {
 // Represents a User document in Firestore (for server-side functions)
 export interface UserDocData {
   uid?: string; 
-  email?: string;
+  email?:.string;
   displayName?: string | null;
   photoURL?: string | null;
   credits?: number;

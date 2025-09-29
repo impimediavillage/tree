@@ -31,16 +31,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 
 const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "seedling", "cutting", "plant", "bag" ];
-const poolUnits = [ "10kg", "25kg", "50kg", "100 litres", "200 litres", "pallet", "crate" ];
-
-const allShippingMethods = [
-  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
-  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
-  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
-  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
-  { id: "collection", label: "Collection from store" },
-  { id: "in_house", label: "In-house delivery service" },
-];
 
 const getProductCollectionName = (): string => {
     return 'permaculture_store_products';
@@ -65,13 +55,18 @@ export default function EditPermacultureProductPage() {
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      category: '',
+      subcategory: null,
+      priceTiers: [],
+      tags: [],
+      imageUrls: [],
+    }
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
-  const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
-  
-  const watchIsAvailableForPool = form.watch('isAvailableForPool');
-  const watchPoolSharingRule = form.watch('poolSharingRule');
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !productId || !productCollectionName) {
@@ -183,7 +178,7 @@ export default function EditPermacultureProductPage() {
 
                 <div className="space-y-6">
                     <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                    <h3 className="text-xl font-semibold border-b pb-2">Pricing & Stock</h3>
                     <div className="space-y-4">
                     {priceTierFields.map((field, index) => (
                         <div key={field.id} className="p-4 border rounded-lg bg-muted/30 relative">
@@ -206,116 +201,6 @@ export default function EditPermacultureProductPage() {
                     ))}
                     <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: '' as any, length: '' as any, width: '' as any, height: '' as any })}>Add Price Tier</Button>
                     </div>
-                     <Separator />
-                           <h3 className="text-xl font-semibold border-b pb-2">Shipping</h3>
-                            <FormField control={form.control} name="shippingMethods" render={() => (
-                            <FormItem>
-                                <FormLabel>Public Shipping Methods</FormLabel>
-                                <FormDescription>Select shipping options for direct customer sales.</FormDescription>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {allShippingMethods.map((method) => (
-                                    <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
-                                        <FormControl>
-                                        <Checkbox
-                                            checked={field.value?.includes(method.id)}
-                                            onCheckedChange={(checked) => {
-                                            return checked
-                                                ? field.onChange([...(field.value || []), method.id])
-                                                : field.onChange(field.value?.filter((value) => value !== method.id))
-                                            }}
-                                        />
-                                        </FormControl>
-                                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
-                                    </FormItem>
-                                    )}/>
-                                ))}\
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                            )}/>
-                          <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                    <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                    {watchIsAvailableForPool && (
-                    <Card className="p-4 bg-muted/50 space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="poolSharingRule"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
-                                            <SelectItem value="all_types">Share with all Wellness types</SelectItem>
-                                            <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        {watchPoolSharingRule === 'specific_stores' && (
-                           <DispensarySelector 
-                                allDispensaries={allDispensaries}
-                                isLoading={isLoadingDispensaries}
-                                selectedIds={form.watch('allowedPoolDispensaryIds') || []}
-                                onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
-                           />
-                        )}
-                        <CardHeader className="p-0"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                        <CardContent className="p-0 space-y-2">
-                        {poolPriceTierFields.map((field, index) => (
-                        <div key={field.id} className="p-4 border rounded-lg bg-background relative">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                            </div>
-                             <div className="mt-4">
-                                <h4 className="text-md font-semibold flex items-center mb-2"><Package className="mr-2 h-5 w-5"/>Packaging Details</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 rounded-md border bg-muted/30">
-                                    <FormField control={form.control} name={`poolPriceTiers.${index}.weight`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`poolPriceTiers.${index}.length`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`poolPriceTiers.${index}.width`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`poolPriceTiers.${index}.height`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                </div>
-                            </div>
-                            {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-2 right-2 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                        </div>
-                        ))}\
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: '' as any, length: '' as any, width: '' as any, height: '' as any })}>Add Pool Price Tier</Button>
-                        </CardContent>
-                        <FormField control={form.control} name="poolShippingMethods" render={() => (
-                                <FormItem className="pt-4 border-t">
-                                    <FormLabel>Pool Shipping Methods</FormLabel>
-                                    <FormDescription>Select shipping options for store-to-store transfers.</FormDescription>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {allShippingMethods.map((method) => (
-                                        <FormField key={method.id} control={form.control} name="poolShippingMethods" render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-background">
-                                            <FormControl>
-                                            <Checkbox
-                                                checked={field.value?.includes(method.id)}
-                                                onCheckedChange={(checked) => {
-                                                return checked
-                                                    ? field.onChange([...(field.value || []), method.id])
-                                                    : field.onChange(field.value?.filter((value) => value !== method.id))
-                                                }}
-                                            />
-                                            </FormControl>
-                                            <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
-                                        </FormItem>
-                                        )}/>
-                                    ))}\
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                                )}/>
-                    </Card>
-                    )}\
                     <Separator />
                     <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
                     <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />

@@ -30,9 +30,23 @@ const prompt = ai.definePrompt({
   name: 'aromatherapyAdvicePrompt',
   input: {schema: AromatherapyAdviceInputSchema},
   output: {schema: AromatherapyAdviceOutputSchema},
-  prompt: `You are the 'Aromatherapy AI advisor', a master aromatherapist and chemist. A user is asking for advice on essential oils. Provide detailed, safe, and creative recommendations. Include specific oil suggestions, blend recipes, and application methods (diffusion, topical, etc.). Always include safety precautions, especially regarding dilution and contraindications.
+  prompt: `You are the 'Aromatherapy AI advisor', a master aromatherapist and chemist. A user is asking for advice on essential oils. Provide detailed, safe, and creative recommendations.
 
-  User's Goal/Question: {{{question}}}`,
+Follow this structure for your response:
+
+**Essential Oil Recommendations:**
+- [List of recommended oils with brief explanations]
+
+**Creative Blend Recipes:**
+- [Specific blend recipes with drop counts]
+
+**Application Methods:**
+- [Detailed instructions for diffusion, topical application, etc.]
+
+**Important Safety Precautions:**
+- [Crucial safety information, including dilution and contraindications]
+
+User's Goal/Question: {{{question}}}`,
 });
 
 const aromatherapyAdviceFlow = ai.defineFlow(

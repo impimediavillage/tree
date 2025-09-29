@@ -33,7 +33,6 @@ export interface Dispensary {
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];
-  shippingMethods?: string[];
   location: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -123,8 +122,6 @@ export interface Product {
   
   currency: string; 
   priceTiers: PriceTier[]; 
-  shippingMethods?: string[];
-  poolShippingMethods?: string[];
   poolPriceTiers?: PriceTier[] | null;
   quantityInStock: number;
   imageUrls?: string[] | null;
@@ -148,14 +145,6 @@ export interface Product {
     linkedStrainId?: string | null;
     theme?: string | null;
   } | null;
-
-  // Fields for Shipping
-  weight?: number; // in kg
-  dimensions?: {
-    length: number; // in cm
-    width: number; // in cm
-    height: number; // in cm
-  };
 }
 
 
@@ -181,11 +170,6 @@ export interface ProductRequest {
 
   quantityRequested: number;
   requestedTier?: PriceTier | null;
-  preferredDeliveryDate?: string | null;
-  actualDeliveryDate?: string | null;
-  deliveryAddress: string;
-  contactPerson: string;
-  contactPhone: string;
   
   requesterConfirmed?: boolean; // Requester agrees to the accepted terms
   ownerConfirmed?: boolean;   // Owner confirms after requester, finalizing order
@@ -340,7 +324,7 @@ export interface AIInteractionLog {
   id?: string;
   userId: string;
   dispensaryId?: string | null;
-  advisorSlug: string;
+  advisorSlug:.string;
   creditsUsed: number;
   wasFreeInteraction: boolean;
   timestamp: Timestamp | Date | string;
@@ -402,13 +386,6 @@ export interface CartItem {
   quantityInStock: number;
   imageUrl?: string | null;
   sampleAmount?: number;
-  // Fields for Shipping
-  weight?: number; // in kg
-  dimensions?: {
-    length: number; // in cm
-    width: number; // in cm
-    height: number; // in cm
-  };
 }
 
 // Types for generated brand assets
