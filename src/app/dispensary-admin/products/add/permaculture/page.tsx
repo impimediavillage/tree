@@ -388,7 +388,7 @@ export default function AddPermacultureProductPage() {
                                                 {poolPriceTierFields.length > 0 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                                             </Card>
                                         ))}
-                                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
+                                        <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: null, length: null, width: null, height: null })}>Add Pool Price Tier</Button>
                                     </CardContent>
                                 </Card>
                             )}

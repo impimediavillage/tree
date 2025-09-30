@@ -83,6 +83,22 @@ export const productSchema = z.object({
   productType: z.enum(['THC', 'CBD', 'HEMP', 'Apparel', 'Gear', 'Other', 'Homeopathy', 'Mushroom', 'Permaculture', 'Traditional Medicine']),
   labTested: z.boolean(),
   labTestReportUrl: z.string().url().nullable(),
+  packageWeight: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Weight must be a number' }).positive('Weight must be positive').optional().nullable()
+  ),
+  packageLength: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Length must be a number' }).positive('Length must be positive').optional().nullable()
+  ),
+  packageWidth: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Width must be a number' }).positive('Width must be positive').optional().nullable()
+  ),
+  packageHeight: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Height must be a number' }).positive('Height must be positive').optional().nullable()
+  ),
   effects: z.array(ProductAttributeSchema).optional(),
   medicalUses: z.array(ProductAttributeSchema).optional(),
   flavors: z.array(z.string()).optional(),
