@@ -22,24 +22,32 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Trash2, Leaf, Check, Package, Users, ChevronsUpDown } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Trash2, Leaf, Check } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "seedling", "cutting", "plant", "bag" ];
 const poolUnits = [ "10kg", "25kg", "50kg", "100 litres", "200 litres", "pallet", "crate" ];
+
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from store" },
+  { id: "in_house", label: "In-house delivery service" },
+];
 
 const getProductCollectionName = (): string => {
     return 'permaculture_store_products';
 };
 
 export default function EditPermacultureProductPage() {
-  const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
   const router = useRouter();
   const params = useParams();
@@ -57,21 +65,13 @@ export default function EditPermacultureProductPage() {
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      category: '',
-      subcategory: null,
-      priceTiers: [],
-      poolPriceTiers: [],
-      isAvailableForPool: false,
-      tags: [],
-      imageUrls: [],
-    }
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
   const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
+  
+  const watchIsAvailableForPool = form.watch('isAvailableForPool');
+  const watchPoolSharingRule = form.watch('poolSharingRule');
 
   const fetchInitialData = useCallback(async () => {
     if (authLoading || !productId || !productCollectionName) {
@@ -183,86 +183,117 @@ export default function EditPermacultureProductPage() {
 
                 <div className="space-y-6">
                     <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Pricing & Stock</h3>
+                    <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
                     <div className="space-y-4">
                     {priceTierFields.map((field, index) => (
-                        <Card key={field.id} className="p-4 bg-muted/30 relative">
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                              <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                              <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                          </div>
-                           <Collapsible className="mt-4">
-                              <CollapsibleTrigger asChild>
-                                  <Button variant="ghost" className="flex items-center w-full justify-start p-2 -ml-2">
-                                      <ChevronsUpDown className="h-4 w-4 mr-2" />
-                                      <span className="text-md font-semibold">Packaging Details</span>
-                                  </Button>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent className="animate-fade-in-scale-up">
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start pt-2">
-                                      <FormField control={form.control} name={`priceTiers.${index}.weight`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.001" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.length`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.width`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.height`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  </div>
-                              </CollapsibleContent>
-                          </Collapsible>
-                          {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                        </Card>
+                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
+                            <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                            {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                        </div>
                     ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: null, length: null, width: null, height: null })}>Add Price Tier</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
                     </div>
-                    
-                    <Separator />
+                     <Separator />
+                           <h3 className="text-xl font-semibold border-b pb-2">Shipping</h3>
+                            <FormField control={form.control} name="shippingMethods" render={() => (
+                            <FormItem>
+                                <FormLabel>Public Shipping Methods</FormLabel>
+                                <FormDescription>Select shipping options for direct customer sales.</FormDescription>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {allShippingMethods.map((method) => (
+                                    <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(method.id)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...(field.value || []), method.id])
+                                                : field.onChange(field.value?.filter((value) => value !== method.id))
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                                    </FormItem>
+                                    )}/>
+                                ))}
+                                </div>
+                                <FormMessage />
+                            </FormItem>
+                            )}/>
+                          <Separator />
                     <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                      <FormField control={form.control} name="isAvailableForPool" render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                              <div className="space-y-0.5">
-                                  <FormLabel className="text-base">Available for Product Pool</FormLabel>
-                                  <FormDescription>Make this product available for other dispensaries to purchase in bulk.</FormDescription>
-                              </div>
-                              <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                          </FormItem>
-                      )} />
-
-                      {form.watch('isAvailableForPool') && (
-                          <Card className="p-4 bg-muted/50 animate-fade-in-scale-up">
-                              <CardHeader className="p-2 pt-0">
-                                  <CardTitle className="text-lg flex items-center"><Users className="mr-2 h-5 w-5" /> Pool Pricing Tiers</CardTitle>
-                                  <CardDescription>Define pricing for bulk purchases by other dispensaries.</CardDescription>
-                              </CardHeader>
-                              <CardContent className="space-y-4 p-2">
-                                  {poolPriceTierFields.map((field, index) => (
-                                      <Card key={field.id} className="p-4 bg-background relative">
-                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                                              <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                          </div>
-                                           <Collapsible className="mt-4">
-                                              <CollapsibleTrigger asChild>
-                                                  <Button variant="ghost" className="flex items-center w-full justify-start p-2 -ml-2">
-                                                      <ChevronsUpDown className="h-4 w-4 mr-2" />
-                                                      <span className="text-md font-semibold">Packaging Details</span>
-                                                  </Button>
-                                              </CollapsibleTrigger>
-                                              <CollapsibleContent className="animate-fade-in-scale-up">
-                                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start pt-2">
-                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.weight`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.001" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.length`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.width`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.height`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  </div>
-                                              </CollapsibleContent>
-                                          </Collapsible>
-                                          {poolPriceTierFields.length > 0 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                      </Card>
-                                  ))}
-                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weight: null, length: null, width: null, height: null })}>Add Pool Price Tier</Button>
-                              </CardContent>
-                          </Card>
-                      )}
+                    <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                    {watchIsAvailableForPool && (
+                    <Card className="p-4 bg-muted/50 space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="poolSharingRule"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                            <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                            <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {watchPoolSharingRule === 'specific_stores' && (
+                           <DispensarySelector 
+                                allDispensaries={allDispensaries}
+                                isLoading={isLoadingDispensaries}
+                                selectedIds={form.watch('allowedPoolDispensaryIds') || []}
+                                onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
+                           />
+                        )}
+                        <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                        <CardContent className="p-0 space-y-2">
+                            {poolPriceTierFields.map((field, index) => (
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-background">
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                            </div>
+                            ))}
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
+                        </CardContent>
+                        <FormField control={form.control} name="poolShippingMethods" render={() => (
+                                <FormItem className="pt-4 border-t">
+                                    <FormLabel>Pool Shipping Methods</FormLabel>
+                                    <FormDescription>Select shipping options for store-to-store transfers.</FormDescription>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {allShippingMethods.map((method) => (
+                                        <FormField key={method.id} control={form.control} name="poolShippingMethods" render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-background">
+                                            <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(method.id)}
+                                                onCheckedChange={(checked) => {
+                                                return checked
+                                                    ? field.onChange([...(field.value || []), method.id])
+                                                    : field.onChange(field.value?.filter((value) => value !== method.id))
+                                                }}
+                                            />
+                                            </FormControl>
+                                            <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                                        </FormItem>
+                                        )}/>
+                                    ))}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                                )}/>
+                    </Card>
+                    )}
                     <Separator />
                     <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
                     <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
@@ -284,3 +315,5 @@ export default function EditPermacultureProductPage() {
     </Card>
   );
 }
+
+    
