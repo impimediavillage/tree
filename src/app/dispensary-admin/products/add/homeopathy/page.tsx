@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -18,8 +18,8 @@ import type { Product as ProductType, Dispensary } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, PackagePlus, ArrowLeft } from 'lucide-react';
@@ -66,8 +66,8 @@ export default function AddHomeopathyProductPage() {
       allowedPoolDispensaryIds: [],
       shippingMethods: [],
       poolShippingMethods: [],
-    },
-  });
+    }
+});
 
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
@@ -146,6 +146,7 @@ export default function AddHomeopathyProductPage() {
         const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
         
         const sanitizedData = Object.fromEntries(
+
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
         );
 
@@ -270,7 +271,19 @@ export default function AddHomeopathyProductPage() {
                         
                         <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                        <ProductPoolSettings control={form.control} watch={form.watch} allDispensaries={allDispensaries} isLoadingDispensaries={isLoadingDispensaries} currency={currentDispensary?.currency || 'ZAR'} />
+                        <Controller
+                            control={form.control}
+                            name="allowedPoolDispensaryIds"
+                            render={({ field }) => (
+                                <ProductPoolSettings
+                                    control={form.control}
+                                    watch={form.watch}
+                                    allDispensaries={allDispensaries}
+                                    isLoadingDispensaries={isLoadingDispensaries}
+                                    currency={currentDispensary?.currency || 'ZAR'} // Assuming ProductPoolSettings also needs currency
+                                    onAllowedPoolDispensaryIdsChange={field.onChange} // Pass the onChange handler
+                                />
+                            )} />
 
                         <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>

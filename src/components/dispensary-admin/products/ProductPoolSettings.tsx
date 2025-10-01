@@ -77,7 +77,7 @@ export function ProductPoolSettings({
                 <DispensarySelector
                   allDispensaries={allDispensaries}
                   isLoading={isLoadingDispensaries}
-                  selectedIds={field.value || []}
+                  selectedIds={field.value as string[] || []}
                   onSelectionChange={field.onChange}
                 />
               )}
