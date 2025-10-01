@@ -1,19 +1,9 @@
-# Firebase
-firebase-debug.log
-firebase-debug.*.log
-
-# Dependencies
-node_modules/
-
-# Build outputs
-.next/
-dist/
-
-# Lockfiles
+node_modules
+.next
+.firebase
+functions/**
+public/**
+docs
 package-lock.json
-
-# Local files
-.DS_Store
-.git/
-internal/
-context_backup/
+*.log
+.git

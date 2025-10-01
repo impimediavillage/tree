@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -58,16 +56,6 @@ type ProductStream = 'THC' | 'CBD' | 'Apparel' | 'Smoking Gear' | 'Art' | 'Furni
 
 const tripleSImages = Array.from({ length: 36 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
 
-const allShippingMethods = [
-  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
-  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
-  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
-  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
-  { id: "collection", label: "Collection from store" },
-  { id: "in_house", label: "In-house delivery service" },
-];
-
-
 export default function AddTHCProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
@@ -116,9 +104,7 @@ export default function AddTHCProductPage() {
       growingMedium: undefined, feedingType: undefined,
       poolSharingRule: 'same_type',
       allowedPoolDispensaryIds: [],
-      shippingMethods: [],
-      poolShippingMethods: [],
-    },
+     },
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
@@ -161,9 +147,7 @@ export default function AddTHCProductPage() {
       productType: stream,
       gender: undefined, sizingSystem: undefined, sizes: [],
       growingMedium: undefined,
-      shippingMethods: [],
-      poolShippingMethods: [],
-    });
+     });
     
     setShowCategorySelector(false);
     setZeroPercentEffects([]);
@@ -597,34 +581,6 @@ export default function AddTHCProductPage() {
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
                         </div>
                         <Separator />
-                         <h3 className="text-xl font-semibold border-b pb-2">Shipping</h3>
-                        <FormField control={form.control} name="shippingMethods" render={() => (
-                          <FormItem>
-                            <FormLabel>Public Shipping Methods</FormLabel>
-                            <FormDescription>Select shipping options for direct customer sales.</FormDescription>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {allShippingMethods.map((method) => (
-                                <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
-                                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(method.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), method.id])
-                                            : field.onChange(field.value?.filter((value) => value !== method.id))
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
-                                  </FormItem>
-                                )}/>
-                              ))}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}/>
-                        <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
                         <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                         {watchIsAvailableForPool && (
@@ -680,35 +636,7 @@ export default function AddTHCProductPage() {
                               ))}
                               <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
                             </CardContent>
-
-                             <FormField control={form.control} name="poolShippingMethods" render={() => (
-                              <FormItem className="pt-4 border-t">
-                                <FormLabel>Pool Shipping Methods</FormLabel>
-                                <FormDescription>Select shipping options for store-to-store transfers.</FormDescription>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  {allShippingMethods.map((method) => (
-                                    <FormField key={method.id} control={form.control} name="poolShippingMethods" render={({ field }) => (
-                                      <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 bg-background">
-                                        <FormControl>
-                                          <Checkbox
-                                            checked={field.value?.includes(method.id)}
-                                            onCheckedChange={(checked) => {
-                                              return checked
-                                                ? field.onChange([...(field.value || []), method.id])
-                                                : field.onChange(field.value?.filter((value) => value !== method.id))
-                                            }}
-                                          />
-                                        </FormControl>
-                                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
-                                      </FormItem>
-                                    )}/>
-                                  ))}
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}/>
-
-                          </Card>
+                        </Card>
                         )}
                         <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
