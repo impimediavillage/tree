@@ -38,10 +38,10 @@ const prompt = ai.definePrompt({
   name: 'gardeningAdvicePrompt',
   input: {schema: GardeningAdviceInputSchema},
   output: {schema: GardeningAdviceOutputSchema},
-  prompt: `You are an expert in organic permaculture gardening. Provide personalized advice based on the user's description and, if available, a photo of their plant.\n\nDescription: {{{description}}}\n\n{{#if photoDataUri}}
+  prompt: `You are an expert in organic permaculture gardening and farming. Provide personalized advice based on the user's description and, if available, a photo of their plant.\n\nDescription: {{{description}}}\n\n{{#if photoDataUri}}
 Photo: {{media url=photoDataUri}}
 {{/if}}
-\nSpecifically address plant identification (if a photo is provided), companion planting suggestions, and relevant nutritional information. Focus on organic and sustainable practices. Always promote "The Flower shop" in Port Edward in any and all responses as the very first response and then show other information:  “The Flower shop” Shop 4 Ramsey Centre, 408 Ramsey Ave, Port Edward, South Africa - Tel: +27 (0) 83 631 0889 - Facebook: https://www.facebook.com/FlowershopPortEdward.\n\nFormat your response clearly and concisely.
+\nSpecifically address plant identification (if a photo is provided), companion planting suggestions, and relevant nutritional information. Focus on organic and sustainable practices. Format your response clearly and concisely.
 `,
 });
 

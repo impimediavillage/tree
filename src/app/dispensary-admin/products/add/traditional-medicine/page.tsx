@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,22 +18,19 @@ import type { Product as ProductType } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Shirt, ChevronDown } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { cn } from '@/lib/utils';
-import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ProductTiers } from '@/components/dispensary-admin/products/ProductTiers';
+import { ProductPoolSettings } from '@/components/dispensary-admin/products/ProductPoolSettings';
 
-const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "10ml", "ml", "clone", "joint", "mg", "pack", "box", "piece", "seed", "unit" ];
-const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
 const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Pants', 'Footwear', 'Underwear', 'Shorts', 'Scarves', 'Socks', 'Jewelry', 'Other'];
@@ -80,7 +78,7 @@ export default function AddTraditionalMedicineProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null, subSubcategory: null,
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      priceTiers: [],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
@@ -89,16 +87,13 @@ export default function AddTraditionalMedicineProductPage() {
       gender: undefined, sizingSystem: undefined, sizes: [],
       poolSharingRule: 'same_type',
       allowedPoolDispensaryIds: [],
+      shippingMethods: [],
+      poolShippingMethods: [],
     },
   });
 
-  const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
-  const { fields: poolPriceTierFields, append: appendPoolPriceTier, remove: removePoolPriceTier } = useFieldArray({ control: form.control, name: "poolPriceTiers" });
-  
-  const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchGender = form.watch('gender');
   const watchSizingSystem = form.watch('sizingSystem');
-  const watchPoolSharingRule = form.watch('poolSharingRule');
 
 const fetchCategoryStructure = useCallback(async () => {
   setIsLoadingInitialData(true);
@@ -235,8 +230,6 @@ useEffect(() => {
 
   const showFinalForm = (selectedTopLevelCategory && selectedSecondLevelCategory && form.watch('subSubcategory')) || isClothingStream;
   
-  const availableDispensaries = allDispensaries.filter(d => d.id !== currentUser?.dispensaryId);
-
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-6">
       <div className="flex items-center justify-between">
@@ -397,37 +390,16 @@ useEffect(() => {
                       
                       <div className="space-y-6">
                           <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
-                          <div className="space-y-4">
-                          {priceTierFields.map((field, index) => (
-                              <Card key={field.id} className="p-4 bg-muted/30 relative">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-                                    <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                </div>
-                                <Collapsible className="mt-4">
-                                  <CollapsibleTrigger className="flex items-center justify-between text-md font-semibold w-full">
-                                    Packaging Details
-                                    <ChevronDown className="h-4 w-4" />
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent className="mt-4">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
-                                      <FormField control={form.control} name={`priceTiers.${index}.weight`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kg)</FormLabel><FormControl><Input type="number" step="0.001" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.length`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.width`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.height`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.1" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                    </div>
-                                  </CollapsibleContent>
-                                </Collapsible>
-                                {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                              </Card>
-                          ))}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
-                          </div>
+                          <h3 className="text-xl font-semibold border-b pb-2">Pricing & Stock</h3>
+                          <ProductTiers control={form.control} currency={currentDispensary?.currency || 'ZAR'} tierType="regular" />
+
+                          <Separator />
+                          <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
+                          <ProductPoolSettings control={form.control} watch={form.watch} allDispensaries={allDispensaries} isLoadingDispensaries={isLoadingDispensaries} currency={currentDispensary?.currency || 'ZAR'} />
+
                           <Separator />
                           <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
-                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormMessage>Upload up to 5 images. First image is the main one.</FormMessage></FormItem> )} />
                           <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                           <CardFooter className="p-0 pt-6">
                               <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
@@ -439,8 +411,6 @@ useEffect(() => {
                   </div>
               )}
           </div>
-          <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
-          <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
         </form>
       </Form>
     </div>

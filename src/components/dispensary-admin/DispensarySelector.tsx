@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -8,22 +7,23 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Search, X } from 'lucide-react';
-import Image from 'next/image';
 
 interface DispensarySelectorProps {
   allDispensaries: Dispensary[];
   isLoading: boolean;
-  selectedIds: string[];
-  onSelectionChange: (ids: string[]) => void;
+  selectedDispensaries: string[] | null | undefined;
+  onChange: (ids: string[]) => void;
 }
 
 export function DispensarySelector({
   allDispensaries,
   isLoading,
-  selectedIds,
-  onSelectionChange,
+  selectedDispensaries: initialSelectedIds,
+  onChange,
 }: DispensarySelectorProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
+
+  const selectedIds = React.useMemo(() => initialSelectedIds || [], [initialSelectedIds]);
 
   const selectedDispensaries = React.useMemo(() => 
     selectedIds.map(id => allDispensaries.find(d => d.id === id)).filter(Boolean) as Dispensary[],
@@ -39,11 +39,11 @@ export function DispensarySelector({
   }, [searchTerm, allDispensaries, selectedIds]);
 
   const addDispensary = (id: string) => {
-    onSelectionChange([...selectedIds, id]);
+    onChange([...selectedIds, id]);
   };
 
   const removeDispensary = (id: string) => {
-    onSelectionChange(selectedIds.filter(selectedId => selectedId !== id));
+    onChange(selectedIds.filter(selectedId => selectedId !== id));
   };
   
   return (
@@ -60,7 +60,6 @@ export function DispensarySelector({
          {isLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
       </div>
       
-      {/* Search Results */}
       {searchTerm && !isLoading && (
         <Card className="max-h-60 overflow-y-auto">
           <CardContent className="p-2 space-y-1">
@@ -83,7 +82,6 @@ export function DispensarySelector({
         </Card>
       )}
 
-      {/* Selected Dispensaries */}
       {selectedIds.length > 0 && (
         <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">Selected Stores ({selectedIds.length})</p>
