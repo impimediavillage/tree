@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
-const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "seedling", "cutting", "plant", "bag" ];
+const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "punnet", "seedling", "cutting", "plant", "bag" ];
 const poolUnits = [ "10kg", "25kg", "50kg", "100 litres", "200 litres", "pallet", "crate" ];
 
 const getProductCollectionName = (): string => {

@@ -205,8 +205,7 @@ export default function AddPermacultureProductPage() {
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
-            <Card>
+             <Card>
                 <CardHeader><CardTitle>Step 1: Select a Top-Level Category</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {Object.entries(categoryStructure).map(([categoryName, categoryData]) => {

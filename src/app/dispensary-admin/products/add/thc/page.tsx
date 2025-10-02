@@ -22,18 +22,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home, Paintbrush, Users, Truck } from 'lucide-react';
+import { Loader2, PackagePlus, Package, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home, Paintbrush, Users, Truck, ChevronsUpDown } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
-import { cn } from '@/lib/utils';
+import { cn, getProductCollectionName } from '@/lib/utils';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { functions } from '@/lib/firebase';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 
 const getCannabinoidProductCategoriesCallable = httpsCallable(functions, 'getCannabinoidProductCategories');
@@ -43,7 +44,7 @@ const regularUnits = [ "gram", "10 grams", "0.25 oz", "0.5 oz", "3ml", "5ml", "1
 const poolUnits = [ "100 grams", "200 grams", "200 grams+", "500 grams", "500 grams+", "1kg", "2kg", "5kg", "10kg", "10kg+", "oz", "50ml", "100ml", "1 litre", "2 litres", "5 litres", "10 litres", "pack", "box" ];
 
 const apparelGenders = ['Mens', 'Womens', 'Unisex'];
-const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Pants', 'Footwear', 'Underwear', 'Shorts', 'Scarves', 'Socks', 'Jewelry', 'Other'];
+const apparelTypes = ['T-Shirt', 'Hoodie', 'Cap', 'Jacket', 'Trousers', 'Footwear', 'Underwear', 'Shorts', 'Scarves', 'Socks', 'Skirts', 'Dresses', 'Jewelry', 'Other'];
 const sizingSystemOptions = ['UK/SA', 'US', 'EURO', 'Alpha (XS-XXXL)', 'Other'];
 const standardSizesData: Record<string, Record<string, string[]>> = {
   'Mens': { 'UK/SA': ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14'], 'US': ['7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11', '11.5', '12', '13', '14', '15'], 'EURO': ['40', '40.5', '41', '41.5', '42', '42.5', '43', '43.5', '44', '44.5', '45', '46', '47'], 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] },
@@ -92,7 +93,7 @@ export default function AddTHCProductPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '', description: '', category: '', subcategory: null,
-      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '' }],
+      priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
@@ -206,14 +207,9 @@ export default function AddTHCProductPage() {
     }, 100);
   };
 
-  const getProductCollectionName = (type: string | undefined): string => {
-      if (!type) return 'products'; 
-      return 'cannibinoid_store_products';
-  };
-
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
-      toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
+    if (!currentDispensary || !currentUser) {
+      toast({ title: "Error", description: "Cannot submit without dispensary data.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
@@ -227,7 +223,7 @@ export default function AddTHCProductPage() {
             });
             uploadedImageUrls = await Promise.all(uploadPromises);
         }
-
+  
         let uploadedLabTestUrl: string | null = null;
         if (labTestFile) {
             toast({ title: "Uploading Lab Report...", description: "Please wait while your lab report is uploaded.", variant: "default" });
@@ -235,18 +231,21 @@ export default function AddTHCProductPage() {
             const snapshot = await uploadBytesResumable(sRef, labTestFile);
             uploadedLabTestUrl = await getDownloadURL(snapshot.ref);
         }
-
+  
         const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
         
         const sanitizedData = Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
         );
-
+  
+        // Explicitly define the product's dispensary type for this page
+        const productDispensaryType = 'Cannibinoid store';
+  
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as ProductFormData),
             dispensaryId: currentUser.dispensaryId!,
             dispensaryName: currentDispensary.dispensaryName,
-            dispensaryType: currentDispensary.dispensaryType,
+            dispensaryType: productDispensaryType, // Use the correct, explicit type
             productOwnerEmail: currentUser.email,
             createdAt: serverTimestamp() as any,
             updatedAt: serverTimestamp() as any,
@@ -256,9 +255,11 @@ export default function AddTHCProductPage() {
             labTestReportUrl: uploadedLabTestUrl,
         };
         
-        const collectionName = getProductCollectionName(currentDispensary.dispensaryType);
+        // Get the collection name using the correct type
+        const collectionName = getProductCollectionName(productDispensaryType);
+        
         await addDoc(collection(db, collectionName), productData);
-
+  
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
         router.push('/dispensary-admin/products');
     } catch (error) {
@@ -268,6 +269,7 @@ export default function AddTHCProductPage() {
         setIsLoading(false);
     }
   };
+
   
   const productStreams: { key: ProductStream; title: string; imageUrl: string; }[] = [
     { key: 'THC', title: 'Cannibinoid (other)', imageUrl: '/images/cannibinoid-store/canna1.jpg' },
@@ -314,11 +316,34 @@ export default function AddTHCProductPage() {
 
 
   if (authLoading) {
-    return ( <div className="max-w-4xl mx-auto my-8 p-6 space-y-6"> <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div> <Skeleton className="h-8 w-1/2" /> <Card className="shadow-xl animate-pulse"> <CardHeader><Skeleton className="h-8 w-1/3" /><Skeleton className="h-5 w-2/3 mt-1" /></CardHeader> <CardContent className="p-6 space-y-6"> <Skeleton className="h-10 w-full" /> <Skeleton className="h-24 w-full" /> <Skeleton className="h-10 w-full" /> </CardContent> <CardFooter><Skeleton className="h-12 w-full" /></CardFooter> </Card> </div> );
+    return (
+      <div className="max-w-5xl mx-auto my-8 p-6 space-y-8">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-1/3" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+        <Skeleton className="h-8 w-1/2" />
+        <Card className="shadow-xl animate-pulse">
+          <CardHeader>
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-5 w-2/3 mt-1" />
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-12 w-full" />
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
+
   return (
-    <div className="max-w-4xl mx-auto my-8 space-y-6">
+    <div className="max-w-5xl mx-auto my-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Add a New Product</h1>
@@ -330,6 +355,7 @@ export default function AddTHCProductPage() {
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {productStreams.map(stream => (
                   <Card 
@@ -382,31 +408,25 @@ export default function AddTHCProductPage() {
                   </CardTitle>
                   <CardDescription className="text-orange-700/80 !mt-4 space-y-3 text-base">
                       <p>
-                          The Wellness Tree fully complies with South African Law and prohibits the sale of THC products.
+                          The Wellness Tree fully complies with South African Law and prohibits the sale of THC products directly.
                       </p>
                       <p>
-                          The Triple S Club is an opportunity for Home growers and fellow Cannabis enthusiasts to share their legal grow, by selling strain specific sticker designs promoting the strain and The Wellness tree attached to your product.
+                          The Triple S Canna Club is an opportunity for fellow Cannabis enthusiasts to share 
+                          their legal home grown delights with other canna enthusiasts in a safe a legal space. 
                       </p>
                       <p>
-                          The public buys a UNIQUE sticker and recieves the sample amounts you create as a grower for FREE.
-                          The sticker price is paid to You less our 25% per transaction. Payments are sent you to Your Payfast sub account
-                          attached to our main Payfast account once the Leafblower driver has succesfully dropped off the sticker design confirmation and free sample package,
-                          or the Store it self has confirmed succesful collection or drop off of the particular sticker and sample purchased.
-                          We know that Your legal grow deserves to be shared and its always awesome to have a few different strains around the house, so get creating your products and let the Sticker design sales roll in.
+                          <strong>Step 1.</strong> When You create a store or club or sign up as a leaf user you join already join the club. Welcome.
+                          <strong>Step 2.</strong> Add your canna garden delight below. REMEMBER when creating a sample you can create multiple price tiers for your sample EG: joint, 1g, 10g.
+                            This enables you to create multiple sample variation displays for 1 product. (GREAT WAY TO FILL YOUR STORE OR CLUB).
+                          <strong>Step 3.</strong> The Triple S club will then promote our 420 design packs to your store or club visitors and attach the samples you create as FREE.       
+                          The design pack price matches your sample price plus our 25% commission per transaction. Payouts / Payment Cashouts are done once a week, sent you to Your account.
+                          !!IMPORTANT - Please ensure that you have completed your store profile set up to ensure weekly payouts are securely sent to your S.A banking account. 
+                          </p>
+                          <p>
+                          Share your garden delights with fellow Canna enthusiasts. Its always awesome to have a few different strains around the house, 
+                          so get creating your products and let the Triple S Sticker design pack sales roll in.
                       </p>
-                      <p>
-                          Whats cool about the Triple S Club is each sticker is uniquely created with the help of Open AI&apos;s Dalle 3, and each sticker is truly unique.
-                          We also have a dedicated already created Triple S Sticker card set for fellow ganga enthusiasts to enjoy.
-                      </p>
-                      <p>
-                          The Promo Sticker set Programme is additional fun for You as the grower to create your own tshirts, cap, hoodie, sticker merchandise and promote your grow,
-                          and of course the strains you love to grow.
-                      </p>
-                       <p>
-                          Your create Sticker sets that fellow cannabis entusisasts can then purchase creating an additional revenue generation opportunity for your
-                          Cannabinoid store.
-                      </p>
-                  </CardDescription>
+             </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <FormField
@@ -414,12 +434,11 @@ export default function AddTHCProductPage() {
                     name="stickerProgramOptIn"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold text-gray-800">Participate in this programme?</FormLabel>
+                        <FormLabel className="text-lg font-semibold text-gray-800">Please click Yes to continue with the Triple S set up ?</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                           <FormControl><SelectTrigger><SelectValue placeholder="Select an option" /></SelectTrigger></FormControl>
                           <SelectContent>
-                            <SelectItem value="yes">Yes, include my product</SelectItem>
-                            <SelectItem value="no">No, this is a standard product</SelectItem>
+                            <SelectItem value="yes">Yes, include my garden delight</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -576,9 +595,22 @@ export default function AddTHCProductPage() {
                                 <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                       <Collapsible>
+                                                                      <CollapsibleTrigger asChild>
+                                                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                                                      </CollapsibleTrigger>
+                                                                      <CollapsibleContent className="pt-4 space-y-4">
+                                                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                                          </div>
+                                                                      </CollapsibleContent>
+                                                                  </Collapsible>
                             </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
                         </div>
                         <Separator />
                         <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
@@ -632,9 +664,22 @@ export default function AddTHCProductPage() {
                                   <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
                                   <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
                                   {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                    <Collapsible>
+                                     <CollapsibleTrigger asChild>
+                                      <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                     </CollapsibleTrigger>
+                                      <CollapsibleContent className="pt-4 space-y-4">
+                                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                           <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                           <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                           <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                           <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                       </div>
+                                      </CollapsibleContent>
+                                    </Collapsible>
                                 </div>
                               ))}
-                              <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Pool Price Tier</Button>
+                              <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Pool Price Tier</Button>
                             </CardContent>
                         </Card>
                         )}

@@ -10,14 +10,13 @@ import type { Product, PriceTier } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, PackageSearch, Loader2, Search, FilterX } from 'lucide-react';
+import { PlusCircle, PackageSearch, Loader2, Search, FilterX, Save, Package} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProductCard } from '@/components/dispensary-admin/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProductCollectionName } from '@/lib/utils';
-
 
 export default function WellnessProductsPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
