@@ -18,21 +18,21 @@ export const PriceTierSchema = z.object({
     z.number().int().min(0, 'Stock cannot be negative').nullable()
   ),
   description: z.string().optional(),
-  weight: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Weight must be positive').optional()
+    weightKgs: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Weight must be a number' }).positive('Weight must be positive').optional().nullable()
   ),
-  length: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Length must be positive').optional()
+  lengthCm: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Length must be a number' }).positive('Length must be positive').optional().nullable()
   ),
-  width: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Width must be positive').optional()
+  widthCm: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Width must be a number' }).positive('Width must be positive').optional().nullable()
   ),
-  height: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Height must be positive').optional()
+  heightCm: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Height must be a number' }).positive('Height must be positive').optional().nullable()
   ),
 });
 
@@ -47,21 +47,21 @@ export const PoolPriceTierSchema = z.object({
     z.number().int().min(0, 'Stock cannot be negative').nullable()
   ),
   description: z.string().optional(),
-  weight: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Weight must be positive').optional()
+      weightKgs: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Weight must be a number' }).positive('Weight must be positive').optional().nullable()
   ),
-  length: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Length must be positive').optional()
+  lengthCm: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Length must be a number' }).positive('Length must be positive').optional().nullable()
   ),
-  width: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Width must be positive').optional()
+  widthCm: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Width must be a number' }).positive('Width must be positive').optional().nullable()
   ),
-  height: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number().positive('Height must be positive').optional()
+  heightCm: z.preprocess(
+    (val) => (val === '' || val === null) ? undefined : Number(val),
+    z.number({ invalid_type_error: 'Height must be a number' }).positive('Height must be positive').optional().nullable()
   ),
 });
 
@@ -83,22 +83,6 @@ export const productSchema = z.object({
   productType: z.enum(['THC', 'CBD', 'HEMP', 'Apparel', 'Gear', 'Other', 'Homeopathy', 'Mushroom', 'Permaculture', 'Traditional Medicine']),
   labTested: z.boolean(),
   labTestReportUrl: z.string().url().nullable(),
-  packageWeight: z.preprocess(
-    (val) => (val === '' || val === null) ? undefined : Number(val),
-    z.number({ invalid_type_error: 'Weight must be a number' }).positive('Weight must be positive').optional().nullable()
-  ),
-  packageLength: z.preprocess(
-    (val) => (val === '' || val === null) ? undefined : Number(val),
-    z.number({ invalid_type_error: 'Length must be a number' }).positive('Length must be positive').optional().nullable()
-  ),
-  packageWidth: z.preprocess(
-    (val) => (val === '' || val === null) ? undefined : Number(val),
-    z.number({ invalid_type_error: 'Width must be a number' }).positive('Width must be positive').optional().nullable()
-  ),
-  packageHeight: z.preprocess(
-    (val) => (val === '' || val === null) ? undefined : Number(val),
-    z.number({ invalid_type_error: 'Height must be a number' }).positive('Height must be positive').optional().nullable()
-  ),
   effects: z.array(ProductAttributeSchema).optional(),
   medicalUses: z.array(ProductAttributeSchema).optional(),
   flavors: z.array(z.string()).optional(),
