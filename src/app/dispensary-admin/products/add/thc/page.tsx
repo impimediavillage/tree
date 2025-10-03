@@ -11,8 +11,8 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { httpsCallable } from 'firebase/functions';
-import { productSchema, type ProductFormData, type ProductAttribute } from '@/lib/schemas';
-import type { Product as ProductType, Dispensary } from '@/types';
+import { productSchema, type ProductFormData } from '@/lib/schemas';
+import type { Product as ProductType } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, Package, ArrowLeft, Trash2, Leaf, Flame, Droplets, Microscope, Gift, Shirt, Sparkles, Check, ImageIcon as ImageIconLucide, Plus, Info, SkipForward, Brush, Palette, Home, Paintbrush, Users, Truck, ChevronsUpDown } from 'lucide-react';
+import { Loader2, PackagePlus, Package, ArrowLeft, Trash2, Gift, ImageIcon as ImageIconLucide, Plus, ChevronsUpDown } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -31,7 +31,6 @@ import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { StrainFinder } from '@/components/dispensary-admin/StrainFinder';
 import { cn, getProductCollectionName } from '@/lib/utils';
 import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
 import { functions } from '@/lib/firebase';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
@@ -92,7 +91,7 @@ export default function AddTHCProductPage() {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '', description: '', category: '', subcategory: null,
+      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
@@ -115,10 +114,10 @@ export default function AddTHCProductPage() {
   const watchStickerOptIn = form.watch('stickerProgramOptIn');
   const watchCategory = form.watch('category');
   const watchSubcategory = form.watch('subcategory');
+  const watchSubSubcategory = form.watch('subSubcategory');
   const watchGender = form.watch('gender');
   const watchSizingSystem = form.watch('sizingSystem');
   const watchPoolSharingRule = form.watch('poolSharingRule');
-  const watchAllowedPoolIds = form.watch('allowedPoolDispensaryIds');
   
   const fetchCannabinoidCategories = useCallback(async (stream: 'THC' | 'CBD') => {
       setIsLoadingInitialData(true);
@@ -140,7 +139,7 @@ export default function AddTHCProductPage() {
   const handleProductStreamSelect = (stream: ProductStream) => {
     form.reset({
       ...form.getValues(),
-      name: '', description: '', category: '', subcategory: null,
+      name: '', description: '', category: '', subcategory: null, subSubcategory: null,
       effects: [], flavors: [], medicalUses: [],
       thcContent: '', cbdContent: '', mostCommonTerpene: '',
       strain: '', strainType: '', homeGrow: [], feedingType: undefined,
@@ -180,11 +179,9 @@ export default function AddTHCProductPage() {
     form.setValue('thcContent', strainData.thcContent);
     form.setValue('cbdContent', strainData.cbdContent);
     form.setValue('mostCommonTerpene', strainData.mostCommonTerpene);
-    
-    form.setValue('effects', strainData.effects);
-    form.setValue('medicalUses', strainData.medicalUses);
+    form.setValue('effects', (strainData.effects || []).map((e: { name: string; percentage: string; }) => ({ name: e.name, percentage: e.percentage })));
+    form.setValue('medicalUses', (strainData.medicalUses || []).map((m: { name: string; percentage: string; }) => ({ name: m.name, percentage: m.percentage })));
     form.setValue('flavors', strainData.flavors);
-    
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
     setShowCategorySelector(true); 
@@ -197,14 +194,41 @@ export default function AddTHCProductPage() {
   }
   
   const handleCategorySelect = (categoryName: string) => {
-      form.setValue('category', categoryName, { shouldValidate: true });
-      form.setValue('subcategory', null);
+    form.setValue('category', categoryName, { shouldValidate: true });
+    form.setValue('subcategory', null);
+    form.setValue('subSubcategory', null);
   };
   
-   const handleSubcategorySelect = () => {
-    setTimeout(() => {
-        scrollToRef(productDetailsRef, 'start');
-    }, 100);
+  const handleSubCategorySelect = (subCategoryName: string) => {
+    form.setValue('subcategory', subCategoryName, { shouldValidate: true });
+    form.setValue('subSubcategory', null); 
+
+    const categoryData = Object.entries(deliveryMethods).find(([catName]) => catName === form.getValues('category'))?.[1];
+    if (!Array.isArray(categoryData)) {
+        setTimeout(() => scrollToRef(productDetailsRef, 'start'), 100);
+        return;
+    }
+    const subCategoryDataItem = categoryData.find(opt => ((typeof opt === 'object' && opt !== null) ? opt.name : opt) === subCategoryName);
+
+    if (typeof subCategoryDataItem !== 'object' || !subCategoryDataItem.types || subCategoryDataItem.types.length === 0) {
+         setTimeout(() => scrollToRef(productDetailsRef, 'start'), 100);
+    }
+  };
+
+  const handleSubSubCategorySelect = () => {
+      setTimeout(() => scrollToRef(productDetailsRef, 'start'), 100);
+  };
+
+  const onValidationErrors = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    const firstError = Object.keys(errors)[0];
+    const firstErrorMessage = errors[firstError]?.message || 'This field is required.';
+    
+    toast({
+        title: "Form Incomplete",
+        description: `Please fix the error on '${firstError}': ${firstErrorMessage}`,
+        variant: "destructive"
+    });
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -238,14 +262,13 @@ export default function AddTHCProductPage() {
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
         );
   
-        // Explicitly define the product's dispensary type for this page
         const productDispensaryType = 'Cannibinoid store';
   
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as ProductFormData),
             dispensaryId: currentUser.dispensaryId!,
             dispensaryName: currentDispensary.dispensaryName,
-            dispensaryType: productDispensaryType, // Use the correct, explicit type
+            dispensaryType: productDispensaryType,
             productOwnerEmail: currentUser.email,
             createdAt: serverTimestamp() as any,
             updatedAt: serverTimestamp() as any,
@@ -255,7 +278,6 @@ export default function AddTHCProductPage() {
             labTestReportUrl: uploadedLabTestUrl,
         };
         
-        // Get the collection name using the correct type
         const collectionName = getProductCollectionName(productDispensaryType);
         
         await addDoc(collection(db, collectionName), productData);
@@ -269,7 +291,6 @@ export default function AddTHCProductPage() {
         setIsLoading(false);
     }
   };
-
   
   const productStreams: { key: ProductStream; title: string; imageUrl: string; }[] = [
     { key: 'THC', title: 'Cannibinoid (other)', imageUrl: '/images/cannibinoid-store/canna1.jpg' },
@@ -281,8 +302,24 @@ export default function AddTHCProductPage() {
   ];
 
   const isCannabinoidStream = selectedProductStream === 'THC' || selectedProductStream === 'CBD';
-  const showProductForm = (selectedProductStream && !isCannabinoidStream) || (isCannabinoidStream && showCategorySelector && watchCategory && watchSubcategory);
   
+  const isSubCategoryLevelDone = () => {
+    if (!watchCategory || !watchSubcategory) return false;
+  
+    const categoryData = Object.entries(deliveryMethods).find(([catName]) => catName === watchCategory)?.[1];
+    if (!Array.isArray(categoryData)) return true; // No sub-levels defined for this category
+    
+    // Find the data for the selected subcategory
+    const subCategoryDataItem = categoryData.find(opt => ((typeof opt === 'object' && opt !== null) ? opt.name : opt) === watchSubcategory);
+    // If it's a simple string or an object without further 'types', this level is done
+    if (typeof subCategoryDataItem !== 'object' || !subCategoryDataItem.types || subCategoryDataItem.types.length === 0) return true;
+    
+    // If it has 'types', we need a selection in subSubcategory
+    return !!watchSubSubcategory;
+  };
+
+  const showProductForm = (selectedProductStream && !isCannabinoidStream) || (isCannabinoidStream && showCategorySelector && isSubCategoryLevelDone());
+
   const handleAddAttribute = (type: 'effects' | 'medicalUses', name: string) => {
     if (!name) return;
     const currentValues = form.getValues(type) || [];
@@ -307,7 +344,7 @@ export default function AddTHCProductPage() {
   }, [watchStickerOptIn, fetchCannabinoidCategories]);
   
   useEffect(() => {
-    if (watchGender && watchSizingSystem && standardSizesData[watchGender] && standardSizesData[watchGender][watchSizingSystem]) {
+    if (watchGender && watchSizingSystem && standardSizesData[watchGender]?.[watchSizingSystem]) {
         setAvailableStandardSizes(standardSizesData[watchGender][watchSizingSystem]!);
     } else {
         setAvailableStandardSizes([]);
@@ -340,8 +377,6 @@ export default function AddTHCProductPage() {
       </div>
     );
   }
-
-
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-8">
       <div className="flex items-center justify-between">
@@ -354,9 +389,9 @@ export default function AddTHCProductPage() {
         </Button>
       </div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit, onValidationErrors)} className="space-y-6">
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {productStreams.map(stream => (
                   <Card 
                     key={stream.key} 
@@ -412,17 +447,17 @@ export default function AddTHCProductPage() {
                       </p>
                       <p>
                           The Triple S Canna Club is an opportunity for fellow Cannabis enthusiasts to share 
-                          their legal home grown delights with other canna enthusiasts in a safe a legal space. 
+                          their legal home grown delights with other canna enthusiasts in a safe and legal space. 
                       </p>
                       <p>
-                          <strong>Step 1.</strong> When You create a store or club or sign up as a leaf user you join already join the club. Welcome.
+                          <strong>Step 1.</strong> When You create a store or club, or sign up as a leaf user, you automatically become a member of our central club. Welcome.
                           <strong>Step 2.</strong> Add your canna garden delight below. REMEMBER when creating a sample you can create multiple price tiers for your sample EG: joint, 1g, 10g.
                             This enables you to create multiple sample variation displays for 1 product. (GREAT WAY TO FILL YOUR STORE OR CLUB).
-                          <strong>Step 3.</strong> The Triple S club will then promote our 420 design packs to your store or club visitors and attach the samples you create as FREE.       
-                          The design pack price matches your sample price plus our 25% commission per transaction. Payouts / Payment Cashouts are done once a week, sent you to Your account.
+                          <strong>Step 3.</strong> The Triple S club will then promote our 420 design packs to your store or club visitors. The design packs attach the samples you create as FREE.       
+                          The design pack price matches your sample plus our 25% commission per transaction. Payouts are done once a week, sent you to Your account.
                           !!IMPORTANT - Please ensure that you have completed your store profile set up to ensure weekly payouts are securely sent to your S.A banking account. 
-                          </p>
-                          <p>
+                      </p>
+                      <p>
                           Share your garden delights with fellow Canna enthusiasts. Its always awesome to have a few different strains around the house, 
                           so get creating your products and let the Triple S Sticker design pack sales roll in.
                       </p>
@@ -464,65 +499,92 @@ export default function AddTHCProductPage() {
                   <h3 className="text-xl font-semibold border-b pb-2">Category Selection *</h3>
                   
                   {isLoadingInitialData ? <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div> : 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {Object.entries(deliveryMethods).map(([categoryName, items]) => {
-                          if (!Array.isArray(items)) return null;
-                          const lastItem = items.length > 0 ? items[items.length - 1] : null;
-                          const isLastItemImageMap = typeof lastItem === 'object' && lastItem !== null && lastItem.hasOwnProperty('imageUrl');
-                          const imageUrl = isLastItemImageMap ? lastItem.imageUrl : null;
-                          const subOptions = isLastItemImageMap ? items.slice(0, -1) : [...items];
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                       {Object.entries(deliveryMethods).map(([categoryName, items]) => {
+                            if (!Array.isArray(items)) return null;
+                            const lastItem = items.length > 0 ? items[items.length - 1] : null;
+                            const isLastItemImageMap = typeof lastItem === 'object' && lastItem !== null && lastItem.hasOwnProperty('imageUrl');
+                            const imageUrl = isLastItemImageMap ? lastItem.imageUrl : null;
+                            const subOptions = isLastItemImageMap ? items.slice(0, -1) : [...items];
 
-                          return (
-                              <div key={categoryName} className="flex flex-col gap-2">
-                                  <Card 
-                                      onClick={() => handleCategorySelect(categoryName)} 
-                                      className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
-                                  >
-                                    <CardHeader className="p-0">
-                                      <div className="relative w-full">
-                                        {imageUrl ? (
-                                            <Image 
-                                                src={imageUrl} 
-                                                alt={categoryName} 
-                                                width={768}
-                                                height={432}
-                                                layout="responsive"
-                                                className="object-contain transition-transform group-hover:scale-105"
-                                                data-ai-hint={`category ${categoryName}`} 
-                                            />
-                                        ) : (
-                                            <div className="w-full aspect-video flex items-center justify-center bg-muted">
-                                                <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
-                                            </div>
-                                        )}
-                                      </div>
-                                    </CardHeader>
-                                      <CardContent className="p-3">
-                                          <CardTitle className="text-center text-base">{categoryName}</CardTitle>
-                                      </CardContent>
-                                  </Card>
-                                  {watchCategory === categoryName && Array.isArray(subOptions) && subOptions.length > 0 && (
+                            const selectedSubCategoryData = watchCategory === categoryName ? subOptions.find(opt => {
+                                const name = (typeof opt === 'object' && opt !== null) ? opt.name : opt;
+                                return name === watchSubcategory;
+                            }) : null;
+
+                            const subSubCategoryOptions = (typeof selectedSubCategoryData === 'object' && selectedSubCategoryData !== null && Array.isArray(selectedSubCategoryData.types)) ? selectedSubCategoryData.types : [];
+
+                            return (
+                                <div key={categoryName} className="flex flex-col gap-2">
+                                    <Card
+                                        onClick={() => handleCategorySelect(categoryName)}
+                                        className={cn("cursor-pointer hover:border-primary flex-grow flex flex-col group overflow-hidden", watchCategory === categoryName && "border-primary ring-2 ring-primary")}
+                                    >
+                                      <CardHeader className="p-0">
+                                        <div className="relative w-full">
+                                          {imageUrl ? (
+                                              <Image
+                                                  src={imageUrl}
+                                                  alt={categoryName}
+                                                  width={768}
+                                                  height={432}
+                                                  layout="responsive"
+                                                  className="object-contain transition-transform group-hover:scale-105"
+                                                  data-ai-hint={`category ${categoryName}`}
+                                              />
+                                          ) : (
+                                              <div className="w-full aspect-video flex items-center justify-center bg-muted">
+                                                  <ImageIconLucide className="h-12 w-12 text-muted-foreground/30"/>
+                                              </div>
+                                          )}
+                                        </div>
+                                      </CardHeader>
+                                        <CardContent className="p-3">
+                                            <CardTitle className="text-center text-base">{categoryName}</CardTitle>
+                                        </CardContent>
+                                    </Card>
+                                    
+                                    {watchCategory === categoryName && subOptions.length > 0 && (
+                                        <FormField
+                                            control={form.control}
+                                            name="subcategory"
+                                            render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={(value) => handleSubCategorySelect(value)} value={field.value ?? ''}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder={`Select ${categoryName} type`} /></SelectTrigger></FormControl>
+                                                    <SelectContent>{subOptions.map(opt => {
+                                                        const value = (typeof opt === 'object' && opt !== null) ? opt.name : opt;
+                                                        return <SelectItem key={value} value={value}>{value}</SelectItem>
+                                                    })}</SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    )}
+
+                                    {watchCategory === categoryName && watchSubcategory && subSubCategoryOptions.length > 0 && (
                                       <FormField
-                                          control={form.control}
-                                          name="subcategory"
-                                          render={({ field }) => (
+                                        control={form.control}
+                                        name="subSubcategory"
+                                        render={({ field }) => (
                                           <FormItem>
-                                              <Select onValueChange={(value) => { field.onChange(value); handleSubcategorySelect(); }} value={field.value ?? ''}>
-                                                  <FormControl><SelectTrigger><SelectValue placeholder={`Select ${categoryName} type`} /></SelectTrigger></FormControl>
-                                                  <SelectContent>{subOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
-                                              </Select>
-                                              <FormMessage />
+                                            <Select onValueChange={(value) => { field.onChange(value); handleSubSubCategorySelect(); }} value={field.value ?? ''}>
+                                              <FormControl><SelectTrigger><SelectValue placeholder={`Select ${watchSubcategory} type`} /></SelectTrigger></FormControl>
+                                              <SelectContent>{subSubCategoryOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                            <FormMessage />
                                           </FormItem>
-                                      )} />
-                                  )}
-                              </div>
-                          );
-                      })}
-                  </div>}
+                                        )}
+                                      />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                  }
               </div>
           )}
-
-          <div ref={productDetailsRef}>
+    <div ref={productDetailsRef}>
             {showProductForm && (
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <Separator />
@@ -530,7 +592,8 @@ export default function AddTHCProductPage() {
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
                         <FormItem><FormLabel>Product Stream</FormLabel><Input value={form.getValues('productType') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
                         <FormItem><FormLabel>Category</FormLabel><Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
-                        <FormItem><FormLabel>Subcategory</FormLabel><Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
+                        <FormItem><FormLabel>Subcategory</FormLabel><Input value={form.getValues('subcategory') || 'N/A'} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
+                         { watchSubSubcategory && <FormItem><FormLabel>Type</FormLabel><Input value={watchSubSubcategory} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem> }
                       </div>
 
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -552,7 +615,7 @@ export default function AddTHCProductPage() {
                       <>
                           <Separator/>
                           <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid Details (Optional)</h3>
-                          <div className="grid md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField control={form.control} name="thcContent" render={({ field }) => ( <FormItem><FormLabel>THC Content</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., 22%" /></FormControl><FormMessage /></FormItem> )} />
                             <FormField control={form.control} name="cbdContent" render={({ field }) => ( <FormItem><FormLabel>CBD Content</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="e.g., <1%" /></FormControl><FormMessage /></FormItem> )} />
                           </div>
@@ -567,9 +630,9 @@ export default function AddTHCProductPage() {
                           <FormField control={form.control} name="homeGrow" render={({ field }) => ( <FormItem><FormLabel>Home Grow Conditions</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Indoor, Greenhouse" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
 
                           <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Effects & Flavors (Optional)</h3>
+                          <h3 className="text-xl font-semibold border-b pb-2">Effects & Flavors</h3>
                           <div className="space-y-4">
-                              <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Happy, Relaxed" value={field.value || []} onChange={field.onChange} /></FormControl><FormDescription>Tags you selected from the strain finder that have a 0% rating will appear below. Add them if they apply.</FormDescription><FormMessage /></FormItem> )} />
+                              <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects *</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Happy, Relaxed" value={field.value || []} onChange={field.onChange} /></FormControl><FormDescription>Tags you selected from the strain finder that have a 0% rating will appear below. Add them if they apply.</FormDescription><FormMessage /></FormItem> )} />
                               {zeroPercentEffects.length > 0 && <div className="flex flex-wrap gap-2 p-2 border-dashed border rounded-md">{zeroPercentEffects.map(name => <Button key={name} type="button" variant="outline" size="sm" onClick={() => handleAddAttribute('effects', name)}>{name} <Plus className="ml-1 h-3 w-3"/></Button>)}</div>}
                               <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} /></FormControl><FormDescription>Tags you selected from the strain finder that have a 0% rating will appear below. Add them if they apply.</FormDescription><FormMessage /></FormItem> )} />
                               {zeroPercentMedical.length > 0 && <div className="flex flex-wrap gap-2 p-2 border-dashed border rounded-md">{zeroPercentMedical.map(name => <Button key={name} type="button" variant="outline" size="sm" onClick={() => handleAddAttribute('medicalUses', name)}>{name} <Plus className="ml-1 h-3 w-3"/></Button>)}</div>}
@@ -590,24 +653,24 @@ export default function AddTHCProductPage() {
                         <h3 className="text-xl font-semibold border-b pb-2">Pricing & Stock</h3>
                         <div className="space-y-4">
                         {priceTierFields.map((field, index) => (
-                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
+                            <div key={field.id} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
                                 <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                       <Collapsible>
-                                                                      <CollapsibleTrigger asChild>
-                                                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
-                                                                      </CollapsibleTrigger>
-                                                                      <CollapsibleContent className="pt-4 space-y-4">
-                                                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                          </div>
-                                                                      </CollapsibleContent>
-                                                                  </Collapsible>
+                                   <Collapsible className="md:col-span-4">
+                                      <CollapsibleTrigger asChild>
+                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                      </CollapsibleTrigger>
+                                      <CollapsibleContent className="pt-4 space-y-4">
+                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                          </div>
+                                      </CollapsibleContent>
+                                  </Collapsible>
                             </div>
                         ))}
                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
@@ -650,8 +713,7 @@ export default function AddTHCProductPage() {
                                     selectedIds={field.value || []}
                                     onSelectionChange={field.onChange}
                                   />
-                                )}
-                              />
+                                )}/>
                             )}
                             <CardHeader className="p-0 mb-2">
                               <CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle>
@@ -664,7 +726,7 @@ export default function AddTHCProductPage() {
                                   <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
                                   <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
                                   {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                    <Collapsible>
+                                    <Collapsible className="md:col-span-4">
                                      <CollapsibleTrigger asChild>
                                       <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
                                      </CollapsibleTrigger>
@@ -697,11 +759,20 @@ export default function AddTHCProductPage() {
                 </div>
             )}
           </div>
-          <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
-          <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
+          <datalist id="regular-units-list">
+            {regularUnits.map(unit => <option key={unit} value={unit} />)}
+          </datalist>
+          <datalist id="pool-units-list">
+            {poolUnits.map(unit => <option key={unit} value={unit} />)}
+          </datalist>
         </form>
       </Form>
     </div>
   );
 }
+
+
+
+
+
 
