@@ -133,6 +133,12 @@ export interface Product {
   allowedPoolDispensaryIds?: string[] | null;
   tags?: string[] | null;
   
+  // Physical Dimensions for shipping
+  weight?: number | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+
   createdAt: Timestamp | Date | string;
   updatedAt: Timestamp | Date | string;
   dispensaryLocation?: {
@@ -386,6 +392,13 @@ export interface CartItem {
   quantityInStock: number;
   imageUrl?: string | null;
   sampleAmount?: number;
+  productType?: string | null;
+
+  // Physical Dimensions for shipping
+  weight?: number | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
 }
 
 // Types for generated brand assets

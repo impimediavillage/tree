@@ -26,14 +26,14 @@ import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
-import { cn } from '@/lib/utils';
+import { cn, getProductCollectionName } from '@/lib/utils'; // FIX: Import getProductCollectionName from utils
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
 
 
-const regularUnits = [ "gram", "kg", "ml", "litre", "unit", "pack", "box", "seedling", "cutting", "plant", "bag" ];
-const poolUnits = [ "10kg", "25kg", "50kg", "100 litres", "200 litres", "pallet", "crate" ];
+const regularUnits = [ "unit", "each", "gram", "kg", "ml", "litre", "pack", "punnet", "box", "seedling", "cutting", "plant", "bag" ];
+const poolUnits = [ "unit", "each", "combo promotion", "pack", "punnet", "box", "seedling", "cutting", "plant", "bag", "gram", "kg", "10kg", "25kg", "50kg", "ml", "litre", "1 l", "2 l", "5 l", "100 litres", "200 litres", "pallet", "crate" ];
 
 interface PermacultureCategory {
   imageUrl: string;
@@ -62,14 +62,18 @@ export default function AddPermacultureProductPage() {
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
+    // FIX: Set static category, add subSubcategory to defaults
     defaultValues: {
-      name: '', description: '', category: '', subcategory: null,
+      name: '', description: '',
+      category: 'Permaculture & Gardening', 
+      subcategory: null,
+      subSubcategory: null,
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
       labTested: false, labTestReportUrl: null,
       currency: currentDispensary?.currency || 'ZAR',
-      productType: 'Permaculture & Gardening',
+      productType: 'Permaculture',
       poolSharingRule: 'same_type',
       allowedPoolDispensaryIds: [],
     },
@@ -80,7 +84,7 @@ export default function AddPermacultureProductPage() {
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchPoolSharingRule = form.watch('poolSharingRule');
-  
+
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
@@ -107,27 +111,57 @@ export default function AddPermacultureProductPage() {
     fetchCategoryStructure();
   }, [fetchCategoryStructure]);
 
+  // FIX: Added validation error handler to show toasts
+  const onValidationErrors = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    const errorKeys = Object.keys(errors);
+    let firstErrorKey = errorKeys.find(key => errors[key] && typeof errors[key].message === 'string');
+    let firstErrorMessage = firstErrorKey ? errors[firstErrorKey].message : 'An unknown validation error occurred.';
+
+    if (!firstErrorKey) {
+        const complexErrorKey = errorKeys[0];
+        if (complexErrorKey && errors[complexErrorKey] && Array.isArray(errors[complexErrorKey])) {
+            const index = errors[complexErrorKey].findIndex((e: any) => e);
+            if (index !== -1) {
+                const fieldError = errors[complexErrorKey][index];
+                if(fieldError) {
+                    const subKey = Object.keys(fieldError)[0];
+                    if(subKey) {
+                        firstErrorKey = `${complexErrorKey}[${index}].${subKey}`;
+                        firstErrorMessage = fieldError[subKey].message;
+                    }
+                }
+            }
+        }
+    }
+    
+    toast({
+        title: "Form Incomplete",
+        description: `Please fix the error on '${firstErrorKey}': ${firstErrorMessage}`,
+        variant: "destructive"
+    });
+  };
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // FIX: Logic updated to map UI Step 1 to form's 'subcategory'
   const handleTopLevelSelect = (categoryName: string) => {
     setSelectedTopLevelCategory(categoryName);
-    form.setValue('category', categoryName, { shouldValidate: true });
-    form.setValue('subcategory', null); // Reset subcategory when top level changes
+    form.setValue('subcategory', categoryName, { shouldValidate: true });
+    form.setValue('subSubcategory', null); // Reset sub-subcategory
     setTimeout(() => scrollToRef(secondStepRef), 100);
   };
   
+  // FIX: Logic updated to map UI Step 2 to form's 'subSubcategory'
   const handleSubCategorySelect = (subCategoryName: string) => {
-    form.setValue('subcategory', subCategoryName, { shouldValidate: true });
+    form.setValue('subSubcategory', subCategoryName, { shouldValidate: true });
     setTimeout(() => scrollToRef(finalFormRef), 100);
   }
 
-  const getProductCollectionName = (): string => {
-    return 'permaculture_store_products';
-  };
-
+  // FIX: The local getProductCollectionName function has been removed.
+  
   const onSubmit = async (data: ProductFormData) => {
     if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) {
       toast({ title: "Error", description: "Cannot submit without dispensary data and type.", variant: "destructive" });
@@ -164,7 +198,8 @@ export default function AddPermacultureProductPage() {
             imageUrl: uploadedImageUrls[0] || null,
         };
         
-        const collectionName = getProductCollectionName();
+        // FIX: Use the imported util to get the correct collection name dynamically
+        const collectionName = getProductCollectionName(currentDispensary.dispensaryType);
         await addDoc(collection(db, collectionName), productData);
 
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
@@ -176,199 +211,203 @@ export default function AddPermacultureProductPage() {
       setIsLoading(false);
     }
   };
-  
   if (authLoading || isLoadingInitialData) {
-     return (
-        <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
-            <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div>
-            <Skeleton className="h-8 w-1/2" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-                <Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" />
-            </div>
-        </div>
-     );
-  }
+    return (
+       <div className="max-w-4xl mx-auto my-8 p-6 space-y-6">
+           <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div>
+           <Skeleton className="h-8 w-1/2" />
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+               <Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" />
+           </div>
+       </div>
+    );
+ }
 
-  const showSubcategories = selectedTopLevelCategory && categoryStructure[selectedTopLevelCategory]?.subcategories;
-  const showFinalForm = selectedTopLevelCategory && form.watch('subcategory');
+ // FIX: Display logic now correctly checks for subcategory selections
+ const showSubcategories = selectedTopLevelCategory && categoryStructure[selectedTopLevelCategory]?.subcategories;
+ const showFinalForm = selectedTopLevelCategory && form.watch('subSubcategory');
 
-  return (
-    <div className="max-w-5xl mx-auto my-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="h-8 w-8 text-primary"/> Add Permaculture Product</h1>
-          <p className="text-muted-foreground mt-1">Follow the steps to add your product.</p>
-        </div>
-        <Button variant="outline" asChild>
-            <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
-        </Button>
-      </div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-             <Card>
-                <CardHeader><CardTitle>Step 1: Select a Top-Level Category</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.entries(categoryStructure).map(([categoryName, categoryData]) => {
-                         const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`;
-                         const imageUrl = categoryData.imageUrl && categoryData.imageUrl.trim() !== '' ? categoryData.imageUrl : placeholderUrl;
-                        return (
-                            <Card 
-                                key={categoryName} 
-                                onClick={() => handleTopLevelSelect(categoryName)} 
-                                className={cn(
-                                    "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
-                                    form.watch('category') === categoryName && 'border-primary ring-2 ring-primary'
-                                )}
-                            >
-                                <CardHeader className="p-0">
-                                    <div className="w-full bg-muted">
-                                        <Image
-                                            src={imageUrl}
-                                            alt={categoryName}
-                                            width={768}
-                                            height={512}
-                                            layout="responsive"
-                                            className="object-contain transition-transform duration-300 group-hover:scale-105"
-                                            onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
-                                        />
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-4 flex-grow flex flex-col">
-                                    <h3 className="text-lg font-semibold">{categoryName}</h3>
-                                    <p className="text-sm text-muted-foreground mt-1 flex-grow">{categoryData.description}</p>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
-                </CardContent>
-            </Card>
+ return (
+   <div className="max-w-5xl mx-auto my-8 space-y-8">
+     <div className="flex items-center justify-between">
+       <div>
+         <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="h-8 w-8 text-primary"/> Add Permaculture Product</h1>
+         <p className="text-muted-foreground mt-1">Follow the steps to add your product.</p>
+       </div>
+       <Button variant="outline" asChild>
+           <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
+       </Button>
+     </div>
+     <Form {...form}>
+       {/* FIX: form now uses onValidationErrors for the submit handler */}
+       <form onSubmit={form.handleSubmit(onSubmit, onValidationErrors)} className="space-y-8">
+            <Card>
+               <CardHeader><CardTitle>Step 1: Select a Top-Level Category</CardTitle></CardHeader>
+               <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {Object.entries(categoryStructure).map(([categoryName, categoryData]) => {
+                        const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(categoryName)}`;
+                        const imageUrl = categoryData.imageUrl && categoryData.imageUrl.trim() !== '' ? categoryData.imageUrl : placeholderUrl;
+                       return (
+                           <Card 
+                               key={categoryName} 
+                               onClick={() => handleTopLevelSelect(categoryName)} 
+                               className={cn(
+                                   "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
+                                   // FIX: Watch the correct form field for styling
+                                   form.watch('subcategory') === categoryName && 'border-primary ring-2 ring-primary'
+                               )}
+                           >
+                               <CardHeader className="p-0">
+                                   <div className="w-full bg-muted">
+                                       <Image
+                                           src={imageUrl}
+                                           alt={categoryName}
+                                           width={768}
+                                           height={512}
+                                           layout="responsive"
+                                           className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                           onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
+                                       />
+                                   </div>
+                               </CardHeader>
+                               <CardContent className="p-4 flex-grow flex flex-col">
+                                   <h3 className="text-lg font-semibold">{categoryName}</h3>
+                                   <p className="text-sm text-muted-foreground mt-1 flex-grow">{categoryData.description}</p>
+                               </CardContent>
+                           </Card>
+                       )
+                   })}
+               </CardContent>
+           </Card>
 
-            {showSubcategories && (
-                <div className="animate-fade-in-scale-up" ref={secondStepRef}>
-                    <Card>
-                        <CardHeader>
-                          <CardTitle>
-                            Step 2: Select a Subcategory for <span className="text-primary">{selectedTopLevelCategory}</span>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {Object.entries(showSubcategories).map(([subCategoryName, subCategoryData]) => {
-                                const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`;
-                                const imageUrl = subCategoryData.imageUrl && subCategoryData.imageUrl.trim() !== '' ? subCategoryData.imageUrl : placeholderUrl;
-                                return (
-                                    <Card 
-                                        key={subCategoryName} 
-                                        onClick={() => handleSubCategorySelect(subCategoryName)}
-                                        className={cn(
-                                            "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200",
-                                            form.watch('subcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
-                                        )}
-                                    >
-                                        <CardHeader className="p-0">
-                                            <div className="w-full bg-muted">
-                                                <Image
-                                                    src={imageUrl}
-                                                    alt={subCategoryName}
-                                                    width={768}
-                                                    height={512}
-                                                    layout="responsive"
-                                                    className="object-contain transition-transform duration-300 group-hover:scale-105"
-                                                    onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
-                                                />
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="p-4 flex-grow flex flex-col">
-                                            <h3 className="text-lg font-semibold">{subCategoryName}</h3>
-                                            <p className="text-sm text-muted-foreground mt-1 flex-grow">{subCategoryData.description}</p>
-                                        </CardContent>
-                                    </Card>
-                                )
-                            })}
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+           {showSubcategories && (
+               <div className="animate-fade-in-scale-up" ref={secondStepRef}>
+                   <Card>
+                       <CardHeader>
+                         <CardTitle>
+                           Step 2: Select a Subcategory for <span className="text-primary">{selectedTopLevelCategory}</span>
+                         </CardTitle>
+                       </CardHeader>
+                       <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                           {Object.entries(showSubcategories).map(([subCategoryName, subCategoryData]) => {
+                               const placeholderUrl = `https://placehold.co/600x400.png?text=${encodeURIComponent(subCategoryName)}`;
+                               const imageUrl = subCategoryData.imageUrl && subCategoryData.imageUrl.trim() !== '' ? subCategoryData.imageUrl : placeholderUrl;
+                               return (
+                                   <Card 
+                                       key={subCategoryName} 
+                                       onClick={() => handleSubCategorySelect(subCategoryName)}
+                                       className={cn(
+                                           "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200",
+                                           // FIX: Watch the correct form field for styling
+                                           form.watch('subSubcategory') === subCategoryName && 'border-primary ring-2 ring-primary'
+                                       )}
+                                   >
+                                       <CardHeader className="p-0">
+                                           <div className="w-full bg-muted">
+                                               <Image
+                                                   src={imageUrl}
+                                                   alt={subCategoryName}
+                                                   width={768}
+                                                   height={512}
+                                                   layout="responsive"
+                                                   className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                                   onError={(e) => { e.currentTarget.srcset = placeholderUrl; e.currentTarget.src = placeholderUrl; }}
+                                               />
+                                           </div>
+                                       </CardHeader>
+                                       <CardContent className="p-4 flex-grow flex flex-col">
+                                           <h3 className="text-lg font-semibold">{subCategoryName}</h3>
+                                           <p className="text-sm text-muted-foreground mt-1 flex-grow">{subCategoryData.description}</p>
+                                       </CardContent>
+                                   </Card>
+                               )
+                           })}
+                       </CardContent>
+                   </Card>
+               </div>
+           )}
 
-            <div ref={finalFormRef}>
-              {showFinalForm && (
-                  <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                      <Separator />
-                      <h3 className="text-2xl font-semibold border-b pb-2">Step 3: Finalize Product Details</h3>
-                      
-                      <div className="grid grid-cols-2 gap-4 bg-muted/50 p-3 rounded-md border">
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
-                        </FormItem>
-                        <FormItem>
-                          <FormLabel>Subcategory</FormLabel>
-                          <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
-                        </FormItem>
-                      </div>
+           <div ref={finalFormRef}>
+             {showFinalForm && (
+                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                     <Separator />
+                     <h3 className="text-2xl font-semibold border-b pb-2">Step 3: Finalize Product Details</h3>
+                     
+                     {/* FIX: Display fields now show the correctly mapped subcategory and subSubcategory */}
+                     <div className="grid grid-cols-2 gap-4 bg-muted/50 p-3 rounded-md border">
+                       <FormItem>
+                         <FormLabel>Top-Level Category</FormLabel>
+                         <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                       </FormItem>
+                       <FormItem>
+                         <FormLabel>Subcategory</FormLabel>
+                         <Input value={form.getValues('subSubcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                       </FormItem>
+                     </div>
 
-                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                      
-                      <div className="space-y-6">
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
-                          <div className="space-y-4">
-                          {priceTierFields.map((field, index) => (
-                              <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                      <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  </div>
-                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                   <Collapsible>
-                                      <CollapsibleTrigger asChild>
-                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
-                                      </CollapsibleTrigger>
-                                      <CollapsibleContent className="pt-4 space-y-4">
-                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                          </div>
-                                      </CollapsibleContent>
-                                  </Collapsible>
-                              </div>
-                          ))}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
-                          </div>
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                          {watchIsAvailableForPool && (
-                          <Card className="p-4 bg-muted/50 space-y-4">
-                              <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
-                                  <FormItem>
-                                      <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
-                                      <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
-                                          <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
-                                          <SelectContent>
-                                              <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
-                                              <SelectItem value="all_types">Share with all Wellness types</SelectItem>
-                                              <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
-                                          </SelectContent>
-                                      </Select>
-                                      <FormMessage />
-                                  </FormItem>
-                              )}/>
+                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                     
+                     <div className="space-y-6">
+                         <Separator />
+                         <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                         <div className="space-y-4">
+                         {priceTierFields.map((field, index) => (
+                             <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                     <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                                     <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                     <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                 </div>
+                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                  <Collapsible>
+                                     <CollapsibleTrigger asChild>
+                                         <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                     </CollapsibleTrigger>
+                                     <CollapsibleContent className="pt-4 space-y-4">
+                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                             <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                         </div>
+                                     </CollapsibleContent>
+                                 </Collapsible>
+                             </div>
+                         ))}
+                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
+                         </div>
+                         <Separator />
+                         <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
+                         <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                         {watchIsAvailableForPool && (
+                         <Card className="p-4 bg-muted/50 space-y-4">
+                             <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
+                                 <FormItem>
+                                     <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                         <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
+                                         <SelectContent>
+                                             <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                             <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                             <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                         </SelectContent>
+                                     </Select>
+                                     <FormMessage />
+                                 </FormItem>
+                             )}/>
 
-                              {watchPoolSharingRule === 'specific_stores' && (
-                                  <DispensarySelector 
-                                      allDispensaries={allDispensaries}
-                                      isLoading={isLoadingDispensaries}
-                                      selectedIds={form.watch('allowedPoolDispensaryIds') || []}
-                                      onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
-                                  />
-                              )}
-                          
-                              <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                              <CardContent className="p-0 space-y-2">
+                             {watchPoolSharingRule === 'specific_stores' && (
+                                 <DispensarySelector 
+                                     allDispensaries={allDispensaries}
+                                     isLoading={isLoadingDispensaries}
+                                     selectedIds={form.watch('allowedPoolDispensaryIds') || []}
+                                     onSelectionChange={(ids) => form.setValue('allowedPoolDispensaryIds', ids)}
+                                 />
+                             )}
+                         
+                             <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                             <CardContent className="p-0 space-y-2">
                                   {poolPriceTierFields.map((field, index) => (
                                   <div key={field.id} className="p-3 border rounded-md relative bg-background space-y-4">
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -401,7 +440,7 @@ export default function AddPermacultureProductPage() {
                           <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, High-Yield" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                           <CardFooter className="p-0 pt-6">
-                              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                              <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
                                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                                   Add Product
                               </Button>

@@ -131,9 +131,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             quantity: finalQuantityToAdd,
             quantityInStock: tierStock,
             imageUrl: product.imageUrl ?? null,
-            weight: product.weight, 
-            dimensions: product.dimensions,
             sampleAmount: tier.sampleAmount,
+            productType: product.productType,
+            weight: product.weight,
+            length: product.length,
+            width: product.width,
+            height: product.height,
           };
           
           return [...prevItems, newItem];

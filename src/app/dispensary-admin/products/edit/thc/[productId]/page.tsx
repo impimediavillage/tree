@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -27,6 +25,7 @@ import { Loader2, Save, ArrowLeft, Trash2, Shirt, Sparkles, Flame, Leaf as LeafI
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { cn, getProductCollectionName } from '@/lib/utils';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { SingleImageDropzone } from '@/components/ui/single-image-dropzone';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
@@ -44,9 +43,6 @@ const standardSizesData: Record<string, Record<string, string[]>> = {
   'Unisex': { 'Alpha (XS-XXXL)': ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'] }
 };
 
-const getProductCollectionName = (): string => {
-    return 'cannibinoid_store_products';
-};
 export default function EditCannabinoidProductPage() {
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { allDispensaries, isLoadingDispensaries } = useDispensaryAdmin();
@@ -66,8 +62,6 @@ export default function EditCannabinoidProductPage() {
   const [labTestFile, setLabTestFile] = useState<File | null>(null);
   const [existingLabTestUrl, setExistingLabTestUrl] = useState<string | null>(null);
 
-  const productCollectionName = getProductCollectionName();
-  
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
   });
@@ -83,12 +77,13 @@ export default function EditCannabinoidProductPage() {
   const watchAllowedPoolIds = form.watch('allowedPoolDispensaryIds');
 
   const fetchInitialData = useCallback(async () => {
-    if (authLoading || !productId || !productCollectionName) {
+    if (authLoading || !productId || !currentDispensary?.dispensaryType) {
       if (!authLoading) setIsLoadingInitialData(false);
       return;
     }
     setIsLoadingInitialData(true);
     try {
+        const productCollectionName = getProductCollectionName(currentDispensary.dispensaryType);
         const productDocRef = doc(db, productCollectionName, productId);
         const productSnap = await getDoc(productDocRef);
         if (!productSnap.exists() || productSnap.data().dispensaryId !== currentUser?.dispensaryId) {
@@ -98,7 +93,26 @@ export default function EditCannabinoidProductPage() {
         }
 
         const productData = productSnap.data() as ProductType;
-        form.reset(productData as ProductFormData);
+
+        const sanitizedData = {
+          ...productData,
+          gender: productData.gender || undefined,
+          sizingSystem: productData.sizingSystem || undefined,
+          growingMedium: productData.growingMedium || undefined,
+          feedingType: productData.feedingType || undefined,
+          labTestReportUrl: productData.labTestReportUrl || null,
+          tags: productData.tags || [],
+          sizes: productData.sizes || [],
+          effects: productData.effects || [],
+          medicalUses: productData.medicalUses || [],
+          flavors: productData.flavors || [],
+          homeGrow: productData.homeGrow || [],
+          priceTiers: productData.priceTiers?.map(tier => ({ ...tier, price: tier.price ?? '', quantityInStock: tier.quantityInStock ?? '' })) || [],
+          poolPriceTiers: productData.poolPriceTiers?.map(tier => ({ ...tier, price: tier.price ?? '', quantityInStock: tier.quantityInStock ?? '' })) || [],
+          allowedPoolDispensaryIds: productData.allowedPoolDispensaryIds || [],
+        };
+
+        form.reset(sanitizedData as unknown as ProductFormData);
         const imageUrls = productData.imageUrls || [];
         setExistingImageUrls(imageUrls);
         setOriginalImageUrls(imageUrls);
@@ -108,7 +122,7 @@ export default function EditCannabinoidProductPage() {
       console.error("Error fetching initial data:", error);
       toast({ title: "Error", description: "Could not load data for editing.", variant: "destructive" });
     } finally { setIsLoadingInitialData(false); }
-  }, [productId, authLoading, toast, router, form, currentUser, productCollectionName]);
+  }, [productId, authLoading, toast, router, form, currentUser, currentDispensary]);
 
   useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
   
@@ -121,12 +135,43 @@ export default function EditCannabinoidProductPage() {
         setAvailableStandardSizes([]); 
     }
   }, [watchGender, watchSizingSystem, form]);
+  
+  const onValidationErrors = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    const errorKeys = Object.keys(errors);
+    let firstErrorKey = errorKeys.find(key => errors[key] && typeof errors[key].message === 'string');
+    let firstErrorMessage = firstErrorKey ? errors[firstErrorKey].message : 'An unknown validation error occurred.';
+  
+    if (!firstErrorKey) {
+        const complexErrorKey = errorKeys[0];
+        if (complexErrorKey && errors[complexErrorKey] && Array.isArray(errors[complexErrorKey])) {
+            const index = errors[complexErrorKey].findIndex((e: any) => e);
+            if (index !== -1) {
+                const fieldError = errors[complexErrorKey][index];
+                if(fieldError) {
+                    const subKey = Object.keys(fieldError)[0];
+                    if(subKey) {
+                        firstErrorKey = `${complexErrorKey}[${index}].${subKey}`;
+                        firstErrorMessage = fieldError[subKey].message;
+                    }
+                }
+            }
+        }
+    }
+    
+    toast({
+        title: "Form Incomplete",
+        description: `Please fix the error on '${firstErrorKey}': ${firstErrorMessage}`,
+        variant: "destructive"
+    });
+  };
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!currentDispensary || !currentUser || !productId) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
+    if (!currentDispensary || !currentUser || !currentDispensary.dispensaryType) { toast({ title: "Error", description: "Cannot update without required data.", variant: "destructive" }); return; }
     setIsLoading(true);
     try {
         // --- Image Deletion Logic ---
+        const productCollectionName = getProductCollectionName(currentDispensary.dispensaryType);
         const imagesToDelete = originalImageUrls.filter(url => !existingImageUrls.includes(url));
         if (imagesToDelete.length > 0) {
             toast({ title: "Deleting Old Images...", description: `Removing ${imagesToDelete.length} image(s).`, variant: "default" });
@@ -204,7 +249,7 @@ export default function EditCannabinoidProductPage() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+           <form onSubmit={form.handleSubmit(onSubmit, onValidationErrors)} className="space-y-6">
             <div className="space-y-6">
                 <h2 className="text-2xl font-semibold border-b pb-2 text-foreground">Product Details</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
@@ -221,9 +266,9 @@ export default function EditCannabinoidProductPage() {
                     <Separator/>
                     <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
                       <div className="grid md:grid-cols-3 gap-4">
-                          <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{apparelSizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{apparelSizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                       </div>
                       <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
                   </>
@@ -286,7 +331,7 @@ export default function EditCannabinoidProductPage() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
+                                    <Select onValueChange={field.onChange} value={field.value || 'same_type'}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
@@ -348,6 +393,12 @@ export default function EditCannabinoidProductPage() {
                   </Button>
               </div>
             </CardFooter>
+            <datalist id="regular-units-list">
+                {regularUnits.map(unit => <option key={unit} value={unit} />)}
+            </datalist>
+            <datalist id="pool-units-list">
+                {poolUnits.map(unit => <option key={unit} value={unit} />)}
+            </datalist>
           </form>
         </Form>
       </CardContent>

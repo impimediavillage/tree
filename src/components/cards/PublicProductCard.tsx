@@ -49,7 +49,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   const currentQuantityInCart = itemInCart?.quantity || 0;
   const canAddToCart = tierStock > currentQuantityInCart;
 
-  const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.stickerProgramOptIn === "yes";
+  const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.productType === "THC";
   
   const handleAddToCartClick = () => {
     addToCart(product, tier, 1);
@@ -165,12 +165,12 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               <span>Sticker price</span>
             </div>
             <p className="text-xs font-semibold text-primary mt-1">
-              FREE SAMPLE with this sticker set.
+              FREE SAMPLE with this DESIGN PACK.
             </p>
           </div>
           <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
             <p className="text-xs font-semibold text-primary">
-              Press Buy Design Pack below to create your Unique strain sticker set and receive your free sample.
+              Press Buy Design Pack below to receive your free sample.
             </p>
           </div>
           <div className="w-full space-y-2">

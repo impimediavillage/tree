@@ -96,7 +96,7 @@ export function CartDrawer() {
                         <p className="text-md font-semibold text-accent mt-1">
                           {item.currency} {(item.price * item.quantity).toFixed(2)}
                         </p>
-                        {item.dispensaryType === 'THC' && item.unit && (
+                        {item.productType === 'THC' && item.unit && (
                           <div className="flex items-center text-xs text-green-500 mt-1">
                             <Gift className="h-4 w-4 mr-1" />
                             <span>Free Sample: {item.unit}</span>

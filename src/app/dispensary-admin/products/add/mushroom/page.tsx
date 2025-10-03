@@ -22,12 +22,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Brain, AlertTriangle, ChevronsUpDown, Check, Package } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Brain, AlertTriangle, ChevronsUpDown, Check, Package, Save } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
-import { cn } from '@/lib/utils';
+import { cn, getProductCollectionName } from '@/lib/utils';
 import { MushroomProductCard } from '@/components/dispensary-admin/MushroomProductCard';
 import { Alert } from '@/components/ui/alert';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
@@ -57,7 +57,7 @@ export default function AddMushroomProductPage() {
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: '', description: '', category: 'Mushroom', subcategory: null,
+      name: '', description: '', category: 'Mushroom', subcategory: null, subSubcategory: null,
       priceTiers: [{ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null }],
       poolPriceTiers: [],
       isAvailableForPool: false, tags: [],
@@ -74,7 +74,7 @@ export default function AddMushroomProductPage() {
   
   const watchIsAvailableForPool = form.watch('isAvailableForPool');
   const watchPoolSharingRule = form.watch('poolSharingRule');
-  
+
   const fetchCategoryStructure = useCallback(async () => {
     setIsLoadingInitialData(true);
     try {
@@ -101,31 +101,60 @@ export default function AddMushroomProductPage() {
     fetchCategoryStructure();
   }, [fetchCategoryStructure]);
 
+  const onValidationErrors = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    const errorKeys = Object.keys(errors);
+    let firstErrorKey = errorKeys.find(key => errors[key] && typeof errors[key].message === 'string');
+    let firstErrorMessage = firstErrorKey ? errors[firstErrorKey].message : 'An unknown validation error occurred.';
+
+    if (!firstErrorKey) {
+        const complexErrorKey = errorKeys[0];
+        if (complexErrorKey && errors[complexErrorKey] && Array.isArray(errors[complexErrorKey])) {
+            const index = errors[complexErrorKey].findIndex((e: any) => e);
+            if (index !== -1) {
+                const fieldError = errors[complexErrorKey][index];
+                if(fieldError) {
+                    const subKey = Object.keys(fieldError)[0];
+                    if(subKey) {
+                        firstErrorKey = `${complexErrorKey}[${index}].${subKey}`;
+                        firstErrorMessage = fieldError[subKey].message;
+                    }
+                }
+            }
+        }
+    }
+    
+    toast({
+        title: "Form Incomplete",
+        description: `Please fix the error on '${firstErrorKey}': ${firstErrorMessage}`,
+        variant: "destructive"
+    });
+  };
 
   const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
   
+  // CORRECTED LOGIC
   const handleTopLevelSelect = (category: any) => {
     setSelectedTopLevel(category.category_name === selectedTopLevel?.category_name ? null : category);
     setSelectedProduct(null); // Reset product selection when top level changes
     form.setValue('name', '');
     form.setValue('description', '');
     form.setValue('subcategory', null);
+    form.setValue('subSubcategory', null); // <-- FIX: Ensure subSubcategory is cleared
     setTimeout(() => scrollToRef(secondStepRef), 100);
   };
 
+  // CORRECTED LOGIC
   const handleProductSelect = (product: any, format: string) => {
     setSelectedProduct(product);
     form.setValue('name', `${product.name} (${format})`);
     form.setValue('description', product.description);
-    form.setValue('subcategory', product.sub_category);
+    form.setValue('subcategory', product.name); // <-- FIX: Set subcategory to product name
+    form.setValue('subSubcategory', format); // <-- FIX: Set subSubcategory to the chosen format
     form.setValue('tags', product.benefits || []);
     setTimeout(() => scrollToRef(finalFormRef), 100);
-  };
-
-  const getProductCollectionName = (): string => {
-    return 'mushroom_store_products';
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -164,7 +193,8 @@ export default function AddMushroomProductPage() {
             imageUrl: uploadedImageUrls[0] || selectedProduct.imageUrl || null,
         };
         
-        const collectionName = getProductCollectionName();
+        // CORRECTED LOGIC: Ensures the collection is specific to the dispensary type
+        const collectionName = getProductCollectionName(currentDispensary.dispensaryType);
         await addDoc(collection(db, collectionName), productData);
 
         toast({ title: "Success!", description: `Product "${data.name}" has been created.` });
@@ -175,213 +205,213 @@ export default function AddMushroomProductPage() {
     } finally {
         setIsLoading(false);
     }
-  };
-  
+  }; 
   if (authLoading || isLoadingInitialData) {
-     return (
-        <div className="max-w-5xl mx-auto my-8 p-6 space-y-6">
-            <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div>
-            <Skeleton className="h-8 w-1/2" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-                <Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" />
-            </div>
-        </div>
-     );
-  }
-  
-  const showFinalForm = !!selectedProduct;
+    return (
+       <div className="max-w-5xl mx-auto my-8 p-6 space-y-6">
+           <div className="flex items-center justify-between"> <Skeleton className="h-10 w-1/3" /> <Skeleton className="h-9 w-24" /> </div>
+           <Skeleton className="h-8 w-1/2" />
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
+               <Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" />
+           </div>
+       </div>
+    );
+ }
+ 
+ const showFinalForm = !!selectedProduct;
 
-  return (
-    <div className="max-w-7xl mx-auto my-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><Brain className="h-8 w-8 text-primary"/> Add Mushroom Product</h1>
-          <p className="text-muted-foreground mt-1">Follow the steps to add your mushroom product.</p>
-        </div>
-        <Button variant="outline" asChild>
-            <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
-        </Button>
-      </div>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
-            <Card>
-                <CardHeader><CardTitle>Step 1: Select a Product Category</CardTitle></CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {topLevelCategories.map((cat, index) => (
-                        <Card 
-                            key={index} 
-                            onClick={() => handleTopLevelSelect(cat)}
-                            className={cn(
-                                "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
-                                selectedTopLevel?.category_name === cat.category_name && 'border-primary ring-2 ring-primary'
-                            )}
-                        >
-                            <CardHeader className="p-0">
-                                <div className="w-full bg-muted">
-                                    <Image
-                                        src={cat.imageUrl}
-                                        alt={cat.category_name}
-                                        width={768}
-                                        height={512}
-                                        layout="responsive"
-                                        className="object-contain transition-transform duration-300 group-hover:scale-105"
-                                    />
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 flex-grow flex flex-col">
-                                <h3 className="text-lg font-semibold">{cat.category_name}</h3>
-                                <p className="text-sm text-muted-foreground mt-1 flex-grow">{cat.description}</p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </CardContent>
-            </Card>
+ return (
+   <div className="max-w-7xl mx-auto my-8 space-y-8">
+     <div className="flex items-center justify-between">
+       <div>
+         <h1 className="text-3xl font-bold flex items-center gap-2"><Brain className="h-8 w-8 text-primary"/> Add Mushroom Product</h1>
+         <p className="text-muted-foreground mt-1">Follow the steps to add your mushroom product.</p>
+       </div>
+       <Button variant="outline" asChild>
+           <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
+       </Button>
+     </div>
+     <Form {...form}>
+       {/* CORRECTED LOGIC: onSubmit now includes the validation error handler */}
+       <form onSubmit={form.handleSubmit(onSubmit, onValidationErrors)} className="space-y-8">
+           
+           <Card>
+               <CardHeader><CardTitle>Step 1: Select a Product Category</CardTitle></CardHeader>
+               <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {topLevelCategories.map((cat, index) => (
+                       <Card 
+                           key={index} 
+                           onClick={() => handleTopLevelSelect(cat)}
+                           className={cn(
+                               "cursor-pointer hover:border-primary flex flex-col group overflow-hidden transition-all duration-200", 
+                               selectedTopLevel?.category_name === cat.category_name && 'border-primary ring-2 ring-primary'
+                           )}
+                       >
+                           <CardHeader className="p-0">
+                               <div className="w-full bg-muted">
+                                   <Image
+                                       src={cat.imageUrl}
+                                       alt={cat.category_name}
+                                       width={768}
+                                       height={512}
+                                       layout="responsive"
+                                       className="object-contain transition-transform duration-300 group-hover:scale-105"
+                                   />
+                               </div>
+                           </CardHeader>
+                           <CardContent className="p-4 flex-grow flex flex-col">
+                               <h3 className="text-lg font-semibold">{cat.category_name}</h3>
+                               <p className="text-sm text-muted-foreground mt-1 flex-grow">{cat.description}</p>
+                           </CardContent>
+                       </Card>
+                   ))}
+               </CardContent>
+           </Card>
 
-            {selectedTopLevel && (
-                <div className="animate-fade-in-scale-up space-y-6" ref={secondStepRef}>
-                    <Separator />
-                    <h3 className="text-2xl font-bold">Step 2: Select a Specific Product from <span className="text-primary">{selectedTopLevel.category_name}</span></h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {selectedTopLevel.products.map((product: any, index: number) => (
-                            <MushroomProductCard 
-                                key={index} 
-                                product={product} 
-                                onSelect={handleProductSelect}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
+           {selectedTopLevel && (
+               <div className="animate-fade-in-scale-up space-y-6" ref={secondStepRef}>
+                   <Separator />
+                   <h3 className="text-2xl font-bold">Step 2: Select a Specific Product from <span className="text-primary">{selectedTopLevel.category_name}</span></h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                       {selectedTopLevel.products.map((product: any, index: number) => (
+                           <MushroomProductCard 
+                               key={index} 
+                               product={product} 
+                               onSelect={handleProductSelect}
+                           />
+                       ))}
+                   </div>
+               </div>
+           )}
 
 
-            <div ref={finalFormRef}>
-              {showFinalForm && (
-                  <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
-                      <Separator />
-                      <h3 className="text-2xl font-bold border-b pb-2">Step 3: Finalize Product Details</h3>
+           <div ref={finalFormRef}>
+             {showFinalForm && (
+                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
+                     <Separator />
+                     <h3 className="text-2xl font-bold border-b pb-2">Step 3: Finalize Product Details</h3>
 
-                      {selectedTopLevel?.category_name === 'Shamanic Mushrooms' && (
-                        <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
-                          <AlertTriangle className="h-5 w-5 text-red-600" />
-                          <CardTitle className="text-red-700 text-lg">Legal & Responsibility Disclaimer</CardTitle>
-                          <CardDescription className="text-red-600 space-y-2 mt-2">
-                            <p>The Wellness Tree complies with South African Law, which prohibits the sale of certain psychoactive substances. Adding any illegal products to your store is strictly forbidden.</p>
-                            <p className="font-semibold">The Wellness Tree does not monitor your store inventory. The sole responsibility for ensuring all listed products are legal rests with you, the store owner.</p>
-                          </CardDescription>
-                        </Alert>
-                      )}
+                     {selectedTopLevel?.category_name === 'Shamanic Mushrooms' && (
+                       <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
+                         <AlertTriangle className="h-5 w-5 text-red-600" />
+                         <CardTitle className="text-red-700 text-lg">Legal & Responsibility Disclaimer</CardTitle>
+                         <CardDescription className="text-red-600 space-y-2 mt-2">
+                           <p>The Wellness Tree complies with South African Law, which prohibits the sale of certain psychoactive substances. Adding any illegal products to your store is strictly forbidden.</p>
+                           <p className="font-semibold">The Wellness Tree does not monitor your store inventory. The sole responsibility for ensuring all listed products are legal rests with you, the store owner.</p>
+                         </CardDescription>
+                       </Alert>
+                     )}
 
-                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
-                      
-                      <div className="space-y-6">
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
-                          <div className="space-y-4">
-                          {priceTierFields.map((field, index) => (
-                              <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                      <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  </div>
-                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                  <Collapsible>
-                                      <CollapsibleTrigger asChild>
-                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
-                                      </CollapsibleTrigger>
-                                      <CollapsibleContent className="pt-4 space-y-4">
-                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                          </div>
-                                      </CollapsibleContent>
-                                  </Collapsible>
-                              </div>
-                          ))}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
-                          </div>
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                          {watchIsAvailableForPool && (
-                             <Card className="p-4 bg-muted/50 space-y-4">
-                              <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
-                                  <FormItem>
-                                      <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
-                                      <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
-                                          <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
-                                          <SelectContent>
-                                              <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
-                                              <SelectItem value="all_types">Share with all Wellness types</SelectItem>
-                                              <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
-                                          </SelectContent>
-                                      </Select>
-                                      <FormMessage />
-                                  </FormItem>
-                              )}/>
+                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                     
+                     <div className="space-y-6">
+                         <Separator />
+                         <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                         <div className="space-y-4">
+                         {priceTierFields.map((field, index) => (
+                             <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
+                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                     <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                                     <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                     <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                 </div>
+                                 {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                 <Collapsible>
+                                     <CollapsibleTrigger asChild>
+                                         <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                     </CollapsibleTrigger>
+                                     <CollapsibleContent className="pt-4 space-y-4">
+                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                             <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                         </div>
+                                     </CollapsibleContent>
+                                 </Collapsible>
+                             </div>
+                         ))}
+                         <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
+                         </div>
+                         <Separator />
+                         <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
+                         <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                         {watchIsAvailableForPool && (
+                            <Card className="p-4 bg-muted/50 space-y-4">
+                             <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
+                                 <FormItem>
+                                     <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                     <Select onValueChange={field.onChange} value={field.value || 'same_type'}>
+                                         <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
+                                         <SelectContent>
+                                             <SelectItem value="same_type">Share with all dispensaries in my Wellness type</SelectItem>
+                                             <SelectItem value="all_types">Share with all Wellness types</SelectItem>
+                                             <SelectItem value="specific_stores">Share with specific stores only</SelectItem>
+                                         </SelectContent>
+                                     </Select>
+                                     <FormMessage />
+                                 </FormItem>
+                             )}/>
 
-                              {watchPoolSharingRule === 'specific_stores' && (
-                                  <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
-                                    <DispensarySelector 
-                                        allDispensaries={allDispensaries}
-                                        isLoading={isLoadingDispensaries}
-                                        selectedIds={field.value || []}
-                                        onSelectionChange={field.onChange}
-                                    />
-                                  )}/>
-                              )}
+                             {watchPoolSharingRule === 'specific_stores' && (
+                                 <FormField control={form.control} name="allowedPoolDispensaryIds" render={({ field }) => (
+                                   <DispensarySelector 
+                                       allDispensaries={allDispensaries}
+                                       isLoading={isLoadingDispensaries}
+                                       selectedIds={field.value || []}
+                                       onSelectionChange={field.onChange}
+                                   />
+                                 )}/>
+                             )}
 
-                              <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
-                              <CardContent className="p-0 space-y-2">
-                                  {poolPriceTierFields.map((field, index) => (
-                                  <div key={field.id} className="p-3 border rounded-md relative bg-background space-y-4">
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                          <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                                          <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                          <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                      </div>
-                                       {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                                      <Collapsible>
-                                          <CollapsibleTrigger asChild>
-                                              <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
-                                          </CollapsibleTrigger>
-                                          <CollapsibleContent className="pt-4 space-y-4">
-                                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                              </div>
-                                          </CollapsibleContent>
-                                      </Collapsible>
-                                  </div>
-                                  ))}
-                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Pool Price Tier</Button>
-                              </CardContent>
-                            </Card>
-                          )}
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
-                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. The first will be the main one. If none are uploaded, the base product image will be used.</FormDescription><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
-                          <CardFooter className="p-0 pt-6">
-                              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
-                                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
-                                  Add Product
-                              </Button>
-                          </CardFooter>
-                      </div>
-                  </div>
-              )}
-          </div>
-          <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
-          <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
-        </form>
-      </Form>
-    </div>
-  );
+                             <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                             <CardContent className="p-0 space-y-2">
+                                 {poolPriceTierFields.map((field, index) => (
+                                 <div key={field.id} className="p-3 border rounded-md relative bg-background space-y-4">
+                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                         <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                         <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                         <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                     </div>
+                                      {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                     <Collapsible>
+                                         <CollapsibleTrigger asChild>
+                                             <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                         </CollapsibleTrigger>
+                                         <CollapsibleContent className="pt-4 space-y-4">
+                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                                 <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                 <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                 <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                 <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             </div>
+                                         </CollapsibleContent>
+                                     </Collapsible>
+                                 </div>
+                                 ))}
+                                 <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Pool Price Tier</Button>
+                             </CardContent>
+                           </Card>
+                         )}
+                         <Separator />
+                         <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
+                         <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. The first will be the main one. If none are uploaded, the base product image will be used.</FormDescription><FormMessage /></FormItem> )} />
+                         <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+                         <CardFooter className="p-0 pt-6">
+                             <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
+                                 Add Product
+                             </Button>
+                         </CardFooter>
+                     </div>
+                 </div>
+             )}
+         </div>
+         <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
+         <datalist id="pool-units-list"> {poolUnits.map(unit => <option key={unit} value={unit} />)} </datalist>
+       </form>
+     </Form>
+   </div>
+ );
 }
