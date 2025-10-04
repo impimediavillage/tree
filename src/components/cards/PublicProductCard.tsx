@@ -6,7 +6,7 @@ import type { Product, PriceTier } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Info, Leaf as LeafIcon, Sparkles, Brain, Flame, Tag, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, Truck, Handshake } from 'lucide-react';
+import { ShoppingCart, Info, Leaf as LeafIcon, Plus, Minus, Gift, Sparkles, Brain, Flame, Tag, ImageIcon as ImageIconLucide, ChevronLeft, ChevronRight, Truck, Handshake } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext'; 
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -103,15 +103,15 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                         <div className="flex items-center justify-end text-xs text-muted-foreground">
                             <span>{tier.unit}</span>
                             <span className="mx-1">/</span>
-                            <span>Sticker price</span>
+                            <span>Design pack price</span>
                         </div>
                         <p className="text-xs font-semibold text-primary mt-1">
-                            FREE SAMPLE with this sticker
+                            FREE INTERSTORE PRODUCT TRADING WITH TRIPLE S DESIGN SEASONAL BUY IN.
                         </p>
                     </div>
                     <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
                         <p className="text-xs font-semibold text-primary">
-                           Press Buy Design Pack below to request this product for your store.
+                           Buy seasonal design packs with free wholesale products for your store.
                         </p>
                     </div>
                     <div className="w-full space-y-2">
@@ -160,12 +160,15 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               {tier.price.toFixed(2)}
             </p>
             <div className="flex items-center justify-end text-xs text-muted-foreground">
-              <span>{tier.unit}</span>
-              <span className="mx-1">/</span>
-              <span>Sticker price</span>
-            </div>
-            <p className="text-xs font-semibold text-primary mt-1">
-              FREE SAMPLE with this DESIGN PACK.
+              <span>Design pack price</span>
+              <span className="mx-1"></span>
+             </div>
+             <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
+            <p className="text-1xl font-bold text-foreground">
+             <span>{tier.unit} as FREE <Gift className="h-4 w-4 mr-1" />  gift included</span>  
+             </p></div>
+              <p className="text-xs font-semibold text-primary mt-1">
+                 FREE SAMPLE with this DESIGN PACK.
             </p>
           </div>
           <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">

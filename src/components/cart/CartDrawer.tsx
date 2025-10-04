@@ -99,7 +99,7 @@ export function CartDrawer() {
                         {item.productType === 'THC' && item.unit && (
                           <div className="flex items-center text-xs text-green-500 mt-1">
                             <Gift className="h-4 w-4 mr-1" />
-                            <span>Free Sample: {item.unit}</span>
+                            <span> {item.quantity} {item.unit} as FREE gift included.</span>
                           </div>
                         )}
                       </div>
