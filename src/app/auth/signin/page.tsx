@@ -136,13 +136,13 @@ export default function SignInPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12">
-       <Button variant="outline" size="sm" className="absolute top-4 left-4" asChild>
-         <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
-       </Button>
+       
       <Card className="w-full max-w-md shadow-xl">
+      <Button variant="outline" size="sm" className="relative top-4 right-4" asChild>
+         <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to View Tree</Link>
+       </Button>
         <CardHeader className="text-center">
-          <LogInIcon className="mx-auto h-12 w-12 text-primary mb-4" />
-          <CardTitle className="text-3xl font-bold">Welcome Back!</CardTitle>
+         <CardTitle className="text-3xl font-bold">Welcome Back!</CardTitle>
           <CardDescription>Sign in to access your account and AI advisors.</CardDescription>
         </CardHeader>
         <CardContent>
