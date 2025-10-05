@@ -1,3 +1,4 @@
+
 export interface Dispensary {
   id?: string;
   dispensaryName: string;
@@ -29,20 +30,20 @@ export interface PriceTier {
   price: number;
   quantityInStock: number;
   description?: string;
-  weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
+  weightKgs?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
 }
 
 export interface PoolPriceTier {
   unit: string;
   price: number;
   description?: string;
-  weight?: number;
-  length?: number;
-  width?: number;
-  height?: number;
+  weightCm?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
 }
 
 export interface ProductAttribute {
@@ -86,4 +87,31 @@ export interface Product {
   dispensaryType?: string | null;
   poolSharingRule?: 'same_type' | 'all_types' | 'specific_stores' | null;
   allowedPoolDispensaryIds?: string[];
+}
+
+// --- DEFINITIVE CART ITEM TYPE ---
+export interface CartItem {
+  id: string;
+  productId: string;
+  name: string;
+  description?: string;
+  category: string;
+  strain?: string | null;
+  dispensaryId: string;
+  dispensaryName: string;
+  dispensaryType?: string | null;
+  productOwnerEmail: string;
+  currency?: string;
+  price: number;
+  unit: string;
+  quantity: number;
+  quantityInStock: number;
+  imageUrl?: string | null;
+  sampleAmount?: number;
+  productType: Product['productType'];
+  // Correct, simple names for the backend
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
 }

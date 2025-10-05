@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { ProductCategory as ProductCategoryType } from '../functions/src/types';
 
 
-const timeFormatRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const timeFormatRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
 const timeErrorMessage = "Invalid time format (HH:MM). Leave empty if not applicable.";
 
 const baseWellnessSchema = z.object({
@@ -21,6 +21,7 @@ const baseWellnessSchema = z.object({
   location: z.string().min(5, { message: "Location address must be at least 5 characters." }),
   latitude: z.number({invalid_type_error: "Invalid latitude"}).optional().nullable(),
   longitude: z.number({invalid_type_error: "Invalid longitude"}).optional().nullable(),
+  showLocation: z.boolean().default(true).optional(),
   deliveryRadius: z.string().optional().nullable(),
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
 });

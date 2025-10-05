@@ -49,7 +49,14 @@ const countryCodes = [
   { value: "+49", flag: "🇩🇪", shortName: "DE", code: "+49" },
   { value: "+33", flag: "🇫🇷", shortName: "FR", code: "+33" },
 ];
-
+const allShippingMethods = [
+    { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+    { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+    { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+    { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+    { id: "collection", label: "Collection from store" },
+    { id: "in_house", label: "In-house delivery service" },
+];
 function parseTimeToComponents(time24?: string): { hour?: string, minute?: string, amPm?: string } {
   if (!time24 || !time24.match(/^([01]\d|2[0-3]):([0-5]\d)$/)) return {};
   const [hourStr, minuteStr] = time24.split(':');
@@ -101,6 +108,8 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
         latitude: dispensary.latitude === null ? undefined : dispensary.latitude,
         longitude: dispensary.longitude === null ? undefined : dispensary.longitude,
         operatingDays: dispensary.operatingDays || [],
+        shippingMethods: dispensary.shippingMethods || [],
+        showLocation: dispensary.showLocation ?? true, // 
       });
       const openTimeComps = parseTimeToComponents(dispensary.openTime);
       setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
@@ -212,7 +221,7 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
             <DialogTitle
                 className="text-3xl flex items-center text-foreground"
             >
-                <Building className="mr-3 h-8 w-8 text-primary" /> Edit Wellness Profile
+                <Building className="mr-3 h-8 w-8 text-primary" /> Edit Store / Club
             </DialogTitle>
             <DialogDescription
                 className="text-foreground"
@@ -235,11 +244,11 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
                 <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Wellness Information</h2>
                 <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                    <FormItem><FormLabel>Wellness Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Store / Club Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="dispensaryType" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Wellness Type</FormLabel>
+                        <FormLabel>Store / Club type</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                         <SelectContent>{allDispensaryTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent>
@@ -268,8 +277,35 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
                 </div>
 
                 <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Contact</h2>
+                <FormField
+                  control={form.control}
+                  name="showLocation"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Show store location?</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === 'true')}
+                        value={field.value ? 'true' : 'false'}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select an option" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="true">Yes</SelectItem>
+                          <SelectItem value="false">No</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        If set to No, the exact address will be hidden from the public store page.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField control={form.control} name="location" render={({ field }) => (
-                <FormItem><FormLabel>Wellness Location / Address</FormLabel>
+                <FormItem><FormLabel>Store / club Location / Address</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
                     <FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage />
                 </FormItem>
@@ -327,6 +363,46 @@ export function EditDispensaryDialog({ dispensary, isOpen, onOpenChange, onDispe
                 )}/>
 
                 <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Operations & Delivery</h2>
+                <FormField
+  control={form.control}
+  name="shippingMethods"
+  render={() => (
+    <FormItem>
+      <FormLabel>Shipping Methods Offered</FormLabel>
+      <FormDescription>Select all shipping methods this store supports.</FormDescription>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {allShippingMethods.map((method) => (
+          <FormField
+            key={method.id}
+            control={form.control}
+            name="shippingMethods"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value?.includes(method.id)}
+                    onCheckedChange={(checked) => {
+                      const currentMethods = field.value || [];
+                      return checked
+                        ? field.onChange([...currentMethods, method.id])
+                        : field.onChange(
+                            currentMethods.filter(
+                              (value) => value !== method.id
+                            )
+                          );
+                    }}
+                  />
+                </FormControl>
+                <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+              </FormItem>
+            )}
+          />
+        ))}
+      </div>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
                 <div className="grid md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>

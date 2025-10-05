@@ -1,13 +1,13 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import { db, functions } from '@/lib/firebase';
+import { auth, db, functions } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import type { CartItem } from '@/types';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import type { CartItem, Dispensary } from '@/types';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,8 +23,11 @@ import { Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Label } from "@/components/ui/label";
 import { PaymentStep } from './PaymentStep';
 
+// --- SCHEMAS AND TYPES ---
+
 const addressSchema = z.object({
   fullName: z.string().min(3, 'Full name is required'),
+  email: z.string().email('Please enter a valid email address'),
   phoneNumber: z.string().min(10, 'A valid phone number is required'),
   shippingAddress: z.object({
     address: z.string().min(5, 'Please enter a valid address.'),
@@ -41,7 +44,18 @@ const addressSchema = z.object({
 type AddressValues = z.infer<typeof addressSchema>;
 interface ShippingRate { id: number; name: string; rate: number; service_level: string; delivery_time: string; courier_name: string; }
 
-const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; }) => {
+const allShippingMethodsMap: { [key: string]: string } = {
+  "dtd": "Door-to-Door Courier (The Courier Guy)",
+  "dtl": "Door-to-Locker (Pudo)",
+  "ltd": "Locker-to-Door (Pudo)",
+  "ltl": "Locker-to-Locker (Pudo)",
+  "collection": "Collection from Store",
+  "in_house": "In-house Delivery Service",
+};
+
+// --- CHILD COMPONENTS ---
+
+const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean }) => {
     const locationInputRef = useRef<HTMLInputElement>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInitialized = useRef(false);
@@ -59,14 +73,8 @@ const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; 
         mapInitialized.current = true;
 
         try {
-            const loader = new Loader({
-                apiKey: apiKey,
-                version: 'weekly',
-                libraries: ['places'],
-            });
-
+            const loader = new Loader({ apiKey: apiKey, version: 'weekly', libraries: ['places'] });
             const google = await loader.load();
-            
             const initialPosition = { lat: -29.8587, lng: 31.0218 };
             
             const mapInstance = new google.maps.Map(mapContainerRef.current!, {
@@ -78,18 +86,11 @@ const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; 
                 fullscreenControl: false,
             });
 
-            const markerInstance = new google.maps.Marker({
-                map: mapInstance,
-                position: initialPosition,
-                draggable: true,
-                title: 'Drag to set location'
-            });
+            const markerInstance = new google.maps.Marker({ map: mapInstance, position: initialPosition, draggable: true, title: 'Drag to set location' });
 
             const setAddressComponents = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
                 const components: { [key: string]: string } = {};
-                place.address_components?.forEach(component => {
-                    components[component.types[0]] = component.long_name;
-                });
+                place.address_components?.forEach(component => { components[component.types[0]] = component.long_name; });
                 form.setValue('shippingAddress.street_number', components['street_number'] || '');
                 form.setValue('shippingAddress.route', components['route'] || '');
                 form.setValue('shippingAddress.locality', components['locality'] || '');
@@ -126,9 +127,8 @@ const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; 
                  form.setValue('shippingAddress.longitude', latLng.lng(), { shouldValidate: true, shouldDirty: true });
                  geocoder.geocode({ location: latLng }, (results, status) => {
                     if (status === 'OK' && results?.[0]) {
-                        const place = results[0];
-                        form.setValue('shippingAddress.address', place.formatted_address || '', { shouldValidate: true, shouldDirty: true });
-                        setAddressComponents(place);
+                        form.setValue('shippingAddress.address', results[0].formatted_address || '', { shouldValidate: true, shouldDirty: true });
+                        setAddressComponents(results[0]);
                     }
                 });
             }
@@ -137,7 +137,7 @@ const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; 
 
         } catch (err) {
             console.error('Google Maps API Error:', err);
-            toast({ title: 'Map Error', description: 'Could not load Google Maps. Please check your connection and try again.', variant: 'destructive' });
+            toast({ title: 'Map Error', description: 'Could not load Google Maps.', variant: 'destructive' });
         }
     }, [form, toast]);
 
@@ -150,53 +150,52 @@ const AddressStep = ({ form, onContinue }: { form: any; onContinue: () => void; 
     return (
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onContinue)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="you@email.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
-
-                <FormField
-                    control={form.control}
-                    name="shippingAddress.address"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Shipping Address</FormLabel>
-                            <FormControl>
-                                <Input
-                                    placeholder="Start typing your address..."
-                                    {...field}
-                                    ref={locationInputRef}
-                                    onChange={(e) => {
-                                        field.onChange(e);
-                                        if (form.getValues('shippingAddress.latitude') !== 0) {
-                                            form.setValue('shippingAddress.latitude', 0);
-                                            form.setValue('shippingAddress.longitude', 0);
-                                        }
-                                    }}
-                                />
-                            </FormControl>
-                            <FormDescription>Select an address from the suggestions to pinpoint it on the map.</FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                
+                <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="shippingAddress.address" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Shipping Address</FormLabel>
+                        <FormControl><Input placeholder="Start typing your address..." {...field} ref={locationInputRef} onChange={(e) => { field.onChange(e); if (form.getValues('shippingAddress.latitude') !== 0) { form.setValue('shippingAddress.latitude', 0); form.setValue('shippingAddress.longitude', 0); } }}/></FormControl>
+                        <FormDescription>Select an address from the suggestions to pinpoint it on the map.</FormDescription>
+                        <FormMessage />
+                    </FormItem>
+                )}/>
                 <div ref={mapContainerRef} className="h-[250px] w-full rounded-md border bg-muted" />
                 <FormDescription>Or, click on the map or drag the marker to set your precise location.</FormDescription>
-                
-                <Button type="submit" className="w-full pt-6">Continue to Delivery Option <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                <Button type="submit" disabled={isSubmitting} className="w-full pt-6">
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Continue to Delivery Option 
+                    {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
             </form>
         </FormProvider>
     );
 };
 
-const ShippingTierStep = ({ onSelectTier, onBack }: { onSelectTier: (tier: string) => void; onBack: () => void; }) => {
-    const availableTiers = ["Door-to-Door Delivery", "Local Delivery", "Collection Point"];
+const ShippingTierStep = ({ shippingMethods, onSelectTier, onBack }: { shippingMethods: string[]; onSelectTier: (tier: string) => void; onBack: () => void; }) => {
+    if (!shippingMethods || shippingMethods.length === 0) {
+        return (
+             <div className="space-y-6 text-center">
+                <h3 className="text-lg font-semibold">No Delivery Options Available</h3>
+                <p className="text-muted-foreground">This dispensary has not configured any shipping or collection methods.</p>
+                <Button variant="outline" onClick={onBack} className="mt-4"><ArrowLeft className="mr-2 h-4 w-4" /> Go Back</Button>
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-6">
             <h3 className="text-lg font-semibold">How would you like to receive your order?</h3>
             <RadioGroup onValueChange={onSelectTier} className="space-y-3">
-                {availableTiers.map(tier => (<Label key={tier} className="flex items-center space-x-3 border rounded-md p-4 hover:bg-accent has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all cursor-pointer"><RadioGroupItem value={tier} id={tier} /><span>{tier}</span></Label>))}
+                {shippingMethods.map(tier => (
+                    <Label key={tier} className="flex items-center space-x-3 border rounded-md p-4 hover:bg-accent has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all cursor-pointer">
+                        <RadioGroupItem value={tier} id={tier} />
+                        <span>{allShippingMethodsMap[tier] || tier}</span>
+                    </Label>
+                ))}
             </RadioGroup>
             <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Go Back</Button>
         </div>
@@ -208,14 +207,9 @@ const ShippingMethodStep = ({ rates, isLoading, error, onBack, onContinue, selec
     if (error) return <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md"><h4>Error Fetching Rates</h4><p>{error}</p><Button variant="outline" onClick={onBack} className="mt-4">Try Again</Button></div>;
     if (rates.length === 0) return <div className="text-center text-muted-foreground p-8"><p>No shipping methods available for this address.</p><Button variant="outline" onClick={onBack} className="mt-4">Go Back</Button></div>;
 
-    const handleSelection = (rateId: string) => {
-        const rate = rates.find(r => r.id.toString() === rateId);
-        if (rate) onSelectRate(rate);
-    }
-
     return (
         <form onSubmit={(e) => { e.preventDefault(); onContinue(); }} className="space-y-6">
-            <RadioGroup value={selectedRate?.id.toString()} onValueChange={handleSelection} name="shippingMethod" className="space-y-3">
+            <RadioGroup value={selectedRate?.id.toString()} onValueChange={(rateId) => { const rate = rates.find(r => r.id.toString() === rateId); if (rate) onSelectRate(rate); }} name="shippingMethod" className="space-y-3">
                 {rates.map(rate => (<Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary"><p className="font-semibold">{rate.courier_name} ({rate.name})</p><p className="font-bold">R{rate.rate.toFixed(2)}</p><RadioGroupItem value={rate.id.toString()} id={rate.id.toString()} className="sr-only" /></Label>))}
             </RadioGroup>
             <div className="flex justify-between items-center">
@@ -226,25 +220,28 @@ const ShippingMethodStep = ({ rates, isLoading, error, onBack, onContinue, selec
     );
 };
 
+
+// --- MAIN CHECKOUT FLOW COMPONENT ---
+
 export function CheckoutFlow() {
     const { cartItems, loading: cartLoading, getCartTotal } = useCart();
-    const { firebaseUser, currentUser } = useAuth(); // Use firebaseUser for auth checks
+    const { firebaseUser, currentUser } = useAuth();
+    const { toast } = useToast();
     const [step, setStep] = useState(1);
-    const [dispensaryId, setDispensaryId] = useState<string | null>(null);
+    
+    const [dispensary, setDispensary] = useState<Dispensary | null>(null);
     const [addressData, setAddressData] = useState<AddressValues | null>(null);
     const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
     const [selectedRate, setSelectedRate] = useState<ShippingRate | null>(null);
+    
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingRates, setIsLoadingRates] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
     const [isDispensaryLoading, setIsDispensaryLoading] = useState(true);
 
     const form = useForm<AddressValues>({
         resolver: zodResolver(addressSchema),
-        defaultValues: {
-            fullName: '',
-            phoneNumber: '',
-            shippingAddress: { address: '', latitude: 0, longitude: 0 }
-        },
+        defaultValues: { fullName: '', email: '', phoneNumber: '', shippingAddress: { address: '', latitude: 0, longitude: 0 } },
         mode: 'onChange'
     });
 
@@ -252,63 +249,119 @@ export function CheckoutFlow() {
         if (!cartLoading) {
             if(cartItems.length > 0) {
                 const id = cartItems[0].dispensaryId;
-                if (id) setDispensaryId(id);
+                if (id) {
+                    setIsDispensaryLoading(true);
+                    getDoc(doc(db, 'dispensaries', id))
+                        .then(docSnap => {
+                            if (docSnap.exists()) {
+                                setDispensary({ id: docSnap.id, ...docSnap.data() } as Dispensary);
+                            } else {
+                                setApiError('Dispensary not found.');
+                            }
+                        })
+                        .catch(err => setApiError("Failed to load dispensary data."))
+                        .finally(() => setIsDispensaryLoading(false));
+                }
                 else setApiError("Dispensary information is missing from your cart.");
             } else {
-                setApiError("Your cart is empty.");
+                 setIsDispensaryLoading(false);
             }
         }
     }, [cartItems, cartLoading]);
-    
-    useEffect(() => {
-        if (dispensaryId) {
-            setIsDispensaryLoading(true);
-            getDoc(doc(db, 'dispensaries', dispensaryId))
-                .then(docSnap => {
-                    if (!docSnap.exists()) setApiError('Dispensary not found.');
-                })
-                .catch(err => setApiError("Failed to load dispensary data."))
-                .finally(() => setIsDispensaryLoading(false));
-        }
-    }, [dispensaryId]);
 
-    const handleAddressContinue = (values: AddressValues) => {
-        setAddressData(values);
-        setStep(2);
+    const handleAddressContinue = async (values: AddressValues) => {
+        setIsSubmitting(true);
+        try {
+            // If user is already logged in, just proceed
+            if (firebaseUser) {
+                setAddressData(values);
+                setStep(2);
+                return;
+            }
+
+            // Check if user account exists
+            const methods = await fetchSignInMethodsForEmail(auth, values.email);
+
+            if (methods.length > 0) {
+                // User exists, but is not logged in.
+                toast({
+                    title: "An account with this email already exists.",
+                    description: "Please log in to continue your purchase.",
+                    variant: "destructive",
+                    duration: 5000,
+                });
+                return;
+            }
+
+            // User does not exist, create a new account
+            toast({
+                title: "Creating your account...",
+                description: "For your convenience, we're setting up an account for you to track your orders.",
+            });
+            
+            // Generate a secure random password for the new user
+            const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
+            const newUser = userCredential.user;
+
+            if (newUser) {
+                // Save user details to a 'users' collection in Firestore
+                await setDoc(doc(db, "users", newUser.uid), {
+                    uid: newUser.uid,
+                    email: values.email,
+                    name: values.fullName,
+                    phoneNumber: values.phoneNumber,
+                    role: 'approved' // Set user role as requested
+                });
+            } else {
+                throw new Error("Could not create user account.");
+            }
+            
+            // The onAuthStateChanged listener in AuthContext will handle the login state.
+            // Now we can proceed.
+            setAddressData(values);
+            setStep(2);
+
+        } catch (error: any) {
+            console.error("Error during user creation/check:", error);
+            toast({
+                title: "Authentication Error",
+                description: error.message || "An unexpected error occurred. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleTierSelection = async (tier: string) => {
         setApiError(null);
-        if (tier === 'Door-to-Door Delivery') {
-            if (!addressData || !dispensaryId || !firebaseUser) { // Check firebaseUser
-                setApiError('You must be signed in to fetch shipping rates.');
+        setSelectedRate(null);
+        setShippingRates([]);
+
+        const isCourierService = ['dtd', 'dtl', 'ltd', 'ltl'].includes(tier);
+
+        if (isCourierService) {
+            if (!addressData || !dispensary || !firebaseUser) {
+                setApiError('You must be signed in and have a valid address to fetch shipping rates.');
                 return;
             }
 
             setIsLoadingRates(true);
-            setShippingRates([]);
             try {
                 const getShiplogicRates = httpsCallable(functions, 'getShiplogicRates');
-                
                 const payload = {
                     cart: cartItems,
-                    dispensaryId,
+                    dispensaryId: dispensary.id,
                     deliveryAddress: addressData.shippingAddress,
-                    customer: {
-                        name: addressData.fullName,
-                        email: currentUser?.email, // Still use currentUser for profile info
-                        phone: addressData.phoneNumber
-                    }
+                    customer: { name: addressData.fullName, email: currentUser?.email, phone: addressData.phoneNumber }
                 };
-                
                 const result = await getShiplogicRates(payload);
                 const data = result.data as { rates: ShippingRate[] };
-
                 if (data.rates && data.rates.length > 0) {
                     setShippingRates(data.rates);
-                    setSelectedRate(data.rates[0]); // Auto-select the first rate
                 } else {
-                    setApiError("No shipping rates could be found for the provided address.");
+                    setApiError("No courier rates could be found for the provided address.");
                 }
             } catch (err: any) {
                 console.error("Error calling getShiplogicRates:", err);
@@ -316,11 +369,23 @@ export function CheckoutFlow() {
             } finally {
                 setIsLoadingRates(false);
             }
-            setStep(3); // Move to the next step to show rates or errors
+            setStep(3);
+        } else if (tier === 'collection') {
+            const collectionRate: ShippingRate = {
+                id: 999, name: 'In-Store Collection', rate: 0, service_level: 'collection',
+                delivery_time: 'N/A', courier_name: 'Collect at dispensary',
+            };
+            setSelectedRate(collectionRate);
+            setStep(4);
+        } else if (tier === 'in_house') {
+            const inHouseRate: ShippingRate = {
+                id: 998, name: 'Local Delivery', rate: 50.00, // Placeholder fee
+                service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: 'In-house delivery',
+            };
+            setSelectedRate(inHouseRate);
+            setStep(4);
         } else {
-            setShippingRates([]); 
-            setSelectedRate(null);
-            setApiError(`'${tier}' is not yet supported.`);
+            setApiError(`'${allShippingMethodsMap[tier] || tier}' is not currently supported.`);
         }
     };
     
@@ -336,28 +401,27 @@ export function CheckoutFlow() {
 
     const renderContent = () => {
         if (isLoading) {
-            return (
-                <div className="flex justify-center items-center min-h-[50vh]">
-                   <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                </div>
-            );
+            return <div className="flex justify-center items-center min-h-[50vh]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
         }
         if (apiError && step < 2) {
-            return (
-                <div className="text-center p-8 text-destructive bg-destructive/10 rounded-lg">
-                    <h3>Something Went Wrong</h3>
-                    <p>{apiError}</p>
-                </div>
-            );
+            return <div className="text-center p-8 text-destructive bg-destructive/10 rounded-lg"><h3>Something Went Wrong</h3><p>{apiError}</p></div>;
         }
+        if (cartItems.length === 0 && !cartLoading) {
+             return <div className="text-center p-8 text-muted-foreground"><h3>Your Cart is Empty</h3><p>Add some items to your cart to begin the checkout process.</p></div>;
+        }
+
 
         return (
             <>
                 <div style={{ display: step === 1 ? 'block' : 'none' }}>
-                    <AddressStep form={form} onContinue={handleAddressContinue} />
+                    <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} />
                 </div>
                 <div style={{ display: step === 2 ? 'block' : 'none' }}>
-                    <ShippingTierStep onSelectTier={handleTierSelection} onBack={() => setStep(1)} />
+                    <ShippingTierStep 
+                        shippingMethods={dispensary?.shippingMethods || []}
+                        onSelectTier={handleTierSelection} 
+                        onBack={() => setStep(1)} 
+                    />
                 </div>
                 <div style={{ display: step === 3 ? 'block' : 'none' }}>
                     <ShippingMethodStep 
@@ -365,17 +429,17 @@ export function CheckoutFlow() {
                         isLoading={isLoadingRates} 
                         error={apiError} 
                         onBack={() => { setApiError(null); setStep(2); }} 
-                        onContinue={handleShippingMethodContinue} 
-                        selectedRate={selectedRate} 
+                        onContinue={handleShippingMethodContinue}
+                        selectedRate={selectedRate}
                         onSelectRate={setSelectedRate} />
                 </div>
                 <div style={{ display: step === 4 ? 'block' : 'none' }}>
                     {addressData && selectedRate && (
-                        <PaymentStep 
-                            cart={cartItems} 
+                        <PaymentStep
+                            cart={cartItems}
                             shippingMethod={selectedRate}
                             shippingAddress={addressData}
-                            onBack={() => setStep(3)} />
+                            onBack={() => setStep(selectedRate.service_level === 'collection' || selectedRate.service_level === 'local' ? 2 : 3)} />
                     )}
                 </div>
             </>
@@ -429,3 +493,7 @@ export function CheckoutFlow() {
         </div>
     );
 }
+
+
+
+

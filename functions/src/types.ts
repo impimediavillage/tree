@@ -8,6 +8,10 @@ export interface PriceTier {
   price: number;
   quantityInStock?: number | null;
   description?: string | null;
+  weightKgs?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
 }
 
 // Updated ProductCategory to support nesting
@@ -43,7 +47,8 @@ export interface Dispensary {
   approvedDate?: Timestamp | Date | string | null;
   lastActivityDate?: Timestamp | Date | string | null;
   publicStoreUrl?: string | null;
-
+  showLocation: boolean;
+  shippingMethods: string[];
   productCount?: number;
   incomingRequestCount?: number;
   outgoingRequestCount?: number;

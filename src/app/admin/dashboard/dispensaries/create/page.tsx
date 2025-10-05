@@ -65,6 +65,15 @@ const countryCodes = [
   { value: "+33", flag: "🇫🇷", shortName: "FR", code: "+33" },
 ];
 
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from store" },
+  { id: "in_house", label: "In-house delivery service" },
+];
+
 export default function AdminCreateWellnessPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -100,6 +109,8 @@ export default function AdminCreateWellnessPage() {
       dispensaryType: undefined, currency: undefined, openTime: '', closeTime: '',
       operatingDays: [], location: '', latitude: undefined, longitude: undefined,
       deliveryRadius: undefined, 
+      shippingMethods: [], // <-- ADD THIS LINE
+      showLocation: true,
       message: '', status: 'Pending Approval',
     },
   });
@@ -323,7 +334,7 @@ export default function AdminCreateWellnessPage() {
       };
       await addDoc(collection(db, 'dispensaries'), wellnessData);
       toast({
-        title: "Wellness Entity Created!",
+        title: "Store Created!",
         description: `${data.dispensaryName} has been successfully created. If 'Approved', the owner role process will initiate.`,
       });
       form.reset();
@@ -333,8 +344,8 @@ export default function AdminCreateWellnessPage() {
       setNationalPhoneNumber('');
       router.push('/admin/dashboard/dispensaries');
     } catch (error) {
-      console.error("Error creating wellness entity:", error);
-      toast({ title: "Creation Failed", description: "Could not create wellness entity.", variant: "destructive" });
+      console.error("Error creating store:", error);
+      toast({ title: "Creation Failed", description: "Could not create store.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -367,7 +378,7 @@ export default function AdminCreateWellnessPage() {
             className="text-3xl flex items-center text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
-            <Building className="mr-3 h-8 w-8 text-primary" /> Create New Store or Club
+            <Building className="mr-3 h-8 w-8 text-primary" /> Add Store or Club
           </CardTitle>
           <Button variant="outline" size="sm" asChild>
             <Link href="/admin/dashboard/dispensaries"><ArrowLeft className="mr-2 h-4 w-4" /> Back to List</Link>
@@ -400,7 +411,7 @@ export default function AdminCreateWellnessPage() {
               )} />
               <FormField control={form.control} name="dispensaryType" render={({ field }) => (
                  <FormItem>
-                    <FormLabel>Wellness store Type</FormLabel>
+                    <FormLabel>Store / Club Type</FormLabel>
                     <div className="flex items-center gap-2">
                         <Select onValueChange={field.onChange} value={field.value || undefined}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
@@ -414,7 +425,7 @@ export default function AdminCreateWellnessPage() {
                                     <Button type="button" variant="outline" size="icon" className="shrink-0"><PlusCircle className="h-4 w-4" /></Button>
                                 </DialogTrigger>
                                 <DialogContent>
-                                    <DialogHeader><DialogTitle>Add New Wellness Type</DialogTitle>
+                                    <DialogHeader><DialogTitle>Add New type</DialogTitle>
                                     <DialogDescription>Enter the name and optionally icon/image paths for the new type.</DialogDescription></DialogHeader>
                                     <div className="space-y-3 py-2">
                                         <Input value={newWellnessTypeName} onChange={(e) => setNewWellnessTypeName(e.target.value)} placeholder="New type name (e.g., Wellness Center)" />
@@ -464,6 +475,36 @@ export default function AdminCreateWellnessPage() {
             <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
             
+            <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
+            <FormField
+              control={form.control}
+              name="showLocation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Show store location?</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(value === 'true')}
+                    defaultValue={field.value ? 'true' : 'false'}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an option" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="true">Yes</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    If set to No, the exact address will be hidden from the public store page.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
+
             <FormItem>
                 <FormLabel>Owner's Phone</FormLabel>
                 <div className="flex items-center gap-2">
@@ -555,7 +596,35 @@ export default function AdminCreateWellnessPage() {
               </FormItem>
             )}/>
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
+
+
+ <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
+<FormField control={form.control} name="shippingMethods" render={() => (
+  <FormItem>
+    <FormLabel>Shipping Methods Offered</FormLabel>
+    <FormDescription>Select all shipping methods your store will support.</FormDescription>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {allShippingMethods.map((method) => (
+        <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+            <FormControl>
+              <Checkbox
+                checked={field.value?.includes(method.id)}
+                onCheckedChange={(checked) => {
+                  return checked
+                    ? field.onChange([...(field.value || []), method.id])
+                    : field.onChange(field.value?.filter((value) => value !== method.id))
+                }}
+              />
+            </FormControl>
+            <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+          </FormItem>
+        )}/>
+      ))}
+    </div>
+    <FormMessage />
+  </FormItem>
+)}/>
             <div className="grid md:grid-cols-2 gap-6">
               <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
                 <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>

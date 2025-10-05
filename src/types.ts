@@ -13,6 +13,10 @@ export interface PriceTier {
   quantityInStock?: number | null;
   description?: string | null;
   sampleAmount?: number;
+  weightKgs?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
 }
 
 // Updated ProductCategory to support nesting
@@ -43,11 +47,11 @@ export interface Dispensary {
   approvedDate?: Timestamp | Date | string | null;
   lastActivityDate?: Timestamp | Date | string | null;
   publicStoreUrl?: string | null;
-
+  shippingMethods: string[];
   productCount?: number;
   incomingRequestCount?: number;
   outgoingRequestCount?: number;
-
+  showLocation: boolean;
   averageRating?: number | null;
   reviewCount?: number;
 }
@@ -133,12 +137,6 @@ export interface Product {
   allowedPoolDispensaryIds?: string[] | null;
   tags?: string[] | null;
   
-  // Physical Dimensions for shipping
-  weight?: number | null;
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
-
   createdAt: Timestamp | Date | string;
   updatedAt: Timestamp | Date | string;
   dispensaryLocation?: {
@@ -330,7 +328,7 @@ export interface AIInteractionLog {
   id?: string;
   userId: string;
   dispensaryId?: string | null;
-  advisorSlug:.string;
+  advisorSlug:string;
   creditsUsed: number;
   wasFreeInteraction: boolean;
   timestamp: Timestamp | Date | string;
@@ -399,7 +397,7 @@ export interface CartItem {
   length?: number | null;
   width?: number | null;
   height?: number | null;
-}
+  }
 
 // Types for generated brand assets
 export interface GenerateInitialLogosInput {

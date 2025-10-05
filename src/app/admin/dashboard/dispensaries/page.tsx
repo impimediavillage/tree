@@ -110,11 +110,11 @@ export default function AdminWellnessPage() {
     }
     try {
       await deleteDoc(doc(db, 'dispensaries', wellnessId));
-      toast({ title: "Wellness Profile Deleted", description: `${wellnessName} has been removed.` });
+      toast({ title: "Store Deleted", description: `${wellnessName} has been removed.` });
       fetchWellnessAndTypes(); 
     } catch (error) {
-      console.error("Error deleting wellness profile:", error);
-      toast({ title: "Deletion Failed", description: "Could not delete wellness profile.", variant: "destructive" });
+      console.error("Error deleting store:", error);
+      toast({ title: "Deletion Failed", description: "Could not delete store.", variant: "destructive" });
     }
   };
 
@@ -129,13 +129,13 @@ export default function AdminWellnessPage() {
               className="text-3xl font-bold flex items-center gap-2 text-foreground"
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              <Building className="h-8 w-8 text-primary" /> Manage Wellness Profiles
+              <Building className="h-8 w-8 text-primary" /> Manage Stores
             </h1>
             <p 
               className="text-foreground" 
               style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >
-              View, edit, approve, or suspend wellness applications and profiles.
+              View, edit, approve, or suspend applications and store profiles.
             </p>
           </div>
           <Button asChild>
@@ -188,7 +188,7 @@ export default function AdminWellnessPage() {
         {isLoading ? (
           <div className="flex justify-center items-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2 text-muted-foreground">Loading wellness profiles...</p>
+            <p className="ml-2 text-muted-foreground">Loading profiles...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">

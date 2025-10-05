@@ -4,9 +4,9 @@ import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem } from './types';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody } from './types';
 
-// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============/
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
@@ -24,7 +24,6 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
     const userId = event.params.userId;
     const afterData = event.data?.after.data() as UserDocData | undefined;
 
-    // Handle user deletion
     if (!afterData) {
         logger.info(`User document ${userId} deleted. Revoking custom claims.`);
         try {
@@ -33,14 +32,13 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         } catch (error) {
             logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
         }
-        return; // Exit function
+        return;
     }
 
-    // Handle user creation or update
     const validRoles: AllowedUserRole[] = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
     const role: AllowedUserRole = afterData.role && validRoles.includes(afterData.role as AllowedUserRole)
         ? afterData.role as AllowedUserRole
-        : 'User'; // Default to 'User'
+        : 'User';
         
     const dispensaryId = afterData.dispensaryId || null;
     let dispensaryType: string | null = null;
@@ -49,7 +47,6 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         try {
             const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
             if (dispensaryDoc.exists) {
-                // Safely access dispensaryType, defaulting to null if it's missing.
                 dispensaryType = dispensaryDoc.data()?.dispensaryType || null;
             }
         } catch (error) {
@@ -57,7 +54,6 @@ export const onUserWriteSetClaims = onDocumentWritten("users/{userId}", async (e
         }
     }
     
-    // Ensure claims object is always created, even if dispensaryType is null.
     const claims: { [key: string]: any } = { 
         role, 
         dispensaryId, 
@@ -106,21 +102,21 @@ export const getUserProfile = onCall(async (request: CallableRequest): Promise<A
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const { uid, token } = request.auth; // The decoded token IS the auth object in v2 onCall
+    const { uid, token } = request.auth; 
 
     try {
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
 
         if (!userDocSnap.exists) {
-            logger.warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`);
-            throw new HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
+            logger.warn(`User document not found for uid: ${uid}.`);
+            throw new HttpsError('not-found', 'Your user profile data could not be found.');
         }
         
         const userData = userDocSnap.data() as UserDocData;
         
         let dispensaryData: Dispensary | null = null;
-        if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
+        if (userData.dispensaryId) {
             const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
             const dispensaryDocSnap = await dispensaryDocRef.get();
             
@@ -196,7 +192,7 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
             const currentCredits = userData.credits || 0;
 
             if (!wasFreeInteraction) {
-                if (currentCredits < creditsToDeduct && creditsToDeduct > 0) { // Only check if credits are needed
+                if (currentCredits < creditsToDeduct && creditsToDeduct > 0) {
                     throw new HttpsError('failed-precondition', 'Insufficient credits.');
                 }
                 newCreditBalance = currentCredits - creditsToDeduct;
@@ -207,7 +203,7 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
 
             const logEntry = {
                 userId,
-                dispensaryId: dispensaryId, // Use dispensaryId from auth token
+                dispensaryId: dispensaryId,
                 advisorSlug,
                 creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -252,14 +248,12 @@ export const getCannabinoidProductCategories = onCall({ cors: true }, async (req
 
         const docData = querySnapshot.docs[0].data();
         
-        // Navigate through the nested map structure to get to the 'Delivery Methods'
         const deliveryMethods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
         
         if (!deliveryMethods || typeof deliveryMethods !== 'object') {
             throw new HttpsError('not-found', `The 'Delivery Methods' structure for the '${stream}' stream is invalid or missing.`);
         }
         
-        // Return the specific 'Delivery Methods' map
         return deliveryMethods;
 
     } catch (error: any) {
@@ -271,17 +265,13 @@ export const getCannabinoidProductCategories = onCall({ cors: true }, async (req
     }
 });
 
-
-// New Cloud Function to search for strains
 export const searchStrains = onCall({ cors: true }, async (request: CallableRequest<{ searchTerm: string; }>) => {
-    // This function is publicly callable, no auth check needed as per requirements.
     const { searchTerm } = request.data;
 
     if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
         throw new HttpsError('invalid-argument', 'A valid search term must be provided.');
     }
     
-    // Capitalize the first letter of each word for case-insensitive-like matching
     const toTitleCase = (str: string) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     const processedTerm = toTitleCase(searchTerm.trim());
 
@@ -307,7 +297,6 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
     }
 });
 
-
 export const createDispensaryUser = onCall(async (request: CallableRequest<{ email: string; displayName: string; dispensaryId: string; }>) => {
     if (request.auth?.token.role !== 'Super Admin') {
         throw new HttpsError('permission-denied', 'Only Super Admins can create dispensary users.');
@@ -319,16 +308,13 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
     }
 
     try {
-        // Check if a user with this email already exists
         const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
 
         if (existingUser) {
-            // User exists, check if they are already linked to a dispensary
             const userDoc = await db.collection('users').doc(existingUser.uid).get();
             if (userDoc.exists && userDoc.data()?.dispensaryId) {
                 throw new HttpsError('already-exists', `User with email ${email} already exists and is linked to a dispensary.`);
             }
-            // User exists but is not linked, so we can link them now
             await db.collection('users').doc(existingUser.uid).update({
                 dispensaryId: dispensaryId,
                 role: 'DispensaryOwner',
@@ -336,7 +322,6 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
             });
              return { success: true, message: `Existing user ${email} successfully linked as DispensaryOwner.` };
         } else {
-            // User does not exist, create a new one
             const temporaryPassword = Math.random().toString(36).slice(-8);
             const newUserRecord = await admin.auth().createUser({
                 email: email,
@@ -346,7 +331,6 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
                 disabled: false,
             });
 
-            // Create user document in Firestore
             const userDocData: UserDocData = {
                 uid: newUserRecord.uid,
                 email: email,
@@ -389,15 +373,12 @@ export const adminUpdateUser = onCall(async (request) => {
     }
 
     try {
-        // Update Firebase Auth user if a password is provided
         if (password) {
             await admin.auth().updateUser(userId, { password: password });
         }
 
-        // Update Firestore user document
         const userDocRef = db.collection('users').doc(userId);
         
-        // Ensure dispensaryId is null if role is not DispensaryOwner
         if (firestoreData.role !== 'DispensaryOwner') {
             firestoreData.dispensaryId = null;
         }
@@ -411,7 +392,6 @@ export const adminUpdateUser = onCall(async (request) => {
         if (error instanceof HttpsError) {
           throw error;
         }
-        // Handle common auth errors
         if (error.code === 'auth/user-not-found') {
             throw new HttpsError('not-found', 'The specified user does not exist.');
         }
@@ -419,148 +399,133 @@ export const adminUpdateUser = onCall(async (request) => {
     }
 });
 
-// ============== SHIPPING FUNCTION (getShiplogicRates) ==============
+// ============== FINAL, HARDENED SHIPPING FUNCTION ==============/
 
-const shiplogicApiKeySecret = defineSecret('SHIPLOGIC_API_KEY');
-
-// --- Interfaces for Incoming Shipping Data ---
-interface AddressData {
-    address: string;
-    street_number?: string;
-    route?: string;
-    locality?: string;
-    administrative_area_level_1?: string;
-    country?: string;
-    postal_code?: string;
-}
-
-interface CustomerData {
-    name: string;
-    email: string;
-    phone: string;
-}
-
-interface RequestPayload {
-    cart: CartItem[];
-    dispensaryId: string;
-    deliveryAddress: AddressData;
-    customer: CustomerData;
-}
-
-// A helper to parse the dispensary's location string from Firestore
-const parseLocationString = (location: string) => {
-    logger.info(`Parsing location string: "${location}"`);
-    const parts = location.split(',').map(part => part.trim());
-    if (parts.length < 4) {
-        logger.warn(`Location string "${location}" is not detailed. Parts found: ${parts.length}`);
-        return { street_address: parts[0] || '', city: parts[1] || parts[0] || '', postal_code: parts[2] || '', local_area: parts[1] || '' };
-    }
-    const address = { street_address: parts[0], local_area: parts[1], city: parts[2], postal_code: parts[3] };
-    logger.info('Parsed location:', address);
-    return address;
-};
-
+const shiplogicApiKeySecret = defineSecret('SHIPLOGIC_API_KEY'); 
 const SHIPLOGIC_API_URL = 'https://api.shiplogic.com/v2/rates';
 
-export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors: true }, async (request: CallableRequest<RequestPayload>) => {
-    logger.info("getShiplogicRates function invoked. This is a new deployment."); // Added this line
+interface ShipLogicCartItem {
+    name: string;
+    quantity: number;
+    price: number;
+    weight?: number; // Optional, as validation will check them
+    height?: number;
+    width?: number;
+    length?: number;
+}
+
+interface ShipLogicRequestPayload {
+    cart: ShipLogicCartItem[];
+    dispensaryId: string;
+    deliveryAddress: {
+        address: string;
+        locality?: string;
+        postal_code?: string;
+    };
+    customer: {
+        name: string;
+        email: string;
+        phone: string;
+    };
+}
+
+const parseLocationString = (location: string) => {
+    const parts = location.split(',').map(part => part.trim());
+    if (parts.length >= 3) {
+        return { 
+            street_address: parts.slice(0, parts.length - 2).join(', '), 
+            local_area: parts[parts.length - 2], 
+            city: parts[parts.length - 2], 
+            postal_code: parts[parts.length - 1] 
+        };
+    }
+    return { street_address: parts[0] || '', city: parts[1] || '', postal_code: parts[2] || '', local_area: parts[1] || '' };
+};
+
+export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors: true }, async (request: CallableRequest<ShipLogicRequestPayload>) => {
+    logger.info("getShiplogicRates invoked (v5 - Corrected Types).");
+    
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
+        throw new HttpsError('unauthenticated', 'Must be authenticated.');
     }
 
     const data = request.data;
-    logger.info("Function called with data:", { data });
-
-    // --- Data Validation ---
-    if (!data.cart || !data.dispensaryId || !data.deliveryAddress || !data.customer) {
-        throw new HttpsError('invalid-argument', 'Missing cart, dispensaryId, deliveryAddress, or customer information.');
+    if (!data.cart || data.cart.length === 0 || !data.dispensaryId || !data.deliveryAddress || !data.customer) {
+        throw new HttpsError('invalid-argument', 'Request is missing required data: cart, dispensaryId, deliveryAddress, or customer.');
     }
 
     const shiplogicApiKey = shiplogicApiKeySecret.value();
     if (!shiplogicApiKey) {
-        throw new HttpsError('internal', "The ShipLogic API key is not configured on the server.");
+        throw new HttpsError('internal', "Server configuration error: ShipLogic API key not found.");
     }
 
     try {
-        // --- Step 1: Fetch Dispensary Data (Collection Address) ---
-        const dispensaryRef = db.collection('dispensaries').doc(data.dispensaryId);
-        const dispensaryDoc = await dispensaryRef.get();
-
+        const dispensaryDoc = await db.collection('dispensaries').doc(data.dispensaryId).get();
         if (!dispensaryDoc.exists) {
-            throw new HttpsError('not-found', `Dispensary with ID '${data.dispensaryId}' not found.`);
+            throw new HttpsError('not-found', `Dispensary '${data.dispensaryId}' not found.`);
         }
         const dispensary = dispensaryDoc.data() as Dispensary;
+        // --- CORRECTED PROPERTY ACCESS --- 
         if (!dispensary.location || !dispensary.dispensaryName || !dispensary.phone) {
-            throw new HttpsError('failed-precondition', 'The dispensary is missing required location, name, or contact information.');
+            throw new HttpsError('failed-precondition', 'Dispensary is missing address, name, or phone.');
         }
 
+        let totalWeight = 0, maxLength = 0, maxWidth = 0, maxHeight = 0;
+
+        for (const item of data.cart) {
+            const isValid = (val: any) => typeof val === 'number' && val > 0;
+            const quantity = isValid(item.quantity) ? item.quantity : 1;
+
+            if (!isValid(item.weight) || !isValid(item.length) || !isValid(item.width) || !isValid(item.height)) {
+                throw new HttpsError('invalid-argument', `Cart item '${item.name}' has invalid dimensions or weight. Values must be positive numbers.`);
+            }
+            
+            totalWeight += (item.weight || 0) * quantity;
+            maxLength = Math.max(maxLength, item.length || 0);
+            maxWidth = Math.max(maxWidth, item.width || 0);
+            maxHeight = Math.max(maxHeight, item.height || 0);
+        }
+
+        // --- FINAL VALIDATION GATE --- 
+        if (maxLength <= 0 || maxWidth <= 0 || maxHeight <= 0 || totalWeight <= 0) {
+             throw new HttpsError('failed-precondition', `The final calculated parcel dimensions are invalid. L:${maxLength}, W:${maxWidth}, H:${maxHeight}, Wt:${totalWeight}.`);
+        }
+
+        const parcel = { description: 'Customer Order', weight: totalWeight, length: maxLength, width: maxWidth, height: maxHeight };
+        // --- CORRECTED PROPERTY ACCESS --- 
         const parsedCollectionAddress = parseLocationString(dispensary.location);
-
-        // --- Step 2: Construct ShipLogic Payload ---
-        const totalCartValue = data.cart.reduce((total, item) => total + (item.price || 0) * item.quantity, 0);
-
+        
         const shipLogicPayload = {
-            collection_address: {
-                company: dispensary.dispensaryName,
-                street_address: parsedCollectionAddress.street_address,
-                local_area: parsedCollectionAddress.local_area,
-                city: parsedCollectionAddress.city,
-                postal_code: parsedCollectionAddress.postal_code,
-                country: 'ZA',
-            },
-            collection_contact: {
-                name: dispensary.dispensaryName,
-                telephone: dispensary.phone,
-                email: dispensary.ownerEmail || 'no-email@example.com', // Use a fallback email
-            },
-            delivery_address: {
-                street_address: `${data.deliveryAddress.street_number || ''} ${data.deliveryAddress.route || ''}`.trim(),
-                local_area: data.deliveryAddress.locality || '',
-                city: data.deliveryAddress.locality || '', // Often the same as local_area for ShipLogic
-                postal_code: data.deliveryAddress.postal_code || '',
-                country: 'ZA',
-            },
-            recipient_contact: {
-                name: data.customer.name,
-                telephone: data.customer.phone,
-                email: data.customer.email,
-            },
-            // Simplified parcel logic. Assumes one box for the whole order.
-            // For more accuracy, you could iterate through cart items if they have dimensions.
-            parcels: [{
-                description: 'Cannabis Products Order',
-                weight: 0.5, // Default weight in kg
-                length: 20,  // Default dimensions in cm
-                width: 15,
-                height: 10,
-            }],
-            declared_value: totalCartValue,
-            service_level: 'economy', // Or parameterize if needed
+            collection_address: { ...parsedCollectionAddress, country: 'ZA' },
+             // --- CORRECTED PROPERTY ACCESS ---
+            collection_contact: { name: dispensary.dispensaryName, telephone: dispensary.phone, email: dispensary.ownerEmail },
+            delivery_address: { address: data.deliveryAddress.address, local_area: data.deliveryAddress.locality, city: data.deliveryAddress.locality, postal_code: data.deliveryAddress.postal_code, country: 'ZA' },
+            recipient_contact: { name: data.customer.name, telephone: data.customer.phone, email: data.customer.email },
+            parcels: [parcel],
+            declared_value: data.cart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0),
+            service_level: 'economy',
         };
 
-        logger.info("Sending payload to ShipLogic:", { payload: shipLogicPayload });
+        logger.info("Sending final payload to ShipLogic:", { payload: shipLogicPayload });
 
-        // --- Step 3: Call ShipLogic API ---
         const response = await fetch(SHIPLOGIC_API_URL, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${shiplogicApiKey}`,
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Authorization': `Bearer ${shiplogicApiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(shipLogicPayload)
         });
 
-        const responseData = await response.json();
-
+        // --- CORRECTED, CRASH-PROOF ERROR HANDLING --- 
         if (!response.ok) {
-            logger.error('ShipLogic API returned an error:', { status: response.status, data: responseData });
-            const errorMessage = responseData.error?.message || 'Failed to get rates from provider.';
-            throw new HttpsError('internal', errorMessage);
+            const errorText = await response.text(); // Get the raw error text from ShipLogic
+            logger.error('ShipLogic API returned an error:', { status: response.status, body: errorText });
+            // Send the actual error message back to the client
+            throw new HttpsError('internal', `Shipping Provider Error: ${errorText}`);
         }
+
+        const responseData = await response.json();
         
-        // --- Step 4: Format and Return Rates ---
-        const formattedRates = responseData.map((rate: any) => ({
-            id: rate.id,
+        const formattedRates = (responseData || []).map((rate: any) => ({
+            id: rate.id, // Important for selection on the frontend
             name: rate.service_level.name,
             rate: parseFloat(rate.rate),
             service_level: rate.service_level.name,
@@ -573,11 +538,7 @@ export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors
 
     } catch (error: any) {
         logger.error('Error in getShiplogicRates function:', error);
-        if (error instanceof HttpsError) {
-            throw error; // Re-throw HttpsError directly
-        }
-        // For other errors, return a generic internal error
-        throw new HttpsError('internal', 'An unexpected error occurred while fetching shipping rates.');
+        if (error instanceof HttpsError) throw error;
+        throw new HttpsError('internal', 'An unexpected server error occurred while fetching shipping rates.');
     }
 });
-

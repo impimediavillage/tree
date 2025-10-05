@@ -1,4 +1,3 @@
-
 'use client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, Truck } from 'lucide-react';
+import { Loader2, Clock, ArrowLeft, Building } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { db } from '@/lib/firebase';
@@ -20,7 +19,7 @@ import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 
 import type { DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']; 
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" },
@@ -100,11 +99,23 @@ export default function WellnessSignupPage() {
     resolver: zodResolver(dispensarySignupSchema),
     mode: "onChange",
     defaultValues: {
-      fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
-      dispensaryType: undefined, currency: undefined, openTime: '', closeTime: '',
-      operatingDays: [], location: '', latitude: undefined, longitude: undefined,
-      deliveryRadius: undefined, 
-      message: '', acceptTerms: false, shippingMethods: [],
+      fullName: '',
+      phone: '',
+      ownerEmail: '',
+      dispensaryName: '',
+      dispensaryType: undefined,
+      currency: undefined,
+      openTime: '',
+      closeTime: '',
+      operatingDays: [],
+      shippingMethods: [],
+      location: '',
+      latitude: undefined,
+      longitude: undefined,
+      showLocation: true,
+      deliveryRadius: undefined,
+      message: '',
+      acceptTerms: false,
     },
   });
 
@@ -280,10 +291,10 @@ export default function WellnessSignupPage() {
       setCloseHour(undefined); setCloseMinute(undefined); setCloseAmPm(undefined);
       setSelectedCountryCode(countryCodes[0].value);
       setNationalPhoneNumber('');
-      mapInitialized.current = false;
-      initializeMap();
+      // We don't re-initialize the map here to avoid re-triggering API loads unnecessarily
+      // The component will re-initialize on next mount if needed.
     } catch (error) {
-      console.error("Error submitting wellness application:", error);
+      console.error("Error submitting store application:", error);
       toast({
         title: "Submission Failed",
         description: "An error occurred. Please try again later.",
@@ -297,198 +308,237 @@ export default function WellnessSignupPage() {
   const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
 
   return (
-    <Card className="max-w-3xl mx-auto my-8 shadow-xl">
-      <CardHeader className="text-center">
-        <CardTitle 
-            className="text-3xl text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >Virtual Store Sign-Up</CardTitle>
-        <CardDescription 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >Join our platform and reach more customers.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Owner Information</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="fullName" render={({ field }) => (
-                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your Full Name" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-               <FormField control={form.control} name="ownerEmail" render={({ field }) => (
-                <FormItem><FormLabel>Owner's Email Address</FormLabel><FormControl><Input type="email" placeholder="owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-            </div>
-            
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Store Information</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="dispensaryName" render={({ field }) => (
-                <FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="Your Store Name" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="dispensaryType" render={({ field }) => (
-                <FormItem><FormLabel>Store Type</FormLabel>
+    <div className="container mx-auto px-4 py-8">
+      <Card className="max-w-3xl mx-auto my-8 shadow-xl">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle
+              className="text-3xl flex items-center text-foreground"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+            >
+              <Building className="mr-3 h-8 w-8 text-primary" /> Dispensary Signup
+            </CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
+            </Button>
+          </div>
+          <CardDescription
+              className="text-foreground"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+          >
+              Join our network by filling in the details below.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <h2 className="text-xl font-semibold border-b pb-2 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Owner Information</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="fullName" render={({ field }) => (
+                  <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your Full Name" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={form.control} name="ownerEmail" render={({ field }) => (
+                  <FormItem><FormLabel>Owner's Email Address</FormLabel><FormControl><Input type="email" placeholder="owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              </div>
+              
+              <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Store Information</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="dispensaryName" render={({ field }) => (
+                  <FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="Your Store Name" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="dispensaryType" render={({ field }) => (
+                  <FormItem><FormLabel>Store Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select><FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={form.control} name="currency" render={({ field }) => (
+                <FormItem><FormLabel>Preferred Currency</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || undefined}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}
-                    </SelectContent>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select currency" /></SelectTrigger></FormControl>
+                    <SelectContent>{currencyOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                   </Select><FormMessage />
                 </FormItem>
               )} />
-            </div>
-            <FormField control={form.control} name="currency" render={({ field }) => (
-              <FormItem><FormLabel>Preferred Currency</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || undefined}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Select currency" /></SelectTrigger></FormControl>
-                  <SelectContent>{currencyOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
-                </Select><FormMessage />
-              </FormItem>
-            )} />
 
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
-            <FormField control={form.control} name="location" render={({ field }) => (
-              <FormItem><FormLabel>Store Location / Address</FormLabel>
-                <FormControl><Input placeholder="e.g. 123 Main St, Anytown" {...field} ref={locationInputRef} /></FormControl>
-                <FormDescription>Start typing your address. Select from suggestions to pinpoint on map.</FormDescription><FormMessage />
-              </FormItem>
-            )} />
-            <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
-            <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with store type.</FormDescription>
-            <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
-            <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
-            
-            <FormItem>
-                <FormLabel>Phone Number</FormLabel>
-                <div className="flex items-center gap-2">
-                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
-                    <SelectTrigger className="w-[120px] shrink-0">
-                      {selectedCountryDisplay ? (
-                        <div className="flex items-center gap-1.5">
-                          <span>{selectedCountryDisplay.flag}</span>
-                          <span>{selectedCountryDisplay.code}</span>
-                        </div>
-                      ) : (
-                        <SelectValue placeholder="Code" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countryCodes.map(cc => (
-                        <SelectItem key={cc.value} value={cc.value}>
-                          <div className="flex items-center gap-2">
-                            <span>{cc.flag}</span>
-                            <span>{cc.shortName}</span>
-                            <span>({cc.code})</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="tel"
-                    placeholder="National number"
-                    value={nationalPhoneNumber}
-                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}
-                  />
-                </div>
-                 <FormField control={form.control} name="phone" render={() => (
-                    <FormItem className="mt-0 pt-0"><FormMessage /></FormItem>
-                 )} />
-              </FormItem>
-
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operating Hours</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="openTime" render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
-                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal">
-                            <Clock className="mr-2 h-4 w-4 opacity-50" />
-                            {field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}
-                        </Button></FormControl></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
-                        <Select value={openHour} onValueChange={setOpenHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                        <Select value={openMinute} onValueChange={setOpenMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                        <Select value={openAmPm} onValueChange={setOpenAmPm}><SelectTrigger><SelectValue placeholder="AM/PM" /></SelectTrigger><SelectContent>{amPmOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                    </div><Button type="button" onClick={() => setIsOpenTimePopoverOpen(false)} className="w-full">Set Time</Button></div></PopoverContent>
-                    </Popover><FormMessage />
-                </FormItem>)} />
-                <FormField control={form.control} name="closeTime" render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
-                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal">
-                            <Clock className="mr-2 h-4 w-4 opacity-50" />
-                            {field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}
-                        </Button></FormControl></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
-                        <Select value={closeHour} onValueChange={setCloseHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                        <Select value={closeMinute} onValueChange={setCloseMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                        <Select value={closeAmPm} onValueChange={setCloseAmPm}><SelectTrigger><SelectValue placeholder="AM/PM" /></SelectTrigger><SelectContent>{amPmOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                    </div><Button type="button" onClick={() => setIsCloseTimePopoverOpen(false)} className="w-full">Set Time</Button></div></PopoverContent>
-                    </Popover><FormMessage />
-                </FormItem>)} />
-            </div>
-
-            <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                {weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                      <FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {
-                            return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day));
-                          }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div>
-                <FormMessage />
-            </FormItem>)}/>
-
-            <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
-            <FormField control={form.control} name="shippingMethods" render={() => (
-              <FormItem>
-                <FormLabel>Shipping Methods Offered</FormLabel>
-                <FormDescription>Select all shipping methods your store will support.</FormDescription>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {allShippingMethods.map((method) => (
-                    <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(method.id)}
-                            onCheckedChange={(checked) => {
-                              return checked
-                                ? field.onChange([...(field.value || []), method.id])
-                                : field.onChange(field.value?.filter((value) => value !== method.id))
-                            }}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
-                      </FormItem>
-                    )}/>
-                  ))}
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}/>
-            <div className="grid md:grid-cols-2 gap-6">
-              <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
-                <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl>
-                    <SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-            </div>
-
-            <FormField control={form.control} name="message" render={({ field }) => (
-              <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness store..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
-
-            <FormField control={form.control} name="acceptTerms" render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                <div className="space-y-1 leading-none"><FormLabel>
-                    I accept the <Link href="/terms" target="_blank" className="underline text-primary hover:text-primary/80">Terms of Usage Agreement</Link>.</FormLabel></div>
-                <FormMessage className="ml-0 pl-0 -mt-1 text-xs"/>
+              <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Location & Contact</h2>
+              <FormField control={form.control} name="location" render={({ field }) => (
+                <FormItem><FormLabel>Store Location / Address</FormLabel>
+                  <FormControl><Input placeholder="e.g. 123 Main St, Anytown" {...field} ref={locationInputRef} /></FormControl>
+                  <FormDescription>Start typing your address. Select from suggestions to pinpoint on map.</FormDescription><FormMessage />
                 </FormItem>
-            )}/>
+              )} />
+              <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
+              <FormDescription>Click on the map or drag the marker to fine-tune location. Icon changes with store type.</FormDescription>
 
-            <Button type="submit" className="w-full text-lg py-6"
-              disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}
-            >
-              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />} Submit Application
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              <FormField
+                control={form.control}
+                name="showLocation"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Show store location?</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(value === 'true')}
+                      value={field.value ? 'true' : 'false'}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an option" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Your exact address will be hidden from the public if you select No.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
+              <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
+              
+              <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}>
+                      <SelectTrigger className="w-[120px] shrink-0">
+                        {selectedCountryDisplay ? (
+                          <div className="flex items-center gap-1.5">
+                            <span>{selectedCountryDisplay.flag}</span>
+                            <span>{selectedCountryDisplay.code}</span>
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Code" />
+                        )}
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countryCodes.map(cc => (
+                          <SelectItem key={cc.value} value={cc.value}>
+                            <div className="flex items-center gap-2">
+                              <span>{cc.flag}</span>
+                              <span>{cc.shortName}</span>
+                              <span>({cc.code})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="tel"
+                      placeholder="National number"
+                      value={nationalPhoneNumber}
+                      onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                    />
+                  </div>
+                   <FormField control={form.control} name="phone" render={() => (
+                      <FormItem className="mt-0 pt-0"><FormMessage /></FormItem>
+                   )} />
+                </FormItem>
+
+              <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operating Hours</h2>
+              <div className="grid md:grid-cols-2 gap-6">
+                  <FormField control={form.control} name="openTime" render={({ field }) => (
+                  <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
+                      <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal">
+                              <Clock className="mr-2 h-4 w-4 opacity-50" />
+                              {field.value ? formatTo12HourDisplay(field.value) : <span>Select Open Time</span>}
+                          </Button></FormControl></PopoverTrigger>
+                      <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
+                          <Select value={openHour} onValueChange={setOpenHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={openMinute} onValueChange={setOpenMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={openAmPm} onValueChange={setOpenAmPm}><SelectTrigger><SelectValue placeholder="AM/PM" /></SelectTrigger><SelectContent>{amPmOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+                      </div><Button type="button" onClick={() => setIsOpenTimePopoverOpen(false)} className="w-full">Set Time</Button></div></PopoverContent>
+                      </Popover><FormMessage />
+                  </FormItem>)} />
+                  <FormField control={form.control} name="closeTime" render={({ field }) => (
+                  <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
+                      <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal">
+                              <Clock className="mr-2 h-4 w-4 opacity-50" />
+                              {field.value ? formatTo12HourDisplay(field.value) : <span>Select Close Time</span>}
+                          </Button></FormControl></PopoverTrigger>
+                      <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
+                          <Select value={closeHour} onValueChange={setCloseHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={closeMinute} onValueChange={setCloseMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+                          <Select value={closeAmPm} onValueChange={setCloseAmPm}><SelectTrigger><SelectValue placeholder="AM/PM" /></SelectTrigger><SelectContent>{amPmOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
+                      </div><Button type="button" onClick={() => setIsCloseTimePopoverOpen(false)} className="w-full">Set Time</Button></div></PopoverContent>
+                      </Popover><FormMessage />
+                  </FormItem>)} />
+              </div>
+
+              <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+                  {weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {
+                              return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day));
+                            }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div>
+                  <FormMessage />
+              </FormItem>)}/>
+
+              <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>Operations & Delivery</h2>
+              <FormField control={form.control} name="shippingMethods" render={() => (
+                <FormItem>
+                  <FormLabel>Shipping Methods Offered</FormLabel>
+                  <FormDescription>Select all shipping methods your store will support.</FormDescription>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {allShippingMethods.map((method) => (
+                      <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(method.id)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...(field.value || []), method.id])
+                                  : field.onChange(field.value?.filter((value) => value !== method.id))
+                              }}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
+                        </FormItem>
+                      )}/>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}/>
+              <div className="grid md:grid-cols-2 gap-6">
+                <FormField control={form.control} name="deliveryRadius" render={({ field }) => (
+                  <FormItem><FormLabel>Same-day Delivery Radius</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl>
+                      <SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+              </div>
+
+              <FormField control={form.control} name="message" render={({ field }) => (
+                <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Tell us more about your wellness store..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+
+              <FormField control={form.control} name="acceptTerms" render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                  <div className="space-y-1 leading-none"><FormLabel>
+                      I accept the <Link href="/terms" target="_blank" className="underline text-primary hover:text-primary/80">Terms of Usage Agreement</Link>.</FormLabel></div>
+                  <FormMessage className="ml-0 pl-0 -mt-1 text-xs"/>
+                  </FormItem>
+              )}/>
+
+              <Button type="submit" className="w-full text-lg py-6"
+                disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}
+              >
+                {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />} Submit Application
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

@@ -39,7 +39,7 @@ const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const logger = __importStar(require("firebase-functions/logger"));
 const params_1 = require("firebase-functions/params");
-// ============== FIREBASE ADMIN SDK INITIALIZATION ==============
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============/
 if (admin.apps.length === 0) {
     try {
         admin.initializeApp();
@@ -55,7 +55,6 @@ const db = admin.firestore();
 exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId}", async (event) => {
     const userId = event.params.userId;
     const afterData = event.data?.after.data();
-    // Handle user deletion
     if (!afterData) {
         logger.info(`User document ${userId} deleted. Revoking custom claims.`);
         try {
@@ -65,20 +64,18 @@ exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId
         catch (error) {
             logger.error(`Error revoking custom claims for deleted user ${userId}:`, error);
         }
-        return; // Exit function
+        return;
     }
-    // Handle user creation or update
     const validRoles = ['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff'];
     const role = afterData.role && validRoles.includes(afterData.role)
         ? afterData.role
-        : 'User'; // Default to 'User'
+        : 'User';
     const dispensaryId = afterData.dispensaryId || null;
     let dispensaryType = null;
     if (dispensaryId) {
         try {
             const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
             if (dispensaryDoc.exists) {
-                // Safely access dispensaryType, defaulting to null if it's missing.
                 dispensaryType = dispensaryDoc.data()?.dispensaryType || null;
             }
         }
@@ -86,7 +83,6 @@ exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId
             logger.error(`Failed to fetch dispensary type for dispensaryId ${dispensaryId}:`, error);
         }
     }
-    // Ensure claims object is always created, even if dispensaryType is null.
     const claims = {
         role,
         dispensaryId,
@@ -136,17 +132,17 @@ exports.getUserProfile = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
     }
-    const { uid, token } = request.auth; // The decoded token IS the auth object in v2 onCall
+    const { uid, token } = request.auth;
     try {
         const userDocRef = db.collection('users').doc(uid);
         const userDocSnap = await userDocRef.get();
         if (!userDocSnap.exists) {
-            logger.warn(`User document not found for uid: ${uid}. This can happen briefly after signup.`);
-            throw new https_1.HttpsError('not-found', 'Your user profile data could not be found. If you just signed up, please wait a moment and try again.');
+            logger.warn(`User document not found for uid: ${uid}.`);
+            throw new https_1.HttpsError('not-found', 'Your user profile data could not be found.');
         }
         const userData = userDocSnap.data();
         let dispensaryData = null;
-        if (userData.dispensaryId && typeof userData.dispensaryId === 'string' && userData.dispensaryId.trim() !== '') {
+        if (userData.dispensaryId) {
             const dispensaryDocRef = db.collection('dispensaries').doc(userData.dispensaryId);
             const dispensaryDocSnap = await dispensaryDocRef.get();
             if (dispensaryDocSnap.exists) {
@@ -212,7 +208,7 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onCall)(async (request) => 
             const userData = freshUserDoc.data();
             const currentCredits = userData.credits || 0;
             if (!wasFreeInteraction) {
-                if (currentCredits < creditsToDeduct && creditsToDeduct > 0) { // Only check if credits are needed
+                if (currentCredits < creditsToDeduct && creditsToDeduct > 0) {
                     throw new https_1.HttpsError('failed-precondition', 'Insufficient credits.');
                 }
                 newCreditBalance = currentCredits - creditsToDeduct;
@@ -223,7 +219,7 @@ exports.deductCreditsAndLogInteraction = (0, https_1.onCall)(async (request) => 
             }
             const logEntry = {
                 userId,
-                dispensaryId: dispensaryId, // Use dispensaryId from auth token
+                dispensaryId: dispensaryId,
                 advisorSlug,
                 creditsUsed: wasFreeInteraction ? 0 : creditsToDeduct,
                 timestamp: admin.firestore.FieldValue.serverTimestamp(),
@@ -262,12 +258,10 @@ exports.getCannabinoidProductCategories = (0, https_1.onCall)({ cors: true }, as
             throw new https_1.HttpsError('not-found', 'Cannabinoid product category configuration not found.');
         }
         const docData = querySnapshot.docs[0].data();
-        // Navigate through the nested map structure to get to the 'Delivery Methods'
         const deliveryMethods = docData?.categoriesData?.thcCbdProductCategories?.[stream]?.['Delivery Methods'];
         if (!deliveryMethods || typeof deliveryMethods !== 'object') {
             throw new https_1.HttpsError('not-found', `The 'Delivery Methods' structure for the '${stream}' stream is invalid or missing.`);
         }
-        // Return the specific 'Delivery Methods' map
         return deliveryMethods;
     }
     catch (error) {
@@ -278,14 +272,11 @@ exports.getCannabinoidProductCategories = (0, https_1.onCall)({ cors: true }, as
         throw new https_1.HttpsError('internal', 'An error occurred while fetching product categories.');
     }
 });
-// New Cloud Function to search for strains
 exports.searchStrains = (0, https_1.onCall)({ cors: true }, async (request) => {
-    // This function is publicly callable, no auth check needed as per requirements.
     const { searchTerm } = request.data;
     if (!searchTerm || typeof searchTerm !== 'string' || searchTerm.trim().length === 0) {
         throw new https_1.HttpsError('invalid-argument', 'A valid search term must be provided.');
     }
-    // Capitalize the first letter of each word for case-insensitive-like matching
     const toTitleCase = (str) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
     const processedTerm = toTitleCase(searchTerm.trim());
     try {
@@ -315,15 +306,12 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('invalid-argument', 'Email, display name, and dispensary ID are required.');
     }
     try {
-        // Check if a user with this email already exists
         const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
         if (existingUser) {
-            // User exists, check if they are already linked to a dispensary
             const userDoc = await db.collection('users').doc(existingUser.uid).get();
             if (userDoc.exists && userDoc.data()?.dispensaryId) {
                 throw new https_1.HttpsError('already-exists', `User with email ${email} already exists and is linked to a dispensary.`);
             }
-            // User exists but is not linked, so we can link them now
             await db.collection('users').doc(existingUser.uid).update({
                 dispensaryId: dispensaryId,
                 role: 'DispensaryOwner',
@@ -332,7 +320,6 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
             return { success: true, message: `Existing user ${email} successfully linked as DispensaryOwner.` };
         }
         else {
-            // User does not exist, create a new one
             const temporaryPassword = Math.random().toString(36).slice(-8);
             const newUserRecord = await admin.auth().createUser({
                 email: email,
@@ -341,7 +328,6 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
                 displayName: displayName,
                 disabled: false,
             });
-            // Create user document in Firestore
             const userDocData = {
                 uid: newUserRecord.uid,
                 email: email,
@@ -381,13 +367,10 @@ exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('invalid-argument', 'User ID is required.');
     }
     try {
-        // Update Firebase Auth user if a password is provided
         if (password) {
             await admin.auth().updateUser(userId, { password: password });
         }
-        // Update Firestore user document
         const userDocRef = db.collection('users').doc(userId);
-        // Ensure dispensaryId is null if role is not DispensaryOwner
         if (firestoreData.role !== 'DispensaryOwner') {
             firestoreData.dispensaryId = null;
         }
@@ -400,114 +383,95 @@ exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
         if (error instanceof https_1.HttpsError) {
             throw error;
         }
-        // Handle common auth errors
         if (error.code === 'auth/user-not-found') {
             throw new https_1.HttpsError('not-found', 'The specified user does not exist.');
         }
         throw new https_1.HttpsError('internal', 'An unexpected error occurred while updating the user.');
     }
 });
-// ============== SHIPPING FUNCTION (getShiplogicRates) ==============
+// ============== FINAL, HARDENED SHIPPING FUNCTION ==============/
 const shiplogicApiKeySecret = (0, params_1.defineSecret)('SHIPLOGIC_API_KEY');
-// A helper to parse the dispensary's location string from Firestore
-const parseLocationString = (location) => {
-    logger.info(`Parsing location string: "${location}"`);
-    const parts = location.split(',').map(part => part.trim());
-    if (parts.length < 4) {
-        logger.warn(`Location string "${location}" is not detailed. Parts found: ${parts.length}`);
-        return { street_address: parts[0] || '', city: parts[1] || parts[0] || '', postal_code: parts[2] || '', local_area: parts[1] || '' };
-    }
-    const address = { street_address: parts[0], local_area: parts[1], city: parts[2], postal_code: parts[3] };
-    logger.info('Parsed location:', address);
-    return address;
-};
 const SHIPLOGIC_API_URL = 'https://api.shiplogic.com/v2/rates';
+const parseLocationString = (location) => {
+    const parts = location.split(',').map(part => part.trim());
+    if (parts.length >= 3) {
+        return {
+            street_address: parts.slice(0, parts.length - 2).join(', '),
+            local_area: parts[parts.length - 2],
+            city: parts[parts.length - 2],
+            postal_code: parts[parts.length - 1]
+        };
+    }
+    return { street_address: parts[0] || '', city: parts[1] || '', postal_code: parts[2] || '', local_area: parts[1] || '' };
+};
 exports.getShiplogicRates = (0, https_1.onCall)({ secrets: [shiplogicApiKeySecret], cors: true }, async (request) => {
-    logger.info("getShiplogicRates function invoked. This is a new deployment."); // Added this line
+    logger.info("getShiplogicRates invoked (v5 - Corrected Types).");
     if (!request.auth) {
-        throw new https_1.HttpsError('unauthenticated', 'The function must be called while authenticated.');
+        throw new https_1.HttpsError('unauthenticated', 'Must be authenticated.');
     }
     const data = request.data;
-    logger.info("Function called with data:", { data });
-    // --- Data Validation ---
-    if (!data.cart || !data.dispensaryId || !data.deliveryAddress || !data.customer) {
-        throw new https_1.HttpsError('invalid-argument', 'Missing cart, dispensaryId, deliveryAddress, or customer information.');
+    if (!data.cart || data.cart.length === 0 || !data.dispensaryId || !data.deliveryAddress || !data.customer) {
+        throw new https_1.HttpsError('invalid-argument', 'Request is missing required data: cart, dispensaryId, deliveryAddress, or customer.');
     }
     const shiplogicApiKey = shiplogicApiKeySecret.value();
     if (!shiplogicApiKey) {
-        throw new https_1.HttpsError('internal', "The ShipLogic API key is not configured on the server.");
+        throw new https_1.HttpsError('internal', "Server configuration error: ShipLogic API key not found.");
     }
     try {
-        // --- Step 1: Fetch Dispensary Data (Collection Address) ---
-        const dispensaryRef = db.collection('dispensaries').doc(data.dispensaryId);
-        const dispensaryDoc = await dispensaryRef.get();
+        const dispensaryDoc = await db.collection('dispensaries').doc(data.dispensaryId).get();
         if (!dispensaryDoc.exists) {
-            throw new https_1.HttpsError('not-found', `Dispensary with ID '${data.dispensaryId}' not found.`);
+            throw new https_1.HttpsError('not-found', `Dispensary '${data.dispensaryId}' not found.`);
         }
         const dispensary = dispensaryDoc.data();
+        // --- CORRECTED PROPERTY ACCESS --- 
         if (!dispensary.location || !dispensary.dispensaryName || !dispensary.phone) {
-            throw new https_1.HttpsError('failed-precondition', 'The dispensary is missing required location, name, or contact information.');
+            throw new https_1.HttpsError('failed-precondition', 'Dispensary is missing address, name, or phone.');
         }
+        let totalWeight = 0, maxLength = 0, maxWidth = 0, maxHeight = 0;
+        for (const item of data.cart) {
+            const isValid = (val) => typeof val === 'number' && val > 0;
+            const quantity = isValid(item.quantity) ? item.quantity : 1;
+            if (!isValid(item.weight) || !isValid(item.length) || !isValid(item.width) || !isValid(item.height)) {
+                throw new https_1.HttpsError('invalid-argument', `Cart item '${item.name}' has invalid dimensions or weight. Values must be positive numbers.`);
+            }
+            totalWeight += (item.weight || 0) * quantity;
+            maxLength = Math.max(maxLength, item.length || 0);
+            maxWidth = Math.max(maxWidth, item.width || 0);
+            maxHeight = Math.max(maxHeight, item.height || 0);
+        }
+        // --- FINAL VALIDATION GATE --- 
+        if (maxLength <= 0 || maxWidth <= 0 || maxHeight <= 0 || totalWeight <= 0) {
+            throw new https_1.HttpsError('failed-precondition', `The final calculated parcel dimensions are invalid. L:${maxLength}, W:${maxWidth}, H:${maxHeight}, Wt:${totalWeight}.`);
+        }
+        const parcel = { description: 'Customer Order', weight: totalWeight, length: maxLength, width: maxWidth, height: maxHeight };
+        // --- CORRECTED PROPERTY ACCESS --- 
         const parsedCollectionAddress = parseLocationString(dispensary.location);
-        // --- Step 2: Construct ShipLogic Payload ---
-        const totalCartValue = data.cart.reduce((total, item) => total + (item.price || 0) * item.quantity, 0);
         const shipLogicPayload = {
-            collection_address: {
-                company: dispensary.dispensaryName,
-                street_address: parsedCollectionAddress.street_address,
-                local_area: parsedCollectionAddress.local_area,
-                city: parsedCollectionAddress.city,
-                postal_code: parsedCollectionAddress.postal_code,
-                country: 'ZA',
-            },
-            collection_contact: {
-                name: dispensary.dispensaryName,
-                telephone: dispensary.phone,
-                email: dispensary.ownerEmail || 'no-email@example.com', // Use a fallback email
-            },
-            delivery_address: {
-                street_address: `${data.deliveryAddress.street_number || ''} ${data.deliveryAddress.route || ''}`.trim(),
-                local_area: data.deliveryAddress.locality || '',
-                city: data.deliveryAddress.locality || '', // Often the same as local_area for ShipLogic
-                postal_code: data.deliveryAddress.postal_code || '',
-                country: 'ZA',
-            },
-            recipient_contact: {
-                name: data.customer.name,
-                telephone: data.customer.phone,
-                email: data.customer.email,
-            },
-            // Simplified parcel logic. Assumes one box for the whole order.
-            // For more accuracy, you could iterate through cart items if they have dimensions.
-            parcels: [{
-                    description: 'Cannabis Products Order',
-                    weight: 0.5, // Default weight in kg
-                    length: 20, // Default dimensions in cm
-                    width: 15,
-                    height: 10,
-                }],
-            declared_value: totalCartValue,
-            service_level: 'economy', // Or parameterize if needed
+            collection_address: { ...parsedCollectionAddress, country: 'ZA' },
+            // --- CORRECTED PROPERTY ACCESS ---
+            collection_contact: { name: dispensary.dispensaryName, telephone: dispensary.phone, email: dispensary.ownerEmail },
+            delivery_address: { address: data.deliveryAddress.address, local_area: data.deliveryAddress.locality, city: data.deliveryAddress.locality, postal_code: data.deliveryAddress.postal_code, country: 'ZA' },
+            recipient_contact: { name: data.customer.name, telephone: data.customer.phone, email: data.customer.email },
+            parcels: [parcel],
+            declared_value: data.cart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0),
+            service_level: 'economy',
         };
-        logger.info("Sending payload to ShipLogic:", { payload: shipLogicPayload });
-        // --- Step 3: Call ShipLogic API ---
+        logger.info("Sending final payload to ShipLogic:", { payload: shipLogicPayload });
         const response = await fetch(SHIPLOGIC_API_URL, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${shiplogicApiKey}`,
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Authorization': `Bearer ${shiplogicApiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(shipLogicPayload)
         });
-        const responseData = await response.json();
+        // --- CORRECTED, CRASH-PROOF ERROR HANDLING --- 
         if (!response.ok) {
-            logger.error('ShipLogic API returned an error:', { status: response.status, data: responseData });
-            const errorMessage = responseData.error?.message || 'Failed to get rates from provider.';
-            throw new https_1.HttpsError('internal', errorMessage);
+            const errorText = await response.text(); // Get the raw error text from ShipLogic
+            logger.error('ShipLogic API returned an error:', { status: response.status, body: errorText });
+            // Send the actual error message back to the client
+            throw new https_1.HttpsError('internal', `Shipping Provider Error: ${errorText}`);
         }
-        // --- Step 4: Format and Return Rates ---
-        const formattedRates = responseData.map((rate) => ({
-            id: rate.id,
+        const responseData = await response.json();
+        const formattedRates = (responseData || []).map((rate) => ({
+            id: rate.id, // Important for selection on the frontend
             name: rate.service_level.name,
             rate: parseFloat(rate.rate),
             service_level: rate.service_level.name,
@@ -519,11 +483,9 @@ exports.getShiplogicRates = (0, https_1.onCall)({ secrets: [shiplogicApiKeySecre
     }
     catch (error) {
         logger.error('Error in getShiplogicRates function:', error);
-        if (error instanceof https_1.HttpsError) {
-            throw error; // Re-throw HttpsError directly
-        }
-        // For other errors, return a generic internal error
-        throw new https_1.HttpsError('internal', 'An unexpected error occurred while fetching shipping rates.');
+        if (error instanceof https_1.HttpsError)
+            throw error;
+        throw new https_1.HttpsError('internal', 'An unexpected server error occurred while fetching shipping rates.');
     }
 });
 //# sourceMappingURL=index.js.map
