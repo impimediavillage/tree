@@ -1,10 +1,6 @@
 
-'use server';
-
 import type { Timestamp } from 'firebase/firestore';
 import type { firestore } from 'firebase-admin';
-import { z } from 'zod';
-import { GenerateStrainStickerInputSchema, GenerateStrainStickerOutputSchema } from '@/lib/schemas';
 
 // Price Tier Interface
 export interface PriceTier {
@@ -12,11 +8,11 @@ export interface PriceTier {
   price: number;
   quantityInStock?: number | null;
   description?: string | null;
-  sampleAmount?: number;
-  weightKgs?: number;
-  lengthCm?: number;
-  widthCm?: number;
-  heightCm?: number;
+  // Explicitly defining shipping dimensions
+  weightKgs?: number | null;
+  lengthCm?: number | null;
+  widthCm?: number | null;
+  heightCm?: number | null;
 }
 
 // Updated ProductCategory to support nesting
@@ -41,17 +37,23 @@ export interface Dispensary {
   latitude?: number | null;
   longitude?: number | null;
   deliveryRadius?: string | null;
+  bulkDeliveryRadius?: string | null;
+  collectionOnly?: boolean;
+  orderType?: 'small' | 'bulk' | 'both' | null;
+  participateSharing?: 'yes' | 'no' | null;
+  leadTime?: string | null;
   message?: string | null;
   status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
-  applicationDate: Timestamp | Date | string | null;
+  applicationDate: Timestamp | Date | string | null; // Changed to allow null
   approvedDate?: Timestamp | Date | string | null;
   lastActivityDate?: Timestamp | Date | string | null;
   publicStoreUrl?: string | null;
+  showLocation: boolean;
   shippingMethods: string[];
   productCount?: number;
   incomingRequestCount?: number;
   outgoingRequestCount?: number;
-  showLocation: boolean;
+
   averageRating?: number | null;
   reviewCount?: number;
 }
@@ -85,7 +87,6 @@ export interface ProductAttribute {
 // Represents a Product document in Firestore
 export interface Product {
   id?: string;
-  creatorUid: string;
   dispensaryId: string;
   dispensaryName: string;
   dispensaryType: string; 
@@ -133,8 +134,6 @@ export interface Product {
   labTested?: boolean;
   labTestReportUrl?: string | null;
   isAvailableForPool?: boolean;
-  poolSharingRule?: 'same_type' | 'all_types' | 'specific_stores' | null;
-  allowedPoolDispensaryIds?: string[] | null;
   tags?: string[] | null;
   
   createdAt: Timestamp | Date | string;
@@ -173,10 +172,10 @@ export interface ProductRequest {
   requesterEmail: string;
 
   quantityRequested: number;
-  requestedTier?: PriceTier | null;
-  
-  requesterConfirmed?: boolean; // Requester agrees to the accepted terms
-  ownerConfirmed?: boolean;   // Owner confirms after requester, finalizing order
+  preferredDeliveryDate?: string | null;
+  deliveryAddress: string;
+  contactPerson: string;
+  contactPhone: string;
 
   requestStatus:
     | "pending_owner_approval"
@@ -185,8 +184,7 @@ export interface ProductRequest {
     | "cancelled"
     | "fulfilled_by_sender"
     | "received_by_requester"
-    | "issue_reported"
-    | "ordered"; // New status for completed pool orders
+    | "issue_reported";
 
   notes?: NoteData[];
 
@@ -199,10 +197,7 @@ export interface ProductRequest {
     currency: string;
     priceTiers: PriceTier[]; 
     imageUrl?: string | null;
-    dispensaryType: string;
-    dispensaryName: string;
   } | null;
-  orderDate?: Timestamp | Date | string;
 }
 
 // Represents a Pool Issue document in Firestore
@@ -247,7 +242,6 @@ export interface User {
   uid: string;
   email: string;
   displayName?: string | null;
-  phoneNumber?: string | null;
   photoURL?: string | null;
   role: 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
   dispensaryId?: string | null;
@@ -261,15 +255,7 @@ export interface User {
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
   updatedAt?: Timestamp | Date | string | null;
-  shippingAddress?: {
-    address: string;
-    latitude: number;
-    longitude: number;
-  } | null;
 }
-
-// This will be the main profile type used in the application context
-export type UserProfile = User;
 
 // Represents a User document in Firestore (for server-side functions)
 export interface UserDocData {
@@ -328,7 +314,7 @@ export interface AIInteractionLog {
   id?: string;
   userId: string;
   dispensaryId?: string | null;
-  advisorSlug:string;
+  advisorSlug: string;
   creditsUsed: number;
   wasFreeInteraction: boolean;
   timestamp: Timestamp | Date | string;
@@ -371,33 +357,29 @@ export interface ProductCategoryCount {
   fill: string; 
 }
 
-// Cart Item type
+// Cart Item type - CORRECTED FOR SHIPPING
 export interface CartItem {
   id: string; // Unique ID for the cart item, e.g., `${productId}-${unit}`
   productId: string; // Original product ID
   name: string;
   description: string;
-  category: string;
-  strain?: string | null;
-  dispensaryId: string;
-  dispensaryName: string;
-  dispensaryType: string;
-  productOwnerEmail: string;
-  currency: string;
   price: number;
   unit: string;
   quantity: number;
   quantityInStock: number;
   imageUrl?: string | null;
-  sampleAmount?: number;
-  productType?: string | null;
-
-  // Physical Dimensions for shipping
+  category: string;
+  dispensaryId: string;
+  dispensaryName: string;
+  dispensaryType: string; 
+  productOwnerEmail: string;
+  
+  // Shipping-related dimension fields, mapped from PriceTier
   weight?: number | null;
   length?: number | null;
   width?: number | null;
   height?: number | null;
-  }
+}
 
 // Types for generated brand assets
 export interface GenerateInitialLogosInput {
@@ -446,7 +428,3 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
-
-// Types for Strain Sticker Generation
-export type GenerateStrainStickerInput = z.infer<typeof GenerateStrainStickerInputSchema>;
-export type GenerateStrainStickerOutput = z.infer<typeof GenerateStrainStickerOutputSchema>;

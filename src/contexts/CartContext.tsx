@@ -54,7 +54,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
   }, []);
 
-  // --- COMPLETELY REWRITTEN addToCart FUNCTION ---
   const addToCart = (product: Product, tier: PriceTier, quantityToAdd: number = 1) => {
     if (!tier || typeof tier.price !== 'number') {
       toast({ title: "Not Available", description: "This product tier cannot be added to the cart.", variant: "destructive"});
@@ -74,40 +73,35 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       let newItems = [...prevItems];
 
       if (existingItemIndex > -1) {
-        // Update quantity for existing item
         const existingItem = newItems[existingItemIndex];
         const newQuantity = existingItem.quantity + quantityToAdd;
 
         if (newQuantity > (existingItem.quantityInStock ?? 999)) {
           toast({ title: "Stock Limit Exceeded", description: `You can't add more of this item.`, variant: "destructive" });
-          return newItems; // Do not update if stock limit is reached
+          return newItems;
         }
 
         newItems[existingItemIndex] = { ...existingItem, quantity: newQuantity };
         toast({ title: "Cart Updated", description: `${product.name} quantity increased to ${newQuantity}.` });
 
       } else {
-        // Add new item
         const quantity = Math.min(quantityToAdd, tierStock);
 
-        // ** THE CRITICAL FIX: Mapping tier properties to the correct CartItem fields **
         const newItem: CartItem = {
           id: cartItemId,
-          productId: product.id,
+          productId: product.id as string,
           name: product.name,
           description: product.description,
           price: tier.price,
           unit: tier.unit,
           quantity: quantity,
           quantityInStock: tierStock,
-          imageUrl: product.imageUrl ?? null,
+          imageUrl: product.imageUrl ?? undefined,
           category: product.category, 
-          dispensaryId: product.dispensaryId, 
+          dispensaryId: product.dispensaryId,
           dispensaryName: product.dispensaryName,
+          dispensaryType: product.dispensaryType,
           productOwnerEmail: product.productOwnerEmail,
-          productType: product.productType,
-
-          // Mapping from PriceTier to CartItem dimension fields
           weight: tier.weightKgs, 
           length: tier.lengthCm, 
           width: tier.widthCm,   
@@ -132,7 +126,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return prevItems.map(item => {
         if (item.id === cartItemId) {
           if (newQuantity <= 0) {
-            return null; // Will be filtered out
+            return null;
           }
           if (newQuantity > (item.quantityInStock ?? 999)){
             toast({ title: "Stock Limit Exceeded", variant: "destructive" });

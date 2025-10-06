@@ -356,24 +356,28 @@ export interface ProductCategoryCount {
   fill: string; 
 }
 
-// Cart Item type
+// Cart Item type - CORRECTED FOR SHIPPING
 export interface CartItem {
   id: string; // Unique ID for the cart item, e.g., `${productId}-${unit}`
   productId: string; // Original product ID
   name: string;
   description: string;
-  category: string;
-  strain?: string | null;
-  dispensaryId: string;
-  dispensaryName: string;
-  dispensaryType: string;
-  productOwnerEmail: string;
-  currency: string;
   price: number;
   unit: string;
   quantity: number;
   quantityInStock: number;
   imageUrl?: string | null;
+  category: string;
+  dispensaryId: string;
+  dispensaryName: string;
+  dispensaryType: string; 
+  productOwnerEmail: string;
+  
+  // Shipping-related dimension fields, mapped from PriceTier
+  weight?: number | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
 }
 
 // Types for generated brand assets
