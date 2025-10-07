@@ -1,8 +1,8 @@
-
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // Import useRouter
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, query, orderBy, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import type { Dispensary, DispensaryType } from '@/types';
@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Search, Filter, Loader2, Building, Store, CheckCheck } from 'lucide-react';
 import { DispensaryCard } from '@/components/admin/DispensaryCard';
-import { EditDispensaryDialog } from '@/components/admin/EditDispensaryDialog';
 import { useAuth } from '@/contexts/AuthContext';
 
 type WellnessStatusFilter = Dispensary['status'] | 'all';
@@ -20,6 +19,7 @@ type WellnessTypeFilter = string | 'all';
 
 export default function AdminWellnessPage() {
   const { isSuperAdmin, loading: authLoading } = useAuth();
+  const router = useRouter(); // Initialize router
   const [allWellnessEntities, setAllWellnessEntities] = useState<Dispensary[]>([]);
   const [filteredWellnessEntities, setFilteredWellnessEntities] = useState<Dispensary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,19 +29,13 @@ export default function AdminWellnessPage() {
   const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   const { toast } = useToast();
   
-  const [editingDispensary, setEditingDispensary] = useState<Dispensary | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
   const fetchWellnessAndTypes = useCallback(async () => {
     setIsLoading(true);
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
       const typesQuery = query(typesCollectionRef, orderBy('name'));
       const typesSnapshot = await getDocs(typesQuery);
-      const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({
-        id: docSnap.id,
-        ...docSnap.data()
-      } as DispensaryType));
+      const fetchedTypes: DispensaryType[] = typesSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
       setWellnessTypes(fetchedTypes);
 
       const wellnessCollectionRef = collection(db, 'dispensaries');
@@ -53,12 +47,7 @@ export default function AdminWellnessPage() {
         const applicationDate = data.applicationDate instanceof Timestamp ? data.applicationDate.toDate() : new Date(data.applicationDate as string);
         const approvedDate = data.approvedDate instanceof Timestamp ? data.approvedDate.toDate() : (data.approvedDate ? new Date(data.approvedDate as string) : undefined);
         
-        fetchedWellness.push({ 
-            id: docSnap.id, 
-            ...data,
-            applicationDate,
-            approvedDate,
-        } as Dispensary);
+        fetchedWellness.push({ id: docSnap.id, ...data, applicationDate, approvedDate } as Dispensary);
       });
       setAllWellnessEntities(fetchedWellness);
 
@@ -92,15 +81,18 @@ export default function AdminWellnessPage() {
       entitiesToFilter = entitiesToFilter.filter(d =>
         d.dispensaryName.toLowerCase().includes(lowercasedFilter) ||
         d.ownerEmail.toLowerCase().includes(lowercasedFilter) ||
-        (d.location && d.location.toLowerCase().includes(lowercasedFilter))
+        // Updated to search new structured address fields
+        (d.streetAddress && d.streetAddress.toLowerCase().includes(lowercasedFilter)) ||
+        (d.suburb && d.suburb.toLowerCase().includes(lowercasedFilter)) ||
+        (d.city && d.city.toLowerCase().includes(lowercasedFilter))
       );
     }
     setFilteredWellnessEntities(entitiesToFilter);
   }, [searchTerm, statusFilter, typeFilter, allWellnessEntities]);
 
+  // Updated handleEdit to navigate to the new page
   const handleEditDispensary = (dispensary: Dispensary) => {
-    setEditingDispensary(dispensary);
-    setIsEditDialogOpen(true);
+    router.push(`/admin/dashboard/dispensaries/edit/${dispensary.id}`);
   };
 
   const handleDeleteWellness = async (wellnessId: string, wellnessName: string) => {
@@ -108,6 +100,8 @@ export default function AdminWellnessPage() {
       toast({ title: "Permission Denied", description: "You are not authorized to delete profiles.", variant: "destructive" });
       return;
     }
+    if (!confirm(`Are you sure you want to delete ${wellnessName}? This action cannot be undone.`)) return;
+
     try {
       await deleteDoc(doc(db, 'dispensaries', wellnessId));
       toast({ title: "Store Deleted", description: `${wellnessName} has been removed.` });
@@ -125,22 +119,16 @@ export default function AdminWellnessPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <h1 
-              className="text-3xl font-bold flex items-center gap-2 text-foreground"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              <Building className="h-8 w-8 text-primary" /> Manage Stores
+            <h1 className="text-3xl font-bold flex items-center gap-2 text-foreground">
+              <Building className="h-8 w-8 text-primary" /> Manage Dispensaries
             </h1>
-            <p 
-              className="text-foreground" 
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-              View, edit, approve, or suspend applications and store profiles.
+            <p className="text-foreground">
+              View, edit, approve, or suspend applications and dispensary profiles.
             </p>
           </div>
           <Button asChild>
             <Link href="/admin/dashboard/dispensaries/create">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add new
+              <PlusCircle className="mr-2 h-4 w-4" /> Add New
             </Link>
           </Button>
         </div>
@@ -150,13 +138,13 @@ export default function AdminWellnessPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search by name, email, location..."
+              placeholder="Search by name, email, or address..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-full"
             />
           </div>
-          <div className="flex-grow sm:flex-grow-0 relative">
+           <div className="flex-grow sm:flex-grow-0 relative">
               <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
               <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as WellnessTypeFilter)}>
                 <SelectTrigger className="pl-10 w-full sm:w-[240px]">
@@ -197,7 +185,7 @@ export default function AdminWellnessPage() {
                 <DispensaryCard
                   key={wellness.id}
                   dispensary={wellness} 
-                  onEdit={() => handleEditDispensary(wellness)}
+                  onEdit={() => handleEditDispensary(wellness)} // This now navigates
                   onDelete={handleDeleteWellness}
                   isSuperAdmin={!!isSuperAdmin}
                 />
@@ -211,16 +199,7 @@ export default function AdminWellnessPage() {
           </div>
         )}
       </div>
-      {editingDispensary && (
-        <EditDispensaryDialog 
-            dispensary={editingDispensary}
-            isOpen={isEditDialogOpen}
-            onOpenChange={setIsEditDialogOpen}
-            onDispensaryUpdate={fetchWellnessAndTypes}
-            allDispensaryTypes={wellnessTypes}
-            isSuperAdmin={!!isSuperAdmin}
-        />
-      )}
+      {/* The dialog component is now completely removed */}
     </>
   );
 }

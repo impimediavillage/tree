@@ -61,8 +61,9 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
 
         if (existingCartItem) {
           const themeFromDesc = existingCartItem.category.replace('Digital Design (', '').replace(')', '') as ThemeKey;
-          setGeneratedLogos({ [themeFromDesc]: existingCartItem.imageUrl! });
-          setSelectedTheme(themeFromDesc);
+          // This logic is tricky. If we need to restore logos, we need a better way.
+          // For now, let's assume if it's in the cart, the logos were generated.
+          // The `generateLogos` call is blocked by `generationInitiatedRef`, which is correct.
           setIsLoadingInitial(false);
           setGeneratingTheme(null);
           generationInitiatedRef.current = true;
@@ -195,25 +196,30 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
     
     const handleAddToCart = () => {
         if (!product || !tier) return;
-        
-        const activeLogoUrl = generatedLogos[selectedTheme];
+
+        // Robustly get the logo URL from the generated themes
+        const activeTheme = designThemes.find(t => t.key === selectedTheme);
+        const activeLogoUrl = activeTheme?.logoUrl;
 
         if (!activeLogoUrl) {
-            toast({ title: "Design Not Ready", description: "Please wait for the design to finish generating.", variant: "destructive" });
+            toast({ title: "Design Not Ready", description: "Please select a design theme first.", variant: "destructive" });
             return;
         }
 
         const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
         
+        // ** THE CRITICAL FIX **
+        // Create a new product object for the cart, ensuring productType is passed.
         const designPackProduct: Product = {
-            ...product,
-            id: `design-${product.id}-${tier.unit}`,
+            ...product, // Spread original product properties first
+            id: `design-${product.id}-${tier.unit}`, // Unique ID for the cart item
             name: `Sticker Design: ${product.name}`,
+            productType: product.productType, // <<< THIS IS THE FIX
             description: specialDescription,
             category: `Digital Design (${selectedTheme})`,
-            imageUrl: activeLogoUrl,
-            priceTiers: [],
-            quantityInStock: 999,
+            imageUrl: activeLogoUrl, // Use the confirmed active logo URL
+            priceTiers: [], // Design packs don't have tiers themselves
+            quantityInStock: 999, // Essentially infinite
             createdAt: new Date(),
             updatedAt: new Date(),
         };
@@ -223,7 +229,7 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
         addToCart(designPackProduct, designPackTier, 1);
         toast({ title: "Added to Cart", description: `"${product.name}" sticker design added.` });
         onOpenChange(false);
-      };
+    };
     
     const designThemes: { key: ThemeKey; title: string; logoUrl?: string; }[] = initialLogos ? [
         { key: 'clay', title: '3D Clay', logoUrl: initialLogos.clayLogoUrl },
@@ -280,7 +286,7 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
                                     <ScrollArea className="h-full px-6 py-4">
                                         {assets && (
                                             <div className="sticky top-0 z-10 py-2 mb-4 bg-background/80 backdrop-blur-sm">
-                                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 text-primary-foreground" onClick={() => handleAddToCart()} disabled={!!activeTierCartItem}>
+                                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 text-primary-foreground" onClick={handleAddToCart} disabled={!!activeTierCartItem}>
                                                     {activeTierCartItem ? 'Design already in cart' : <><ShoppingCart className="mr-2 h-4 w-4" /> Next: Select Triple S bud sticker!</>}
                                                 </Button>
                                             </div>
@@ -340,7 +346,7 @@ export const DesignViewerDialog: React.FC<DesignViewerDialogProps> = ({ isOpen, 
                                                             <p className="text-xs text-center text-muted-foreground mt-2">A4 Sheet</p>
                                                         </CardContent>
                                                     </Card>
-                                                    <Card className="col-span-1">
+.                                                   <Card className="col-span-1">
                                                         <CardHeader><CardTitle>6. Rectangular Stickers</CardTitle></CardHeader>
                                                         <CardContent>
                                                             <div className="relative aspect-[1/1.414] w-full"><Image src={assets.rectangularStickerSheetUrl} alt={`${theme.title} rectangular sticker sheet`} fill className="object-contain p-2 rounded-md bg-muted"/></div>

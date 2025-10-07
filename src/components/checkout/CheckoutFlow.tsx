@@ -209,7 +209,7 @@ const ShippingMethodStep = ({ rates, isLoading, error, onBack, onContinue, selec
 
     return (
         <form onSubmit={(e) => { e.preventDefault(); onContinue(); }} className="space-y-6">
-            <RadioGroup value={selectedRate?.id.toString()} onValueChange={(rateId) => { const rate = rates.find(r => r.id.toString() === rateId); if (rate) onSelectRate(rate); }} name="shippingMethod" className="space-y-3">
+            <RadioGroup value={selectedRate?.id?.toString() || ''} onValueChange={(rateId) => { const rate = rates.find(r => r.id.toString() === rateId); if (rate) onSelectRate(rate); }} name="shippingMethod" className="space-y-3">
                 {rates.map(rate => (<Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary"><p className="font-semibold">{rate.courier_name} ({rate.name})</p><p className="font-bold">R{rate.rate.toFixed(2)}</p><RadioGroupItem value={rate.id.toString()} id={rate.id.toString()} className="sr-only" /></Label>))}
             </RadioGroup>
             <div className="flex justify-between items-center">
@@ -353,13 +353,19 @@ export function CheckoutFlow() {
                 const payload = {
                     cart: cartItems,
                     dispensaryId: dispensary.id,
-                    deliveryAddress: addressData.shippingAddress,
+                    deliveryAddress: addressData.shippingAddress, // Passing the whole object
                     customer: { name: addressData.fullName, email: currentUser?.email, phone: addressData.phoneNumber }
                 };
                 const result = await getShiplogicRates(payload);
-                const data = result.data as { rates: ShippingRate[] };
+                const data = result.data as { rates?: ShippingRate[], error?: string };
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
                 if (data.rates && data.rates.length > 0) {
                     setShippingRates(data.rates);
+                    setSelectedRate(data.rates[0]); // Pre-select the first rate
                 } else {
                     setApiError("No courier rates could be found for the provided address.");
                 }
@@ -438,7 +444,7 @@ export function CheckoutFlow() {
                         <PaymentStep
                             cart={cartItems}
                             shippingMethod={selectedRate}
-                            shippingAddress={addressData}
+                            shippingAddress={addressData.shippingAddress}
                             onBack={() => setStep(selectedRate.service_level === 'collection' || selectedRate.service_level === 'local' ? 2 : 3)} />
                     )}
                 </div>
@@ -493,7 +499,3 @@ export function CheckoutFlow() {
         </div>
     );
 }
-
-
-
-

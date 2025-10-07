@@ -17,6 +17,7 @@ interface CartContextType {
   setIsCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   toggleCart: () => void;
   loadCart: (items: CartItem[]) => void;
+  loading: boolean; // Added loading state
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -26,9 +27,11 @@ const CART_STORAGE_KEY = 'dispensaryTreeCart';
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [loading, setLoading] = useState(true); // Initialize loading state
   const { toast } = useToast();
 
   useEffect(() => {
+    setLoading(true);
     const storedCart = localStorage.getItem(CART_STORAGE_KEY);
     if (storedCart) {
       try {
@@ -38,15 +41,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem(CART_STORAGE_KEY);
       }
     }
+    setLoading(false); // Set loading to false after cart is loaded
   }, []);
 
   useEffect(() => {
-    if (cartItems.length > 0) {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-      } else {
-        localStorage.removeItem(CART_STORAGE_KEY);
-      }
-  }, [cartItems]);
+    if (!loading) { // Only write to localStorage if not in initial loading phase
+      if (cartItems.length > 0) {
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+        } else {
+          localStorage.removeItem(CART_STORAGE_KEY);
+        }
+    }
+  }, [cartItems, loading]);
 
   const loadCart = useCallback((items: CartItem[]) => {
       if (Array.isArray(items)) {
@@ -168,6 +174,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setIsCartOpen,
         toggleCart,
         loadCart,
+        loading, // Expose loading state
       }}
     >
       {children}

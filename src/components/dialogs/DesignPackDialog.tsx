@@ -141,6 +141,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             ...product,
             id: `design-${product.id}-${tier.unit}`,
             name: `Sticker Design: ${product.name} (${tier.unit})`,
+            productType: product.productType,
             description: specialDescription, 
             category: `Digital Design ('custom')`,
             imageUrl: selectedSticker, 

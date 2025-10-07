@@ -32,7 +32,12 @@ export interface Dispensary {
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];
-  location: string;
+  location?: string; // Legacy field, will be phased out
+  // New structured address fields for Shiplogic
+  streetAddress?: string;
+  suburb?: string;
+  city?: string;
+  postalCode?: string;
   latitude?: number | null;
   longitude?: number | null;
   deliveryRadius?: string | null;

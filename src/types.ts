@@ -33,7 +33,12 @@ export interface Dispensary {
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];
-  location: string;
+  location?: string; // Legacy field, will be phased out
+  // New structured address fields for Shiplogic
+  streetAddress?: string;
+  suburb?: string;
+  city?: string;
+  postalCode?: string;
   latitude?: number | null;
   longitude?: number | null;
   deliveryRadius?: string | null;
@@ -364,6 +369,7 @@ export interface CartItem {
   name: string;
   description: string;
   price: number;
+  currency: string;
   unit: string;
   quantity: number;
   quantityInStock: number;
@@ -373,7 +379,7 @@ export interface CartItem {
   dispensaryName: string;
   dispensaryType: string; 
   productOwnerEmail: string;
-  
+  productType?: string | null;  
   // Shipping-related dimension fields, mapped from PriceTier
   weight?: number | null;
   length?: number | null;

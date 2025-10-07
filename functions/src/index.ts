@@ -399,20 +399,29 @@ export const adminUpdateUser = onCall(async (request) => {
     }
 });
 
-// ============== FINAL, REWRITTEN & HARDENED SHIPPING FUNCTION ==============/
+// ============== FINAL, REWRITTEN & HARDENED SHIPPING FUNCTION ==============//
 
 const shiplogicApiKeySecret = defineSecret('SHIPLOGIC_API_KEY'); 
 const SHIPLOGIC_API_URL = 'https://api.shiplogic.com/v2/rates';
 
-interface ShipLogicRequestPayload {
+// Interface for the detailed address data we now get from the frontend
+interface FrontendDeliveryAddress {
+    address: string; // The full formatted address string from Google
+    latitude: number;
+    longitude: number;
+    street_number?: string;
+    route?: string; // Street name
+    locality?: string; // Suburb or local area
+    administrative_area_level_1?: string; // Province / State
+    country?: string;
+    postal_code?: string;
+}
+
+// Interface for the entire payload from the frontend
+interface GetRatesRequestPayload {
     cart: CartItem[];
     dispensaryId: string;
-    deliveryAddress: {
-        street_address: string;
-        local_area: string;
-        city: string;
-        code: string;
-    };
+    deliveryAddress: FrontendDeliveryAddress; // Use the new detailed address interface
     customer: {
         name: string;
         email: string;
@@ -420,9 +429,20 @@ interface ShipLogicRequestPayload {
     };
 }
 
+// Add a specific interface for our cleanly formatted rate
+interface FormattedRate {
+    id: any;
+    name: any;
+    rate: number;
+    service_level: any;
+    delivery_time: any;
+    courier_name: any;
+}
+
+// DEPRECATED: This helper function is no longer the primary method for parsing delivery addresses.
+// It remains as a last-resort fallback ONLY for the delivery address if Google's structured data is missing.
 const parseLocationString = (location: string): { street_address: string; local_area: string; city: string; code: string } => {
     const parts = location.split(',').map(part => part.trim());
-    // Handle cases with more or fewer than 4 parts gracefully
     if (parts.length >= 4) {
         return { 
             street_address: parts.slice(0, parts.length - 3).join(', '), 
@@ -431,54 +451,62 @@ const parseLocationString = (location: string): { street_address: string; local_
             code: parts[parts.length - 1]
         };
     }
-    // Fallback for simpler address formats
+    // Fallback for shorter address strings
     return { 
         street_address: parts[0] || '', 
         local_area: parts[1] || '', 
-        city: parts[1] || '', // Often city and local_area are the same in simpler formats
-        code: parts[2] || '' 
+        city: parts.length > 2 ? parts[parts.length - 2] : parts[parts.length - 1] || '', // Best guess for city
+        code: parts.length > 1 ? parts[parts.length - 1] : '' // Best guess for code
     };
 };
 
-export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors: true }, async (request: CallableRequest<ShipLogicRequestPayload>) => {
-    logger.info("getShiplogicRates invoked (v6 - FINAL & CORRECTED).");
-    
+export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors: true }, async (request: CallableRequest<GetRatesRequestPayload>) => {
+    logger.info("getShiplogicRates invoked (v12 - Final Backend Refactor).");
+
     if (!request.auth) {
-        throw new HttpsError('unauthenticated', 'Must be authenticated.');
+        throw new HttpsError('unauthenticated', 'Must be authenticated to fetch rates.');
     }
 
-    const data = request.data;
-    if (!data.cart || data.cart.length === 0 || !data.dispensaryId || !data.deliveryAddress) {
-        throw new HttpsError('invalid-argument', 'Request is missing required data: cart, dispensaryId, or deliveryAddress.');
+    const { cart, dispensaryId, deliveryAddress } = request.data;
+
+    if (!cart || cart.length === 0 || !dispensaryId || !deliveryAddress || !deliveryAddress.latitude || !deliveryAddress.longitude) {
+        return { error: 'Request is missing required data or a valid address.' };
     }
 
     const shiplogicApiKey = shiplogicApiKeySecret.value();
     if (!shiplogicApiKey) {
-        throw new HttpsError('internal', "Server configuration error: ShipLogic API key not found.");
+        logger.error("CRITICAL: ShipLogic API key not found in secrets.");
+        return { error: "Server configuration error: Shipping API key not found." };
     }
 
     try {
-        const dispensaryDoc = await db.collection('dispensaries').doc(data.dispensaryId).get();
+        const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
         if (!dispensaryDoc.exists) {
-            throw new HttpsError('not-found', `Dispensary '${data.dispensaryId}' not found.`);
+            throw new HttpsError('not-found', `Dispensary '${dispensaryId}' not found.`);
         }
         const dispensary = dispensaryDoc.data() as Dispensary;
-        if (!dispensary.location) {
-            throw new HttpsError('failed-precondition', 'Dispensary is missing its location address.');
-        }
 
-        const parcels = data.cart.map(item => {
-            const quantity = typeof item.quantity === 'number' && item.quantity > 0 ? item.quantity : 1;
-            
-            // Rigorous validation for each item's dimensions
-            if (typeof item.length !== 'number' || item.length <= 0 ||
-                typeof item.width !== 'number' || item.width <= 0 ||
-                typeof item.height !== 'number' || item.height <= 0 ||
-                typeof item.weight !== 'number' || item.weight <= 0) {
-                throw new HttpsError('invalid-argument', `Cart item '${item.name}' is missing valid shipping dimensions (length, width, height, weight).`);
-            }
-            
-            // Create a parcel for each *quantity* of an item
+        // === START: RELIABLE COLLECTION ADDRESS ===
+        // Use new structured fields first. Fallback to legacy 'location' field ONLY if necessary.
+        if (!dispensary.streetAddress || !dispensary.city || !dispensary.postalCode) {
+             logger.error('Dispensary is missing new structured address fields. This is a data migration issue.', { dispensaryId: dispensary.id });
+             throw new HttpsError('failed-precondition', 'Dispensary location address is incomplete. Please update the dispensary profile.');
+        }
+        
+        const collectionAddress = {
+            street_address: dispensary.streetAddress,
+            local_area: dispensary.suburb || '', // Suburb is optional
+            city: dispensary.city,
+            code: dispensary.postalCode,
+            country: 'ZA', 
+            type: 'business', 
+            company: dispensary.dispensaryName
+        };
+        // === END: RELIABLE COLLECTION ADDRESS ===
+
+        const parcels = cart.map(item => {
+            const quantity = (typeof item.quantity === 'number' && item.quantity > 0) ? item.quantity : 1;
+            if (!item.length || !item.width || !item.height || !item.weight) return null;
             return Array(quantity).fill({
                 submitted_length_cm: item.length,
                 submitted_width_cm: item.width,
@@ -486,53 +514,98 @@ export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors
                 submitted_weight_kg: item.weight,
                 parcel_description: item.name,
             });
-        }).flat(); // Flatten the array of arrays into a single array of parcels
+        }).flat().filter(p => p !== null) as object[];
 
         if (parcels.length === 0) {
-            throw new HttpsError('failed-precondition', 'Cannot get shipping rates for an empty list of parcels.');
+            return { error: 'No items in the cart have valid shipping dimensions.' };
         }
 
-        const parsedCollectionAddress = parseLocationString(dispensary.location);
+        // ====== Robust Delivery Address Construction Logic (Remains as is) ======
+        let deliveryCity = deliveryAddress.locality;
+        let deliveryCode = deliveryAddress.postal_code;
+
+        if (!deliveryCity || !deliveryCode) {
+            logger.info("Core delivery address components missing, falling back to string parsing.", { 
+                locality: deliveryAddress.locality, 
+                postal_code: deliveryAddress.postal_code 
+            });
+            const parsedDeliveryAddress = parseLocationString(deliveryAddress.address);
+            if (!deliveryCity) {
+                deliveryCity = parsedDeliveryAddress.city || parsedDeliveryAddress.local_area;
+            }
+            if (!deliveryCode) {
+                deliveryCode = parsedDeliveryAddress.code;
+            }
+        }
         
+        if (!deliveryCity) {
+            logger.error("Could not determine a valid city for the delivery address after fallback.", { address: deliveryAddress.address });
+            return { error: "Could not determine a valid city for the delivery address. Please try a different address format." };
+        }
+        // =============================================
+
         const shipLogicPayload = {
-            collection_address: { ...parsedCollectionAddress, country: 'ZA', type: 'business', company: dispensary.dispensaryName },
-            delivery_address: { ...data.deliveryAddress, country: 'ZA', type: 'residential' },
+            collection_address: collectionAddress, // Use the new reliable collection address
+            delivery_address: {
+                street_address: `${deliveryAddress.street_number || ''} ${deliveryAddress.route || ''}`.trim() || deliveryAddress.address.split(',')[0],
+                local_area: deliveryAddress.locality || deliveryCity, 
+                city: deliveryCity, 
+                zone: deliveryAddress.administrative_area_level_1 || '', 
+                code: deliveryCode || '',
+                country: 'ZA',
+                type: 'residential',
+                lat: deliveryAddress.latitude,
+                lng: deliveryAddress.longitude,
+            },
             parcels: parcels,
-            declared_value: data.cart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0),
+            declared_value: cart.reduce((total, item) => total + (item.price || 0) * (item.quantity || 1), 0),
         };
-
-        logger.info("Sending final, corrected payload to ShipLogic:", { payload: shipLogicPayload });
-
+        
         const response = await fetch(SHIPLOGIC_API_URL, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${shiplogicApiKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(shipLogicPayload)
         });
 
+        const responseData = await response.json();
+
         if (!response.ok) {
-            const errorText = await response.text();
-            logger.error('ShipLogic API returned an error:', { status: response.status, body: errorText });
-            throw new HttpsError('internal', `Shipping Provider Error: ${errorText}`);
+            const errorMessage = responseData.error || responseData.message || JSON.stringify(responseData);
+            logger.error('ShipLogic API returned an error:', { status: response.status, body: errorMessage });
+            return { error: `Shipping Provider Error: ${errorMessage}` };
         }
 
-        const responseData = await response.json();
+        const ratesSource = responseData?.rates || (Array.isArray(responseData) ? responseData : []);
         
-        // The response is an array of rate objects directly
-        const formattedRates = (responseData || []).map((rate: any) => ({
-            id: rate.id, 
-            name: rate.service_level.name,
-            rate: parseFloat(rate.rate),
-            service_level: rate.service_level.name,
-            delivery_time: rate.service_level.description,
-            courier_name: rate.courier_name,
-        }));
+        if (!Array.isArray(ratesSource)) {
+            logger.warn("Shiplogic response was not an array as expected.", { responseData });
+            return { rates: [] };
+        }
 
-        logger.info(`Successfully fetched ${formattedRates.length} rates from ShipLogic.`);
+        const formattedRates = ratesSource.map((rate: any): FormattedRate | null => {
+            if (!rate || rate.id == null || !rate.service_level || typeof rate.rate !== 'number') {
+                logger.warn("Skipping malformed rate from Shiplogic:", rate);
+                return null; 
+            }
+            return {
+                id: rate.id, 
+                name: rate.service_level.name || 'Unnamed Service',
+                rate: parseFloat(rate.rate),
+                service_level: rate.service_level.name || 'N/A',
+                delivery_time: rate.service_level.description || 'No delivery estimate',
+                courier_name: rate.courier_name || 'Unknown Courier',
+            };
+        }).filter((rate): rate is FormattedRate => rate !== null);
+
+        if (formattedRates.length === 0) {
+            logger.warn("Shiplogic returned 0 valid rates for the address.", { payload: shipLogicPayload });
+        }
+
+        logger.info(`Successfully parsed ${formattedRates.length} rates from ShipLogic.`);
         return { rates: formattedRates };
 
     } catch (error: any) {
         logger.error('CRITICAL ERROR in getShiplogicRates function:', error);
-        if (error instanceof HttpsError) throw error;
-        throw new HttpsError('internal', 'An unexpected server error occurred while fetching shipping rates.');
+        return { error: error.message || 'An unexpected server error occurred.' };
     }
 });
