@@ -24,23 +24,22 @@ import { Label } from "@/components/ui/label";
 import { PaymentStep } from './PaymentStep';
 
 // --- SCHEMAS AND TYPES ---
-
 const addressSchema = z.object({
   fullName: z.string().min(3, 'Full name is required'),
   email: z.string().email('Please enter a valid email address'),
   phoneNumber: z.string().min(10, 'A valid phone number is required'),
   shippingAddress: z.object({
-    address: z.string().min(5, 'Please enter a valid address.'),
-    latitude: z.number().refine(val => val !== 0, "Please select a valid address from the map or suggestions."),
-    longitude: z.number().refine(val => val !== 0, "Please select a valid address from the map or suggestions."),
-    street_number: z.string().optional(),
-    route: z.string().optional(),
-    locality: z.string().optional(),
-    administrative_area_level_1: z.string().optional(),
-    country: z.string().optional(),
-    postal_code: z.string().optional(),
+    streetAddress: z.string().min(5, 'A valid street address is required.'),
+    suburb: z.string().min(2, 'A valid suburb is required.'),
+    city: z.string().min(2, 'A valid city is required.'),
+    province: z.string().min(2, 'A valid province is required.'),
+    postalCode: z.string().min(4, 'A valid postal code is required.'),
+    country: z.string().min(2, 'A valid country is required.'),
+    latitude: z.number().refine(val => val !== 0, "Please select an address from the map."),
+    longitude: z.number().refine(val => val !== 0, "Please select an address from the map."),
   }),
 });
+
 type AddressValues = z.infer<typeof addressSchema>;
 interface ShippingRate { id: number; name: string; rate: number; service_level: string; delivery_time: string; courier_name: string; }
 
@@ -73,7 +72,7 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
         mapInitialized.current = true;
 
         try {
-            const loader = new Loader({ apiKey: apiKey, version: 'weekly', libraries: ['places'] });
+            const loader = new Loader({ apiKey: apiKey, version: 'weekly', libraries: ['places', 'geocoding'] });
             const google = await loader.load();
             const initialPosition = { lat: -29.8587, lng: 31.0218 };
             
@@ -88,17 +87,24 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
 
             const markerInstance = new google.maps.Marker({ map: mapInstance, position: initialPosition, draggable: true, title: 'Drag to set location' });
 
-            const setAddressComponents = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
-                const components: { [key: string]: string } = {};
-                place.address_components?.forEach(component => { components[component.types[0]] = component.long_name; });
-                form.setValue('shippingAddress.street_number', components['street_number'] || '');
-                form.setValue('shippingAddress.route', components['route'] || '');
-                form.setValue('shippingAddress.locality', components['locality'] || '');
-                form.setValue('shippingAddress.administrative_area_level_1', components['administrative_area_level_1'] || '');
-                form.setValue('shippingAddress.country', components['country'] || '');
-                form.setValue('shippingAddress.postal_code', components['postal_code'] || '');
-            };
+            const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string): string =>
+                components.find(c => c.types.includes(type))?.long_name || '';
 
+            const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
+                const components = place.address_components;
+                if (!components) return;
+
+                const streetNumber = getAddressComponent(components, 'street_number');
+                const route = getAddressComponent(components, 'route');
+                
+                form.setValue('shippingAddress.streetAddress', `${streetNumber} ${route}`.trim(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('shippingAddress.suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('shippingAddress.city', getAddressComponent(components, 'administrative_area_level_2'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('shippingAddress.province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('shippingAddress.postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('shippingAddress.country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
+            };
+            
             const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, {
                 fields: ['formatted_address', 'address_components', 'geometry.location'],
                 types: ['address'],
@@ -112,10 +118,9 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
                     mapInstance.setCenter(loc);
                     mapInstance.setZoom(17);
                     markerInstance.setPosition(loc);
-                    form.setValue('shippingAddress.address', place.formatted_address || '', { shouldValidate: true });
                     form.setValue('shippingAddress.latitude', loc.lat(), { shouldValidate: true });
                     form.setValue('shippingAddress.longitude', loc.lng(), { shouldValidate: true });
-                    setAddressComponents(place);
+                    setAddressFields(place);
                 }
             });
 
@@ -127,8 +132,8 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
                  form.setValue('shippingAddress.longitude', latLng.lng(), { shouldValidate: true, shouldDirty: true });
                  geocoder.geocode({ location: latLng }, (results, status) => {
                     if (status === 'OK' && results?.[0]) {
-                        form.setValue('shippingAddress.address', results[0].formatted_address || '', { shouldValidate: true, shouldDirty: true });
-                        setAddressComponents(results[0]);
+                        if(locationInputRef.current) locationInputRef.current.value = results[0].formatted_address || '';
+                        setAddressFields(results[0]);
                     }
                 });
             }
@@ -150,21 +155,31 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
     return (
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onContinue)} className="space-y-6">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h3 className="text-lg font-semibold border-b pb-2">Contact Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="you@email.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="shippingAddress.address" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Shipping Address</FormLabel>
-                        <FormControl><Input placeholder="Start typing your address..." {...field} ref={locationInputRef} onChange={(e) => { field.onChange(e); if (form.getValues('shippingAddress.latitude') !== 0) { form.setValue('shippingAddress.latitude', 0); form.setValue('shippingAddress.longitude', 0); } }}/></FormControl>
-                        <FormDescription>Select an address from the suggestions to pinpoint it on the map.</FormDescription>
-                        <FormMessage />
-                    </FormItem>
-                )}/>
+                
+                <h3 className="text-lg font-semibold border-b pb-2 pt-4">Shipping Location</h3>
+                <FormItem>
+                    <FormLabel>Location Search</FormLabel>
+                    <FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl>
+                    <FormDescription>Select an address to auto-fill the fields below. You can also click the map or drag the pin.</FormDescription>
+                </FormItem>
+
                 <div ref={mapContainerRef} className="h-[250px] w-full rounded-md border bg-muted" />
-                <FormDescription>Or, click on the map or drag the marker to set your precise location.</FormDescription>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={form.control} name="shippingAddress.streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+
                 <Button type="submit" disabled={isSubmitting} className="w-full pt-6">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Continue to Delivery Option 
@@ -174,6 +189,7 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
         </FormProvider>
     );
 };
+
 
 const ShippingTierStep = ({ shippingMethods, onSelectTier, onBack }: { shippingMethods: string[]; onSelectTier: (tier: string) => void; onBack: () => void; }) => {
     if (!shippingMethods || shippingMethods.length === 0) {
@@ -241,7 +257,21 @@ export function CheckoutFlow() {
 
     const form = useForm<AddressValues>({
         resolver: zodResolver(addressSchema),
-        defaultValues: { fullName: '', email: '', phoneNumber: '', shippingAddress: { address: '', latitude: 0, longitude: 0 } },
+        defaultValues: {
+            fullName: '', 
+            email: '', 
+            phoneNumber: '', 
+            shippingAddress: { 
+                streetAddress: '', 
+                suburb: '', 
+                city: '', 
+                province: '',
+                postalCode: '', 
+                country: '',
+                latitude: 0, 
+                longitude: 0 
+            } 
+        },
         mode: 'onChange'
     });
 
@@ -272,63 +302,36 @@ export function CheckoutFlow() {
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
         try {
-            // If user is already logged in, just proceed
             if (firebaseUser) {
                 setAddressData(values);
                 setStep(2);
                 return;
             }
 
-            // Check if user account exists
             const methods = await fetchSignInMethodsForEmail(auth, values.email);
-
             if (methods.length > 0) {
-                // User exists, but is not logged in.
-                toast({
-                    title: "An account with this email already exists.",
-                    description: "Please log in to continue your purchase.",
-                    variant: "destructive",
-                    duration: 5000,
-                });
+                toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });
                 return;
             }
 
-            // User does not exist, create a new account
-            toast({
-                title: "Creating your account...",
-                description: "For your convenience, we're setting up an account for you to track your orders.",
-            });
+            toast({ title: "Creating your account...", description: "For your convenience, we're setting up an account for you to track your orders." });
             
-            // Generate a secure random password for the new user
             const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
             const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
             const newUser = userCredential.user;
 
             if (newUser) {
-                // Save user details to a 'users' collection in Firestore
-                await setDoc(doc(db, "users", newUser.uid), {
-                    uid: newUser.uid,
-                    email: values.email,
-                    name: values.fullName,
-                    phoneNumber: values.phoneNumber,
-                    role: 'approved' // Set user role as requested
-                });
+                await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved' });
             } else {
                 throw new Error("Could not create user account.");
             }
             
-            // The onAuthStateChanged listener in AuthContext will handle the login state.
-            // Now we can proceed.
             setAddressData(values);
             setStep(2);
 
         } catch (error: any) {
             console.error("Error during user creation/check:", error);
-            toast({
-                title: "Authentication Error",
-                description: error.message || "An unexpected error occurred. Please try again.",
-                variant: "destructive"
-            });
+            toast({ title: "Authentication Error", description: error.message || "An unexpected error occurred. Please try again.", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -350,22 +353,32 @@ export function CheckoutFlow() {
             setIsLoadingRates(true);
             try {
                 const getShiplogicRates = httpsCallable(functions, 'getShiplogicRates');
+                // Shiplogic expects province to be under the `zone` key
+                const deliveryAddressForApi = {
+                    street_address: addressData.shippingAddress.streetAddress,
+                    local_area: addressData.shippingAddress.suburb,
+                    city: addressData.shippingAddress.city,
+                    zone: addressData.shippingAddress.province,
+                    code: addressData.shippingAddress.postalCode,
+                    country: addressData.shippingAddress.country,
+                    lat: addressData.shippingAddress.latitude,
+                    lng: addressData.shippingAddress.longitude,
+                };
+
                 const payload = {
                     cart: cartItems,
                     dispensaryId: dispensary.id,
-                    deliveryAddress: addressData.shippingAddress, // Passing the whole object
+                    deliveryAddress: deliveryAddressForApi,
                     customer: { name: addressData.fullName, email: currentUser?.email, phone: addressData.phoneNumber }
                 };
                 const result = await getShiplogicRates(payload);
                 const data = result.data as { rates?: ShippingRate[], error?: string };
 
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                if (data.error) throw new Error(data.error);
 
                 if (data.rates && data.rates.length > 0) {
                     setShippingRates(data.rates);
-                    setSelectedRate(data.rates[0]); // Pre-select the first rate
+                    setSelectedRate(data.rates[0]);
                 } else {
                     setApiError("No courier rates could be found for the provided address.");
                 }
@@ -377,17 +390,11 @@ export function CheckoutFlow() {
             }
             setStep(3);
         } else if (tier === 'collection') {
-            const collectionRate: ShippingRate = {
-                id: 999, name: 'In-Store Collection', rate: 0, service_level: 'collection',
-                delivery_time: 'N/A', courier_name: 'Collect at dispensary',
-            };
+            const collectionRate: ShippingRate = { id: 999, name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: 'Collect at dispensary' };
             setSelectedRate(collectionRate);
             setStep(4);
         } else if (tier === 'in_house') {
-            const inHouseRate: ShippingRate = {
-                id: 998, name: 'Local Delivery', rate: 50.00, // Placeholder fee
-                service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: 'In-house delivery',
-            };
+            const inHouseRate: ShippingRate = { id: 998, name: 'Local Delivery', rate: 50.00, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: 'In-house delivery' };
             setSelectedRate(inHouseRate);
             setStep(4);
         } else {
@@ -415,7 +422,6 @@ export function CheckoutFlow() {
         if (cartItems.length === 0 && !cartLoading) {
              return <div className="text-center p-8 text-muted-foreground"><h3>Your Cart is Empty</h3><p>Add some items to your cart to begin the checkout process.</p></div>;
         }
-
 
         return (
             <>

@@ -11,9 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, ArrowLeft, Building } from 'lucide-react';
+import { Loader2, ArrowLeft, Building } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
 import type { DispensaryType } from '@/types';
@@ -56,12 +55,11 @@ export default function WellnessSignupPage() {
     mode: "onChange",
     defaultValues: {
       fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
-      dispensaryType: undefined, currency: undefined,
+      dispensaryType: undefined, currency: 'ZAR',
       operatingDays: [], shippingMethods: [],
-      // NEW STRUCTURED ADDRESS DEFAULTS
-      streetAddress: '', suburb: '', city: '', postalCode: '',
+      streetAddress: '', suburb: '', city: '', postalCode: '', province: '', country: '',
       latitude: undefined, longitude: undefined,
-      showLocation: true, deliveryRadius: undefined,
+      showLocation: true, deliveryRadius: 'none',
       message: '', acceptTerms: false,
       openTime: '', closeTime: '',
     },
@@ -108,7 +106,9 @@ export default function WellnessSignupPage() {
             form.setValue('streetAddress', `${streetNumber} ${route}`.trim(), { shouldValidate: true, shouldDirty: true });
             form.setValue('suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
             form.setValue('city', getAddressComponent(components, 'administrative_area_level_2') || getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
+            form.setValue('province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
             form.setValue('postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
+            form.setValue('country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
         };
 
         const map = new google.maps.Map(mapContainerRef.current!, { center: { lat: -29.8587, lng: 31.0218 }, zoom: 6, mapId: 'b39f3f8b7139051d' });
@@ -165,16 +165,13 @@ export default function WellnessSignupPage() {
   async function onSubmit(data: DispensarySignupFormData) {
     setIsLoading(true);
     
-    // Create a clean data object for Firestore, removing the deprecated 'location' field
-    const { ...rest } = data;
     const wellnessData = {
-      ...rest,
+      ...data,
       status: 'Pending Approval' as const,
       applicationDate: Timestamp.fromDate(new Date()),
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null,
     };
-    delete (wellnessData as any).location; // Ensure deprecated field is not sent
 
     try {
       await addDoc(collection(db, 'dispensaries'), wellnessData);
@@ -225,10 +222,9 @@ export default function WellnessSignupPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
               
-              {/* Owner & Store Info Sections */}
-              <div>
+              <section>
                 <h2 className="text-xl font-semibold border-b pb-2 text-foreground">Owner & Store Information</h2>
                 <div className="grid md:grid-cols-2 gap-6 mt-4">
                   <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -236,12 +232,12 @@ export default function WellnessSignupPage() {
                   <FormField control={form.control} name="dispensaryName" render={({ field }) => (<FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="e.g., The Green Leaf" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="dispensaryType" render={({ field }) => (<FormItem><FormLabel>Store Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
-              </div>
+              </section>
               
-              {/* Location & Contact Section */}
-              <div>
+              <section>
                 <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Contact</h2>
                 <div className="mt-4 space-y-6">
+                    <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
                     <FormItem>
                         <FormLabel>Location Search</FormLabel>
                         <FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl>
@@ -252,7 +248,9 @@ export default function WellnessSignupPage() {
                         <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                     </div>
 
                     <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
@@ -268,11 +266,23 @@ export default function WellnessSignupPage() {
                             <FormMessage />
                         </FormItem>
                     )} />
+                    <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel>Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
-              </div>
+              </section>
               
-              {/* Other sections like Operating Hours, Delivery, etc. */}
-              {/* ... These sections remain unchanged ... */}
+              <section>
+                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Operations & Services</h2>
+                <div className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                    <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
+                    <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods</FormLabel><FormDescription>Select all the ways you can get products to customers.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
+                    <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
+                </div>
+              </section>
 
               <div className="pt-4">
                 <FormField control={form.control} name="acceptTerms" render={({ field }) => (

@@ -9,6 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { BRAND_NAME } from '@/config/brand';
 
 // Define the inputs/outputs for the flows.
 const GenerateThemedLogoInputSchema = z.object({
@@ -97,7 +98,7 @@ const getUnifiedStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle'
 🧾 TEXT & BORDER RULES:
 - The design must be enclosed in a **precise circular border**.
 - **Top Arc Text:** Include "${subjectName_UPPERCASE}" following the top curve of the circle.
-- **Bottom Arc Text:** Include "THE WELLNESS TREE" on the bottom curve.
+- **Bottom Arc Text:** Include "${BRAND_NAME.toUpperCase()}" on the bottom curve.
 - Both texts must follow the circle perfectly and use the **${details.fontAndBorderStyle}** to match the design language.
 - Ensure the text is bold, readable, cleanly curved, and **visually balanced** around the sticker’s circumference.
 

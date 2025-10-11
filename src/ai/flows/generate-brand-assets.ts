@@ -21,6 +21,7 @@ import type {
     GenerateApparelInput,
     ThemeAssetSet
 } from '@/types';
+import { BRAND_NAME } from '@/config/brand';
 
 
 // --- SHARED HELPERS ---
@@ -92,7 +93,7 @@ const getCircularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmstyle
 🧾 TEXT & BORDER RULES:
 - The design must be enclosed in a **precise circular border**.
 - **Top Arc Text:** Include "${subjectName_UPPERCASE}" following the top curve of the circle.
-- **Bottom Arc Text:** Include "THE WELLNESS TREE" on the bottom curve.
+- **Bottom Arc Text:** Include "${BRAND_NAME.toUpperCase()}" on the bottom curve.
 - Both texts must follow the circle perfectly and use the **${details.fontAndBorderStyle}** to match the design language.
 - Ensure the text is bold, readable, cleanly curved, and **visually balanced** around the sticker’s circumference.
 
@@ -122,7 +123,7 @@ const getRectangularStickerPrompt = (style: 'clay' | 'comic' | 'rasta' | 'farmst
     
     **Artwork:** The design must incorporate the same subject matter (${artworkSubject}) and visual style as its circular counterpart. Create a compelling rectangular composition; do NOT just place a circle on a rectangle.
     
-    **Text:** The sticker must clearly and legibly incorporate the text **"${subjectName.toUpperCase()}"** and **"THE WELLNESS TREE"**. The font should be bold, readable, and match the overall design style.
+    **Text:** The sticker must clearly and legibly incorporate the text **"${subjectName.toUpperCase()}"** and **"${BRAND_NAME.toUpperCase()}"**. The font should be bold, readable, and match the overall design style.
     
     **Final Check:** The output is a single, rectangular, ${style}-style sticker on a white background, with integrated artwork and text.`;
 };
@@ -144,7 +145,7 @@ const getTrippyStickerPrompt = (circularStickerUrl: string, subjectName: string)
     
     **Text and Border:** The design must be enclosed in a circular border.
     - On the **top curve** of the border, incorporate the name **"${subjectName.toUpperCase()}"**.
-    - On the **bottom curve** of the border, incorporate the words **"THE WELLNESS TREE"**.
+    - On the **bottom curve** of the border, incorporate the words **"${BRAND_NAME.toUpperCase()}"**.
     - The font and border style must be **DIFFERENT** from the original sticker but still complementary and wacky. Be creative with the text and border to match the trippy theme.
     
     The output should be a single, wacky circular sticker on a solid white background.` }

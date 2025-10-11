@@ -123,6 +123,7 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         defaultValues: {
             ...initialData,
             showLocation: initialData.showLocation ?? true, // Default to true if undefined
+            country: initialData.country || '',
         },
     });
 
@@ -162,8 +163,9 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
                 form.setValue('streetAddress', `${getAddrComp(c, 'street_number')} ${getAddrComp(c, 'route')}`.trim(), { shouldValidate: true, shouldDirty: true });
                 form.setValue('suburb', getAddrComp(c, 'locality'), { shouldValidate: true, shouldDirty: true });
                 form.setValue('city', getAddrComp(c, 'administrative_area_level_2'), { shouldValidate: true, shouldDirty: true });
-                form.setValue('province', getAddrComp(c, 'administrative_area_level_1', true), { shouldValidate: true, shouldDirty: true });
+                form.setValue('province', getAddrComp(c, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
                 form.setValue('postalCode', getAddrComp(c, 'postal_code'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('country', getAddrComp(c, 'country'), { shouldValidate: true, shouldDirty: true });
                 if (locationInputRef.current && p.formatted_address) locationInputRef.current.value = p.formatted_address;
             };
             const updateLatLng = (lat: number, lng: number) => { marker.setPosition({ lat, lng }); form.setValue('latitude', lat, { shouldValidate: true, shouldDirty: true }); form.setValue('longitude', lng, { shouldValidate: true, shouldDirty: true }); };
@@ -259,6 +261,7 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
                                     <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                                 </div>
                                 <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
                                 <FormField control={form.control} name="phone" render={() => (<FormItem><FormLabel>Contact Phone</FormLabel><div className="flex items-center gap-2"><Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue/></SelectTrigger><SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent></Select><Input type="tel" placeholder="e.g. 821234567" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} /></div><FormMessage /></FormItem>)} />

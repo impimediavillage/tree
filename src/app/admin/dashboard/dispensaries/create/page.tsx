@@ -6,8 +6,8 @@ import { baseWellnessSchema, type BaseWellnessFormData } from '@/lib/schemas';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox'; // Added
-import { Textarea } from '@/components/ui/textarea'; // Added
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -61,7 +61,7 @@ export default function AdminCreateDispensaryPage() {
       fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
       dispensaryType: undefined, currency: 'ZAR', 
       operatingDays: [], shippingMethods: [],
-      streetAddress: '', suburb: '', city: '', postalCode: '', province: '',
+      streetAddress: '', suburb: '', city: '', postalCode: '', province: '', country: '',
       latitude: undefined, longitude: undefined,
       showLocation: true, deliveryRadius: 'none',
       message: '', openTime: '', closeTime: '',
@@ -111,8 +111,9 @@ export default function AdminCreateDispensaryPage() {
             form.setValue('streetAddress', `${getAddressComponent(components, 'street_number')} ${getAddressComponent(components, 'route')}`.trim(), { shouldValidate: true, shouldDirty: true });
             form.setValue('suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
             form.setValue('city', getAddressComponent(components, 'administrative_area_level_2'), { shouldValidate: true, shouldDirty: true });
-            form.setValue('province', getAddressComponent(components, 'administrative_area_level_1', true), { shouldValidate: true, shouldDirty: true });
+            form.setValue('province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
             form.setValue('postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
+            form.setValue('country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
         };
 
         const map = new google.maps.Map(mapContainerRef.current!, { center: { lat: -29.8587, lng: 31.0218 }, zoom: 6, mapId: 'b39f3f8b7139051d' });
@@ -202,6 +203,7 @@ export default function AdminCreateDispensaryPage() {
               <section>
                  <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Location & Contact</h2>
                 <div className="space-y-6">
+                    <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
                     <FormItem><FormLabel>Find Address</FormLabel><FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl></FormItem>
                     <div className="grid md:grid-cols-2 gap-6">
                         <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -212,6 +214,7 @@ export default function AdminCreateDispensaryPage() {
                         <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
+                    <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
                     <FormField control={form.control} name="phone" render={() => (<FormItem><FormLabel>Contact Phone Number</FormLabel><div className="flex items-center gap-2"><Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger><SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent></Select><Input type="tel" placeholder="e.g. 821234567" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} /></div><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel>Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
