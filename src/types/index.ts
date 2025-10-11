@@ -94,6 +94,7 @@ export interface CartItem {
   id: string;
   productId: string;
   name: string;
+  originalName?: string;
   description?: string;
   category: string;
   strain?: string | null;
@@ -114,4 +115,22 @@ export interface CartItem {
   length?: number;
   width?: number;
   height?: number;
+}
+
+// --- OCR Result Interfaces ---
+export interface OcrFrame {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface OcrRecognitionResult {
+  text: string;
+  confidence: number;
+  frame: OcrFrame;
+}
+
+export interface OcrResult {
+  results: OcrRecognitionResult[][];
 }

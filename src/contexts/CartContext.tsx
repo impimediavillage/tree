@@ -68,7 +68,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     if (existingItemIndex > -1) {
       newCartItems[existingItemIndex].quantity += quantity;
-      // CORRECTED: Only update image for THC products
       if (isThcProduct && overrideImageUrl) {
           newCartItems[existingItemIndex].imageUrl = overrideImageUrl;
       }
@@ -76,8 +75,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const newItem: CartItem = {
         id: cartItemId,
         productId: product.id,
-        name: isThcProduct ? 'Triple S Design Pack' : product.name,
-        description: isThcProduct ? product.name : undefined, 
+        name: isThcProduct ? 'Triple S Design Pack with free gift.' : product.name,
+        originalName: isThcProduct ? product.name : undefined,
         category: product.category,
         strain: product.strain,
         price: tier.price,
@@ -89,8 +88,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         currency: product.currency,
         unit: tier.unit,
         quantityInStock: tier.quantityInStock,
-        // DEFINITIVE FIX: The override image is ONLY used if the productType is 'THC'.
-        // All other product types will ALWAYS use the default product image.
         imageUrl: isThcProduct && overrideImageUrl ? overrideImageUrl : (product.imageUrls?.[0] || '/placeholder.svg'),
         productType: product.productType, 
         weight: tier.weightKgs,
