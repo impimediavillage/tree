@@ -1,13 +1,13 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { auth, db, functions } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '@/contexts/AuthContext';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import type { CartItem, Dispensary } from '@/types';
+import { doc, setDoc } from 'firebase/firestore';
+import type { CartItem, ShippingRate, AddressValues, GroupedCart } from '@/types';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,17 +18,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
-import { Label } from "@/components/ui/label";
 import { PaymentStep } from './PaymentStep';
+import { DispensaryShippingGroup } from './DispensaryShippingGroup';
 
-// --- SCHEMAS AND TYPES ---
+// --- SCHEMAS ---
 const addressSchema = z.object({
   fullName: z.string().min(3, 'Full name is required'),
   email: z.string().email('Please enter a valid email address'),
   phoneNumber: z.string().min(10, 'A valid phone number is required'),
   shippingAddress: z.object({
+    address: z.string().min(5, 'A full address is required. Please select one from the map.'),
     streetAddress: z.string().min(5, 'A valid street address is required.'),
     suburb: z.string().min(2, 'A valid suburb is required.'),
     city: z.string().min(2, 'A valid city is required.'),
@@ -39,18 +39,6 @@ const addressSchema = z.object({
     longitude: z.number().refine(val => val !== 0, "Please select an address from the map."),
   }),
 });
-
-type AddressValues = z.infer<typeof addressSchema>;
-interface ShippingRate { id: number; name: string; rate: number; service_level: string; delivery_time: string; courier_name: string; }
-
-const allShippingMethodsMap: { [key: string]: string } = {
-  "dtd": "Door-to-Door Courier (The Courier Guy)",
-  "dtl": "Door-to-Locker (Pudo)",
-  "ltd": "Locker-to-Door (Pudo)",
-  "ltl": "Locker-to-Locker (Pudo)",
-  "collection": "Collection from Store",
-  "in_house": "In-house Delivery Service",
-};
 
 // --- CHILD COMPONENTS ---
 
@@ -93,6 +81,12 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
             const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
                 const components = place.address_components;
                 if (!components) return;
+                
+                // **CRITICAL FIX**: Capture the full formatted address
+                const formattedAddress = place.formatted_address;
+                if (formattedAddress) {
+                    form.setValue('shippingAddress.address', formattedAddress, { shouldValidate: true, shouldDirty: true });
+                }
 
                 const streetNumber = getAddressComponent(components, 'street_number');
                 const route = getAddressComponent(components, 'route');
@@ -182,7 +176,7 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
 
                 <Button type="submit" disabled={isSubmitting} className="w-full pt-6">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Continue to Delivery Option 
+                    Continue to Delivery Options
                     {!isSubmitting && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
             </form>
@@ -190,70 +184,52 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
     );
 };
 
-
-const ShippingTierStep = ({ shippingMethods, onSelectTier, onBack }: { shippingMethods: string[]; onSelectTier: (tier: string) => void; onBack: () => void; }) => {
-    if (!shippingMethods || shippingMethods.length === 0) {
-        return (
-             <div className="space-y-6 text-center">
-                <h3 className="text-lg font-semibold">No Delivery Options Available</h3>
-                <p className="text-muted-foreground">This dispensary has not configured any shipping or collection methods.</p>
-                <Button variant="outline" onClick={onBack} className="mt-4"><ArrowLeft className="mr-2 h-4 w-4" /> Go Back</Button>
-            </div>
-        )
-    }
+const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onContinue, onShippingSelectionsChange, shippingSelections }: { groupedCart: GroupedCart; addressData: AddressValues; onBack: () => void; onContinue: () => void; onShippingSelectionsChange: (id: string, rate: ShippingRate | null) => void; shippingSelections: Record<string, ShippingRate | null>; }) => {
+    const dispensaryIds = Object.keys(groupedCart);
+    const allDispensariesHaveSelection = dispensaryIds.every(id => shippingSelections[id]);
 
     return (
-        <div className="space-y-6">
-            <h3 className="text-lg font-semibold">How would you like to receive your order?</h3>
-            <RadioGroup onValueChange={onSelectTier} className="space-y-3">
-                {shippingMethods.map(tier => (
-                    <Label key={tier} className="flex items-center space-x-3 border rounded-md p-4 hover:bg-accent has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all cursor-pointer">
-                        <RadioGroupItem value={tier} id={tier} />
-                        <span>{allShippingMethodsMap[tier] || tier}</span>
-                    </Label>
-                ))}
-            </RadioGroup>
-            <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Go Back</Button>
+        <div className="space-y-8">
+            <div>
+                 <h2 class="text-2xl font-bold tracking-tight">Delivery Options</h2>
+                 <p className="text-muted-foreground">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
+            </div>
+
+            {dispensaryIds.map(dispensaryId => {
+                const group = groupedCart[dispensaryId];
+                return (
+                    <DispensaryShippingGroup 
+                        key={dispensaryId}
+                        dispensaryId={dispensaryId}
+                        dispensaryName={group.dispensaryName}
+                        items={group.items}
+                        addressData={addressData}
+                        onShippingSelectionChange={onShippingSelectionsChange}
+                    />
+                )
+            })}
+            <div className="flex justify-between items-center pt-6">
+                <Button type="button" variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Address</Button>
+                <Button type="button" onClick={onContinue} disabled={!allDispensariesHaveSelection}>
+                    Continue to Payment <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </div>
         </div>
     );
-};
-
-const ShippingMethodStep = ({ rates, isLoading, error, onBack, onContinue, selectedRate, onSelectRate }: { rates: ShippingRate[]; isLoading: boolean; error: string | null; onBack: () => void; onContinue: () => void; selectedRate: ShippingRate | null; onSelectRate: (rate: ShippingRate) => void; }) => {
-    if (isLoading) return <div className="flex flex-col items-center justify-center min-h-[200px]"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="mt-4 text-muted-foreground">Fetching live shipping rates...</p></div>;
-    if (error) return <div className="text-center text-destructive bg-destructive/10 p-4 rounded-md"><h4>Error Fetching Rates</h4><p>{error}</p><Button variant="outline" onClick={onBack} className="mt-4">Try Again</Button></div>;
-    if (rates.length === 0) return <div className="text-center text-muted-foreground p-8"><p>No shipping methods available for this address.</p><Button variant="outline" onClick={onBack} className="mt-4">Go Back</Button></div>;
-
-    return (
-        <form onSubmit={(e) => { e.preventDefault(); onContinue(); }} className="space-y-6">
-            <RadioGroup value={selectedRate?.id?.toString() || ''} onValueChange={(rateId) => { const rate = rates.find(r => r.id.toString() === rateId); if (rate) onSelectRate(rate); }} name="shippingMethod" className="space-y-3">
-                {rates.map(rate => (<Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary"><p className="font-semibold">{rate.courier_name} ({rate.name})</p><p className="font-bold">R{rate.rate.toFixed(2)}</p><RadioGroupItem value={rate.id.toString()} id={rate.id.toString()} className="sr-only" /></Label>))}
-            </RadioGroup>
-            <div className="flex justify-between items-center">
-                <Button type="button" variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                <Button type="submit" disabled={!selectedRate}>Continue to Payment <ArrowRight className="ml-2 h-4 w-4" /></Button>
-            </div>
-        </form>
-    );
-};
-
+}
 
 // --- MAIN CHECKOUT FLOW COMPONENT ---
 
-export function CheckoutFlow() {
+export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
     const { cartItems, loading: cartLoading, getCartTotal } = useCart();
-    const { firebaseUser, currentUser } = useAuth();
+    const { firebaseUser } = useAuth();
     const { toast } = useToast();
     const [step, setStep] = useState(1);
     
-    const [dispensary, setDispensary] = useState<Dispensary | null>(null);
     const [addressData, setAddressData] = useState<AddressValues | null>(null);
-    const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
-    const [selectedRate, setSelectedRate] = useState<ShippingRate | null>(null);
-    
+    const [shippingSelections, setShippingSelections] = useState<Record<string, ShippingRate | null>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoadingRates, setIsLoadingRates] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
-    const [isDispensaryLoading, setIsDispensaryLoading] = useState(true);
 
     const form = useForm<AddressValues>({
         resolver: zodResolver(addressSchema),
@@ -262,6 +238,7 @@ export function CheckoutFlow() {
             email: '', 
             phoneNumber: '', 
             shippingAddress: { 
+                address: '', // **CRITICAL FIX**: Added default value
                 streetAddress: '', 
                 suburb: '', 
                 city: '', 
@@ -276,54 +253,35 @@ export function CheckoutFlow() {
     });
 
     useEffect(() => {
-        if (!cartLoading) {
-            if(cartItems.length > 0) {
-                const id = cartItems[0].dispensaryId;
-                if (id) {
-                    setIsDispensaryLoading(true);
-                    getDoc(doc(db, 'dispensaries', id))
-                        .then(docSnap => {
-                            if (docSnap.exists()) {
-                                setDispensary({ id: docSnap.id, ...docSnap.data() } as Dispensary);
-                            } else {
-                                setApiError('Dispensary not found.');
-                            }
-                        })
-                        .catch(err => setApiError("Failed to load dispensary data."))
-                        .finally(() => setIsDispensaryLoading(false));
-                }
-                else setApiError("Dispensary information is missing from your cart.");
-            } else {
-                 setIsDispensaryLoading(false);
-            }
-        }
-    }, [cartItems, cartLoading]);
+      // Pre-fill form if user is logged in and has address info
+      if (firebaseUser && firebaseUser.shippingAddress) {
+        form.reset({ 
+          fullName: firebaseUser.name || '',
+          email: firebaseUser.email || '',
+          phoneNumber: firebaseUser.phoneNumber || '',
+          shippingAddress: { ...firebaseUser.shippingAddress }
+        });
+      }
+    }, [firebaseUser, form]);
 
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
         try {
-            if (firebaseUser) {
-                setAddressData(values);
-                setStep(2);
-                return;
-            }
-
-            const methods = await fetchSignInMethodsForEmail(auth, values.email);
-            if (methods.length > 0) {
-                toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });
-                return;
-            }
-
-            toast({ title: "Creating your account...", description: "For your convenience, we're setting up an account for you to track your orders." });
-            
-            const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-            const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
-            const newUser = userCredential.user;
-
-            if (newUser) {
-                await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved' });
-            } else {
-                throw new Error("Could not create user account.");
+            if (!firebaseUser) {
+                const methods = await fetchSignInMethodsForEmail(auth, values.email);
+                if (methods.length > 0) {
+                    toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });
+                    return;
+                }
+                toast({ title: "Creating your account...", description: "For your convenience, we are setting up an account to track your orders." });
+                const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+                const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
+                const newUser = userCredential.user;
+                if (newUser) {
+                    await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved' });
+                } else {
+                    throw new Error("Could not create user account.");
+                }
             }
             
             setAddressData(values);
@@ -337,125 +295,55 @@ export function CheckoutFlow() {
         }
     };
 
-    const handleTierSelection = async (tier: string) => {
-        setApiError(null);
-        setSelectedRate(null);
-        setShippingRates([]);
+    const handleShippingSelectionsChange = (dispensaryId: string, rate: ShippingRate | null) => {
+        setShippingSelections(prev => ({...prev, [dispensaryId]: rate }));
+    };
 
-        const isCourierService = ['dtd', 'dtl', 'ltd', 'ltl'].includes(tier);
-
-        if (isCourierService) {
-            if (!addressData || !dispensary || !firebaseUser) {
-                setApiError('You must be signed in and have a valid address to fetch shipping rates.');
-                return;
-            }
-
-            setIsLoadingRates(true);
-            try {
-                const getShiplogicRates = httpsCallable(functions, 'getShiplogicRates');
-                // Shiplogic expects province to be under the `zone` key
-                const deliveryAddressForApi = {
-                    street_address: addressData.shippingAddress.streetAddress,
-                    local_area: addressData.shippingAddress.suburb,
-                    city: addressData.shippingAddress.city,
-                    zone: addressData.shippingAddress.province,
-                    code: addressData.shippingAddress.postalCode,
-                    country: addressData.shippingAddress.country,
-                    lat: addressData.shippingAddress.latitude,
-                    lng: addressData.shippingAddress.longitude,
-                };
-
-                const payload = {
-                    cart: cartItems,
-                    dispensaryId: dispensary.id,
-                    deliveryAddress: deliveryAddressForApi,
-                    customer: { name: addressData.fullName, email: currentUser?.email, phone: addressData.phoneNumber }
-                };
-                const result = await getShiplogicRates(payload);
-                const data = result.data as { rates?: ShippingRate[], error?: string };
-
-                if (data.error) throw new Error(data.error);
-
-                if (data.rates && data.rates.length > 0) {
-                    setShippingRates(data.rates);
-                    setSelectedRate(data.rates[0]);
-                } else {
-                    setApiError("No courier rates could be found for the provided address.");
-                }
-            } catch (err: any) {
-                console.error("Error calling getShiplogicRates:", err);
-                setApiError(err.message || 'An unknown error occurred while fetching rates.');
-            } finally {
-                setIsLoadingRates(false);
-            }
+    const handleShippingContinue = () => {
+        const allSelected = Object.keys(groupedCart).every(id => shippingSelections[id]);
+        if (allSelected) {
             setStep(3);
-        } else if (tier === 'collection') {
-            const collectionRate: ShippingRate = { id: 999, name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: 'Collect at dispensary' };
-            setSelectedRate(collectionRate);
-            setStep(4);
-        } else if (tier === 'in_house') {
-            const inHouseRate: ShippingRate = { id: 998, name: 'Local Delivery', rate: 50.00, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: 'In-house delivery' };
-            setSelectedRate(inHouseRate);
-            setStep(4);
         } else {
-            setApiError(`'${allShippingMethodsMap[tier] || tier}' is not currently supported.`);
+            toast({ title: "Selection Incomplete", description: "Please select a shipping method for every dispensary.", variant: "destructive"});
         }
     };
-    
-    const handleShippingMethodContinue = () => {
-        if (selectedRate) {
-            setStep(4);
-        } else {
-            setApiError("Please select a shipping method to continue.");
-        }
-    };
-    
-    const isLoading = cartLoading || isDispensaryLoading;
+
+    const totalShippingCost = Object.values(shippingSelections).reduce((total, rate) => total + (rate?.rate || 0), 0);
 
     const renderContent = () => {
-        if (isLoading) {
+        if (cartLoading) {
             return <div className="flex justify-center items-center min-h-[50vh]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
         }
-        if (apiError && step < 2) {
-            return <div className="text-center p-8 text-destructive bg-destructive/10 rounded-lg"><h3>Something Went Wrong</h3><p>{apiError}</p></div>;
-        }
-        if (cartItems.length === 0 && !cartLoading) {
+        if (Object.keys(groupedCart).length === 0 && !cartLoading) {
              return <div className="text-center p-8 text-muted-foreground"><h3>Your Cart is Empty</h3><p>Add some items to your cart to begin the checkout process.</p></div>;
         }
 
-        return (
-            <>
-                <div style={{ display: step === 1 ? 'block' : 'none' }}>
-                    <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} />
-                </div>
-                <div style={{ display: step === 2 ? 'block' : 'none' }}>
-                    <ShippingTierStep 
-                        shippingMethods={dispensary?.shippingMethods || []}
-                        onSelectTier={handleTierSelection} 
-                        onBack={() => setStep(1)} 
+        switch(step) {
+            case 1: 
+                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} />;
+            case 2:
+                return addressData && (
+                    <MultiDispensaryShippingStep
+                        groupedCart={groupedCart}
+                        addressData={addressData}
+                        onBack={() => setStep(1)}
+                        onContinue={handleShippingContinue}
+                        onShippingSelectionsChange={handleShippingSelectionsChange}
+                        shippingSelections={shippingSelections}
                     />
-                </div>
-                <div style={{ display: step === 3 ? 'block' : 'none' }}>
-                    <ShippingMethodStep 
-                        rates={shippingRates} 
-                        isLoading={isLoadingRates} 
-                        error={apiError} 
-                        onBack={() => { setApiError(null); setStep(2); }} 
-                        onContinue={handleShippingMethodContinue}
-                        selectedRate={selectedRate}
-                        onSelectRate={setSelectedRate} />
-                </div>
-                <div style={{ display: step === 4 ? 'block' : 'none' }}>
-                    {addressData && selectedRate && (
-                        <PaymentStep
-                            cart={cartItems}
-                            shippingMethod={selectedRate}
-                            shippingAddress={addressData.shippingAddress}
-                            onBack={() => setStep(selectedRate.service_level === 'collection' || selectedRate.service_level === 'local' ? 2 : 3)} />
-                    )}
-                </div>
-            </>
-        );
+                );
+            case 3:
+                 return addressData && (
+                     <PaymentStep
+                        cart={cartItems}
+                        groupedCart={groupedCart}
+                        shippingSelections={shippingSelections}
+                        shippingAddress={addressData.shippingAddress}
+                        onBack={() => setStep(2)} />
+                 );
+            default: 
+                return <div>An unexpected error occurred.</div>;
+        }
     };
 
     return (
@@ -463,7 +351,7 @@ export function CheckoutFlow() {
             <div className="lg:col-span-2">
                 <Card className="border-0 shadow-none">
                     <CardHeader>
-                        <CardDescription>Step {step} of 4 - {step === 1 ? 'Shipping Details' : step === 2 ? 'Delivery Option' : step === 3 ? 'Finalize Delivery' : 'Payment'}</CardDescription>
+                        <CardDescription>Step {step} of 3 - {step === 1 ? 'Shipping Details' : step === 2 ? 'Delivery Options' : 'Payment'}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {renderContent()}
@@ -480,7 +368,7 @@ export function CheckoutFlow() {
                                     <div key={item.id} className="flex justify-between items-start">
                                         <div>
                                             <p className="font-semibold">{item.name}</p>
-                                            <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                            <p className="text-sm text-muted-foreground">Qty: {item.quantity} - from {item.dispensaryName}</p>
                                         </div>
                                         <span>R{((item.price || 0) * item.quantity).toFixed(2)}</span>
                                     </div>
@@ -488,14 +376,20 @@ export function CheckoutFlow() {
                                 <hr className="my-2" />
                                 <div className="space-y-1 text-sm">
                                     <div className="flex justify-between"><span>Subtotal</span><span>R{getCartTotal().toFixed(2)}</span></div>
-                                    {selectedRate && (
-                                         <div className="flex justify-between"><span>Shipping</span><span>R{selectedRate.rate.toFixed(2)}</span></div>
+                                    {Object.keys(shippingSelections).length > 0 && (
+                                         <div className="flex justify-between font-medium"><span>Shipping</span><span>R{totalShippingCost.toFixed(2)}</span></div>
                                     )}
+                                    {Object.entries(shippingSelections).map(([id, rate]) => rate && (
+                                        <div key={id} className="flex justify-between pl-4 text-muted-foreground">
+                                            <span>from {groupedCart[id]?.dispensaryName}</span>
+                                            <span>R{rate.rate.toFixed(2)}</span>
+                                        </div>
+                                    ))}
                                 </div>
                                 <hr className="my-2" />
                                 <div className="flex justify-between font-bold text-lg">
                                     <span>Total</span>
-                                    <span>R{(getCartTotal() + (selectedRate?.rate || 0)).toFixed(2)}</span>
+                                    <span>R{(getCartTotal() + totalShippingCost).toFixed(2)}</span>
                                 </div>
                             </div>
                         ) : <p>Your cart is empty.</p>}

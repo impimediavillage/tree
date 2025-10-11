@@ -5,6 +5,13 @@ import type { Product, CartItem, PriceTier } from '@/types';
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+interface GroupedCart {
+  [dispensaryId: string]: {
+    dispensaryName: string;
+    items: CartItem[];
+  };
+}
+
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: Product, tier: PriceTier, quantity?: number) => void;
@@ -13,6 +20,7 @@ interface CartContextType {
   clearCart: () => void;
   getCartTotal: () => number;
   getTotalItems: () => number;
+  getGroupedCart: () => GroupedCart;
   isCartOpen: boolean;
   setIsCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   toggleCart: () => void;
@@ -83,7 +91,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const newQuantity = existingItem.quantity + quantityToAdd;
 
         if (newQuantity > (existingItem.quantityInStock ?? 999)) {
-          toast({ title: "Stock Limit Exceeded", description: `You can't add more of this item.`, variant: "destructive" });
+          toast({ title: "Stock Limit Exceeded", description: `You can\'t add more of this item.`, variant: "destructive" });
           return newItems;
         }
 
@@ -158,6 +166,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return cartItems.reduce((count, item) => count + item.quantity, 0);
   };
 
+  const getGroupedCart = (): GroupedCart => {
+    return cartItems.reduce((acc, item) => {
+      const { dispensaryId, dispensaryName } = item;
+      if (!dispensaryId) return acc;
+
+      if (!acc[dispensaryId]) {
+        acc[dispensaryId] = {
+          dispensaryName: dispensaryName || 'Unknown Dispensary',
+          items: [],
+        };
+      }
+      acc[dispensaryId].items.push(item);
+      return acc;
+    }, {} as GroupedCart);
+  };
+
   const toggleCart = () => setIsCartOpen(prev => !prev);
 
   return (
@@ -170,6 +194,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearCart,
         getCartTotal,
         getTotalItems,
+        getGroupedCart,
         isCartOpen,
         setIsCartOpen,
         toggleCart,
