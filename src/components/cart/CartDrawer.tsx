@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { ShoppingCart, Trash2, Plus, Minus, Info, Gift } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import type { CartItem } from '@/types';
 
 export function CartDrawer() {
   const {
@@ -25,34 +26,35 @@ export function CartDrawer() {
   
   const router = useRouter();
 
-  const handleQuantityChange = (productId: string, currentQuantity: number, change: number) => {
-    const newQuantity = currentQuantity + change;
+  const handleQuantityChange = (item: CartItem, change: number) => {
+    const newQuantity = item.quantity + change;
     if (newQuantity > 0) {
-      updateQuantity(productId, newQuantity);
+      updateQuantity(item.id, newQuantity);
     } else {
-      removeFromCart(productId); 
+      removeFromCart(item.id);
     }
   };
 
-  const handleDirectQuantityInput = (productId: string, value: string) => {
+  const handleDirectQuantityInput = (item: CartItem, value: string) => {
+    if (value === "") {
+      updateQuantity(item.id, 0); // Temporarily allow empty string
+      return;
+    }
     const newQuantity = parseInt(value, 10);
     if (!isNaN(newQuantity) && newQuantity >= 1) {
-      updateQuantity(productId, newQuantity);
-    } else if (value === "") {
-      // Allow clearing the input
+      updateQuantity(item.id, newQuantity);
     }
   };
   
-  const handleQuantityInputBlur = (productId: string, currentDisplayQuantity: string | number) => {
-    let newQuantity = typeof currentDisplayQuantity === 'string' ? parseInt(currentDisplayQuantity, 10) : currentDisplayQuantity;
-    if (isNaN(newQuantity) || newQuantity < 1) {
-      updateQuantity(productId, 1); // Default to 1 if invalid
+  const handleQuantityInputBlur = (item: CartItem) => {
+    if (item.quantity === 0) {
+      updateQuantity(item.id, 1); // Reset to 1 if left empty
     }
   };
 
   const handleCheckout = () => {
-    setIsCartOpen(false); // Close the drawer
-    router.push('/checkout'); // Navigate to the checkout page
+    setIsCartOpen(false);
+    router.push('/checkout');
   };
 
   return (
@@ -61,7 +63,7 @@ export function CartDrawer() {
         <SheetHeader className="p-4 sm:p-6 border-b border-border">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-xl font-semibold flex items-center">
-              <ShoppingCart className="mr-3 h-6 w-6 text-primary" /> Your Shopping Cart 
+              <ShoppingCart className="mr-3 h-6 w-6 text-primary" /> Your Shopping Cart
               <span className="ml-2 text-muted-foreground text-base">({getTotalItems()} items)</span>
             </SheetTitle>
           </div>
@@ -90,27 +92,38 @@ export function CartDrawer() {
                         <ShoppingCart className="h-10 w-10 text-muted-foreground/50 m-auto" />
                       )}
                     </div>
-                    <div className="flex-grow flex flex-col">
+                    <div className="flex-grow flex flex-col space-y-2">
                       <div>
                         <h3 className="font-semibold text-md">{item.name}</h3>
                         <p className="text-md font-semibold text-accent mt-1">
-                          {item.currency} {(item.price * item.quantity).toFixed(2)}
+                          ZAR {(item.price * item.quantity).toFixed(2)}
                         </p>
-                        {item.productType === 'THC' && item.unit && (
-                          <div className="flex items-center text-xs text-green-500 mt-1">
-                            <Gift className="h-4 w-4 mr-1" />
-                            <span> {item.quantity} {item.unit} as FREE gift included.</span>
-                          </div>
-                        )}
                       </div>
-                      <div className="flex items-center justify-between mt-2">
+                      
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center border border-input rounded-md">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.id!, item.quantity, -1)}><Minus className="h-4 w-4" /></Button>
-                          <Input type="number" value={item.quantity} onChange={(e) => handleDirectQuantityInput(item.id!, e.target.value)} onBlur={(e) => handleQuantityInputBlur(item.id!, e.target.value)} className="h-8 w-12 text-center border-none" min="1" />
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item.id!, item.quantity, 1)}><Plus className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item, -1)}><Minus className="h-4 w-4" /></Button>
+                          <Input
+                            type="text"
+                            value={item.quantity > 0 ? item.quantity : ''}
+                            onChange={(e) => handleDirectQuantityInput(item, e.target.value)}
+                            onBlur={() => handleQuantityInputBlur(item)}
+                            className="h-8 w-12 text-center border-none focus-visible:ring-0"
+                          />
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(item, 1)}><Plus className="h-4 w-4" /></Button>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeFromCart(item.id!)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeFromCart(item.id)}><Trash2 className="h-4 w-4" /></Button>
                       </div>
+
+                      {/* --- Corrected Tweak for THC Product Type --- */}
+                      {item.productType === 'THC' && (
+                        <div className="flex items-center text-xs text-green-500 pt-1">
+                          <Gift className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                          <span className="font-medium">
+                            {item.quantity} X FREE {item.unit} of {item.originalName}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -121,7 +134,7 @@ export function CartDrawer() {
               <div className="space-y-4 w-full">
                   <div className="flex justify-between items-center text-lg font-semibold">
                       <span>Subtotal:</span>
-                      <span>{cartItems[0]?.currency || 'ZAR'} {getCartTotal().toFixed(2)}</span>
+                      <span>ZAR {getCartTotal().toFixed(2)}</span>
                   </div>
                   <Separator />
                   <div className="space-y-3">

@@ -135,30 +135,11 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             }
         }
 
-        const specialDescription = `PROMO_DESIGN_PACK|${product.name}|${tier.unit}`;
+        // --- THE DEFINITIVE FIX ---
+        // Call `addToCart` with the original product and tier,
+        // and pass the selected sticker URL as the override image.
+        addToCart(product, tier, 1, selectedSticker);
         
-        const designPackProduct: Product = {
-            ...product,
-            id: `design-${product.id}-${tier.unit}`,
-            name: `Sticker Design: ${product.name} (${tier.unit})`,
-            productType: product.productType,
-            description: specialDescription, 
-            category: `Digital Design ('custom')`,
-            imageUrl: selectedSticker, 
-            imageUrls: [selectedSticker],
-            priceTiers: [],
-            quantityInStock: 999, 
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-        
-        const designPackTier: PriceTier = {
-          ...tier,
-          price: tier.price,
-          unit: tier.unit
-        };
-        
-        addToCart(designPackProduct, designPackTier, 1);
         toast({ title: "Design Pack Added!", description: `Your custom "${product.name}" pack is in your cart.` });
         onOpenChange(false);
         setIsProcessingCart(false);

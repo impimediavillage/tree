@@ -14,7 +14,7 @@ interface GroupedCart {
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: Product, tier: PriceTier, quantity?: number) => void;
+  addToCart: (product: Product, tier: PriceTier, quantity?: number, overrideImageUrl?: string) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -25,189 +25,142 @@ interface CartContextType {
   setIsCartOpen: React.Dispatch<React.SetStateAction<boolean>>;
   toggleCart: () => void;
   loadCart: (items: CartItem[]) => void;
-  loading: boolean; // Added loading state
+  loading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'dispensaryTreeCart';
-
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [loading, setLoading] = useState(true); // Initialize loading state
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    setLoading(true);
-    const storedCart = localStorage.getItem(CART_STORAGE_KEY);
-    if (storedCart) {
-      try {
+    try {
+      const storedCart = localStorage.getItem('cart');
+      if (storedCart) {
         setCartItems(JSON.parse(storedCart));
-      } catch (error) {
-        console.error("Error parsing cart from localStorage:", error);
-        localStorage.removeItem(CART_STORAGE_KEY);
       }
+    } catch (error) {
+      console.error("Failed to parse cart from localStorage", error);
+      setCartItems([]);
     }
-    setLoading(false); // Set loading to false after cart is loaded
+    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    if (!loading) { // Only write to localStorage if not in initial loading phase
-      if (cartItems.length > 0) {
-          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
-        } else {
-          localStorage.removeItem(CART_STORAGE_KEY);
-        }
+  const saveCart = useCallback((items: CartItem[]) => {
+    try {
+      const filteredItems = items.filter(item => item.quantity > 0);
+      setCartItems(filteredItems);
+      localStorage.setItem('cart', JSON.stringify(filteredItems));
+    } catch (error) {
+      console.error("Failed to save cart to localStorage", error);
     }
-  }, [cartItems, loading]);
-
-  const loadCart = useCallback((items: CartItem[]) => {
-      if (Array.isArray(items)) {
-        setCartItems(items);
-      }
   }, []);
 
-  const addToCart = (product: Product, tier: PriceTier, quantityToAdd: number = 1) => {
-    if (!tier || typeof tier.price !== 'number') {
-      toast({ title: "Not Available", description: "This product tier cannot be added to the cart.", variant: "destructive"});
-      return;
-    }
-
-    const tierStock = tier.quantityInStock ?? 999;
-    if (tierStock <= 0) {
-      toast({ title: "Out of Stock", description: "This item is currently out of stock.", variant: "destructive"});
-      return;
-    }
-
+  const addToCart = (product: Product, tier: PriceTier, quantity = 1, overrideImageUrl?: string) => {
+    const isThcProduct = product.productType === 'THC';
     const cartItemId = `${product.id}-${tier.unit}`;
+    const existingItemIndex = cartItems.findIndex(item => item.id === cartItemId);
 
-    setCartItems(prevItems => {
-      const existingItemIndex = prevItems.findIndex(item => item.id === cartItemId);
-      let newItems = [...prevItems];
+    let newCartItems = [...cartItems];
 
-      if (existingItemIndex > -1) {
-        const existingItem = newItems[existingItemIndex];
-        const newQuantity = existingItem.quantity + quantityToAdd;
-
-        if (newQuantity > (existingItem.quantityInStock ?? 999)) {
-          toast({ title: "Stock Limit Exceeded", description: `You can\'t add more of this item.`, variant: "destructive" });
-          return newItems;
-        }
-
-        newItems[existingItemIndex] = { ...existingItem, quantity: newQuantity };
-        toast({ title: "Cart Updated", description: `${product.name} quantity increased to ${newQuantity}.` });
-
-      } else {
-        const quantity = Math.min(quantityToAdd, tierStock);
-
-        const newItem: CartItem = {
-          id: cartItemId,
-          productId: product.id as string,
-          name: product.name,
-          description: product.description,
-          price: tier.price,
-          unit: tier.unit,
-          quantity: quantity,
-          quantityInStock: tierStock,
-          imageUrl: product.imageUrl ?? undefined,
-          category: product.category, 
-          dispensaryId: product.dispensaryId,
-          dispensaryName: product.dispensaryName,
-          dispensaryType: product.dispensaryType,
-          productOwnerEmail: product.productOwnerEmail,
-          weight: tier.weightKgs, 
-          length: tier.lengthCm, 
-          width: tier.widthCm,   
-          height: tier.heightCm,  
-        };
-
-        newItems.push(newItem);
-        toast({ title: "Added to Cart", description: `${product.name} (${tier.unit}) has been added.` });
+    if (existingItemIndex > -1) {
+      newCartItems[existingItemIndex].quantity += quantity;
+      // CORRECTED: Only update image for THC products
+      if (isThcProduct && overrideImageUrl) {
+          newCartItems[existingItemIndex].imageUrl = overrideImageUrl;
       }
-      
-      return newItems;
+    } else {
+      const newItem: CartItem = {
+        id: cartItemId,
+        productId: product.id,
+        name: isThcProduct ? 'Triple S Design Pack' : product.name,
+        description: isThcProduct ? product.name : undefined, 
+        category: product.category,
+        strain: product.strain,
+        price: tier.price,
+        quantity: quantity,
+        dispensaryId: product.dispensaryId,
+        dispensaryName: product.dispensaryName,
+        dispensaryType: product.dispensaryType,
+        productOwnerEmail: product.productOwnerEmail,
+        currency: product.currency,
+        unit: tier.unit,
+        quantityInStock: tier.quantityInStock,
+        // DEFINITIVE FIX: The override image is ONLY used if the productType is 'THC'.
+        // All other product types will ALWAYS use the default product image.
+        imageUrl: isThcProduct && overrideImageUrl ? overrideImageUrl : (product.imageUrls?.[0] || '/placeholder.svg'),
+        productType: product.productType, 
+        weight: tier.weightKgs,
+        length: tier.lengthCm,
+        width: tier.widthCm,
+        height: tier.heightCm,
+      };
+      newCartItems.push(newItem);
+    }
+
+    saveCart(newCartItems);
+    toast({
+      title: isThcProduct ? 'Design Pack Added' : 'Item Added',
+      description: isThcProduct
+        ? `${product.name} (${tier.unit}) design pack added to cart.`
+        : `${product.name} has been added to your cart.`,
     });
+    setIsCartOpen(true);
   };
 
   const removeFromCart = (cartItemId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId));
-    toast({ title: "Item Removed", description: "The item has been removed from your cart." });
+    const newCart = cartItems.filter(item => item.id !== cartItemId);
+    saveCart(newCart);
   };
 
-  const updateQuantity = (cartItemId: string, newQuantity: number) => {
-    setCartItems(prevItems => {
-      return prevItems.map(item => {
-        if (item.id === cartItemId) {
-          if (newQuantity <= 0) {
-            return null;
-          }
-          if (newQuantity > (item.quantityInStock ?? 999)){
-            toast({ title: "Stock Limit Exceeded", variant: "destructive" });
-            return { ...item, quantity: item.quantityInStock ?? 999 };
-          }
-          return { ...item, quantity: newQuantity };
-        }
-        return item;
-      }).filter((item): item is CartItem => item !== null);
-    });
+  const updateQuantity = (cartItemId: string, quantity: number) => {
+    const newQuantity = Math.max(0, quantity);
+    const newCart = cartItems.map(item =>
+      item.id === cartItemId ? { ...item, quantity: newQuantity } : item
+    );
+    saveCart(newCart);
   };
 
   const clearCart = () => {
-    setCartItems([]);
-    toast({ title: "Cart Cleared", description: "Your cart is now empty." });
+    saveCart([]);
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
   const getTotalItems = () => {
-    return cartItems.reduce((count, item) => count + item.quantity, 0);
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
   const getGroupedCart = (): GroupedCart => {
     return cartItems.reduce((acc, item) => {
       const { dispensaryId, dispensaryName } = item;
-      if (!dispensaryId) return acc;
-
       if (!acc[dispensaryId]) {
-        acc[dispensaryId] = {
-          dispensaryName: dispensaryName || 'Unknown Dispensary',
-          items: [],
-        };
+        acc[dispensaryId] = { dispensaryName, items: [] };
       }
       acc[dispensaryId].items.push(item);
       return acc;
     }, {} as GroupedCart);
   };
 
-  const toggleCart = () => setIsCartOpen(prev => !prev);
+  const toggleCart = () => setIsCartOpen(!isCartOpen);
+
+  const loadCart = (items: CartItem[]) => {
+    saveCart(items);
+  };
 
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        getCartTotal,
-        getTotalItems,
-        getGroupedCart,
-        isCartOpen,
-        setIsCartOpen,
-        toggleCart,
-        loadCart,
-        loading, // Expose loading state
-      }}
-    >
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, getCartTotal, getTotalItems, getGroupedCart, isCartOpen, setIsCartOpen, toggleCart, loadCart, loading }}>
       {children}
     </CartContext.Provider>
   );
 };
 
-export const useCart = (): CartContextType => {
+export const useCart = () => {
   const context = useContext(CartContext);
   if (context === undefined) {
     throw new Error('useCart must be used within a CartProvider');
