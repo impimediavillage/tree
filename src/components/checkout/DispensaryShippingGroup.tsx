@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -13,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
 import type { CartItem, Dispensary, ShippingRate, AddressValues } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const allShippingMethodsMap: { [key: string]: string } = {
   "dtd": "Door-to-Door Courier (The Courier Guy)",
@@ -39,6 +38,11 @@ interface DispensaryShippingGroupProps {
   items: CartItem[];
   addressData: AddressValues;
   onShippingSelectionChange: (dispensaryId: string, rate: ShippingRate | null) => void;
+}
+
+// --- FIX: Stricter address validation to include lat/lng ---
+const isAddressComplete = (address: AddressValues['shippingAddress']) => {
+    return address && address.streetAddress && address.city && address.postalCode && address.province && address.latitude && address.longitude;
 }
 
 export const DispensaryShippingGroup = ({ 
@@ -92,10 +96,23 @@ export const DispensaryShippingGroup = ({
     setError(null);
     setOriginLocker(null);
     setDestinationLocker(null);
-  }
+  };
+
+  const handleRateSelection = useCallback((rateId: string) => {
+    const rate = rates.find(r => r.id.toString() === rateId);
+    if (rate) {
+      setSelectedRateId(rateId);
+      onShippingSelectionChange(dispensaryId, rate);
+    }
+  }, [rates, dispensaryId, onShippingSelectionChange]);
 
   const fetchPudoRates = useCallback(async () => {
     if (!selectedTier || !['dtl', 'ltd', 'ltl'].includes(selectedTier)) return;
+
+    if (['dtl', 'ltd'].includes(selectedTier) && !isAddressComplete(addressData.shippingAddress)) {
+        setError("Please provide a complete shipping address (including map selection) to get delivery rates.");
+        return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -103,8 +120,8 @@ export const DispensaryShippingGroup = ({
 
     try {
       const getPudoRates = httpsCallable(functions, 'getPudoRates');
-      let payload: any = { cart: items, dispensaryId, type: selectedTier };
-
+      
+      // --- FIX: Ensure lat/lng are included in the payload ---
       const deliveryAddressForApi = {
           street_address: addressData.shippingAddress.streetAddress,
           local_area: addressData.shippingAddress.suburb,
@@ -112,19 +129,27 @@ export const DispensaryShippingGroup = ({
           zone: addressData.shippingAddress.province,
           code: addressData.shippingAddress.postalCode,
           country: addressData.shippingAddress.country,
+          lat: addressData.shippingAddress.latitude,
+          lng: addressData.shippingAddress.longitude
       };
 
-      if (selectedTier === 'dtl' && destinationLocker) {
+      let payload: any = { cart: items, dispensaryId, type: selectedTier };
+
+      if (selectedTier === 'dtl') {
+        if (!destinationLocker) return; 
         payload.destinationLockerCode = destinationLocker.code;
         payload.deliveryAddress = deliveryAddressForApi;
-      } else if (selectedTier === 'ltd' && originLocker) {
+      } else if (selectedTier === 'ltd') {
+        if (!originLocker) return;
         payload.originLockerCode = originLocker.code;
         payload.deliveryAddress = deliveryAddressForApi;
-      } else if (selectedTier === 'ltl' && originLocker && destinationLocker) {
+      } else if (selectedTier === 'ltl') {
+        if (!originLocker || !destinationLocker) return;
         payload.originLockerCode = originLocker.code;
         payload.destinationLockerCode = destinationLocker.code;
       } else {
-        return; 
+        setIsLoading(false);
+        return;
       }
       
       const result = await getPudoRates(payload);
@@ -132,9 +157,6 @@ export const DispensaryShippingGroup = ({
 
       if (data.rates && data.rates.length > 0) {
         setRates(data.rates);
-        if(data.rates.length === 1) {
-          handleRateSelection(data.rates[0].id.toString());
-        }
       } else {
         setError("No Pudo rate was found for the selected criteria.");
       }
@@ -145,7 +167,7 @@ export const DispensaryShippingGroup = ({
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTier, items, dispensaryId, originLocker, destinationLocker, addressData, toast, handleRateSelection]);
+  }, [selectedTier, items, dispensaryId, originLocker, destinationLocker, addressData, toast]);
 
   useEffect(() => {
     if ((selectedTier === 'dtl' && destinationLocker) || 
@@ -156,9 +178,23 @@ export const DispensaryShippingGroup = ({
   }, [selectedTier, originLocker, destinationLocker, fetchPudoRates]);
 
 
+  useEffect(() => {
+    if (rates.length === 1 && !selectedRateId) {
+      handleRateSelection(rates[0].id.toString());
+    }
+  }, [rates, selectedRateId, handleRateSelection]);
+
+
   const handleTierSelection = async (tier: string) => {
     setSelectedTier(tier);
     resetSelections();
+
+    const addressRequired = ['dtd', 'dtl', 'ltd'].includes(tier);
+    if (addressRequired && !isAddressComplete(addressData.shippingAddress)) {
+        setError("Please provide a complete shipping address (including map selection) to get delivery rates.");
+        return;
+    }
+    setError(null);
 
     if (tier === 'dtd') {
       setIsLoading(true);
@@ -211,11 +247,9 @@ export const DispensaryShippingGroup = ({
     } else if (tier === 'collection') {
       const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: dispensaryName };
       setRates([collectionRate]);
-      handleRateSelection(collectionRate.id);
     } else if (tier === 'in_house') {
       const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: dispensary?.inHouseDeliveryFee ?? 50, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: dispensaryName };
       setRates([inHouseRate]);
-      handleRateSelection(inHouseRate.id);
     }
   };
 
@@ -232,14 +266,6 @@ export const DispensaryShippingGroup = ({
     setCurrentLockerSelection(type);
     setIsLockerModalOpen(true);
   }
-
-  const handleRateSelection = (rateId: string) => {
-    const rate = rates.find(r => r.id.toString() === rateId);
-    if (rate) {
-      setSelectedRateId(rateId);
-      onShippingSelectionChange(dispensaryId, rate);
-    }
-  }
   
   const filteredLockers = useMemo(() => 
     pudoLockers.filter(locker => 
@@ -254,14 +280,9 @@ export const DispensaryShippingGroup = ({
       <Card className='bg-muted/20'><CardContent className='p-6 flex items-center'><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading shipping options...</CardContent></Card>
     )
   }
-  if (error && !rates.length) {
-      return (
-         <Card className='bg-muted/20'>
-            <CardHeader><CardTitle>Shipment from {dispensaryName}</CardTitle></CardHeader>
-            <CardContent><p className='text-destructive'>{error}</p></CardContent>
-        </Card>
-      )
-  }
+
+  const shouldShowError = error && !rates.length;
+  const shouldShowNoMethods = dispensary?.shippingMethods?.length === 0;
 
   return (
     <Card className="bg-muted/20 shadow-md">
@@ -287,13 +308,13 @@ export const DispensaryShippingGroup = ({
                 <span>{allShippingMethodsMap[tier] || tier}</span>
               </Label>
             ))}
-            {dispensary?.shippingMethods?.length === 0 && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods.</p>}
+            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods.</p>}
           </RadioGroup>
         </div>
 
         {isFetchingPudo && <div className="flex items-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className='ml-3'>Fetching Pudo Lockers...</p></div>}
 
-        {isPudoTier && (
+        {isPudoTier && !isFetchingPudo && !error && (
           <div className="space-y-4">
             {selectedTier === 'ltd' || selectedTier === 'ltl' ? (
                  <div>
@@ -341,7 +362,7 @@ export const DispensaryShippingGroup = ({
           <div className="flex items-center justify-center p-6"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className='ml-3'>Fetching rates...</p></div>
         )}
 
-        {error && <p className="text-destructive text-center p-4 bg-destructive/10 rounded-md">{error}</p>}
+        {shouldShowError && <p className="text-destructive text-center p-4 bg-destructive/10 rounded-md">{error}</p>}
 
         {rates.length > 0 && !isLoading && (
             <div>

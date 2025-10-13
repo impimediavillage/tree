@@ -517,7 +517,7 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
 
     const pudoApiKey = pudoApiKeySecret.value();
     if (!pudoApiKey) {
-        logger.error("CRITICAL: Pudo API key not found in secrets.");
+        logger.error("CRITICAL: Pudo API key not found in secrets. Check function configuration and permissions.");
         throw new HttpsError('internal', 'Server configuration error: Pudo API key not found.');
     }
 
@@ -533,6 +533,19 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
         }
         const dispensary = dispensaryDoc.data() as Dispensary;
 
+        const collectionAddress = {
+            street_address: dispensary.streetAddress,
+            local_area: dispensary.suburb,
+            code: dispensary.postalCode,
+            city: dispensary.city,
+            zone: dispensary.province,
+            country: "ZA",
+        };
+
+        if (!collectionAddress.street_address || !collectionAddress.city || !collectionAddress.code || !collectionAddress.zone) {
+             throw new HttpsError('failed-precondition', 'The dispensary address is incomplete and required for Pudo rates.');
+        }
+
         const parcels = cart.map((item: CartItem) => ({
             submitted_weight_kg: item.weight || 0.1,
             submitted_height_cm: item.height || 10,
@@ -543,35 +556,35 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
 
         let apiPayload: any = { parcels };
 
+        // --- FINAL FIX: Stricter address validation to match working ShipLogic function ---
         switch (type) {
             case 'dtl': // Door-to-Locker
-                // --- FIX ---
-                // The Pudo API requires a delivery_address even for DTL, contrary to documentation.
-                if (!destinationLockerCode || !dispensary.streetAddress || !deliveryAddress) {
-                    throw new HttpsError('invalid-argument', 'Destination locker, delivery address, and full dispensary address are required for DTL.');
+                if (!destinationLockerCode || !deliveryAddress) {
+                    throw new HttpsError('invalid-argument', 'Destination locker and a complete delivery address are required for DTL.');
                 }
-                apiPayload.collection_address = {
-                    street_address: dispensary.streetAddress,
-                    local_area: dispensary.suburb,
-                    code: dispensary.postalCode,
-                    city: dispensary.city,
-                    zone: dispensary.province,
-                    country: "ZA",
-                };
-                // This is the crucial addition to satisfy the API
-                apiPayload.delivery_address = deliveryAddress; 
+                if (!deliveryAddress.street_address || !deliveryAddress.city || !deliveryAddress.code || !deliveryAddress.zone || !deliveryAddress.lat || !deliveryAddress.lng) {
+                    logger.error('Incomplete delivery address (missing lat/lng) provided for DTL rate request.', { deliveryAddress });
+                    throw new HttpsError('invalid-argument', 'The provided delivery address is incomplete. Please ensure all fields, including coordinates, are filled out.');
+                }
+                apiPayload.collection_address = collectionAddress;
                 apiPayload.delivery_pickup_point_id = destinationLockerCode;
                 apiPayload.delivery_pickup_point_provider = "tcg-locker";
-                // --- END FIX ---
+                apiPayload.delivery_address = deliveryAddress; 
                 break;
+
             case 'ltd': // Locker-to-Door
                  if (!originLockerCode || !deliveryAddress) {
-                     throw new HttpsError('invalid-argument', 'Origin locker and delivery address are required for LTD.');
+                     throw new HttpsError('invalid-argument', 'Origin locker and a complete delivery address are required for LTD.');
                  }
+                 if (!deliveryAddress.street_address || !deliveryAddress.city || !deliveryAddress.code || !deliveryAddress.zone || !deliveryAddress.lat || !deliveryAddress.lng) {
+                    logger.error('Incomplete delivery address (missing lat/lng) provided for LTD rate request.', { deliveryAddress });
+                    throw new HttpsError('invalid-argument', 'The provided delivery address is incomplete. Please ensure all fields, including coordinates, are filled out.');
+                }
                  apiPayload.collection_pickup_point_id = originLockerCode;
                  apiPayload.collection_pickup_point_provider = "tcg-locker";
                  apiPayload.delivery_address = deliveryAddress;
                 break;
+
             case 'ltl': // Locker-to-Locker
                 if (!originLockerCode || !destinationLockerCode) {
                     throw new HttpsError('invalid-argument', 'Origin and destination lockers are required for LTL.');
@@ -581,29 +594,38 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
                 apiPayload.delivery_pickup_point_id = destinationLockerCode;
                 apiPayload.delivery_pickup_point_provider = "tcg-locker";
                 break;
+
             default:
                 throw new HttpsError('invalid-argument', `Invalid Pudo shipping type specified: ${type}`);
         }
+        // --- END OF FIX ---
 
         logger.info(`Requesting Pudo Sandbox rate for type ${type}`, { payload: apiPayload });
 
         const response = await fetch(PUDO_RATES_URL, {
             method: 'POST',
-            headers: { 
+            headers: {
                 'Authorization': `Bearer ${apiToken}`,
-                'Content-Type': 'application/json', 
-                'Accept': 'application/json' 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(apiPayload)
         });
 
         const responseText = await response.text();
+        
         if (!response.ok) {
-            logger.error('Pudo Sandbox API returned an error for rate:', {
-                status: response.status,
-                body: responseText
-            });
-            throw new HttpsError('unavailable', 'The Pudo shipping provider returned an error while fetching rates.');
+            let errorBody;
+            try {
+                errorBody = JSON.parse(responseText);
+            } catch (e) {
+                logger.error('Pudo Sandbox API returned non-JSON error:', { status: response.status, body: responseText });
+                throw new HttpsError('unavailable', `The Pudo shipping provider returned an unreadable error.`);
+            }
+
+            logger.error('Pudo Sandbox API returned an error for rate:', { status: response.status, body: errorBody });
+            const errorMessage = errorBody.message || 'The Pudo shipping provider returned an error while fetching rates.';
+            throw new HttpsError('unavailable', errorMessage);
         }
 
         let responseData;
