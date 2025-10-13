@@ -50,8 +50,8 @@ if (admin.apps.length === 0) {
     }
 }
 const db = admin.firestore();
-// ============== END INITIALIZATION ==============
-// ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) - V2 SYNTAX ==============
+// ============== END INITIALIZATION =============
+// ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) - V2 SYNTAX =============
 exports.onUserWriteSetClaims = (0, firestore_1.onDocumentWritten)("users/{userId}", async (event) => {
     const userId = event.params.userId;
     const afterData = event.data?.after.data();
@@ -391,187 +391,199 @@ exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
 });
 // ============== SHIPPING FUNCTIONS ==============//
 const shiplogicApiKeySecret = (0, params_1.defineSecret)('SHIPLOGIC_API_KEY');
-const pudoEmailSecret = (0, params_1.defineSecret)('PUDO_EMAIL');
-const pudoPasswordSecret = (0, params_1.defineSecret)('PUDO_PASSWORD');
+const pudoApiKeySecret = (0, params_1.defineSecret)('PUDO_API_KEY');
+// This remains for the getShiplogicRates function
 const SHIPLOGIC_API_URL = 'https://api.shiplogic.com/v2/rates';
-const PUDO_API_URL = 'https://api.pudo.co.za/api/v1';
-let pudoAuthToken = null;
-/**
- * Fetches and caches a Pudo authentication token.
- * This function retrieves a new token only when the cached one is null or nearing expiration.
- * @returns {Promise<string>} The valid bearer token.
- */
-const getPudoAuthToken = async () => {
-    const now = Date.now();
-    // Return cached token if it's still valid (with a 5-minute buffer)
-    if (pudoAuthToken && pudoAuthToken.expiresAt > now + 5 * 60 * 1000) {
-        logger.info("Using cached Pudo auth token.");
-        return pudoAuthToken.token;
-    }
-    logger.info("Fetching new Pudo auth token...");
-    const email = pudoEmailSecret.value();
-    const password = pudoPasswordSecret.value();
-    if (!email || !password) {
-        logger.error("CRITICAL: Pudo email or password not found in secrets.");
-        throw new https_1.HttpsError('internal', 'Server configuration error: Pudo credentials are not set.');
-    }
-    try {
-        const response = await fetch(`${PUDO_API_URL}/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-        });
-        const data = await response.json();
-        if (!response.ok || !data.token || !data.expires_in) {
-            const errorMessage = data.error || data.message || JSON.stringify(data);
-            logger.error('Failed to fetch Pudo auth token:', { status: response.status, body: errorMessage });
-            throw new https_1.HttpsError('unavailable', `Pudo authentication failed: ${errorMessage}`);
-        }
-        // Cache the new token and its expiration time (expires_in is in seconds)
-        pudoAuthToken = {
-            token: data.token,
-            expiresAt: now + (data.expires_in * 1000),
-        };
-        logger.info("Successfully fetched and cached new Pudo auth token.");
-        return pudoAuthToken.token;
-    }
-    catch (error) {
-        logger.error("CRITICAL ERROR in getPudoAuthToken:", error);
-        if (error instanceof https_1.HttpsError) {
-            throw error;
-        }
-        throw new https_1.HttpsError('internal', 'An unexpected error occurred during Pudo authentication.');
-    }
-};
-exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoEmailSecret, pudoPasswordSecret], cors: true }, async (request) => {
+// Define the new Pudo base URL for clarity
+const PUDO_API_URL = 'https://sandbox.api-pudo.co.za/api/v1';
+exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: true }, async (request) => {
     logger.info("getPudoLockers invoked.");
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to fetch lockers.');
     }
+    const pudoApiKey = pudoApiKeySecret.value();
+    if (!pudoApiKey) {
+        logger.error("CRITICAL: Pudo API key not found in secrets.");
+        throw new https_1.HttpsError('internal', 'Server configuration error: Pudo API key not found.');
+    }
+    // Using API Key in header as per observed behavior, not contract
+    const keyParts = pudoApiKey.split('|');
+    const apiToken = keyParts.length === 2 ? keyParts[1] : pudoApiKey;
+    const PUDO_LOCKERS_URL = `${PUDO_API_URL}/lockers`;
+    logger.info(`Fetching Pudo lockers from: ${PUDO_LOCKERS_URL}`);
     try {
-        const authToken = await getPudoAuthToken();
-        const response = await fetch(`${PUDO_API_URL}/lockers`, {
+        const response = await fetch(PUDO_LOCKERS_URL, {
             method: 'GET',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
         });
-        const responseData = await response.json();
+        const responseText = await response.text();
         if (!response.ok) {
-            const errorMessage = responseData.error || responseData.message || JSON.stringify(responseData);
-            logger.error('Pudo API returned an error while fetching lockers:', { status: response.status, body: errorMessage });
-            throw new https_1.HttpsError('unavailable', `Shipping Provider Error: ${errorMessage}`);
+            logger.error('Pudo API returned an error while fetching lockers:', { status: response.status, body: responseText });
+            const detail = responseText.includes("Unauthenticated") ? "Authentication failed." : "Could not retrieve lockers.";
+            throw new https_1.HttpsError('unavailable', `Shipping Provider Error: ${detail}`);
         }
-        return responseData; // Return the raw locker data
+        let responseData;
+        try {
+            responseData = JSON.parse(responseText);
+        }
+        catch (e) {
+            logger.error("Failed to parse JSON from Pudo API response:", { responseText });
+            throw new https_1.HttpsError('internal', 'Received an invalid response from the shipping provider.');
+        }
+        // --- ROBUST FIX ---
+        // As seen in logs, the API wraps the array in a 'responseData' field.
+        // We check for that field first, otherwise fall back to other possibilities.
+        const allLockers = responseData.responseData || responseData.lockers || (Array.isArray(responseData) ? responseData : null);
+        if (!Array.isArray(allLockers)) {
+            logger.error("Pudo locker response was not in any expected format.", { responseData });
+            throw new https_1.HttpsError('internal', 'Received an invalid response format from the shipping provider.');
+        }
+        // --- END FIX ---
+        logger.info(`Successfully fetched ${allLockers.length} Pudo lockers.`);
+        return { data: allLockers };
     }
     catch (error) {
         logger.error('CRITICAL ERROR in getPudoLockers function:', error);
         if (error instanceof https_1.HttpsError) {
             throw error;
         }
-        throw new https_1.HttpsError('internal', error.message || 'An unexpected server error occurred while fetching Pudo lockers.');
+        throw new https_1.HttpsError('internal', 'An unexpected server error occurred while fetching Pudo lockers.');
     }
 });
-// New function to get Pudo rates
-exports.getPudoRates = (0, https_1.onCall)({ secrets: [pudoEmailSecret, pudoPasswordSecret], cors: true }, async (request) => {
+exports.getPudoRates = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: true }, async (request) => {
     logger.info("getPudoRates invoked.");
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to fetch rates.');
     }
-    const { cart, dispensaryId, destinationLockerCode } = request.data;
-    if (!cart || cart.length === 0 || !dispensaryId || !destinationLockerCode) {
-        throw new https_1.HttpsError('invalid-argument', 'Request is missing required cart, dispensary, or locker code.');
+    const { cart, dispensaryId, destinationLockerCode, originLockerCode, deliveryAddress, type } = request.data;
+    if (!cart || cart.length === 0 || !dispensaryId || !type) {
+        throw new https_1.HttpsError('invalid-argument', 'Missing required data: cart, dispensaryId, or type.');
     }
+    const pudoApiKey = pudoApiKeySecret.value();
+    if (!pudoApiKey) {
+        logger.error("CRITICAL: Pudo API key not found in secrets.");
+        throw new https_1.HttpsError('internal', 'Server configuration error: Pudo API key not found.');
+    }
+    const keyParts = pudoApiKey.split('|');
+    const apiToken = keyParts.length === 2 ? keyParts[1] : pudoApiKey;
+    const PUDO_RATES_URL = `${PUDO_API_URL}/rates`;
     try {
-        const authToken = await getPudoAuthToken();
         const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
         if (!dispensaryDoc.exists) {
             throw new https_1.HttpsError('not-found', `Dispensary '${dispensaryId}' not found.`);
         }
         const dispensary = dispensaryDoc.data();
-        if (!dispensary.streetAddress || !dispensary.city || !dispensary.postalCode) {
-            logger.error('Dispensary is missing structured address fields.', { dispensaryId: dispensary.id });
-            throw new https_1.HttpsError('failed-precondition', 'Dispensary location address is incomplete.');
+        const parcels = cart.map((item) => ({
+            submitted_weight_kg: item.weight || 0.1,
+            submitted_height_cm: item.height || 10,
+            submitted_width_cm: item.width || 10,
+            submitted_length_cm: item.length || 10,
+            parcel_description: item.name,
+        }));
+        let apiPayload = { parcels };
+        switch (type) {
+            case 'dtl': // Door-to-Locker
+                // --- FIX ---
+                // The Pudo API requires a delivery_address even for DTL, contrary to documentation.
+                if (!destinationLockerCode || !dispensary.streetAddress || !deliveryAddress) {
+                    throw new https_1.HttpsError('invalid-argument', 'Destination locker, delivery address, and full dispensary address are required for DTL.');
+                }
+                apiPayload.collection_address = {
+                    street_address: dispensary.streetAddress,
+                    local_area: dispensary.suburb,
+                    code: dispensary.postalCode,
+                    city: dispensary.city,
+                    zone: dispensary.province,
+                    country: "ZA",
+                };
+                // This is the crucial addition to satisfy the API
+                apiPayload.delivery_address = deliveryAddress;
+                apiPayload.delivery_pickup_point_id = destinationLockerCode;
+                apiPayload.delivery_pickup_point_provider = "tcg-locker";
+                // --- END FIX ---
+                break;
+            case 'ltd': // Locker-to-Door
+                if (!originLockerCode || !deliveryAddress) {
+                    throw new https_1.HttpsError('invalid-argument', 'Origin locker and delivery address are required for LTD.');
+                }
+                apiPayload.collection_pickup_point_id = originLockerCode;
+                apiPayload.collection_pickup_point_provider = "tcg-locker";
+                apiPayload.delivery_address = deliveryAddress;
+                break;
+            case 'ltl': // Locker-to-Locker
+                if (!originLockerCode || !destinationLockerCode) {
+                    throw new https_1.HttpsError('invalid-argument', 'Origin and destination lockers are required for LTL.');
+                }
+                apiPayload.collection_pickup_point_id = originLockerCode;
+                apiPayload.collection_pickup_point_provider = "tcg-locker";
+                apiPayload.delivery_pickup_point_id = destinationLockerCode;
+                apiPayload.delivery_pickup_point_provider = "tcg-locker";
+                break;
+            default:
+                throw new https_1.HttpsError('invalid-argument', `Invalid Pudo shipping type specified: ${type}`);
         }
-        // 1. Calculate total dimensions and weight
-        let totalWeight = 0;
-        let maxLength = 0;
-        let maxWidth = 0;
-        let maxHeight = 0;
-        cart.forEach(item => {
-            const quantity = item.quantity || 1;
-            totalWeight += (item.weight || 0) * quantity;
-            maxLength = Math.max(maxLength, item.length || 0);
-            maxWidth = Math.max(maxWidth, item.width || 0);
-            maxHeight += (item.height || 0) * quantity; // Stack height for simplicity
-        });
-        // 2. Determine parcel size based on provided definitions
-        let parcelSize = '';
-        if (totalWeight <= 2 && maxLength <= 60 && maxWidth <= 17 && maxHeight <= 8) {
-            parcelSize = 'XS';
-        }
-        else if (totalWeight <= 5 && maxLength <= 60 && maxWidth <= 41 && maxHeight <= 8) {
-            parcelSize = 'S';
-        }
-        else if (totalWeight <= 10 && maxLength <= 60 && maxWidth <= 41 && maxHeight <= 19) {
-            parcelSize = 'M';
-        }
-        else if (totalWeight <= 15 && maxLength <= 60 && maxWidth <= 41 && maxHeight <= 41) {
-            parcelSize = 'L';
-        }
-        else if (totalWeight <= 20 && maxLength <= 60 && maxWidth <= 41 && maxHeight <= 69) {
-            parcelSize = 'XL';
-        }
-        else {
-            throw new https_1.HttpsError('failed-precondition', 'The combined items exceed the largest parcel dimensions (XL).');
-        }
-        const collectionAddress = {
-            street_address: dispensary.streetAddress,
-            local_area: dispensary.suburb || '',
-            city: dispensary.city,
-            code: dispensary.postalCode,
-            country: 'ZA',
-        };
-        const pudoPayload = {
-            collection_address: collectionAddress,
-            destination_locker_code: destinationLockerCode,
-            parcel_size: parcelSize,
-        };
-        // 3. Call Pudo API
-        const response = await fetch(`${PUDO_API_URL}/quotes`, {
+        logger.info(`Requesting Pudo Sandbox rate for type ${type}`, { payload: apiPayload });
+        const response = await fetch(PUDO_RATES_URL, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(pudoPayload)
+            headers: {
+                'Authorization': `Bearer ${apiToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(apiPayload)
         });
-        const responseData = await response.json();
+        const responseText = await response.text();
         if (!response.ok) {
-            const errorMessage = responseData.error || responseData.message || JSON.stringify(responseData);
-            logger.error('Pudo API returned an error:', { status: response.status, body: errorMessage });
-            throw new https_1.HttpsError('unavailable', `Shipping Provider Error: ${errorMessage}`);
+            logger.error('Pudo Sandbox API returned an error for rate:', {
+                status: response.status,
+                body: responseText
+            });
+            throw new https_1.HttpsError('unavailable', 'The Pudo shipping provider returned an error while fetching rates.');
         }
-        const rateValue = responseData.price || responseData.rate;
-        if (typeof rateValue !== 'number') {
-            logger.error('Pudo quote response did not contain a valid rate field.', { responseData });
-            throw new https_1.HttpsError('internal', 'Could not parse the shipping rate from the provider.');
+        let responseData;
+        try {
+            responseData = JSON.parse(responseText);
         }
-        const formattedRate = {
-            id: `pudo-dtl-${destinationLockerCode}`,
-            name: 'Door-to-Locker',
-            rate: rateValue,
-            service_level: 'Standard',
-            delivery_time: '1-4 business days',
-            courier_name: 'Pudo (The Courier Guy)',
-        };
-        return { rates: [formattedRate] };
+        catch (e) {
+            logger.error("Failed to parse JSON from Pudo rates API response:", { responseText });
+            throw new https_1.HttpsError('internal', 'Received an invalid response from the Pudo shipping provider.');
+        }
+        const ratesSource = responseData.responseData || responseData.rates || (Array.isArray(responseData) ? responseData : null);
+        if (!Array.isArray(ratesSource)) {
+            logger.warn("Pudo rates response was not an array as expected.", { responseData });
+            return { rates: [] };
+        }
+        const formattedRates = ratesSource.map((rate, index) => {
+            if (!rate || !rate.service_level_code || !rate.total_price) {
+                logger.warn("Skipping malformed rate from Pudo:", { rate });
+                return null;
+            }
+            return {
+                id: rate.service_level_code || index,
+                name: rate.service_name || 'Pudo Service',
+                rate: parseFloat(rate.total_price),
+                service_level: rate.service_level_code,
+                delivery_time: (rate.eta_days_min && rate.eta_days_max) ? `${rate.eta_days_min}-${rate.eta_days_max} business days` : 'No delivery estimate',
+                courier_name: 'Pudo (Sandbox)',
+            };
+        }).filter((rate) => rate !== null);
+        logger.info(`Successfully parsed ${formattedRates.length} rates from Pudo.`);
+        return { rates: formattedRates };
     }
     catch (error) {
-        logger.error('CRITICAL ERROR in getPudoRates function:', error);
+        logger.error(`CRITICAL ERROR in getPudoRates function for type ${type}:`, error);
         if (error instanceof https_1.HttpsError) {
             throw error;
         }
-        throw new https_1.HttpsError('internal', error.message || 'An unexpected server error occurred while fetching Pudo rates.');
+        throw new https_1.HttpsError('internal', 'An unexpected server error occurred while fetching Pudo rates.');
     }
 });
 exports.getShiplogicRates = (0, https_1.onCall)({ secrets: [shiplogicApiKeySecret], cors: true }, async (request) => {
-    logger.info("getShiplogicRates invoked (v16 - Corrected Rate Parsing).");
+    logger.info("getShiplogicRates invoked (using ShipLogic API Key).");
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to fetch rates.');
     }

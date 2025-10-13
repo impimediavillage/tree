@@ -38,6 +38,7 @@ export interface Dispensary {
   suburb?: string;
   city?: string;
   postalCode?: string;
+  province: string;
   latitude?: number | null;
   longitude?: number | null;
   deliveryRadius?: string | null;
