@@ -15,21 +15,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const allShippingMethodsMap: { [key: string]: string } = {
-  "dtd": "Door-to-Door Courier (The Courier Guy)",
-  "dtl": "Door-to-Locker (Pudo)",
-  "ltd": "Locker-to-Door (Pudo)",
-  "ltl": "Locker-to-Locker (Pudo)",
+  "dtd": "Door-to-Door Courier",
+  "dtl": "Door-to-Locker",
+  "ltd": "Locker-to-Door",
+  "ltl": "Locker-to-Locker",
   "collection": "Collection from Store",
   "in_house": "In-house Delivery Service",
 };
 
-interface PudoLocker {
-    code: string;
+interface PickupPoint {
+    id: string; 
     name: string;
-    address: string;
-    province: string;
-    lat: number;
-    lng: number;
+    street_address: string;
+    [key: string]: any; 
 }
 
 interface DispensaryShippingGroupProps {
@@ -40,7 +38,6 @@ interface DispensaryShippingGroupProps {
   onShippingSelectionChange: (dispensaryId: string, rate: ShippingRate | null) => void;
 }
 
-// --- FIX: Stricter address validation to include lat/lng ---
 const isAddressComplete = (address: AddressValues['shippingAddress']) => {
     return address && address.streetAddress && address.city && address.postalCode && address.province && address.latitude && address.longitude;
 }
@@ -55,15 +52,16 @@ export const DispensaryShippingGroup = ({
   const { toast } = useToast();
   const [dispensary, setDispensary] = useState<Dispensary | null>(null);
   const [isLoading, setIsLoading] = useState(true); 
-  const [isFetchingPudo, setIsFetchingPudo] = useState(false);
+  const [isFetchingLockers, setIsFetchingLockers] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [rates, setRates] = useState<ShippingRate[]>([]);
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
   
-  const [pudoLockers, setPudoLockers] = useState<PudoLocker[]>([]);
-  const [originLocker, setOriginLocker] = useState<PudoLocker | null>(null);
-  const [destinationLocker, setDestinationLocker] = useState<PudoLocker | null>(null);
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
+  const [originLocker, setOriginLocker] = useState<PickupPoint | null>(null);
+  const [destinationLocker, setDestinationLocker] = useState<PickupPoint | null>(null);
+  
   const [lockerSearchTerm, setLockerSearchTerm] = useState('');
   const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
   const [currentLockerSelection, setCurrentLockerSelection] = useState<'origin' | 'destination' | null>(null);
@@ -108,20 +106,14 @@ export const DispensaryShippingGroup = ({
 
   const fetchPudoRates = useCallback(async () => {
     if (!selectedTier || !['dtl', 'ltd', 'ltl'].includes(selectedTier)) return;
-
-    if (['dtl', 'ltd'].includes(selectedTier) && !isAddressComplete(addressData.shippingAddress)) {
-        setError("Please provide a complete shipping address (including map selection) to get delivery rates.");
-        return;
-    }
-
+    
     setIsLoading(true);
     setError(null);
     setRates([]);
 
     try {
-      const getPudoRates = httpsCallable(functions, 'getPudoRates');
+      const getPudoRatesFn = httpsCallable(functions, 'getPudoRates');
       
-      // --- FIX: Ensure lat/lng are included in the payload ---
       const deliveryAddressForApi = {
           street_address: addressData.shippingAddress.streetAddress,
           local_area: addressData.shippingAddress.suburb,
@@ -136,71 +128,53 @@ export const DispensaryShippingGroup = ({
       let payload: any = { cart: items, dispensaryId, type: selectedTier };
 
       if (selectedTier === 'dtl') {
-        if (!destinationLocker) return; 
-        payload.destinationLockerCode = destinationLocker.code;
-        payload.deliveryAddress = deliveryAddressForApi;
+        if (!destinationLocker) return;
+        payload.destinationLockerCode = destinationLocker.id;
       } else if (selectedTier === 'ltd') {
         if (!originLocker) return;
-        payload.originLockerCode = originLocker.code;
+        payload.originLockerCode = originLocker.id;
         payload.deliveryAddress = deliveryAddressForApi;
       } else if (selectedTier === 'ltl') {
         if (!originLocker || !destinationLocker) return;
-        payload.originLockerCode = originLocker.code;
-        payload.destinationLockerCode = destinationLocker.code;
-      } else {
-        setIsLoading(false);
-        return;
+        payload.originLockerCode = originLocker.id;
+        payload.destinationLockerCode = destinationLocker.id;
       }
       
-      const result = await getPudoRates(payload);
+      const result = await getPudoRatesFn(payload);
       const data = result.data as { rates?: ShippingRate[] };
 
       if (data.rates && data.rates.length > 0) {
         setRates(data.rates);
       } else {
-        setError("No Pudo rate was found for the selected criteria.");
+        setError("No locker-based shipping rates were found for the selected criteria.");
       }
     } catch (err: any) {
       console.error("Error fetching Pudo rates:", err);
-      setError(err.message || "An unknown error occurred while fetching Pudo rates.");
-      toast({ title: "Pudo Rate Error", description: err.message || "Could not fetch Pudo rates.", variant: "destructive" });
+      const message = err.message || "An unknown error occurred while fetching Pudo rates.";
+      setError(message);
+      toast({ title: "Pudo Rate Error", description: message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }, [selectedTier, items, dispensaryId, originLocker, destinationLocker, addressData, toast]);
 
-  useEffect(() => {
-    if ((selectedTier === 'dtl' && destinationLocker) || 
-        (selectedTier === 'ltd' && originLocker) || 
-        (selectedTier === 'ltl' && originLocker && destinationLocker)) {
-      fetchPudoRates();
+  const fetchShiplogicRates = useCallback(async () => {
+    if (!isAddressComplete(addressData.shippingAddress)) {
+      setError("Please provide a complete shipping address to get door-to-door rates.");
+      return;
     }
-  }, [selectedTier, originLocker, destinationLocker, fetchPudoRates]);
 
-
-  useEffect(() => {
-    if (rates.length === 1 && !selectedRateId) {
-      handleRateSelection(rates[0].id.toString());
-    }
-  }, [rates, selectedRateId, handleRateSelection]);
-
-
-  const handleTierSelection = async (tier: string) => {
-    setSelectedTier(tier);
-    resetSelections();
-
-    const addressRequired = ['dtd', 'dtl', 'ltd'].includes(tier);
-    if (addressRequired && !isAddressComplete(addressData.shippingAddress)) {
-        setError("Please provide a complete shipping address (including map selection) to get delivery rates.");
-        return;
-    }
+    setIsLoading(true);
     setError(null);
+    setRates([]);
 
-    if (tier === 'dtd') {
-      setIsLoading(true);
-      try {
-        const getShiplogicRates = httpsCallable(functions, 'getShiplogicRates');
-        const deliveryAddressForApi = {
+    try {
+      const getShiplogicRatesFn = httpsCallable(functions, 'getShiplogicRates');
+      const payload = {
+        cart: items,
+        dispensaryId,
+        type: 'std',
+        deliveryAddress: {
           street_address: addressData.shippingAddress.streetAddress,
           local_area: addressData.shippingAddress.suburb,
           city: addressData.shippingAddress.city,
@@ -209,40 +183,81 @@ export const DispensaryShippingGroup = ({
           country: addressData.shippingAddress.country,
           lat: addressData.shippingAddress.latitude,
           lng: addressData.shippingAddress.longitude,
-        };
-        const payload = { cart: items, dispensaryId, deliveryAddress: deliveryAddressForApi };
-        const result = await getShiplogicRates(payload);
-        const data = result.data as { rates?: ShippingRate[] };
+        }
+      };
 
-        if (data.rates && data.rates.length > 0) {
-          setRates(data.rates);
-        } else {
-          setError("No courier rates were found for this address.");
-        }
-      } catch (err: any) {
-        setError(err.message || "An error occurred while fetching shipping rates.");
-        toast({ title: "Shipping Rate Error", description: err.message, variant: "destructive" });
-      } finally {
-        setIsLoading(false);
+      const result = await getShiplogicRatesFn(payload);
+      const data = result.data as { rates?: ShippingRate[] };
+
+      if (data.rates && data.rates.length > 0) {
+        setRates(data.rates);
+      } else {
+        setError("No door-to-door shipping rates were found for your address.");
       }
-    } else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
-      setIsFetchingPudo(true);
-      try {
-        if (pudoLockers.length === 0) {
-          const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
-          const result = await getPudoLockers();
-          const lockerData = (result.data as any)?.data as PudoLocker[];
+    } catch (err: any) {
+      console.error("Error fetching ShipLogic rates:", err);
+      const message = err.message || "An unknown error occurred while fetching shipping rates.";
+      setError(message);
+      toast({ title: "Shipping Rate Error", description: message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [items, dispensaryId, addressData, toast]);
+
+  useEffect(() => {
+    if (!selectedTier) return;
+    
+    if ((selectedTier === 'dtl' && destinationLocker) || 
+        (selectedTier === 'ltd' && originLocker) || 
+        (selectedTier === 'ltl' && originLocker && destinationLocker)) {
+      fetchPudoRates();
+    }
+  }, [selectedTier, originLocker, destinationLocker, fetchPudoRates]);
+
+  useEffect(() => {
+    if (rates.length === 1 && !selectedRateId) {
+      handleRateSelection(rates[0].id.toString());
+    }
+  }, [rates, selectedRateId, handleRateSelection]);
+
+  const handleTierSelection = async (tier: string) => {
+    setSelectedTier(tier);
+    resetSelections();
+    
+    const addressRequired = ['dtd', 'ltd', 'dtl'];
+    if (addressRequired.includes(tier) && !isAddressComplete(addressData.shippingAddress)) {
+        setError("Please provide a complete shipping address (including map selection) to get rates.");
+        return;
+    }
+    setError(null);
+
+    if (tier === 'dtd') {
+      fetchShiplogicRates();
+    } 
+    else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
+      if (pickupPoints.length === 0) {
+        setIsFetchingLockers(true);
+        try {
+          const getPudoLockersFn = httpsCallable(functions, 'getPudoLockers');
+          const result = await getPudoLockersFn({
+            latitude: addressData.shippingAddress.latitude,
+            longitude: addressData.shippingAddress.longitude,
+            city: addressData.shippingAddress.city
+          });
+          const lockerData = (result.data as any)?.data as PickupPoint[];
+
           if (lockerData && lockerData.length > 0) {
-            setPudoLockers(lockerData);
+            setPickupPoints(lockerData);
           } else {
-            throw new Error('Could not retrieve any Pudo lockers.');
+            throw new Error('Could not retrieve any Pudo lockers near your location.');
           }
+        } catch (err: any) {
+          const message = err.message || 'Failed to fetch Pudo locker locations.';
+          setError(message);
+          toast({ title: "Locker Error", description: message, variant: "destructive" });
+        } finally {
+          setIsFetchingLockers(false);
         }
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch Pudo locker locations.');
-        toast({ title: "Locker Error", description: err.message, variant: "destructive" });
-      } finally {
-        setIsFetchingPudo(false);
       }
     } else if (tier === 'collection') {
       const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: dispensaryName };
@@ -253,7 +268,7 @@ export const DispensaryShippingGroup = ({
     }
   };
 
-  const handleLockerSelect = (locker: PudoLocker) => {
+  const handleLockerSelect = (locker: PickupPoint) => {
     if (currentLockerSelection === 'origin') {
       setOriginLocker(locker);
     } else if (currentLockerSelection === 'destination') {
@@ -268,14 +283,14 @@ export const DispensaryShippingGroup = ({
   }
   
   const filteredLockers = useMemo(() => 
-    pudoLockers.filter(locker => 
+    pickupPoints.filter(locker => 
         locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
-        locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase())
-    ), [pudoLockers, lockerSearchTerm]);
+        (locker.street_address && locker.street_address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+    ), [pickupPoints, lockerSearchTerm]);
 
-  const isPudoTier = ['dtl', 'ltd', 'ltl'].includes(selectedTier || '');
+  const isLockerTier = ['dtl', 'ltd', 'ltl'].includes(selectedTier || '');
   
-  if (isLoading && !dispensary) {
+  if (isLoading && !dispensary && !rates.length) {
     return (
       <Card className='bg-muted/20'><CardContent className='p-6 flex items-center'><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading shipping options...</CardContent></Card>
     )
@@ -287,7 +302,7 @@ export const DispensaryShippingGroup = ({
   return (
     <Card className="bg-muted/20 shadow-md">
       <CardHeader>
-        <CardTitle>Shipment from {dispensary?.name || dispensaryName}</CardTitle>
+        <CardTitle>Shipment from {dispensary?.dispensaryName || dispensaryName}</CardTitle>
         <CardDescription>Select a delivery method for the items from this dispensary.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -312,15 +327,15 @@ export const DispensaryShippingGroup = ({
           </RadioGroup>
         </div>
 
-        {isFetchingPudo && <div className="flex items-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className='ml-3'>Fetching Pudo Lockers...</p></div>}
+        {isFetchingLockers && <div className="flex items-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className='ml-3'>Fetching Pudo Lockers...</p></div>}
 
-        {isPudoTier && !isFetchingPudo && !error && (
+        {isLockerTier && !isFetchingLockers && !error && (
           <div className="space-y-4">
             {selectedTier === 'ltd' || selectedTier === 'ltl' ? (
                  <div>
                     <p className="font-medium mb-2">2. Choose Origin Locker</p>
                     <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={() => openLockerModal('origin')}>
-                        {originLocker ? <div><p className='font-semibold'>{originLocker.name}</p><p className='text-sm text-muted-foreground'>{originLocker.address}</p></div> : 'Click to select origin locker'}
+                        {originLocker ? <div><p className='font-semibold'>{originLocker.name}</p><p className='text-sm text-muted-foreground'>{originLocker.street_address}</p></div> : 'Click to select origin locker'}
                     </Button>
                  </div>
             ) : null}
@@ -329,7 +344,7 @@ export const DispensaryShippingGroup = ({
                 <div>
                     <p className="font-medium mb-2">{selectedTier === 'ltl' ? '3. Choose Destination Locker' : '2. Choose Destination Locker'}</p>
                     <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={() => openLockerModal('destination')} disabled={selectedTier === 'ltl' && !originLocker}>
-                        {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
+                        {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.street_address}</p></div> : 'Click to select destination locker'}
                     </Button>
                     {selectedTier === 'ltl' && !originLocker && <p className='text-xs text-muted-foreground mt-1'>Please select an origin locker first.</p>}
                 </div>
@@ -346,10 +361,10 @@ export const DispensaryShippingGroup = ({
                 </div>
                 <div className="max-h-[400px] overflow-y-auto space-y-2 p-1">
                     {filteredLockers.map(locker => (
-                        <Button key={locker.code} variant="ghost" className="w-full justify-start h-auto py-2 text-left" onClick={() => handleLockerSelect(locker)}>
+                        <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-2 text-left" onClick={() => handleLockerSelect(locker)}>
                             <div>
                                 <p className="font-semibold">{locker.name}</p>
-                                <p className="text-sm text-muted-foreground">{locker.address}</p>
+                                <p className="text-sm text-muted-foreground">{locker.street_address}</p>
                             </div>
                         </Button>
                     ))}
@@ -366,7 +381,7 @@ export const DispensaryShippingGroup = ({
 
         {rates.length > 0 && !isLoading && (
             <div>
-                <p className="font-medium mb-2">{isPudoTier ? (selectedTier === 'ltl' ? '4. Finalize Selection' : '3. Finalize Selection') : '2. Finalize Selection'}</p>
+                <p className="font-medium mb-2">{isLockerTier ? (selectedTier === 'ltl' ? '4. Finalize Selection' : '3. Finalize Selection') : '2. Finalize Selection'}</p>
                 <RadioGroup onValueChange={handleRateSelection} value={selectedRateId || ''} className="space-y-3">
                     {rates.map(rate => (
                         <Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all cursor-pointer">

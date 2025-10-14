@@ -1,0 +1,6518 @@
+TCG LOCKER SANDBOX API
+Register for a Test account on sandbox.pudo.co.za
+
+Login and navigate to Settings API Keys and Create an API Key
+
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+POST
+Getting opt-in rates L2D
+https://sandbox.api-pudo.co.za/api/v1/rates/opt-in
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+Bearer insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+Body
+raw
+View More
+{
+    "delivery_address": {
+        "type": "residential",
+        "entered_address": "123 Rivonia Rd, Sandown, Sandton, 2031, South Africa",
+        "company": "123 Rivonia Rd",
+        "street_address": "Rivonia Road",
+        "local_area": "Sandown",
+        "code": "2031",
+        "city": "Sandton",
+        "zone": "GP",
+        "country": "South Africa",
+        "lat": "-26.1042942",
+        "lng": "28.0599364"
+    }
+}
+Example Request
+Getting opt-in rates L2D
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "Bearer insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "delivery_address": {
+    "type": "residential",
+    "entered_address": "123 Rivonia Rd, Sandown, Sandton, 2031, South Africa",
+    "company": "123 Rivonia Rd",
+    "street_address": "Rivonia Road",
+    "local_area": "Sandown",
+    "code": "2031",
+    "city": "Sandton",
+    "zone": "GP",
+    "country": "South Africa",
+    "lat": "-26.1042942",
+    "lng": "28.0599364"
+  }
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/rates/opt-in", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+{
+  "opt_in_rates": [
+    {
+      "id": 29580,
+      "charge_type": "flat",
+      "charge_value": "517.5",
+      "name": "Chain Stores",
+      "vat_type": "standard"
+    },
+    {
+      "id": 29581,
+      "charge_type": "flat",
+      "charge_value": "276",
+      "name": "Hospital",
+      "vat_type": "standard"
+    },
+    {
+      "id": 29582,
+      "charge_type": "flat",
+      "charge_value": "25",
+      "name": "Manual waybill charge",
+      "vat_type": "standard"
+    },
+    {
+      "id": 29583,
+      "charge_type": "flat",
+      "charge_value": "276",
+      "name": "Plot / Farm",
+      "vat_type": "standard"
+    },
+    {
+      "id": 29584,
+      "charge_type": "flat",
+      "charge_value": "276",
+      "name": "Power station",
+      "vat_type": "standard"
+    },
+    {
+      "id": 29585,
+      "charge_type": "flat",
+      "charge_value": "115",
+      "name": "Tender",
+      "vat_type": "standard"
+    }
+  ],
+  "opt_in_time_based_rates": [
+    {
+      "id": 38419,
+      "charge_type": "delivery",
+      "charge_value": "713",
+      "name": "Public holidy delivery"
+    },
+    {
+      "id": 38420,
+      "charge_type": "delivery",
+      "charge_value": "210.25",
+      "name": "Early bird"
+    },
+    {
+      "id": 38423,
+      "charge_type": "delivery",
+      "charge_value": "713",
+      "name": "After hours delivery"
+    },
+    {
+      "id": 38425,
+      "charge_type": "delivery",
+      "charge_value": "517.5",
+      "name": "Saturday delivery"
+    }
+  ]
+}
+POST
+Getting rates D2D
+https://sandbox.api-pudo.co.za/api/v1/rates
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+Body
+raw
+View More
+{
+    "collection_address": {
+        "lat": -26.0249547,
+        "lng": 27.9553194,
+        "street_address": "Kya Sand Road",
+        "local_area": "Kya Sand",
+        "suburb": "Kya Sand",
+        "city": "Randburg",
+        "code": "",
+        "zone": "GP",
+        "country": "South Africa",
+        "entered_address": "Kya Sand Rd, Kya Sand, Randburg, South Africa",
+        "type": "residential",
+        "company": "The Courier Guy"
+    },
+    "delivery_address": {
+        "lat": -34.03532089999999,
+        "lng": 18.753318,
+        "street_address": "Johannesburg Street",
+        "local_area": "Croydon",
+        "suburb": "Croydon",
+        "city": "Cape Town",
+        "code": "7130",
+        "zone": "WC",
+        "country": "South Africa",
+        "entered_address": "Johannesburg St, Croydon, Cape Town, 7130, South Africa",
+        "type": "residential"
+    },
+    "parcels": [
+        {
+            "submitted_length_cm": "40",
+            "submitted_width_cm": "30",
+            "submitted_height_cm": "8",
+            "submitted_weight_kg": "2",
+            "parcel_description": "Standard flyer",
+            "alternative_tracking_reference": ""
+        }
+    ],
+    "opt_in_rates": [],
+    "opt_in_time_based_rates": []
+}
+Example Request
+Getting rates D2D
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "collection_address": {
+    "lat": -26.0249547,
+    "lng": 27.9553194,
+    "street_address": "Kya Sand Road",
+    "local_area": "Kya Sand",
+    "suburb": "Kya Sand",
+    "city": "Randburg",
+    "code": "",
+    "zone": "GP",
+    "country": "South Africa",
+    "entered_address": "Kya Sand Rd, Kya Sand, Randburg, South Africa",
+    "type": "residential",
+    "company": "The Courier Guy"
+  },
+  "delivery_address": {
+    "lat": -34.03532089999999,
+    "lng": 18.753318,
+    "street_address": "Johannesburg Street",
+    "local_area": "Croydon",
+    "suburb": "Croydon",
+    "city": "Cape Town",
+    "code": "7130",
+    "zone": "WC",
+    "country": "South Africa",
+    "entered_address": "Johannesburg St, Croydon, Cape Town, 7130, South Africa",
+    "type": "residential"
+  },
+  "parcels": [
+    {
+      "submitted_length_cm": "40",
+      "submitted_width_cm": "30",
+      "submitted_height_cm": "8",
+      "submitted_weight_kg": "2",
+      "parcel_description": "Standard flyer",
+      "alternative_tracking_reference": ""
+    }
+  ],
+  "opt_in_rates": [],
+  "opt_in_time_based_rates": []
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/rates", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+{
+  "rates": [
+    {
+      "from_tags": "579,232,580,634,1805",
+      "to_tags": "232,582,634,1805,579",
+      "rate": "171.35",
+      "rates_explained": "",
+      "rate_excluding_vat": 149,
+      "base_rate": {
+        "charge": 171.35,
+        "rate_formula_type": "per_kg",
+        "total_calculated_weight": 2.4,
+        "vat_type": null,
+        "vat": 22.35
+      },
+      "charged_weight": 2.4,
+      "rate_revision_id": 960,
+      "service_level": {
+        "id": 2,
+        "code": "ECO",
+        "name": "Economy",
+        "description": "Expect delivery between 3 - 4 business days.",
+        "vat_type": null,
+        "insurance_disabled": null,
+        "collection_date": "29 Aug, 2024 08:00 AM",
+        "collection_cut_off_time": "29 Aug, 2024 03:00 PM",
+        "delivery_date_from": "03 Sep, 2024 08:00 AM",
+        "delivery_date_to": "04 Sep, 2024 08:00 AM"
+      },
+      "surcharges": null,
+      "rate_adjustments": null,
+      "time_based_rate_adjustments": null,
+      "mandatory_charges": null
+    },
+    {
+      "from_tags": "579,232,580,634,1805",
+      "to_tags": "232,582,634,1805,579",
+      "rate": "171.35",
+      "rates_explained": "",
+      "rate_excluding_vat": 149,
+      "base_rate": {
+        "charge": 171.35,
+        "rate_formula_type": "per_kg",
+        "total_calculated_weight": 2,
+        "vat_type": null,
+        "vat": 22.35
+      },
+      "charged_weight": 2,
+      "rate_revision_id": 960,
+      "service_level": {
+        "id": 1,
+        "code": "OVN",
+        "name": "Overnight",
+        "description": "Expect delivery between 1 - 2 business days.",
+        "vat_type": null,
+        "insurance_disabled": null,
+        "collection_date": "29 Aug, 2024 08:00 AM",
+        "collection_cut_off_time": "29 Aug, 2024 03:00 PM",
+        "delivery_date_from": "30 Aug, 2024 08:00 AM",
+        "delivery_date_to": "02 Sep, 2024 08:00 AM"
+      },
+      "surcharges": null,
+      "rate_adjustments": null,
+      "time_based_rate_adjustments": null,
+      "mandatory_charges": null
+    }
+  ],
+  "service_days": {
+    "collection_service_days": [],
+    "delivery_service_days": []
+  }
+}
+POST
+Getting rates D2L
+https://sandbox.api-pudo.co.za/api/v1/rates
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+Bearer insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+Body
+raw
+View More
+{
+    "collection_address": {
+        "type": "residential",
+        "entered_address": "123 Rivonia Rd, Sandown, Sandton, 2031, South Africa",
+        "company": "123 Rivonia Rd",
+        "street_address": "Rivonia Road",
+        "local_area": "Sandown",
+        "code": "2031",
+        "city": "Sandton",
+        "zone": "GP",
+        "country": "South Africa",
+        "lat": "-26.1042942",
+        "lng": "28.0599364"
+    },
+  "delivery_address": {
+        "terminal_id": "CG10"
+    },
+    "opt_in_rates": [],
+    "opt_in_time_based_rates": []
+}
+Example Request
+Getting rates D2L
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "Bearer insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "collection_address": {
+    "type": "residential",
+    "entered_address": "123 Rivonia Rd, Sandown, Sandton, 2031, South Africa",
+    "company": "123 Rivonia Rd",
+    "street_address": "Rivonia Road",
+    "local_area": "Sandown",
+    "code": "2031",
+    "city": "Sandton",
+    "zone": "GP",
+    "country": "South Africa",
+    "lat": "-26.1042942",
+    "lng": "28.0599364"
+  },
+  "delivery_address": {
+    "terminal_id": "CG10"
+  },
+  "opt_in_rates": [],
+  "opt_in_time_based_rates": []
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/rates", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+{
+  "rates": [
+    {
+      "from_tags": "579,232,580,634,1805",
+      "to_tags": "579,232,580,634,1805",
+      "rate": "70.00",
+      "rates_explained": "",
+      "rate_excluding_vat": 60.87,
+      "base_rate": {
+        "charge": 70,
+        "rate_formula_type": "per_parcel",
+        "total_calculated_weight": 0,
+        "vat_type": null,
+        "vat": 9.13
+      },
+      "charged_weight": 0,
+      "rate_revision_id": 960,
+      "service_level": {
+        "id": 34,
+        "code": "D2LS - ECO",
+        "name": "Door to Locker Small",
+        "description": "Door to Locker Small",
+        "vat_type": null,
+        "insurance_disabled": null,
+        "collection_date": "29 Aug, 2024 08:00 AM",
+        "collection_cut_off_time": "29 Aug, 2024 05:00 PM",
+        "delivery_date_from": "03 Sep, 2024 08:00 AM",
+        "delivery_date_to": "04 Sep, 2024 08:00 AM",
+        "box_type_name": "V4-S",
+        "box_type": "11",
+        "dimensions": {
+          "width": 41,
+          "height": 8,
+          "length": 60,
+          "weight": 5
+        }
+      },
+      "surcharges": null,
+      "rate_adjustments": null,
+      "time_based_rate_adjustments": null,
+      "mandatory_charges": null
+    },
+    {
+      "from_tags": "579,232,580,634,1805",
+      "to_tags": "579,232,580,634,1805",
+      "rate": "100.00",
+      "rates_explained": "",
+      "rate_excluding_vat": 86.96,
+      "base_rate": {
+        "charge": 100,
+        "rate_formula_type": "per_parcel",
+        "total_calculated_weight": 0,
+        "vat_type": null,
+        "vat": 13.04
+      },
+      "charged_weight": 0,
+      "rate_revision_id": 960,
+      "service_level": {
+        "id": 35,
+        "code": "D2LM - ECO",
+        "name": "Door to Locker Medium",
+        "description": "Door to Locker Medium",
+        "vat_type": null,
+        "insurance_disabled": null,
+        "collection_date": "29 Aug, 2024 08:00 AM",
+        "collection_cut_off_time": "29 Aug, 2024 05:00 PM",
+        "delivery_date_from": "03 Sep, 2024 08:00 AM",
+        "delivery_date_to": "04 Sep, 2024 08:00 AM",
+        "box_type_name": "V4-M",
+        "box_type": "12",
+        "dimensions": {
+          "width": 41,
+          "height": 19,
+          "length": 60,
+          "weight": 10
+        }
+      },
+      "surcharges": null,
+      "rate_adjustments": null,
+      "time_based_rate_adjustments": null,
+      "mandatory_charges": null
+    },
+    {
+      "from_tags": "579,232,580,634,1805",
+      "to_tags": "579,232,580,634,1805",
+      "rate": "150.00",
+      "rates_explained": "",
+      "rate_excluding_vat": 130.43,
+      "base_rate": {
+        "charge": 150,
+        "rate_formula_type": "per_parcel",
+        "total_calculated_weight": 0,
+        "vat_type": null,
+        "vat": 19.57
+      },
+      "charged_weight": 0,
+      "rate_revision_id": 960,
+      "service_level": {
+        "id": 36,
+        "code": "D2LL - ECO",
+        "name": "Door to Locker Large",
+        "description": "Door to Locker Large",
+        "vat_type": null,
+        "insurance_disabled": null,
+        "collection_date": "29 Aug, 2024 08:00 AM",
+        "collection_cut_off_time": "29 Aug, 2024 05:00 PM",
+        "delivery_date_from": "03 Sep, 2024 08:00 AM",
+        "delivery_date_to": "04 Sep, 2024 08:00 AM",
+        "box_type_name": "V4-L",
+        "box_type": "13",
+        "dimensions": {
+          "width": 41,
+          "height": 41,
+          "length": 60,
+          "weight": 15
+        }
+      },
+      "surcharges": null,
+      "rate_adjustments": null,
+      "time_based_rate_adjustments": null,
+      "mandatory_charges": null
+    },
+    {
+      "from_tags": "579,232,580,634,1805",
+      "to_tags": "579,232,580,634,1805",
+      "rate": "200.00",
+      "rates_explained": "",
+      "rate_excluding_vat": 173.91,
+      "base_rate": {
+        "charge": 200,
+        "rate_formula_type": "per_parcel",
+        "total_calculated_weight": 0,
+        "vat_type": null,
+        "vat": 26.09
+      },
+      "charged_weight": 0,
+      "rate_revision_id": 960,
+      "service_level": {
+        "id": 37,
+        "code": "D2LXL - ECO",
+        "name": "Door to Locker Extra Large",
+        "description": "Door to Locker Extra Large",
+        "vat_type": null,
+        "insurance_disabled": null,
+        "collection_date": "29 Aug, 2024 08:00 AM",
+        "collection_cut_off_time": "29 Aug, 2024 05:00 PM",
+        "delivery_date_from": "03 Sep, 2024 08:00 AM",
+        "delivery_date_to": "04 Sep, 2024 08:00 AM",
+        "box_type_name": "V4-XL",
+        "box_type": "14",
+        "dimensions": {
+          "width": 41,
+          "height": 69,
+          "length": 60,
+          "weight": 20
+        }
+      },
+      "surcharges": null,
+      "rate_adjustments": null,
+      "time_based_rate_adjustments": null,
+      "mandatory_charges": null
+    }
+  ],
+  "service_days": {
+    "collection_service_days": [],
+    "delivery_service_days": []
+  }
+}
+POST
+Create a shipment L2D
+https://sandbox.api-pudo.co.za/api/v1/shipments
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+Bearer insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+Body
+raw
+View More
+{
+    "collection_address": {
+        "terminal_id": "CG10"
+    },
+    "special_instructions_collection": "None",
+    "collection_contact": {
+        "name": "Test User",
+        "email": "tester@gmail.com",
+        "mobile_number": "0720000000"
+    },
+    "delivery_address": {
+        "lat": -34.03532089999999,
+        "lng": 18.753318,
+        "street_address": "Johannesburg Street",
+        "local_area": "Croydon",
+        "suburb": "Croydon",
+        "city": "Cape Town",
+        "code": "7130",
+        "zone": "WC",
+        "country": "South Africa",
+        "entered_address": "Johannesburg St, Croydon, Cape Town, 7130, South Africa",
+        "type": "residential"
+    },
+    "delivery_contact": {
+        "name": "test",
+        "email": "test@gmai.com",
+        "mobile_number": "0954215265"
+    },
+    "opt_in_rates": [],
+    "opt_in_time_based_rates": [],
+    "service_level_code": "L2DL - ECO"
+}
+Example Request
+Create a shipment L2D
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "Bearer insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "collection_address": {
+    "terminal_id": "CG10"
+  },
+  "special_instructions_collection": "None",
+  "collection_contact": {
+    "name": "Test User",
+    "email": "tester@gmail.com",
+    "mobile_number": "0720000000"
+  },
+  "delivery_address": {
+    "lat": -34.03532089999999,
+    "lng": 18.753318,
+    "street_address": "Johannesburg Street",
+    "local_area": "Croydon",
+    "suburb": "Croydon",
+    "city": "Cape Town",
+    "code": "7130",
+    "zone": "WC",
+    "country": "South Africa",
+    "entered_address": "Johannesburg St, Croydon, Cape Town, 7130, South Africa",
+    "type": "residential"
+  },
+  "delivery_contact": {
+    "name": "test",
+    "email": "test@gmai.com",
+    "mobile_number": "0954215265"
+  },
+  "opt_in_rates": [],
+  "opt_in_time_based_rates": [],
+  "service_level_code": "L2DL - ECO"
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/shipments", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+{
+  "special_instructions_collection": "None",
+  "opt_in_rates": "[]",
+  "opt_in_time_based_rates": "[]",
+  "service_level_code": "L2DL - ECO",
+  "account_id": 369271,
+  "collection_address_id": 2052000479,
+  "delivery_address_id": 2052000480,
+  "charged_weight": 0,
+  "collection_contact_id": 2546,
+  "delivery_contact_id": 2547,
+  "account_branch_id": 890,
+  "rate_group_id": 8897,
+  "all_charges_reversed": false,
+  "collection_branch_id": 751,
+  "collection_branch_name": "JNB",
+  "collection_agent_id": "phodzo",
+  "collection_agent_routing_number": "J226(S3)",
+  "collection_agent_zone": "J Kikuyu",
+  "original_collection_agent_id": "phodzo",
+  "original_collection_min_date": "2024-08-29T08:00:00+02:00",
+  "collection_min_date": "2024-08-29T08:00:00+02:00",
+  "estimated_collection": "2024-08-29T08:00:00+02:00",
+  "collection_cutoff_override": false,
+  "collection_request_id": 0,
+  "created_by": "api-NewPlugin",
+  "current_branch_id": 751,
+  "current_branch_name": "JNB",
+  "delivery_after": "08:00",
+  "collection_after": "08:00",
+  "delivery_branch_id": 580,
+  "delivery_branch_name": "CPT",
+  "delivery_agent_id": "cptcroydon",
+  "delivery_agent_routing_number": "CO4/CR6",
+  "delivery_agent_zone": "C CROYDON",
+  "original_delivery_agent_id": "cptcroydon",
+  "original_delivery_min_date": "2024-09-03T08:00:00+02:00",
+  "delivery_min_date": "2024-09-03T08:00:00+02:00",
+  "estimated_delivery_from": "2024-09-03T08:00:00+02:00",
+  "estimated_delivery_to": "2024-09-04T08:00:00+02:00",
+  "collection_before": "17:00",
+  "delivery_before": "17:00",
+  "delivery_rescheduled": null,
+  "disable_new_charges": false,
+  "external_note_count": 0,
+  "has_been_invoiced": false,
+  "is_pending": false,
+  "latest_tracking_event_time": "2024-08-29T07:35:07.914913Z",
+  "modified_by": "Talent Sibanda",
+  "mute_notifications": false,
+  "rate": 150,
+  "rate_revision_id": 960,
+  "default_special_request_id": 8896,
+  "original_rate": 150,
+  "payment_intervention_status": "",
+  "previous_rate": 0,
+  "responsible_contact_id": 2546,
+  "service_level_cut_off_time": "2024-08-29T17:00:00+02:00",
+  "service_level_name": "Locker to Door Large",
+  "source": "api",
+  "pod_method": "PIN with fallback options",
+  "time_created": "2024-08-29T07:35:07.914981Z",
+  "locker_provider": "KERN",
+  "status": "deposit-pending",
+  "base_rate_obj": {
+    "charge": "150.00",
+    "rate_formula_type": "per_parcel",
+    "total_calculated_weight": 0,
+    "vat_type": null,
+    "vat": "19.57"
+  },
+  "service_level_obj": {
+    "id": 31,
+    "code": "L2DL - ECO",
+    "name": "Locker to Door Large",
+    "description": null,
+    "vat_type": null,
+    "insurance_disabled": "1",
+    "collection_date": "2024-08-29T08:00:00+02:00",
+    "delivery_date_from": "2024-09-03T08:00:00+02:00",
+    "delivery_date_to": "2024-09-04T08:00:00+02:00",
+    "collection_cut_off_time": "2024-08-29T17:00:00+02:00"
+  },
+  "surcharge_obj": [],
+  "id": 856,
+  "custom_tracking_reference": "PUDOD000574",
+  "pincode": "343568"
+}
+POST
+Create a shipment D2L
+https://sandbox.api-pudo.co.za/api/v1/shipments
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+Bearer insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+Body
+raw
+View More
+{
+    "collection_min_date": "2023-11-30T17:54:47.476Z",
+    "collection_after": "08:00",
+    "collection_before": "17:00",
+    "collection_address": {
+        "lat": -26.0249547,
+        "lng": 27.9553194,
+        "street_address": "Kya Sand Road",
+        "local_area": "Kya Sand",
+        "suburb": "Kya Sand",
+        "city": "Randburg",
+        "code": "",
+        "zone": "GP",
+        "country": "South Africa",
+        "entered_address": "Kya Sand Rd, Kya Sand, Randburg, South Africa",
+        "type": "residential",
+        "company": "The Courier Guy"
+    },
+    "special_instructions_collection": "None",
+    "collection_contact": {
+        "name": "Test User",
+        "email": "tester@gmail.com",
+        "mobile_number": "0720000000"
+    },
+    "delivery_min_date": "2023-11-30T17:54:47.494Z",
+    "delivery_after": "08:00",
+    "delivery_before": "17:00",
+    "delivery_address": {
+        "terminal_id": "CG200"
+    },
+    "delivery_contact": {
+        "name": "test",
+        "email": "test@gmai.com",
+        "mobile_number": "0954215265"
+    },
+    "opt_in_rates": [],
+    "opt_in_time_based_rates": [],
+    "service_level_code": "D2LL - ECO"
+}
+Example Request
+Create a shipment D2L
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "Bearer insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "collection_min_date": "2023-11-30T17:54:47.476Z",
+  "collection_after": "08:00",
+  "collection_before": "17:00",
+  "collection_address": {
+    "lat": -26.0249547,
+    "lng": 27.9553194,
+    "street_address": "Kya Sand Road",
+    "local_area": "Kya Sand",
+    "suburb": "Kya Sand",
+    "city": "Randburg",
+    "code": "",
+    "zone": "GP",
+    "country": "South Africa",
+    "entered_address": "Kya Sand Rd, Kya Sand, Randburg, South Africa",
+    "type": "residential",
+    "company": "The Courier Guy"
+  },
+  "special_instructions_collection": "None",
+  "collection_contact": {
+    "name": "Test User",
+    "email": "tester@gmail.com",
+    "mobile_number": "0720000000"
+  },
+  "delivery_min_date": "2023-11-30T17:54:47.494Z",
+  "delivery_after": "08:00",
+  "delivery_before": "17:00",
+  "delivery_address": {
+    "terminal_id": "CG200"
+  },
+  "delivery_contact": {
+    "name": "test",
+    "email": "test@gmai.com",
+    "mobile_number": "0954215265"
+  },
+  "opt_in_rates": [],
+  "opt_in_time_based_rates": [],
+  "service_level_code": "D2LL - ECO"
+});
+
+var requestOptions = {
+  method: 'POST',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/shipments", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+{
+  "collection_min_date": "2023-12-01T01:54:47.000Z",
+  "collection_after": "08:00",
+  "collection_before": "17:00",
+  "special_instructions_collection": "None",
+  "delivery_min_date": "2023-12-06T01:54:47.000Z",
+  "delivery_after": "08:00",
+  "delivery_before": "17:00",
+  "opt_in_rates": "[]",
+  "opt_in_time_based_rates": "[]",
+  "service_level_code": "D2LL - ECO",
+  "account_id": 369271,
+  "collection_address_id": 2052000481,
+  "delivery_address_id": 2052000482,
+  "charged_weight": 0,
+  "collection_contact_id": 2548,
+  "delivery_contact_id": 2549,
+  "account_branch_id": 890,
+  "rate_group_id": 8897,
+  "all_charges_reversed": false,
+  "collection_branch_id": 751,
+  "collection_branch_name": "JNB",
+  "collection_agent_id": "danise",
+  "collection_agent_routing_number": "J457(WR7)",
+  "collection_agent_zone": "Kya sands 2",
+  "original_collection_agent_id": "danise",
+  "original_collection_min_date": "2023-12-01 01:54:47",
+  "estimated_collection": "2023-12-01 01:54:47",
+  "collection_cutoff_override": false,
+  "collection_request_id": 0,
+  "created_by": "api-NewPlugin",
+  "current_branch_id": 751,
+  "current_branch_name": "JNB",
+  "delivery_branch_id": 751,
+  "delivery_branch_name": "JNB",
+  "delivery_agent_id": "lesley",
+  "delivery_agent_routing_number": "J360(S3)",
+  "delivery_agent_zone": "J Strathavon",
+  "original_delivery_agent_id": "lesley",
+  "original_delivery_min_date": "2023-12-06T01:54:47+02:00",
+  "estimated_delivery_from": "2023-12-06T01:54:47+02:00",
+  "estimated_delivery_to": "2023-12-07T01:54:47+02:00",
+  "delivery_rescheduled": null,
+  "disable_new_charges": false,
+  "external_note_count": 0,
+  "has_been_invoiced": false,
+  "is_pending": false,
+  "latest_tracking_event_time": "2024-08-29T07:35:57.181608Z",
+  "modified_by": "Talent Sibanda",
+  "mute_notifications": false,
+  "rate": 150,
+  "rate_revision_id": 960,
+  "default_special_request_id": 8896,
+  "original_rate": 150,
+  "payment_intervention_status": "",
+  "previous_rate": 0,
+  "responsible_contact_id": 2548,
+  "service_level_cut_off_time": "2024-08-29T17:00:00+02:00",
+  "service_level_name": "Door to Locker Large",
+  "source": "api",
+  "pod_method": "PIN with fallback options",
+  "time_created": "2024-08-29T07:35:57.181679Z",
+  "locker_provider": "KERN",
+  "status": "submitted",
+  "base_rate_obj": {
+    "charge": "150.00",
+    "rate_formula_type": "per_parcel",
+    "total_calculated_weight": 0,
+    "vat_type": null,
+    "vat": "19.57"
+  },
+  "service_level_obj": {
+    "id": 36,
+    "code": "D2LL - ECO",
+    "name": "Door to Locker Large",
+    "description": null,
+    "vat_type": null,
+    "insurance_disabled": "1",
+    "collection_date": "2023-12-01 01:54:47",
+    "delivery_date_from": "2023-12-06T01:54:47+02:00",
+    "delivery_date_to": "2023-12-07T01:54:47+02:00",
+    "collection_cut_off_time": "2024-08-29T17:00:00+02:00"
+  },
+  "surcharge_obj": [],
+  "id": 857,
+  "custom_tracking_reference": "PUDOD000575"
+}
+PUT
+Cancelling a shipment
+https://sandbox.api-pudo.co.za/api/v1/shipments/857
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+Bearer insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+Body
+raw
+{
+  "status": "cancelled",
+  "metaData": {
+    "tracking_info": {
+      "message": "Dog too scary"
+    }
+  },
+  "service_level_id": 3
+}
+Example Request
+Cancelling a shipment
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "Bearer insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "status": "cancelled",
+  "metaData": {
+    "tracking_info": {
+      "message": "Dog too scary"
+    }
+  },
+  "service_level_id": 3
+});
+
+var requestOptions = {
+  method: 'PUT',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/shipments/857", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+{
+  "id": 857,
+  "account_id": 369271,
+  "account_branch_id": 890,
+  "collection_address_id": 2052000481,
+  "collection_contact_id": 2548,
+  "delivery_contact_id": 2549,
+  "delivery_address_id": 2052000482,
+  "rate_group_id": 8897,
+  "default_special_request_id": 8896,
+  "all_charges_reversed": 0,
+  "status": "cancelled",
+  "charged_weight": "0.00",
+  "payment_intervention_status": "",
+  "short_tracking_reference": "1XSYKW",
+  "time_created": "2024-08-29 09:35:57",
+  "time_modified": "2024-08-29 07:35:57",
+  "latest_tracking_event_time": "2024-08-29T07:37:49.642541Z",
+  "modified_by": "Talent Sibanda",
+  "created_by": "api-NewPlugin",
+  "source": "api",
+  "collection_min_date": "2023-12-01 01:54:47",
+  "collection_after": "08:00:00",
+  "collection_before": "17:00:00",
+  "delivery_min_date": "2023-12-05 23:54:47",
+  "delivery_after": "08:00:00",
+  "delivery_before": "17:00:00",
+  "delivery_rescheduled": null,
+  "collection_request_id": "0",
+  "delivery_agent_id": "lesley",
+  "collection_agent_id": "danise",
+  "original_delivery_agent_id": "lesley",
+  "original_collection_agent_id": "danise",
+  "collection_agent_zone": "Kya sands 2",
+  "delivery_agent_zone": "J Strathavon",
+  "delivery_read_by_driver_time": null,
+  "collection_read_by_driver_time": null,
+  "responsible_contact_id": 2548,
+  "proof_of_delivery_pin_hashed": null,
+  "collected_date": null,
+  "delivered_date": null,
+  "is_return": null,
+  "service_level_code": "D2LL - ECO",
+  "service_level_id": 3,
+  "service_level_name": "Door to Locker Large",
+  "shipment_import_id": 0,
+  "rate": "150.00",
+  "original_rate": "150.00",
+  "previous_rate": "0.00",
+  "declared_value": "0.000000",
+  "opt_in_rates": "[]",
+  "opt_in_time_based_rates": "[]",
+  "special_instructions_collection": "None",
+  "special_instructions_delivery": null,
+  "estimated_collection": "2023-12-01 01:54:47",
+  "estimated_delivery_from": "2023-12-05 23:54:47",
+  "estimated_delivery_to": "2023-12-06 23:54:47",
+  "is_pending": 0,
+  "current_branch_id": 751,
+  "current_branch_name": "JNB",
+  "collection_branch_id": 751,
+  "collection_branch_name": "JNB",
+  "delivery_branch_id": 751,
+  "delivery_branch_name": "JNB",
+  "transient_branch_ids": null,
+  "service_level_cut_off_time": "2024-08-29 15:00:00",
+  "collection_cutoff_override": "0",
+  "total_note_count": null,
+  "external_note_count": 0,
+  "disable_new_charges": "0",
+  "mute_notifications": "0",
+  "pod_method": "PIN with fallback options",
+  "has_been_invoiced": "0",
+  "tracking_events": null,
+  "custom_tracking_reference": "PUDOD000575",
+  "customer_reference": null,
+  "collection_agent_routing_number": "J457(WR7)",
+  "delivery_agent_routing_number": "J360(S3)",
+  "original_collection_min_date": "2023-12-01 01:54:47",
+  "original_delivery_min_date": "2023-12-05 23:54:47",
+  "rate_revision_id": 960,
+  "base_rate_obj": {
+    "charge": "150.00",
+    "rate_formula_type": "per_parcel",
+    "total_calculated_weight": 0,
+    "vat_type": null,
+    "vat": "19.57"
+  },
+  "service_level_obj": {
+    "id": 36,
+    "code": "D2LL - ECO",
+    "name": "Door to Locker Large",
+    "description": null,
+    "vat_type": null,
+    "insurance_disabled": "1",
+    "collection_date": "2023-12-01 01:54:47",
+    "delivery_date_from": "2023-12-06T01:54:47+02:00",
+    "delivery_date_to": "2023-12-07T01:54:47+02:00",
+    "collection_cut_off_time": "2024-08-29T17:00:00+02:00"
+  },
+  "rate_adjustments_obj": null,
+  "time_based_rate_adjustments_obj": null,
+  "surcharge_obj": [],
+  "mandatory_charges_obj": null,
+  "isAmazon": 0,
+  "amazon_ship_sort": null,
+  "amazon_ship_shipmethod": null,
+  "saved_to_shiplogic": null,
+  "shiplogic_custom_tracking_reference": null,
+  "shiplogic_create_shipment_error": null,
+  "kern_status": null,
+  "kern_error_message": null,
+  "locker_provider": "KERN",
+  "survey_token": null
+}
+GET
+Getting shipments
+https://sandbox.api-pudo.co.za/api/v1/shipments?filter={"custom_tracking_reference": "PUDOD000574"}&range=[0,24]&sort=["time_created","DESC"]
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+HEADERS
+authorization
+Bearer insert your bearer token here
+
+content-type
+application/json
+
+ACCEPT
+application/json
+
+PARAMS
+filter
+{"custom_tracking_reference": "PUDOD000574"}
+
+range
+[0,24]
+
+sort
+["time_created","DESC"]
+
+Body
+raw
+View More
+{
+  "status": "collection-assigned",
+  "custom_tracking_reference_prefix": "TCG",
+  "pod_method": "PIN with fallback options",
+  "collection_min_date": "2023-11-30T17:54:47.476Z",
+  "collection_after": "08:00",
+  "collection_before": "17:00",
+  "collection_address": {
+    "lat": -26.0249547,
+    "lng": 27.9553194,
+    "street_address": "Kya Sand Road",
+    "local_area": "Kya Sand",
+    "suburb": "Kya Sand",
+    "city": "Randburg",
+    "code": "",
+    "zone": "GP",
+    "country": "South Africa",
+    "entered_address": "Kya Sand Rd, Kya Sand, Randburg, South Africa",
+    "address_id": null,
+    "IS_ADDRESS_BOOK": false,
+    "type": "residential",
+    "company": "The Courier Guy"
+  },
+  "special_instructions_collection": "None",
+  "collection_contact": {
+    "name": "Gert Venter",
+    "email": "venteralf@gmail.com",
+    "mobile_number": "0721967014"
+  },
+  "delivery_min_date": "2023-11-30T17:54:47.494Z",
+  "delivery_after": "08:00",
+  "delivery_before": "17:00",
+  "delivery_address": {
+    "lat": -34.03532089999999,
+    "lng": 18.753318,
+    "street_address": "Johannesburg Street",
+    "local_area": "Croydon",
+    "suburb": "Croydon",
+    "city": "Cape Town",
+    "code": "7130",
+    "zone": "WC",
+    "country": "South Africa",
+    "entered_address": "Johannesburg St, Croydon, Cape Town, 7130, South Africa",
+    "address_id": null,
+    "IS_ADDRESS_BOOK": false,
+    "type": "residential"
+  },
+  "delivery_contact": {
+    "name": "test",
+    "email": "test@gmai.com",
+    "mobile_number": "0954215265"
+  },
+  "parcels": [
+    {
+      "type": {
+        "id": "Standard-flyer",
+        "name": "Standard flyer"
+      },
+      "submitted_length_cm": "40",
+      "submitted_width_cm": "30",
+      "submitted_height_cm": "8",
+      "submitted_weight_kg": "2",
+      "parcel_description": "Standard flyer",
+      "alternative_tracking_reference": "",
+      "is_default": true,
+      "error": false
+    }
+  ],
+  "account_id": 142,
+  "opt_in_rates": [],
+  "opt_in_time_based_rates": [],
+  "rate": "149.50",
+  "rate_revision_id": 938,
+  "charged_weight": 2,
+  "service_level_code": "OVN",
+  "service_level_id": 1
+}
+Example Request
+Getting shipments
+View More
+javascript
+var myHeaders = new Headers();
+myHeaders.append("authorization", "Bearer insert your bearer token here");
+myHeaders.append("content-type", "application/json");
+myHeaders.append("ACCEPT", "application/json");
+
+var raw = JSON.stringify({
+  "status": "collection-assigned",
+  "custom_tracking_reference_prefix": "TCG",
+  "pod_method": "PIN with fallback options",
+  "collection_min_date": "2023-11-30T17:54:47.476Z",
+  "collection_after": "08:00",
+  "collection_before": "17:00",
+  "collection_address": {
+    "lat": -26.0249547,
+    "lng": 27.9553194,
+    "street_address": "Kya Sand Road",
+    "local_area": "Kya Sand",
+    "suburb": "Kya Sand",
+    "city": "Randburg",
+    "code": "",
+    "zone": "GP",
+    "country": "South Africa",
+    "entered_address": "Kya Sand Rd, Kya Sand, Randburg, South Africa",
+    "address_id": null,
+    "IS_ADDRESS_BOOK": false,
+    "type": "residential",
+    "company": "The Courier Guy"
+  },
+  "special_instructions_collection": "None",
+  "collection_contact": {
+    "name": "Gert Venter",
+    "email": "venteralf@gmail.com",
+    "mobile_number": "0721967014"
+  },
+  "delivery_min_date": "2023-11-30T17:54:47.494Z",
+  "delivery_after": "08:00",
+  "delivery_before": "17:00",
+  "delivery_address": {
+    "lat": -34.03532089999999,
+    "lng": 18.753318,
+    "street_address": "Johannesburg Street",
+    "local_area": "Croydon",
+    "suburb": "Croydon",
+    "city": "Cape Town",
+    "code": "7130",
+    "zone": "WC",
+    "country": "South Africa",
+    "entered_address": "Johannesburg St, Croydon, Cape Town, 7130, South Africa",
+    "address_id": null,
+    "IS_ADDRESS_BOOK": false,
+    "type": "residential"
+  },
+  "delivery_contact": {
+    "name": "test",
+    "email": "test@gmai.com",
+    "mobile_number": "0954215265"
+  },
+  "parcels": [
+    {
+      "type": {
+        "id": "Standard-flyer",
+        "name": "Standard flyer"
+      },
+      "submitted_length_cm": "40",
+      "submitted_width_cm": "30",
+      "submitted_height_cm": "8",
+      "submitted_weight_kg": "2",
+      "parcel_description": "Standard flyer",
+      "alternative_tracking_reference": "",
+      "is_default": true,
+      "error": false
+    }
+  ],
+  "account_id": 142,
+  "opt_in_rates": [],
+  "opt_in_time_based_rates": [],
+  "rate": "149.50",
+  "rate_revision_id": 938,
+  "charged_weight": 2,
+  "service_level_code": "OVN",
+  "service_level_id": 1
+});
+
+var requestOptions = {
+  method: 'GET',
+  headers: myHeaders,
+  body: raw,
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/shipments?filter={\"custom_tracking_reference\": \"PUDOD000574\"}&range=[0,24]&sort=[\"time_created\",\"DESC\"]", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+[
+  {
+    "id": 857,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-29 09:35:57",
+    "time_modified": "2024-08-29 07:37:49",
+    "delivery_agent_id": "lesley",
+    "collection_agent_id": "danise",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000575",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000481,
+    "delivery_address_id": 2052000482,
+    "service_level_name": "Door to Locker Large",
+    "service_level_code": "D2LL - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000481,
+      "entered_address": "Khaya Sands, Randburg, 2163, South Africa",
+      "geo_local_area": "Khaya Sands",
+      "local_area": "Khaya Sands"
+    },
+    "delivery_address": {
+      "id": 2052000482,
+      "entered_address": "ZA Johannesburg Sandton Grayston Shopping Centre Corner Of Grayston Drive &, Helen Rd, Strathavon, Sandton, 2196, South Africa",
+      "geo_local_area": null,
+      "local_area": "Sandton"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 856,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-29 09:35:07",
+    "time_modified": "2024-08-29 07:35:09",
+    "delivery_agent_id": "cptcroydon",
+    "collection_agent_id": "phodzo",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000574",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000479,
+    "delivery_address_id": 2052000480,
+    "service_level_name": "Locker to Door Large",
+    "service_level_code": "L2DL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000479,
+      "entered_address": "1 Waterval Cres, Johannesburg, 2191, South Africa",
+      "geo_local_area": null,
+      "local_area": ""
+    },
+    "delivery_address": {
+      "id": 2052000480,
+      "entered_address": "Croydon, Cape Town, 7130, South Africa",
+      "geo_local_area": "Croydon",
+      "local_area": "Croydon"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 854,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-29 09:34:23",
+    "time_modified": "2024-08-29 07:34:24",
+    "delivery_agent_id": "dglenwood",
+    "collection_agent_id": "tonychoga",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000572",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000475,
+    "delivery_address_id": 2052000476,
+    "service_level_name": "Locker to Locker Extra Small",
+    "service_level_code": "L2LXS - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000475,
+      "entered_address": "10A Alice Ln, Sandhurst, Sandton, 2196, South Africa",
+      "geo_local_area": null,
+      "local_area": "Sandhurst"
+    },
+    "delivery_address": {
+      "id": 2052000476,
+      "entered_address": "257 King Dinuzulu Rd (South ), Bulwer, Berea, 4083, South Africa",
+      "geo_local_area": null,
+      "local_area": "Bulwer"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 852,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-29 09:33:09",
+    "time_modified": "2024-08-29 07:33:11",
+    "delivery_agent_id": "nlp7",
+    "collection_agent_id": "pmblocal3aux",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000570",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000471,
+    "delivery_address_id": 2052000472,
+    "service_level_name": "Locker to Locker Extra Small",
+    "service_level_code": "L2LXS - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000471,
+      "entered_address": "28 Blackburrow Rd, Hayfields, Pietermaritzburg, 3201, South Africa",
+      "geo_local_area": null,
+      "local_area": "Hayfields"
+    },
+    "delivery_address": {
+      "id": 2052000472,
+      "entered_address": "R40, Marijane A, Bushbuckridge, South Africa",
+      "geo_local_area": null,
+      "local_area": "Marijane A"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 849,
+    "account_id": 369271,
+    "status": "submitted",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-29 09:30:19",
+    "time_modified": "2024-08-29 07:30:19",
+    "delivery_agent_id": "cptcroydon",
+    "collection_agent_id": "danise",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000567",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000463,
+    "delivery_address_id": 2052000464,
+    "service_level_name": "Overnight",
+    "service_level_code": "OVN",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000463,
+      "entered_address": "Khaya Sands, Randburg, 2163, South Africa",
+      "geo_local_area": "Khaya Sands",
+      "local_area": "Khaya Sands"
+    },
+    "delivery_address": {
+      "id": 2052000464,
+      "entered_address": "Croydon, Cape Town, 7130, South Africa",
+      "geo_local_area": "Croydon",
+      "local_area": "Croydon"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 836,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-28 09:50:32",
+    "time_modified": "2024-08-28 07:50:34",
+    "delivery_agent_id": "tumelo",
+    "collection_agent_id": "cptauxn1city",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000556",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000433,
+    "delivery_address_id": 2052000434,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000433,
+      "entered_address": "Louwtjie Rothman St, N1 City, Cape Town, 7460, South Africa",
+      "geo_local_area": null,
+      "local_area": "N1 City"
+    },
+    "delivery_address": {
+      "id": 2052000434,
+      "entered_address": "375 Rivonia Rd, Rivonia, Sandton, 2191, South Africa",
+      "geo_local_area": null,
+      "local_area": "Rivonia"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 835,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-28 09:43:41",
+    "time_modified": "2024-08-28 07:43:43",
+    "delivery_agent_id": "tumelo",
+    "collection_agent_id": "cptauxn1city",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000555",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000431,
+    "delivery_address_id": 2052000432,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000431,
+      "entered_address": "Louwtjie Rothman St, N1 City, Cape Town, 7460, South Africa",
+      "geo_local_area": null,
+      "local_area": "N1 City"
+    },
+    "delivery_address": {
+      "id": 2052000432,
+      "entered_address": "375 Rivonia Rd, Rivonia, Sandton, 2191, South Africa",
+      "geo_local_area": null,
+      "local_area": "Rivonia"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 834,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-28 08:35:09",
+    "time_modified": "2024-08-28 06:35:11",
+    "delivery_agent_id": "tumelo",
+    "collection_agent_id": "cptauxn1city",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000554",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000429,
+    "delivery_address_id": 2052000430,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000429,
+      "entered_address": "Louwtjie Rothman St, N1 City, Cape Town, 7460, South Africa",
+      "geo_local_area": null,
+      "local_area": "N1 City"
+    },
+    "delivery_address": {
+      "id": 2052000430,
+      "entered_address": "375 Rivonia Rd, Rivonia, Sandton, 2191, South Africa",
+      "geo_local_area": null,
+      "local_area": "Rivonia"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 831,
+    "account_id": 369271,
+    "status": "submitted",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-27 15:27:12",
+    "time_modified": "2024-08-27 13:27:12",
+    "delivery_agent_id": "jkilnerpark",
+    "collection_agent_id": "howick",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000551",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000421,
+    "delivery_address_id": 2052000422,
+    "service_level_name": "Door to Locker Small",
+    "service_level_code": "D2LS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000421,
+      "entered_address": "Howick, South Africa",
+      "geo_local_area": "Howick",
+      "local_area": "Howick"
+    },
+    "delivery_address": {
+      "id": 2052000422,
+      "entered_address": "330 Anna Wilson St, Kilner Park, Pretoria, 0186, South Africa",
+      "geo_local_area": null,
+      "local_area": "Kilner Park"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 812,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-23 16:08:13",
+    "time_modified": "2024-08-23 14:08:18",
+    "delivery_agent_id": "dglenwood",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000534",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000369,
+    "delivery_address_id": 2052000370,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000369,
+      "entered_address": "62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": null,
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2052000370,
+      "entered_address": "249 King Dinuzulu Rd N, Bulwer, Berea, 4083, South Africa",
+      "geo_local_area": null,
+      "local_area": "Bulwer"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 808,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-21 13:33:48",
+    "time_modified": "2024-08-21 11:33:50",
+    "delivery_agent_id": "meclocal1",
+    "collection_agent_id": "vdbvredenburg",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000530",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000348,
+    "delivery_address_id": 2052000349,
+    "service_level_name": "Locker to Locker Small",
+    "service_level_code": "L2LS - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000348,
+      "entered_address": "8 Bree St, Vredenburg, 7380, South Africa",
+      "geo_local_area": null,
+      "local_area": "Vredenburg"
+    },
+    "delivery_address": {
+      "id": 2052000349,
+      "entered_address": "38 Meintjies St, Middelburg - Ec, Middelburg, 5900, South Africa",
+      "geo_local_area": null,
+      "local_area": "Middelburg - Ec"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 807,
+    "account_id": 369271,
+    "status": "submitted",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-21 07:21:26",
+    "time_modified": "2024-08-21 05:21:26",
+    "delivery_agent_id": "thabang",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000529",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337181,
+    "delivery_address_id": 2036337750,
+    "service_level_name": "Local Overnight Parcel",
+    "service_level_code": "LOX",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337181,
+      "entered_address": "2c, 62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": "Chartwell",
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2036337750,
+      "entered_address": "221 Sandringham Cl, Chartwell, 2055, South Africa",
+      "geo_local_area": "Chartwell",
+      "local_area": "Chartwell"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 805,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-19 11:30:05",
+    "time_modified": "2024-08-19 09:30:06",
+    "delivery_agent_id": "dglenwood",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000527",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000343,
+    "delivery_address_id": 2052000344,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000343,
+      "entered_address": "62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": null,
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2052000344,
+      "entered_address": "249 King Dinuzulu Rd N, Bulwer, Berea, 4083, South Africa",
+      "geo_local_area": null,
+      "local_area": "Bulwer"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 794,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-16 12:31:17",
+    "time_modified": "2024-08-16 10:31:19",
+    "delivery_agent_id": "dglenwood",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDOD000516",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000320,
+    "delivery_address_id": 2052000321,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000320,
+      "entered_address": "62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": null,
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2052000321,
+      "entered_address": "249 King Dinuzulu Rd N, Bulwer, Berea, 4083, South Africa",
+      "geo_local_area": null,
+      "local_area": "Bulwer"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 785,
+    "account_id": 369271,
+    "status": "submitted",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-08 09:52:49",
+    "time_modified": "2024-08-08 07:52:49",
+    "delivery_agent_id": "Chris P Bacon Driver",
+    "collection_agent_id": "salvokop",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000443-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2052000303,
+    "delivery_address_id": 2052000304,
+    "service_level_name": "Local Overnight Parcel",
+    "service_level_code": "LOX",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2052000303,
+      "entered_address": "Pretoria Central, Pretoria, 0001, South Africa",
+      "geo_local_area": "Pretoria Central",
+      "local_area": "Pretoria Central"
+    },
+    "delivery_address": {
+      "id": 2052000304,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 753,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-05 07:59:11",
+    "time_modified": "2024-08-05 08:00:49",
+    "delivery_agent_id": "upilocal1",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000481-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337755,
+    "delivery_address_id": 2036337756,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337755,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "delivery_address": {
+      "id": 2036337756,
+      "entered_address": "Upington, 8801, South Africa",
+      "geo_local_area": "Upington",
+      "local_area": "Upington"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 752,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-05 06:01:02",
+    "time_modified": "2024-08-05 08:00:56",
+    "delivery_agent_id": "upilocal1",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000480-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337751,
+    "delivery_address_id": 2036337752,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337751,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "delivery_address": {
+      "id": 2036337752,
+      "entered_address": "Upington, 8801, South Africa",
+      "geo_local_area": "Upington",
+      "local_area": "Upington"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 751,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-05 05:47:43",
+    "time_modified": "2024-08-05 08:01:03",
+    "delivery_agent_id": "upilocal1",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000479-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337748,
+    "delivery_address_id": 2036337749,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337748,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "delivery_address": {
+      "id": 2036337749,
+      "entered_address": "Upington, 8801, South Africa",
+      "geo_local_area": "Upington",
+      "local_area": "Upington"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 750,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-05 05:43:28",
+    "time_modified": "2024-08-05 06:08:49",
+    "delivery_agent_id": "upilocal1",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000478-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337746,
+    "delivery_address_id": 2036337747,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337746,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "delivery_address": {
+      "id": 2036337747,
+      "entered_address": "Upington, 8801, South Africa",
+      "geo_local_area": "Upington",
+      "local_area": "Upington"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 748,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-05 05:32:33",
+    "time_modified": "2024-08-05 06:07:49",
+    "delivery_agent_id": "upilocal1",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000476-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337742,
+    "delivery_address_id": 2036337743,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337742,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "delivery_address": {
+      "id": 2036337743,
+      "entered_address": "Upington, 8801, South Africa",
+      "geo_local_area": "Upington",
+      "local_area": "Upington"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 745,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-05 05:11:21",
+    "time_modified": "2024-08-05 06:07:27",
+    "delivery_agent_id": "upilocal1",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": 1,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000473-R",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337736,
+    "delivery_address_id": 2036337737,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": null,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337736,
+      "entered_address": "Roodepoort, South Africa",
+      "geo_local_area": "Roodepoort",
+      "local_area": "Roodepoort"
+    },
+    "delivery_address": {
+      "id": 2036337737,
+      "entered_address": "Upington, 8801, South Africa",
+      "geo_local_area": "Upington",
+      "local_area": "Upington"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 743,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-02 14:13:52",
+    "time_modified": "2024-08-02 14:13:55",
+    "delivery_agent_id": "Chris P Bacon Driver",
+    "collection_agent_id": "upilocal1",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000471",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337732,
+    "delivery_address_id": 2036337181,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337732,
+      "entered_address": "Shop 18, Kgalagadi Pick n Pay Centre, Upington, 8801, South Africa",
+      "geo_local_area": null,
+      "local_area": "ZF Mgcawu District Municipality"
+    },
+    "delivery_address": {
+      "id": 2036337181,
+      "entered_address": "2c, 62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": "Chartwell",
+      "local_area": "Chartwell"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 742,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-02 06:47:33",
+    "time_modified": "2024-08-02 06:47:35",
+    "delivery_agent_id": "dglenwood",
+    "collection_agent_id": "Chris P Bacon Driver",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000470",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337730,
+    "delivery_address_id": 2036337731,
+    "service_level_name": "Locker to Locker Large",
+    "service_level_code": "L2LL - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337730,
+      "entered_address": "62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": null,
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2036337731,
+      "entered_address": "249 King Dinuzulu Rd N, Bulwer, Berea, 4083, South Africa",
+      "geo_local_area": null,
+      "local_area": "Bulwer"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 731,
+    "account_id": 369271,
+    "status": "deposit-pending",
+    "payment_intervention_status": "",
+    "time_created": "2024-08-01 10:09:42",
+    "time_modified": "2024-08-01 10:09:44",
+    "delivery_agent_id": "richard",
+    "collection_agent_id": "tshepo",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000459",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337705,
+    "delivery_address_id": 2036337706,
+    "service_level_name": "Locker to Door Extra Small",
+    "service_level_code": "L2DXS - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337705,
+      "entered_address": "62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": null,
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2036337706,
+      "entered_address": "Morningside, Sandton, 2057, South Africa",
+      "geo_local_area": "Morningside",
+      "local_area": "Morningside"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  },
+  {
+    "id": 717,
+    "account_id": 369271,
+    "status": "cancelled",
+    "payment_intervention_status": "",
+    "time_created": "2024-07-31 17:25:31",
+    "time_modified": "2024-07-31 17:25:50",
+    "delivery_agent_id": "kathupos1",
+    "collection_agent_id": "tshepo",
+    "is_return": null,
+    "total_note_count": null,
+    "external_note_count": 0,
+    "pod_method": "PIN with fallback options",
+    "has_been_invoiced": "0",
+    "custom_tracking_reference": "PUDO000445",
+    "has_pod_files": 0,
+    "collection_address_id": 2036337666,
+    "delivery_address_id": 2036337667,
+    "service_level_name": "Locker to Locker Extra Small",
+    "service_level_code": "L2LXS - ECO",
+    "saved_to_shiplogic": 2,
+    "delivery_rescheduled": null,
+    "collection_address": {
+      "id": 2036337666,
+      "entered_address": "62 Jackson Rd, Chartwell, 2055, South Africa",
+      "geo_local_area": null,
+      "local_area": "Chartwell"
+    },
+    "delivery_address": {
+      "id": 2036337667,
+      "entered_address": "2 Kromme Ave, Postmasburg, 8420, South Africa",
+      "geo_local_area": null,
+      "local_area": "Postmasburg"
+    },
+    "account_name": "Another Test Company",
+    "account": {
+      "id": 369271,
+      "name": "Another Test Company",
+      "account_code": "ANOTH183",
+      "default_collection_address": null,
+      "billing_address": {
+        "id": 162,
+        "account_id": 369271,
+        "city": "",
+        "code": "",
+        "company": "",
+        "country": "",
+        "local_area": "",
+        "street_address": "",
+        "zone": ""
+      },
+      "billing_contact": {
+        "id": 166703,
+        "account_id": 369271,
+        "email": "",
+        "mobile_number": "",
+        "name": ""
+      },
+      "branch": null,
+      "additional_info": null,
+      "account_tags": null
+    }
+  }
+]
+GET
+Tracking a shipment (By Parcel)
+https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?parcel_id=458
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+PARAMS
+parcel_id
+458
+
+Example Request
+Tracking a shipment (By Parcel)
+View More
+javascript
+var requestOptions = {
+  method: 'GET',
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?parcel_id=458", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+Example Response
+Body
+Headers (0)
+No response body
+This request doesn't return any response body
+GET
+Tracking a shipment (By Shipment)
+https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?include_parcels=false&id=857
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+PARAMS
+include_parcels
+false
+
+id
+857
+
+Example Request
+Tracking a shipment (By Shipment)
+View More
+javascript
+var requestOptions = {
+  method: 'GET',
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?include_parcels=false&id=857", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+Example Response
+Body
+Headers (0)
+No response body
+This request doesn't return any response body
+GET
+Tracking a shipment (By Shipment Status)
+https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?status=deposit-pending
+Below is a list of all possible shipment statuses :
+
+'quote-pending'
+
+'payment-failed'
+
+'submitted'
+
+'collection-assigned'
+
+'collection-unassigned'
+
+'collection-rejected'
+
+'collection-exception'
+
+'collection-failed'
+
+'collected'
+
+'at-hub'
+
+'in-transit'
+
+'at-destination-hub'
+
+'returned-to-hub'
+
+'delivery-assigned'
+
+'delivery-unassigned'
+
+'delivery-rejected'
+
+'out-for-delivery'
+
+'delivery-exception'
+
+'delivery-failed-attempt'
+
+'in-locker'
+
+'collect-and-return-to-hub'
+
+'delivered'
+
+'cancelled'
+
+'deposit-pending'
+
+'courier-deposited'
+
+'customer-collected'
+
+'customer-deposited'
+
+'courier-collected'
+
+'cancel-booking-expired'
+
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+PARAMS
+status
+deposit-pending
+
+Example Request
+Tracking a shipment (By Shipment Status)
+View More
+javascript
+var requestOptions = {
+  method: 'GET',
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?status=deposit-pending", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+200 OK
+Example Response
+Body
+Headers (13)
+View More
+json
+[
+  {
+    "shipment_id": 452,
+    "custom_tracking_reference": "PUDO000179",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-12 03:21:32",
+    "shipment_time_modified": "2024-04-12 03:21:32",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1671,
+      "created_at": "2024-04-12 03:21:31",
+      "updated_at": "2024-04-12 03:21:31",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 454,
+    "custom_tracking_reference": "PUDO000181",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-12 04:53:21",
+    "shipment_time_modified": "2024-04-12 04:53:21",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1675,
+      "created_at": "2024-04-12 04:53:21",
+      "updated_at": "2024-04-12 04:53:21",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 455,
+    "custom_tracking_reference": "PUDO000182",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-12 05:17:58",
+    "shipment_time_modified": "2024-04-12 05:17:58",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1677,
+      "created_at": "2024-04-12 05:17:58",
+      "updated_at": "2024-04-12 05:17:58",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 460,
+    "custom_tracking_reference": "PUDO000187",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 09:23:49",
+    "shipment_time_modified": "2024-04-23 09:23:49",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1687,
+      "created_at": "2024-04-23 09:23:49",
+      "updated_at": "2024-04-23 09:23:49",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "MAK",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 461,
+    "custom_tracking_reference": "PUDO000188",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 10:06:31",
+    "shipment_time_modified": "2024-04-23 10:06:32",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1689,
+      "created_at": "2024-04-23 10:06:31",
+      "updated_at": "2024-04-23 10:06:31",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 464,
+    "custom_tracking_reference": "PUDO000191",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 11:00:32",
+    "shipment_time_modified": "2024-04-23 11:00:32",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1695,
+      "created_at": "2024-04-23 11:00:32",
+      "updated_at": "2024-04-23 11:00:32",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "ALI ",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 465,
+    "custom_tracking_reference": "PUDO000192",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 11:01:49",
+    "shipment_time_modified": "2024-04-23 11:01:49",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1697,
+      "created_at": "2024-04-23 11:01:49",
+      "updated_at": "2024-04-23 11:01:49",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "COL",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 466,
+    "custom_tracking_reference": "PUDO000193",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 11:03:40",
+    "shipment_time_modified": "2024-04-23 11:03:40",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1699,
+      "created_at": "2024-04-23 11:03:40",
+      "updated_at": "2024-04-23 11:03:40",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "PTA",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 467,
+    "custom_tracking_reference": "PUDO000194",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 11:05:57",
+    "shipment_time_modified": "2024-04-23 11:05:57",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1701,
+      "created_at": "2024-04-23 11:05:57",
+      "updated_at": "2024-04-23 11:05:57",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "PTA",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 468,
+    "custom_tracking_reference": "PUDO000195",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 11:07:38",
+    "shipment_time_modified": "2024-04-23 11:07:38",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1703,
+      "created_at": "2024-04-23 11:07:38",
+      "updated_at": "2024-04-23 11:07:38",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 469,
+    "custom_tracking_reference": "PUDO000196",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 11:08:13",
+    "shipment_time_modified": "2024-04-23 11:08:13",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1705,
+      "created_at": "2024-04-23 11:08:12",
+      "updated_at": "2024-04-23 11:08:12",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "DUN",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 472,
+    "custom_tracking_reference": "PUDO000199",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 12:22:13",
+    "shipment_time_modified": "2024-04-23 12:22:14",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1711,
+      "created_at": "2024-04-23 12:22:13",
+      "updated_at": "2024-04-23 12:22:13",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "LTT",
+    "service_level_code": "D2LXL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 477,
+    "custom_tracking_reference": "PUDO000204",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 12:56:40",
+    "shipment_time_modified": "2024-04-23 12:56:41",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1721,
+      "created_at": "2024-04-23 12:56:40",
+      "updated_at": "2024-04-23 12:56:40",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "MOS",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 479,
+    "custom_tracking_reference": "PUDO000206",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 16:29:14",
+    "shipment_time_modified": "2024-04-23 16:29:14",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1725,
+      "created_at": "2024-04-23 16:29:13",
+      "updated_at": "2024-04-23 16:29:13",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LM - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 483,
+    "custom_tracking_reference": "PUDO000210",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 16:36:26",
+    "shipment_time_modified": "2024-04-23 16:36:27",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1733,
+      "created_at": "2024-04-23 16:36:26",
+      "updated_at": "2024-04-23 16:36:26",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "BEL",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 484,
+    "custom_tracking_reference": "PUDO000211",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-23 16:37:03",
+    "shipment_time_modified": "2024-04-23 16:37:04",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1735,
+      "created_at": "2024-04-23 16:37:03",
+      "updated_at": "2024-04-23 16:37:03",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 487,
+    "custom_tracking_reference": "PUDO000214",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-24 11:34:11",
+    "shipment_time_modified": "2024-04-24 11:34:11",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1741,
+      "created_at": "2024-04-24 11:34:10",
+      "updated_at": "2024-04-24 11:34:10",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "ELS",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 491,
+    "custom_tracking_reference": "PUDO000218",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-24 11:38:19",
+    "shipment_time_modified": "2024-04-24 11:38:20",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1749,
+      "created_at": "2024-04-24 11:38:19",
+      "updated_at": "2024-04-24 11:38:19",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "BRE",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 492,
+    "custom_tracking_reference": "PUDO000219",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-24 11:39:06",
+    "shipment_time_modified": "2024-04-24 11:39:07",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1751,
+      "created_at": "2024-04-24 11:39:06",
+      "updated_at": "2024-04-24 11:39:06",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 493,
+    "custom_tracking_reference": "PUDO000220",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-04-24 11:52:00",
+    "shipment_time_modified": "2024-04-24 11:52:01",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1753,
+      "created_at": "2024-04-24 11:52:00",
+      "updated_at": "2024-04-24 11:52:00",
+      "name": "TESTA",
+      "email": "demo@pudo-sa.co.za",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KIM",
+    "delivery_hub": "PLZ",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 496,
+    "custom_tracking_reference": "PUDO000223",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-02 09:19:26",
+    "shipment_time_modified": "2024-05-02 09:19:26",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1759,
+      "created_at": "2024-05-02 09:19:26",
+      "updated_at": "2024-05-02 09:19:26",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LXS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 498,
+    "custom_tracking_reference": "PUDO000225",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-02 09:22:29",
+    "shipment_time_modified": "2024-05-02 09:22:29",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1763,
+      "created_at": "2024-05-02 09:22:29",
+      "updated_at": "2024-05-02 09:22:29",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 500,
+    "custom_tracking_reference": "PUDO000227",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-02 09:27:17",
+    "shipment_time_modified": "2024-05-02 09:27:17",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1767,
+      "created_at": "2024-05-02 09:27:16",
+      "updated_at": "2024-05-02 09:27:16",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "JEF",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 501,
+    "custom_tracking_reference": "PUDO000228",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-02 09:29:40",
+    "shipment_time_modified": "2024-05-02 09:29:40",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1769,
+      "created_at": "2024-05-02 09:29:40",
+      "updated_at": "2024-05-02 09:29:40",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "DBN",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 504,
+    "custom_tracking_reference": "PUDO000231",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-02 10:16:13",
+    "shipment_time_modified": "2024-05-02 10:16:13",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1775,
+      "created_at": "2024-05-02 10:16:13",
+      "updated_at": "2024-05-02 10:16:13",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "KYA",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 517,
+    "custom_tracking_reference": "PUDO000244",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-06 07:54:47",
+    "shipment_time_modified": "2024-05-06 07:54:48",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1801,
+      "created_at": "2024-05-06 07:54:46",
+      "updated_at": "2024-05-06 07:54:46",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2613,
+        "date": "2024-05-06 07:54:48.404587",
+        "message": "",
+        "shipment_id": 517,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2612,
+        "date": "2024-05-06 07:54:48.398188",
+        "message": "",
+        "shipment_id": 517,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 522,
+    "custom_tracking_reference": "PUDO000249",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-10 07:43:20",
+    "shipment_time_modified": "2024-05-10 07:43:22",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1811,
+      "created_at": "2024-05-10 07:43:20",
+      "updated_at": "2024-05-10 07:43:20",
+      "name": "t",
+      "email": "t@t.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "PMB",
+    "service_level_code": "L2LS - ECO",
+    "tracking_events": [
+      {
+        "id": 2622,
+        "date": "2024-05-10 07:43:22.057599",
+        "message": "",
+        "shipment_id": 522,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2621,
+        "date": "2024-05-10 07:43:22.037420",
+        "message": "",
+        "shipment_id": 522,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 523,
+    "custom_tracking_reference": "PUDO000250",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-10 07:45:15",
+    "shipment_time_modified": "2024-05-10 07:45:16",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1813,
+      "created_at": "2024-05-10 07:45:14",
+      "updated_at": "2024-05-10 07:45:14",
+      "name": "t",
+      "email": "t@t.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "PMB",
+    "service_level_code": "L2LS - ECO",
+    "tracking_events": [
+      {
+        "id": 2626,
+        "date": "2024-05-10 07:45:16.259595",
+        "message": "",
+        "shipment_id": 523,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2625,
+        "date": "2024-05-10 07:45:16.250236",
+        "message": "",
+        "shipment_id": 523,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 524,
+    "custom_tracking_reference": "PUDO000251",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-10 08:11:39",
+    "shipment_time_modified": "2024-05-10 08:11:41",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1815,
+      "created_at": "2024-05-10 08:11:39",
+      "updated_at": "2024-05-10 08:11:39",
+      "name": "t",
+      "email": "t@t.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "PMB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2630,
+        "date": "2024-05-10 08:11:41.017776",
+        "message": "",
+        "shipment_id": 524,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2629,
+        "date": "2024-05-10 08:11:40.996924",
+        "message": "",
+        "shipment_id": 524,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 525,
+    "custom_tracking_reference": "PUDO000252",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-10 10:05:07",
+    "shipment_time_modified": "2024-05-10 10:05:08",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1817,
+      "created_at": "2024-05-10 10:05:06",
+      "updated_at": "2024-05-10 10:05:06",
+      "name": "t",
+      "email": "t@t.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "PMB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2634,
+        "date": "2024-05-10 10:05:08.554762",
+        "message": "",
+        "shipment_id": 525,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2633,
+        "date": "2024-05-10 10:05:08.540931",
+        "message": "",
+        "shipment_id": 525,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 526,
+    "custom_tracking_reference": "PUDO000253",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-14 05:05:46",
+    "shipment_time_modified": "2024-05-14 05:05:51",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1819,
+      "created_at": "2024-05-14 05:05:45",
+      "updated_at": "2024-05-14 05:05:45",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2638,
+        "date": "2024-05-14 05:05:51.065104",
+        "message": "",
+        "shipment_id": 526,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2637,
+        "date": "2024-05-14 05:05:51.040893",
+        "message": "",
+        "shipment_id": 526,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 529,
+    "custom_tracking_reference": "PUDO000256",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-14 05:42:01",
+    "shipment_time_modified": "2024-05-14 05:42:03",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1825,
+      "created_at": "2024-05-14 05:42:01",
+      "updated_at": "2024-05-14 05:42:01",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2642,
+        "date": "2024-05-14 05:42:02.684026",
+        "message": "",
+        "shipment_id": 529,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2641,
+        "date": "2024-05-14 05:42:02.667956",
+        "message": "",
+        "shipment_id": 529,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 538,
+    "custom_tracking_reference": "PUDO000265",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-14 07:21:18",
+    "shipment_time_modified": "2024-05-14 07:21:20",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1843,
+      "created_at": "2024-05-14 07:21:18",
+      "updated_at": "2024-05-14 07:21:18",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2651,
+        "date": "2024-05-14 07:21:20.255920",
+        "message": "",
+        "shipment_id": 538,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2650,
+        "date": "2024-05-14 07:21:20.242147",
+        "message": "",
+        "shipment_id": 538,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 542,
+    "custom_tracking_reference": "PUDO000269",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-16 08:16:00",
+    "shipment_time_modified": "2024-05-16 08:16:00",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1851,
+      "created_at": "2024-05-16 08:15:59",
+      "updated_at": "2024-05-16 08:15:59",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 543,
+    "custom_tracking_reference": "PUDO000270",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-16 08:16:49",
+    "shipment_time_modified": "2024-05-16 08:16:49",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1853,
+      "created_at": "2024-05-16 08:16:49",
+      "updated_at": "2024-05-16 08:16:49",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 544,
+    "custom_tracking_reference": "PUDO000271",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-16 08:16:55",
+    "shipment_time_modified": "2024-05-16 08:16:55",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1855,
+      "created_at": "2024-05-16 08:16:55",
+      "updated_at": "2024-05-16 08:16:55",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "PMB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 545,
+    "custom_tracking_reference": "PUDO000272",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-20 11:11:27",
+    "shipment_time_modified": "2024-05-20 11:11:32",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1857,
+      "created_at": "2024-05-20 11:11:26",
+      "updated_at": "2024-05-20 11:11:26",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "0210210210"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "FIC",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 2672,
+        "date": "2024-05-20 11:11:32.045852",
+        "message": "",
+        "shipment_id": 545,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2671,
+        "date": "2024-05-20 11:11:32.037528",
+        "message": "",
+        "shipment_id": 545,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 548,
+    "custom_tracking_reference": "PUDO000275",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-22 13:32:26",
+    "shipment_time_modified": "2024-05-22 13:32:28",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1863,
+      "created_at": "2024-05-22 13:32:26",
+      "updated_at": "2024-05-22 13:32:26",
+      "name": "Normal",
+      "email": "mncubesimi@gmail.com",
+      "mobile_number": "0834824931"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2676,
+        "date": "2024-05-22 13:32:28.296215",
+        "message": "",
+        "shipment_id": 548,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2675,
+        "date": "2024-05-22 13:32:28.280775",
+        "message": "",
+        "shipment_id": 548,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 558,
+    "custom_tracking_reference": "PUDO000285",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-24 07:03:36",
+    "shipment_time_modified": "2024-05-24 07:03:36",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1883,
+      "created_at": "2024-05-24 07:03:36",
+      "updated_at": "2024-05-24 07:03:36",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 562,
+    "custom_tracking_reference": "PUDO000289",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-24 07:04:57",
+    "shipment_time_modified": "2024-05-24 07:04:57",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1891,
+      "created_at": "2024-05-24 07:04:56",
+      "updated_at": "2024-05-24 07:04:56",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "PMB",
+    "service_level_code": "D2LL - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 563,
+    "custom_tracking_reference": "PUDO000290",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-24 07:06:19",
+    "shipment_time_modified": "2024-05-24 07:06:21",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1893,
+      "created_at": "2024-05-24 07:06:19",
+      "updated_at": "2024-05-24 07:06:19",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "CPT",
+    "service_level_code": "L2DS - ECO",
+    "tracking_events": [
+      {
+        "id": 2680,
+        "date": "2024-05-24 07:06:20.920322",
+        "message": "",
+        "shipment_id": 563,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2679,
+        "date": "2024-05-24 07:06:20.907259",
+        "message": "",
+        "shipment_id": 563,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 564,
+    "custom_tracking_reference": "PUDO000291",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-24 07:10:32",
+    "shipment_time_modified": "2024-05-24 07:10:33",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1895,
+      "created_at": "2024-05-24 07:10:32",
+      "updated_at": "2024-05-24 07:10:32",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2684,
+        "date": "2024-05-24 07:10:33.902041",
+        "message": "",
+        "shipment_id": 564,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2683,
+        "date": "2024-05-24 07:10:33.892849",
+        "message": "",
+        "shipment_id": 564,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 566,
+    "custom_tracking_reference": "PUDO000293",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-24 07:34:24",
+    "shipment_time_modified": "2024-05-24 07:34:26",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1899,
+      "created_at": "2024-05-24 07:34:24",
+      "updated_at": "2024-05-24 07:34:24",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2688,
+        "date": "2024-05-24 07:34:25.947199",
+        "message": "",
+        "shipment_id": 566,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2687,
+        "date": "2024-05-24 07:34:25.935174",
+        "message": "",
+        "shipment_id": 566,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 567,
+    "custom_tracking_reference": "PUDO000294",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-24 07:44:01",
+    "shipment_time_modified": "2024-05-24 07:44:02",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1901,
+      "created_at": "2024-05-24 07:44:01",
+      "updated_at": "2024-05-24 07:44:01",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2692,
+        "date": "2024-05-24 07:44:02.865448",
+        "message": "",
+        "shipment_id": 567,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2691,
+        "date": "2024-05-24 07:44:02.856120",
+        "message": "",
+        "shipment_id": 567,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 568,
+    "custom_tracking_reference": "PUDO000295",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-28 07:03:19",
+    "shipment_time_modified": "2024-05-28 07:03:19",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1903,
+      "created_at": "2024-05-28 07:03:19",
+      "updated_at": "2024-05-28 07:03:19",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "CPT",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 578,
+    "custom_tracking_reference": "PUDO000305",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-28 07:56:38",
+    "shipment_time_modified": "2024-05-28 07:56:40",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1923,
+      "created_at": "2024-05-28 07:56:38",
+      "updated_at": "2024-05-28 07:56:38",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2696,
+        "date": "2024-05-28 07:56:39.893925",
+        "message": "",
+        "shipment_id": 578,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2695,
+        "date": "2024-05-28 07:56:39.874472",
+        "message": "",
+        "shipment_id": 578,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 579,
+    "custom_tracking_reference": "PUDO000306",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-28 08:07:28",
+    "shipment_time_modified": "2024-05-28 08:07:29",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1925,
+      "created_at": "2024-05-28 08:07:27",
+      "updated_at": "2024-05-28 08:07:27",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2700,
+        "date": "2024-05-28 08:07:29.555754",
+        "message": "",
+        "shipment_id": 579,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2699,
+        "date": "2024-05-28 08:07:29.532863",
+        "message": "",
+        "shipment_id": 579,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 581,
+    "custom_tracking_reference": "PUDO000308",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-28 08:10:01",
+    "shipment_time_modified": "2024-05-28 08:10:03",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1929,
+      "created_at": "2024-05-28 08:10:01",
+      "updated_at": "2024-05-28 08:10:01",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2704,
+        "date": "2024-05-28 08:10:03.203121",
+        "message": "",
+        "shipment_id": 581,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2703,
+        "date": "2024-05-28 08:10:03.191499",
+        "message": "",
+        "shipment_id": 581,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 582,
+    "custom_tracking_reference": "PUDO000309",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-05-28 09:44:01",
+    "shipment_time_modified": "2024-05-28 09:44:02",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1931,
+      "created_at": "2024-05-28 09:44:00",
+      "updated_at": "2024-05-28 09:44:00",
+      "name": "Normal",
+      "email": "mncubesimi@gmail.com",
+      "mobile_number": "+27834824931"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 2708,
+        "date": "2024-05-28 09:44:02.341020",
+        "message": "",
+        "shipment_id": 582,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2707,
+        "date": "2024-05-28 09:44:02.322642",
+        "message": "",
+        "shipment_id": 582,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 585,
+    "custom_tracking_reference": "PUDO000312",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-04 11:00:40",
+    "shipment_time_modified": "2024-06-04 11:00:42",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1937,
+      "created_at": "2024-06-04 11:00:40",
+      "updated_at": "2024-06-04 11:00:40",
+      "name": "Simi Mncube",
+      "email": "simi@appinlet.com",
+      "mobile_number": "+27834824931"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "HOW",
+    "service_level_code": "L2DXS - ECO",
+    "tracking_events": [
+      {
+        "id": 2712,
+        "date": "2024-06-04 11:00:42.193833",
+        "message": "",
+        "shipment_id": 585,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2711,
+        "date": "2024-06-04 11:00:42.184678",
+        "message": "",
+        "shipment_id": 585,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 589,
+    "custom_tracking_reference": "PUDO000316",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-11 03:30:16",
+    "shipment_time_modified": "2024-06-11 03:30:18",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1945,
+      "created_at": "2024-06-11 03:30:15",
+      "updated_at": "2024-06-11 03:30:15",
+      "name": "test",
+      "email": "bruce@appinlet.com",
+      "mobile_number": "1231231234"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 2716,
+        "date": "2024-06-11 05:30:18.028193",
+        "message": "",
+        "shipment_id": 589,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2715,
+        "date": "2024-06-11 05:30:18.009061",
+        "message": "",
+        "shipment_id": 589,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 590,
+    "custom_tracking_reference": "PUDO000317",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-13 14:35:53",
+    "shipment_time_modified": "2024-06-13 14:35:56",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1947,
+      "created_at": "2024-06-13 14:35:52",
+      "updated_at": "2024-06-13 14:35:52",
+      "name": "TEST",
+      "email": "talent@thecourierguy.co.za",
+      "mobile_number": "0219880438"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2DXS - ECO",
+    "tracking_events": [
+      {
+        "id": 2720,
+        "date": "2024-06-13 16:35:56.100224",
+        "message": "",
+        "shipment_id": 590,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2719,
+        "date": "2024-06-13 16:35:56.086771",
+        "message": "",
+        "shipment_id": 590,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 592,
+    "custom_tracking_reference": "PUDO000319",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-18 07:27:18",
+    "shipment_time_modified": "2024-06-18 07:27:20",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1951,
+      "created_at": "2024-06-18 07:27:17",
+      "updated_at": "2024-06-18 07:27:17",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LS - ECO",
+    "tracking_events": [
+      {
+        "id": 2724,
+        "date": "2024-06-18 09:27:19.794004",
+        "message": "",
+        "shipment_id": 592,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2723,
+        "date": "2024-06-18 09:27:19.784911",
+        "message": "",
+        "shipment_id": 592,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 594,
+    "custom_tracking_reference": "PUDO000321",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-18 08:47:25",
+    "shipment_time_modified": "2024-06-18 08:47:27",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1955,
+      "created_at": "2024-06-18 08:47:25",
+      "updated_at": "2024-06-18 08:47:25",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2729,
+        "date": "2024-06-18 10:47:27.082616",
+        "message": "",
+        "shipment_id": 594,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2728,
+        "date": "2024-06-18 10:47:27.059948",
+        "message": "",
+        "shipment_id": 594,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 595,
+    "custom_tracking_reference": "PUDO000322",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-21 09:01:14",
+    "shipment_time_modified": "2024-06-21 09:01:21",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1957,
+      "created_at": "2024-06-21 09:01:13",
+      "updated_at": "2024-06-21 09:01:13",
+      "name": "Simi",
+      "email": "mncubesimi@gmail.com",
+      "mobile_number": "+27834824931"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 2733,
+        "date": "2024-06-21 11:01:21.520101",
+        "message": "",
+        "shipment_id": 595,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2732,
+        "date": "2024-06-21 11:01:21.506645",
+        "message": "",
+        "shipment_id": 595,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 596,
+    "custom_tracking_reference": "PUDO000323",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-06-25 13:30:02",
+    "shipment_time_modified": "2024-06-25 13:30:07",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1959,
+      "created_at": "2024-06-25 13:30:02",
+      "updated_at": "2024-06-25 13:30:02",
+      "name": "Simi",
+      "email": "mncubesimi@gmail.com",
+      "mobile_number": "+27834824931"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2737,
+        "date": "2024-06-25 15:30:07.493763",
+        "message": "",
+        "shipment_id": 596,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2736,
+        "date": "2024-06-25 15:30:07.480092",
+        "message": "",
+        "shipment_id": 596,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 605,
+    "custom_tracking_reference": "PUDO000332",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-15 10:59:18",
+    "shipment_time_modified": "2024-07-15 10:59:20",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 1991,
+      "created_at": "2024-07-15 10:59:18",
+      "updated_at": "2024-07-15 10:59:18",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2750,
+        "date": "2024-07-15 12:59:20.128327",
+        "message": "",
+        "shipment_id": 605,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2749,
+        "date": "2024-07-15 12:59:20.113864",
+        "message": "",
+        "shipment_id": 605,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 638,
+    "custom_tracking_reference": "PUDO000366",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-23 14:14:45",
+    "shipment_time_modified": "2024-07-23 14:14:46",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2069,
+      "created_at": "2024-07-23 14:14:45",
+      "updated_at": "2024-07-23 14:14:45",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2859,
+        "date": "2024-07-23 16:14:46.503672",
+        "message": "",
+        "shipment_id": 638,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2858,
+        "date": "2024-07-23 16:14:46.481465",
+        "message": "",
+        "shipment_id": 638,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 643,
+    "custom_tracking_reference": "PUDO000371",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 06:55:08",
+    "shipment_time_modified": "2024-07-26 06:55:13",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2081,
+      "created_at": "2024-07-26 06:55:08",
+      "updated_at": "2024-07-26 06:55:08",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2887,
+        "date": "2024-07-26 08:55:13.287344",
+        "message": "",
+        "shipment_id": 643,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2886,
+        "date": "2024-07-26 08:55:13.266473",
+        "message": "",
+        "shipment_id": 643,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 644,
+    "custom_tracking_reference": "PUDO000372",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 10:21:48",
+    "shipment_time_modified": "2024-07-26 10:21:50",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2083,
+      "created_at": "2024-07-26 10:21:48",
+      "updated_at": "2024-07-26 10:21:48",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": null
+    },
+    "collection_hub": "PTA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2891,
+        "date": "2024-07-26 12:21:50.065587",
+        "message": "",
+        "shipment_id": 644,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2890,
+        "date": "2024-07-26 12:21:50.053579",
+        "message": "",
+        "shipment_id": 644,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 645,
+    "custom_tracking_reference": "PUDO000373",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 10:30:36",
+    "shipment_time_modified": "2024-07-26 10:30:38",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2085,
+      "created_at": "2024-07-26 10:30:36",
+      "updated_at": "2024-07-26 10:30:36",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": null
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2895,
+        "date": "2024-07-26 12:30:38.233699",
+        "message": "",
+        "shipment_id": 645,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2894,
+        "date": "2024-07-26 12:30:38.221448",
+        "message": "",
+        "shipment_id": 645,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 647,
+    "custom_tracking_reference": "PUDO000375",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 10:34:11",
+    "shipment_time_modified": "2024-07-26 10:34:12",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2089,
+      "created_at": "2024-07-26 10:34:11",
+      "updated_at": "2024-07-26 10:34:11",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": null
+    },
+    "collection_hub": "PTA",
+    "delivery_hub": "CPT",
+    "service_level_code": "L2DL - ECO",
+    "tracking_events": [
+      {
+        "id": 2899,
+        "date": "2024-07-26 12:34:12.607071",
+        "message": "",
+        "shipment_id": 647,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2898,
+        "date": "2024-07-26 12:34:12.601686",
+        "message": "",
+        "shipment_id": 647,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 649,
+    "custom_tracking_reference": "PUDO000377",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 10:36:10",
+    "shipment_time_modified": "2024-07-26 10:36:11",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2093,
+      "created_at": "2024-07-26 10:36:10",
+      "updated_at": "2024-07-26 10:36:10",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": null
+    },
+    "collection_hub": "PTA",
+    "delivery_hub": "CPT",
+    "service_level_code": "L2DXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2903,
+        "date": "2024-07-26 12:36:11.377411",
+        "message": "",
+        "shipment_id": 649,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2902,
+        "date": "2024-07-26 12:36:11.367498",
+        "message": "",
+        "shipment_id": 649,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 653,
+    "custom_tracking_reference": "PUDO000381",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 10:51:10",
+    "shipment_time_modified": "2024-07-26 10:51:11",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2101,
+      "created_at": "2024-07-26 10:51:10",
+      "updated_at": "2024-07-26 10:51:10",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": null
+    },
+    "collection_hub": "PTA",
+    "delivery_hub": "CPT",
+    "service_level_code": "L2DL - ECO",
+    "tracking_events": [
+      {
+        "id": 2907,
+        "date": "2024-07-26 12:51:11.509925",
+        "message": "",
+        "shipment_id": 653,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2906,
+        "date": "2024-07-26 12:51:11.500097",
+        "message": "",
+        "shipment_id": 653,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 657,
+    "custom_tracking_reference": "PUDO000385",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 10:54:01",
+    "shipment_time_modified": "2024-07-26 10:54:02",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2109,
+      "created_at": "2024-07-26 10:54:01",
+      "updated_at": "2024-07-26 10:54:01",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": null
+    },
+    "collection_hub": "PHA",
+    "delivery_hub": "CPT",
+    "service_level_code": "L2DM - ECO",
+    "tracking_events": [
+      {
+        "id": 2911,
+        "date": "2024-07-26 12:54:02.456318",
+        "message": "",
+        "shipment_id": 657,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2910,
+        "date": "2024-07-26 12:54:02.447807",
+        "message": "",
+        "shipment_id": 657,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 658,
+    "custom_tracking_reference": "PUDO000386",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 12:32:08",
+    "shipment_time_modified": "2024-07-26 12:32:09",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2111,
+      "created_at": "2024-07-26 12:32:08",
+      "updated_at": "2024-07-26 12:32:08",
+      "name": "test",
+      "email": "support@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LS - ECO",
+    "tracking_events": [
+      {
+        "id": 2915,
+        "date": "2024-07-26 14:32:09.183305",
+        "message": "",
+        "shipment_id": 658,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2914,
+        "date": "2024-07-26 14:32:09.170894",
+        "message": "",
+        "shipment_id": 658,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 659,
+    "custom_tracking_reference": "PUDO000387",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 12:32:31",
+    "shipment_time_modified": "2024-07-26 12:32:32",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2113,
+      "created_at": "2024-07-26 12:32:31",
+      "updated_at": "2024-07-26 12:32:31",
+      "name": "test",
+      "email": "support@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LS - ECO",
+    "tracking_events": [
+      {
+        "id": 2919,
+        "date": "2024-07-26 14:32:32.654181",
+        "message": "",
+        "shipment_id": 659,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2918,
+        "date": "2024-07-26 14:32:32.646017",
+        "message": "",
+        "shipment_id": 659,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 660,
+    "custom_tracking_reference": "PUDO000388",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 12:35:28",
+    "shipment_time_modified": "2024-07-26 12:35:30",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2115,
+      "created_at": "2024-07-26 12:35:28",
+      "updated_at": "2024-07-26 12:35:28",
+      "name": "test",
+      "email": "support@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 2923,
+        "date": "2024-07-26 14:35:29.681276",
+        "message": "",
+        "shipment_id": 660,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2922,
+        "date": "2024-07-26 14:35:29.673653",
+        "message": "",
+        "shipment_id": 660,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 665,
+    "custom_tracking_reference": "PUDO000393",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 12:44:04",
+    "shipment_time_modified": "2024-07-26 12:44:05",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2125,
+      "created_at": "2024-07-26 12:44:04",
+      "updated_at": "2024-07-26 12:44:04",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2927,
+        "date": "2024-07-26 14:44:05.410479",
+        "message": "",
+        "shipment_id": 665,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2926,
+        "date": "2024-07-26 14:44:05.400024",
+        "message": "",
+        "shipment_id": 665,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 666,
+    "custom_tracking_reference": "PUDO000394",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 12:50:35",
+    "shipment_time_modified": "2024-07-26 12:50:36",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2127,
+      "created_at": "2024-07-26 12:50:35",
+      "updated_at": "2024-07-26 12:50:35",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2931,
+        "date": "2024-07-26 14:50:36.516284",
+        "message": "",
+        "shipment_id": 666,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2930,
+        "date": "2024-07-26 14:50:36.507146",
+        "message": "",
+        "shipment_id": 666,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 667,
+    "custom_tracking_reference": "PUDO000395",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 12:52:25",
+    "shipment_time_modified": "2024-07-26 12:52:26",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2129,
+      "created_at": "2024-07-26 12:52:25",
+      "updated_at": "2024-07-26 12:52:25",
+      "name": "t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "1234567890"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2935,
+        "date": "2024-07-26 14:52:26.844245",
+        "message": "",
+        "shipment_id": 667,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2934,
+        "date": "2024-07-26 14:52:26.838924",
+        "message": "",
+        "shipment_id": 667,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 668,
+    "custom_tracking_reference": "PUDO000396",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 14:21:17",
+    "shipment_time_modified": "2024-07-26 14:21:20",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2131,
+      "created_at": "2024-07-26 14:21:17",
+      "updated_at": "2024-07-26 14:21:17",
+      "name": "test test",
+      "email": "test@appinlet.com",
+      "mobile_number": "0844140001"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 2939,
+        "date": "2024-07-26 16:21:20.245513",
+        "message": "",
+        "shipment_id": 668,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2938,
+        "date": "2024-07-26 16:21:20.237083",
+        "message": "",
+        "shipment_id": 668,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 669,
+    "custom_tracking_reference": "PUDO000397",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 14:22:29",
+    "shipment_time_modified": "2024-07-26 14:22:31",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2133,
+      "created_at": "2024-07-26 14:22:29",
+      "updated_at": "2024-07-26 14:22:29",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2943,
+        "date": "2024-07-26 16:22:30.998757",
+        "message": "",
+        "shipment_id": 669,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2942,
+        "date": "2024-07-26 16:22:30.993919",
+        "message": "",
+        "shipment_id": 669,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 670,
+    "custom_tracking_reference": "PUDO000398",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-26 14:22:59",
+    "shipment_time_modified": "2024-07-26 14:23:00",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2135,
+      "created_at": "2024-07-26 14:22:59",
+      "updated_at": "2024-07-26 14:22:59",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2947,
+        "date": "2024-07-26 16:23:00.793243",
+        "message": "",
+        "shipment_id": 670,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2946,
+        "date": "2024-07-26 16:23:00.787281",
+        "message": "",
+        "shipment_id": 670,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 671,
+    "custom_tracking_reference": "PUDO000399",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-29 09:25:45",
+    "shipment_time_modified": "2024-07-29 09:25:50",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2137,
+      "created_at": "2024-07-29 09:25:45",
+      "updated_at": "2024-07-29 09:25:45",
+      "name": "test",
+      "email": "test@gmai.com",
+      "mobile_number": "0954215265"
+    },
+    "collection_hub": "PMB",
+    "delivery_hub": "NEL",
+    "service_level_code": "L2LM - ECO",
+    "tracking_events": [
+      {
+        "id": 2952,
+        "date": "2024-07-29 11:25:50.440965",
+        "message": "",
+        "shipment_id": 671,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 2951,
+        "date": "2024-07-29 11:25:50.422083",
+        "message": "",
+        "shipment_id": 671,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 704,
+    "custom_tracking_reference": "PUDO000432",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 11:02:23",
+    "shipment_time_modified": "2024-07-31 11:02:28",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2217,
+      "created_at": "2024-07-31 11:02:23",
+      "updated_at": "2024-07-31 11:02:23",
+      "name": "PhilipTesterss",
+      "email": "talent@thecourierguy.co.za",
+      "mobile_number": "+27814078152"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "KAT",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 3018,
+        "date": "2024-07-31 13:02:28.536572",
+        "message": "",
+        "shipment_id": 704,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3017,
+        "date": "2024-07-31 13:02:28.530839",
+        "message": "",
+        "shipment_id": 704,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 705,
+    "custom_tracking_reference": "PUDO000433",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 11:02:26",
+    "shipment_time_modified": "2024-07-31 11:02:30",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2219,
+      "created_at": "2024-07-31 11:02:26",
+      "updated_at": "2024-07-31 11:02:26",
+      "name": "PhilipTesterss",
+      "email": "talent@thecourierguy.co.za",
+      "mobile_number": "+27814078152"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "KAT",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 3022,
+        "date": "2024-07-31 13:02:29.751446",
+        "message": "",
+        "shipment_id": 705,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3021,
+        "date": "2024-07-31 13:02:29.745915",
+        "message": "",
+        "shipment_id": 705,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 707,
+    "custom_tracking_reference": "PUDO000435",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 11:10:01",
+    "shipment_time_modified": "2024-07-31 11:10:01",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2225,
+      "created_at": "2024-07-31 11:10:01",
+      "updated_at": "2024-07-31 11:10:01",
+      "name": "Greg",
+      "email": "greg.g@thecourierguy.co.za",
+      "mobile_number": "+27714581189"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "KAT",
+    "service_level_code": "D2LS - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 711,
+    "custom_tracking_reference": "PUDO000439",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 11:47:56",
+    "shipment_time_modified": "2024-07-31 11:47:58",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2233,
+      "created_at": "2024-07-31 11:47:56",
+      "updated_at": "2024-07-31 11:47:56",
+      "name": "Mncube",
+      "email": "simi@appinlet.com",
+      "mobile_number": "0834824931"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "HOW",
+    "service_level_code": "L2DL - ECO",
+    "tracking_events": [
+      {
+        "id": 3030,
+        "date": "2024-07-31 13:47:57.973172",
+        "message": "",
+        "shipment_id": 711,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3029,
+        "date": "2024-07-31 13:47:57.962738",
+        "message": "",
+        "shipment_id": 711,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 712,
+    "custom_tracking_reference": "PUDO000440",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 12:31:42",
+    "shipment_time_modified": "2024-07-31 12:31:44",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2235,
+      "created_at": "2024-07-31 12:31:42",
+      "updated_at": "2024-07-31 12:31:42",
+      "name": "Mncube",
+      "email": "simi@appinlet.com",
+      "mobile_number": "0834824931"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "PLZ",
+    "service_level_code": "L2LXL - ECO",
+    "tracking_events": [
+      {
+        "id": 3034,
+        "date": "2024-07-31 14:31:44.319956",
+        "message": "",
+        "shipment_id": 712,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3033,
+        "date": "2024-07-31 14:31:44.303439",
+        "message": "",
+        "shipment_id": 712,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 713,
+    "custom_tracking_reference": "PUDO000441",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 13:57:46",
+    "shipment_time_modified": "2024-07-31 13:57:46",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2237,
+      "created_at": "2024-07-31 13:57:46",
+      "updated_at": "2024-07-31 13:57:46",
+      "name": "Greg",
+      "email": "greg.g@thecourierguy.co.za",
+      "mobile_number": "+27714581189"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "KAT",
+    "service_level_code": "D2LM - ECO",
+    "tracking_events": []
+  },
+  {
+    "shipment_id": 714,
+    "custom_tracking_reference": "PUDO000442",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-07-31 13:58:57",
+    "shipment_time_modified": "2024-07-31 13:59:02",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2239,
+      "created_at": "2024-07-31 13:58:57",
+      "updated_at": "2024-07-31 13:58:57",
+      "name": "PhilipTesterss",
+      "email": "test@test.com",
+      "mobile_number": "+27814078152"
+    },
+    "collection_hub": "DBN",
+    "delivery_hub": "KAT",
+    "service_level_code": "L2LXS - ECO",
+    "tracking_events": [
+      {
+        "id": 3038,
+        "date": "2024-07-31 15:59:02.302412",
+        "message": "",
+        "shipment_id": 714,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3037,
+        "date": "2024-07-31 15:59:02.293057",
+        "message": "",
+        "shipment_id": 714,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 731,
+    "custom_tracking_reference": "PUDO000459",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-01 10:09:42",
+    "shipment_time_modified": "2024-08-01 10:09:44",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2279,
+      "created_at": "2024-08-01 10:09:42",
+      "updated_at": "2024-08-01 10:09:42",
+      "name": "Talent Sibanda",
+      "email": "talent@thecourierguy.co.za",
+      "mobile_number": "+27714581189"
+    },
+    "collection_hub": "JNB",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2DXS - ECO",
+    "tracking_events": [
+      {
+        "id": 3064,
+        "date": "2024-08-01 12:09:44.214462",
+        "message": "",
+        "shipment_id": 731,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3063,
+        "date": "2024-08-01 12:09:44.203708",
+        "message": "",
+        "shipment_id": 731,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 742,
+    "custom_tracking_reference": "PUDO000470",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-02 06:47:33",
+    "shipment_time_modified": "2024-08-02 06:47:35",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2303,
+      "created_at": "2024-08-02 06:47:33",
+      "updated_at": "2024-08-02 06:47:33",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "0210210210"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3093,
+        "date": "2024-08-02 08:47:35.357912",
+        "message": "",
+        "shipment_id": 742,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3092,
+        "date": "2024-08-02 08:47:35.338593",
+        "message": "",
+        "shipment_id": 742,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 743,
+    "custom_tracking_reference": "PUDO000471",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-02 14:13:52",
+    "shipment_time_modified": "2024-08-02 14:13:55",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2305,
+      "created_at": "2024-08-02 14:13:52",
+      "updated_at": "2024-08-02 14:13:52",
+      "name": "Talent Sibanda",
+      "email": "talent@thecourierguy.co.za",
+      "mobile_number": "+27714581189"
+    },
+    "collection_hub": "UPI",
+    "delivery_hub": "KYA",
+    "service_level_code": "L2DXS - ECO",
+    "tracking_events": [
+      {
+        "id": 3099,
+        "date": "2024-08-02 16:13:55.393444",
+        "message": "",
+        "shipment_id": 743,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3098,
+        "date": "2024-08-02 16:13:55.376171",
+        "message": "",
+        "shipment_id": 743,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 794,
+    "custom_tracking_reference": "PUDOD000516",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-16 12:31:17",
+    "shipment_time_modified": "2024-08-16 10:31:19",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2411,
+      "created_at": "2024-08-16 10:31:17",
+      "updated_at": "2024-08-16 10:31:17",
+      "name": "test test",
+      "email": "mncubesimi@gmail.com",
+      "mobile_number": "0813847294"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3224,
+        "date": "2024-08-16 12:31:19.285972",
+        "message": "",
+        "shipment_id": 794,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3223,
+        "date": "2024-08-16 12:31:19.279888",
+        "message": "",
+        "shipment_id": 794,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 805,
+    "custom_tracking_reference": "PUDOD000527",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-19 11:30:05",
+    "shipment_time_modified": "2024-08-19 09:30:06",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2433,
+      "created_at": "2024-08-19 09:30:04",
+      "updated_at": "2024-08-19 09:30:04",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "+27210210210"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3256,
+        "date": "2024-08-19 11:30:06.178012",
+        "message": "",
+        "shipment_id": 805,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3255,
+        "date": "2024-08-19 11:30:06.162784",
+        "message": "",
+        "shipment_id": 805,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 808,
+    "custom_tracking_reference": "PUDOD000530",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-21 13:33:48",
+    "shipment_time_modified": "2024-08-21 11:33:50",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2439,
+      "created_at": "2024-08-21 11:33:48",
+      "updated_at": "2024-08-21 11:33:48",
+      "name": "PhilipTesterss",
+      "email": "talent@thecourierguy.co.za",
+      "mobile_number": "+27714581189"
+    },
+    "collection_hub": "VDB",
+    "delivery_hub": "MEC",
+    "service_level_code": "L2LS - ECO",
+    "tracking_events": [
+      {
+        "id": 3260,
+        "date": "2024-08-21 13:33:50.088845",
+        "message": "",
+        "shipment_id": 808,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3259,
+        "date": "2024-08-21 13:33:50.071764",
+        "message": "",
+        "shipment_id": 808,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 812,
+    "custom_tracking_reference": "PUDOD000534",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-23 16:08:13",
+    "shipment_time_modified": "2024-08-23 14:08:18",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2447,
+      "created_at": "2024-08-23 14:08:13",
+      "updated_at": "2024-08-23 14:08:13",
+      "name": "Mncube",
+      "email": "simi@appinlet.com",
+      "mobile_number": "0834824931"
+    },
+    "collection_hub": "KYA",
+    "delivery_hub": "DBN",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3272,
+        "date": "2024-08-23 16:08:18.556181",
+        "message": "",
+        "shipment_id": 812,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3271,
+        "date": "2024-08-23 16:08:18.536973",
+        "message": "",
+        "shipment_id": 812,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 834,
+    "custom_tracking_reference": "PUDOD000554",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-28 08:35:09",
+    "shipment_time_modified": "2024-08-28 06:35:11",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2497,
+      "created_at": "2024-08-28 06:35:09",
+      "updated_at": "2024-08-28 06:35:09",
+      "name": "test test",
+      "email": "simi@appinlet.com",
+      "mobile_number": "0813847294"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3326,
+        "date": "2024-08-28 08:35:11.450857",
+        "message": "",
+        "shipment_id": 834,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3325,
+        "date": "2024-08-28 08:35:11.427512",
+        "message": "",
+        "shipment_id": 834,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 835,
+    "custom_tracking_reference": "PUDOD000555",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-28 09:43:41",
+    "shipment_time_modified": "2024-08-28 07:43:43",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2499,
+      "created_at": "2024-08-28 07:43:41",
+      "updated_at": "2024-08-28 07:43:41",
+      "name": "t t",
+      "email": "reagan@appinlet.com",
+      "mobile_number": "+27210210210"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3330,
+        "date": "2024-08-28 09:43:42.664066",
+        "message": "",
+        "shipment_id": 835,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3329,
+        "date": "2024-08-28 09:43:42.643951",
+        "message": "",
+        "shipment_id": 835,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  },
+  {
+    "shipment_id": 836,
+    "custom_tracking_reference": "PUDOD000556",
+    "status": "deposit-pending",
+    "shipment_time_created": "2024-08-28 09:50:32",
+    "shipment_time_modified": "2024-08-28 07:50:34",
+    "shipment_collected_date": null,
+    "shipment_delivered_date": null,
+    "collection_from": "Another Test Company",
+    "delivery_to": {
+      "id": 2501,
+      "created_at": "2024-08-28 07:50:32",
+      "updated_at": "2024-08-28 07:50:32",
+      "name": "test test",
+      "email": "simi@appinlet.com",
+      "mobile_number": "0813847294"
+    },
+    "collection_hub": "CPT",
+    "delivery_hub": "JNB",
+    "service_level_code": "L2LL - ECO",
+    "tracking_events": [
+      {
+        "id": 3334,
+        "date": "2024-08-28 09:50:34.101538",
+        "message": "",
+        "shipment_id": 836,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "deposit-pending",
+        "location": ""
+      },
+      {
+        "id": 3333,
+        "date": "2024-08-28 09:50:34.090567",
+        "message": "",
+        "shipment_id": 836,
+        "parcel_id": 0,
+        "source": "Talent Sibanda",
+        "status": "submitted",
+        "location": ""
+      }
+    ]
+  }
+]
+GET
+Tracking a shipment (By Parcel Barcode)
+https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?tracking_reference=NLEB4R_001
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+PARAMS
+tracking_reference
+NLEB4R_001
+
+Example Request
+Tracking a shipment (By Parcel Barcode)
+View More
+javascript
+var requestOptions = {
+  method: 'GET',
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/tracking/shipments?tracking_reference=NLEB4R_001", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+Example Response
+Body
+Headers (0)
+No response body
+This request doesn't return any response body
+GET
+Getting POD images for a shipment
+https://sandbox.api-pudo.co.za/api/v1/shipments/pod/images?shipment_id=857
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+PARAMS
+shipment_id
+857
+
+Example Request
+Getting POD images for a shipment
+View More
+javascript
+var requestOptions = {
+  method: 'GET',
+  redirect: 'follow'
+};
+
+fetch("https://sandbox.api-pudo.co.za/api/v1/shipments/pod/images?shipment_id=857", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+Example Response
+Body
+Headers (0)
+No response body
+This request doesn't return any response body
+Billing
+This section lists all the APIs related to getting Billing Information
+
+AUTHORIZATION
+Bearer Token
+This folder is using Bearer Token from collectionTCG LOCKER SANDBOX API
+GET
+Getting an account statement
+https://a3mkbgy3r7.execute-api.af-south-1.amazonaws.com/api/v1/billing/statements?start_date=2020-11-01&end_date=2025-12-01
+AUTHORIZATION
+Bearer Token
+Token
+<token>
+
+PARAMS
+start_date
+2020-11-01
+
+end_date
+2025-12-01
+
+Example Request
+Getting an account statement
+View More
+javascript
+var requestOptions = {
+  method: 'GET',
+  redirect: 'follow'
+};
+
+fetch("https://a3mkbgy3r7.execute-api.af-south-1.amazonaws.com/api/v1/billing/statements?start_date=2020-11-01&end_date=2025-12-01", requestOptions)
+  .then(response => response.text())
+  .then(result => console.log(result))
+  .catch(error => console.log('error', error));
+Example Response
+Body
+Headers (0)
+No response body
+This request doesn't return any response body

@@ -61,6 +61,7 @@ export interface Dispensary {
 
   averageRating?: number | null;
   reviewCount?: number;
+  inHouseDeliveryFee?: number;
 }
 
 // Represents the structure for Wellness Type documents (basic info)
@@ -433,4 +434,37 @@ export interface StickerSet {
   salesCount: number;
   viewCount: number;
   createdAt: Timestamp | Date | string;
+}
+
+// --- ADDED: Definition for ShippingRate to match backend ---
+export interface ShippingRate {
+  id: any;
+  name: any;
+  rate: number;
+  service_level: any;
+  delivery_time: any;
+  courier_name: any;
+}
+
+// --- ADDED: Definition for AddressValues wrapper used in checkout ---
+export interface AddressValues {
+  shippingAddress: {
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    postalCode: string;
+    province: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  };
+  billingAddress: {
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    postalCode: string;
+    province: string;
+    country: string;
+  };
+  useShippingForBilling: boolean;
 }
