@@ -4,13 +4,13 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, MapPin } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
-import type { CartItem, Dispensary, ShippingRate, AddressValues } from '@/types';
+import type { CartItem, Dispensary, ShippingRate, AddressValues, PUDOLocker } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -22,13 +22,6 @@ const allShippingMethodsMap: { [key: string]: string } = {
   "collection": "Collection from Store",
   "in_house": "In-house Delivery Service",
 };
-
-interface PickupPoint {
-    id: string; 
-    name: string;
-    street_address: string;
-    [key: string]: any; 
-}
 
 interface DispensaryShippingGroupProps {
   dispensaryId: string;
@@ -58,13 +51,12 @@ export const DispensaryShippingGroup = ({
   const [rates, setRates] = useState<ShippingRate[]>([]);
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
   
-  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
-  const [originLocker, setOriginLocker] = useState<PickupPoint | null>(null);
-  const [destinationLocker, setDestinationLocker] = useState<PickupPoint | null>(null);
+  const [pickupPoints, setPickupPoints] = useState<PUDOLocker[]>([]);
+  const [originLocker, setOriginLocker] = useState<PUDOLocker | null>(null);
+  const [destinationLocker, setDestinationLocker] = useState<PUDOLocker | null>(null);
   
   const [lockerSearchTerm, setLockerSearchTerm] = useState('');
   const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
-  const [currentLockerSelection, setCurrentLockerSelection] = useState<'origin' | 'destination' | null>(null);
 
   useEffect(() => {
     const fetchDispensary = async () => {
@@ -73,7 +65,11 @@ export const DispensaryShippingGroup = ({
         const docRef = doc(db, 'dispensaries', dispensaryId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setDispensary({ id: docSnap.id, ...docSnap.data() } as Dispensary);
+          const dispensaryData = { id: docSnap.id, ...docSnap.data() } as Dispensary;
+          setDispensary(dispensaryData);
+          if (dispensaryData.originLocker) {
+            setOriginLocker(dispensaryData.originLocker);
+          }
         } else {
           setError('Dispensary details could not be found.');
         }
@@ -92,7 +88,6 @@ export const DispensaryShippingGroup = ({
     onShippingSelectionChange(dispensaryId, null);
     setRates([]);
     setError(null);
-    setOriginLocker(null);
     setDestinationLocker(null);
   };
 
@@ -131,11 +126,12 @@ export const DispensaryShippingGroup = ({
         if (!destinationLocker) return;
         payload.destinationLockerCode = destinationLocker.id;
       } else if (selectedTier === 'ltd') {
-        if (!originLocker) return;
+        if (!originLocker) { setError("This dispensary has not configured an origin locker for this shipping method."); return; }
         payload.originLockerCode = originLocker.id;
         payload.deliveryAddress = deliveryAddressForApi;
       } else if (selectedTier === 'ltl') {
         if (!originLocker || !destinationLocker) return;
+        if (!originLocker) { setError("This dispensary has not configured an origin locker for this shipping method."); return; }
         payload.originLockerCode = originLocker.id;
         payload.destinationLockerCode = destinationLocker.id;
       }
@@ -163,11 +159,9 @@ export const DispensaryShippingGroup = ({
       setError("Please provide a complete shipping address to get door-to-door rates.");
       return;
     }
-
     setIsLoading(true);
     setError(null);
     setRates([]);
-
     try {
       const getShiplogicRatesFn = httpsCallable(functions, 'getShiplogicRates');
       const payload = {
@@ -185,10 +179,8 @@ export const DispensaryShippingGroup = ({
           lng: addressData.shippingAddress.longitude,
         }
       };
-
       const result = await getShiplogicRatesFn(payload);
       const data = result.data as { rates?: ShippingRate[] };
-
       if (data.rates && data.rates.length > 0) {
         setRates(data.rates);
       } else {
@@ -206,11 +198,14 @@ export const DispensaryShippingGroup = ({
 
   useEffect(() => {
     if (!selectedTier) return;
-    
-    if ((selectedTier === 'dtl' && destinationLocker) || 
-        (selectedTier === 'ltd' && originLocker) || 
-        (selectedTier === 'ltl' && originLocker && destinationLocker)) {
+    if (selectedTier === 'dtl' && destinationLocker) {
       fetchPudoRates();
+    } else if ((selectedTier === 'ltd' || selectedTier === 'ltl') && originLocker) {
+      if (selectedTier === 'ltl') {
+        if (destinationLocker) fetchPudoRates();
+      } else {
+        fetchPudoRates();
+      }
     }
   }, [selectedTier, originLocker, destinationLocker, fetchPudoRates]);
 
@@ -235,6 +230,12 @@ export const DispensaryShippingGroup = ({
       fetchShiplogicRates();
     } 
     else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
+      if (tier === 'ltd' || tier === 'ltl') {
+          if (!originLocker) {
+              setError("This dispensary has not configured an origin locker for this shipping method. Please select another method.");
+              return;
+          }
+      }
       if (pickupPoints.length === 0) {
         setIsFetchingLockers(true);
         try {
@@ -244,7 +245,7 @@ export const DispensaryShippingGroup = ({
             longitude: addressData.shippingAddress.longitude,
             city: addressData.shippingAddress.city
           });
-          const lockerData = (result.data as any)?.data as PickupPoint[];
+          const lockerData = (result.data as any)?.data as PUDOLocker[];
 
           if (lockerData && lockerData.length > 0) {
             setPickupPoints(lockerData);
@@ -268,24 +269,22 @@ export const DispensaryShippingGroup = ({
     }
   };
 
-  const handleLockerSelect = (locker: PickupPoint) => {
-    if (currentLockerSelection === 'origin') {
-      setOriginLocker(locker);
-    } else if (currentLockerSelection === 'destination') {
+  const handleLockerSelect = (locker: PUDOLocker) => {
+    // Origin locker is not selectable by the user in this component
+    if (destinationLocker) {
       setDestinationLocker(locker);
     }
     setIsLockerModalOpen(false);
   };
 
-  const openLockerModal = (type: 'origin' | 'destination') => {
-    setCurrentLockerSelection(type);
+  const openLockerModal = () => {
     setIsLockerModalOpen(true);
   }
   
   const filteredLockers = useMemo(() => 
     pickupPoints.filter(locker => 
         locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
-        (locker.street_address && locker.street_address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+        (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
     ), [pickupPoints, lockerSearchTerm]);
 
   const isLockerTier = ['dtl', 'ltd', 'ltl'].includes(selectedTier || '');
@@ -331,30 +330,38 @@ export const DispensaryShippingGroup = ({
 
         {isLockerTier && !isFetchingLockers && !error && (
           <div className="space-y-4">
-            {selectedTier === 'ltd' || selectedTier === 'ltl' ? (
-                 <div>
-                    <p className="font-medium mb-2">2. Choose Origin Locker</p>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={() => openLockerModal('origin')}>
-                        {originLocker ? <div><p className='font-semibold'>{originLocker.name}</p><p className='text-sm text-muted-foreground'>{originLocker.street_address}</p></div> : 'Click to select origin locker'}
-                    </Button>
-                 </div>
-            ) : null}
+            {(selectedTier === 'ltd' || selectedTier === 'ltl') && (
+              <div>
+                  <p className="font-medium mb-2">Origin Locker (Pre-selected by Dispensary)</p>
+                  <div className="flex items-center gap-3 rounded-md border border-dashed p-3 bg-muted/50">
+                      <MapPin className="h-6 w-6 text-muted-foreground" />
+                      {originLocker ? (
+                          <div>
+                              <p className='font-semibold'>{originLocker.name}</p>
+                              <p className='text-sm text-muted-foreground'>{originLocker.address}</p>
+                          </div>
+                      ) : (
+                          <p className="text-sm text-destructive">Origin locker not configured by the dispensary.</p>
+                      )}
+                  </div>
+              </div>
+            )}
 
-            {selectedTier === 'dtl' || selectedTier === 'ltl' ? (
+            {(selectedTier === 'dtl' || selectedTier === 'ltl') && (
                 <div>
-                    <p className="font-medium mb-2">{selectedTier === 'ltl' ? '3. Choose Destination Locker' : '2. Choose Destination Locker'}</p>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={() => openLockerModal('destination')} disabled={selectedTier === 'ltl' && !originLocker}>
-                        {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.street_address}</p></div> : 'Click to select destination locker'}
+                    <p className="font-medium mb-2">{selectedTier === 'ltl' ? 'Destination Locker' : 'Destination Locker'}</p>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={openLockerModal} disabled={(selectedTier === 'ltl' || selectedTier === 'ltd') && !originLocker}>
+                        {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
                     </Button>
-                    {selectedTier === 'ltl' && !originLocker && <p className='text-xs text-muted-foreground mt-1'>Please select an origin locker first.</p>}
+                    {((selectedTier === 'ltl' || selectedTier === 'ltd') && !originLocker) && <p className='text-xs text-destructive mt-1'>Cannot select destination until dispensary configures an origin.</p>}
                 </div>
-            ) : null}
+            )}
           </div>
         )}
 
         <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
             <DialogContent className="sm:max-w-[625px]">
-                <DialogHeader><DialogTitle>Select a Pudo Locker ({currentLockerSelection})</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Select a Destination Pudo Locker</DialogTitle></DialogHeader>
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input placeholder="Search by name or address..." value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10"/>
@@ -364,7 +371,7 @@ export const DispensaryShippingGroup = ({
                         <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-2 text-left" onClick={() => handleLockerSelect(locker)}>
                             <div>
                                 <p className="font-semibold">{locker.name}</p>
-                                <p className="text-sm text-muted-foreground">{locker.street_address}</p>
+                                <p className="text-sm text-muted-foreground">{locker.address}</p>
                             </div>
                         </Button>
                     ))}
@@ -381,7 +388,7 @@ export const DispensaryShippingGroup = ({
 
         {rates.length > 0 && !isLoading && (
             <div>
-                <p className="font-medium mb-2">{isLockerTier ? (selectedTier === 'ltl' ? '4. Finalize Selection' : '3. Finalize Selection') : '2. Finalize Selection'}</p>
+                <p className="font-medium mb-2">{isLockerTier ? (selectedTier === 'ltl' ? 'Finalize Selection' : 'Finalize Selection') : 'Finalize Selection'}</p>
                 <RadioGroup onValueChange={handleRateSelection} value={selectedRateId || ''} className="space-y-3">
                     {rates.map(rate => (
                         <Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all cursor-pointer">
@@ -391,7 +398,7 @@ export const DispensaryShippingGroup = ({
                             </div>
                             <p className="font-bold text-lg">R{rate.rate.toFixed(2)}</p>
                             <RadioGroupItem value={rate.id.toString()} id={`${dispensaryId}-${rate.id}`} className="sr-only" />
-                        </Label>
+                        </Label
                     ))}
                 </RadioGroup>
             </div>

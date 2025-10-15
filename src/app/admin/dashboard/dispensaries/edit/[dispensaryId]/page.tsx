@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,20 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Building } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Loader2, Save, ArrowLeft, Building, MapPin, Search } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { db, functions } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, collection, getDocs, query as firestoreQuery, orderBy } from 'firebase/firestore';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { editDispensarySchema, type EditDispensaryFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryType } from '@/types';
+import type { Dispensary, DispensaryType, PUDOLocker } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader } from '@googlemaps/js-api-loader';
 
-// --- Re-usable constants ---
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const currencyOptions = [{ value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" }, { value: "USD", label: "💵 USD (US Dollar)" }, { value: "EUR", label: "💶 EUR (Euro)" }, { value: "GBP", label: "💷 GBP (British Pound)" }];
 const deliveryRadiusOptions = [{ value: "none", label: "No same-day delivery" }, { value: "5", label: "5 km" }, { value: "10", label: "10 km" }, { value: "20", label: "20 km" }, { value: "50", label: "50 km" }];
@@ -31,8 +31,9 @@ const allShippingMethods = [{ id: "dtd", label: "DTD - Door to Door (The Courier
 const countryCodes = [{ value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" }];
 
 const createDispensaryUserCallable = httpsCallable(functions, 'createDispensaryUser');
+const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
 
-// --- Main Page Component (Handles data fetching and auth) ---
+
 export default function EditDispensaryPage() {
     const params = useParams();
     const dispensaryId = params.dispensaryId as string;
@@ -45,38 +46,30 @@ export default function EditDispensaryPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (authLoading) return; // Wait for authentication to resolve
-
+        if (authLoading) return;
         if (!isSuperAdmin) {
             toast({ title: "Access Denied", description: "You do not have permission to view this page.", variant: "destructive" });
             router.replace('/admin/dashboard');
             return;
         }
-
         if (!dispensaryId) {
             router.replace('/admin/dashboard/dispensaries');
             return;
         }
-
         const fetchData = async () => {
             try {
-                // Fetch dispensary data
                 const docRef = doc(db, "dispensaries", dispensaryId);
                 const docSnap = await getDoc(docRef);
-
                 if (!docSnap.exists()) {
                     toast({ title: "Not Found", description: "Dispensary data could not be found.", variant: "destructive" });
                     router.replace('/admin/dashboard/dispensaries');
                     return;
                 }
-                const dispensaryData = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-                setDispensary(dispensaryData);
+                setDispensary({ id: docSnap.id, ...docSnap.data() } as Dispensary);
 
-                // Fetch dispensary types
                 const typesQuery = firestoreQuery(collection(db, 'dispensaryTypes'), orderBy('name'));
                 const typesSnapshot = await getDocs(typesQuery);
-                const typesData = typesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as DispensaryType));
-                setAllDispensaryTypes(typesData);
+                setAllDispensaryTypes(typesSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as DispensaryType)));
 
             } catch (error) {
                 console.error("Failed to fetch data:", error);
@@ -94,7 +87,6 @@ export default function EditDispensaryPage() {
     }
 
     if (!dispensary) {
-        // This case is handled by the loading state, but as a fallback:
         return <div className="text-center py-12">Dispensary not found or failed to load.</div>;
     }
 
@@ -102,7 +94,6 @@ export default function EditDispensaryPage() {
 }
 
 
-// --- Form Component (Handles UI and submission) ---
 function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: Dispensary; allDispensaryTypes: DispensaryType[] }) {
     const { toast } = useToast();
     const router = useRouter();
@@ -110,6 +101,11 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
     const dispensaryId = initialData.id;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
+    const [pudoLockers, setPudoLockers] = useState<PUDOLocker[]>([]);
+    const [isFetchingLockers, setIsFetchingLockers] = useState(false);
+    const [lockerSearchTerm, setLockerSearchTerm] = useState('');
+    const [lockerError, setLockerError] = useState<string | null>(null);
     const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
     const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
     
@@ -122,12 +118,17 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         mode: "onChange",
         defaultValues: {
             ...initialData,
-            showLocation: initialData.showLocation ?? true, // Default to true if undefined
+            showLocation: initialData.showLocation ?? true,
             country: initialData.country || '',
+            originLocker: initialData.originLocker || null,
         },
     });
 
-    // --- FORM POPULATION & SYNC ---
+    const watchedShippingMethods = useWatch({ control: form.control, name: 'shippingMethods' });
+    const watchedOriginLocker = useWatch({ control: form.control, name: 'originLocker' });
+    const watchedCity = useWatch({ control: form.control, name: 'city' });
+    const needsOriginLocker = watchedShippingMethods?.includes('ltl') || watchedShippingMethods?.includes('ltd');
+
     useEffect(() => {
         const phone = initialData.phone || '';
         const countryCode = countryCodes.find(c => phone.startsWith(c.value));
@@ -144,7 +145,12 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         form.setValue('phone', fullPhoneNumber, { shouldValidate: nationalPhoneNumber.length > 5, shouldDirty: true });
     }, [selectedCountryCode, nationalPhoneNumber, form]);
 
-    // --- GOOGLE MAPS INTEGRATION ---
+    useEffect(() => {
+      if (!needsOriginLocker) {
+        form.setValue('originLocker', null, { shouldDirty: true });
+      }
+    }, [needsOriginLocker, form]);
+
     const initializeMap = useCallback((lat: number, lng: number) => {
         if (mapInitialized.current || !mapContainerRef.current) return;
         mapInitialized.current = true;
@@ -180,19 +186,19 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         if (initialData.latitude && initialData.longitude) {
             initializeMap(initialData.latitude, initialData.longitude);
         } else {
-             initializeMap(-29.85, 31.02); // Default to Durban
+             initializeMap(-29.85, 31.02);
         }
     }, [initialData, initializeMap]);
 
-    // --- SUBMIT LOGIC (UNCHANGED) ---
     async function onSubmit(data: EditDispensaryFormData) {
         if (!dispensaryId || !isSuperAdmin) return;
         setIsSubmitting(true);
         
         const updateData: { [key: string]: any } = { 
             ...data, 
-            showLocation: data.showLocation, // Ensure boolean is passed correctly
-            lastActivityDate: serverTimestamp() 
+            showLocation: data.showLocation,
+            lastActivityDate: serverTimestamp(),
+            originLocker: data.originLocker || null,
         };
 
         try {
@@ -217,7 +223,51 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         }
     }
 
+    const fetchLockers = async () => {
+        if (!watchedCity) {
+            setLockerError('Please enter a city to find nearby lockers.');
+            return;
+        }
+        setIsFetchingLockers(true);
+        setLockerError(null);
+        try {
+          const result = await getPudoLockers({ city: watchedCity });
+          const lockerData = (result.data as any)?.data as PUDOLocker[];
+          if (lockerData && lockerData.length > 0) {
+              setPudoLockers(lockerData);
+          } else {
+              setLockerError('No Pudo lockers found for the specified city. Please check the spelling or try a nearby major city.');
+          }
+        } catch (error) {
+            console.error("Error fetching Pudo lockers:", error);
+            const message = error instanceof FunctionsError ? error.message : "An unexpected error occurred while fetching lockers.";
+            setLockerError(message);
+        } finally {
+            setIsFetchingLockers(false);
+        }
+    };
+
+    const handleOpenLockerModal = () => {
+        setPudoLockers([]);
+        setLockerSearchTerm('');
+        setLockerError(null);
+        fetchLockers();
+        setIsLockerModalOpen(true);
+    }
+
+    function handleLockerSelect(locker: PUDOLocker) {
+      form.setValue('originLocker', locker, { shouldValidate: true, shouldDirty: true });
+      setIsLockerModalOpen(false);
+    }
+
+    const filteredLockers = useMemo(() => 
+      pudoLockers.filter(locker => 
+          locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
+          (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+      ), [pudoLockers, lockerSearchTerm]);
+
     return (
+      <>
         <div className="container mx-auto px-4 py-8">
             <Card className="max-w-4xl mx-auto my-8 shadow-xl bg-card">
             <CardHeader>
@@ -277,6 +327,33 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
                                 </div>
                                 <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
                                 <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods</FormLabel><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
+                                
+                                {needsOriginLocker && (
+                                  <FormItem>
+                                    <FormLabel>Origin Locker for LTL/LTD Shipping</FormLabel>
+                                    <Card className="border-dashed">
+                                      <CardContent className="p-4">
+                                        {watchedOriginLocker ? (
+                                          <div className="flex items-center justify-between">
+                                            <div>
+                                              <p className="font-semibold">{watchedOriginLocker.name}</p>
+                                              <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
+                                            </div>
+                                            <Button variant="outline" type="button" onClick={handleOpenLockerModal}>Change Locker</Button>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center justify-center flex-col gap-2 text-center">
+                                            <MapPin className="w-10 h-10 text-muted-foreground" />
+                                            <p className="text-muted-foreground mb-2">An origin locker is required. Please enter a city first.</p>
+                                            <Button onClick={handleOpenLockerModal} type="button" disabled={!watchedCity}>Select Origin Locker</Button>
+                                          </div>
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+
                                 <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a radius..." /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(o => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="A short bio..." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                             </div>
@@ -292,6 +369,43 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
                 </Form>
             </CardContent>
         </Card>
-    </div>
+      </div>
+
+       <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+                <DialogTitle>Select an Origin Locker</DialogTitle>
+                <DialogDescription>
+                   Search for Pudo lockers in the dispensary&apos;s city. This will be the default collection point.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input placeholder={`Search lockers in ${watchedCity || 'your city'}...`} value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
+            </div>
+            <div className="mt-4 max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                {isFetchingLockers ? (
+                    <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className='ml-3'>Fetching lockers...</p></div>
+                ) : lockerError ? (
+                    <p className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{lockerError}</p>
+                ) : filteredLockers.length > 0 ? (
+                    filteredLockers.map(locker => (
+                        <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-3 text-left" onClick={() => handleLockerSelect(locker)}>
+                            <div>
+                                <p className="font-semibold">{locker.name}</p>
+                                <p className="text-sm text-muted-foreground">{locker.address}</p>
+                            </div>
+                        </Button>
+                    ))
+                ) : (
+                    <p className="text-center text-muted-foreground py-8">No lockers found for this city.</p>
+                )}
+            </div>
+            <DialogFooter>
+                <Button variant="secondary" onClick={() => setIsLockerModalOpen(false)}>Cancel</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
     );
 }

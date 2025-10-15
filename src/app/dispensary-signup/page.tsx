@@ -1,5 +1,5 @@
 'use client';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { dispensarySignupSchema, type DispensarySignupFormData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
@@ -9,16 +9,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Building } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '@/lib/firebase';
+import { Loader2, ArrowLeft, Building, MapPin, Search } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { db, functions } from '@/lib/firebase';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
-import type { DispensaryType } from '@/types';
+import type { DispensaryType, PUDOLocker } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 
-// --- CONSTANTS ---
+
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" }, { value: "USD", label: "💵 USD (US Dollar)" },
@@ -33,23 +35,30 @@ const allShippingMethods = [
     { id: "ltd", label: "LTD - Locker to Door (Pudo)" }, { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
     { id: "collection", label: "Collection from store" }, { id: "in_house", label: "In-house delivery service" },
 ];
-const countryCodes = [{ value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" }]; // Simplified for ZA focus
+const countryCodes = [{ value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" }];
 
-// --- MAIN COMPONENT ---
+const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
+
+
 export default function WellnessSignupPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
+  
+  const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
+  const [pudoLockers, setPudoLockers] = useState<PUDOLocker[]>([]);
+  const [isFetchingLockers, setIsFetchingLockers] = useState(false);
+  const [lockerSearchTerm, setLockerSearchTerm] = useState('');
+  const [lockerError, setLockerError] = useState<string | null>(null);
 
-  // --- REFS AND STATE ---
+
   const locationInputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInitialized = useRef(false);
   const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
-  // --- FORM SETUP ---
   const form = useForm<DispensarySignupFormData>({
     resolver: zodResolver(dispensarySignupSchema),
     mode: "onChange",
@@ -61,11 +70,15 @@ export default function WellnessSignupPage() {
       latitude: undefined, longitude: undefined,
       showLocation: true, deliveryRadius: 'none',
       message: '', acceptTerms: false,
-      openTime: '', closeTime: '',
+      openTime: '', closeTime: '', originLocker: null,
     },
   });
 
-  // --- DATA FETCHING ---
+  const watchedShippingMethods = useWatch({ control: form.control, name: 'shippingMethods' });
+  const watchedOriginLocker = useWatch({ control: form.control, name: 'originLocker' });
+  const watchedCity = useWatch({ control: form.control, name: 'city' });
+  const needsOriginLocker = watchedShippingMethods?.includes('ltl') || watchedShippingMethods?.includes('ltd');
+
   useEffect(() => {
     const fetchWellnessTypes = async () => {
       try {
@@ -79,7 +92,6 @@ export default function WellnessSignupPage() {
     fetchWellnessTypes();
   }, [toast]);
 
-  // --- GOOGLE MAPS INTEGRATION ---
   const initializeMap = useCallback(() => {
     if (mapInitialized.current || !mapContainerRef.current) return;
     
@@ -155,13 +167,17 @@ export default function WellnessSignupPage() {
     }
   }, [initializeMap]);
   
-  // --- FORM FIELD SYNC ---
   useEffect(() => {
     const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
 
-  // --- FORM SUBMISSION ---
+  useEffect(() => {
+    if (!needsOriginLocker) {
+      form.setValue('originLocker', null);
+    }
+  }, [needsOriginLocker, form]);
+
   async function onSubmit(data: DispensarySignupFormData) {
     setIsLoading(true);
     
@@ -171,6 +187,7 @@ export default function WellnessSignupPage() {
       applicationDate: Timestamp.fromDate(new Date()),
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null,
+      originLocker: data.originLocker ?? null,
     };
 
     try {
@@ -185,7 +202,49 @@ export default function WellnessSignupPage() {
     }
   }
   
-  // --- SUCCESS STATE RENDER ---
+  const fetchLockers = async () => {
+      if (!watchedCity) {
+          setLockerError('Please enter a city to find nearby lockers.');
+          return;
+      }
+      setIsFetchingLockers(true);
+      setLockerError(null);
+      try {
+        const result = await getPudoLockers({ city: watchedCity });
+        const lockerData = (result.data as any)?.data as PUDOLocker[];
+        if (lockerData && lockerData.length > 0) {
+            setPudoLockers(lockerData);
+        } else {
+            setLockerError('No Pudo lockers found for the specified city. Please check the spelling or try a nearby major city.');
+        }
+      } catch (error) {
+          console.error("Error fetching Pudo lockers:", error);
+          const message = error instanceof FunctionsError ? error.message : "An unexpected error occurred while fetching lockers.";
+          setLockerError(message);
+      } finally {
+          setIsFetchingLockers(false);
+      }
+  };
+  
+  const handleOpenLockerModal = () => {
+      setPudoLockers([]);
+      setLockerSearchTerm('');
+      setLockerError(null);
+      fetchLockers();
+      setIsLockerModalOpen(true);
+  }
+
+  function handleLockerSelect(locker: PUDOLocker) {
+    form.setValue('originLocker', locker, { shouldValidate: true, shouldDirty: true });
+    setIsLockerModalOpen(false);
+  }
+
+  const filteredLockers = useMemo(() => 
+    pudoLockers.filter(locker => 
+        locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
+        (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+    ), [pudoLockers, lockerSearchTerm]);
+  
   if (isSuccess) {
     return (
         <div className="container mx-auto flex h-screen items-center justify-center">
@@ -205,101 +264,165 @@ export default function WellnessSignupPage() {
     );
   }
 
-  // --- FORM RENDER ---
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-4xl mx-auto my-8 shadow-xl">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground">
-              <Building className="mr-3 h-8 w-8 text-primary" /> Dispensary Signup
-            </CardTitle>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
-            </Button>
-          </div>
-          <CardDescription>Join our network by filling in the details below.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
-              
-              <section>
-                <h2 className="text-xl font-semibold border-b pb-2 text-foreground">Owner & Store Information</h2>
-                <div className="grid md:grid-cols-2 gap-6 mt-4">
-                  <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="ownerEmail" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="e.g., owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="dispensaryName" render={({ field }) => (<FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="e.g., The Green Leaf" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="dispensaryType" render={({ field }) => (<FormItem><FormLabel>Store Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                </div>
-              </section>
-              
-              <section>
-                <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Contact</h2>
-                <div className="mt-4 space-y-6">
-                    <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
-                    <FormItem>
-                        <FormLabel>Location Search</FormLabel>
-                        <FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl>
-                        <FormDescription>Select an address to auto-fill the fields below. You can also click the map or drag the pin.</FormDescription>
-                    </FormItem>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-
-                    <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
-
-                    <FormField control={form.control} name="phone" render={() => (
-                        <FormItem><FormLabel>Phone Number</FormLabel>
-                            <div className="flex items-center gap-2">
-                                <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
-                                <SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent>
-                                </Select>
-                                <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
-                            </div>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel>Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                </div>
-              </section>
-              
-              <section>
-                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Operations & Services</h2>
-                <div className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                        <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-                    <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
-                    <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods</FormLabel><FormDescription>Select all the ways you can get products to customers.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
-                    <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
-                </div>
-              </section>
-
-              <div className="pt-4">
-                <FormField control={form.control} name="acceptTerms" render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                    <div className="space-y-1 leading-none"><FormLabel>I accept the <Link href="/terms" target="_blank" className="underline text-primary hover:text-primary/80">Terms of Usage Agreement</Link>.</FormLabel></div>
-                    </FormItem>
-                )}/>
-                <FormMessage className="mt-2 ml-1 text-sm text-red-500">{form.formState.errors.acceptTerms?.message}</FormMessage>
-              </div>
-
-              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}>
-                {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />} Submit Application
+    <>
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-4xl mx-auto my-8 shadow-xl">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-3xl flex items-center text-foreground">
+                <Building className="mr-3 h-8 w-8 text-primary" /> Dispensary Signup
+              </CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
               </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+            <CardDescription>Join our network by filling in the details below.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+                
+                <section>
+                  <h2 className="text-xl font-semibold border-b pb-2 text-foreground">Owner & Store Information</h2>
+                  <div className="grid md:grid-cols-2 gap-6 mt-4">
+                    <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="ownerEmail" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="e.g., owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="dispensaryName" render={({ field }) => (<FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="e.g., The Green Leaf" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="dispensaryType" render={({ field }) => (<FormItem><FormLabel>Store Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                  </div>
+                </section>
+                
+                <section>
+                  <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Contact</h2>
+                  <div className="mt-4 space-y-6">
+                      <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
+                      <FormItem>
+                          <FormLabel>Location Search</FormLabel>
+                          <FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl>
+                          <FormDescription>Select an address to auto-fill the fields below. You can also click the map or drag the pin.</FormDescription>
+                      </FormItem>
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                      </div>
+
+                      <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
+
+                      <FormField control={form.control} name="phone" render={() => (
+                          <FormItem><FormLabel>Phone Number</FormLabel>
+                              <div className="flex items-center gap-2">
+                                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
+                                  <SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent>
+                                  </Select>
+                                  <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
+                              </div>
+                              <FormMessage />
+                          </FormItem>
+                      )} />
+                      <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel>Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                  </div>
+                </section>
+                
+                <section>
+                  <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Operations & Services</h2>
+                  <div className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                          <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                      </div>
+                      <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
+                      <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods</FormLabel><FormDescription>Select all the ways you can get products to customers.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
+
+                      {needsOriginLocker && (
+                        <FormItem>
+                          <FormLabel>Origin Locker for LTL/LTD Shipping</FormLabel>
+                          <Card className="border-dashed">
+                            <CardContent className="p-4">
+                              {watchedOriginLocker ? (
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="font-semibold">{watchedOriginLocker.name}</p>
+                                    <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
+                                  </div>
+                                  <Button variant="outline" onClick={handleOpenLockerModal}>Change Locker</Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center flex-col gap-2 text-center">
+                                  <MapPin className="w-10 h-10 text-muted-foreground" />
+                                  <p className="text-muted-foreground mb-2">An origin locker is required for this shipping method. Please enter your address and city first.</p>
+                                  <Button onClick={handleOpenLockerModal} disabled={!watchedCity}>Select Origin Locker</Button>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+
+                      <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
+                  </div>
+                </section>
+
+                <div className="pt-4">
+                  <FormField control={form.control} name="acceptTerms" render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                      <div className="space-y-1 leading-none"><FormLabel>I accept the <Link href="/terms" target="_blank" className="underline text-primary hover:text-primary/80">Terms of Usage Agreement</Link>.</FormLabel></div>
+                      </FormItem>
+                  )}/>
+                  <FormMessage className="mt-2 ml-1 text-sm text-red-500">{form.formState.errors.acceptTerms?.message}</FormMessage>
+                </div>
+
+                <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || (form.formState.isSubmitted && !form.formState.isValid)}>
+                  {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />} Submit Application
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+
+     <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+                <DialogTitle>Select an Origin Locker</DialogTitle>
+                <DialogDescription>
+                   Search for Pudo lockers in your city. This will be the default collection point for locker-based shipments.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input placeholder={`Search lockers in ${watchedCity || 'your city'}...`} value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
+            </div>
+            <div className="mt-4 max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                {isFetchingLockers ? (
+                    <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className='ml-3'>Fetching lockers...</p></div>
+                ) : lockerError ? (
+                    <p className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{lockerError}</p>
+                ) : filteredLockers.length > 0 ? (
+                    filteredLockers.map(locker => (
+                        <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-3 text-left" onClick={() => handleLockerSelect(locker)}>
+                            <div>
+                                <p className="font-semibold">{locker.name}</p>
+                                <p className="text-sm text-muted-foreground">{locker.address}</p>
+                            </div>
+                        </Button>
+                    ))
+                ) : (
+                    <p className="text-center text-muted-foreground py-8">No lockers found. Please refine your city or search term.</p>
+                )}
+            </div>
+            <DialogFooter>
+                <Button variant="secondary" onClick={() => setIsLockerModalOpen(false)}>Cancel</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

@@ -1,4 +1,13 @@
 
+export interface PUDOLocker {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+}
+
 export interface Dispensary {
   id?: string;
   dispensaryName: string;
@@ -23,6 +32,7 @@ export interface Dispensary {
   bio?: string;
   currency: 'ZAR' | 'USD' | 'EUR' | 'GBP';
   minimumOrderAmount?: number;
+  originLocker?: PUDOLocker | null;
 }
 
 export interface PriceTier {

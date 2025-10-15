@@ -24,7 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Loader } from '@googlemaps/js-api-loader';
 
-const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', Fri', Sat', Sun'];
+const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" }, { value: "USD", label: "💵 USD (US Dollar)" },

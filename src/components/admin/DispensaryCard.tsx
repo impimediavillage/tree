@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, Building, Mail, MapPin, Tag, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, Building, Mail, MapPin, Tag, Clock, CheckCircle, XCircle, AlertTriangle, Package } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface DispensaryCardProps {
@@ -48,6 +48,14 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete, isSuper
     }
   };
 
+  const fullAddress = [
+    wellness.streetAddress,
+    wellness.suburb,
+    wellness.city,
+    wellness.province,
+    wellness.postalCode,
+  ].filter(Boolean).join(', ');
+
   return (
     <Card 
       className="w-full flex-shrink-0 shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card text-card-foreground animate-fade-in-scale-up"
@@ -77,11 +85,19 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete, isSuper
           <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <span className="truncate" title={wellness.dispensaryType}>{wellness.dispensaryType}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="truncate" title={wellness.location}>{wellness.location}</span>
+        <div className="flex items-start gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <span className="truncate" title={fullAddress}>{fullAddress || 'No address specified'}</span>
         </div>
-        <div className="flex items-center gap-2">
+        {wellness.originLocker && (
+          <div className="flex items-start gap-2 text-purple-600">
+            <Package className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span className="truncate font-medium" title={`${wellness.originLocker.name} (${wellness.originLocker.address})`}>
+              Origin: {wellness.originLocker.name}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-2 pt-1">
           <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <span>Applied: {formatDate(wellness.applicationDate)}</span>
         </div>
