@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,16 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Clock, Save, ArrowLeft, Store as StoreIcon, Truck } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Loader2, Save, ArrowLeft, Store as StoreIcon, MapPin, Search } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db } from '@/lib/firebase';
+import { db, functions } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { ownerEditDispensarySchema, type OwnerEditDispensaryFormData } from '@/lib/schemas';
-import type { Dispensary, DispensaryType } from '@/types';
+import type { Dispensary, PUDOLocker } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Loader } from '@googlemaps/js-api-loader';
@@ -29,33 +29,15 @@ const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const currencyOptions = [
   { value: "ZAR", label: "🇿🇦 ZAR (South African Rand)" }, { value: "USD", label: "💵 USD (US Dollar)" },
   { value: "EUR", label: "💶 EUR (Euro)" }, { value: "GBP", label: "💷 GBP (British Pound)" },
-  { value: "AUD", label: "🇦🇺 AUD (Australian Dollar)" },
 ];
 
 const deliveryRadiusOptions = [
   { value: "none", label: "No same-day delivery" }, { value: "5", label: "5 km" },
   { value: "10", label: "10 km" }, { value: "20", label: "20 km" }, { value: "50", label: "50 km" },
-  { value: "100", label: "100 km" },
 ];
-
-const hourOptions = Array.from({ length: 12 }, (_, i) => ({ value: (i + 1).toString(), label: (i + 1).toString().padStart(2, '0') }));
-const minuteOptions = [ { value: "00", label: "00" }, { value: "15", label: "15" }, { value: "30", label: "30" }, { value: "45", label: "45" }];
-const amPmOptions = [ { value: "AM", label: "AM" }, { value: "PM", label: "PM" }];
-
-const wellnessTypeIcons: Record<string, string> = {
-  "THC - CBD - Mushrooms wellness": "/icons/thc-cbd-mushroom.png",
-  "Homeopathic wellness": "/icons/homeopathy.png",
-  "African Traditional Medicine wellness": "/icons/traditional-medicine.png",
-  "Flower Store": "/icons/default-pin.png",
-  "Permaculture & gardening store": "/icons/permaculture.png",
-  "default": "/icons/default-pin.png"
-};
 
 const countryCodes = [
   { value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" },
-  { value: "+1",  flag: "🇺🇸", shortName: "US", code: "+1" },
-  { value: "+44", flag: "🇬🇧", shortName: "GB", code: "+44" },
-  { value: "+61", flag: "🇦🇺", shortName: "AU", code: "+61" },
 ];
 
 const allShippingMethods = [
@@ -67,295 +49,405 @@ const allShippingMethods = [
   { id: "in_house", label: "In-house delivery service" },
 ];
 
-function parseTimeToComponents(time24?: string): { hour?: string, minute?: string, amPm?: string } {
-    if (!time24 || !time24.match(/^([01]\d|2[0-3]):([0-5]\d)$/)) return {};
-    const [hourStr, minuteStr] = time24.split(':');
-    let hour = parseInt(hourStr, 10);
-    const amPm = hour >= 12 ? 'PM' : 'AM';
-    hour = hour % 12;
-    if (hour === 0) hour = 12; // 12 PM or 12 AM
-    return { hour: hour.toString(), minute: minuteStr, amPm };
-}
+const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
 
 export default function WellnessOwnerProfilePage() {
+    const { currentUser, currentDispensary, loading: authLoading } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!authLoading && !currentDispensary) {
+            toast({ title: "Not Found", description: "Your dispensary profile could not be found.", variant: "destructive" });
+            router.push('/dispensary-admin/dashboard');
+        }
+        if (!authLoading && currentDispensary) {
+            setIsLoading(false);
+        }
+    }, [currentDispensary, authLoading, router, toast]);
+
+    if (isLoading || !currentDispensary) {
+        return (
+            <div className="max-w-4xl mx-auto my-8 p-6 space-y-8">
+                <Skeleton className="h-12 w-1/3" />
+                <Skeleton className="h-10 w-2/3" />
+                <div className="space-y-4 pt-6">
+                    <Skeleton className="h-96 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-1/2" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
+            </div>
+        );
+    }
+
+    return <EditProfileForm dispensary={currentDispensary} user={currentUser} />;
+}
+
+function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: any }) {
     const { toast } = useToast();
     const router = useRouter();
-    const { currentUser, currentDispensary, loading: authLoading } = useAuth();
-
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const [openHour, setOpenHour] = useState<string | undefined>();
-    const [openMinute, setOpenMinute] = useState<string | undefined>();
-    const [openAmPm, setOpenAmPm] = useState<string | undefined>();
-    const [isOpentimePopoverOpen, setIsOpenTimePopoverOpen] = useState(false);
-
-    const [closeHour, setCloseHour] = useState<string | undefined>();
-    const [closeMinute, setCloseMinute] = useState<string | undefined>();
-    const [closeAmPm, setCloseAmPm] = useState<string | undefined>();
-    const [isCloseTimePopoverOpen, setIsCloseTimePopoverOpen] = useState(false);
-
-    const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
-    const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
-
     const locationInputRef = useRef<HTMLInputElement>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInitialized = useRef(false);
-    
+
+    const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
+    const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
+
+    const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
+    const [pudoLockers, setPudoLockers] = useState<PUDOLocker[]>([]);
+    const [isFetchingLockers, setIsFetchingLockers] = useState(false);
+    const [lockerSearchTerm, setLockerSearchTerm] = useState('');
+    const [lockerError, setLockerError] = useState<string | null>(null);
+
     const form = useForm<OwnerEditDispensaryFormData>({
         resolver: zodResolver(ownerEditDispensarySchema),
         mode: "onChange",
+        defaultValues: {
+            dispensaryName: dispensary.dispensaryName || '',
+            phone: dispensary.phone || '',
+            streetAddress: dispensary.streetAddress || '',
+            suburb: dispensary.suburb || '',
+            city: dispensary.city || '',
+            province: dispensary.province || '',
+            postalCode: dispensary.postalCode || '',
+            country: dispensary.country || '',
+            latitude: dispensary.latitude === null ? undefined : dispensary.latitude,
+            longitude: dispensary.longitude === null ? undefined : dispensary.longitude,
+            showLocation: dispensary.showLocation ?? true,
+            openTime: dispensary.openTime || '',
+            closeTime: dispensary.closeTime || '',
+            operatingDays: dispensary.operatingDays || [],
+            shippingMethods: dispensary.shippingMethods || [],
+            deliveryRadius: dispensary.deliveryRadius || 'none',
+            message: dispensary.message || '',
+            originLocker: dispensary.originLocker || null,
+        },
     });
 
+    const watchedShippingMethods = useWatch({ control: form.control, name: 'shippingMethods' });
+    const watchedOriginLocker = useWatch({ control: form.control, name: 'originLocker' });
+    const watchedLatitude = useWatch({ control: form.control, name: 'latitude' });
+    const watchedLongitude = useWatch({ control: form.control, name: 'longitude' });
+
+    const locationIsSet = useMemo(() => watchedLatitude !== undefined && watchedLongitude !== undefined, [watchedLatitude, watchedLongitude]);
+
+    const needsOriginLocker = useMemo(() => 
+        watchedShippingMethods?.includes('ltl') || watchedShippingMethods?.includes('ltd'), 
+        [watchedShippingMethods]
+    );
+
     useEffect(() => {
-        const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
+        if (dispensary.phone) {
+            const foundCountry = countryCodes.find(cc => dispensary.phone!.startsWith(cc.value));
+            if (foundCountry) {
+                setSelectedCountryCode(foundCountry.value);
+                setNationalPhoneNumber(dispensary.phone!.substring(foundCountry.value.length));
+            } else {
+                setNationalPhoneNumber(dispensary.phone);
+            }
+        }
+    }, [dispensary.phone]);
+
+    useEffect(() => {
+        const justDigits = nationalPhoneNumber.replace(/\D/g, '');
+        const combinedPhoneNumber = `${selectedCountryCode}${justDigits}`;
         form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
     }, [selectedCountryCode, nationalPhoneNumber, form]);
-    
-    const initializeMap = useCallback(async (profile: Dispensary) => {
-        if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
 
+    useEffect(() => {
+        if (!needsOriginLocker) {
+          form.setValue('originLocker', null, { shouldDirty: true });
+        }
+    }, [needsOriginLocker, form]);
+
+    const initializeMap = useCallback(() => {
+        if (mapInitialized.current || !mapContainerRef.current) return;
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         if (!apiKey) {
-            console.error("Google Maps API key is missing.");
-            toast({ title: "Map Error", description: "Google Maps API key is not configured.", variant: "destructive"});
+            toast({ title: "Map Error", description: "Google Maps API key not configured.", variant: "destructive" });
             return;
         }
-
         mapInitialized.current = true;
-    
-        try {
-            const loader = new Loader({
-                apiKey: apiKey,
-                version: 'weekly',
-                libraries: ['places'],
-            });
-    
-            const google = await loader.load();
-            const { Map } = google.maps;
-            const { Marker } = google.maps;
-    
-            const lat = profile.latitude ?? -29.8587;
-            const lng = profile.longitude ?? 31.0218;
-            const zoom = (profile.latitude && profile.longitude) ? 17 : 6;
-            let iconUrl = wellnessTypeIcons[profile.dispensaryType] || wellnessTypeIcons.default;
-    
-            const map = new Map(mapContainerRef.current!, { center: { lat, lng }, zoom, mapId: 'b39f3f8b7139051d', mapTypeControl: false, streetViewControl: false });
-            const marker = new Marker({ position: { lat, lng }, map, draggable: true, icon: { url: iconUrl, scaledSize: new google.maps.Size(40, 40), anchor: new google.maps.Point(20, 40) } });
-            const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, { fields: ["formatted_address", "geometry.location"], types: ["address"] });
-    
-            autocomplete.addListener("place_changed", () => {
-                const place = autocomplete.getPlace();
-                if (place.formatted_address) form.setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true });
-                if (place.geometry?.location) {
-                    const loc = place.geometry.location;
-                    form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
-                    form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
-                    map.setCenter(loc);
-                    map.setZoom(17);
-                    marker.setPosition(loc);
-                }
-            });
-    
+
+        const loader = new Loader({ apiKey, version: 'weekly', libraries: ['places', 'geocoding'] });
+
+        loader.load().then(google => {
+            const initialLatLng = {
+                lat: form.getValues('latitude') || -29.8587,
+                lng: form.getValues('longitude') || 31.0218
+            };
+
+            const map = new google.maps.Map(mapContainerRef.current!, { center: initialLatLng, zoom: 12, mapId: 'b39f3f8b7139051d' });
+            const marker = new google.maps.Marker({ position: initialLatLng, map, draggable: true });
             const geocoder = new google.maps.Geocoder();
+
+            const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string): string =>
+                components.find(c => c.types.includes(type))?.long_name || '';
+
+            const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
+                const components = place.address_components;
+                if (!components) return;
+                
+                const streetNumber = getAddressComponent(components, 'street_number');
+                const route = getAddressComponent(components, 'route');
+                
+                form.setValue('streetAddress', `${streetNumber} ${route}`.trim(), { shouldValidate: true, shouldDirty: true });
+                form.setValue('suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('city', getAddressComponent(components, 'administrative_area_level_2') || getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
+                form.setValue('country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
+
+                if (locationInputRef.current) {
+                    locationInputRef.current.value = place.formatted_address || '';
+                }
+            };
+
+            if (locationInputRef.current) {
+                const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, { fields: ["address_components", "formatted_address", "geometry.location"], types: ["address"], componentRestrictions: { country: "za" } });
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+                    if (place.geometry?.location) {
+                        const loc = place.geometry.location;
+                        marker.setPosition(loc); map.setCenter(loc); map.setZoom(17);
+                        form.setValue('latitude', loc.lat(), { shouldValidate: true, shouldDirty: true });
+                        form.setValue('longitude', loc.lng(), { shouldValidate: true, shouldDirty: true });
+                        setAddressFields(place);
+                    }
+                });
+            }
+
             const handleMapInteraction = (pos: google.maps.LatLng) => {
-                marker.setPosition(pos);
-                map.panTo(pos);
+                marker.setPosition(pos); map.panTo(pos);
                 form.setValue('latitude', pos.lat(), { shouldValidate: true, shouldDirty: true });
                 form.setValue('longitude', pos.lng(), { shouldValidate: true, shouldDirty: true });
                 geocoder.geocode({ location: pos }, (results, status) => {
                     if (status === 'OK' && results?.[0]) {
-                        form.setValue('location', results[0].formatted_address, { shouldValidate: true, shouldDirty: true });
+                        setAddressFields(results[0]);
                     }
                 });
             };
-    
+
             map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
             marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
-    
-        } catch (e) {
-          console.error('Error loading Google Maps:', e);
-          toast({ title: 'Map Error', description: 'Could not load Google Maps. Please try refreshing the page.', variant: 'destructive'});
-        }
+
+        }).catch(e => {
+            console.error("Google Maps Error:", e);
+            toast({ title: "Map Error", description: "Could not load Google Maps.", variant: "destructive" });
+        });
     }, [form, toast]);
 
     useEffect(() => {
-        if (!authLoading && currentDispensary) {
-            form.reset({
-                ...currentDispensary,
-                latitude: currentDispensary.latitude === null ? undefined : currentDispensary.latitude,
-                longitude: currentDispensary.longitude === null ? undefined : currentDispensary.longitude,
-                operatingDays: currentDispensary.operatingDays || [],
-                shippingMethods: currentDispensary.shippingMethods || [],
-            });
-            
-            const openTimeComps = parseTimeToComponents(currentDispensary.openTime);
-            setOpenHour(openTimeComps.hour); setOpenMinute(openTimeComps.minute); setOpenAmPm(openTimeComps.amPm);
-            
-            const closeTimeComps = parseTimeToComponents(currentDispensary.closeTime);
-            setCloseHour(closeTimeComps.hour); setCloseMinute(closeTimeComps.minute); setCloseAmPm(closeTimeComps.amPm);
-
-            if (currentDispensary.phone) {
-                const foundCountry = countryCodes.find(cc => currentDispensary.phone!.startsWith(cc.value));
-                if (foundCountry) {
-                    setSelectedCountryCode(foundCountry.value);
-                    setNationalPhoneNumber(currentDispensary.phone!.substring(foundCountry.value.length));
-                } else { setNationalPhoneNumber(currentDispensary.phone); }
-            }
-            
-            initializeMap(currentDispensary);
-        } else if (!authLoading && !currentDispensary) {
-            toast({ title: "Not Found", description: "Your wellness profile could not be found.", variant: "destructive" });
-            router.push('/dispensary-admin/dashboard');
+        if (typeof window !== 'undefined' && !mapInitialized.current) {
+            initializeMap();
         }
-    }, [currentDispensary, authLoading, router, toast, form, initializeMap]);
-    
-    const formatTo24Hour = (hourStr?: string, minuteStr?: string, amPmStr?: string): string => {
-        if (!hourStr || !minuteStr || !amPmStr) return '';
-        let hour = parseInt(hourStr, 10);
-        if (amPmStr === 'PM' && hour !== 12) hour += 12;
-        else if (amPmStr === 'AM' && hour === 12) hour = 0;
-        return `${hour.toString().padStart(2, '0')}:${minuteStr}`;
-    };
-
-    useEffect(() => { form.setValue('openTime', formatTo24Hour(openHour, openMinute, openAmPm), { shouldValidate: true, shouldDirty: true }); }, [openHour, openMinute, openAmPm, form]);
-    useEffect(() => { form.setValue('closeTime', formatTo24Hour(closeHour, closeMinute, closeAmPm), { shouldValidate: true, shouldDirty: true }); }, [closeHour, closeMinute, closeAmPm, form]);
+    }, [initializeMap]);
 
     async function onSubmit(data: OwnerEditDispensaryFormData) {
-        if (!currentDispensary?.id) return;
+        if (!dispensary.id) return;
         setIsSubmitting(true);
         try {
-            const wellnessDocRef = doc(db, 'dispensaries', currentDispensary.id);
-            const updateData = { ...data, lastActivityDate: serverTimestamp() };
-            await updateDoc(wellnessDocRef, updateData as any);
-            toast({ title: "Profile Updated", description: "Your wellness profile has been successfully updated." });
+            const dispensaryDocRef = doc(db, 'dispensaries', dispensary.id);
+            const updateData: { [key: string]: any } = { 
+                ...data, 
+                lastActivityDate: serverTimestamp(),
+                originLocker: data.originLocker || null,
+            };
+            await updateDoc(dispensaryDocRef, updateData);
+            toast({ title: "Profile Updated", description: "Your dispensary profile has been successfully updated." });
             router.push('/dispensary-admin/dashboard');
         } catch (error) {
-            toast({ title: "Update Failed", description: "Could not update your profile.", variant: "destructive" });
+            console.error("Profile update error:", error);
+            toast({ title: "Update Failed", description: "An unexpected error occurred. Please try again.", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
     }
 
-     const formatTo12HourDisplay = (time24?: string): string => {
-        if (!time24 || !time24.match(/^([01]\d|2[0-3]):([0-5]\d)$/)) return "Select Time";
-        const [hour24Str, minuteStr] = time24.split(':');
-        let hour24 = parseInt(hour24Str, 10);
-        const amPm = hour24 >= 12 ? 'PM' : 'AM';
-        let hour12 = hour24 % 12;
-        if (hour12 === 0) hour12 = 12;
-        return `${hour12.toString().padStart(2, '0')}:${minuteStr} ${amPm}`;
+    const fetchLockers = async () => {
+        const lat = form.getValues('latitude');
+        const lng = form.getValues('longitude');
+
+        if (lat === undefined || lng === undefined) {
+            setLockerError('Your dispensary location is not set. Please set a location on the map to find nearby lockers.');
+            return;
+        }
+
+        setIsFetchingLockers(true);
+        setLockerError(null);
+        try {
+            const result = await getPudoLockers({ latitude: lat, longitude: lng });
+            const lockerData = (result.data as { data: PUDOLocker[] }).data;
+            if (lockerData && lockerData.length > 0) {
+                setPudoLockers(lockerData);
+            } else {
+                setLockerError('No Pudo lockers found within a 100km radius of your location.');
+            }
+        } catch (error) {
+            const message = error instanceof FunctionsError ? error.message : "An unexpected error occurred while fetching lockers.";
+            setLockerError(message);
+        } finally {
+            setIsFetchingLockers(false);
+        }
     };
-    
-    if (authLoading || !currentDispensary) {
-        return <div className="max-w-3xl mx-auto my-8 p-6 space-y-6"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-8 w-2/3" /><Skeleton className="h-96 w-full mt-4" /><Skeleton className="h-12 w-full mt-4" /></div>;
+
+    const handleOpenLockerModal = () => {
+        setPudoLockers([]);
+        setLockerSearchTerm('');
+        setLockerError(null);
+        fetchLockers();
+        setIsLockerModalOpen(true);
     }
-    
-    const selectedCountryDisplay = countryCodes.find(cc => cc.value === selectedCountryCode);
+
+    function handleLockerSelect(locker: PUDOLocker) {
+      form.setValue('originLocker', locker, { shouldValidate: true, shouldDirty: true });
+      setIsLockerModalOpen(false);
+    }
+
+    const filteredLockers = useMemo(() => 
+      pudoLockers.filter(locker => 
+          locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
+          (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+      ), [pudoLockers, lockerSearchTerm]);
 
     return (
-        <Card className="max-w-3xl mx-auto my-8 shadow-xl">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-3xl flex items-center text-foreground"><StoreIcon className="mr-3 h-8 w-8 text-primary" /> Edit My Profile</CardTitle>
-                    <Button variant="outline" size="sm" asChild><Link href="/dispensary-admin/dashboard"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Link></Button>
-                </div>
-                <CardDescription className="text-foreground">Update your wellness profile details. Your email and full name are linked to your auth account.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <h2 className="text-xl font-semibold border-b pb-2 text-foreground">My Information</h2>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <FormItem><FormLabel>Full Name (Read-only)</FormLabel><Input value={currentUser?.displayName || ''} readOnly disabled /></FormItem>
-                            <FormItem><FormLabel>Email (Read-only)</FormLabel><Input value={currentUser?.email || ''} readOnly disabled /></FormItem>
-                        </div>
+        <>
+            <Card className="max-w-4xl mx-auto my-8 shadow-xl">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-3xl flex items-center text-foreground"><StoreIcon className="mr-3 h-8 w-8 text-primary" /> Edit Dispensary Profile</CardTitle>
+                        <Button variant="outline" size="sm" asChild><Link href="/dispensary-admin/dashboard"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Link></Button>
+                    </div>
+                    <CardDescription>Update your dispensary details. These changes will be reflected on the public website.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+                            
+                            <section>
+                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Core Information</h2>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <FormItem><FormLabel>Owner Name (Read-only)</FormLabel><Input value={user?.displayName || ''} readOnly disabled /></FormItem>
+                                    <FormItem><FormLabel>Owner Email (Read-only)</FormLabel><Input value={user?.email || ''} readOnly disabled /></FormItem>
+                                    <FormField control={form.control} name="dispensaryName" render={({ field }) => ( <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name="phone" render={() => (
+                                        <FormItem><FormLabel>Contact Phone Number</FormLabel>
+                                            <div className="flex items-center gap-2">
+                                                <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue/></SelectTrigger><SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent></Select>
+                                                <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
+                                            </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                </div>
+                            </section>
 
-                        <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Wellness Information</h2>
-                        <FormField control={form.control} name="dispensaryName" render={({ field }) => ( <FormItem><FormLabel>Wellness Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => (
-                             <FormItem>
-                                <FormLabel>Phone Number</FormLabel>
-                                <div className="flex items-center gap-2">
-                                <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0">{selectedCountryDisplay ? <div className="flex items-center gap-1.5"><span>{selectedCountryDisplay.flag}</span><span>{selectedCountryDisplay.code}</span></div> : <SelectValue placeholder="Code" />}</SelectTrigger><SelectContent>{countryCodes.map(cc => <SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.shortName} ({cc.code})</span></div></SelectItem>)}</SelectContent></Select>
-                                <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}/></div>
-                                <FormControl><input type="hidden" {...field} /></FormControl><FormMessage />
-                             </FormItem>
-                        )} />
+                            <section>
+                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Location Details</h2>
+                                <div className="space-y-6">
+                                    <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
+                                    <FormItem><FormLabel>Find Address</FormLabel><FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl></FormItem>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </div>
+                                    <div className="grid md:grid-cols-3 gap-6">
+                                        <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </div>
+                                    <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
+                                </div>
+                            </section>
 
-                        <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Hours</h2>
-                        <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location / Address</FormLabel><FormControl><Input {...field} ref={locationInputRef} /></FormControl><FormDescription>Start typing address or drag marker on map.</FormDescription><FormMessage /></FormItem> )} />
-                        <div ref={mapContainerRef} className="h-96 w-full mt-1 rounded-md border shadow-sm bg-muted" />
-                        <FormField control={form.control} name="latitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
-                        <FormField control={form.control} name="longitude" render={({ field }) => (<FormItem style={{ display: 'none' }}><FormControl><Input type="hidden" {...field} value={field.value ?? ''} /></FormControl><FormMessage/></FormItem>)} />
-                        
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="openTime" render={({ field }) => (
-                                <FormItem className="flex flex-col"><FormLabel>Open Time</FormLabel>
-                                    <Popover open={isOpentimePopoverOpen} onOpenChange={setIsOpenTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : 'Select Time'}</Button></FormControl></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
-                                            <Select value={openHour} onValueChange={setOpenHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                                            <Select value={openMinute} onValueChange={setOpenMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                                            <Select value={openAmPm} onValueChange={setOpenAmPm}><SelectTrigger><SelectValue placeholder="AM/PM" /></SelectTrigger><SelectContent>{amPmOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                                        </div><Button type="button" onClick={() => setIsOpenTimePopoverOpen(false)} className="w-full">Set Time</Button></div></PopoverContent>
-                                    </Popover><FormMessage />
-                                </FormItem>
-                            )} />
-                             <FormField control={form.control} name="closeTime" render={({ field }) => (
-                                <FormItem className="flex flex-col"><FormLabel>Close Time</FormLabel>
-                                    <Popover open={isCloseTimePopoverOpen} onOpenChange={setIsCloseTimePopoverOpen}><PopoverTrigger asChild><FormControl><Button variant="outline" role="combobox" className="w-full justify-start font-normal"><Clock className="mr-2 h-4 w-4 opacity-50" />{field.value ? formatTo12HourDisplay(field.value) : 'Select Time'}</Button></FormControl></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><div className="p-4 space-y-3"><div className="grid grid-cols-3 gap-2">
-                                            <Select value={closeHour} onValueChange={setCloseHour}><SelectTrigger><SelectValue placeholder="Hour" /></SelectTrigger><SelectContent>{hourOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                                            <Select value={closeMinute} onValueChange={setCloseMinute}><SelectTrigger><SelectValue placeholder="Min" /></SelectTrigger><SelectContent>{minuteOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                                            <Select value={closeAmPm} onValueChange={setCloseAmPm}><SelectTrigger><SelectValue placeholder="AM/PM" /></SelectTrigger><SelectContent>{amPmOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select>
-                                        </div><Button type="button" onClick={() => setIsCloseTimePopoverOpen(false)} className="w-full">Set Time</Button></div></PopoverContent>
-                                    </Popover><FormMessage />
-                                </FormItem>
-                            )} />
-                        </div>
-                        <FormField control={form.control} name="operatingDays" render={() => (<FormItem><FormLabel>Days of Operation</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">{weekDays.map((day) => (<FormField key={day} control={form.control} name="operatingDays" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), day]) : field.onChange(field.value?.filter((value) => value !== day)); }}/></FormControl><FormLabel className="font-normal">{day}</FormLabel></FormItem>)}/>))}</div><FormMessage /></FormItem>)}/>
-                        
-                        <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Operations & Delivery</h2>
-                        
-                        <FormField control={form.control} name="shippingMethods" render={() => (
-                          <FormItem>
-                            <FormLabel>Shipping Methods Offered</FormLabel>
-                            <FormDescription>Select all shipping methods your store supports. This will affect options available when you add products.</FormDescription>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {allShippingMethods.map((method) => (
-                                <FormField key={method.id} control={form.control} name="shippingMethods" render={({ field }) => (
-                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-muted/30">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(method.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), method.id])
-                                            : field.onChange(field.value?.filter((value) => value !== method.id))
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal text-sm">{method.label}</FormLabel>
-                                  </FormItem>
-                                )}/>
-                              ))}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}/>
-                        
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || undefined}><FormControl><SelectTrigger><SelectValue placeholder="Select radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                        </div>
-                        
-                        <FormField control={form.control} name="message" render={({ field }) => (
-                        <FormItem><FormLabel>Additional Information (Optional)</FormLabel><FormControl><Textarea placeholder="Notes..." {...field} value={field.value || ''} rows={4} /></FormControl><FormMessage /></FormItem>)} />
+                            <section>
+                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Operations & Services</h2>
+                                <div className="space-y-6">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </div>
+                                    <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
+                                    <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods Offered</FormLabel><FormDescription>Select all shipping methods your store supports.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
 
-                        <div className="flex gap-4 pt-4">
-                            <Button type="submit" size="lg" className="flex-1 text-lg" disabled={isSubmitting || (form.formState.isSubmitted && !form.formState.isValid)}><Save className="mr-2 h-5 w-5" /> Save Changes</Button>
-                        </div>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
+                                    {needsOriginLocker && (
+                                        <FormItem>
+                                            <FormLabel>Origin Locker for LTL/LTD Shipping</FormLabel>
+                                            <Card className="border-dashed">
+                                                <CardContent className="p-4">
+                                                    {watchedOriginLocker ? (
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <p className="font-semibold">{watchedOriginLocker.name}</p>
+                                                                <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
+                                                            </div>
+                                                            <Button variant="outline" type="button" onClick={handleOpenLockerModal}>Change Locker</Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center flex-col gap-2 text-center">
+                                                            <MapPin className="w-10 h-10 text-muted-foreground" />
+                                                            <p className="text-muted-foreground mb-2">An origin locker is required. Please set a location on the map first.</p>
+                                                            <Button onClick={handleOpenLockerModal} type="button" disabled={!locationIsSet}>Select Origin Locker</Button>
+                                                        </div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+
+                                    <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
+                                </div>
+                            </section>
+
+                            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting || !form.formState.isDirty}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+
+            <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
+                <DialogContent className="sm:max-w-[625px]">
+                    <DialogHeader>
+                        <DialogTitle>Select an Origin Locker</DialogTitle>
+                        <DialogDescription>Search for Pudo lockers within a 100km radius of your set location. This will be the default collection point for locker-based shipments.</DialogDescription>
+                    </DialogHeader>
+                    <div className="relative mt-4">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input placeholder={`Search lockers in a 100km radius...`} value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
+                    </div>
+                    <div className="mt-4 max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                        {isFetchingLockers ? (
+                            <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className='ml-3'>Fetching lockers...</p></div>
+                        ) : lockerError ? (
+                            <p className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{lockerError}</p>
+                        ) : filteredLockers.length > 0 ? (
+                            filteredLockers.map(locker => (
+                                <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-3 text-left" onClick={() => handleLockerSelect(locker)}>
+                                    <div>
+                                        <p className="font-semibold">{locker.name} ({locker.distanceKm?.toFixed(2)} km)</p>
+                                        <p className="text-sm text-muted-foreground">{locker.address}</p>
+                                    </div>
+                                </Button>
+                            ))
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">No lockers found. Please refine your search term or check your map location.</p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="secondary" onClick={() => setIsLockerModalOpen(false)}>Cancel</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
+ 

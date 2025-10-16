@@ -9,15 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Building, MapPin, Search } from 'lucide-react';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { db, functions } from '@/lib/firebase';
-import { httpsCallable, FunctionsError } from 'firebase/functions';
+import { Loader2, ArrowLeft, Building } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
-import type { DispensaryType, PUDOLocker } from '@/types';
+import type { DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 
 
@@ -30,14 +28,7 @@ const deliveryRadiusOptions = [
   { value: "none", label: "No same-day delivery" }, { value: "5", label: "5 km" },
   { value: "10", label: "10 km" }, { value: "20", label: "20 km" }, { value: "50", label: "50 km" },
 ];
-const allShippingMethods = [
-    { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" }, { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
-    { id: "ltd", label: "LTD - Locker to Door (Pudo)" }, { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
-    { id: "collection", label: "Collection from store" }, { id: "in_house", label: "In-house delivery service" },
-];
 const countryCodes = [{ value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" }];
-
-const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
 
 
 export default function WellnessSignupPage() {
@@ -46,13 +37,6 @@ export default function WellnessSignupPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   
-  const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
-  const [pudoLockers, setPudoLockers] = useState<PUDOLocker[]>([]);
-  const [isFetchingLockers, setIsFetchingLockers] = useState(false);
-  const [lockerSearchTerm, setLockerSearchTerm] = useState('');
-  const [lockerError, setLockerError] = useState<string | null>(null);
-
-
   const locationInputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInitialized = useRef(false);
@@ -63,21 +47,29 @@ export default function WellnessSignupPage() {
     resolver: zodResolver(dispensarySignupSchema),
     mode: "onChange",
     defaultValues: {
-      fullName: '', phone: '', ownerEmail: '', dispensaryName: '',
-      dispensaryType: undefined, currency: 'ZAR',
-      operatingDays: [], shippingMethods: [],
-      streetAddress: '', suburb: '', city: '', postalCode: '', province: '', country: '',
-      latitude: undefined, longitude: undefined,
-      showLocation: true, deliveryRadius: 'none',
-      message: '', acceptTerms: false,
-      openTime: '', closeTime: '', originLocker: null,
+      fullName: '',
+      phone: '',
+      ownerEmail: '',
+      dispensaryName: '',
+      dispensaryType: undefined,
+      currency: 'ZAR',
+      operatingDays: [],
+      streetAddress: '',
+      suburb: '',
+      city: '',
+      postalCode: '',
+      province: '',
+      country: '',
+      latitude: undefined,
+      longitude: undefined,
+      showLocation: true,
+      deliveryRadius: 'none',
+      message: '',
+      acceptTerms: false,
+      openTime: '',
+      closeTime: '',
     },
   });
-
-  const watchedShippingMethods = useWatch({ control: form.control, name: 'shippingMethods' });
-  const watchedOriginLocker = useWatch({ control: form.control, name: 'originLocker' });
-  const watchedCity = useWatch({ control: form.control, name: 'city' });
-  const needsOriginLocker = watchedShippingMethods?.includes('ltl') || watchedShippingMethods?.includes('ltd');
 
   useEffect(() => {
     const fetchWellnessTypes = async () => {
@@ -86,7 +78,8 @@ export default function WellnessSignupPage() {
         const fetchedTypes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DispensaryType));
         setWellnessTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
       } catch (error) {
-        toast({ title: "Error", description: "Could not load wellness types.", variant: "destructive" });
+        console.error("Error fetching dispensary types:", error);
+        toast({ title: "Error", description: "Could not load required data. Please try again later.", variant: "destructive" });
       }
     };
     fetchWellnessTypes();
@@ -158,7 +151,10 @@ export default function WellnessSignupPage() {
         map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
         marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
 
-    }).catch(e => toast({ title: 'Map Error', description: 'Could not load Google Maps.', variant: 'destructive' }));
+    }).catch(e => {
+        console.error("Error loading Google Maps:", e);
+        toast({ title: 'Map Error', description: 'Could not load Google Maps.', variant: 'destructive' });
+    });
   }, [form, toast]);
 
   useEffect(() => {
@@ -168,26 +164,22 @@ export default function WellnessSignupPage() {
   }, [initializeMap]);
   
   useEffect(() => {
-    const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`;
+    const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`.replace(/\D/g, '');
     form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
   }, [selectedCountryCode, nationalPhoneNumber, form]);
-
-  useEffect(() => {
-    if (!needsOriginLocker) {
-      form.setValue('originLocker', null);
-    }
-  }, [needsOriginLocker, form]);
 
   async function onSubmit(data: DispensarySignupFormData) {
     setIsLoading(true);
     
     const wellnessData = {
       ...data,
+      // Set default empty values for fields moved to admin profile
+      shippingMethods: [],
+      originLocker: null,
       status: 'Pending Approval' as const,
       applicationDate: Timestamp.fromDate(new Date()),
       latitude: data.latitude ?? null,
       longitude: data.longitude ?? null,
-      originLocker: data.originLocker ?? null,
     };
 
     try {
@@ -201,49 +193,6 @@ export default function WellnessSignupPage() {
       setIsLoading(false);
     }
   }
-  
-  const fetchLockers = async () => {
-      if (!watchedCity) {
-          setLockerError('Please enter a city to find nearby lockers.');
-          return;
-      }
-      setIsFetchingLockers(true);
-      setLockerError(null);
-      try {
-        const result = await getPudoLockers({ city: watchedCity });
-        const lockerData = (result.data as any)?.data as PUDOLocker[];
-        if (lockerData && lockerData.length > 0) {
-            setPudoLockers(lockerData);
-        } else {
-            setLockerError('No Pudo lockers found for the specified city. Please check the spelling or try a nearby major city.');
-        }
-      } catch (error) {
-          console.error("Error fetching Pudo lockers:", error);
-          const message = error instanceof FunctionsError ? error.message : "An unexpected error occurred while fetching lockers.";
-          setLockerError(message);
-      } finally {
-          setIsFetchingLockers(false);
-      }
-  };
-  
-  const handleOpenLockerModal = () => {
-      setPudoLockers([]);
-      setLockerSearchTerm('');
-      setLockerError(null);
-      fetchLockers();
-      setIsLockerModalOpen(true);
-  }
-
-  function handleLockerSelect(locker: PUDOLocker) {
-    form.setValue('originLocker', locker, { shouldValidate: true, shouldDirty: true });
-    setIsLockerModalOpen(false);
-  }
-
-  const filteredLockers = useMemo(() => 
-    pudoLockers.filter(locker => 
-        locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
-        (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
-    ), [pudoLockers, lockerSearchTerm]);
   
   if (isSuccess) {
     return (
@@ -337,34 +286,6 @@ export default function WellnessSignupPage() {
                           <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
                       <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
-                      <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods</FormLabel><FormDescription>Select all the ways you can get products to customers.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
-
-                      {needsOriginLocker && (
-                        <FormItem>
-                          <FormLabel>Origin Locker for LTL/LTD Shipping</FormLabel>
-                          <Card className="border-dashed">
-                            <CardContent className="p-4">
-                              {watchedOriginLocker ? (
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="font-semibold">{watchedOriginLocker.name}</p>
-                                    <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
-                                  </div>
-                                  <Button variant="outline" onClick={handleOpenLockerModal}>Change Locker</Button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-center flex-col gap-2 text-center">
-                                  <MapPin className="w-10 h-10 text-muted-foreground" />
-                                  <p className="text-muted-foreground mb-2">An origin locker is required for this shipping method. Please enter your address and city first.</p>
-                                  <Button onClick={handleOpenLockerModal} disabled={!watchedCity}>Select Origin Locker</Button>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-
                       <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
                       <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
                   </div>
@@ -387,42 +308,6 @@ export default function WellnessSignupPage() {
           </CardContent>
         </Card>
       </div>
-
-     <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
-        <DialogContent className="sm:max-w-[625px]">
-            <DialogHeader>
-                <DialogTitle>Select an Origin Locker</DialogTitle>
-                <DialogDescription>
-                   Search for Pudo lockers in your city. This will be the default collection point for locker-based shipments.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input placeholder={`Search lockers in ${watchedCity || 'your city'}...`} value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
-            </div>
-            <div className="mt-4 max-h-[400px] overflow-y-auto space-y-2 pr-2">
-                {isFetchingLockers ? (
-                    <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className='ml-3'>Fetching lockers...</p></div>
-                ) : lockerError ? (
-                    <p className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{lockerError}</p>
-                ) : filteredLockers.length > 0 ? (
-                    filteredLockers.map(locker => (
-                        <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-3 text-left" onClick={() => handleLockerSelect(locker)}>
-                            <div>
-                                <p className="font-semibold">{locker.name}</p>
-                                <p className="text-sm text-muted-foreground">{locker.address}</p>
-                            </div>
-                        </Button>
-                    ))
-                ) : (
-                    <p className="text-center text-muted-foreground py-8">No lockers found. Please refine your city or search term.</p>
-                )}
-            </div>
-            <DialogFooter>
-                <Button variant="secondary" onClick={() => setIsLockerModalOpen(false)}>Cancel</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

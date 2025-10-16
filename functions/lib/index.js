@@ -398,21 +398,18 @@ const pudoApiKeySecret = (0, params_1.defineSecret)('PUDO_API_KEY'); // Pudo/TCG
 const SHIPLOGIC_RATES_API_URL = 'https://api.shiplogic.com/v2/rates';
 const PUDO_BASE_URL = 'https://sandbox.api-pudo.co.za/api/v1';
 // --- NEW: FUNCTION TO FETCH LOCKER LOCATIONS (from Pudo/TCG) ---
-// --- FUNCTION TO FETCH LOCKER LOCATIONS (from Pudo/TCG) ---
 exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: true }, async (request) => {
     logger.info("getPudoLockers invoked with dynamic radius logic.");
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to fetch Pudo lockers.');
     }
-    // The primary filtering mechanism is lat/lng, with city as a fallback.
-    // The radius is now dynamic, with a default of 100km.
     const { latitude, longitude, radius = 100, city } = request.data;
     const pudoApiKey = pudoApiKeySecret.value();
     if (!pudoApiKey) {
         logger.error("CRITICAL: PUDO_API_KEY not found in secrets.");
         throw new https_1.HttpsError('internal', 'Server configuration error: Pudo API key not found.');
     }
-    const url = `${PUDO_BASE_URL}/lockers-data`; // Using the corrected endpoint
+    const url = `${PUDO_BASE_URL}/lockers-data`;
     // --- Haversine formula function to calculate distance ---
     const getDistanceInKm = (lat1, lon1, lat2, lon2) => {
         const R = 6371; // Radius of the Earth in km
@@ -438,35 +435,45 @@ exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors
         if (!Array.isArray(allLockers)) {
             throw new https_1.HttpsError('internal', 'Received an invalid response format from the locker provider.');
         }
-        let filteredLockers = [];
-        // --- PRIMARY LOGIC: Filter by Lat/Lng Radius ---
+        let formattedLockers = [];
         if (latitude != null && longitude != null) {
-            logger.info(`Filtering lockers by radius (${radius}km) around lat: ${latitude}, lng: ${longitude}`);
-            filteredLockers = allLockers.filter(locker => {
+            logger.info(`Filtering and enriching lockers by radius (${radius}km) around lat: ${latitude}, lng: ${longitude}`);
+            formattedLockers = allLockers.reduce((acc, locker) => {
                 const lockerLat = parseFloat(locker.latitude);
                 const lockerLng = parseFloat(locker.longitude);
                 if (isNaN(lockerLat) || isNaN(lockerLng)) {
-                    return false;
+                    return acc; // Skip lockers with invalid coordinates
                 }
                 const distance = getDistanceInKm(latitude, longitude, lockerLat, lockerLng);
-                return distance <= radius;
-            });
+                if (distance <= radius) {
+                    acc.push({
+                        id: locker.code,
+                        name: locker.name,
+                        address: locker.street_address, // Use 'address' to match schema and frontend
+                        distanceKm: distance // Attach the calculated distance
+                    });
+                }
+                return acc;
+            }, []);
+            // Sort by distance, closest first
+            formattedLockers.sort((a, b) => a.distanceKm - b.distanceKm);
         }
-        // --- FALLBACK LOGIC: Filter by City string match ---
         else if (city) {
             logger.warn(`Lat/Lng not provided. Falling back to inefficient city string filter for: ${city}`);
-            filteredLockers = allLockers.filter(locker => locker.street_address && locker.street_address.toLowerCase().includes(city.toLowerCase()));
+            formattedLockers = allLockers
+                .filter((locker) => locker.street_address && locker.street_address.toLowerCase().includes(city.toLowerCase()))
+                .map((locker) => ({
+                id: locker.code,
+                name: locker.name,
+                address: locker.street_address, // Use 'address' field
+                distanceKm: null // No distance can be calculated
+            }));
         }
         else {
             logger.error("No location data (lat/lng or city) provided to getPudoLockers.");
             throw new https_1.HttpsError('invalid-argument', 'No location data was provided to find lockers.');
         }
-        const formattedLockers = filteredLockers.map((locker) => ({
-            id: locker.code,
-            name: locker.name,
-            street_address: locker.street_address
-        }));
-        logger.info(`Successfully fetched and filtered ${formattedLockers.length} Pudo lockers.`);
+        logger.info(`Successfully fetched and formatted ${formattedLockers.length} Pudo lockers.`);
         if (formattedLockers.length === 0) {
             logger.warn("No lockers found within the specified radius or matching the city.");
         }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { functions, db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Loader2, Search, MapPin } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
 import type { CartItem, Dispensary, ShippingRate, AddressValues, PUDOLocker } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const allShippingMethodsMap: { [key: string]: string } = {
   "dtd": "Door-to-Door Courier",
@@ -32,7 +32,7 @@ interface DispensaryShippingGroupProps {
 }
 
 const isAddressComplete = (address: AddressValues['shippingAddress']) => {
-    return address && address.streetAddress && address.city && address.postalCode && address.province && address.latitude && address.longitude;
+    return address && address.streetAddress && address.city && address.postalCode && address.province;
 }
 
 export const DispensaryShippingGroup = ({ 
@@ -144,11 +144,16 @@ export const DispensaryShippingGroup = ({
       } else {
         setError("No locker-based shipping rates were found for the selected criteria.");
       }
-    } catch (err: any) {
-      console.error("Error fetching Pudo rates:", err);
-      const message = err.message || "An unknown error occurred while fetching Pudo rates.";
-      setError(message);
-      toast({ title: "Pudo Rate Error", description: message, variant: "destructive" });
+    } catch (e: any) {
+        console.error("Error fetching Pudo rates:", e);
+        let errorMessage = "An unexpected error occurred while fetching Pudo rates.";
+        if (e instanceof FunctionsError) {
+            errorMessage = e.message;
+        } else if (e.message) {
+            errorMessage = e.message;
+        }
+        setError(errorMessage);
+        toast({ title: "Pudo Rate Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -186,11 +191,16 @@ export const DispensaryShippingGroup = ({
       } else {
         setError("No door-to-door shipping rates were found for your address.");
       }
-    } catch (err: any) {
-      console.error("Error fetching ShipLogic rates:", err);
-      const message = err.message || "An unknown error occurred while fetching shipping rates.";
-      setError(message);
-      toast({ title: "Shipping Rate Error", description: message, variant: "destructive" });
+    } catch (e: any) {
+      console.error("Error fetching ShipLogic rates:", e);
+        let errorMessage = "An unexpected error occurred while fetching shipping rates.";
+        if (e instanceof FunctionsError) {
+            errorMessage = e.message;
+        } else if (e.message) {
+            errorMessage = e.message;
+        }
+        setError(errorMessage);
+        toast({ title: "Shipping Rate Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -219,7 +229,7 @@ export const DispensaryShippingGroup = ({
     setSelectedTier(tier);
     resetSelections();
     
-    const addressRequired = ['dtd', 'ltd', 'dtl'];
+    const addressRequired = ['dtd', 'ltd', 'dtl', 'ltl'];
     if (addressRequired.includes(tier) && !isAddressComplete(addressData.shippingAddress)) {
         setError("Please provide a complete shipping address (including map selection) to get rates.");
         return;
@@ -230,32 +240,32 @@ export const DispensaryShippingGroup = ({
       fetchShiplogicRates();
     } 
     else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
-      if (tier === 'ltd' || tier === 'ltl') {
-          if (!originLocker) {
-              setError("This dispensary has not configured an origin locker for this shipping method. Please select another method.");
-              return;
-          }
+      if ((tier === 'ltd' || tier === 'ltl') && !originLocker) {
+        setError("This dispensary has not configured an origin locker for this shipping method. Please select another method.");
+        return;
       }
+
       if (pickupPoints.length === 0) {
         setIsFetchingLockers(true);
         try {
           const getPudoLockersFn = httpsCallable(functions, 'getPudoLockers');
-          const result = await getPudoLockersFn({
-            latitude: addressData.shippingAddress.latitude,
-            longitude: addressData.shippingAddress.longitude,
-            city: addressData.shippingAddress.city
-          });
+          const result = await getPudoLockersFn({ city: addressData.shippingAddress.city });
           const lockerData = (result.data as any)?.data as PUDOLocker[];
 
           if (lockerData && lockerData.length > 0) {
             setPickupPoints(lockerData);
           } else {
-            throw new Error('Could not retrieve any Pudo lockers near your location.');
+            throw new Error('Could not retrieve any Pudo lockers in your specified city.');
           }
-        } catch (err: any) {
-          const message = err.message || 'Failed to fetch Pudo locker locations.';
-          setError(message);
-          toast({ title: "Locker Error", description: message, variant: "destructive" });
+        } catch (e: any) {
+            let errorMessage = "An unexpected error occurred while fetching Pudo locker locations.";
+            if (e instanceof FunctionsError) {
+                errorMessage = e.message;
+            } else if (e.message) {
+                errorMessage = e.message;
+            }
+            setError(errorMessage);
+            toast({ title: "Locker Error", description: errorMessage, variant: "destructive" });
         } finally {
           setIsFetchingLockers(false);
         }
@@ -270,15 +280,16 @@ export const DispensaryShippingGroup = ({
   };
 
   const handleLockerSelect = (locker: PUDOLocker) => {
-    // Origin locker is not selectable by the user in this component
-    if (destinationLocker) {
-      setDestinationLocker(locker);
-    }
+    setDestinationLocker(locker);
     setIsLockerModalOpen(false);
   };
 
   const openLockerModal = () => {
-    setIsLockerModalOpen(true);
+    if (pickupPoints.length > 0) {
+        setIsLockerModalOpen(true);
+    } else {
+        toast({ title: "No Lockers Loaded", description: "Could not find any lockers for the address provided.", variant: "destructive" });
+    }
   }
   
   const filteredLockers = useMemo(() => 
@@ -292,7 +303,7 @@ export const DispensaryShippingGroup = ({
   if (isLoading && !dispensary && !rates.length) {
     return (
       <Card className='bg-muted/20'><CardContent className='p-6 flex items-center'><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading shipping options...</CardContent></Card>
-    )
+    );
   }
 
   const shouldShowError = error && !rates.length;
@@ -349,11 +360,11 @@ export const DispensaryShippingGroup = ({
 
             {(selectedTier === 'dtl' || selectedTier === 'ltl') && (
                 <div>
-                    <p className="font-medium mb-2">{selectedTier === 'ltl' ? 'Destination Locker' : 'Destination Locker'}</p>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={openLockerModal} disabled={(selectedTier === 'ltl' || selectedTier === 'ltd') && !originLocker}>
+                    <p className="font-medium mb-2">2. Select Destination Locker</p>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={openLockerModal} disabled={!isAddressComplete(addressData.shippingAddress)}>
                         {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
                     </Button>
-                    {((selectedTier === 'ltl' || selectedTier === 'ltd') && !originLocker) && <p className='text-xs text-destructive mt-1'>Cannot select destination until dispensary configures an origin.</p>}
+                    {!isAddressComplete(addressData.shippingAddress) && <p className='text-xs text-muted-foreground mt-1'>Please complete your address to select a locker.</p>}
                 </div>
             )}
           </div>
@@ -361,21 +372,27 @@ export const DispensaryShippingGroup = ({
 
         <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
             <DialogContent className="sm:max-w-[625px]">
-                <DialogHeader><DialogTitle>Select a Destination Pudo Locker</DialogTitle></DialogHeader>
-                <div className="relative">
+                <DialogHeader>
+                    <DialogTitle>Select a Destination Pudo Locker</DialogTitle>
+                    <DialogDescription>Showing lockers near {addressData.shippingAddress.city}.</DialogDescription>
+                </DialogHeader>
+                <div className="relative mt-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input placeholder="Search by name or address..." value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10"/>
                 </div>
-                <div className="max-h-[400px] overflow-y-auto space-y-2 p-1">
-                    {filteredLockers.map(locker => (
-                        <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-2 text-left" onClick={() => handleLockerSelect(locker)}>
-                            <div>
-                                <p className="font-semibold">{locker.name}</p>
-                                <p className="text-sm text-muted-foreground">{locker.address}</p>
-                            </div>
-                        </Button>
-                    ))}
-                    {filteredLockers.length === 0 && <p className='text-center text-muted-foreground py-4'>No lockers match your search.</p>}
+                <div className="mt-2 max-h-[400px] overflow-y-auto space-y-2 p-1">
+                    {filteredLockers.length > 0 ? (
+                        filteredLockers.map(locker => (
+                            <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-2 text-left" onClick={() => handleLockerSelect(locker)}>
+                                <div>
+                                    <p className="font-semibold">{locker.name}</p>
+                                    <p className="text-sm text-muted-foreground">{locker.address}</p>
+                                </div>
+                            </Button>
+                        ))
+                    ) : (
+                        <p className='text-center text-muted-foreground py-4'>No lockers match your search.</p>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -388,7 +405,7 @@ export const DispensaryShippingGroup = ({
 
         {rates.length > 0 && !isLoading && (
             <div>
-                <p className="font-medium mb-2">{isLockerTier ? (selectedTier === 'ltl' ? 'Finalize Selection' : 'Finalize Selection') : 'Finalize Selection'}</p>
+                <p className="font-medium mb-2">3. Confirm Service Level</p>
                 <RadioGroup onValueChange={handleRateSelection} value={selectedRateId || ''} className="space-y-3">
                     {rates.map(rate => (
                         <Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all cursor-pointer">
@@ -398,7 +415,7 @@ export const DispensaryShippingGroup = ({
                             </div>
                             <p className="font-bold text-lg">R{rate.rate.toFixed(2)}</p>
                             <RadioGroupItem value={rate.id.toString()} id={`${dispensaryId}-${rate.id}`} className="sr-only" />
-                        </Label
+                        </Label>
                     ))}
                 </RadioGroup>
             </div>

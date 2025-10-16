@@ -6,6 +6,12 @@ const timeErrorMessage = "Invalid time format (HH:MM). Leave empty if not applic
 
 // =================================================================
 // REFACTORED BASE SCHEMA
+const pudoLockerSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  address: z.string(),
+  distanceKm: z.number().optional().nullable(),
+});
 // =================================================================
 export const baseWellnessSchema = z.object({
   fullName: z.string().min(2, { message: "Owner's full name must be at least 2 characters." }),
@@ -27,13 +33,13 @@ export const baseWellnessSchema = z.object({
   city: z.string().min(1, { message: "City is required (auto-filled from map)." }),
   postalCode: z.string().min(1, { message: "Postal code is required (auto-filled from map)." }),
   province: z.string().min(1, { message: "Province is required." }),
-  
+  country: z.string().min(1, { message: "Country is required." }),  
   latitude: z.number({ invalid_type_error: "A valid location must be selected on the map." }),
   longitude: z.number({ invalid_type_error: "A valid location must be selected on the map." }),
-
   showLocation: z.boolean().default(true).optional(),
   deliveryRadius: z.string().optional().nullable(),
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
+  originLocker: pudoLockerSchema.nullable().optional(),
 });
 export type BaseWellnessFormData = z.infer<typeof baseWellnessSchema>;
 

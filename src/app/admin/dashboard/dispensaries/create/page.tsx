@@ -80,7 +80,11 @@ export default function AdminCreateDispensaryPage() {
   const watchedShippingMethods = useWatch({ control: form.control, name: 'shippingMethods' });
   const watchedOriginLocker = useWatch({ control: form.control, name: 'originLocker' });
   const watchedCity = useWatch({ control: form.control, name: 'city' });
-  const needsOriginLocker = watchedShippingMethods?.includes('ltl') || watchedShippingMethods?.includes('ltd');
+
+  const needsOriginLocker = useMemo(() => 
+      watchedShippingMethods?.includes('ltl') || watchedShippingMethods?.includes('ltd'), 
+      [watchedShippingMethods]
+  );
 
   useEffect(() => {
     if (!authLoading && !isSuperAdmin) {
@@ -193,20 +197,24 @@ export default function AdminCreateDispensaryPage() {
   }
   
   const fetchLockers = async () => {
-      if (!watchedCity) {
-          setLockerError('Please enter a city to find nearby lockers.');
+      const city = form.getValues('city');
+
+      if (!city) {
+          setLockerError('Dispensary city is not set. Please set a location to find lockers in the area.');
           return;
       }
+
       setIsFetchingLockers(true);
       setLockerError(null);
       try {
-        const result = await getPudoLockers({ city: watchedCity });
-        const lockerData = (result.data as any)?.data as PUDOLocker[];
-        if (lockerData && lockerData.length > 0) {
-            setPudoLockers(lockerData);
-        } else {
-            setLockerError('No Pudo lockers found for the specified city. Please check the spelling or try a nearby major city.');
-        }
+          const result = await getPudoLockers({ city });
+          const lockerData = (result.data as { data: PUDOLocker[] }).data;
+
+          if (lockerData && lockerData.length > 0) {
+              setPudoLockers(lockerData);
+          } else {
+              setLockerError('No Pudo lockers found for the specified city.');
+          }
       } catch (error) {
           console.error("Error fetching Pudo lockers:", error);
           const message = error instanceof FunctionsError ? error.message : "An unexpected error occurred while fetching lockers.";
@@ -312,7 +320,7 @@ export default function AdminCreateDispensaryPage() {
                               ) : (
                                 <div className="flex items-center justify-center flex-col gap-2 text-center">
                                   <MapPin className="w-10 h-10 text-muted-foreground" />
-                                  <p className="text-muted-foreground mb-2">An origin locker is required. Please enter a city first.</p>
+                                  <p className="text-muted-foreground mb-2">An origin locker is required for this shipping method.</p>
                                   <Button onClick={handleOpenLockerModal} type="button" disabled={!watchedCity}>Select Origin Locker</Button>
                                 </div>
                               )}
@@ -341,12 +349,12 @@ export default function AdminCreateDispensaryPage() {
             <DialogHeader>
                 <DialogTitle>Select an Origin Locker</DialogTitle>
                 <DialogDescription>
-                   Search for Pudo lockers in the dispensary&apos;s city. This will be the default collection point.
+                    Showing Pudo lockers for the city of &quot;{watchedCity}&quot;.
                 </DialogDescription>
             </DialogHeader>
             <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input placeholder={`Search lockers in ${watchedCity || 'your city'}...`} value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
+                <Input placeholder="Search lockers by name or address..." value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
             </div>
             <div className="mt-4 max-h-[400px] overflow-y-auto space-y-2 pr-2">
                 {isFetchingLockers ? (
@@ -363,7 +371,7 @@ export default function AdminCreateDispensaryPage() {
                         </Button>
                     ))
                 ) : (
-                    <p className="text-center text-muted-foreground py-8">No lockers found for this city.</p>
+                    <p className="text-center text-muted-foreground py-8">No lockers found for this city. Please ensure the city is correct.</p>
                 )}
             </div>
             <DialogFooter>
