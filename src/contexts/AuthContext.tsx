@@ -47,6 +47,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!fullProfile || !fullProfile.uid) {
         throw new Error("Received invalid user profile from server.");
       }
+
+      // PATCH: If user is a DispensaryOwner and the nested dispensary object is missing its ID,
+      // inject it from the user's top-level dispensaryId. This fixes a data inconsistency
+      // from the backend where the nested object doesn't include the document ID.
+      if (fullProfile.role === 'DispensaryOwner' && fullProfile.dispensary && !fullProfile.dispensary.id && fullProfile.dispensaryId) {
+        fullProfile.dispensary.id = fullProfile.dispensaryId;
+      }
       
       setCurrentUser(fullProfile);
       setCurrentDispensary(fullProfile.dispensary || null);

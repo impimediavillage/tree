@@ -15,17 +15,15 @@ const pudoLockerSchema = z.object({
 // =================================================================
 export const baseWellnessSchema = z.object({
   fullName: z.string().min(2, { message: "Owner's full name must be at least 2 characters." }),
-  phone: z.string()
-    .min(10, { message: "Phone number seems too short." })
-    .regex(/^\+\d{1,3}\d{6,14}$/, { message: "Invalid phone number format. Include country code (e.g., +27821234567)." }),
+  phone: z.string().min(9, { message: "Phone number seems too short." }),    
   ownerEmail: z.string().email({ message: "Invalid email address." }),
   dispensaryName: z.string().min(2, { message: "Wellness name must be at least 2 characters." }),
   dispensaryType: z.string({ required_error: "Please select a wellness type." }).min(1, { message: "Please select a wellness type." }),
   currency: z.string({ required_error: "Please select a currency." }).min(1, { message: "Please select a currency." }),
   openTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   closeTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
-  operatingDays: z.array(z.string()).min(1, { message: "Select at least one operating day." }),
-  shippingMethods: z.array(z.string()).min(1, { message: "Select at least one shipping method." }).optional().default([]),
+  operatingDays: z.array(z.string()).optional().default([]),
+  shippingMethods: z.array(z.string()).optional().default([]),
   
   // --- NEW STRUCTURED ADDRESS FIELDS ---
   streetAddress: z.string().min(1, { message: "Street address is required (auto-filled from map)." }),

@@ -1,5 +1,5 @@
 'use client';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { dispensarySignupSchema, type DispensarySignupFormData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,12 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Building } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, addDoc, Timestamp, getDocs, query as firestoreQuery } from 'firebase/firestore';
+import { db, functions } from '@/lib/firebase';
+import { collection, getDocs, query as firestoreQuery } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import type { DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
-
+import countryDialCodes from '@/../docs/country-dial-codes.json';
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const currencyOptions = [
@@ -28,8 +29,13 @@ const deliveryRadiusOptions = [
   { value: "none", label: "No same-day delivery" }, { value: "5", label: "5 km" },
   { value: "10", label: "10 km" }, { value: "20", label: "20 km" }, { value: "50", label: "50 km" },
 ];
-const countryCodes = [{ value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" }];
 
+interface Country {
+    name: string;
+    iso: string;
+    flag: string;
+    dialCode: string;
+}
 
 export default function WellnessSignupPage() {
   const { toast } = useToast();
@@ -40,7 +46,7 @@ export default function WellnessSignupPage() {
   const locationInputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInitialized = useRef(false);
-  const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
+  const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(countryDialCodes.find(c => c.iso === 'ZA'));
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
   const form = useForm<DispensarySignupFormData>({
@@ -98,8 +104,8 @@ export default function WellnessSignupPage() {
     const loader = new Loader({ apiKey, version: 'weekly', libraries: ['places', 'geocoding'] });
 
     loader.load().then(google => {
-        const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string): string =>
-            components.find(c => c.types.includes(type))?.long_name || '';
+        const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string, useShortName = false): string =>
+            components.find(c => c.types.includes(type))?.[useShortName ? 'short_name' : 'long_name'] || '';
 
         const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
             const components = place.address_components;
@@ -107,6 +113,7 @@ export default function WellnessSignupPage() {
 
             const streetNumber = getAddressComponent(components, 'street_number');
             const route = getAddressComponent(components, 'route');
+            const countryShortName = getAddressComponent(components, 'country', true);
             
             form.setValue('streetAddress', `${streetNumber} ${route}`.trim(), { shouldValidate: true, shouldDirty: true });
             form.setValue('suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
@@ -114,13 +121,18 @@ export default function WellnessSignupPage() {
             form.setValue('province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
             form.setValue('postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
             form.setValue('country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
+
+            const matchedCountry = countryDialCodes.find(c => c.iso.toLowerCase() === countryShortName.toLowerCase());
+            if (matchedCountry) {
+                setSelectedCountry(matchedCountry);
+            }
         };
 
         const map = new google.maps.Map(mapContainerRef.current!, { center: { lat: -29.8587, lng: 31.0218 }, zoom: 6, mapId: 'b39f3f8b7139051d' });
         const marker = new google.maps.Marker({ map, draggable: true, position: { lat: -29.8587, lng: 31.0218 } });
 
         if (locationInputRef.current) {
-            const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, { fields: ["formatted_address", "geometry", "address_components"], types: ["address"], componentRestrictions: { country: "za" } });
+            const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, { fields: ["address_components", "geometry", "formatted_address"], types: ["address"] });
             autocomplete.addListener("place_changed", () => {
                 const place = autocomplete.getPlace();
                 if (place.geometry?.location) {
@@ -164,31 +176,37 @@ export default function WellnessSignupPage() {
   }, [initializeMap]);
   
   useEffect(() => {
-    const combinedPhoneNumber = `${selectedCountryCode}${nationalPhoneNumber}`.replace(/\D/g, '');
-    form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
-  }, [selectedCountryCode, nationalPhoneNumber, form]);
+    if (selectedCountry) {
+        const combinedPhoneNumber = `${selectedCountry.dialCode}${nationalPhoneNumber}`.replace(/\D/g, '');
+        form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
+    }
+  }, [selectedCountry, nationalPhoneNumber, form]);
+
+  const submitApplication = httpsCallable(functions, 'submitDispensaryApplication');
 
   async function onSubmit(data: DispensarySignupFormData) {
     setIsLoading(true);
-    
-    const wellnessData = {
-      ...data,
-      // Set default empty values for fields moved to admin profile
-      shippingMethods: [],
-      originLocker: null,
-      status: 'Pending Approval' as const,
-      applicationDate: Timestamp.fromDate(new Date()),
-      latitude: data.latitude ?? null,
-      longitude: data.longitude ?? null,
-    };
 
     try {
-      await addDoc(collection(db, 'dispensaries'), wellnessData);
-      setIsSuccess(true);
-      toast({ title: "Application Submitted!", description: "We've received your application and will review it shortly." });
-    } catch (error) {
+      const result: any = await submitApplication(data);
+
+      if (result.data.success) {
+          setIsSuccess(true);
+          toast({ 
+              title: "Application Submitted!", 
+              description: "We've received your application and will review it shortly." 
+          });
+      } else {
+          throw new Error(result.data.message || 'An unknown server error occurred.');
+      }
+    } catch (error: any) {
       console.error("Error submitting dispensary application:", error);
-      toast({ title: "Submission Failed", description: "An error occurred. Please try again.", variant: "destructive" });
+      const errorMessage = error.message || "An unexpected error occurred. Please try again.";
+      toast({ 
+          title: "Submission Failed", 
+          description: errorMessage, 
+          variant: "destructive" 
+      });
     } finally {
       setIsLoading(false);
     }
@@ -253,12 +271,12 @@ export default function WellnessSignupPage() {
                       </FormItem>
 
                       <div className="grid md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                       </div>
 
                       <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
@@ -266,9 +284,9 @@ export default function WellnessSignupPage() {
                       <FormField control={form.control} name="phone" render={() => (
                           <FormItem><FormLabel>Phone Number</FormLabel>
                               <div className="flex items-center gap-2">
-                                  <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue /></SelectTrigger>
-                                  <SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent>
-                                  </Select>
+                                  <div className="w-[80px] shrink-0 border rounded-md h-10 flex items-center justify-center bg-muted">
+                                    {selectedCountry && <span className='text-sm'>{selectedCountry.flag} {selectedCountry.dialCode}</span>}
+                                  </div>
                                   <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
                               </div>
                               <FormMessage />

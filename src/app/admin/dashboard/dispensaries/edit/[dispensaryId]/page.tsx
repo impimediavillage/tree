@@ -36,7 +36,7 @@ const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
 
 export default function EditDispensaryPage() {
     const params = useParams();
-    const dispensaryId = params.dispensaryId as string;
+    const dispensaryId = params?.dispensaryId as string;
     const router = useRouter();
     const { toast } = useToast();
     const { isSuperAdmin, loading: authLoading } = useAuth();
@@ -213,9 +213,23 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
 
             if (wasPending && isNowApproved) {
                 toast({ title: "Approving...", description: "Creating owner account..." });
-                await createDispensaryUserCallable({ email: data.ownerEmail, displayName: data.fullName, dispensaryId });
-                toast({ title: "Approval Success!", description: `Owner account for ${data.ownerEmail} created and linked.` });
+
+                const result = await createDispensaryUserCallable({ 
+                    email: data.ownerEmail, 
+                    displayName: data.fullName, 
+                    dispensaryId 
+                });
+
+                const newOwnerId = (result.data as { uid?: string })?.uid;
+
+                if (!newOwnerId) {
+                    throw new Error("Failed to get new owner ID from creation function.");
+                }
+                
+                updateData.ownerId = newOwnerId;
                 updateData.approvedDate = serverTimestamp();
+                
+                toast({ title: "Approval Success!", description: `Owner account for ${data.ownerEmail} created and linked.` });
             }
             
             await updateDoc(doc(db, 'dispensaries', dispensaryId), updateData);
@@ -240,10 +254,8 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         setIsFetchingLockers(true);
         setLockerError(null);
         try {
-            // Using 'city' to fetch lockers, matching DispensaryShippingGroup.tsx
             const result = await getPudoLockers({ city });
             
-            // The data is nested under result.data.data
             const lockerData = (result.data as { data: PUDOLocker[] }).data;
 
             if (lockerData && lockerData.length > 0) {
@@ -264,7 +276,7 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
         setPudoLockers([]);
         setLockerSearchTerm('');
         setLockerError(null);
-        fetchLockers(); // This will now use the city-based search
+        fetchLockers();
         setIsLockerModalOpen(true);
     }
 
@@ -349,6 +361,7 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
                                         {watchedOriginLocker ? (
                                           <div className="flex items-center justify-between">
                                             <div>
+                                              <p className="font-semibold">{watchedOriginLocker.name}</p>
                                               <p className="font-semibold">{watchedOriginLocker.name}</p>
                                               <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
                                             </div>

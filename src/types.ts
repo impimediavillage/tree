@@ -21,6 +21,15 @@ export interface ProductCategory {
   subcategories?: ProductCategory[]; // Recursive
 }
 export type AllowedUserRole = 'User' | 'LeafUser' | 'DispensaryOwner' | 'Super Admin' | 'DispensaryStaff';
+
+// Represents a PUDO Locker, often used as an origin or destination
+export interface PUDOLocker {
+  id: string;
+  name: string;
+  address: string;
+  distanceKm?: number;
+}
+
 // Represents the structure of a Dispensary document in Firestore
 export interface Dispensary {
   id?: string; 
@@ -38,9 +47,12 @@ export interface Dispensary {
   streetAddress?: string;
   suburb?: string;
   city?: string;
+  province?: string;
   postalCode?: string;
+  country?: string;
   latitude?: number | null;
   longitude?: number | null;
+  originLocker?: PUDOLocker | null;
   deliveryRadius?: string | null;
   bulkDeliveryRadius?: string | null;
   collectionOnly?: boolean;
@@ -58,7 +70,6 @@ export interface Dispensary {
   productCount?: number;
   incomingRequestCount?: number;
   outgoingRequestCount?: number;
-
   averageRating?: number | null;
   reviewCount?: number;
   inHouseDeliveryFee?: number;

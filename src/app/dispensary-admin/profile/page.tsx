@@ -15,14 +15,15 @@ import { Loader2, Save, ArrowLeft, Store as StoreIcon, MapPin, Search } from 'lu
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { db, functions } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { functions } from '@/lib/firebase';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
 import { ownerEditDispensarySchema, type OwnerEditDispensaryFormData } from '@/lib/schemas';
 import type { Dispensary, PUDOLocker } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Loader } from '@googlemaps/js-api-loader';
+import countryDialCodes from '@/../docs/country-dial-codes.json';
+
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -36,9 +37,13 @@ const deliveryRadiusOptions = [
   { value: "10", label: "10 km" }, { value: "20", label: "20 km" }, { value: "50", label: "50 km" },
 ];
 
-const countryCodes = [
-  { value: "+27", flag: "🇿🇦", shortName: "ZA", code: "+27" },
-];
+
+interface Country {
+    name: string;
+    iso: string;
+    flag: string;
+    dialCode: string;
+}
 
 const allShippingMethods = [
   { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
@@ -50,6 +55,8 @@ const allShippingMethods = [
 ];
 
 const getPudoLockers = httpsCallable(functions, 'getPudoLockers');
+const updateDispensaryProfile = httpsCallable(functions, 'updateDispensaryProfile');
+
 
 export default function WellnessOwnerProfilePage() {
     const { currentUser, currentDispensary, loading: authLoading } = useAuth();
@@ -95,8 +102,8 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
     const mapInitialized = useRef(false);
 
     const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
-    const [selectedCountryCode, setSelectedCountryCode] = useState(countryCodes[0].value);
-
+    const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(countryDialCodes.find(c => c.iso === 'ZA'));
+    
     const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
     const [pudoLockers, setPudoLockers] = useState<PUDOLocker[]>([]);
     const [isFetchingLockers, setIsFetchingLockers] = useState(false);
@@ -109,6 +116,7 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
         defaultValues: {
             dispensaryName: dispensary.dispensaryName || '',
             phone: dispensary.phone || '',
+            currency: dispensary.currency || 'ZAR',
             streetAddress: dispensary.streetAddress || '',
             suburb: dispensary.suburb || '',
             city: dispensary.city || '',
@@ -142,21 +150,26 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
 
     useEffect(() => {
         if (dispensary.phone) {
-            const foundCountry = countryCodes.find(cc => dispensary.phone!.startsWith(cc.value));
-            if (foundCountry) {
-                setSelectedCountryCode(foundCountry.value);
-                setNationalPhoneNumber(dispensary.phone!.substring(foundCountry.value.length));
+            const sortedCountries = [...countryDialCodes].sort((a, b) => b.dialCode.length - a.dialCode.length);
+            const phoneStr = dispensary.phone.startsWith('+') ? dispensary.phone : `+${dispensary.phone}`;
+            
+            const matchedCountry = sortedCountries.find(c => phoneStr.startsWith(c.dialCode));
+
+            if (matchedCountry) {
+                setSelectedCountry(matchedCountry);
+                setNationalPhoneNumber(phoneStr.substring(matchedCountry.dialCode.length));
             } else {
-                setNationalPhoneNumber(dispensary.phone);
+                 setNationalPhoneNumber(phoneStr.replace(/\D/g, ''));
             }
         }
     }, [dispensary.phone]);
 
     useEffect(() => {
-        const justDigits = nationalPhoneNumber.replace(/\D/g, '');
-        const combinedPhoneNumber = `${selectedCountryCode}${justDigits}`;
-        form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: !!nationalPhoneNumber });
-    }, [selectedCountryCode, nationalPhoneNumber, form]);
+        if (selectedCountry) {
+            const combinedPhoneNumber = `${selectedCountry.dialCode}${nationalPhoneNumber}`.replace(/\D/g, '');
+            form.setValue('phone', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
+        }
+    }, [selectedCountry, nationalPhoneNumber, form]);
 
     useEffect(() => {
         if (!needsOriginLocker) {
@@ -185,8 +198,8 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
             const marker = new google.maps.Marker({ position: initialLatLng, map, draggable: true });
             const geocoder = new google.maps.Geocoder();
 
-            const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string): string =>
-                components.find(c => c.types.includes(type))?.long_name || '';
+            const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string, useShortName = false): string =>
+                components.find(c => c.types.includes(type))?.[useShortName ? 'short_name' : 'long_name'] || '';
 
             const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
                 const components = place.address_components;
@@ -201,14 +214,39 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                 form.setValue('province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
                 form.setValue('postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
                 form.setValue('country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
-
+                
                 if (locationInputRef.current) {
                     locationInputRef.current.value = place.formatted_address || '';
                 }
+
+                // --- NEW, CORRECT LOGIC ---
+                const countryShortName = getAddressComponent(components, 'country', true);
+                const matchedCountry = countryDialCodes.find(c => c.iso.toLowerCase() === countryShortName.toLowerCase());
+                
+                if (matchedCountry) {
+                    // 1. Set the country from the map result. This is the source of truth.
+                    setSelectedCountry(matchedCountry);
+
+                    // 2. Now, parse the original phone number using this country context.
+                    if (dispensary.phone) {
+                        const phoneStr = dispensary.phone.startsWith('+') ? dispensary.phone : `+${dispensary.phone}`;
+                        
+                        if (phoneStr.startsWith(matchedCountry.dialCode)) {
+                            // If the stored number matches the country, strip the code.
+                            setNationalPhoneNumber(phoneStr.substring(matchedCountry.dialCode.length));
+                        } else {
+                            // If it doesn't match, the safest fallback is to just show the digits
+                            // from the original number, allowing the user to correct it within the
+                            // context of the now-correct dial code.
+                            setNationalPhoneNumber(phoneStr.replace(/\D/g, ''));
+                        }
+                    }
+                }
+                // --- END OF NEW LOGIC ---
             };
 
             if (locationInputRef.current) {
-                const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, { fields: ["address_components", "formatted_address", "geometry.location"], types: ["address"], componentRestrictions: { country: "za" } });
+                const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, { fields: ["address_components", "formatted_address", "geometry.location"], types: ["address"] });
                 autocomplete.addListener("place_changed", () => {
                     const place = autocomplete.getPlace();
                     if (place.geometry?.location) {
@@ -220,6 +258,13 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                     }
                 });
             }
+            
+            // Initial geocode on load
+            geocoder.geocode({ location: initialLatLng }, (results, status) => {
+                if (status === 'OK' && results?.[0]) {
+                    setAddressFields(results[0]);
+                }
+            });
 
             const handleMapInteraction = (pos: google.maps.LatLng) => {
                 marker.setPosition(pos); map.panTo(pos);
@@ -239,7 +284,7 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
             console.error("Google Maps Error:", e);
             toast({ title: "Map Error", description: "Could not load Google Maps.", variant: "destructive" });
         });
-    }, [form, toast]);
+    }, [form, toast, dispensary.phone]);         
 
     useEffect(() => {
         if (typeof window !== 'undefined' && !mapInitialized.current) {
@@ -248,21 +293,61 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
     }, [initializeMap]);
 
     async function onSubmit(data: OwnerEditDispensaryFormData) {
-        if (!dispensary.id) return;
         setIsSubmitting(true);
-        try {
-            const dispensaryDocRef = doc(db, 'dispensaries', dispensary.id);
-            const updateData: { [key: string]: any } = { 
-                ...data, 
-                lastActivityDate: serverTimestamp(),
-                originLocker: data.originLocker || null,
+        
+        // 1. Create a clean data object with only the fields allowed by the backend.
+        const submissionData: Partial<OwnerEditDispensaryFormData> = {
+            dispensaryName: data.dispensaryName,
+            phone: data.phone,
+            currency: data.currency,
+            streetAddress: data.streetAddress,
+            suburb: data.suburb,
+            city: data.city,
+            province: data.province,
+            postalCode: data.postalCode,
+            country: data.country,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            showLocation: data.showLocation,
+            openTime: data.openTime,
+            closeTime: data.closeTime,
+            operatingDays: data.operatingDays,
+            shippingMethods: data.shippingMethods,
+            deliveryRadius: data.deliveryRadius,
+            message: data.message,
+        };
+
+        // 2. Handle the 'originLocker' object separately to ensure it's clean.
+        // If it exists, create a new object without the temporary 'distanceKm' field.
+        if (data.originLocker) {
+            submissionData.originLocker = {
+                id: data.originLocker.id,
+                name: data.originLocker.name,
+                address: data.originLocker.address,
             };
-            await updateDoc(dispensaryDocRef, updateData);
-            toast({ title: "Profile Updated", description: "Your dispensary profile has been successfully updated." });
+        } else {
+            submissionData.originLocker = null;
+        }
+        console.log("Final submissionData being sent to Firebase:", submissionData);
+        try {
+            // 3. Send the clean, validated data to the backend function.
+            await updateDispensaryProfile(submissionData);
+            
+            toast({
+                title: "Profile Updated",
+                description: "Your dispensary profile has been successfully updated.",
+            });
             router.push('/dispensary-admin/dashboard');
         } catch (error) {
             console.error("Profile update error:", error);
-            toast({ title: "Update Failed", description: "An unexpected error occurred. Please try again.", variant: "destructive" });
+            const message = error instanceof FunctionsError 
+                ? error.message 
+                : "An unexpected error occurred. Please try again.";
+            toast({
+                title: "Update Failed",
+                description: message,
+                variant: "destructive",
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -309,10 +394,12 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
     }
 
     const filteredLockers = useMemo(() => 
-      pudoLockers.filter(locker => 
-          locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
-          (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
-      ), [pudoLockers, lockerSearchTerm]);
+        pudoLockers.filter(locker => 
+            locker && locker.id && (
+                locker.name.toLowerCase().includes(lockerSearchTerm.toLowerCase()) ||
+                (locker.address && locker.address.toLowerCase().includes(lockerSearchTerm.toLowerCase()))
+            )
+    ), [pudoLockers, lockerSearchTerm]);
 
     return (
         <>
@@ -335,11 +422,30 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                                     <FormItem><FormLabel>Owner Email (Read-only)</FormLabel><Input value={user?.email || ''} readOnly disabled /></FormItem>
                                     <FormField control={form.control} name="dispensaryName" render={({ field }) => ( <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name="phone" render={() => (
-                                        <FormItem><FormLabel>Contact Phone Number</FormLabel>
+                                        <FormItem>
+                                            <FormLabel>Contact Phone Number</FormLabel>
                                             <div className="flex items-center gap-2">
-                                                <Select value={selectedCountryCode} onValueChange={setSelectedCountryCode}><SelectTrigger className="w-[120px] shrink-0"><SelectValue/></SelectTrigger><SelectContent>{countryCodes.map(cc => (<SelectItem key={cc.value} value={cc.value}><div className="flex items-center gap-2"><span>{cc.flag}</span><span>{cc.code}</span></div></SelectItem>))}</SelectContent></Select>
-                                                <Input type="tel" placeholder="National number" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
+                                                <div className="w-[80px] shrink-0 border rounded-md h-10 flex items-center justify-center bg-muted">
+                                                    {selectedCountry && <span className='text-sm'>{selectedCountry.flag} {selectedCountry.dialCode}</span>}
+                                                </div>
+                                                <Input
+                                                    type="tel"
+                                                    placeholder="National number"
+                                                    value={nationalPhoneNumber}
+                                                    onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                                />
                                             </div>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="currency" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Operating Currency</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl>
+                                                <SelectContent>{currencyOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent>
+                                            </Select>
+                                            <FormDescription>The currency for your products and services.</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
@@ -352,15 +458,15 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                                     <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
                                     <FormItem><FormLabel>Find Address</FormLabel><FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl></FormItem>
                                     <div className="grid md:grid-cols-2 gap-6">
-                                        <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                                     </div>
                                     <div className="grid md:grid-cols-3 gap-6">
-                                        <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                                     </div>
-                                    <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                                     <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
                                 </div>
                             </section>
@@ -369,11 +475,11 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                                 <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Operations & Services</h2>
                                 <div className="space-y-6">
                                     <div className="grid md:grid-cols-2 gap-6">
-                                        <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                                     </div>
-                                    <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
-                                    <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods Offered</FormLabel><FormDescription>Select all shipping methods your store supports.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4"><FormMessage />{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div></FormItem>)} />
+                                    <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4">{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods Offered</FormLabel><FormDescription>Select all shipping methods your store supports.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4">{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div><FormMessage /></FormItem>)} />
 
                                     {needsOriginLocker && (
                                         <FormItem>
@@ -402,7 +508,7 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                                     )}
 
                                     <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
-                                    <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
                                 </div>
                             </section>
 
@@ -417,11 +523,11 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
             <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
                 <DialogContent className="sm:max-w-[625px]">
                     <DialogHeader>
-                        <DialogTitle>Select an Origin Locker</DialogTitle>
+                    <DialogTitle>Select an Origin Locker</DialogTitle>
                         <DialogDescription>Search for Pudo lockers within a 100km radius of your set location. This will be the default collection point for locker-based shipments.</DialogDescription>
                     </DialogHeader>
                     <div className="relative mt-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted foreground" />
                         <Input placeholder={`Search lockers in a 100km radius...`} value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10" disabled={isFetchingLockers}/>
                     </div>
                     <div className="mt-4 max-h-[400px] overflow-y-auto space-y-2 pr-2">
@@ -450,4 +556,4 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
         </>
     );
 }
- 
+

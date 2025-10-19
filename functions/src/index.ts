@@ -3,7 +3,7 @@ import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem } from './types';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload } from './types';
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
 if (admin.apps.length === 0) {
@@ -319,7 +319,12 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
                 role: 'DispensaryOwner',
                 status: 'Active',
             });
-             return { success: true, message: `Existing user ${email} successfully linked as DispensaryOwner.` };
+             // Return the UID of the existing user
+             return { 
+                success: true, 
+                message: `Existing user ${email} successfully linked as DispensaryOwner.`,
+                uid: existingUser.uid 
+            };
         } else {
             const temporaryPassword = Math.random().toString(36).slice(-8);
             const newUserRecord = await admin.auth().createUser({
@@ -346,10 +351,12 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
             };
             await db.collection('users').doc(newUserRecord.uid).set(userDocData);
             
+            // Return the UID of the newly created user
             return {
                 success: true,
                 message: 'New user account created successfully. Please provide them with their temporary password.',
-                temporaryPassword: temporaryPassword
+                temporaryPassword: temporaryPassword,
+                uid: newUserRecord.uid
             };
         }
     } catch (error: any) {
@@ -360,6 +367,7 @@ export const createDispensaryUser = onCall(async (request: CallableRequest<{ ema
         throw new HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
     }
 });
+
 
 export const adminUpdateUser = onCall(async (request) => {
     if (request.auth?.token.role !== 'Super Admin') {
@@ -441,7 +449,6 @@ interface FormattedRate {
 }
 
 
-// --- NEW: FUNCTION TO FETCH LOCKER LOCATIONS (from Pudo/TCG) ---
 export const getPudoLockers = onCall({ secrets: [pudoApiKeySecret], cors: true }, async (request: CallableRequest<{ latitude?: number; longitude?: number; radius?: number; city?: string; }>) => {
     logger.info("getPudoLockers invoked with dynamic radius logic.");
 
@@ -544,9 +551,11 @@ export const getPudoLockers = onCall({ secrets: [pudoApiKeySecret], cors: true }
     } catch (error: any) {
         logger.error('CRITICAL ERROR in getPudoLockers function:', error);
         if (error instanceof HttpsError) {
+          // If it's already an HttpsError, just re-throw it
           throw error;
         }
-        throw new HttpsError('internal', 'An unexpected server error occurred while fetching Pudo lockers.');
+        // Otherwise, wrap it in a generic 'internal' HttpsError
+        throw new HttpsError('internal', error.message || 'An unexpected server error occurred while fetching Pudo lockers.');
     }
 });
 
@@ -810,6 +819,155 @@ export const getShiplogicRates = onCall({ secrets: [shiplogicApiKeySecret], cors
           throw error;
         }
         throw new HttpsError('internal', error.message || 'An unexpected server error occurred while fetching shipping rates.');
+    }
+});
+export const updateDispensaryProfile = onCall({ cors: true }, async (request: CallableRequest<OwnerUpdateDispensaryPayload>) => {
+    // 1. Authentication & Authorization Check
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be logged in to update a dispensary.');
+    }
+    const userRole = request.auth.token.role;
+    if (userRole !== 'DispensaryOwner') {
+        throw new HttpsError('permission-denied', 'Only dispensary owners can update their profile.');
+    }
+
+    // 2. Ownership Verification (get dispensaryId from the user's token)
+    const dispensaryId = request.auth.token.dispensaryId;
+    if (!dispensaryId) {
+        throw new HttpsError('failed-precondition', 'Your user account is not associated with a dispensary.');
+    }
+
+    // 3. Data Sanitization & Mapping
+    // We explicitly map the data from the request to a new object.
+    // This is a critical security step to prevent malicious users from injecting forbidden fields.
+    const data = request.data;
+    const allowedUpdateData = {
+        dispensaryName: data.dispensaryName,
+        phone: data.phone,
+        currency: data.currency,
+        streetAddress: data.streetAddress || null,
+        suburb: data.suburb || null,
+        city: data.city || null,
+        province: data.province || null,
+        postalCode: data.postalCode || null,
+        country: data.country || null,
+        latitude: data.latitude === undefined ? null : data.latitude,
+        longitude: data.longitude === undefined ? null : data.longitude,
+        showLocation: data.showLocation,
+        openTime: data.openTime || null,
+        closeTime: data.closeTime || null,
+        operatingDays: data.operatingDays || [],
+        shippingMethods: data.shippingMethods || [],
+        deliveryRadius: data.deliveryRadius || 'none',
+        message: data.message || '',
+        originLocker: data.originLocker || null, 
+        lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    // 4. Database Operation
+    try {
+        const dispensaryDocRef = db.collection('dispensaries').doc(dispensaryId);
+        
+        const docSnap = await dispensaryDocRef.get();
+        if (!docSnap.exists) {
+            throw new HttpsError('not-found', 'The specified dispensary does not exist.');
+        }
+        
+        await dispensaryDocRef.update(allowedUpdateData);
+        
+        logger.info(`Dispensary profile ${dispensaryId} updated successfully by owner ${request.auth.uid}.`);
+        
+        return { success: true, message: "Dispensary profile updated successfully." };
+
+    } catch (error: any) {
+        logger.error(`CRITICAL ERROR in updateDispensaryProfile for dispensary ${dispensaryId}:`, error);
+        if (error instanceof HttpsError) {
+          throw error;
+        }
+        throw new HttpsError('internal', 'An unexpected server error occurred while updating the profile.');
+    }
+});
+
+
+export const submitDispensaryApplication = onCall({ cors: true }, async (request: CallableRequest<any>) => {
+    // 1. Data Validation & Sanitization
+    const data = request.data;
+    if (!data.ownerEmail || !data.fullName || !data.dispensaryName || !data.dispensaryType || !data.currency || !data.acceptTerms) {
+        logger.error("submitDispensaryApplication validation failed: Missing required fields.", { 
+            required: { 
+                ownerEmail: !!data.ownerEmail, 
+                fullName: !!data.fullName, 
+                dispensaryName: !!data.dispensaryName, 
+                dispensaryType: !!data.dispensaryType,
+                currency: !!data.currency,
+                acceptTerms: !!data.acceptTerms
+            }
+        });
+        throw new HttpsError('invalid-argument', 'Please fill out all required fields, including currency.');
+    }
+
+    if (data.acceptTerms !== true) {
+        throw new HttpsError('failed-precondition', 'You must accept the Terms of Usage Agreement to submit an application.');
+    }
+
+    // 2. Prepare the New Dispensary Document
+    // CORRECTED: This version captures all fields from the signup form.
+    const newApplicationData = {
+        // --- Core Application Data ---
+        dispensaryName: data.dispensaryName,
+        dispensaryType: data.dispensaryType,
+        ownerEmail: data.ownerEmail,
+        fullName: data.fullName,
+        phone: data.phone || null,
+        
+        // --- Address & Location Data ---
+        streetAddress: data.streetAddress || null,
+        suburb: data.suburb || null,
+        city: data.city || null,
+        province: data.province || null,
+        postalCode: data.postalCode || null,
+        country: data.country || null,
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
+        showLocation: data.showLocation || false,
+        
+        // --- Operational Data (from form) ---
+        currency: data.currency, // CORRECTED: Included from form
+        openTime: data.openTime || null, // CORRECTED: Included from form
+        closeTime: data.closeTime || null, // CORRECTED: Included from form
+        operatingDays: data.operatingDays || [], // CORRECTED: Included from form
+        deliveryRadius: data.deliveryRadius || 'none', // CORRECTED: Included from form
+        message: data.message || '', // CORRECTED: Included from form
+
+        // --- System-set initial values ---
+        status: 'Pending Approval',
+        acceptTerms: true,
+        
+        // --- Server-side timestamps for data integrity ---
+        applicationDate: admin.firestore.FieldValue.serverTimestamp(),
+        lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
+        
+        // --- Fields to be populated later in the workflow ---
+        ownerId: null,
+        approvedDate: null,
+        publicStoreUrl: null,
+        shippingMethods: [], // This is managed in the owner's profile after approval
+        originLocker: null  // This is managed in the owner's profile after approval
+    };
+
+    // 3. Database Operation
+    try {
+        const dispensaryRef = await db.collection('dispensaries').add(newApplicationData);
+        logger.info(`New dispensary application created with ID: ${dispensaryRef.id} for email: ${data.ownerEmail}`);
+        
+        return { 
+            success: true, 
+            message: "Your application has been submitted successfully. You will be notified once it has been reviewed by an administrator." 
+        };
+
+    } catch (error: any) {
+        logger.error(`CRITICAL ERROR in submitDispensaryApplication for email ${data.ownerEmail}:`, error);
+        throw new HttpsError('internal', 'An unexpected server error occurred while submitting your application. Please try again later.');
     }
 });
 

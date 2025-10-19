@@ -433,3 +433,32 @@ export interface StickerSet {
   viewCount: number;
   createdAt: Timestamp | Date | string;
 }
+
+// Data payload for the updateDispensaryProfile callable function.
+// This defines ONLY the fields an owner is allowed to edit.
+export interface OwnerUpdateDispensaryPayload {
+  dispensaryName: string;
+  phone: string;
+  currency: string; // <<< THIS IS THE FIX
+  streetAddress?: string;
+  suburb?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  country?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  showLocation: boolean;
+  openTime?: string | null;
+  closeTime?: string | null;
+  operatingDays: string[];
+  shippingMethods: string[];
+  deliveryRadius?: string | null;
+  message?: string | null;
+  originLocker?: {
+    id: string;
+    name: string;
+    address: string;
+    distanceKm?: number;
+  } | null;
+}
