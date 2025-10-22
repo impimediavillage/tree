@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -12,8 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
-  firebaseUser: FirebaseUser | null; // The raw Firebase user object
-  currentUser: AppUser | null; // Your custom user profile
+  currentUser: AppUser | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
   currentDispensary: Dispensary | null;
   loading: boolean;
@@ -29,32 +27,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Get references to the callable functions
 const getUserProfileCallable = httpsCallable(functions, 'getUserProfile');
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [currentDispensary, setCurrentDispensary] = useState<Dispensary | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
-  const fetchUserProfile = useCallback(async (user: FirebaseUser): Promise<AppUser | null> => {
+  const fetchUserProfile = useCallback(async (firebaseUser: FirebaseUser): Promise<AppUser | null> => {
     try {
-      const result = await getUserProfileCallable({});
+      console.log("AuthContext: Fetching user profile for UID:", firebaseUser.uid);
+      
+      const result = await getUserProfileCallable({}); // Pass empty object as data
       const fullProfile = result.data as AppUser;
 
       if (!fullProfile || !fullProfile.uid) {
         throw new Error("Received invalid user profile from server.");
       }
-
-      // PATCH: If user is a DispensaryOwner and the nested dispensary object is missing its ID,
-      // inject it from the user's top-level dispensaryId. This fixes a data inconsistency
-      // from the backend where the nested object doesn't include the document ID.
-      if (fullProfile.role === 'DispensaryOwner' && fullProfile.dispensary && !fullProfile.dispensary.id && fullProfile.dispensaryId) {
-        fullProfile.dispensary.id = fullProfile.dispensaryId;
-      }
       
+      console.log("AuthContext: Profile received:", fullProfile.role, "Dispensary:", fullProfile.dispensaryId);
       setCurrentUser(fullProfile);
       setCurrentDispensary(fullProfile.dispensary || null);
       localStorage.setItem('currentUserHolisticAI', JSON.stringify(fullProfile));
@@ -73,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       toast({ title: "Profile Load Error", description, variant: "destructive" });
-      await auth.signOut();
+      await auth.signOut(); // Log out the user if their profile can't be fetched
       return null;
     }
   }, [toast]);
@@ -90,13 +84,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [toast, router]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      setFirebaseUser(user); // Keep track of the raw Firebase user
-
-      if (user) {
-        await fetchUserProfile(user);
+      console.log("onAuthStateChanged fired. firebaseUser:", firebaseUser); // Add this log
+      if (firebaseUser) {
+        console.log("Authenticated user detected, fetching profile..."); // Add this log
+        await fetchUserProfile(firebaseUser);
       } else {
+        console.log("No authenticated user."); // Add this log
         setCurrentUser(null);
         setCurrentDispensary(null);
         localStorage.removeItem('currentUserHolisticAI');
@@ -116,7 +111,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isLeafUser = currentUser?.role === 'User' || currentUser?.role === 'LeafUser';
   
   const value: AuthContextType = {
-    firebaseUser,
     currentUser,
     setCurrentUser,
     currentDispensary,

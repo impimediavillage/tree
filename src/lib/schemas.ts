@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import type { ProductCategory as ProductCategoryType } from '../functions/src/types';
 
 const timeFormatRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -74,17 +75,41 @@ export const editDispensarySchema = baseWellnessSchema.extend({
 });
 export type EditDispensaryFormData = z.infer<typeof editDispensarySchema>;
 
-export const ownerEditDispensarySchema = baseWellnessSchema.omit({
-  ownerEmail: true,
-  fullName: true,
-}).extend({
+export const ownerEditDispensarySchema = z.object({
+  // Fields kept from baseWellnessSchema
+  phone: z.string().min(9, { message: "Phone number seems too short." }),    
+  dispensaryName: z.string().min(2, { message: "Wellness name must be at least 2 characters." }),
+  currency: z.string({ required_error: "Please select a currency." }).min(1, { message: "Please select a currency." }),
+  openTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
+  closeTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
+  operatingDays: z.array(z.string()).optional().default([]),
+  shippingMethods: z.array(z.string()).optional().default([]),
+  
+  
+  // Address fields are now correctly optional
+  streetAddress: z.string().optional().nullable(),
+  suburb: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  postalCode: z.string().optional().nullable(),
+  province: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),  
+  latitude: z.number().optional().nullable(),
+  longitude: z.number().optional().nullable(),
+
+  // Other optional fields from baseWellnessSchema
+  showLocation: z.boolean().default(true).optional(),
+  deliveryRadius: z.string().optional().nullable(),
+  message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
+  originLocker: pudoLockerSchema.nullable().optional(),
 }).superRefine((data, ctx) => {
-   if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Open time must be before close time.", path: ["openTime"] });
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Close time must be after open time.", path: ["closeTime"] });
-  }
+    if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Open time must be before close time.', path: ['openTime'] });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Close time must be after open time.', path: ['closeTime'] });
+    }
 });
+
 export type OwnerEditDispensaryFormData = z.infer<typeof ownerEditDispensarySchema>;
+
 
 // --- ALL OTHER SCHEMAS REMAIN UNCHANGED ---
 
@@ -566,3 +591,5 @@ export const GenerateStrainStickerInputSchema = z.object({
 export const GenerateStrainStickerOutputSchema = z.object({
   imageUrl: z.string().url().describe('The URL of the generated circular sticker image.'),
 });
+
+

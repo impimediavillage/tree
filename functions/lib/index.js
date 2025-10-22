@@ -729,7 +729,7 @@ exports.updateDispensaryProfile = (0, https_1.onCall)({ cors: true }, async (req
     if (userRole !== 'DispensaryOwner') {
         throw new https_1.HttpsError('permission-denied', 'Only dispensary owners can update their profile.');
     }
-    // 2. Ownership Verification
+    // 2. Ownership Verification (get dispensaryId from the user's token)
     const dispensaryId = request.auth.token.dispensaryId;
     if (!dispensaryId) {
         throw new https_1.HttpsError('failed-precondition', 'Your user account is not associated with a dispensary.');
@@ -741,14 +741,13 @@ exports.updateDispensaryProfile = (0, https_1.onCall)({ cors: true }, async (req
     const allowedUpdateData = {
         dispensaryName: data.dispensaryName,
         phone: data.phone,
-        currency: data.currency, // <<< THE FIX IS HERE
+        currency: data.currency,
         streetAddress: data.streetAddress || null,
         suburb: data.suburb || null,
         city: data.city || null,
         province: data.province || null,
         postalCode: data.postalCode || null,
         country: data.country || null,
-        // Handle cases where lat/lng might be undefined from the form
         latitude: data.latitude === undefined ? null : data.latitude,
         longitude: data.longitude === undefined ? null : data.longitude,
         showLocation: data.showLocation,
@@ -758,31 +757,25 @@ exports.updateDispensaryProfile = (0, https_1.onCall)({ cors: true }, async (req
         shippingMethods: data.shippingMethods || [],
         deliveryRadius: data.deliveryRadius || 'none',
         message: data.message || '',
-        // Ensure originLocker is either a valid object or null
         originLocker: data.originLocker || null,
-        // Update the last activity timestamp
         lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
     };
     // 4. Database Operation
     try {
         const dispensaryDocRef = db.collection('dispensaries').doc(dispensaryId);
-        // Good practice: Check if the document actually exists before trying to update it.
         const docSnap = await dispensaryDocRef.get();
         if (!docSnap.exists) {
             throw new https_1.HttpsError('not-found', 'The specified dispensary does not exist.');
         }
-        // Perform the secure update
         await dispensaryDocRef.update(allowedUpdateData);
         logger.info(`Dispensary profile ${dispensaryId} updated successfully by owner ${request.auth.uid}.`);
         return { success: true, message: "Dispensary profile updated successfully." };
     }
     catch (error) {
         logger.error(`CRITICAL ERROR in updateDispensaryProfile for dispensary ${dispensaryId}:`, error);
-        // Re-throw HttpsError instances directly
         if (error instanceof https_1.HttpsError) {
             throw error;
         }
-        // Wrap other errors in a generic internal error
         throw new https_1.HttpsError('internal', 'An unexpected server error occurred while updating the profile.');
     }
 });

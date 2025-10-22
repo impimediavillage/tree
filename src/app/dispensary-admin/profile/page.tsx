@@ -325,14 +325,13 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                 name: data.originLocker.name,
                 address: data.originLocker.address,
             };
+            console.log("Final submissionData being sent to Firebase:", submissionData);
         } else {
             submissionData.originLocker = null;
         }
-        console.log("Final submissionData being sent to Firebase:", submissionData);
         try {
             // 3. Send the clean, validated data to the backend function.
-            await updateDispensaryProfile(submissionData);
-            
+            await updateDispensaryProfile({ dispensaryId: dispensary.id, ...submissionData });
             toast({
                 title: "Profile Updated",
                 description: "Your dispensary profile has been successfully updated.",
@@ -510,9 +509,8 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                                     <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value ?? ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
                                 </div>
-                            </section>
-
-                            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting || !form.formState.isDirty}>
+                                </section>
+                                <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting || (form.formState.isSubmitted && !form.formState.isValid)}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Save Changes
                             </Button>
                         </form>
@@ -556,4 +554,6 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
         </>
     );
 }
+
+
 
