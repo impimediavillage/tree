@@ -76,37 +76,42 @@ export const editDispensarySchema = baseWellnessSchema.extend({
 export type EditDispensaryFormData = z.infer<typeof editDispensarySchema>;
 
 export const ownerEditDispensarySchema = z.object({
-  // Fields kept from baseWellnessSchema
-  phone: z.string().min(9, { message: "Phone number seems too short." }),    
   dispensaryName: z.string().min(2, { message: "Wellness name must be at least 2 characters." }),
   currency: z.string({ required_error: "Please select a currency." }).min(1, { message: "Please select a currency." }),
+  phone: z.string().min(9, { message: "A complete phone number is required." }),
+  streetAddress: z.string().min(1, { message: "Street address is required." }),
+  suburb: z.string().min(1, { message: "Suburb is required." }),
+  city: z.string().min(1, { message: "City is required." }),
+  postalCode: z.string().optional().nullable(),
+  province: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  latitude: z.number({ required_error: "A valid location must be selected on the map.", invalid_type_error: "A valid location must be selected on the map." }),
+  longitude: z.number({ required_error: "A valid location must be selected on the map.", invalid_type_error: "A valid location must be selected on the map." }),
+  showLocation: z.boolean().default(true).optional(),
   openTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   closeTime: z.string().refine(val => val === '' || timeFormatRegex.test(val), { message: timeErrorMessage }).optional().nullable(),
   operatingDays: z.array(z.string()).optional().default([]),
-  shippingMethods: z.array(z.string()).optional().default([]),
-  
-  
-  // Address fields are now correctly optional
-  streetAddress: z.string().optional().nullable(),
-  suburb: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  postalCode: z.string().optional().nullable(),
-  province: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),  
-  latitude: z.number().optional().nullable(),
-  longitude: z.number().optional().nullable(),
-
-  // Other optional fields from baseWellnessSchema
-  showLocation: z.boolean().default(true).optional(),
+  shippingMethods: z.array(z.string()).min(1, { message: "Please select at least one shipping method." }),
   deliveryRadius: z.string().optional().nullable(),
-  message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
   originLocker: pudoLockerSchema.nullable().optional(),
+  message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
 }).superRefine((data, ctx) => {
-    if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Open time must be before close time.', path: ['openTime'] });
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Close time must be after open time.', path: ['closeTime'] });
-    }
+  if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Open time must be before close time.', path: ['openTime'] });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Close time must be after open time.', path: ['closeTime'] });
+  }
+
+  const lockerRequired = data.shippingMethods.includes('LTL') || data.shippingMethods.includes('LTD');
+  if (lockerRequired && (!data.originLocker || !data.originLocker.id)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'An origin locker must be selected for Locker to Locker or Locker to Door shipping.',
+      path: ['originLocker'],
+    });
+  }
 });
+
+
 
 export type OwnerEditDispensaryFormData = z.infer<typeof ownerEditDispensarySchema>;
 

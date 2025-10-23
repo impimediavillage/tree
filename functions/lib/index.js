@@ -750,7 +750,7 @@ exports.updateDispensaryProfile = (0, https_1.onCall)({ cors: true }, async (req
         country: data.country || null,
         latitude: data.latitude === undefined ? null : data.latitude,
         longitude: data.longitude === undefined ? null : data.longitude,
-        showLocation: data.showLocation,
+        showLocation: data.showLocation ?? true,
         openTime: data.openTime || null,
         closeTime: data.closeTime || null,
         operatingDays: data.operatingDays || [],

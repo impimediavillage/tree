@@ -42,8 +42,6 @@ export interface Dispensary {
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];
-  location?: string; // Legacy field, will be phased out
-  // New structured address fields for Shiplogic
   streetAddress?: string;
   suburb?: string;
   city?: string;
@@ -54,10 +52,6 @@ export interface Dispensary {
   longitude?: number | null;
   originLocker?: PUDOLocker | null;
   deliveryRadius?: string | null;
-  bulkDeliveryRadius?: string | null;
-  collectionOnly?: boolean;
-  orderType?: 'small' | 'bulk' | 'both' | null;
-  participateSharing?: 'yes' | 'no' | null;
   leadTime?: string | null;
   message?: string | null;
   status: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
