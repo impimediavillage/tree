@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Inbox, Send, AlertTriangle, Loader2 } from 'lucide-react';
+import { History, Inbox, Send, Loader2 } from 'lucide-react';
 import { ProductRequestCard } from '@/components/dispensary-admin/ProductRequestCard';
 
 export default function WellnessPoolPage() {
@@ -89,22 +89,8 @@ export default function WellnessPoolPage() {
     return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
-  if (!currentUser?.dispensary?.participateSharing || currentUser.dispensary.participateSharing === 'no') {
-    return (
-        <Card className="mt-6 text-center">
-            <CardHeader>
-                <AlertTriangle className="mx-auto h-12 w-12 text-orange-500" />
-                <CardTitle className="text-xl font-semibold">Product Sharing Disabled</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <CardDescription>
-                    Your wellness profile is not set up to participate in the product sharing pool.
-                    To enable this feature, please edit your profile settings.
-                </CardDescription>
-            </CardContent>
-        </Card>
-    );
-  }
+  // All dispensaries participate in the Product Pool by default
+  // No need to check participateSharing flag anymore
 
   const renderRequestGrid = (requests: ProductRequest[], type: 'incoming' | 'outgoing') => {
     if (isLoading) {

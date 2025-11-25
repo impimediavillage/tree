@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, ShoppingBasket, FilterX, AlertTriangle, Truck } from 'lucide-react';
+import { Search, ShoppingBasket, FilterX, Truck } from 'lucide-react';
 
 const productCollectionNames = [
     "cannibinoid_store_products",
@@ -59,6 +59,13 @@ export default function BrowsePoolPage() {
     const productsMap = new Map<string, Product>();
 
     try {
+        // Product Pool Sharing Logic:
+        // All dispensaries participate in the pool by default (no participateSharing flag needed)
+        // Product visibility is controlled by the SELLER when creating pool price tiers:
+        // 1. 'same_type' - Only dispensaries of the same type can see this product
+        // 2. 'all_types' - All dispensaries in the pool can see this product
+        // 3. 'specific_stores' - Only dispensaries in allowedPoolDispensaryIds can see this product
+        // Each pool price tier creates a unique card in the browse view
         for (const collectionName of productCollectionNames) {
             const productsCollectionRef = collection(db, collectionName);
             const sameTypeQuery = query(productsCollectionRef, where('isAvailableForPool', '==', true), where('poolSharingRule', '==', 'same_type'), where('dispensaryType', '==', myDispensaryType));
@@ -160,7 +167,8 @@ export default function BrowsePoolPage() {
   }, [filteredProducts, myOpenRequests]);
 
   const handleRequestClick = (product: Product, tier: PriceTier) => {
-    // For pool tiers, use unit + price as composite key since tierId might not exist
+    // For pool tiers, we need to find a unique identifier
+    // Use unit + price as a composite key since tierId might not exist
     const tierIdentifier = `${tier.unit}-${tier.price}`;
     
     // Navigate to the request page with URL params
@@ -185,22 +193,6 @@ export default function BrowsePoolPage() {
     };
     return typeMap[dispensaryType] || 'products';
   };
-  
-  if (!authLoading && (!currentUser?.dispensary?.participateSharing || currentUser.dispensary.participateSharing === 'no')) {
-    return (
-        <Card className="mt-6 text-center">
-            <CardHeader>
-                <AlertTriangle className="mx-auto h-12 w-12 text-orange-500" />
-                <CardTitle className="text-xl font-semibold">Product Sharing Disabled</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <CardDescription>
-                    Your wellness profile is not set up to participate in the product sharing pool. To enable this feature, please edit your profile settings.
-                </CardDescription>
-            </CardContent>
-        </Card>
-    );
-  }
 
   return (
     <>
