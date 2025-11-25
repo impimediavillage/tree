@@ -2,6 +2,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
@@ -14,7 +15,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, ShoppingBasket, FilterX, AlertTriangle, Truck } from 'lucide-react';
-import { RequestProductDialog } from '@/components/dispensary-admin/RequestProductDialog';
 
 const productCollectionNames = [
     "cannibinoid_store_products",
@@ -35,6 +35,7 @@ type ProductWithRequestInfo = {
 };
 
 export default function BrowsePoolPage() {
+  const router = useRouter();
   const { currentUser, currentDispensary, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
@@ -45,8 +46,6 @@ export default function BrowsePoolPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<{product: Product, tier: PriceTier} | null>(null);
-  const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
 
   const fetchPoolData = useCallback(async () => {
     if (!currentUser?.dispensaryId || !currentDispensary?.dispensaryType) {
@@ -113,6 +112,24 @@ export default function BrowsePoolPage() {
       fetchPoolData();
     }
   }, [authLoading, fetchPoolData]);
+
+  // Listen for when a request is submitted and refresh data
+  useEffect(() => {
+    const checkForRefresh = () => {
+      const shouldRefresh = localStorage.getItem('poolRequestSubmitted');
+      if (shouldRefresh === 'true') {
+        localStorage.removeItem('poolRequestSubmitted');
+        fetchPoolData();
+      }
+    };
+
+    // Check on mount
+    checkForRefresh();
+
+    // Also check when window regains focus (in case user navigates back)
+    window.addEventListener('focus', checkForRefresh);
+    return () => window.removeEventListener('focus', checkForRefresh);
+  }, [fetchPoolData]);
   
   const filteredProducts = useMemo(() => {
     return poolProducts.filter(product => {
@@ -143,8 +160,30 @@ export default function BrowsePoolPage() {
   }, [filteredProducts, myOpenRequests]);
 
   const handleRequestClick = (product: Product, tier: PriceTier) => {
-    setSelectedProduct({ product, tier });
-    setIsRequestDialogOpen(true);
+    // For pool tiers, use unit + price as composite key since tierId might not exist
+    const tierIdentifier = `${tier.unit}-${tier.price}`;
+    
+    // Navigate to the request page with URL params
+    // Pass the collection name so we know where to find the product
+    const params = new URLSearchParams({
+      productId: product.id || '',
+      tierId: tierIdentifier,
+      ownerDispensaryId: product.dispensaryId,
+      collectionName: product.dispensaryType ? getCollectionName(product.dispensaryType) : 'products',
+    });
+    router.push(`/dispensary-admin/browse-pool/request?${params.toString()}`);
+  };
+
+  // Helper to get collection name from dispensary type
+  const getCollectionName = (dispensaryType: string): string => {
+    const typeMap: Record<string, string> = {
+      'Cannibinoid store': 'cannibinoid_store_products',
+      'Traditional Medicine dispensary': 'traditional_medicine_dispensary_products',
+      'Homeopathy store': 'homeopathy_store_products',
+      'Mushroom store': 'mushroom_store_products',
+      'Permaculture store': 'permaculture_store_products',
+    };
+    return typeMap[dispensaryType] || 'products';
   };
   
   if (!authLoading && (!currentUser?.dispensary?.participateSharing || currentUser.dispensary.participateSharing === 'no')) {
@@ -223,20 +262,6 @@ export default function BrowsePoolPage() {
         </Card>
         )}
       </div>
-      {selectedProduct && currentDispensary && (
-        <RequestProductDialog
-          isOpen={isRequestDialogOpen}
-          onOpenChange={setIsRequestDialogOpen}
-          product={selectedProduct.product}
-          tier={selectedProduct.tier}
-          requesterDispensary={currentDispensary}
-          onSuccess={() => {
-            setIsRequestDialogOpen(false);
-            fetchPoolData(); 
-            toast({ title: 'Request Sent!', description: 'Your product request has been sent to the owner.' });
-          }}
-        />
-      )}
     </>
   );
 }
