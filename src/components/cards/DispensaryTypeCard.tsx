@@ -27,7 +27,7 @@ export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: Disp
 
   return (
     <Card 
-        className="group relative flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-[380px] bg-card/60 dark:bg-card/70 backdrop-blur-sm border-border/30 hover:border-primary/50 animate-fade-in-scale-up"
+        className="group relative flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-[380px] bg-muted/50 border-border/30 hover:border-primary/50 animate-fade-in-scale-up"
         style={{ animationDelay: `${delay}ms`, animationFillMode: 'backwards' }}
         data-ai-hint={`dispensary type ${name.toLowerCase()}`}
     >
@@ -48,7 +48,7 @@ export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: Disp
 
         <div className="relative z-10 flex flex-col h-full p-6 text-white">
             <CardHeader className="p-0">
-                <CardTitle className="text-2xl font-bold tracking-tight text-white shadow-text leading-tight">
+                <CardTitle className="text-2xl font-extrabold tracking-tight text-white shadow-text leading-tight">
                     {name}
                 </CardTitle>
                 {storeCount !== undefined && (
@@ -59,7 +59,7 @@ export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: Disp
             </CardHeader>
 
             <CardContent className="p-0 flex-grow mt-3">
-                <p className="text-sm text-gray-200 line-clamp-4 shadow-text">
+                <p className="text-sm font-semibold text-white/95 line-clamp-4 shadow-text">
                     {description}
                 </p>
             </CardContent>

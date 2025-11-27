@@ -87,7 +87,7 @@ export default function TraditionalMedicineAdvisorPage() {
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <Card className="shadow-xl">
+      <Card className="shadow-xl bg-muted/50">
         <CardHeader>
           <div className="flex items-center gap-3">
             <HandHelping className="h-10 w-10 text-primary" />

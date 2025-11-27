@@ -130,7 +130,7 @@ export default function PublicCreditsPage() {
             description={<p>Credits are your key to unlocking a universe of creative potential. Use them to generate stunning AI-powered designs, get expert advice, and bring your wellness ideas to life.</p>}
         >
             {currentUser && !authLoading && (
-                <div className="mt-6 bg-card/70 dark:bg-card/80 backdrop-blur-md border border-border/50 rounded-lg p-4 inline-block shadow-inner">
+                <div className="mt-6 bg-muted/50 border border-border/50 rounded-lg p-4 inline-block shadow-inner">
                     <p className="text-lg text-foreground">
                         Your current balance: 
                         <span className="font-bold text-primary ml-2">{currentUser.credits}</span> credits
@@ -142,7 +142,7 @@ export default function PublicCreditsPage() {
         {isLoadingPackages ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1,2,3].map(i => (
-                  <Card key={i} className="flex flex-col bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 shadow-lg">
+                  <Card key={i} className="flex flex-col bg-muted/50 border-border/50 shadow-lg">
                       <CardHeader className="pb-4"><Skeleton className="h-6 w-3/4" /><Skeleton className="h-8 w-1/2 mt-2" /><Skeleton className="h-5 w-1/4 mt-1" /></CardHeader>
                       <CardContent className="flex-grow space-y-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-4/6" /></CardContent>
                       <CardFooter><Skeleton className="h-12 w-full" /></CardFooter>
@@ -150,11 +150,11 @@ export default function PublicCreditsPage() {
               ))}
           </div>
         ) : creditPackages.length === 0 ? (
-          <Card className="bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
-              <CardContent className="pt-6 text-center text-muted-foreground">
+          <Card className="bg-muted/50 border-border/50">
+              <CardContent className="pt-6 text-center text-foreground/80">
                   <DollarSign className="mx-auto h-12 w-12 mb-3 text-accent" />
-                  <h3 className="text-xl font-semibold">No Credit Packages Available</h3>
-                  <p>There are currently no credit packages available for purchase. Please check back later.</p>
+                  <h3 className="text-xl font-extrabold">No Credit Packages Available</h3>
+                  <p className="font-semibold">There are currently no credit packages available for purchase. Please check back later.</p>
               </CardContent>
           </Card>
         ) : (
@@ -172,25 +172,25 @@ export default function PublicCreditsPage() {
               return (
                 <Card 
                   key={pkg.id} 
-                  className="flex flex-col shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-card/70 dark:bg-card/80 backdrop-blur-md text-card-foreground border border-border/50 hover:border-primary/60"
+                  className="flex flex-col shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-muted/50 text-card-foreground border border-border/50 hover:border-primary/60"
                   data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
                 >
                   <CardHeader className="pb-4 text-center">
-                    <CardTitle className="text-2xl font-bold text-primary">{pkg.name}</CardTitle>
+                    <CardTitle className="text-2xl font-extrabold text-primary">{pkg.name}</CardTitle>
                      <p className="text-4xl font-extrabold text-foreground my-3">
-                      {pkg.price.toFixed(2)} <span className="text-base font-medium text-muted-foreground">{pkg.currency}</span>
+                      {pkg.price.toFixed(2)} <span className="text-base font-bold text-foreground/60">{pkg.currency}</span>
                     </p>
                     <p className="text-xl">
-                        <span className="text-3xl font-bold text-primary">{pkg.credits}</span>
-                        <span className="text-muted-foreground"> Credits</span>
+                        <span className="text-3xl font-extrabold text-primary">{pkg.credits}</span>
+                        <span className="font-semibold text-foreground/70"> Credits</span>
                         {pkg.bonusCredits && pkg.bonusCredits > 0 && (
                              <Badge variant="default" className="ml-2 bg-accent hover:bg-accent/90 text-accent-foreground">+{pkg.bonusCredits} Bonus</Badge>
                         )}
                     </p>
                   </CardHeader>
                   <CardContent className="flex-grow flex flex-col px-6">
-                    {pkg.description && <p className="text-sm text-muted-foreground mb-5 text-center line-clamp-2 h-10">{pkg.description}</p>}
-                    <ul className="space-y-3 mb-6 text-sm flex-grow">
+                    {pkg.description && <p className="text-sm font-semibold text-foreground/80 mb-5 text-center line-clamp-2 h-10">{pkg.description}</p>}
+                    <ul className="space-y-3 mb-6 text-sm font-semibold flex-grow">
                       {packageFeatures.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3 text-foreground">
                           <feature.icon className="h-5 w-5 text-primary" />

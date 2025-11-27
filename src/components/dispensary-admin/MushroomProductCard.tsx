@@ -52,7 +52,7 @@ export function MushroomProductCard({ product, onSelect }: MushroomProductCardPr
   const safetyWarnings = product.safety_warnings;
 
   return (
-    <Card className="w-80 flex-shrink-0 snap-start flex flex-col shadow-lg bg-card text-card-foreground border border-border/50 group">
+    <Card className="w-80 flex-shrink-0 snap-start flex flex-col shadow-lg bg-muted/50 text-card-foreground border border-border/50 group">
         <CardHeader className="p-0 relative h-48 w-full overflow-hidden rounded-t-lg">
             <Image
                 src={imageUrl}

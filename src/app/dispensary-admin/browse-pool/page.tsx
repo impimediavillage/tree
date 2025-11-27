@@ -197,7 +197,7 @@ export default function BrowsePoolPage() {
   return (
     <>
       <div className="space-y-6">
-        <Card className="shadow-lg bg-card border-primary/30">
+        <Card className="shadow-lg bg-muted/50 border-primary/30">
             <CardHeader>
             <CardTitle 
                 className="text-3xl font-bold text-foreground flex items-center"
@@ -214,7 +214,7 @@ export default function BrowsePoolPage() {
             </CardHeader>
         </Card>
         
-        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
             <div className="relative flex-grow">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input type="text" placeholder="Search by name or description..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-full" />

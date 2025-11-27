@@ -7,6 +7,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Formats a number as currency with the specified currency code
+ * @param amount The amount to format
+ * @param currency The currency code (default: ZAR)
+ * @returns Formatted currency string
+ */
+export function formatCurrency(amount: number, currency: string = 'ZAR'): string {
+  const currencySymbols: Record<string, string> = {
+    'ZAR': 'R',
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+  };
+
+  const symbol = currencySymbols[currency] || currency;
+  return `${symbol}${amount.toFixed(2)}`;
+}
+
+/**
  * Shuffles an array in place using the Fisher-Yates algorithm.
  * Creates a new array to avoid modifying the original.
  * @param array The array to shuffle.

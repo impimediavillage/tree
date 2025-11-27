@@ -131,10 +131,10 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             <>
                 <div className="w-full text-right">
                     <p className="text-2xl font-bold text-foreground">
-                        <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
+                        <span className="text-sm font-bold text-primary align-top">{product.currency} </span>
                         {tier.price.toFixed(2)}
                     </p>
-                    <div className="flex items-center justify-end text-xs text-muted-foreground">
+                    <div className="flex items-center justify-end text-xs font-semibold text-foreground/70">
                         <span className="mr-1">/ {tier.unit}</span>
                     </div>
                 </div>
@@ -220,7 +220,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   return (
     <>
       <Card 
-          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 group animate-fade-in-scale-up"
+          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-muted/50 border-border/50 group animate-fade-in-scale-up"
           style={{ animationFillMode: 'backwards' }}
           data-ai-hint={dataAiHintProduct}
       >
@@ -273,15 +273,15 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           )}
         </div>
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-lg font-semibold truncate text-primary" title={product.name}>{product.name}</CardTitle>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CardTitle className="text-lg font-bold truncate text-primary" title={product.name}>{product.name}</CardTitle>
+          <div className="flex items-center gap-2 text-xs font-semibold text-foreground/80">
               <Tag className="h-3.5 w-3.5"/> <span>{product.category}</span>
               {product.strain && <span className="truncate">| {product.strain}</span>}
           </div>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col space-y-2.5 py-2">
             <div className="flex-grow">
-                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
+                <p className="text-sm font-medium text-foreground/90 line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
             </div>
              {requestStatus === 'negotiating' && (
               <div className="text-xs space-y-1 pt-1">
@@ -297,7 +297,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       </Card>
       
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
-        <DialogContent className="max-w-lg w-full p-2 sm:p-4 bg-card/80 backdrop-blur-md">
+        <DialogContent className="max-w-lg w-full p-2 sm:p-4 bg-muted/50">
           <DialogHeader className="p-2">
             <DialogTitle>{product.name}</DialogTitle>
             <DialogDescription>

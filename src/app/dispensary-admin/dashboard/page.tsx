@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard } from 'lucide-react';
+import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -18,14 +18,14 @@ interface QuickActionCardProps {
 }
 
 const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, buttonText, disabled }) => (
-    <Card className="hover:shadow-lg transition-shadow bg-card">
+    <Card className="hover:shadow-lg transition-shadow bg-muted/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl text-card-foreground">
-          <Icon className="text-accent h-6 w-6" /> {title}
+        <CardTitle className="flex items-center gap-3 text-xl font-extrabold text-foreground">
+          <Icon className="text-primary h-8 w-8" /> {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground mb-4">{description}</p>
+        <p className="text-foreground/80 font-semibold mb-4">{description}</p>
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={disabled}>
           <Link href={disabled ? '#' : link}>{buttonText}</Link>
         </Button>
@@ -52,7 +52,7 @@ export default function WellnessAdminOverviewPage() {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg bg-card border-primary/30">
+      <Card className="shadow-lg bg-muted/50 border-primary/30">
         <CardHeader>
           <CardTitle 
             className="text-3xl font-bold text-foreground flex items-center"
@@ -83,6 +83,20 @@ export default function WellnessAdminOverviewPage() {
             icon={ShoppingBasket}
             link="/dispensary-admin/pool"
             buttonText="Go to Pool"
+        />
+        <QuickActionCard
+            title="Orders"
+            description="Manage customer orders, shipping labels, and order tracking."
+            icon={Receipt}
+            link="/dispensary-admin/orders"
+            buttonText="View Orders"
+        />
+        <QuickActionCard
+            title="Pool Orders"
+            description="View and manage all finalized product pool orders and shipping."
+            icon={PackageCheck}
+            link="/dispensary-admin/product-pool-orders"
+            buttonText="View Pool Orders"
         />
         <QuickActionCard
             title="Wellness Profile"

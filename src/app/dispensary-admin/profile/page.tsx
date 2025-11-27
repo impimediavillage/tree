@@ -317,20 +317,20 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
             message: data.message,
         };
 
-        // 2. Handle the 'originLocker' object separately to ensure it's clean.
-        // If it exists, create a new object without the temporary 'distanceKm' field.
-        if (data.originLocker) {
-            submissionData.originLocker = {
-                id: data.originLocker.id,
-                name: data.originLocker.name,
-                address: data.originLocker.address,
-            };
-            console.log("Final submissionData being sent to Firebase:", submissionData);
+        // 2. Handle the 'originLocker' object - preserve complete PUDO structure for shipping compatibility.
+        // The PUDO API returns rich locker data (location, city, province, status, etc.) that shipping needs.
+        if (data.originLocker && data.originLocker.id) {
+            // Keep all fields including distanceKm for consistency
+            submissionData.originLocker = data.originLocker;
+            console.log("Complete originLocker structure being sent:", submissionData.originLocker);
         } else {
             submissionData.originLocker = null;
         }
+        
+        console.log("Complete submissionData being sent to Firebase:", submissionData);
+        
         try {
-            // 3. Send the clean, validated data to the backend function.
+            // 3. Send the complete, validated data to the backend function.
             await updateDispensaryProfile({ dispensaryId: dispensary.id, ...submissionData });
             toast({
                 title: "Profile Updated",

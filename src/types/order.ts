@@ -36,6 +36,7 @@ export interface Order {
     total: number;
     subtotal: number;
     shippingTotal: number;
+    currency?: string;
     paymentMethod: 'payfast';
     paymentId?: string;
     paymentStatus: 'pending' | 'completed' | 'failed';

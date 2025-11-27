@@ -294,7 +294,7 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
     return (
       <>
         <div className="container mx-auto px-4 py-8">
-            <Card className="max-w-4xl mx-auto my-8 shadow-xl bg-card">
+            <Card className="max-w-4xl mx-auto my-8 shadow-xl bg-muted/50">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-3xl flex items-center text-foreground"><Building className="mr-3 h-8 w-8 text-primary" /> Edit Dispensary</CardTitle>

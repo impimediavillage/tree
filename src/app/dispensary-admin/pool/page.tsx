@@ -126,7 +126,7 @@ export default function WellnessPoolPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg bg-card border-primary/30">
+      <Card className="shadow-lg bg-muted/50 border-primary/30">
         <CardHeader>
           <CardTitle 
             className="text-3xl font-bold text-foreground flex items-center"

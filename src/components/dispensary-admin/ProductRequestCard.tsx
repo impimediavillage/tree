@@ -382,7 +382,7 @@ export const ProductRequestCard: React.FC<ProductRequestCardProps> = ({ request,
 
 
     return (
-        <Card className="flex flex-col shadow-md hover:shadow-lg transition-shadow bg-card">
+        <Card className="flex flex-col shadow-md hover:shadow-lg transition-shadow bg-muted/50">
             <CardHeader>
                 <div className="flex justify-between items-start gap-2">
                      <CardTitle className="text-lg font-semibold truncate" title={request.productName}>{request.productName}</CardTitle>

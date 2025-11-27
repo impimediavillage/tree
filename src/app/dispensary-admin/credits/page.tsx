@@ -24,7 +24,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, description, isLoading }) => (
-  <Card className="shadow-md hover:shadow-lg transition-shadow bg-card">
+  <Card className="shadow-md hover:shadow-lg transition-shadow bg-muted/50">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium text-card-foreground">{title}</CardTitle>
       <Icon className="h-5 w-5 text-muted-foreground" />
@@ -121,7 +121,7 @@ export default function DispensaryCreditsPage() {
 
     return (
         <div className="space-y-8">
-            <Card className="shadow-lg bg-card border-primary/30">
+            <Card className="shadow-lg bg-muted/50 border-primary/30">
                 <CardHeader>
                     <CardTitle className="text-3xl font-bold text-foreground flex items-center" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         <CreditCard className="mr-3 h-8 w-8 text-primary" /> My Credit Analytics
@@ -156,7 +156,7 @@ export default function DispensaryCreditsPage() {
                 />
             </div>
 
-             <Card className="shadow-md bg-card">
+             <Card className="shadow-md bg-muted/50">
                 <CardHeader>
                     <CardTitle className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Usage by Advisor
@@ -200,7 +200,7 @@ export default function DispensaryCreditsPage() {
                 </CardContent>
             </Card>
 
-            <Card className="shadow-md bg-card">
+            <Card className="shadow-md bg-muted/50">
                  <CardHeader>
                     <CardTitle className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
                         Recent Transactions
@@ -230,7 +230,7 @@ export default function DispensaryCreditsPage() {
                             ))}
                             {!isLoading && logs.slice(0, 10).map(log => (
                                 <TableRow key={log.id}>
-                                    <TableCell>{format(log.timestamp, 'PPpp')}</TableCell>
+                                    <TableCell>{format(log.timestamp instanceof Date ? log.timestamp : (log.timestamp as any)?.toDate?.() || new Date(log.timestamp as any), 'PPpp')}</TableCell>
                                     <TableCell><Badge variant="secondary">{formatAdvisorSlug(log.advisorSlug)}</Badge></TableCell>
                                     <TableCell>{/* Need to fetch user displayName from log.userId if needed, for now just UID */ log.userId.substring(0,10)}...</TableCell>
                                     <TableCell className="text-right font-semibold text-destructive">-{log.creditsUsed}</TableCell>

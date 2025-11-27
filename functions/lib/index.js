@@ -452,11 +452,23 @@ exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors
                 }
                 const distance = getDistanceInKm(latitude, longitude, lockerLat, lockerLng);
                 if (distance <= radius) {
+                    // Return complete PUDO locker structure for shipping compatibility
                     acc.push({
                         id: locker.code,
-                        name: locker.name,
-                        address: locker.street_address, // Use 'address' to match schema and frontend
-                        distanceKm: distance // Attach the calculated distance
+                        name: locker.name || '',
+                        address: locker.street_address || '',
+                        street_address: locker.street_address || '',
+                        city: locker.city || '',
+                        province: locker.province || '',
+                        postalCode: locker.postal_code || '',
+                        suburb: locker.suburb || '',
+                        status: locker.status || 'active',
+                        availableCompartments: locker.available_compartments || 0,
+                        location: {
+                            lat: lockerLat,
+                            lng: lockerLng
+                        },
+                        distanceKm: distance // Temporary field for sorting (removed before saving)
                     });
                 }
                 return acc;
@@ -468,18 +480,33 @@ exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors
             logger.warn(`Lat/Lng not provided. Falling back to inefficient city string filter for: ${city}`);
             formattedLockers = allLockers
                 .filter((locker) => locker.street_address && locker.street_address.toLowerCase().includes(city.toLowerCase()))
-                .map((locker) => ({
-                id: locker.code,
-                name: locker.name,
-                address: locker.street_address, // Use 'address' field
-                distanceKm: null // No distance can be calculated
-            }));
+                .map((locker) => {
+                const lockerLat = parseFloat(locker.latitude);
+                const lockerLng = parseFloat(locker.longitude);
+                return {
+                    id: locker.code,
+                    name: locker.name || '',
+                    address: locker.street_address || '',
+                    street_address: locker.street_address || '',
+                    city: locker.city || '',
+                    province: locker.province || '',
+                    postalCode: locker.postal_code || '',
+                    suburb: locker.suburb || '',
+                    status: locker.status || 'active',
+                    availableCompartments: locker.available_compartments || 0,
+                    location: !isNaN(lockerLat) && !isNaN(lockerLng) ? {
+                        lat: lockerLat,
+                        lng: lockerLng
+                    } : undefined,
+                    distanceKm: null // No distance can be calculated
+                };
+            });
         }
         else {
             logger.error("No location data (lat/lng or city) provided to getPudoLockers.");
             throw new https_1.HttpsError('invalid-argument', 'No location data was provided to find lockers.');
         }
-        logger.info(`Successfully fetched and formatted ${formattedLockers.length} Pudo lockers.`);
+        logger.info(`Successfully fetched and formatted ${formattedLockers.length} Pudo lockers with complete structure.`);
         if (formattedLockers.length === 0) {
             logger.warn("No lockers found within the specified radius or matching the city.");
         }

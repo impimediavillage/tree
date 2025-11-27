@@ -350,7 +350,7 @@ export default function EditWellnessTypeCategoriesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {categoryFields.map((categoryItem, categoryIndex) => (
-                <Card key={categoryItem.id} className="p-3 bg-card border shadow-md relative animate-fade-in-scale-up" style={{ animationDuration: '0.3s', animationDelay: `${categoryIndex * 50}ms`}}>
+                <Card key={categoryItem.id} className="p-3 bg-muted/50 border shadow-md relative animate-fade-in-scale-up" style={{ animationDuration: '0.3s', animationDelay: `${categoryIndex * 50}ms`}}>
                   <div className="flex items-start justify-between mb-2">
                      <GripVertical className="h-5 w-5 text-muted-foreground/50 cursor-grab mt-7 mr-1" />
                     <FormField

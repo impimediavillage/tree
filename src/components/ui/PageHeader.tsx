@@ -10,7 +10,7 @@ interface PageHeaderProps {
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, children }) => {
   return (
-    <div className="bg-card/70 dark:bg-card/80 backdrop-blur-md border border-border/50 rounded-lg p-8 shadow-lg mb-12 text-center animate-fade-in-scale-up">
+    <div className="bg-muted/50 border border-border/50 rounded-lg p-8 shadow-lg mb-12 text-center animate-fade-in-scale-up">
       <h1 className="text-5xl font-extrabold tracking-tight text-foreground">
         {title}
       </h1>

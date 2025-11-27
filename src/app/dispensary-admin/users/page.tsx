@@ -274,7 +274,7 @@ export default function WellnessManageUsersPage() {
         </div>
       </div>
 
-       <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card shadow-sm">
+       <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
         <Input
             placeholder="Search by name or email..."
             value={searchTerm}

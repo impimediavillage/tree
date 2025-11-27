@@ -32,7 +32,7 @@ interface AdvisorCardProps {
 const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescription, icon: Icon, link, imageSrc, imageHint, dataAiHint, delay = 0 }) => (
   <Dialog>
     <Card
-      className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 overflow-hidden"
+      className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-muted/50 border-border/50 overflow-hidden"
       style={{ animationFillMode: 'backwards', animationDelay: `${delay}ms` }}
       data-ai-hint={dataAiHint || title.toLowerCase().replace(' advisor', '')}
     >
@@ -45,8 +45,8 @@ const AdvisorCard: React.FC<AdvisorCardProps> = ({ title, description, longDescr
           <div className="flex items-start gap-3 mb-2">
               <Icon className="h-8 w-8 text-primary flex-shrink-0 mt-1" />
               <div>
-                <h3 className="text-xl font-semibold text-card-foreground">{title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{description}</p>
+                <h3 className="text-xl font-bold text-foreground">{title}</h3>
+                <p className="text-sm font-semibold text-foreground/80 mt-1">{description}</p>
               </div>
           </div>
       </CardContent>
@@ -247,12 +247,12 @@ export default function HolisticAiHubPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Card 2: Create a Store */}
-          <Card className="p-8 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">
+              <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                 Join Our Growing Ecosystem
               </h2>
-              <p className="text-lg text-foreground mt-2">
+              <p className="text-lg font-semibold text-foreground/90 mt-2">
                 Create you own Cannibnoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or a Mushroom store.
               </p>
             </div>
@@ -282,12 +282,12 @@ export default function HolisticAiHubPage() {
           </Card>
 
           {/* Card 3: Become a Leaf User */}
-          <Card className="p-8 animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
             <div className="text-center">
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">
+              <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                 Need Wellness help now?
               </h2>
-              <p className="text-lg text-foreground mt-2">
+              <p className="text-lg font-semibold text-foreground/90 mt-2">
                 Get instant assistance now. Sign up as Leaf user and get 20 free credits. Make your own Clothing gear and much so more...
               </p>
             </div>
@@ -322,9 +322,9 @@ export default function HolisticAiHubPage() {
       )}
 
       {currentUser && currentUser.role === 'Super Admin' && (
-        <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
+        <Card className="shadow-lg animate-fade-in-scale-up bg-muted/50 border-border/50">
           <CardHeader>
-            <CardTitle className="text-2xl text-foreground flex items-center gap-2">
+            <CardTitle className="text-2xl font-extrabold text-foreground flex items-center gap-2">
               <Settings className="h-7 w-7 text-primary" /> Welcome, Super Admin!
             </CardTitle>
           </CardHeader>
@@ -337,9 +337,9 @@ export default function HolisticAiHubPage() {
       )}
 
       {currentUser && (currentUser.role === 'DispensaryOwner' || currentUser.role === 'DispensaryStaff') && (
-         <Card className="shadow-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50">
+         <Card className="shadow-lg animate-fade-in-scale-up bg-muted/50 border-border/50">
           <CardHeader>
-            <CardTitle className="text-2xl text-foreground flex items-center gap-2">
+            <CardTitle className="text-2xl font-extrabold text-foreground flex items-center gap-2">
               <Briefcase className="h-7 w-7 text-primary" /> Welcome, Wellness Team!
             </CardTitle>
           </CardHeader>
@@ -368,12 +368,12 @@ export default function HolisticAiHubPage() {
       )}
 
       <div id="advisors-section" style={{ scrollMarginTop: '100px' }} />
-      <section className="p-8 rounded-lg animate-fade-in-scale-up bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
+      <section className="p-8 rounded-lg animate-fade-in-scale-up bg-muted/50 border-border/50 shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
-          <h2 className="text-4xl font-bold text-foreground tracking-tight flex items-center justify-center gap-2">
+          <h2 className="text-4xl font-extrabold text-foreground tracking-tight flex items-center justify-center gap-2">
             <Brain className="h-10 w-10 text-primary"/> Explore Our AI Advisors
           </h2>
-          <p className="text-lg text-foreground max-w-2xl mx-auto mt-3">
+          <p className="text-lg font-semibold text-foreground/90 max-w-2xl mx-auto mt-3">
             Get specialized insights and recommendations across various domains of holistic wellness and knowledge.
           </p>
         </div>
@@ -386,13 +386,13 @@ export default function HolisticAiHubPage() {
 
       <section className="animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.4s' }}>
         <Card
-          className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 bg-card/70 dark:bg-card/80 backdrop-blur-md"
+          className="shadow-xl hover:shadow-2xl transition-shadow duration-300 flex flex-col border-2 border-primary/50 bg-muted/50"
           data-ai-hint="promo asset generator"
         >
           <CardHeader className="text-center p-6">
               <Palette className="mx-auto h-12 w-12 text-primary mb-3"/>
-              <CardTitle className="text-2xl font-bold">AI Asset Generator</CardTitle>
-              <CardDescription className="text-muted-foreground max-w-md mx-auto">
+              <CardTitle className="text-2xl font-extrabold">AI Asset Generator</CardTitle>
+              <CardDescription className="text-foreground/80 font-semibold max-w-md mx-auto">
                 Instantly create unique logos, sticker sheets, and apparel mockups for your store or favorite strain.
               </CardDescription>
           </CardHeader>

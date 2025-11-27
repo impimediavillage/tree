@@ -80,7 +80,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
 
 
         {/* Placeholder for Payment Gateway Integration */}
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 mt-6">
+        <div className="rounded-lg border bg-muted/50 text-card-foreground shadow-sm p-6 mt-6">
             <h3 className="font-semibold text-center">Payment Gateway Coming Soon</h3>
             <p className="text-center text-muted-foreground mt-2">This is where the credit card input or other payment options will be rendered.</p>
         </div>

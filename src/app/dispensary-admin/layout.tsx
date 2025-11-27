@@ -34,8 +34,8 @@ const mainSidebarNavItems: NavItem[] = [
   { title: 'Promo Collections', href: '/dispensary-admin/promotions', icon: Palette },
   { title: 'Browse Pool', href: '/dispensary-admin/browse-pool', icon: ShoppingBasket, ownerOnly: true },
   { title: 'My Pool Activity', href: '/dispensary-admin/pool', icon: History, ownerOnly: true },
+  { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered },
   { title: 'Pool Orders', href: '/dispensary-admin/product-pool-orders', icon: PackageCheck, ownerOnly: true },
-  { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered, disabled: true, badge: 'Soon' },
 ];
 
 const managementSidebarNavItems: NavItem[] = [

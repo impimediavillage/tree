@@ -44,12 +44,12 @@ export function FeaturedStickerCard({ stickerSet }: FeaturedStickerCardProps) {
           </div>
         </CardHeader>
         <CardContent className="p-4 flex-grow flex flex-col">
-          <h3 className="font-bold text-lg text-foreground truncate" title={stickerSet.name}>{stickerSet.name}</h3>
-          <p className="text-sm text-muted-foreground">
-            Theme: <span className="font-semibold">{themeDisplay[stickerSet.theme]}</span>
+          <h3 className="font-extrabold text-lg text-foreground truncate" title={stickerSet.name}>{stickerSet.name}</h3>
+          <p className="text-sm font-semibold text-foreground/80">
+            Theme: <span className="font-bold">{themeDisplay[stickerSet.theme]}</span>
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            By: <span className="font-medium">{stickerSet.creatorDisplayName}</span>
+          <p className="text-xs font-semibold text-foreground/70 mt-1">
+            By: <span className="font-bold">{stickerSet.creatorDisplayName}</span>
           </p>
         </CardContent>
         <CardFooter className="p-4 pt-0">

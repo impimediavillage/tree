@@ -71,7 +71,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, i
     );
 
     return (
-        <Card className="hover:shadow-lg transition-shadow bg-card">
+        <Card className="hover:shadow-lg transition-shadow bg-muted/50">
         <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl text-card-foreground">
             <Icon className="text-accent h-6 w-6" /> {title}
@@ -126,7 +126,7 @@ export default function AdminDashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg bg-card border-primary/30">
+      <Card className="shadow-lg bg-muted/50 border-primary/30">
         <CardHeader>
           <CardTitle 
             className="text-3xl font-bold text-foreground flex items-center"

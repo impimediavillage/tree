@@ -59,8 +59,8 @@ export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
 
   return (
     <>
-      <Card 
-        className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 h-full bg-card text-card-foreground group border border-border hover:border-primary/40 animate-fade-in-scale-up"
+      <Card
+        className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 h-full bg-muted/50 text-card-foreground group border border-border hover:border-primary/40 animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHintProduct}
       >

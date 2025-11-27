@@ -128,7 +128,7 @@ export default function LeafCreditsPage() {
             return (
               <Card 
                 key={pkg.id} 
-                className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 bg-card text-card-foreground border border-border hover:border-primary/50"
+                className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 bg-muted/50 text-card-foreground border border-border hover:border-primary/50"
                 data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
               >
                 <CardHeader className="pb-4">

@@ -300,7 +300,7 @@ export default function AdminUsersPage() {
         <AddUserDialog onUserAdded={fetchUsersAndWellnessProfiles} dispensaries={wellnessProfiles} />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card">
+      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50">
         <Input
             placeholder="Search by name or email..."
             value={searchTerm}
@@ -338,7 +338,7 @@ export default function AdminUsersPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse bg-card">
+            <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse bg-muted/50">
               <div className="flex items-center gap-4">
                 <Skeleton className="h-16 w-16 bg-muted rounded-full" />
                 <div className="flex-1 space-y-2">

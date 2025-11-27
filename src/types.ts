@@ -28,6 +28,17 @@ export interface PUDOLocker {
   name: string;
   address: string;
   distanceKm?: number;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  suburb?: string;
+  street_address?: string;
+  status?: string;
+  availableCompartments?: number;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 // Represents the structure of a Dispensary document in Firestore
@@ -77,6 +88,7 @@ export interface DispensaryType {
   iconPath?: string | null;
   image?: string | null;
   advisorFocusPrompt?: string | null;
+  storeCount?: number;
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }

@@ -52,7 +52,7 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
 
   return (
     <Card 
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-card text-card-foreground group border border-border hover:border-primary/50 animate-fade-in-scale-up"
+        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-muted/50 text-card-foreground group border border-border hover:border-primary/50 animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
     >
@@ -73,20 +73,20 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
         )}
       </div>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-semibold text-primary truncate" title={dispensary.dispensaryName}>
+        <CardTitle className="text-xl font-bold text-primary truncate" title={dispensary.dispensaryName}>
           {dispensary.dispensaryName}
         </CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
+        <CardDescription className="text-sm font-semibold text-foreground/70">
           {dispensary.dispensaryType}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground line-clamp-2 mb-2" title={dispensary.message || dispensary.location}>
-          {dispensary.message || dispensary.location?.split(',').slice(0,2).join(', ') || 'Visit us!'}
+        <p className="text-sm font-medium text-foreground/80 line-clamp-2 mb-2" title={dispensary.message || `${dispensary.city}, ${dispensary.province}`}>
+          {dispensary.message || `${dispensary.city || ''}, ${dispensary.province || ''}`.trim() || 'Visit us!'}
         </p>
-        {dispensary.location && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3" /> {dispensary.location.split(',').slice(0,2).join(',')}
+        {(dispensary.city || dispensary.province) && (
+          <div className="flex items-center gap-1 text-xs font-semibold text-foreground/70">
+            <MapPin className="h-3 w-3" /> {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
           </div>
         )}
       </CardContent>

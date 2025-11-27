@@ -36,7 +36,7 @@ const TripleSShowcase = ({
 
   return (
     <section 
-      className="bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 rounded-lg p-6 shadow-lg overflow-hidden"
+      className="bg-muted/50 border-border/50 rounded-lg p-6 shadow-lg overflow-hidden"
       data-ai-hint="triple-s-club-section"
     >
       <div className="text-center mb-6">

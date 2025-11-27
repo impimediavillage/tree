@@ -190,7 +190,7 @@ export default function WellnessProductsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-card shadow-sm">
+      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
         <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input

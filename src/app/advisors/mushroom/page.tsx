@@ -85,7 +85,7 @@ export default function MushroomAdvisorPage() {
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <Card className="shadow-xl">
+      <Card className="shadow-xl bg-muted/50">
         <CardHeader>
           <div className="flex items-center gap-3">
             <Brain className="h-10 w-10 text-primary" />

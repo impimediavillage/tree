@@ -44,8 +44,8 @@ const StatusIndicator = ({ status }: { status?: User['status'] }) => {
 
 export function UserCard({ user, dispensaryName, onEdit }: UserCardProps) {
   return (
-    <Card 
-      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-card text-card-foreground"
+    <Card
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up bg-muted/50 text-card-foreground"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">

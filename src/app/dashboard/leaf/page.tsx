@@ -72,7 +72,7 @@ export default function LeafDashboardOverviewPage() {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-md bg-card border-primary/20">
+      <Card className="shadow-md bg-muted/50 border-primary/20">
         <CardHeader>
           <CardTitle 
             className="text-3xl font-semibold text-foreground"

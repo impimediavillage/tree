@@ -49,8 +49,8 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
   };
 
   return (
-    <Card 
-      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-card text-card-foreground animate-fade-in-scale-up"
+    <Card
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-muted/50 text-card-foreground animate-fade-in-scale-up"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
