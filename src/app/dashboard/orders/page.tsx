@@ -13,7 +13,7 @@ import { OrderCard } from '@/components/orders/OrderCard';
 import { useToast } from '@/hooks/use-toast';
 
 export default function OrderHistoryPage() {
-  const { user, currentDispensary } = useAuth();
+  const { currentUser, currentDispensary } = useAuth();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -21,26 +21,13 @@ export default function OrderHistoryPage() {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      if (!user?.uid) return;
+      if (!currentUser?.uid) return;
       setIsLoading(true);
       
       try {
-        const allOrders = await Promise.all(
-          [
-            'Cannibinoid store',
-            'Traditional Medicine dispensary',
-            'Homeopathic store',
-            'Mushroom store',
-            'Permaculture & gardening store'
-          ].map(type => getUserOrders(user.uid, type))
-        );
-        
-        // Combine and sort all orders by date
-        const combinedOrders = allOrders
-          .flat()
-          .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-        
-        setOrders(combinedOrders);
+        // Fetch all orders from the single orders collection
+        const userOrders = await getUserOrders(currentUser.uid);
+        setOrders(userOrders);
       } catch (error: any) {
         console.error('Error fetching orders:', error);
         toast({ 
@@ -54,7 +41,7 @@ export default function OrderHistoryPage() {
     };
 
     fetchOrders();
-  }, [user, toast]);
+  }, [currentUser, toast]);
 
   // Group orders by status
   const activeOrders = orders.filter(order => 
@@ -71,55 +58,90 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="container py-8 max-w-5xl">
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Order History</h1>
-          <p className="text-muted-foreground">View and track your orders</p>
+    <div className="container py-8 px-4 max-w-7xl mx-auto">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="text-center md:text-left">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Order History
+          </h1>
+          <p className="text-muted-foreground mt-2">View and track all your orders</p>
         </div>
 
         {orders.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-              <ShoppingCart className="h-12 w-12 text-muted-foreground" />
-              <div>
-                <h3 className="font-semibold text-lg">No Orders Yet</h3>
-                <p className="text-muted-foreground">You haven't placed any orders yet.</p>
+          <Card className="border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-6">
+              <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
+                <ShoppingCart className="h-12 w-12 text-primary" />
               </div>
-              <Button variant="outline" asChild>
+              <div className="space-y-2">
+                <h3 className="font-bold text-2xl">No Orders Yet</h3>
+                <p className="text-muted-foreground max-w-md">
+                  Start your wellness journey by exploring our dispensaries and placing your first order.
+                </p>
+              </div>
+              <Button size="lg" asChild className="mt-4">
                 <a href="/browse-dispensary-types">Browse Dispensaries</a>
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <Tabs defaultValue="active" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="active">
-                Active Orders {activeOrders.length > 0 && `(${activeOrders.length})`}
+          <Tabs defaultValue="active" className="space-y-6">
+            <TabsList className="grid w-full max-w-md mx-auto md:mx-0 grid-cols-2 h-12">
+              <TabsTrigger value="active" className="text-base font-semibold">
+                Active {activeOrders.length > 0 && `(${activeOrders.length})`}
               </TabsTrigger>
-              <TabsTrigger value="completed">
-                Completed Orders {completedOrders.length > 0 && `(${completedOrders.length})`}
+              <TabsTrigger value="completed" className="text-base font-semibold">
+                Completed {completedOrders.length > 0 && `(${completedOrders.length})`}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="active" className="space-y-4">
-              {activeOrders.map(order => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order}
-                  onClick={() => setSelectedOrder(order)}
-                />
-              ))}
+              {activeOrders.length === 0 ? (
+                <Card className="border-2">
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                    <Package2 className="h-16 w-16 text-muted-foreground/50" />
+                    <div>
+                      <h3 className="font-semibold text-lg">No Active Orders</h3>
+                      <p className="text-muted-foreground text-sm">All your orders have been completed or cancelled.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {activeOrders.map(order => (
+                    <OrderCard 
+                      key={order.id} 
+                      order={order}
+                      onClick={() => setSelectedOrder(order)}
+                    />
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="completed" className="space-y-4">
-              {completedOrders.map(order => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order}
-                  onClick={() => setSelectedOrder(order)}
-                />
-              ))}
+              {completedOrders.length === 0 ? (
+                <Card className="border-2">
+                  <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                    <Package2 className="h-16 w-16 text-muted-foreground/50" />
+                    <div>
+                      <h3 className="font-semibold text-lg">No Completed Orders</h3>
+                      <p className="text-muted-foreground text-sm">Your completed orders will appear here.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {completedOrders.map(order => (
+                    <OrderCard 
+                      key={order.id} 
+                      order={order}
+                      onClick={() => setSelectedOrder(order)}
+                    />
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}

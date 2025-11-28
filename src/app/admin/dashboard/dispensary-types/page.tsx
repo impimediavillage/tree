@@ -131,21 +131,13 @@ export default function AdminWellnessTypesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
           {filteredTypes.length > 0 ? (
             filteredTypes.map((type, index) => (
-              <div key={type.id || index} className="flex flex-col gap-2">
-                <DispensaryTypeCard
-                  dispensaryType={type}
-                  onSave={fetchWellnessTypes}
-                  onDelete={handleDeleteType}
-                  isSuperAdmin={isSuperAdmin}
-                />
-                 {isSuperAdmin && (
-                    <Button asChild variant="secondary" size="sm">
-                       <Link href={`/admin/dashboard/dispensary-types/edit-categories/${encodeURIComponent(type.name)}`}>
-                         <ListFilter className="mr-2 h-4 w-4" /> Manage Categories
-                       </Link>
-                    </Button>
-                  )}
-              </div>
+              <DispensaryTypeCard
+                key={type.id || index}
+                dispensaryType={type}
+                onSave={fetchWellnessTypes}
+                onDelete={handleDeleteType}
+                isSuperAdmin={isSuperAdmin}
+              />
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Building, ListChecks, Package,
-  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle
+  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,7 @@ const mainSidebarNavItems: NavItem[] = [
   { title: 'View all stores', href: '/admin/dashboard/dispensaries', icon: Building },
   { title: 'Users', href: '/admin/dashboard/users', icon: Users },
   { title: 'Store types', href: '/admin/dashboard/dispensary-types', icon: ListChecks },
+  { title: 'AI Advisors', href: '/admin/dashboard/ai-advisors', icon: Brain },
 ];
 
 const managementSidebarNavItems: NavItem[] = [

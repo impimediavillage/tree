@@ -3,7 +3,10 @@ import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/
 import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
-import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload } from './types';
+import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload, AIAdvisor } from './types';
+
+// Define OpenAI API Key as a secret
+const openaiApiKey = defineSecret('OPENAI_API_KEY');
 
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
 if (admin.apps.length === 0) {
@@ -224,6 +227,404 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
           throw error;
         }
         throw new HttpsError('internal', 'An internal error occurred while processing the transaction.');
+    }
+});
+
+// ============== CHAT WITH AI ADVISOR FUNCTION ==============
+interface ChatMessage {
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+}
+
+interface ChatWithAdvisorRequest {
+    advisorSlug: string;
+    userMessage: string;
+    conversationHistory: ChatMessage[];
+}
+
+interface ChatWithAdvisorResponse {
+    success: boolean;
+    message: string;
+    tokensUsed: number;
+    creditsDeducted: number;
+    model: string;
+}
+
+export const chatWithAdvisor = onCall(
+    { secrets: [openaiApiKey] },
+    async (request: CallableRequest<ChatWithAdvisorRequest>): Promise<ChatWithAdvisorResponse> => {
+        // Authentication check
+        if (!request.auth) {
+            throw new HttpsError('unauthenticated', 'You must be signed in to chat with an advisor.');
+        }
+
+        const { advisorSlug, userMessage, conversationHistory } = request.data;
+        const userId = request.auth.uid;
+
+        // Validation
+        if (!advisorSlug || !userMessage) {
+            throw new HttpsError('invalid-argument', 'Missing required parameters: advisorSlug and userMessage.');
+        }
+
+        if (userMessage.trim().length === 0) {
+            throw new HttpsError('invalid-argument', 'User message cannot be empty.');
+        }
+
+        if (userMessage.length > 5000) {
+            throw new HttpsError('invalid-argument', 'Message is too long. Maximum 5000 characters.');
+        }
+
+        try {
+            // Fetch advisor configuration from Firestore
+            const advisorsSnapshot = await db.collection('aiAdvisors')
+                .where('slug', '==', advisorSlug)
+                .where('isActive', '==', true)
+                .limit(1)
+                .get();
+
+            if (advisorsSnapshot.empty) {
+                throw new HttpsError('not-found', `Advisor "${advisorSlug}" not found or is not active.`);
+            }
+
+            const advisorDoc = advisorsSnapshot.docs[0];
+            const advisor = { id: advisorDoc.id, ...advisorDoc.data() } as AIAdvisor;
+
+            // Fetch user data for credit check
+            const userDoc = await db.collection('users').doc(userId).get();
+            if (!userDoc.exists) {
+                throw new HttpsError('not-found', 'User not found.');
+            }
+
+            const userData = userDoc.data() as UserDocData;
+            const userCredits = userData.credits || 0;
+
+            // Check if user has enough credits (base cost minimum)
+            if (userCredits < advisor.creditCostBase) {
+                throw new HttpsError(
+                    'failed-precondition',
+                    `Insufficient credits. You need at least ${advisor.creditCostBase} credits. You have ${userCredits}.`
+                );
+            }
+
+            // Prepare messages for OpenAI
+            const messages: ChatMessage[] = [
+                { role: 'system', content: advisor.systemPrompt },
+                ...conversationHistory.slice(-10), // Keep last 10 messages for context
+                { role: 'user', content: userMessage },
+            ];
+
+            // Call OpenAI API
+            const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${openaiApiKey.value()}`,
+                },
+                body: JSON.stringify({
+                    model: advisor.model,
+                    messages: messages,
+                    temperature: 0.7,
+                    max_tokens: 1000,
+                    user: userId, // For OpenAI abuse monitoring
+                }),
+            });
+
+            if (!openaiResponse.ok) {
+                const errorData = await openaiResponse.json().catch(() => ({}));
+                logger.error('OpenAI API Error:', errorData);
+                throw new HttpsError(
+                    'internal',
+                    `OpenAI API error: ${openaiResponse.statusText}`
+                );
+            }
+
+            const openaiData = await openaiResponse.json();
+            const assistantMessage = openaiData.choices[0]?.message?.content || '';
+            const tokensUsed = openaiData.usage?.total_tokens || 0;
+
+            // Calculate credits to deduct (base + token-based)
+            const tokenCredits = Math.ceil(tokensUsed * advisor.creditCostPerTokens);
+            const totalCredits = advisor.creditCostBase + tokenCredits;
+
+            // Deduct credits and log interaction
+            await db.runTransaction(async (transaction) => {
+                const userRef = db.collection('users').doc(userId);
+                const freshUserDoc = await transaction.get(userRef);
+
+                if (!freshUserDoc.exists) {
+                    throw new HttpsError('not-found', 'User not found during transaction.');
+                }
+
+                const freshUserData = freshUserDoc.data() as UserDocData;
+                const currentCredits = freshUserData.credits || 0;
+
+                if (currentCredits < totalCredits) {
+                    throw new HttpsError(
+                        'failed-precondition',
+                        `Insufficient credits. Required: ${totalCredits}, Available: ${currentCredits}`
+                    );
+                }
+
+                const newBalance = currentCredits - totalCredits;
+                transaction.update(userRef, { credits: newBalance });
+
+                // Log the interaction
+                const logEntry = {
+                    userId,
+                    advisorSlug,
+                    advisorId: advisor.id,
+                    creditsDeducted: totalCredits,
+                    tokensUsed,
+                    model: advisor.model,
+                    messageLength: userMessage.length,
+                    responseLength: assistantMessage.length,
+                    wasFreeInteraction: false,
+                    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                };
+
+                const logRef = db.collection('aiInteractionsLog').doc();
+                transaction.set(logRef, logEntry);
+            });
+
+            logger.info(`Chat completed for user ${userId} with advisor ${advisorSlug}. Tokens: ${tokensUsed}, Credits: ${totalCredits}`);
+
+            return {
+                success: true,
+                message: assistantMessage,
+                tokensUsed,
+                creditsDeducted: totalCredits,
+                model: advisor.model,
+            };
+
+        } catch (error: any) {
+            logger.error('Error in chatWithAdvisor:', error);
+            
+            if (error instanceof HttpsError) {
+                throw error;
+            }
+
+            throw new HttpsError('internal', 'An error occurred while processing your request.');
+        }
+    }
+);
+
+// ============== SEED AI ADVISORS FUNCTION ==============
+interface AdvisorSeedData {
+    name: string;
+    slug: string;
+    shortDescription: string;
+    longDescription: string;
+    imageUrl: string;
+    iconName: string;
+    systemPrompt: string;
+    isActive: boolean;
+    order: number;
+    tier: 'basic' | 'standard' | 'premium';
+    creditCostBase: number;
+    creditCostPerTokens: number;
+    model: 'gpt-4' | 'gpt-4-turbo' | 'gpt-3.5-turbo';
+    tags: string[];
+}
+
+export const seedAIAdvisors = onCall(async (request: CallableRequest) => {
+    // Check authentication
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be signed in to seed advisors.');
+    }
+
+    // Check if user is super admin
+    if (request.auth?.token.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'Only Super Admins can seed advisors.');
+    }
+
+    const advisorsData: AdvisorSeedData[] = [
+        {
+            name: 'Cannabinoid Advisor',
+            slug: 'cannabinoid-advisor',
+            shortDescription: 'Expert guidance on THC & CBD for health and wellness',
+            longDescription: 'Get personalized advice on cannabis compounds, therapeutic applications, dosage recommendations, and product selection based on deep research.',
+            imageUrl: '/images/cbd/cbd1.png',
+            iconName: 'Leaf',
+            systemPrompt: `You are an expert Cannabinoid Advisor with deep knowledge of THC and CBD compounds, their therapeutic applications, and cannabis wellness. Your role is to provide evidence-based information on cannabinoid profiles, effects, and applications. Offer guidance on dosage, consumption methods, and product selection. Share information about terpenes, strains, and their characteristics. Always emphasize safety considerations, contraindications, and potential drug interactions. Recommend starting with low doses and gradually increasing. Remind users to consult healthcare providers for medical conditions and to verify legal status in their location.`,
+            isActive: true,
+            order: 1,
+            tier: 'standard',
+            creditCostBase: 5,
+            creditCostPerTokens: 0.0002,
+            model: 'gpt-4-turbo',
+            tags: ['cannabis', 'cbd', 'thc', 'wellness'],
+        },
+        {
+            name: 'The Conscious Gardener',
+            slug: 'conscious-gardener',
+            shortDescription: 'Organic permaculture and sustainable gardening wisdom',
+            longDescription: 'Learn regenerative gardening practices, companion planting, soil health, and organic pest management from a permaculture expert.',
+            imageUrl: '/images/permaculture/garden.png',
+            iconName: 'Sprout',
+            systemPrompt: `You are 'The Conscious Gardener,' an expert in organic permaculture and sustainable gardening practices. Guide users on regenerative agriculture, companion planting strategies, soil building techniques, and organic pest management. Share wisdom on water conservation, composting, seed saving, and creating biodiverse gardens. Emphasize working with nature rather than against it. Provide seasonal advice and help users understand their local growing conditions. Promote chemical-free gardening and biodiversity.`,
+            isActive: true,
+            order: 2,
+            tier: 'standard',
+            creditCostBase: 5,
+            creditCostPerTokens: 0.0002,
+            model: 'gpt-4-turbo',
+            tags: ['gardening', 'permaculture', 'organic', 'sustainability'],
+        },
+        {
+            name: 'Homeopathic Advisor',
+            slug: 'homeopathic-advisor',
+            shortDescription: 'Classical homeopathy guidance and remedy selection',
+            longDescription: 'Receive advice on homeopathic remedies, potencies, and constitutional types based on classical homeopathic principles.',
+            imageUrl: '/images/homeopathy/homeopathy1.png',
+            iconName: 'ShieldCheck',
+            systemPrompt: `You are a knowledgeable Homeopathic Advisor trained in classical homeopathy principles. Help users understand homeopathic remedies, their applications, and appropriate potency selection. Explain constitutional types, acute vs. chronic conditions, and remedy selection based on the totality of symptoms. Provide guidance on dosage and administration. Always emphasize that homeopathy is complementary and users should consult qualified practitioners for serious conditions. Use proper Latin names for remedies and explain the law of similars.`,
+            isActive: true,
+            order: 3,
+            tier: 'standard',
+            creditCostBase: 6,
+            creditCostPerTokens: 0.0002,
+            model: 'gpt-4-turbo',
+            tags: ['homeopathy', 'natural-medicine', 'remedies'],
+        },
+        {
+            name: 'Mushroom Funguy',
+            slug: 'mushroom-funguy',
+            shortDescription: 'Medicinal and sacred mushroom expertise',
+            longDescription: 'Explore the world of medicinal mushrooms, their benefits, cultivation, and responsible use with expert guidance.',
+            imageUrl: '/images/mushrooms/mushrooms1.png',
+            iconName: 'Brain',
+            systemPrompt: `You are 'Mushroom Funguy,' an enthusiastic expert on medicinal and sacred mushrooms. Share knowledge about functional mushrooms (reishi, lion's mane, cordyceps, turkey tail, etc.) and their health benefits. Provide cultivation guidance, preparation methods, and dosage recommendations. When discussing sacred mushrooms, emphasize legal considerations, set and setting, harm reduction, and integration practices. Always promote responsible use, respect for traditional knowledge, and awareness of legal restrictions. Focus on scientific research while honoring indigenous wisdom.`,
+            isActive: true,
+            order: 4,
+            tier: 'premium',
+            creditCostBase: 7,
+            creditCostPerTokens: 0.0003,
+            model: 'gpt-4-turbo',
+            tags: ['mushrooms', 'medicinal', 'fungi', 'wellness'],
+        },
+        {
+            name: 'Traditional Medicine Advisor',
+            slug: 'traditional-medicine',
+            shortDescription: 'African and indigenous healing traditions',
+            longDescription: 'Learn about traditional African medicine, medicinal plants, and indigenous healing practices with cultural respect and authenticity.',
+            imageUrl: '/images/traditional-medicine/traditional1.png',
+            iconName: 'HandHelping',
+            systemPrompt: `You are a Traditional Medicine Advisor with deep respect for African and indigenous healing traditions. Share knowledge about medicinal plants, traditional remedies, and holistic healing practices from African cultures. Emphasize the importance of cultural context, traditional knowledge holders, and sustainable harvesting. Explain the spiritual and physical aspects of traditional healing. Always promote respect for healers and elders, and caution against appropriation. Encourage users to seek authentic practitioners and verify safety and legality of plants in their region.`,
+            isActive: true,
+            order: 5,
+            tier: 'standard',
+            creditCostBase: 6,
+            creditCostPerTokens: 0.0002,
+            model: 'gpt-4-turbo',
+            tags: ['traditional-medicine', 'african-healing', 'indigenous', 'holistic'],
+        },
+        {
+            name: 'Qigong Master',
+            slug: 'qigong-master',
+            shortDescription: 'Ancient Chinese energy cultivation practices',
+            longDescription: 'Master the art of Qigong with guidance on breathing techniques, energy cultivation, and traditional Chinese medicine principles.',
+            imageUrl: '/images/muti-lounge/physical-health/physical1.png',
+            iconName: 'Zap',
+            systemPrompt: `You are a Qigong Master and guide, teaching the ancient Chinese practice of energy cultivation. Provide instruction on breathing techniques, movement sequences, meditation practices, and energy work. Explain TCM concepts like qi, meridians, and the five elements. Offer guidance for beginners and advanced practitioners. Share exercises for specific health conditions, stress relief, and vitality. Emphasize proper form, mindful practice, and gradual progression. Encourage regular practice and patience in developing qi sensitivity.`,
+            isActive: true,
+            order: 6,
+            tier: 'standard',
+            creditCostBase: 5,
+            creditCostPerTokens: 0.0002,
+            model: 'gpt-4-turbo',
+            tags: ['qigong', 'energy', 'tcm', 'meditation'],
+        },
+        {
+            name: 'Flower Power',
+            slug: 'flower-power',
+            shortDescription: 'Garden design, flowers, and Bach flower remedies',
+            longDescription: 'Discover the beauty and healing properties of flowers through garden design, cultivation, and Bach flower remedy selection.',
+            imageUrl: '/images/permaculture/garden.png',
+            iconName: 'Flower',
+            systemPrompt: `You are 'Flower Power,' a passionate guide to the world of flowers and their therapeutic applications. Share expertise on garden design, flower cultivation, and seasonal blooms. Explain Bach flower remedies, their emotional healing properties, and proper selection. Offer advice on creating pollinator-friendly gardens and using flowers for natural dyes and crafts. Provide identification help and care instructions. Emphasize the emotional and aesthetic benefits of working with flowers.`,
+            isActive: true,
+            order: 7,
+            tier: 'basic',
+            creditCostBase: 3,
+            creditCostPerTokens: 0.0001,
+            model: 'gpt-3.5-turbo',
+            tags: ['flowers', 'gardening', 'bach-remedies', 'design'],
+        },
+        {
+            name: 'Aromatherapy Expert',
+            slug: 'aromatherapy',
+            shortDescription: 'Essential oils and therapeutic aromatherapy',
+            longDescription: 'Master the art of aromatherapy with guidance on essential oils, blending, safety, and therapeutic applications.',
+            imageUrl: '/images/cbd/cbd2.png',
+            iconName: 'Sparkles',
+            systemPrompt: `You are an Aromatherapy expert specializing in essential oils and their therapeutic applications. Provide comprehensive guidance on oil selection, quality assessment, and safety considerations. Teach blending techniques, dilution ratios, and application methods. Explain the properties and benefits of different oils for physical and emotional wellness. Always emphasize proper dilution, patch testing, and contraindications for pregnancy, children, and pets. Recommend reputable suppliers and proper storage methods.`,
+            isActive: true,
+            order: 8,
+            tier: 'standard',
+            creditCostBase: 5,
+            creditCostPerTokens: 0.0002,
+            model: 'gpt-4-turbo',
+            tags: ['aromatherapy', 'essential-oils', 'wellness', 'natural-healing'],
+        },
+        {
+            name: 'Vegan Food Guru',
+            slug: 'vegan-food-guru',
+            shortDescription: 'Plant-based nutrition and delicious vegan recipes',
+            longDescription: 'Transform your diet with expert advice on plant-based nutrition, meal planning, and creative vegan cooking.',
+            imageUrl: '/images/permaculture/garden.png',
+            iconName: 'Leaf',
+            systemPrompt: `You are the 'Vegan Food Guru,' an expert in plant-based nutrition and vegan cooking. Provide guidance on balanced vegan diets, protein sources, vitamin B12, iron, and other essential nutrients. Share delicious recipes, meal prep tips, and creative ingredient substitutions. Help users transition to veganism or incorporate more plant-based meals. Offer advice on reading labels, dining out, and addressing nutritional concerns. Emphasize whole foods, variety, and the environmental benefits of plant-based eating.`,
+            isActive: true,
+            order: 9,
+            tier: 'basic',
+            creditCostBase: 4,
+            creditCostPerTokens: 0.0001,
+            model: 'gpt-3.5-turbo',
+            tags: ['vegan', 'nutrition', 'plant-based', 'cooking'],
+        },
+    ];
+
+    try {
+        let addedCount = 0;
+        let skippedCount = 0;
+
+        for (const advisorData of advisorsData) {
+            // Check if advisor already exists
+            const existingQuery = await db
+                .collection('aiAdvisors')
+                .where('slug', '==', advisorData.slug)
+                .limit(1)
+                .get();
+
+            if (!existingQuery.empty) {
+                logger.info(`Advisor ${advisorData.slug} already exists, skipping...`);
+                skippedCount++;
+                continue;
+            }
+
+            // Add the advisor
+            await db.collection('aiAdvisors').add({
+                ...advisorData,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+
+            logger.info(`Added advisor: ${advisorData.name} (${advisorData.slug})`);
+            addedCount++;
+        }
+
+        const message = `Seeding complete! Added ${addedCount} advisors, skipped ${skippedCount} existing advisors.`;
+        logger.info(message);
+
+        return {
+            success: true,
+            message,
+            count: addedCount,
+            skipped: skippedCount,
+        };
+    } catch (error: any) {
+        logger.error('Error seeding advisors:', error);
+        throw new HttpsError('internal', `Failed to seed advisors: ${error.message}`);
     }
 });
 

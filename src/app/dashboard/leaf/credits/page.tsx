@@ -132,34 +132,34 @@ export default function LeafCreditsPage() {
                 data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
               >
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-xl font-bold text-primary text-center">{pkg.name}</CardTitle>
-                  <p className="text-3xl font-extrabold text-center text-accent my-2">
-                    {pkg.price.toFixed(2)} <span className="text-sm font-normal text-muted-foreground">{pkg.currency}</span>
+                  <CardTitle className="text-2xl font-black text-center text-foreground">{pkg.name}</CardTitle>
+                  <p className="text-4xl font-black text-center text-foreground my-2 drop-shadow-sm">
+                    {pkg.price.toFixed(2)} <span className="text-xl font-bold text-foreground/80">{pkg.currency}</span>
                   </p>
-                  <p className="text-lg text-center">
-                      <span className="text-2xl font-bold text-primary">{pkg.credits}</span>
-                      <span className="text-muted-foreground"> Credits</span>
+                  <p className="text-xl text-center font-bold">
+                      <span className="text-3xl font-black text-primary drop-shadow-sm">{pkg.credits}</span>
+                      <span className="text-foreground/90 font-semibold"> Credits</span>
                       {pkg.bonusCredits && pkg.bonusCredits > 0 && (
-                          <span className="text-sm text-green-600 font-medium"> + {pkg.bonusCredits} Bonus!</span>
+                          <span className="text-lg text-green-600 font-bold drop-shadow-sm"> + {pkg.bonusCredits} Bonus!</span>
                       )}
                   </p>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
-                  {pkg.description && <p className="text-sm text-muted-foreground mb-4 text-center line-clamp-2">{pkg.description}</p>}
-                  <ul className="space-y-2 mb-6 text-sm">
+                  {pkg.description && <p className="text-base font-semibold text-muted-foreground mb-4 text-center line-clamp-2">{pkg.description}</p>}
+                  <ul className="space-y-3 mb-6 text-base font-semibold">
                     {packageFeatures.map((feature, index) => (
-                      <li key={index} className="flex items-center gap-2 text-card-foreground">
-                        <feature.icon className="h-4 w-4 text-green-500" />
+                      <li key={index} className="flex items-center gap-3 text-card-foreground">
+                        <feature.icon className="h-6 w-6 text-green-500" />
                         <span>{feature.text}</span>
                       </li>
                     ))}
                   </ul>
                   <Button 
-                    className="mt-auto w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md py-3"
+                    className="mt-auto w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold py-4"
                     onClick={() => handlePurchase(pkg)}
                     disabled={isLoading}
                   >
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : `Purchase ${pkg.name}`}
+                    {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : `Purchase ${pkg.name}`}
                   </Button>
                 </CardContent>
               </Card>

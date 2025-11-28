@@ -28,13 +28,14 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud, Image as ImageIconLucideSvg, Trash2, ListPlus } from 'lucide-react'; 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, serverTimestamp, getDocs, query, where } from 'firebase/firestore';
 import { ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
-import type { DispensaryType } from '@/types';
+import type { DispensaryType, AIAdvisor } from '@/types';
 import { dispensaryTypeSchema, type DispensaryTypeFormData } from '@/lib/schemas';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface DispensaryTypeDialogProps {
   dispensaryType?: DispensaryType | null;
@@ -65,6 +66,9 @@ export function DispensaryTypeDialog({
   const [iconPreview, setIconPreview] = React.useState<string | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
 
+  const [availableAdvisors, setAvailableAdvisors] = React.useState<AIAdvisor[]>([]);
+  const [isLoadingAdvisors, setIsLoadingAdvisors] = React.useState(false);
+
   const form = useForm<DispensaryTypeFormData>({
     resolver: zodResolver(dispensaryTypeSchema),
     defaultValues: {
@@ -73,8 +77,30 @@ export function DispensaryTypeDialog({
       iconPath: null,
       image: null,
       advisorFocusPrompt: '',
+      recommendedAdvisorIds: [],
     },
   });
+
+  React.useEffect(() => {
+    const fetchAdvisors = async () => {
+      if (isOpen) {
+        setIsLoadingAdvisors(true);
+        try {
+          const advisorsSnapshot = await getDocs(collection(db, 'aiAdvisors'));
+          const advisorsData: AIAdvisor[] = advisorsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          } as AIAdvisor));
+          setAvailableAdvisors(advisorsData);
+        } catch (error) {
+          console.error('Error fetching advisors:', error);
+        } finally {
+          setIsLoadingAdvisors(false);
+        }
+      }
+    };
+    fetchAdvisors();
+  }, [isOpen]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -85,12 +111,13 @@ export function DispensaryTypeDialog({
           iconPath: dispensaryType.iconPath === "" ? null : (dispensaryType.iconPath || null),
           image: dispensaryType.image === "" ? null : (dispensaryType.image || null),
           advisorFocusPrompt: dispensaryType.advisorFocusPrompt || '',
+          recommendedAdvisorIds: dispensaryType.recommendedAdvisorIds || [],
         });
         setIconPreview(dispensaryType.iconPath || null);
         setImagePreview(dispensaryType.image || null);
       } else {
         form.reset({
-          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '',
+          name: '', description: '', iconPath: null, image: null, advisorFocusPrompt: '', recommendedAdvisorIds: [],
         });
         setIconPreview(null);
         setImagePreview(null);
@@ -219,6 +246,7 @@ export function DispensaryTypeDialog({
         iconPath: currentIconPath, // Use the determined icon path
         image: currentImagePath,   // Use the determined image path
         advisorFocusPrompt: formData.advisorFocusPrompt || null,
+        recommendedAdvisorIds: formData.recommendedAdvisorIds || [],
         updatedAt: serverTimestamp(),
       };
 
@@ -317,6 +345,55 @@ export function DispensaryTypeDialog({
                       />
                     </FormControl>
                     <FormDescription>Guides the AI advisor for this type. (Optional)</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="recommendedAdvisorIds"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recommended AI Advisors</FormLabel>
+                    <FormDescription>
+                      Select advisors to recommend for this dispensary type
+                    </FormDescription>
+                    {isLoadingAdvisors ? (
+                      <div className="flex items-center gap-2 p-4 border rounded-md">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm text-muted-foreground">Loading advisors...</span>
+                      </div>
+                    ) : availableAdvisors.length === 0 ? (
+                      <div className="p-4 border rounded-md text-sm text-muted-foreground">
+                        No advisors available. Create some in the AI Advisors section first.
+                      </div>
+                    ) : (
+                      <div className="space-y-2 border rounded-md p-4 max-h-48 overflow-y-auto">
+                        {availableAdvisors.map((advisor) => (
+                          <div key={advisor.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field.value?.includes(advisor.id!)}
+                              onCheckedChange={(checked) => {
+                                const currentValue = field.value || [];
+                                if (checked) {
+                                  field.onChange([...currentValue, advisor.id!]);
+                                } else {
+                                  field.onChange(currentValue.filter((id) => id !== advisor.id));
+                                }
+                              }}
+                              disabled={!isSuperAdmin || isSubmitting}
+                            />
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              {advisor.name}
+                              <span className="text-xs text-muted-foreground ml-2">
+                                ({advisor.tier})
+                              </span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

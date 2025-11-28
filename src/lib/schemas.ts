@@ -139,14 +139,23 @@ export const dispensaryTypeSchema = z.object({
   name: z.string().min(2, { message: "Wellness type name must be at least 2 characters." }),
   description: z.string().max(500, "Description cannot exceed 500 characters.").optional().nullable(),
   iconPath: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.string().url({ message: "Invalid URL for icon path." }).optional().nullable()
+    (val) => (val === "" ? null : val),
+    z.union([
+      z.string().url({ message: "Invalid URL for icon path." }),
+      z.string().startsWith('/', { message: "Icon path must be a URL or absolute path" }),
+      z.null()
+    ]).optional().nullable()
   ),
   image: z.preprocess(
-    (val) => (val === "" ? undefined : val),
-    z.string().url({ message: "Please enter a valid URL for the image." }).optional().nullable()
+    (val) => (val === "" ? null : val),
+    z.union([
+      z.string().url({ message: "Please enter a valid URL for the image." }),
+      z.string().startsWith('/', { message: "Image must be a URL or absolute path" }),
+      z.null()
+    ]).optional().nullable()
   ),
   advisorFocusPrompt: z.string().max(1000, "Advisor focus prompt cannot exceed 1000 characters.").optional().nullable(),
+  recommendedAdvisorIds: z.array(z.string()).optional().default([]),
 });
 export type DispensaryTypeFormData = z.infer<typeof dispensaryTypeSchema>;
 

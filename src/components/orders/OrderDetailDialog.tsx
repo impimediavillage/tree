@@ -342,10 +342,43 @@ export function OrderDetailDialog({
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <OrderStatusManagement
-                      order={order}
-                      onUpdateStatus={onUpdateStatus}
-                    />
+                    {isDispensaryView ? (
+                      <OrderStatusManagement
+                        order={order}
+                        onUpdateStatus={onUpdateStatus}
+                      />
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                          <span className="font-medium">Current Status:</span>
+                          <Badge 
+                            variant={
+                              order.status === 'delivered' ? 'default' :
+                              order.status === 'cancelled' ? 'destructive' :
+                              'secondary'
+                            }
+                            className="text-sm font-semibold"
+                          >
+                            {order.status.replace(/_/g, ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                        {order.statusHistory && order.statusHistory.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-muted-foreground">Status History:</p>
+                            <div className="space-y-2">
+                              {order.statusHistory.slice().reverse().map((history, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                                  <span className="capitalize">{history.status.replace(/_/g, ' ')}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {history.timestamp?.toDate().toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

@@ -2,7 +2,8 @@ import { db, functions } from '@/lib/firebase';
 import { collection, doc, getDoc, getDocs, query, where, orderBy, Timestamp, addDoc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import type { Order, OrderShipment } from '@/types/order';
-import { getCollectionName } from '@/lib/utils';
+
+const ORDERS_COLLECTION = 'orders';
 
 export const createOrder = async (
   userId: string,
@@ -33,26 +34,14 @@ export const createOrder = async (
     dispensaryOrders.set(dispensaryType, [...existingShipments, { ...shipment, dispensaryId }]);
   });
 
-  // Create order in each dispensary type collection
-  const orderPromises = Array.from(dispensaryOrders.entries()).map(async ([dispensaryType, shipments]) => {
-    const collectionName = getCollectionName(dispensaryType);
-    const orderRef = await addDoc(collection(db, collectionName), {
-      ...orderDoc,
-      shipments: shipments.reduce((acc, shipment) => ({
-        ...acc,
-        [shipment.dispensaryId]: shipment
-      }), {})
-    });
-    return orderRef.id;
-  });
-
-  await Promise.all(orderPromises);
+  // Create order in the orders collection
+  const orderRef = await addDoc(collection(db, ORDERS_COLLECTION), orderDoc);
+  
   return orderNumber;
 };
 
 export const getOrder = async (orderNumber: string, dispensaryType: string): Promise<Order | null> => {
-  const collectionName = getCollectionName(dispensaryType);
-  const ordersRef = collection(db, collectionName);
+  const ordersRef = collection(db, ORDERS_COLLECTION);
   const q = query(ordersRef, where('orderNumber', '==', orderNumber));
   
   const snapshot = await getDocs(q);
@@ -62,9 +51,8 @@ export const getOrder = async (orderNumber: string, dispensaryType: string): Pro
   return { id: orderDoc.id, ...orderDoc.data() } as Order;
 };
 
-export const getUserOrders = async (userId: string, dispensaryType: string): Promise<Order[]> => {
-  const collectionName = getCollectionName(dispensaryType);
-  const ordersRef = collection(db, collectionName);
+export const getUserOrders = async (userId: string): Promise<Order[]> => {
+  const ordersRef = collection(db, ORDERS_COLLECTION);
   const q = query(
     ordersRef,
     where('userId', '==', userId),
@@ -76,8 +64,7 @@ export const getUserOrders = async (userId: string, dispensaryType: string): Pro
 };
 
 export const getDispensaryOrders = async (dispensaryId: string, dispensaryType: string): Promise<Order[]> => {
-  const collectionName = getCollectionName(dispensaryType);
-  const ordersRef = collection(db, collectionName);
+  const ordersRef = collection(db, ORDERS_COLLECTION);
   const q = query(
     ordersRef,
     where('shipments', 'array-contains', { dispensaryId }),
@@ -95,8 +82,7 @@ export const updateOrderStatus = async (
   dispensaryId?: string,
   shipmentStatus?: OrderShipment['status']
 ): Promise<void> => {
-  const collectionName = getCollectionName(dispensaryType);
-  const orderRef = doc(db, collectionName, orderId);
+  const orderRef = doc(db, ORDERS_COLLECTION, orderId);
   
   const updateData: any = {
     status,
@@ -127,8 +113,7 @@ export const updateShipmentTracking = async (
     provider: 'shiplogic' | 'pudo';
   }
 ): Promise<void> => {
-  const collectionName = getCollectionName(dispensaryType);
-  const orderRef = doc(db, collectionName, orderId);
+  const orderRef = doc(db, ORDERS_COLLECTION, orderId);
   
   await updateDoc(orderRef, {
     [`shipments.${dispensaryId}.trackingNumber`]: trackingData.trackingNumber,

@@ -50,32 +50,32 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
 
   return (
     <Card
-      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-muted/50 text-card-foreground animate-fade-in-scale-up"
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-white/50 backdrop-blur-sm text-card-foreground animate-fade-in-scale-up"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start mb-2">
-          <CardTitle className="text-xl font-semibold text-primary flex items-center gap-2">
-            <Tag className="h-6 w-6" />
+          <CardTitle className="text-xl font-bold text-[#5D4E37] flex items-center gap-2">
+            <Tag className="h-6 w-6 stroke-[2.5]" />
             {dispensaryType.name}
           </CardTitle>
         </div>
-        {dispensaryType.id && <CardDescription className="text-xs text-muted-foreground">ID: {dispensaryType.id.substring(0,10)}...</CardDescription>}
+        {dispensaryType.id && <CardDescription className="text-xs text-[#5D4E37]/70 font-medium">ID: {dispensaryType.id.substring(0,10)}...</CardDescription>}
       </CardHeader>
-      <CardContent className="flex-grow space-y-3 text-sm">
+      <CardContent className="flex-grow space-y-3 text-sm font-medium">
         <div className="flex items-start gap-2">
-          <Info className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <p className="text-muted-foreground line-clamp-3" title={dispensaryType.description || "No description"}>
+          <Info className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5 stroke-[2.5]" />
+          <p className="text-gray-700 font-semibold line-clamp-3" title={dispensaryType.description || "No description"}>
             {dispensaryType.description || "No description provided."}
           </p>
         </div>
 
         {dispensaryType.advisorFocusPrompt && (
           <div className="flex items-start gap-2 pt-2 border-t mt-2">
-            <MessageSquareText className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <MessageSquareText className="h-5 w-5 text-gray-700 flex-shrink-0 mt-0.5 stroke-[2.5]" />
             <div>
-                <p className="text-xs font-medium text-muted-foreground">Advisor Focus:</p>
-                <p className="text-foreground line-clamp-2" title={dispensaryType.advisorFocusPrompt}>
+                <p className="text-xs font-bold text-gray-600">Advisor Focus:</p>
+                <p className="text-gray-800 font-semibold line-clamp-2" title={dispensaryType.advisorFocusPrompt}>
                     {dispensaryType.advisorFocusPrompt}
                 </p>
             </div>
@@ -84,16 +84,16 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
         
         <div className="flex items-center gap-3 mt-2 pt-2 border-t">
           <div className="space-y-1">
-             <p className="text-xs font-medium text-muted-foreground">Icon:</p>
+             <p className="text-xs font-bold text-gray-600">Icon:</p>
             {renderImagePreview(dispensaryType.iconPath, `${dispensaryType.name} icon`, "type icon")}
           </div>
            <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Image:</p>
+            <p className="text-xs font-bold text-gray-600">Image:</p>
             {renderImagePreview(dispensaryType.image, `${dispensaryType.name} image`, "type image")}
           </div>
         </div>
          {dispensaryType.createdAt && (
-            <p className="text-xs text-muted-foreground pt-1">
+            <p className="text-xs text-gray-600 font-semibold pt-1">
                 Created: {new Date(typeof dispensaryType.createdAt === 'string' ? dispensaryType.createdAt : (dispensaryType.createdAt as any)?.toDate ? (dispensaryType.createdAt as any).toDate() : Date.now()).toLocaleDateString()}
             </p>
         )}
@@ -106,13 +106,13 @@ export function DispensaryTypeCard({ dispensaryType, onSave, onDelete, isSuperAd
                 onSave={onSave}
                 isSuperAdmin={isSuperAdmin}
             >
-                <Button variant="outline" className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                <Button variant="outline" className="w-full font-bold"><Edit className="mr-2 h-5 w-5 stroke-[2.5]" /> Edit</Button>
             </DispensaryTypeDialog>
 
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full" disabled={!dispensaryType.id}>
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                <Button variant="destructive" className="w-full font-bold" disabled={!dispensaryType.id}>
+                    <Trash2 className="mr-2 h-5 w-5 stroke-[2.5]" /> Delete
                 </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

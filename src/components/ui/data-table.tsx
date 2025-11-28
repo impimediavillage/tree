@@ -17,6 +17,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 
+export type { ColumnDef };
+
 import {
   Table,
   TableBody,

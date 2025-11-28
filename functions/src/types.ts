@@ -71,6 +71,7 @@ export interface DispensaryType {
   iconPath?: string | null;
   image?: string | null;
   advisorFocusPrompt?: string | null;
+  recommendedAdvisorIds?: string[]; // Array of AI Advisor IDs linked to this dispensary type
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }
@@ -461,4 +462,42 @@ export interface OwnerUpdateDispensaryPayload {
     address: string;
     distanceKm?: number;
   } | null;
+}
+
+// --- AI ADVISOR INTERFACES ---
+export type AdvisorTier = 'basic' | 'standard' | 'premium';
+export type AdvisorModel = 'gpt-4' | 'gpt-4-turbo' | 'gpt-3.5-turbo';
+
+export interface AIAdvisor {
+  id: string;
+  name: string;
+  slug: string;
+  shortDescription: string;
+  longDescription: string;
+  imageUrl: string;
+  iconName: string; // Lucide icon name as string (e.g., 'Leaf', 'Brain', 'Sparkles')
+  systemPrompt: string;
+  isActive: boolean;
+  order: number;
+  tier: AdvisorTier;
+  creditCostBase: number; // Minimum credits per interaction
+  creditCostPerTokens: number; // Additional credits per X tokens
+  model: AdvisorModel;
+  tags: string[];
+  createdAt: Timestamp | Date | string | firestore.Timestamp;
+  updatedAt: Timestamp | Date | string | firestore.Timestamp;
+}
+
+export interface AdvisorInteraction {
+  id?: string;
+  userId: string;
+  advisorSlug: string;
+  advisorName: string;
+  creditsDeducted: number;
+  tokensUsed: number;
+  model: string;
+  messageLength: number;
+  responseLength: number;
+  wasFreeInteraction: boolean;
+  timestamp: Timestamp | Date | string | firestore.Timestamp;
 }
