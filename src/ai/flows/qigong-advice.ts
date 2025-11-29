@@ -13,7 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const QigongAdviceInputSchema = z.object({
-  question: z.string().describe("The user's question about Qigong."),
+  issueType: z.string().describe('The type of wellness goal being pursued.'),
+  description: z.string().describe('Detailed description of Qigong needs and preferences.'),
 });
 export type QigongAdviceInput = z.infer<typeof QigongAdviceInputSchema>;
 
@@ -32,7 +33,8 @@ const prompt = ai.definePrompt({
   output: {schema: QigongAdviceOutputSchema},
   prompt: `You are 'Qigong knowledge with AI', a wise and experienced Qigong master. A student has come to you with a question. Provide clear, safe, and insightful guidance based on traditional Qigong principles. Explain exercises, philosophy, or concepts as needed. Always encourage a gentle and mindful approach.
 
-  Student's Question: {{{question}}}`,
+  Wellness Goal: {{{issueType}}}
+  Student Description: {{{description}}}`,
 });
 
 const qigongAdviceFlow = ai.defineFlow(

@@ -176,7 +176,7 @@ export default function LeafProfilePage() {
               <Input id="confirmNewPassword" type="password" {...form.register("confirmNewPassword")} />
               {form.formState.errors.confirmNewPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.confirmNewPassword.message}</p>}
             </div>
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>

@@ -137,25 +137,25 @@ export default function LeafCreditsPage() {
                     {pkg.price.toFixed(2)} <span className="text-xl font-bold text-foreground/80">{pkg.currency}</span>
                   </p>
                   <p className="text-xl text-center font-bold">
-                      <span className="text-3xl font-black text-primary drop-shadow-sm">{pkg.credits}</span>
-                      <span className="text-foreground/90 font-semibold"> Credits</span>
+                      <span className="text-3xl font-black text-green-800 drop-shadow-sm">{pkg.credits}</span>
+                      <span className="text-foreground font-bold"> Credits</span>
                       {pkg.bonusCredits && pkg.bonusCredits > 0 && (
-                          <span className="text-lg text-green-600 font-bold drop-shadow-sm"> + {pkg.bonusCredits} Bonus!</span>
+                          <span className="text-lg text-green-700 font-black drop-shadow-sm"> + {pkg.bonusCredits} Bonus!</span>
                       )}
                   </p>
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col">
-                  {pkg.description && <p className="text-base font-semibold text-muted-foreground mb-4 text-center line-clamp-2">{pkg.description}</p>}
+                  {pkg.description && <p className="text-base font-bold text-foreground/90 mb-4 text-center line-clamp-2 drop-shadow-sm">{pkg.description}</p>}
                   <ul className="space-y-3 mb-6 text-base font-semibold">
                     {packageFeatures.map((feature, index) => (
                       <li key={index} className="flex items-center gap-3 text-card-foreground">
-                        <feature.icon className="h-6 w-6 text-green-500" />
+                        <feature.icon className="h-8 w-8 text-green-800" />
                         <span>{feature.text}</span>
                       </li>
                     ))}
                   </ul>
                   <Button 
-                    className="mt-auto w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold py-4"
+                    className="mt-auto w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                     onClick={() => handlePurchase(pkg)}
                     disabled={isLoading}
                   >

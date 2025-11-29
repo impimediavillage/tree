@@ -239,6 +239,7 @@ interface ChatMessage {
 interface ChatWithAdvisorRequest {
     advisorSlug: string;
     userMessage: string;
+    imageUrl?: string;
     conversationHistory: ChatMessage[];
 }
 
@@ -258,19 +259,19 @@ export const chatWithAdvisor = onCall(
             throw new HttpsError('unauthenticated', 'You must be signed in to chat with an advisor.');
         }
 
-        const { advisorSlug, userMessage, conversationHistory } = request.data;
+        const { advisorSlug, userMessage, imageUrl, conversationHistory } = request.data;
         const userId = request.auth.uid;
 
         // Validation
-        if (!advisorSlug || !userMessage) {
-            throw new HttpsError('invalid-argument', 'Missing required parameters: advisorSlug and userMessage.');
+        if (!advisorSlug || (!userMessage && !imageUrl)) {
+            throw new HttpsError('invalid-argument', 'Missing required parameters: advisorSlug and either userMessage or imageUrl.');
         }
 
-        if (userMessage.trim().length === 0) {
-            throw new HttpsError('invalid-argument', 'User message cannot be empty.');
+        if (userMessage && userMessage.trim().length === 0 && !imageUrl) {
+            throw new HttpsError('invalid-argument', 'User message cannot be empty unless an image is provided.');
         }
 
-        if (userMessage.length > 5000) {
+        if (userMessage && userMessage.length > 5000) {
             throw new HttpsError('invalid-argument', 'Message is too long. Maximum 5000 characters.');
         }
 
@@ -298,20 +299,49 @@ export const chatWithAdvisor = onCall(
             const userData = userDoc.data() as UserDocData;
             const userCredits = userData.credits || 0;
 
+            // Add extra credits for image processing
+            const imageCost = imageUrl ? 10 : 0;
+            const minimumRequired = advisor.creditCostBase + imageCost;
+
             // Check if user has enough credits (base cost minimum)
-            if (userCredits < advisor.creditCostBase) {
+            if (userCredits < minimumRequired) {
                 throw new HttpsError(
                     'failed-precondition',
-                    `Insufficient credits. You need at least ${advisor.creditCostBase} credits. You have ${userCredits}.`
+                    `Insufficient credits. You need at least ${minimumRequired} credits. You have ${userCredits}.`
                 );
             }
 
+            // Prepare user content with optional image
+            let userContent: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
+            
+            if (imageUrl) {
+                // Multi-modal content with image (Vision API format)
+                userContent = [
+                    { type: 'text', text: userMessage || 'Please analyze this image.' },
+                    { type: 'image_url', image_url: { url: imageUrl } }
+                ];
+            } else {
+                // Text-only content
+                userContent = userMessage;
+            }
+
             // Prepare messages for OpenAI
-            const messages: ChatMessage[] = [
+            const messages: any[] = [
                 { role: 'system', content: advisor.systemPrompt },
-                ...conversationHistory.slice(-10), // Keep last 10 messages for context
-                { role: 'user', content: userMessage },
+                ...conversationHistory.slice(-10).map((msg: any) => ({
+                    role: msg.role,
+                    content: msg.imageUrl
+                        ? [
+                            { type: 'text', text: msg.content },
+                            { type: 'image_url', image_url: { url: msg.imageUrl } }
+                        ]
+                        : msg.content
+                })),
+                { role: 'user', content: userContent },
             ];
+
+            // Use GPT-4 Vision if image is present, otherwise use the advisor's configured model
+            const modelToUse = imageUrl ? 'gpt-4o' : advisor.model;
 
             // Call OpenAI API
             const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -321,10 +351,10 @@ export const chatWithAdvisor = onCall(
                     'Authorization': `Bearer ${openaiApiKey.value()}`,
                 },
                 body: JSON.stringify({
-                    model: advisor.model,
+                    model: modelToUse,
                     messages: messages,
                     temperature: 0.7,
-                    max_tokens: 1000,
+                    max_tokens: imageUrl ? 1500 : 1000, // More tokens for image analysis
                     user: userId, // For OpenAI abuse monitoring
                 }),
             });
@@ -342,9 +372,9 @@ export const chatWithAdvisor = onCall(
             const assistantMessage = openaiData.choices[0]?.message?.content || '';
             const tokensUsed = openaiData.usage?.total_tokens || 0;
 
-            // Calculate credits to deduct (base + token-based)
+            // Calculate credits to deduct (base + token-based + image cost)
             const tokenCredits = Math.ceil(tokensUsed * advisor.creditCostPerTokens);
-            const totalCredits = advisor.creditCostBase + tokenCredits;
+            const totalCredits = advisor.creditCostBase + tokenCredits + imageCost;
 
             // Deduct credits and log interaction
             await db.runTransaction(async (transaction) => {
@@ -375,9 +405,10 @@ export const chatWithAdvisor = onCall(
                     advisorId: advisor.id,
                     creditsDeducted: totalCredits,
                     tokensUsed,
-                    model: advisor.model,
-                    messageLength: userMessage.length,
+                    model: modelToUse,
+                    messageLength: userMessage?.length || 0,
                     responseLength: assistantMessage.length,
+                    hasImage: !!imageUrl,
                     wasFreeInteraction: false,
                     timestamp: admin.firestore.FieldValue.serverTimestamp(),
                 };
@@ -386,14 +417,14 @@ export const chatWithAdvisor = onCall(
                 transaction.set(logRef, logEntry);
             });
 
-            logger.info(`Chat completed for user ${userId} with advisor ${advisorSlug}. Tokens: ${tokensUsed}, Credits: ${totalCredits}`);
+            logger.info(`Chat completed for user ${userId} with advisor ${advisorSlug}. Tokens: ${tokensUsed}, Credits: ${totalCredits}, Image: ${!!imageUrl}`);
 
             return {
                 success: true,
                 message: assistantMessage,
                 tokensUsed,
                 creditsDeducted: totalCredits,
-                model: advisor.model,
+                model: modelToUse,
             };
 
         } catch (error: any) {

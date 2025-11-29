@@ -105,46 +105,16 @@ export default function WellnessProfilesByTypePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-      <div className="mb-8">
-        <Button variant="outline" onClick={() => router.back()} className="mb-4">
+      <div className="mb-8 flex justify-end">
+        <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Wellness Types
         </Button>
-        <div className="relative w-full h-48 md:h-64 rounded-lg overflow-hidden shadow-lg mb-6 bg-muted">
-            <Image 
-              src={headerImageUrl} 
-              alt={wellnessTypeName || "Wellness Type"} 
-              layout="fill" 
-              objectFit="cover" 
-              data-ai-hint={headerDataAiHint}
-              priority
-              onError={(e) => {
-                e.currentTarget.srcset = `https://placehold.co/1200x300.png?text=${encodeURIComponent(wellnessTypeName || "Wellness Profiles")}`;
-                e.currentTarget.src = `https://placehold.co/1200x300.png?text=${encodeURIComponent(wellnessTypeName || "Wellness Profiles")}`;
-              }}
-            />
-            <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center p-4">
-                <h1 
-                  className="text-4xl md:text-5xl font-extrabold text-white text-center"
-                  style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-                >
-                    {wellnessTypeName}
-                </h1>
-                {wellnessTypeDetails?.description && (
-                    <p 
-                      className="text-lg text-gray-200 mt-2 text-center max-w-2xl"
-                      style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-                    >
-                        {wellnessTypeDetails.description}
-                    </p>
-                )}
-            </div>
-        </div>
       </div>
 
       {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {wellnessProfiles.map(profile => (
-            <DispensaryListingCard key={profile.id} dispensary={profile} />
+            <DispensaryListingCard key={profile.id} dispensary={profile} typeBannerImageUrl={profile.bannerUrl} />
           ))}
         </div>
       ) : (

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Palette, Loader2, AlertTriangle, Package } from 'lucide-react'; 
+import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Palette, Loader2, AlertTriangle, Package, Brain } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ const sidebarNavItems = [
   { title: 'My Sticker Sets', href: '/dashboard/leaf/sticker-sets', icon: Palette },
   { title: 'My Credits', href: '/dashboard/leaf/credits', icon: DollarSign },
   { title: 'Interaction History', href: '/dashboard/leaf/history', icon: History },
+  { title: 'AI Advisors', href: '/dashboard/advisors', icon: Brain },
 ];
 
 const getInitials = (name?: string | null, fallback = 'LU') => {

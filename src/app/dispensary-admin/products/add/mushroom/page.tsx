@@ -222,9 +222,9 @@ export default function AddMushroomProductPage() {
 
  return (
    <div className="max-w-7xl mx-auto my-8 space-y-8">
-     <div className="flex items-center justify-between">
+     <div className="flex items-center justify-between bg-muted/50 p-6 rounded-lg border border-primary/20">
        <div>
-         <h1 className="text-3xl font-bold flex items-center gap-2"><Brain className="h-8 w-8 text-primary"/> Add Mushroom Product</h1>
+         <h1 className="text-3xl font-bold flex items-center gap-2"><Brain className="h-8 w-8 text-green-800"/> Add Mushroom Product</h1>
          <p className="text-muted-foreground mt-1">Follow the steps to add your mushroom product.</p>
        </div>
        <Button variant="outline" asChild>
@@ -399,7 +399,7 @@ export default function AddMushroomProductPage() {
                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. The first will be the main one. If none are uploaded, the base product image will be used.</FormDescription><FormMessage /></FormItem> )} />
                          <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                          <CardFooter className="p-0 pt-6">
-                             <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                             <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
                                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                                  Add Product
                              </Button>

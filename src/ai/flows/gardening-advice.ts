@@ -12,21 +12,13 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GardeningAdviceInputSchema = z.object({
-  photoDataUri: z
-    .string()
-    .optional()
-    .describe(
-      "A photo of a plant, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
-  description: z.string().describe('The description of the gardening needs.'),
+  issueType: z.string().describe('The type of gardening concern.'),
+  description: z.string().describe('Detailed description of gardening needs and conditions.'),
 });
 export type GardeningAdviceInput = z.infer<typeof GardeningAdviceInputSchema>;
 
 const GardeningAdviceOutputSchema = z.object({
   advice: z.string().describe('Personalized advice on organic permaculture gardening practices.'),
-  plantIdentification: z.string().optional().describe('The identification of the plant, if an image was provided.'),
-  companionPlantingSuggestions: z.string().optional().describe('Suggestions for companion planting.'),
-  nutritionalInformation: z.string().optional().describe('Nutritional information related to the plants mentioned.'),
 });
 export type GardeningAdviceOutput = z.infer<typeof GardeningAdviceOutputSchema>;
 
@@ -38,11 +30,10 @@ const prompt = ai.definePrompt({
   name: 'gardeningAdvicePrompt',
   input: {schema: GardeningAdviceInputSchema},
   output: {schema: GardeningAdviceOutputSchema},
-  prompt: `You are an expert in organic permaculture gardening and farming. Provide personalized advice based on the user's description and, if available, a photo of their plant.\n\nDescription: {{{description}}}\n\n{{#if photoDataUri}}
-Photo: {{media url=photoDataUri}}
-{{/if}}
-\nSpecifically address plant identification (if a photo is provided), companion planting suggestions, and relevant nutritional information. Focus on organic and sustainable practices. Format your response clearly and concisely.
-`,
+  prompt: `You are an expert in organic permaculture gardening and farming. Provide personalized advice based on the user's gardening concern and description. Focus on organic and sustainable practices. Format your response clearly and concisely.
+
+Concern Type: {{{issueType}}}
+Description: {{{description}}}`,
 });
 
 const gardeningAdviceFlow = ai.defineFlow(

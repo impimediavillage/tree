@@ -122,7 +122,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             )}
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <Package2 className="h-6 w-6 text-primary" />
+                <Package2 className="h-7 w-7 text-green-800" />
                 <span className="text-xl font-bold">#{order.orderNumber || 'No Number'}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -150,7 +150,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         {order.customerDetails && (
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
+              <User className="h-6 w-6 text-green-800" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{order.customerDetails.name}</p>
@@ -162,7 +162,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         {/* Product Details */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <ShoppingBag className="h-5 w-5 text-primary" />
+            <ShoppingBag className="h-6 w-6 text-green-800" />
             <span>Products ({totalItems} items)</span>
           </div>
           <div className="space-y-2 pl-7">
@@ -185,7 +185,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         {/* Shipping Method */}
         <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <Truck className="h-5 w-5 text-primary" />
+            <Truck className="h-6 w-6 text-green-800" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-muted-foreground mb-1">Shipping Method</p>
@@ -205,7 +205,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         {/* Shipment Status */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Package className="h-5 w-5 text-primary" />
+            <Package className="h-6 w-6 text-green-800" />
             <span>Shipment Status</span>
           </div>
           <div className="space-y-3">

@@ -65,7 +65,7 @@ export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: Disp
             </CardContent>
 
             <CardFooter className="p-0 mt-auto">
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold group-hover:bg-primary/95 transition-colors">
+                <Button asChild className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
                     <Link href={linkHref}>
                         View Stores <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Link>

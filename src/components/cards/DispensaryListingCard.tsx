@@ -10,11 +10,12 @@ import { MapPin, Trees, Route } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const hardcodedTypeImages: Record<string, string> = {
-  "Cannibinoid store": "/images/dispensary-types/thc-cbd-mushroom-banner.jpg",
-  "Homeopathic store": "/images/dispensary-types/homeopathy-banner.jpg",
-  "Traditional Medicine dispensary": "/images/dispensary-types/traditional-banner.jpg",
-  "Permaculture & gardening store": "/images/dispensary-types/permaculture-banner.jpg",
-  "Flower Store": "/images/dispensary-types/flower-store-banner.jpg",
+  "Cannibinoid store": "/images/cannibinoid-store/canna1.jpg",
+  "Homeopathic store": "/images/homeopathy/homeopathy.png",
+  "Traditional Medicine dispensary": "/images/traditional-medicine/traditional-medicine.png",
+  "Permaculture & gardening store": "/images/permaculture/garden.png",
+  "Flower Store": "/images/flowers-permaculture.png",
+  "Mushroom store": "/images/mushrooms/mushroom.png",
 };
 
 interface DispensaryListingCardProps {
@@ -32,15 +33,21 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
   useEffect(() => {
     let bannerUrl = defaultPlaceholderUrl; 
 
-    if (typeBannerImageUrl && typeof typeBannerImageUrl === 'string' && typeBannerImageUrl.trim() !== '') {
+    // First priority: dispensary's own bannerUrl
+    if (dispensary.bannerUrl && typeof dispensary.bannerUrl === 'string' && dispensary.bannerUrl.trim() !== '') {
+      bannerUrl = dispensary.bannerUrl;
+    }
+    // Second priority: typeBannerImageUrl prop
+    else if (typeBannerImageUrl && typeof typeBannerImageUrl === 'string' && typeBannerImageUrl.trim() !== '') {
       bannerUrl = typeBannerImageUrl;
     } 
+    // Third priority: hardcoded type images
     else if (dispensary.dispensaryType && hardcodedTypeImages[dispensary.dispensaryType]) {
       bannerUrl = hardcodedTypeImages[dispensary.dispensaryType]!;
     }
     
     setCurrentBannerUrl(bannerUrl);
-  }, [typeBannerImageUrl, dispensary.dispensaryType, dispensary.dispensaryName, defaultPlaceholderUrl]);
+  }, [typeBannerImageUrl, dispensary.dispensaryType, dispensary.bannerUrl, dispensary.dispensaryName, defaultPlaceholderUrl]);
 
   const handleImageError = () => {
     if (currentBannerUrl !== defaultPlaceholderUrl) {
@@ -52,7 +59,7 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
 
   return (
     <Card 
-        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-muted/50 text-card-foreground group border border-border hover:border-primary/50 animate-fade-in-scale-up"
+        className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col overflow-hidden bg-muted/50 text-card-foreground group border border-primary/20 hover:border-primary/50 animate-fade-in-scale-up"
         style={{ animationFillMode: 'backwards' }}
         data-ai-hint={dataAiHint}
     >
@@ -67,13 +74,13 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
         />
         {distance !== undefined && (
             <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold py-1 px-2 rounded-full flex items-center gap-1 shadow-lg">
-                <Route className="h-4 w-4" />
+                <Route className="h-4 w-4 text-green-800" />
                 {distance.toFixed(1)} km away
             </div>
         )}
       </div>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold text-primary truncate" title={dispensary.dispensaryName}>
+        <CardTitle className="text-xl font-bold text-foreground truncate" title={dispensary.dispensaryName}>
           {dispensary.dispensaryName}
         </CardTitle>
         <CardDescription className="text-sm font-semibold text-foreground/70">
@@ -86,14 +93,14 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
         </p>
         {(dispensary.city || dispensary.province) && (
           <div className="flex items-center gap-1 text-xs font-semibold text-foreground/70">
-            <MapPin className="h-3 w-3" /> {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
+            <MapPin className="h-4 w-4 text-green-800" /> {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
           </div>
         )}
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full bg-green-600 hover:bg-green-700 text-white">
+        <Button asChild className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
           <Link href={`/store/${dispensary.id}`}>
-            <Trees className="mr-2 h-4 w-4" /> Climb this tree
+            <Trees className="mr-2 h-5 w-5" /> Climb this tree
           </Link>
         </Button>
       </CardFooter>

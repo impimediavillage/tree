@@ -65,7 +65,7 @@ const TripleSShowcase = ({
             </p>
           </CardContent>
           <div className="mt-auto pt-4">
-            <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+            <Button asChild size="lg" className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
               <Link href="/dispensary-signup">
                 <Store className="mr-2 h-5 w-5" />
                 Create Club / Store
@@ -81,7 +81,7 @@ const TripleSShowcase = ({
             </p>
           </CardContent>
           <div className="mt-auto pt-4">
-            <Button asChild size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+            <Button asChild size="lg" className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
               <Link href="/auth/signup">
                 <Leaf className="mr-2 h-5 w-5" />
                 Sign up as a leaf

@@ -170,9 +170,9 @@ export default function EditTraditionalMedicineProductPage() {
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
-      <CardHeader>
+      <CardHeader className="bg-muted/50">
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground"> <Leaf className="mr-3 h-8 w-8 text-primary" /> Edit Traditional Medicine Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center text-foreground"> <Leaf className="mr-3 h-8 w-8 text-green-800" /> Edit Traditional Medicine Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
@@ -281,10 +281,10 @@ export default function EditTraditionalMedicineProductPage() {
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="pt-4 space-y-4">
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                            <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormMessage> )} />
-                                            <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormMessage> )} />
-                                            <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormMessage> )} />
-                                            <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormMessage> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /> </FormItem> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /> </FormItem> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /> </FormItem> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /> </FormItem> )} />
                                         </div>
                                     </CollapsibleContent>
                                 </Collapsible>
@@ -303,7 +303,7 @@ export default function EditTraditionalMedicineProductPage() {
             
             <CardFooter>
                 <div className="flex w-full">
-                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                         Save Changes
                     </Button>

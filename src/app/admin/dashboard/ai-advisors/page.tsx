@@ -141,10 +141,10 @@ export default function AdminAIAdvisorsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-muted/50 p-6 rounded-lg border border-primary/20">
           <div>
             <h1 className="text-4xl font-bold mb-2 flex items-center gap-2">
-              <Brain className="h-8 w-8 text-primary" />
+              <Brain className="h-8 w-8 text-green-800" />
               AI Advisors Management
             </h1>
             <p className="text-muted-foreground">

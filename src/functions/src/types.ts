@@ -252,7 +252,7 @@ export interface User {
 // Represents a User document in Firestore (for server-side functions)
 export interface UserDocData {
   uid?: string; 
-  email?:.string;
+  email?: string;
   displayName?: string | null;
   photoURL?: string | null;
   credits?: number;

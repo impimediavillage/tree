@@ -47,7 +47,7 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
                 </div>
                 </div>
                 <div className="pt-4 border-t border-border/50">
-                    <Button size="lg" className="w-full text-lg bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
+                    <Button size="lg" className="w-full text-lg bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
                         <Leaf className="mr-2 h-5 w-5"/>
                         Sign Up For Free
                     </Button>
@@ -129,14 +129,24 @@ export default function PublicCreditsPage() {
             title="Fuel Your Creative Journey"
             description={<p>Credits are your key to unlocking a universe of creative potential. Use them to generate stunning AI-powered designs, get expert advice, and bring your wellness ideas to life.</p>}
         >
-            {currentUser && !authLoading && (
-                <div className="mt-6 bg-muted/50 border border-border/50 rounded-lg p-4 inline-block shadow-inner">
-                    <p className="text-lg text-foreground">
-                        Your current balance: 
-                        <span className="font-bold text-primary ml-2">{currentUser.credits}</span> credits
-                    </p>
-                </div>
-            )}
+            <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center justify-center">
+                <Button 
+                    size="lg" 
+                    className="bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl px-8 py-3"
+                    onClick={() => router.push('/dashboard/advisors')}
+                >
+                    <Sparkles className="mr-2 h-5 w-5" />
+                    Explore AI Advisors
+                </Button>
+                {currentUser && !authLoading && (
+                    <div className="bg-muted/50 border border-border/50 rounded-lg p-4 shadow-inner">
+                        <p className="text-lg text-foreground">
+                            Your current balance: 
+                            <span className="font-bold text-primary ml-2">{currentUser.credits}</span> credits
+                        </p>
+                    </div>
+                )}
+            </div>
         </PageHeader>
 
         {isLoadingPackages ? (
@@ -175,32 +185,32 @@ export default function PublicCreditsPage() {
                   className="flex flex-col shadow-lg hover:shadow-2xl transition-shadow duration-300 bg-muted/50 text-card-foreground border border-border/50 hover:border-primary/60"
                   data-ai-hint={`credit package ${pkg.name.toLowerCase()}`}
                 >
-                  <CardHeader className="pb-4 text-center">
-                    <CardTitle className="text-2xl font-extrabold text-primary">{pkg.name}</CardTitle>
-                     <p className="text-4xl font-extrabold text-foreground my-3">
-                      {pkg.price.toFixed(2)} <span className="text-base font-bold text-foreground/60">{pkg.currency}</span>
+                  <CardHeader className="pb-4 text-card-foreground rounded-t-lg">
+                    <CardTitle className="text-2xl font-black text-center">{pkg.name}</CardTitle>
+                     <p className="text-4xl font-black text-center text-accent my-3 drop-shadow-sm">
+                      {pkg.price.toFixed(2)} <span className="text-xl font-bold text-foreground/80">{pkg.currency}</span>
                     </p>
-                    <p className="text-xl">
-                        <span className="text-3xl font-extrabold text-primary">{pkg.credits}</span>
-                        <span className="font-semibold text-foreground/70"> Credits</span>
+                    <p className="text-xl text-center font-bold">
+                        <span className="text-3xl font-black text-green-800 drop-shadow-sm">{pkg.credits}</span>
+                        <span className="text-foreground font-bold"> Credits</span>
                         {pkg.bonusCredits && pkg.bonusCredits > 0 && (
-                             <Badge variant="default" className="ml-2 bg-accent hover:bg-accent/90 text-accent-foreground">+{pkg.bonusCredits} Bonus</Badge>
+                             <Badge variant="default" className="ml-2 bg-accent hover:bg-accent/90 text-accent-foreground font-bold">+{pkg.bonusCredits} Bonus</Badge>
                         )}
                     </p>
                   </CardHeader>
                   <CardContent className="flex-grow flex flex-col px-6">
-                    {pkg.description && <p className="text-sm font-semibold text-foreground/80 mb-5 text-center line-clamp-2 h-10">{pkg.description}</p>}
-                    <ul className="space-y-3 mb-6 text-sm font-semibold flex-grow">
+                    {pkg.description && <p className="text-sm font-bold text-foreground/90 mb-5 text-center line-clamp-2 h-10">{pkg.description}</p>}
+                    <ul className="space-y-3 mb-6 text-sm font-bold flex-grow">
                       {packageFeatures.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3 text-foreground">
-                          <feature.icon className="h-5 w-5 text-primary" />
+                          <feature.icon className="h-10 w-10 text-green-800" />
                           <span>{feature.text}</span>
                         </li>
                       ))}
                     </ul>
                     <Button 
                       size="lg"
-                      className="mt-auto w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg font-bold py-6"
+                      className="mt-auto w-full bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground text-lg font-bold py-6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                       onClick={() => handlePurchase(pkg)}
                       disabled={isLoading}
                     >

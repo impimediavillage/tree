@@ -94,16 +94,16 @@ const AdvisorsPage = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="mb-8">
+      <div className="mb-8 bg-muted/50 border border-border/50 rounded-lg p-8 shadow-lg">
         <h1 className="text-4xl font-bold mb-2 flex items-center gap-2">
-          <Brain className="h-10 w-10 text-primary" />
+          <Brain className="h-12 w-12 text-green-800" />
           AI Advisors
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-[#5D4E37] text-lg font-bold">
           Consult with our specialized AI advisors for personalized wellness guidance.
           {currentUser && (
             <span className="ml-2">
-              Your credits: <span className="font-bold text-primary">{currentUser.credits ?? 0}</span>
+              Your credits: <span className="text-2xl font-black text-green-800">{currentUser.credits ?? 0}</span>
             </span>
           )}
         </p>
@@ -123,29 +123,29 @@ const AdvisorsPage = () => {
             return (
               <Card
                 key={advisor.id}
-                className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-card"
+                className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-white/80 backdrop-blur-sm"
               >
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start mb-2">
-                    <CardTitle className="text-xl font-bold text-[#5D4E37] flex items-center gap-2">
+                    <CardTitle className="text-xl font-black text-[#5D4E37] flex items-center gap-2">
                       {renderIcon(advisor.iconName)}
                       {advisor.name}
                     </CardTitle>
                     {getTierBadge(advisor.tier)}
                   </div>
-                  <CardDescription className="text-sm font-medium text-[#5D4E37]/70">
+                  <CardDescription className="text-sm font-bold text-[#5D4E37]/70">
                     {advisor.shortDescription}
                   </CardDescription>
                 </CardHeader>
 
                 <CardContent className="flex-grow space-y-3">
                   {imageUrl && (
-                    <div className="relative h-40 w-full rounded-lg overflow-hidden border bg-muted">
+                    <div className="relative h-64 w-full rounded-lg overflow-hidden border bg-muted">
                       <Image
                         src={imageUrl}
                         alt={advisor.name}
                         fill
-                        className="object-cover"
+                        className="object-contain"
                         unoptimized
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
@@ -173,7 +173,7 @@ const AdvisorsPage = () => {
                 </CardContent>
 
                 <CardFooter className="border-t pt-4">
-                  <Button asChild className="w-full font-bold">
+                  <Button asChild className="w-full font-bold bg-primary hover:bg-[#5D4E37] active:bg-primary/80 hover:scale-105 active:scale-95 transition-all duration-300 text-primary-foreground">
                     <Link href={`/advisors/${advisor.slug}`}>
                       Consult Advisor
                       <ArrowRight className="ml-2 h-4 w-4" />

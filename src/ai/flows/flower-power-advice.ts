@@ -13,7 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const FlowerPowerAdviceInputSchema = z.object({
-  question: z.string().describe("The user's emotional state or question."),
+  issueType: z.string().describe('The type of emotional challenge.'),
+  description: z.string().describe('Detailed description of emotional state and circumstances.'),
 });
 export type FlowerPowerAdviceInput = z.infer<typeof FlowerPowerAdviceInputSchema>;
 
@@ -32,7 +33,8 @@ const prompt = ai.definePrompt({
   output: {schema: FlowerPowerAdviceOutputSchema},
   prompt: `You are 'Flower Power', an expert on flower essences (like Bach remedies) and their subtle emotional healing properties. A user is describing their emotional state. Based on their input, recommend specific flower essences, explain their purpose, and suggest how to use them.
 
-  User's State/Question: {{{question}}}`,
+  Emotional Challenge: {{{issueType}}}
+  User Description: {{{description}}}`,
 });
 
 const flowerPowerAdviceFlow = ai.defineFlow(

@@ -13,7 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const VeganFoodAdviceInputSchema = z.object({
-  question: z.string().describe("The user's question about vegan food, nutrition, or recipes."),
+  issueType: z.string().describe('The type of vegan nutrition concern.'),
+  description: z.string().describe('Detailed description of the vegan nutrition needs.'),
 });
 export type VeganFoodAdviceInput = z.infer<typeof VeganFoodAdviceInputSchema>;
 
@@ -32,7 +33,8 @@ const prompt = ai.definePrompt({
   output: {schema: VeganFoodAdviceOutputSchema},
   prompt: `You are the 'Vegan food Guru', a passionate and knowledgeable chef and nutritionist specializing in plant-based cuisine. A user is asking for advice. Provide delicious recipes, sound nutritional guidance, and helpful lifestyle tips. Always be encouraging and positive.
 
-  User's Question: {{{question}}}`,
+  Concern Type: {{{issueType}}}
+  User Description: {{{description}}}`,
 });
 
 const veganFoodAdviceFlow = ai.defineFlow(

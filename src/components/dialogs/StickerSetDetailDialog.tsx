@@ -260,7 +260,7 @@ export function StickerSetDetailDialog({ stickerSet, isOpen, onOpenChange }: Sti
         <DialogFooter className="mt-auto pt-4 border-t">
           <div className="flex w-full justify-between items-center">
              <div className="text-2xl font-bold">R60.00</div>
-             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleAddToCart}>
+             <Button size="lg" className="bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={handleAddToCart}>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
              </Button>
           </div>

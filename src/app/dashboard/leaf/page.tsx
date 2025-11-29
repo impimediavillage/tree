@@ -76,13 +76,11 @@ export default function LeafDashboardOverviewPage() {
         <CardHeader>
           <CardTitle 
             className="text-3xl font-semibold text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
           </CardTitle>
           <CardDescription 
             className="text-lg text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >
             Manage your AI interactions, credits, and explore wellness entities. Current Credits: 
             <span className="font-bold text-green-600 ml-1">{currentUser?.credits ?? 0}</span>
@@ -101,9 +99,8 @@ export default function LeafDashboardOverviewPage() {
               <div className="flex justify-between items-center mb-6">
                   <h2 
                     className="text-2xl font-bold text-foreground flex items-center"
-                    style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                   >
-                      <Heart className="mr-3 h-8 w-8 text-primary" />
+                      <Heart className="mr-3 h-9 w-9 text-green-800" />
                       Your Preferred Wellness Types
                   </h2>
               </div>
@@ -124,16 +121,15 @@ export default function LeafDashboardOverviewPage() {
 
           {otherWellnessTypes.length > 0 && (
             <section>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-6 bg-muted/50 p-4 rounded-lg border border-primary/20">
                   <h2 
                     className="text-2xl font-bold text-foreground flex items-center"
-                    style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
                   >
-                      <Store className="mr-3 h-8 w-8 text-primary" />
+                      <Store className="mr-3 h-9 w-9 text-green-800" />
                       Browse Other Wellness Types
                   </h2>
                   {(preferredWellnessTypes.length === 0) && (
-                     <Button variant="outline" asChild>
+                     <Button variant="outline" asChild className="hover:bg-[#5D4E37] hover:text-white active:bg-[#5D4E37]/80 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
                         <Link href="/dashboard/leaf/credits">
                             <DollarSign className="mr-2 h-4 w-4"/> Buy Credits
                         </Link>
@@ -166,24 +162,23 @@ export default function LeafDashboardOverviewPage() {
       <section>
         <h2 
             className="text-2xl font-bold text-foreground mb-4 flex items-center"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
         >
-            <Lightbulb className="mr-3 h-8 w-8 text-primary" /> Quick Actions
+            <Lightbulb className="mr-3 h-9 w-9 text-green-800" /> Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader><CardTitle className="flex items-center gap-2"><History className="text-accent h-6 w-6" />Interaction History</CardTitle></CardHeader>
+            <Card className="hover:shadow-lg transition-shadow bg-muted/50 border-primary/20">
+            <CardHeader><CardTitle className="flex items-center gap-2"><History className="text-orange-500 h-8 w-8" />Interaction History</CardTitle></CardHeader>
             <CardContent>
-                <p className="text-muted-foreground mb-4">Review your past interactions with our AI advisors.</p>
-                <Button asChild className="w-full bg-primary text-primary-foreground"><Link href="/dashboard/leaf/history">View History</Link></Button>
+                <p className="text-foreground font-semibold mb-4">Review your past interactions with our AI advisors.</p>
+                <Button asChild className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"><Link href="/dashboard/leaf/history">View History</Link></Button>
             </CardContent>
             </Card>
             
-            <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Tag className="text-accent h-6 w-6" />AI Advisors</CardTitle></CardHeader>
+            <Card className="hover:shadow-lg transition-shadow bg-muted/50 border-primary/20">
+            <CardHeader><CardTitle className="flex items-center gap-2"><Tag className="text-orange-500 h-8 w-8" />AI Advisors</CardTitle></CardHeader>
             <CardContent>
-                <p className="text-muted-foreground mb-4">Discover insights by consulting our specialized AI advisors.</p>
-                <Button asChild className="w-full bg-primary text-primary-foreground"><Link href="/dashboard/advisors">See All Advisors</Link></Button>
+                <p className="text-foreground font-semibold mb-4">Discover insights by consulting our specialized AI advisors.</p>
+                <Button asChild className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"><Link href="/dashboard/advisors">See All Advisors</Link></Button>
             </CardContent>
             </Card>
         </div>

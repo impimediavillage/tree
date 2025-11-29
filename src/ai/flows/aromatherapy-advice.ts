@@ -13,7 +13,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AromatherapyAdviceInputSchema = z.object({
-  question: z.string().describe("The user's question or desired mood/effect."),
+  issueType: z.string().describe('The type of aromatherapy goal.'),
+  description: z.string().describe('Detailed description of aromatherapy needs and preferences.'),
 });
 export type AromatherapyAdviceInput = z.infer<typeof AromatherapyAdviceInputSchema>;
 
@@ -46,7 +47,8 @@ Follow this structure for your response:
 **Important Safety Precautions:**
 - [Crucial safety information, including dilution and contraindications]
 
-User's Goal/Question: {{{question}}}`,
+Goal Type: {{{issueType}}}
+User Description: {{{description}}}`,
 });
 
 const aromatherapyAdviceFlow = ai.defineFlow(

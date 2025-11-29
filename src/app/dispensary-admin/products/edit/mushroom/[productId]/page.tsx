@@ -153,9 +153,9 @@ export default function EditMushroomProductPage() {
 
   return (
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
-      <CardHeader>
+      <CardHeader className="bg-muted/50">
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground"> <Brain className="mr-3 h-8 w-8 text-primary" /> Edit Mushroom Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center text-foreground"> <Brain className="mr-3 h-8 w-8 text-green-800" /> Edit Mushroom Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
             </Button>
@@ -290,7 +290,7 @@ export default function EditMushroomProductPage() {
             
             <CardFooter>
                 <div className="flex w-full">
-                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                         Save Changes
                     </Button>

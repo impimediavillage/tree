@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { TimePicker } from '@/components/ui/time-picker';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Building } from 'lucide-react';
@@ -217,11 +218,11 @@ export default function WellnessSignupPage() {
         <div className="container mx-auto flex h-screen items-center justify-center">
             <Card className="max-w-lg text-center shadow-xl">
                 <CardHeader>
-                    <CardTitle className="text-3xl">Thank You!</CardTitle>
-                    <CardDescription>Your application has been successfully submitted.</CardDescription>
+                    <CardTitle className="text-3xl text-[#5D4E37]">Thank You!</CardTitle>
+                    <CardDescription className="text-[#5D4E37]">Your application has been successfully submitted.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p>Our team will review your information and get back to you shortly. You can now safely close this page.</p>
+                    <p className="text-[#5D4E37]">Our team will review your information and get back to you shortly. You can now safely close this page.</p>
                     <Button asChild className="mt-6">
                         <Link href="/">Back to Homepage</Link>
                     </Button>
@@ -237,52 +238,52 @@ export default function WellnessSignupPage() {
         <Card className="max-w-4xl mx-auto my-8 shadow-xl">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-3xl flex items-center text-foreground">
-                <Building className="mr-3 h-8 w-8 text-primary" /> Dispensary Signup
+              <CardTitle className="text-3xl flex items-center text-[#5D4E37]">
+                <Building className="mr-3 h-12 w-12 text-[#006B3E]" /> Dispensary Signup
               </CardTitle>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
               </Button>
             </div>
-            <CardDescription>Join our network by filling in the details below.</CardDescription>
+            <CardDescription className="text-[#5D4E37]">Join our network by filling in the details below.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
                 
                 <section>
-                  <h2 className="text-xl font-semibold border-b pb-2 text-foreground">Owner & Store Information</h2>
+                  <h2 className="text-xl font-semibold border-b pb-2 text-[#5D4E37]">Owner & Store Information</h2>
                   <div className="grid md:grid-cols-2 gap-6 mt-4">
-                    <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="ownerEmail" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="e.g., owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="dispensaryName" render={({ field }) => (<FormItem><FormLabel>Store Name</FormLabel><FormControl><Input placeholder="e.g., The Green Leaf" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="dispensaryType" render={({ field }) => (<FormItem><FormLabel>Store Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="ownerEmail" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Email Address</FormLabel><FormControl><Input type="email" placeholder="e.g., owner@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="dispensaryName" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Store Name</FormLabel><FormControl><Input placeholder="e.g., The Green Leaf" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="dispensaryType" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Store Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{wellnessTypes.map(type => <SelectItem key={type.id} value={type.name}>{type.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                   </div>
                 </section>
                 
                 <section>
-                  <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-foreground">Location & Contact</h2>
+                  <h2 className="text-xl font-semibold border-b pb-2 mt-6 text-[#5D4E37]">Location & Contact</h2>
                   <div className="mt-4 space-y-6">
-                      <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription className="text-[#5D4E37]">Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
                       <FormItem>
-                          <FormLabel>Location Search</FormLabel>
+                          <FormLabel className="text-[#5D4E37]">Location Search</FormLabel>
                           <FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl>
-                          <FormDescription>Select an address to auto-fill the fields below. You can also click the map or drag the pin.</FormDescription>
+                          <FormDescription className="text-[#5D4E37]">Select an address to auto-fill the fields below. You can also click the map or drag the pin.</FormDescription>
                       </FormItem>
 
                       <div className="grid md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="streetAddress" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Street Address</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="suburb" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Suburb</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="city" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">City</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="province" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Province</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="postalCode" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Postal Code</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="country" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Country</FormLabel><FormControl><Input {...field} value={field.value ?? ''} placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                       </div>
 
                       <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
 
                       <FormField control={form.control} name="phone" render={() => (
-                          <FormItem><FormLabel>Phone Number</FormLabel>
+                          <FormItem><FormLabel className="text-[#5D4E37]">Phone Number</FormLabel>
                               <div className="flex items-center gap-2">
                                   <div className="w-[80px] shrink-0 border rounded-md h-10 flex items-center justify-center bg-muted">
                                     {selectedCountry && <span className='text-sm'>{selectedCountry.flag} {selectedCountry.dialCode}</span>}
@@ -292,27 +293,27 @@ export default function WellnessSignupPage() {
                               <FormMessage />
                           </FormItem>
                       )} />
-                      <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel>Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                   </div>
                 </section>
                 
                 <section>
-                  <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Operations & Services</h2>
+                  <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-[#5D4E37]">Operations & Services</h2>
                   <div className="space-y-6">
                       <div className="grid md:grid-cols-2 gap-6">
-                          <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel>Opening Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                          <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel>Closing Time</FormLabel><FormControl><Input type="time" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="openTime" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Opening Time</FormLabel><FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
+                          <FormField control={form.control} name="closeTime" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Closing Time</FormLabel><FormControl><TimePicker value={field.value} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
                       </div>
-                      <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
-                      <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
-                      <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel>Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription>This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4"><FormMessage />{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm text-[#5D4E37]">{day}</FormLabel></FormItem>))}</div></FormItem>)} />
+                      <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription className="text-[#5D4E37]">Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
+                      <FormField control={form.control} name="message" render={({ field }) => (<FormItem><FormLabel className="text-[#5D4E37]">Public Bio / Message</FormLabel><FormControl><Textarea placeholder="Tell customers a little bit about your store..." className="resize-vertical" {...field} value={field.value || ''} /></FormControl><FormDescription className="text-[#5D4E37]">This is optional and will be displayed on your public store page.</FormDescription><FormMessage /></FormItem>)} />
                   </div>
                 </section>
 
                 <div className="pt-4">
                   <FormField control={form.control} name="acceptTerms" render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                      <div className="space-y-1 leading-none"><FormLabel>I accept the <Link href="/terms" target="_blank" className="underline text-primary hover:text-primary/80">Terms of Usage Agreement</Link>.</FormLabel></div>
+                      <div className="space-y-1 leading-none"><FormLabel className="text-[#5D4E37]">I accept the <Link href="/terms" target="_blank" className="underline text-primary hover:text-primary/80">Terms of Usage Agreement</Link>.</FormLabel></div>
                       </FormItem>
                   )}/>
                   <FormMessage className="mt-2 ml-1 text-sm text-red-500">{form.formState.errors.acceptTerms?.message}</FormMessage>

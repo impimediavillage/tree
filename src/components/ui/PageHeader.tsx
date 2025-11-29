@@ -14,7 +14,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, chil
       <h1 className="text-5xl font-extrabold tracking-tight text-foreground">
         {title}
       </h1>
-      <div className="text-xl text-foreground/80 mt-4 max-w-3xl mx-auto">
+      <div className="text-xl font-bold text-foreground mt-4 max-w-3xl mx-auto">
         {description}
       </div>
       {children && (

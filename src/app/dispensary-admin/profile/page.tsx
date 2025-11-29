@@ -403,9 +403,9 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
     return (
         <>
             <Card className="max-w-4xl mx-auto my-8 shadow-xl">
-                <CardHeader>
+                <CardHeader className="bg-muted/50">
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-3xl flex items-center text-foreground"><StoreIcon className="mr-3 h-8 w-8 text-primary" /> Edit Dispensary Profile</CardTitle>
+                        <CardTitle className="text-3xl flex items-center text-foreground"><StoreIcon className="mr-3 h-8 w-8 text-green-800" /> Edit Dispensary Profile</CardTitle>
                         <Button variant="outline" size="sm" asChild><Link href="/dispensary-admin/dashboard"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Link></Button>
                     </div>
                     <CardDescription>Update your dispensary details. These changes will be reflected on the public website.</CardDescription>

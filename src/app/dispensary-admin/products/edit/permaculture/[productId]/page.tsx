@@ -222,9 +222,9 @@ export default function EditPermacultureProductPage() {
 
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-muted/50 p-6 rounded-lg border border-primary/20">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="h-8 w-8 text-primary"/> Edit Product</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="h-8 w-8 text-green-800"/> Edit Product</h1>
           <p className="text-muted-foreground mt-1">Update the details for your permaculture product.</p>
         </div>
         <Button variant="outline" asChild>
@@ -418,7 +418,7 @@ export default function EditPermacultureProductPage() {
           </Card>
 
           <CardFooter className="p-0 pt-4 flex justify-between">
-              <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
+              <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                   Save Changes
               </Button>

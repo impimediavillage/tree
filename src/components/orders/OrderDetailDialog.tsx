@@ -189,7 +189,7 @@ export function OrderDetailDialog({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Package2 className="h-5 w-5 text-primary" />
+                      <Package2 className="h-6 w-6 text-green-800" />
                       Order Information
                     </CardTitle>
                   </CardHeader>
@@ -222,14 +222,14 @@ export function OrderDetailDialog({
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5 text-primary" />
+                        <User className="h-6 w-6 text-green-800" />
                         Customer Details
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="flex items-center gap-3">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="h-6 w-6 text-primary" />
+                          <User className="h-7 w-7 text-green-800" />
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold">{order.customerDetails.name}</p>
@@ -251,7 +251,7 @@ export function OrderDetailDialog({
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-primary" />
+                        <MapPin className="h-6 w-6 text-green-800" />
                         Locker Details
                       </CardTitle>
                     </CardHeader>
@@ -337,7 +337,7 @@ export function OrderDetailDialog({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5 text-primary" />
+                      <Clock className="h-6 w-6 text-green-800" />
                       Order Status
                     </CardTitle>
                   </CardHeader>
@@ -386,7 +386,7 @@ export function OrderDetailDialog({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <ShoppingBag className="h-5 w-5 text-primary" />
+                      <ShoppingBag className="h-6 w-6 text-green-800" />
                       Items ({order.items?.length || 0})
                     </CardTitle>
                   </CardHeader>
@@ -421,7 +421,7 @@ export function OrderDetailDialog({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Truck className="h-5 w-5 text-primary" />
+                      <Truck className="h-6 w-6 text-green-800" />
                       Shipping Information
                     </CardTitle>
                   </CardHeader>
@@ -432,7 +432,7 @@ export function OrderDetailDialog({
                         <p className="text-xs text-muted-foreground mb-2">Shipment {idx + 1}</p>
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Truck className="h-5 w-5 text-primary" />
+                            <Truck className="h-6 w-6 text-green-800" />
                           </div>
                           <div className="flex-1">
                             <p className="font-semibold">{shipment.shippingMethod?.courier_name || shipment.shippingMethod?.name}</p>
@@ -472,7 +472,7 @@ export function OrderDetailDialog({
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-primary" />
+                      <FileText className="h-6 w-6 text-green-800" />
                       Order Summary
                     </CardTitle>
                   </CardHeader>
@@ -513,7 +513,7 @@ export function OrderDetailDialog({
                     <CardContent className="pt-6">
                       <div className="flex flex-col items-center text-center space-y-4">
                         <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Truck className="h-6 w-6 text-primary" />
+                          <Truck className="h-7 w-7 text-green-800" />
                         </div>
                         <div>
                           <h3 className="font-semibold text-lg">Generate Shipping Labels</h3>
@@ -840,7 +840,7 @@ function ShipmentDetails({ shipment }: { shipment: OrderShipment }) {
           <div className="space-y-2">
             <div className="flex items-start justify-between">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <Package className="h-4 w-4 text-primary" />
+                <Package className="h-5 w-5 text-green-800" />
                 Tracking Information
               </h4>
             </div>
@@ -859,7 +859,7 @@ function ShipmentDetails({ shipment }: { shipment: OrderShipment }) {
                 >
                   {isCopying ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 text-green-600 mr-2" />
+                      <CheckCircle2 className="h-5 w-5 text-green-800 mr-2" />
                       Copied
                     </>
                   ) : (

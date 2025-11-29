@@ -138,7 +138,7 @@ export function CartDrawer() {
                   </div>
                   <Separator />
                   <div className="space-y-3">
-                    <Button onClick={handleCheckout} className="w-full text-lg py-3 bg-primary hover:bg-primary/90 text-primary-foreground">
+                    <Button onClick={handleCheckout} className="w-full text-lg py-3 bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
                         Proceed to Checkout
                     </Button>
                     <Button variant="outline" onClick={clearCart} className="w-full border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive">

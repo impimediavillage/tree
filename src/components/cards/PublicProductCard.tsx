@@ -116,7 +116,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                     </div>
                     <div className="w-full space-y-2">
                         <Button
-                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-bold flex items-center justify-center gap-2.5"
+                            className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
                             disabled={tierStock <= 0 || requestStatus === 'negotiating'}
                             onClick={() => onRequestProduct(product, tier)}
                             aria-label={`Request product ${product.name}`}
@@ -178,7 +178,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           </div>
           <div className="w-full space-y-2">
             <Button
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-bold flex items-center justify-center gap-2.5"
+              className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
               disabled={tierStock <= 0}
               onClick={() => setIsDesignPackOpen(true)}
               aria-label={`Buy design for ${product.name}`}
@@ -204,7 +204,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         </div>
         <div className="w-full">
             <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-md font-semibold"
+                className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                 disabled={tierStock <= 0 || !canAddToCart}
                 onClick={handleAddToCartClick}
                 aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
