@@ -102,54 +102,54 @@ export function ProductCard({ product, tier, onDelete }: ProductCardProps) {
           )}
           <Badge 
               variant={product.isAvailableForPool ? "default" : "secondary"} 
-              className={`absolute top-2 right-2 z-10 text-xs px-2 py-1 shadow-md ${product.isAvailableForPool ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-slate-500 hover:bg-slate-600 text-white'}`}
+              className={`absolute top-2 right-2 z-10 text-xs font-bold px-2 py-1 shadow-md ${product.isAvailableForPool ? 'bg-[#006B3E] hover:bg-[#005030] text-white' : 'bg-slate-500 hover:bg-slate-600 text-white'}`}
             >
-              {product.isAvailableForPool ? <CheckCircle className="mr-1 h-3 w-3"/> : <XCircle className="mr-1 h-3 w-3"/>}
+              {product.isAvailableForPool ? <CheckCircle className="mr-1 h-4 w-4"/> : <XCircle className="mr-1 h-4 w-4"/>}
               {product.isAvailableForPool ? 'In Pool' : 'Not In Pool'}
             </Badge>
         </div>
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-lg font-semibold truncate text-primary" title={product.name}>
+          <CardTitle className="text-lg font-extrabold truncate text-[#5D4E37]" title={product.name}>
             {product.name}
           </CardTitle>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Package className="h-3.5 w-3.5"/> 
+          <div className="flex items-center gap-2 text-xs font-bold text-[#5D4E37]">
+            <Package className="h-5 w-5 text-[#006B3E]"/> 
             <span className="truncate" title={product.category}>{product.category}</span>
           </div>
         </CardHeader>
         <CardContent className="flex-grow space-y-2.5 py-2 text-sm">
-          <p className="text-muted-foreground line-clamp-2 leading-relaxed h-10" title={product.description}>
+          <p className="text-[#5D4E37] font-semibold line-clamp-2 leading-relaxed h-10" title={product.description}>
             {product.description}
           </p>
           {tier && (
             <div className="flex items-baseline gap-1.5 text-foreground">
-              <span className="font-medium text-muted-foreground">{product.currency}</span>
-              <span className="text-xl font-bold text-green-600">{tier.price.toFixed(2)}</span>
-              <span className="text-xs text-muted-foreground">/ {tier.unit}</span>
+              <span className="font-bold text-[#5D4E37]">{product.currency}</span>
+              <span className="text-xl font-extrabold text-[#006B3E]">{tier.price.toFixed(2)}</span>
+              <span className="text-xs font-bold text-[#5D4E37]">/ {tier.unit}</span>
             </div>
           )}
-           <div className="flex items-center gap-1.5 text-muted-foreground">
+           <div className="flex items-center gap-1.5 text-[#5D4E37] font-bold">
               <span>Stock for this tier:</span>
-              <span className={`font-semibold ${tier.quantityInStock && tier.quantityInStock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <span className={`font-extrabold ${tier.quantityInStock && tier.quantityInStock > 0 ? 'text-[#006B3E]' : 'text-red-600'}`}>
                   {tier.quantityInStock ?? 0}
               </span>
           </div>
            <div className="flex flex-wrap gap-2 pt-2">
-            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
-            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={Leaf} />
-            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+            <InfoDialog title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} iconClassName="h-5 w-5 text-[#006B3E]" />
+            <InfoDialog title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={Leaf} iconClassName="h-5 w-5 text-[#006B3E]" />
+            <InfoDialog title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} iconClassName="h-5 w-5 text-[#006B3E]" />
           </div>
         </CardContent>
         <CardFooter className="flex gap-2 border-t pt-3 mt-auto">
           <Button variant="outline" size="sm" className="flex-1" asChild>
             <Link href={editPath}>
-              <Edit className="mr-1.5 h-4 w-4" /> Edit
+              <Edit className="mr-1.5 h-5 w-5" /> Edit
             </Link>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" className="flex-1">
-                <Trash2 className="mr-1.5 h-4 w-4" /> Delete
+                <Trash2 className="mr-1.5 h-5 w-5" /> Delete
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

@@ -13,12 +13,11 @@ import { Loader2, AlertTriangle, MapPin, Clock, Tag, Search, FilterX, Info } fro
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
-import { DesignViewerDialog } from '@/components/dialogs/DesignViewerDialog';
 import TripleSShowcase from '@/components/features/TripleSShowcase'; // Import the showcase component
 
 export default function WellnessStorePage() {
   const params = useParams();
-  const wellnessId = params.dispensaryId as string;
+  const wellnessId = params?.dispensaryId as string;
   const router = useRouter();
 
   const [wellness, setWellness] = useState<Dispensary | null>(null);
@@ -30,14 +29,6 @@ export default function WellnessStorePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>([]);
-
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [designViewerState, setDesignViewerState] = useState<{product: Product | null, tier: PriceTier | null}>({product: null, tier: null});
-  
-  const handleGenerateDesignsClick = (product: Product, tier: PriceTier) => {
-    setDesignViewerState({ product, tier });
-    setIsViewerOpen(true);
-  };
 
   useEffect(() => {
     if (!wellnessId) {
@@ -177,7 +168,7 @@ export default function WellnessStorePage() {
       {displayItems.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {displayItems.map(item => (
-            <PublicProductCard key={item.key} product={item.product} tier={item.tier} onGenerateDesigns={handleGenerateDesignsClick} />
+            <PublicProductCard key={item.key} product={item.product} tier={item.tier} />
           ))}
         </div>
       ) : (
@@ -208,9 +199,12 @@ export default function WellnessStorePage() {
           {wellness.message && (
             <p className="italic text-foreground/90">&quot;{wellness.message}&quot;</p>
           )}
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" /> <span>{wellness.location}</span>
-          </div>
+          {(wellness.city || wellness.province) && (
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" /> 
+              <span>{[wellness.city, wellness.province].filter(Boolean).join(', ')}</span>
+            </div>
+          )}
           {(wellness.openTime || wellness.closeTime) && (
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
@@ -231,13 +225,6 @@ export default function WellnessStorePage() {
           <TripleSShowcase quoteText="Create your own club or canna store. Create custom (black only for now) caps, tshirts, hoodies, beanies, and sticker sets with your own unique & funky designs. Public E store with weekly out payments from HQ and a R100 annual membership fee + The Wellness tree charges a 25% comm on all transaction and 5% comm on Product Pool wholesaler trading."/>
         </div>
       )}
-
-      <DesignViewerDialog 
-        isOpen={isViewerOpen}
-        onOpenChange={setIsViewerOpen}
-        product={designViewerState.product}
-        tier={designViewerState.tier}
-      />
     </div>
   );
 }

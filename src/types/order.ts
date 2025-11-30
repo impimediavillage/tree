@@ -58,4 +58,10 @@ export interface Order {
     shipments: {
         [dispensaryId: string]: OrderShipment;
     };
+    // Treehouse marketplace fields
+    orderType?: 'dispensary' | 'treehouse' | 'healer-service';
+    podStatus?: 'pending_print' | 'printing' | 'printed' | 'packaging' | 'shipped' | 'delivered';
+    platformCommission?: number; // 75% for Treehouse orders
+    creatorCommission?: number; // 25% for Treehouse orders
+    creatorId?: string; // Creator user ID for Treehouse orders
 }

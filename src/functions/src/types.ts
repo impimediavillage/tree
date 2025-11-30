@@ -383,36 +383,4 @@ export interface GenerateInitialLogosOutput {
     imaginativeLogoUrl: string;
 }
 
-export interface GenerateApparelInput {
-    style: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
-    circularStickerUrl: string;
-    subjectName: string;
-    isStore: boolean;
-}
 
-export interface ThemeAssetSet {
-    circularStickerUrl: string;
-    rectangularStickerUrl: string;
-    capUrl: string;
-    tShirtUrl: string;
-    hoodieUrl: string;
-    circularStickerSheetUrl: string;
-    rectangularStickerSheetUrl: string;
-    trippySticker1Url: string;
-    trippySticker2Url: string;
-}
-
-export interface StickerSet {
-  id?: string;
-  creatorUid: string;
-  creatorDisplayName: string;
-  creatorRole: User['role'];
-  dispensaryId?: string | null; // For store-created sets
-  name: string; // e.g., "Lemon Haze"
-  theme: 'clay' | 'comic' | 'rasta' | 'farmstyle' | 'imaginative';
-  assets: ThemeAssetSet;
-  isPublic: boolean;
-  salesCount: number;
-  viewCount: number;
-  createdAt: Timestamp | Date | string;
-}

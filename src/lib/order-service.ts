@@ -176,6 +176,12 @@ interface CreateOrderParams {
     email: string;
     phone: string;
   };
+  // Treehouse marketplace fields
+  orderType?: 'dispensary' | 'treehouse' | 'healer-service';
+  podStatus?: 'pending_print' | 'printing' | 'printed' | 'packaging' | 'shipped' | 'delivered';
+  platformCommission?: number; // 75% for Treehouse
+  creatorCommission?: number; // 25% for Treehouse
+  creatorId?: string; // Creator user ID
 }
 
 export async function createOrder(params: CreateOrderParams): Promise<DocumentReference> {
@@ -276,7 +282,13 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
     paymentStatus: 'pending',
-    paymentMethod: 'payfast'
+    paymentMethod: 'payfast',
+    // Treehouse marketplace fields
+    ...(params.orderType && { orderType: params.orderType }),
+    ...(params.podStatus && { podStatus: params.podStatus }),
+    ...(params.platformCommission && { platformCommission: params.platformCommission }),
+    ...(params.creatorCommission && { creatorCommission: params.creatorCommission }),
+    ...(params.creatorId && { creatorId: params.creatorId })
   };
 
   const validation = validateOrderInput(params);

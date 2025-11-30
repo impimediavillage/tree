@@ -191,7 +191,7 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
     return (
         <div className="space-y-8">
             <div>
-                 <h2 class="text-2xl font-bold tracking-tight">Delivery Options</h2>
+                 <h2 className="text-2xl font-bold tracking-tight">Delivery Options</h2>
                  <p className="text-muted-foreground">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
             </div>
 
@@ -222,7 +222,7 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
 
 export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
     const { cartItems, loading: cartLoading, getCartTotal } = useCart();
-    const { firebaseUser } = useAuth();
+    const { currentUser } = useAuth();
     const { toast } = useToast();
     const [step, setStep] = useState(1);
     
@@ -254,20 +254,20 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
 
     useEffect(() => {
       // Pre-fill form if user is logged in and has address info
-      if (firebaseUser && firebaseUser.shippingAddress) {
+      if (currentUser && currentUser.shippingAddress) {
         form.reset({ 
-          fullName: firebaseUser.name || '',
-          email: firebaseUser.email || '',
-          phoneNumber: firebaseUser.phoneNumber || '',
-          shippingAddress: { ...firebaseUser.shippingAddress }
+          fullName: currentUser.name || '',
+          email: currentUser.email || '',
+          phoneNumber: currentUser.phoneNumber || '',
+          shippingAddress: { ...currentUser.shippingAddress }
         });
       }
-    }, [firebaseUser, form]);
+    }, [currentUser, form]);
 
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
         try {
-            if (!firebaseUser) {
+            if (!currentUser) {
                 const methods = await fetchSignInMethodsForEmail(auth, values.email);
                 if (methods.length > 0) {
                     toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });

@@ -64,6 +64,30 @@ export default function EditCannabinoidProductPage() {
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      category: '',
+      subcategory: '',
+      subSubcategory: '',
+      gender: '',
+      sizingSystem: '',
+      growingMedium: '',
+      feedingType: '',
+      labTestReportUrl: null,
+      tags: [],
+      sizes: [],
+      effects: [],
+      medicalUses: [],
+      flavors: [],
+      homeGrow: [],
+      priceTiers: [],
+      poolPriceTiers: [],
+      allowedPoolDispensaryIds: [],
+      isAvailableForPool: false,
+      labTested: false,
+      poolSharingRule: 'same_type',
+    },
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
@@ -240,18 +264,18 @@ export default function EditCannabinoidProductPage() {
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground"> <Save className="mr-3 h-8 w-8 text-primary" /> Edit Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center text-[#5D4E37] font-extrabold"> <Save className="mr-3 h-10 w-10 text-[#006B3E]" /> Edit Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                <ArrowLeft className="mr-2 h-5 w-5" /> Back to Products
             </Button>
         </div>
-        <CardDescription className="text-foreground"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
+        <CardDescription className="text-[#5D4E37] font-semibold"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
            <form onSubmit={form.handleSubmit(onSubmit, onValidationErrors)} className="space-y-6">
             <div className="space-y-6">
-                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground">Product Details</h2>
+                <h2 className="text-2xl font-extrabold border-b pb-2 text-[#5D4E37]">Product Details</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/50 p-3 rounded-md border">
                     <FormItem><FormLabel>Product Stream</FormLabel><Input value={form.getValues('productType') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
                     <FormItem><FormLabel>Category</FormLabel><Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
@@ -264,7 +288,7 @@ export default function EditCannabinoidProductPage() {
                 {form.getValues('productType') === 'Apparel' && (
                   <>
                     <Separator/>
-                    <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Apparel Details</h3>
                       <div className="grid md:grid-cols-3 gap-4">
                           <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                           <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
@@ -276,7 +300,7 @@ export default function EditCannabinoidProductPage() {
                 {isCannabinoidStream && (
                   <>
                       <Separator/>
-                      <h3 className="text-xl font-semibold border-b pb-2">Cannabinoid & Terpene Profile</h3>
+                      <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Cannabinoid & Terpene Profile</h3>
                       <FormField control={form.control} name="effects" render={({ field }) => ( <FormItem><FormLabel>Effects</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Happy, Relaxed" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="medicalUses" render={({ field }) => ( <FormItem><FormLabel>Medical Uses</FormLabel><FormControl><MultiInputTags inputType="attribute" placeholder="e.g., Pain, Anxiety" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                       <FormField control={form.control} name="flavors" render={({ field }) => ( <FormItem><FormLabel>Flavors</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Pine, Citrus" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
@@ -295,33 +319,35 @@ export default function EditCannabinoidProductPage() {
                 
                 <div className="space-y-6">
                     <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Pricing & Stock</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Pricing & Stock</h3>
                     <div className="space-y-4">
                     {priceTierFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
-                            <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                        <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                            </div>
                             {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                         <Collapsible>
-                            <CollapsibleTrigger asChild>
-                               <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                            <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="pt-4 space-y-4">
-                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                                          <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                          <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                          <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                          <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                      </div>
-                                                  </CollapsibleContent>
-                                              </Collapsible>
-                                          </div>
-                                      ))}
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                        <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                        <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </div>
+                    ))}
                                       <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
                                       </div>
                                      <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Product Pool Settings</h3>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
                     <Card className="p-4 bg-muted/50 space-y-4">
@@ -354,32 +380,34 @@ export default function EditCannabinoidProductPage() {
                         <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
                         <CardContent className="p-0 space-y-2">
                             {poolPriceTierFields.map((field, index) => (
-                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-background">
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                            <div key={field.id} className="p-3 border rounded-md relative bg-background space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                    <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
+                                    <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                </div>
                                 {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
-                            <Collapsible>
-                                                              <CollapsibleTrigger asChild>
-                                                                  <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
-                                                              </CollapsibleTrigger>
-                                                              <CollapsibleContent className="pt-4 space-y-4">
-                                                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                      <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                                  </div>
-                                                              </CollapsibleContent>
-                             </Collapsible>
-                           </div>
-                                     ))}
+                                <Collapsible>
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="pt-4 space-y-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                            <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            </div>
+                            ))}
                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Pool Price Tier</Button>
                         </CardContent>
                         </Card>
                     )}
                     <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Images & Tags</h3>
                     <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
@@ -387,8 +415,8 @@ export default function EditCannabinoidProductPage() {
             
             <CardFooter>
               <div className="flex w-full">
-                  <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-green-700" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                  <Button type="submit" size="lg" className="w-full text-lg font-bold bg-[#006B3E] hover:bg-[#5D4E37] active:bg-[#006B3E] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
+                      {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
                       Save Changes
                   </Button>
               </div>

@@ -567,34 +567,6 @@ export const GenerateApparelInputSchema = z.object({
   isStore: z.boolean().describe('Whether the subject is a store or strain for prompt context.'),
 });
 
-export const ThemeAssetSetSchema = z.object({
-    circularStickerUrl: z.string().url(),
-    rectangularStickerUrl: z.string().url(),
-    capUrl: z.string().url(),
-    tShirtUrl: z.string().url(),
-    hoodieUrl: z.string().url(),
-    circularStickerSheetUrl: z.string().url(),
-    rectangularStickerSheetUrl: z.string().url(),
-    trippySticker1Url: z.string().url(),
-    trippySticker2Url: z.string().url(),
-});
-
-export const stickerSetSchema = z.object({
-  id: z.string().optional(),
-  creatorUid: z.string(),
-  creatorDisplayName: z.string(),
-  creatorRole: z.enum(['User', 'LeafUser', 'DispensaryOwner', 'Super Admin', 'DispensaryStaff']),
-  dispensaryId: z.string().optional().nullable(),
-  name: z.string(),
-  theme: z.enum(['clay', 'comic', 'rasta', 'farmstyle', 'imaginative']),
-  assets: ThemeAssetSetSchema,
-  isPublic: z.boolean().default(true),
-  salesCount: z.number().int().min(0).default(0),
-  viewCount: z.number().int().min(0).default(0),
-  createdAt: z.any(),
-});
-export type StickerSetDbData = z.infer<typeof stickerSetSchema>;
-
 // Schemas for Strain Sticker Generation
 export const GenerateStrainStickerInputSchema = z.object({
   strainName: z.string().describe('The name of the cannabis strain.'),

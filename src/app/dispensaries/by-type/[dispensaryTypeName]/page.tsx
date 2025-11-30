@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Store, ArrowLeft, LocateFixed } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard';
-import TripleSShowcase from '@/components/features/TripleSShowcase';
+import { TripleSEntry } from '@/components/features/TripleSEntry';
 
 // Haversine formula to calculate distance between two lat/lon points
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -95,11 +95,8 @@ export default function PublicWellnessProfilesByTypePage() {
         toast({ title: "Location Found!", description: "Sorting stores by your location." });
 
         const sortedProfiles = [...wellnessProfiles].map(profile => {
-            if (profile.location) {
-                const [lat, lon] = profile.location.split(',').map(Number);
-                if (!isNaN(lat) && !isNaN(lon)) {
-                    profile.distance = getDistance(latitude, longitude, lat, lon);
-                }
+            if (profile.latitude && profile.longitude) {
+                profile.distance = getDistance(latitude, longitude, profile.latitude, profile.longitude);
             }
             return profile;
         }).sort((a, b) => {
@@ -173,6 +170,9 @@ export default function PublicWellnessProfilesByTypePage() {
 
       {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+          {wellnessTypeName === 'Cannibinoid store' && (
+            <TripleSEntry />
+          )}
           {wellnessProfiles.map(wellness => (
             <DispensaryListingCard 
               key={wellness.id} 
@@ -190,12 +190,6 @@ export default function PublicWellnessProfilesByTypePage() {
             <p>There are currently no approved wellness profiles listed for the &quot;{wellnessTypeName}&quot; type.</p>
           </CardContent>
         </Card>
-      )}
-
-      {wellnessTypeName === 'Cannibinoid store' && (
-        <div className="mb-12">
-          <TripleSShowcase />
-        </div>
       )}
     </div>
   );

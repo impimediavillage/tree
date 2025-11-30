@@ -90,10 +90,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         quantityInStock: tier.quantityInStock,
         imageUrl: isThcProduct && overrideImageUrl ? overrideImageUrl : (product.imageUrls?.[0] || '/placeholder.svg'),
         productType: product.productType, 
-        weight: tier.weightKgs,
-        length: tier.lengthCm,
-        width: tier.widthCm,
-        height: tier.heightCm,
+        // Default dimensions for shipping if not provided: small package (10cm x 10cm x 5cm, 0.1kg)
+        weight: tier.weightKgs ?? 0.1,
+        length: tier.lengthCm ?? 10,
+        width: tier.widthCm ?? 10,
+        height: tier.heightCm ?? 5,
       };
       newCartItems.push(newItem);
     }

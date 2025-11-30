@@ -18,9 +18,10 @@ interface InfoDialogProps {
   items?: (string | ProductAttribute)[];
   itemType?: 'flavor' | 'effect' | 'medical';
   className?: string;
+  iconClassName?: string;
 }
 
-export const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType, className }: InfoDialogProps) => {
+export const InfoDialog = ({ triggerText, title, icon: Icon, children, items, itemType, className, iconClassName }: InfoDialogProps) => {
   if (!children && (!items || items.length === 0)) return null;
 
   const badgeColors = {
@@ -47,7 +48,7 @@ export const InfoDialog = ({ triggerText, title, icon: Icon, children, items, it
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className={cn("text-xs h-7 px-2", className)}>
-            <Icon className="mr-1.5 h-3.5 w-3.5" />
+            <Icon className={cn("mr-1.5", iconClassName || "h-3.5 w-3.5")} />
             {triggerText}
         </Button>
       </DialogTrigger>

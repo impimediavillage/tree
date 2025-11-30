@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Palette, Loader2, AlertTriangle, Package, Brain } from 'lucide-react'; 
+import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -14,15 +14,25 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
-const sidebarNavItems = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ElementType;
+  disabled?: boolean;
+  badge?: string;
+}
+
+const sidebarNavItems: NavItem[] = [
   { title: 'Overview', href: '/dashboard/leaf', icon: LayoutDashboard },
   { title: 'My Profile', href: '/dashboard/leaf/profile', icon: UserCircle },
   { title: 'My Orders', href: '/dashboard/orders', icon: Package },
-  { title: 'My Sticker Sets', href: '/dashboard/leaf/sticker-sets', icon: Palette },
   { title: 'My Credits', href: '/dashboard/leaf/credits', icon: DollarSign },
   { title: 'Interaction History', href: '/dashboard/leaf/history', icon: History },
   { title: 'AI Advisors', href: '/dashboard/advisors', icon: Brain },
+  { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Sparkles },
+  { title: 'Triple S Club', href: '/triple-s-club', icon: Sparkles },
 ];
 
 const getInitials = (name?: string | null, fallback = 'LU') => {
@@ -86,15 +96,25 @@ export default function LeafDashboardLayout({
               variant={pathname === item.href ? 'secondary' : 'ghost'}
               className={cn(
                 'w-full justify-start',
-                pathname === item.href && 'bg-primary/10 text-primary hover:bg-primary/20'
+                pathname === item.href && 'bg-primary/10 text-primary hover:bg-primary/20',
+                item.disabled && 'opacity-50 cursor-not-allowed'
               )}
-              asChild
+              asChild={!item.disabled}
               onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+              disabled={item.disabled}
             >
-              <Link href={item.href}>
-                <item.icon className="mr-2 h-5 w-5" />
-                {item.title}
-              </Link>
+              {item.disabled ? (
+                <span className="flex items-center w-full">
+                  <item.icon className="mr-2 h-5 w-5" />
+                  {item.title}
+                  {item.badge && <Badge className="ml-auto bg-[#006B3E] hover:bg-[#005230] text-white">{item.badge}</Badge>}
+                </span>
+              ) : (
+                <Link href={item.href}>
+                  <item.icon className="mr-2 h-5 w-5" />
+                  {item.title}
+                </Link>
+              )}
             </Button>
           ))}
         </nav>

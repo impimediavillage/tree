@@ -73,27 +73,27 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
           onError={handleImageError}
         />
         {distance !== undefined && (
-            <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-bold py-1 px-2 rounded-full flex items-center gap-1 shadow-lg">
-                <Route className="h-4 w-4 text-green-800" />
+            <div className="absolute top-2 right-2 bg-[#006B3E] text-white text-xs font-bold py-1 px-2 rounded-full flex items-center gap-1 shadow-lg">
+                <Route className="h-4 w-4" />
                 {distance.toFixed(1)} km away
             </div>
         )}
       </div>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold text-foreground truncate" title={dispensary.dispensaryName}>
+        <CardTitle className="text-xl font-extrabold text-[#5D4E37] truncate" title={dispensary.dispensaryName}>
           {dispensary.dispensaryName}
         </CardTitle>
-        <CardDescription className="text-sm font-semibold text-foreground/70">
+        <CardDescription className="text-sm font-bold text-[#5D4E37]/80">
           {dispensary.dispensaryType}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm font-medium text-foreground/80 line-clamp-2 mb-2" title={dispensary.message || `${dispensary.city}, ${dispensary.province}`}>
+        <p className="text-sm font-semibold text-[#5D4E37]/90 line-clamp-2 mb-2" title={dispensary.message || `${dispensary.city}, ${dispensary.province}`}>
           {dispensary.message || `${dispensary.city || ''}, ${dispensary.province || ''}`.trim() || 'Visit us!'}
         </p>
         {(dispensary.city || dispensary.province) && (
-          <div className="flex items-center gap-1 text-xs font-semibold text-foreground/70">
-            <MapPin className="h-4 w-4 text-green-800" /> {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
+          <div className="flex items-center gap-1 text-xs font-bold text-[#5D4E37]">
+            <MapPin className="h-5 w-5 text-[#006B3E]" /> {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
           </div>
         )}
       </CardContent>

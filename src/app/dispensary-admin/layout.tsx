@@ -31,7 +31,6 @@ interface NavItem {
 const mainSidebarNavItems: NavItem[] = [
   { title: 'Overview', href: '/dispensary-admin/dashboard', icon: LayoutDashboard },
   { title: 'My Products', href: '/dispensary-admin/products', icon: Package },
-  { title: 'Promo Collections', href: '/dispensary-admin/promotions', icon: Palette },
   { title: 'Browse Pool', href: '/dispensary-admin/browse-pool', icon: ShoppingBasket, ownerOnly: true },
   { title: 'My Pool Activity', href: '/dispensary-admin/pool', icon: History, ownerOnly: true },
   { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered },
@@ -41,6 +40,7 @@ const mainSidebarNavItems: NavItem[] = [
 const managementSidebarNavItems: NavItem[] = [
   { title: 'Analytics', href: '/dispensary-admin/analytics', icon: BarChart3 },
   { title: 'Credits', href: '/dispensary-admin/credits', icon: CreditCard },
+  { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Palette },
   { title: 'Manage Staff', href: '/dispensary-admin/users', icon: Users, ownerOnly: true },
   { title: 'Marketing', href: '/dispensary-admin/marketing', icon: Megaphone, disabled: true, badge: 'Soon' },
 ];
@@ -131,7 +131,12 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                         <Link href={itemDisabled ? '#' : item.href}>
                         <item.icon className="mr-2 h-4 w-4" />
                         {item.title}
-                        {item.badge && <Badge className="ml-auto">{item.badge}</Badge>}
+                        {item.badge && (
+                          <Badge className={cn(
+                            "ml-auto",
+                            item.badge === 'Coming Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                          )}>{item.badge}</Badge>
+                        )}
                         </Link>
                     </Button>
                     {needsSeparator && <Separator className="my-2" />}

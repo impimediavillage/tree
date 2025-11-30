@@ -224,11 +224,11 @@ export default function EditPermacultureProductPage() {
     <div className="max-w-5xl mx-auto my-8 space-y-8">
       <div className="flex items-center justify-between bg-muted/50 p-6 rounded-lg border border-primary/20">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2"><Leaf className="h-8 w-8 text-green-800"/> Edit Product</h1>
-          <p className="text-muted-foreground mt-1">Update the details for your permaculture product.</p>
+          <h1 className="text-3xl font-extrabold flex items-center gap-2 text-[#5D4E37]"><Leaf className="h-10 w-10 text-[#006B3E]"/> Edit Product</h1>
+          <p className="text-[#5D4E37] font-semibold mt-1">Update the details for your permaculture product.</p>
         </div>
         <Button variant="outline" asChild>
-          <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
+          <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-5 w-5" />Back to Products</Link>
         </Button>
       </div>
 
@@ -237,7 +237,7 @@ export default function EditPermacultureProductPage() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Category Selection</CardTitle>
+              <CardTitle className="text-[#5D4E37] font-extrabold">Category Selection</CardTitle>
               <CardDescription>The category for this product is fixed. To change it, you must recreate the product in the correct category.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -296,7 +296,7 @@ export default function EditPermacultureProductPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Core Product Details</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-[#5D4E37] font-extrabold">Core Product Details</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
@@ -304,7 +304,7 @@ export default function EditPermacultureProductPage() {
           </Card>
           
           <Card>
-            <CardHeader><CardTitle>Pricing & Stock</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-[#5D4E37] font-extrabold">Pricing & Stock</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {priceTierFields.map((field, index) => (
                 <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
@@ -334,7 +334,7 @@ export default function EditPermacultureProductPage() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Product Pool Settings</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-[#5D4E37] font-extrabold">Product Pool Settings</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
@@ -396,7 +396,7 @@ export default function EditPermacultureProductPage() {
           </Card>
           
           <Card>
-            <CardHeader><CardTitle>Images & Tags</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-[#5D4E37] font-extrabold">Images & Tags</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <FormItem>
                 <FormLabel>Product Images</FormLabel>
@@ -418,8 +418,8 @@ export default function EditPermacultureProductPage() {
           </Card>
 
           <CardFooter className="p-0 pt-4 flex justify-between">
-              <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              <Button type="submit" size="lg" className="w-full text-lg font-bold bg-[#006B3E] hover:bg-[#5D4E37] active:bg-[#006B3E] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
                   Save Changes
               </Button>
           </CardFooter>

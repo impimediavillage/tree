@@ -50,18 +50,18 @@ export function Header() {
   return (
     <header className="bg-background/80 border-b border-border/80 shadow-sm sticky top-0 z-50 backdrop-blur-md">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 text-2xl font-bold text-primary hover:text-primary/90 transition-colors">
-          <Trees className="h-8 w-8" />
+        <Link href="/" className="flex items-center gap-2.5 text-2xl font-bold text-[#006B3E] hover:text-[#005230] transition-colors">
+          <Trees className="h-10 w-10" />
           <span className="hidden sm:inline">The Wellness Tree</span>
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">
-          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-[#006B3E] hover:bg-[#006B3E]/10 px-2 sm:px-3">
             <Link href="/pricing">
                 Pricing
             </Link>
           </Button>
-          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary hover:bg-primary/10 px-2 sm:px-3">
+          <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-[#006B3E] hover:bg-[#006B3E]/10 px-2 sm:px-3">
             <Link href="/browse-dispensary-types">
                 <span className="sm:hidden">Browse</span>
                 <span className="hidden sm:inline">Browse stores</span>
@@ -132,9 +132,9 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-             <Button variant="ghost" size="icon" asChild className="ml-1 text-muted-foreground hover:text-primary hover:bg-primary/10">
+             <Button variant="ghost" size="icon" asChild className="ml-1 text-muted-foreground hover:text-[#006B3E] hover:bg-[#006B3E]/10">
                 <Link href="/auth/signin" aria-label="Login or create account">
-                    <UserCircle className="h-6 w-6" />
+                    <UserCircle className="h-7 w-7" />
                 </Link>
             </Button>
           )}

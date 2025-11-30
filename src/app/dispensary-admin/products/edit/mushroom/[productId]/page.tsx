@@ -57,6 +57,19 @@ export default function EditMushroomProductPage() {
   
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      category: '',
+      subcategory: '',
+      subSubcategory: '',
+      tags: [],
+      priceTiers: [],
+      poolPriceTiers: [],
+      allowedPoolDispensaryIds: [],
+      isAvailableForPool: false,
+      poolSharingRule: 'same_type',
+    },
   });
 
   const { fields: priceTierFields, append: appendPriceTier, remove: removePriceTier } = useFieldArray({ control: form.control, name: "priceTiers" });
@@ -155,18 +168,18 @@ export default function EditMushroomProductPage() {
     <Card className="max-w-4xl mx-auto my-8 shadow-xl">
       <CardHeader className="bg-muted/50">
         <div className="flex items-center justify-between">
-            <CardTitle className="text-3xl flex items-center text-foreground"> <Brain className="mr-3 h-8 w-8 text-green-800" /> Edit Mushroom Product </CardTitle>
+            <CardTitle className="text-3xl flex items-center text-[#5D4E37] font-extrabold"> <Brain className="mr-3 h-10 w-10 text-[#006B3E]" /> Edit Mushroom Product </CardTitle>
             <Button variant="outline" size="sm" onClick={() => router.push('/dispensary-admin/products')}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Products
+                <ArrowLeft className="mr-2 h-5 w-5" /> Back to Products
             </Button>
         </div>
-        <CardDescription className="text-foreground"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
+        <CardDescription className="text-[#5D4E37] font-semibold"> Modify details for &quot;{form.getValues('name')}&quot;. </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-6">
-                <h2 className="text-2xl font-semibold border-b pb-2 text-foreground">Product Details</h2>
+                <h2 className="font-extrabold text-[#5D4E37] text-2xl border-b pb-2">Product Details</h2>
                 
                 {watchCategory === 'Shamanic Mushrooms' && (
                   <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
@@ -194,7 +207,7 @@ export default function EditMushroomProductPage() {
                 
                 <div className="space-y-6">
                     <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Pricing, Stock & Visibility</h3>
                     <div className="space-y-4">
                     {priceTierFields.map((field, index) => (
                         <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
@@ -222,7 +235,7 @@ export default function EditMushroomProductPage() {
                     <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
                     </div>
                   <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Product Pool Settings</h3>
                     <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                     {watchIsAvailableForPool && (
                     <Card className="p-4 bg-muted/50 space-y-4">
@@ -282,7 +295,7 @@ export default function EditMushroomProductPage() {
                     </Card>
                     )}
                     <Separator />
-                    <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
+                    <h3 className="font-extrabold text-[#5D4E37] text-xl border-b pb-2">Images & Tags</h3>
                     <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} existingImageUrls={existingImageUrls} onExistingImageDelete={(url) => setExistingImageUrls(prev => prev.filter(u => u !== url))} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
                 </div>
@@ -290,8 +303,8 @@ export default function EditMushroomProductPage() {
             
             <CardFooter>
                 <div className="flex w-full">
-                    <Button type="submit" size="lg" className="w-full text-lg bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                    <Button type="submit" size="lg" className="w-full text-lg font-bold bg-[#006B3E] hover:bg-[#5D4E37] active:bg-[#006B3E] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
                         Save Changes
                     </Button>
                 </div>

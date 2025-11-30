@@ -27,6 +27,59 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Creator Designs Collection
+    match /creatorDesigns/{designId} {
+      // Allow users to read their own designs
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Allow users to create their own designs (via API only)
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      
+      // Allow users to update their own designs
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Super Admins can read all designs
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Treehouse Products Collection
+    match /treehouseProducts/{productId} {
+      // Public read access for marketplace browsing
+      allow read: if true;
+      
+      // Only creators can create/update their own products
+      allow create, update: if request.auth != null && 
+        (request.auth.uid == request.resource.data.creatorId || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin');
+      
+      // Super Admins can delete products
+      allow delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Creator Earnings Collection
+    match /creatorEarnings/{userId} {
+      // Creators can read their own earnings
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Only system/admins can write earnings (handled by backend)
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Orders Collection (extend existing rules)
+    match /orders/{orderId} {
+      // Users can read their own orders, creators can see their Treehouse orders, admins can see all
+      allow read: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         request.auth.uid == resource.data.creatorId ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin');
+      
+      // Allow Super Admin to update POD status
+      allow update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
     // Placeholder for other rules - you can add more rules for other collections here
     match /{document=**} {
       allow read, write: if false;

@@ -266,7 +266,7 @@ export default function LeafHistoryPage() {
         </Card>
 
         {/* Advisor Usage Distribution */}
-        <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-primary/20">
+        <Card className="shadow-lg bg-white/80 border-primary/20">
           <CardHeader>
             <CardTitle className="text-xl font-black text-[#5D4E37] flex items-center gap-2">
               <Award className="h-6 w-6 text-[#006B3E]" />
@@ -342,7 +342,7 @@ export default function LeafHistoryPage() {
       </Card>
 
       {/* History List */}
-      <Card className="shadow-lg bg-white/80 backdrop-blur-sm border-primary/20">
+      <Card className="shadow-lg bg-white/80 border-primary/20">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>

@@ -15,18 +15,27 @@ interface QuickActionCardProps {
     link: string;
     buttonText: string;
     disabled?: boolean;
+    variant?: 'green' | 'brown';
 }
 
-const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, buttonText, disabled }) => (
+const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, buttonText, disabled, variant = 'green' }) => (
     <Card className="hover:shadow-lg transition-shadow bg-muted/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-xl font-extrabold text-foreground">
-          <Icon className="text-primary h-8 w-8" /> {title}
+        <CardTitle className="flex items-center gap-3 text-xl font-black text-[#3D2E17]">
+          <Icon className="text-[#006B3E] h-10 w-10" /> {title}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-foreground/80 font-semibold mb-4">{description}</p>
-        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={disabled}>
+        <p className="text-[#3D2E17] font-bold mb-4">{description}</p>
+        <Button 
+          asChild 
+          className={`w-full transition-all duration-200 ${
+            variant === 'green' 
+              ? 'bg-[#006B3E] hover:bg-[#3D2E17] active:scale-95 text-white' 
+              : 'bg-[#3D2E17] hover:bg-[#006B3E] active:scale-95 text-white'
+          }`}
+          disabled={disabled}
+        >
           <Link href={disabled ? '#' : link}>{buttonText}</Link>
         </Button>
       </CardContent>
@@ -54,16 +63,10 @@ export default function WellnessAdminOverviewPage() {
     <div className="space-y-8">
       <Card className="shadow-lg bg-muted/50 border-primary/30">
         <CardHeader>
-          <CardTitle 
-            className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <Store className="mr-3 h-8 w-8 text-primary" /> {currentDispensary?.dispensaryName || "Your Wellness Profile"}
+          <CardTitle className="text-3xl font-black text-[#3D2E17] flex items-center">
+            <Store className="mr-3 h-10 w-10 text-[#006B3E]" /> {currentDispensary?.dispensaryName || "Your Wellness Profile"}
           </CardTitle>
-          <CardDescription 
-            className="text-md text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <CardDescription className="text-md text-[#3D2E17] font-bold">
             Welcome to your control panel. Manage products, pool interactions, and settings.
           </CardDescription>
         </CardHeader>
@@ -76,6 +79,7 @@ export default function WellnessAdminOverviewPage() {
             icon={Package}
             link="/dispensary-admin/products"
             buttonText="Go to Products"
+            variant="green"
         />
         <QuickActionCard
             title="Product Sharing Pool"
@@ -83,6 +87,7 @@ export default function WellnessAdminOverviewPage() {
             icon={ShoppingBasket}
             link="/dispensary-admin/pool"
             buttonText="Go to Pool"
+            variant="brown"
         />
         <QuickActionCard
             title="Orders"
@@ -90,6 +95,7 @@ export default function WellnessAdminOverviewPage() {
             icon={Receipt}
             link="/dispensary-admin/orders"
             buttonText="View Orders"
+            variant="green"
         />
         <QuickActionCard
             title="Pool Orders"
@@ -97,6 +103,7 @@ export default function WellnessAdminOverviewPage() {
             icon={PackageCheck}
             link="/dispensary-admin/product-pool-orders"
             buttonText="View Pool Orders"
+            variant="brown"
         />
         <QuickActionCard
             title="Wellness Profile"
@@ -104,6 +111,7 @@ export default function WellnessAdminOverviewPage() {
             icon={Store}
             link="/dispensary-admin/profile"
             buttonText="Edit Profile"
+            variant="green"
         />
          <QuickActionCard
             title="Sales & Analytics"
@@ -111,6 +119,7 @@ export default function WellnessAdminOverviewPage() {
             icon={BarChart3}
             link="/dispensary-admin/analytics"
             buttonText="View Analytics"
+            variant="brown"
         />
         <QuickActionCard
             title="Manage Staff"
@@ -118,6 +127,7 @@ export default function WellnessAdminOverviewPage() {
             icon={Users}
             link="/dispensary-admin/users"
             buttonText="Manage Users"
+            variant="green"
         />
          <QuickActionCard
             title="Credit Analytics"
@@ -125,6 +135,7 @@ export default function WellnessAdminOverviewPage() {
             icon={CreditCard}
             link="/dispensary-admin/credits"
             buttonText="View Credit Usage"
+            variant="brown"
         />
       </div>
     </div>

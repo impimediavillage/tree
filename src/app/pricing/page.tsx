@@ -47,8 +47,8 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
                 </div>
                 </div>
                 <div className="pt-4 border-t border-border/50">
-                    <Button size="lg" className="w-full text-lg bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
-                        <Leaf className="mr-2 h-5 w-5"/>
+                    <Button size="lg" className="w-full text-lg bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
+                        <Leaf className="mr-2 h-6 w-6"/>
                         Sign Up For Free
                     </Button>
                 </div>
@@ -132,10 +132,10 @@ export default function PublicCreditsPage() {
             <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center justify-center">
                 <Button 
                     size="lg" 
-                    className="bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl px-8 py-3"
+                    className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl px-8 py-3"
                     onClick={() => router.push('/dashboard/advisors')}
                 >
-                    <Sparkles className="mr-2 h-5 w-5" />
+                    <Sparkles className="mr-2 h-6 w-6" />
                     Explore AI Advisors
                 </Button>
                 {currentUser && !authLoading && (
@@ -210,11 +210,11 @@ export default function PublicCreditsPage() {
                     </ul>
                     <Button 
                       size="lg"
-                      className="mt-auto w-full bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground text-lg font-bold py-6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                      className="mt-auto w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                       onClick={() => handlePurchase(pkg)}
                       disabled={isLoading}
                     >
-                      {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : `Purchase Now`}
+                      {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : `Purchase Now`}
                     </Button>
                   </CardContent>
                 </Card>

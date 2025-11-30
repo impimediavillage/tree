@@ -150,7 +150,7 @@ export default function SignUpPage() {
       <Button variant="outline" size="sm" className="absolute top-4 left-4" asChild>
          <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
        </Button>
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl bg-white/80">
         <CardHeader className="text-center">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-3xl font-bold text-foreground">Create Your Leaf User Account</CardTitle>

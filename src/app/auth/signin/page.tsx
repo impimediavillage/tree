@@ -34,7 +34,7 @@ export default function SignInPage() {
   });
   
   useEffect(() => {
-    const cartQueryParam = searchParams.get('cart');
+    const cartQueryParam = searchParams?.get('cart');
     if (cartQueryParam && cartItems.length === 0) { // Only load if cart is currently empty
       try {
         const decodedCartString = atob(decodeURIComponent(cartQueryParam));
@@ -51,7 +51,7 @@ export default function SignInPage() {
   }, [searchParams, loadCart, toast, cartItems.length]);
 
   const handleRedirect = (userProfile: AppUser | null) => {
-    const redirectUrl = searchParams.get('redirect');
+    const redirectUrl = searchParams?.get('redirect');
     if (redirectUrl) {
       router.push(redirectUrl);
       return;
@@ -120,8 +120,8 @@ export default function SignInPage() {
   };
 
   // Construct the sign-up link with existing query params
-  const redirectParam = searchParams.get('redirect');
-  const cartParam = searchParams.get('cart');
+  const redirectParam = searchParams?.get('redirect');
+  const cartParam = searchParams?.get('cart');
   let signUpHref = '/auth/signup';
   const signUpParams = new URLSearchParams();
   if (redirectParam) {
@@ -137,7 +137,7 @@ export default function SignInPage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-12">
        
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl bg-muted/50 border-border/50">
       <Button variant="outline" size="sm" className="relative top-4 right-4" asChild>
          <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" />Back to View Tree</Link>
        </Button>
