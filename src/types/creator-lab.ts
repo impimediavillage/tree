@@ -6,9 +6,13 @@
 
 // ============ APPAREL & PRICING ============
 
-export type ApparelType = 'T-Shirt' | 'Hoodie' | 'Long T-Shirt' | 'Cap' | 'Beanie';
+export type ApparelType = 'T-Shirt' | 'Hoodie' | 'Long T-Shirt' | 'Cap' | 'Beanie' | 'Backpack';
 
 export type ApparelColor = 'Black'; // Only black for now, can expand later
+
+export type ApparelSurface = 'front' | 'back' | 'both'; // For T-Shirt, Long Sleeve, Hoodie
+
+export type ProductCategory = 'Apparel' | 'Art' | 'Metalwork' | 'Furniture' | 'Resin';
 
 export interface ApparelPricing {
   type: ApparelType;
@@ -17,13 +21,35 @@ export interface ApparelPricing {
   currency: 'ZAR';
 }
 
-// Fixed pricing (incl. VAT)
+// Fixed pricing (incl. VAT + 25% creator surcharge)
+// Cap: R350 base + R87.50 commission = R437.50
+// Beanie: R350 base + R87.50 commission = R437.50
+// T-Shirt: R500 base + R125 commission = R625
+// Long Sleeve: R750 base + R187.50 commission = R937.50
+// Hoodie: R1000 base + R250 commission = R1250
+// Backpack: R600 base + R150 commission = R750
 export const APPAREL_PRICES: Record<ApparelType, number> = {
-  'T-Shirt': 500,
-  'Long T-Shirt': 750,
-  'Hoodie': 1000,
-  'Cap': 400,
-  'Beanie': 350,
+  'T-Shirt': 625,
+  'Long T-Shirt': 937.50,
+  'Hoodie': 1250,
+  'Cap': 437.50,
+  'Beanie': 437.50,
+  'Backpack': 750,
+};
+
+// Available sizes per apparel type
+export const APPAREL_SIZES: Record<ApparelType, string[]> = {
+  'T-Shirt': ['S', 'M', 'L', 'XL', '2XL'],
+  'Long T-Shirt': ['S', 'M', 'L', 'XL', '2XL'],
+  'Hoodie': ['S', 'M', 'L', 'XL', '2XL'],
+  'Cap': ['Standard'],
+  'Beanie': ['Standard'],
+  'Backpack': ['Standard'],
+};
+  'Long T-Shirt': 937.50,
+  'Hoodie': 1250,
+  'Cap': 437.50,
+  'Beanie': 437.50,
 };
 
 // Commission split
@@ -47,19 +73,23 @@ export type DesignOperationType =
 export interface CreatorDesign {
   id: string;
   userId: string;
-  userEmail: string;
+  userEmail?: string;
   userName?: string;
   prompt: string;
   revisedPrompt?: string; // DALL-E often revises prompts
-  imageUrl: string;
+  imageUrl?: string; // Legacy field
+  logoImageUrl?: string; // High-res logo ONLY (for POD printing)
+  designImageUrl?: string; // Apparel mockup with logo (for display)
   thumbnailUrl?: string;
-  status: DesignStatus;
-  operationType: DesignOperationType;
-  creditsUsed: number;
-  createdAt: any; // Firestore ServerTimestamp
+  status?: DesignStatus;
+  operationType?: DesignOperationType;
+  creditsUsed?: number;
+  createdAt: any; // Firestore ServerTimestamp or Date
   updatedAt?: any;
   publishedAt?: any;
   unpublishedAt?: any;
+  isPublished?: boolean;
+  productId?: string;
   variations?: string[]; // URLs of variation images
   parentDesignId?: string; // If this is a variation, reference parent
   metadata?: {
@@ -67,6 +97,13 @@ export interface CreatorDesign {
     height?: number;
     format?: string;
   };
+  // Multi-category support
+  category?: ProductCategory;
+  // Apparel-specific fields
+  apparelType?: ApparelType;
+  surface?: ApparelSurface; // front/back/both for t-shirts, hoodies, long sleeve
+  modelImageUrl?: string; // Human model showcase image
+  modelPrompt?: string; // Prompt used for model generation
 }
 
 // Credit costs for operations
@@ -84,11 +121,18 @@ export interface TreehouseProduct {
   creatorId: string;
   creatorName: string;
   creatorEmail: string;
-  apparelType: ApparelType;
-  apparelColor: ApparelColor;
+  category: ProductCategory;
+  productName: string; // Custom funky name for the product
+  productDescription?: string; // Marketing description
+  // Apparel-specific fields
+  apparelType?: ApparelType;
+  apparelColor?: ApparelColor;
+  surface?: ApparelSurface; // front/back/both
+  logoImageUrl?: string; // High-res logo for POD printing
+  modelImageUrl?: string; // Human model showcase
   designImageUrl: string;
   designThumbnailUrl?: string;
-  price: number; // Fixed based on apparel type
+  price: number; // Fixed based on product type (incl. 25% surcharge)
   currency: 'ZAR';
   isActive: boolean;
   publishedAt: any; // Firestore ServerTimestamp
@@ -99,6 +143,10 @@ export interface TreehouseProduct {
   viewCount: number; // Product page views
   addToCartCount: number; // Times added to cart
   tags?: string[]; // Searchable tags (auto-generated from prompt)
+  // Dispensary fields (if created by dispensary owner/staff)
+  dispensaryId?: string;
+  dispensaryName?: string;
+  dispensaryType?: string;
 }
 
 // ============ CREATOR EARNINGS ============

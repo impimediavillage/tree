@@ -4,10 +4,11 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Building, ListChecks, CreditCard, ShieldAlert, Bell, Settings, Package, Loader2, Hourglass, DownloadCloud } from 'lucide-react';
+import { Users, Building, ListChecks, CreditCard, ShieldAlert, Bell, Settings, Package, Loader2, Hourglass, DownloadCloud, Upload } from 'lucide-react';
 import { useEffect, useState, useCallback, use } from 'react';
-import { db } from '@/lib/firebase';
+import { db, functions } from '@/lib/firebase';
 import { collection, getDocs, query, where, CollectionReference, DocumentData, doc, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -220,7 +221,75 @@ export default function AdminDashboardOverviewPage() {
             link="/admin/dashboard/pool-issues"
             buttonText="View Issues"
         />
+        <UploadTemplatesCard />
       </div>
     </div>
+  );
+}
+
+// New component for uploading apparel templates
+function UploadTemplatesCard() {
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUpload = async () => {
+    setIsUploading(true);
+    try {
+      const uploadTemplates = httpsCallable(functions, 'uploadApparelTemplates');
+      const result = await uploadTemplates();
+      const data = result.data as { success: boolean; message: string; uploaded: number; skipped: number; errors?: string[] };
+      
+      toast({
+        title: data.success ? 'Upload Complete' : 'Upload Status',
+        description: data.message,
+        variant: data.errors && data.errors.length > 0 ? 'default' : 'default',
+      });
+
+      if (data.errors && data.errors.length > 0) {
+        console.warn('Template upload errors:', data.errors);
+      }
+    } catch (error: any) {
+      console.error('Error uploading templates:', error);
+      toast({
+        title: 'Upload Failed',
+        description: error.message || 'Failed to upload apparel templates',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Upload className="mr-2 h-5 w-5" />
+          Creator Lab Templates
+        </CardTitle>
+        <CardDescription>
+          Upload black apparel templates to Firebase Storage for Creator Lab compositing.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button
+          onClick={handleUpload}
+          disabled={isUploading}
+          className="w-full"
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            <>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Templates
+            </>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

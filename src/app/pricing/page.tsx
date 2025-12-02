@@ -190,13 +190,13 @@ export default function PublicCreditsPage() {
                      <p className="text-4xl font-black text-center text-accent my-3 drop-shadow-sm">
                       {pkg.price.toFixed(2)} <span className="text-xl font-bold text-foreground/80">{pkg.currency}</span>
                     </p>
-                    <p className="text-xl text-center font-bold">
+                    <div className="text-xl text-center font-bold">
                         <span className="text-3xl font-black text-green-800 drop-shadow-sm">{pkg.credits}</span>
                         <span className="text-foreground font-bold"> Credits</span>
                         {pkg.bonusCredits && pkg.bonusCredits > 0 && (
                              <Badge variant="default" className="ml-2 bg-accent hover:bg-accent/90 text-accent-foreground font-bold">+{pkg.bonusCredits} Bonus</Badge>
                         )}
-                    </p>
+                    </div>
                   </CardHeader>
                   <CardContent className="flex-grow flex flex-col px-6">
                     {pkg.description && <p className="text-sm font-bold text-foreground/90 mb-5 text-center line-clamp-2 h-10">{pkg.description}</p>}

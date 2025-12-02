@@ -33,12 +33,83 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const logger = __importStar(require("firebase-functions/logger"));
 const params_1 = require("firebase-functions/params");
+// Export Creator Lab functions
+var creator_lab_1 = require("./creator-lab");
+Object.defineProperty(exports, "generateCreatorDesign", { enumerable: true, get: function () { return creator_lab_1.generateCreatorDesign; } });
+Object.defineProperty(exports, "generateModelShowcase", { enumerable: true, get: function () { return creator_lab_1.generateModelShowcase; } });
+Object.defineProperty(exports, "publishCreatorProduct", { enumerable: true, get: function () { return creator_lab_1.publishCreatorProduct; } });
+Object.defineProperty(exports, "updateTreehouseProduct", { enumerable: true, get: function () { return creator_lab_1.updateTreehouseProduct; } });
+Object.defineProperty(exports, "toggleProductStatus", { enumerable: true, get: function () { return creator_lab_1.toggleProductStatus; } });
+Object.defineProperty(exports, "deleteTreehouseProduct", { enumerable: true, get: function () { return creator_lab_1.deleteTreehouseProduct; } });
+// Upload Apparel Templates to Storage
+exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
+    // Check authentication
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'You must be signed in.');
+    }
+    // Check if user is super admin
+    if (request.auth?.token.role !== 'Super Admin') {
+        throw new https_1.HttpsError('permission-denied', 'Only Super Admins can upload apparel templates.');
+    }
+    const bucket = admin.storage().bucket();
+    const templates = [
+        'black-cap.jpg',
+        'black-beannie.jpg',
+        'black-tshirt-front.jpg',
+        'black-tshirt-back.jpg',
+        'black-long-sleeve-sweatshirt-front.jpg',
+        'black-long-sleeve-sweatshirt-black.jpg',
+        'black-hoodie-front.jpg',
+        'black-hoodie-back.jpg',
+    ];
+    try {
+        let uploadedCount = 0;
+        let skippedCount = 0;
+        const errors = [];
+        for (const template of templates) {
+            try {
+                const storagePath = `apparel-templates/${template}`;
+                const file = bucket.file(storagePath);
+                // Check if file already exists
+                const [exists] = await file.exists();
+                if (exists) {
+                    logger.info(`Template ${template} already exists, skipping...`);
+                    skippedCount++;
+                    continue;
+                }
+                // Note: In production, you'd download from public folder or another source
+                // For now, we'll log that manual upload is required
+                logger.warn(`Template ${template} needs manual upload to Storage`);
+                errors.push(`${template} - requires manual upload from public/images/apparel/`);
+            }
+            catch (error) {
+                logger.error(`Error processing template ${template}:`, error);
+                errors.push(`${template} - ${error.message}`);
+            }
+        }
+        const message = errors.length > 0
+            ? `Upload status: ${uploadedCount} uploaded, ${skippedCount} skipped. ${errors.length} require manual upload.`
+            : `Successfully processed: ${uploadedCount} uploaded, ${skippedCount} already existed.`;
+        logger.info(message);
+        return {
+            success: true,
+            message,
+            uploaded: uploadedCount,
+            skipped: skippedCount,
+            errors: errors.length > 0 ? errors : undefined,
+        };
+    }
+    catch (error) {
+        logger.error('Error in uploadApparelTemplates:', error);
+        throw new https_1.HttpsError('internal', `Failed to upload templates: ${error.message}`);
+    }
+});
 // Define OpenAI API Key as a secret
 const openaiApiKey = (0, params_1.defineSecret)('OPENAI_API_KEY');
 // ============== FIREBASE ADMIN SDK INITIALIZATION ==============//

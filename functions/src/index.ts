@@ -5,6 +5,82 @@ import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
 import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload, AIAdvisor } from './types';
 
+// Export Creator Lab functions
+export { generateCreatorDesign, generateModelShowcase, publishCreatorProduct, updateTreehouseProduct, toggleProductStatus, deleteTreehouseProduct } from './creator-lab';
+
+// Upload Apparel Templates to Storage
+export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
+    // Check authentication
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'You must be signed in.');
+    }
+
+    // Check if user is super admin
+    if (request.auth?.token.role !== 'Super Admin') {
+        throw new HttpsError('permission-denied', 'Only Super Admins can upload apparel templates.');
+    }
+
+    const bucket = admin.storage().bucket();
+    
+    const templates = [
+        'black-cap.jpg',
+        'black-beannie.jpg',
+        'black-tshirt-front.jpg',
+        'black-tshirt-back.jpg',
+        'black-long-sleeve-sweatshirt-front.jpg',
+        'black-long-sleeve-sweatshirt-black.jpg',
+        'black-hoodie-front.jpg',
+        'black-hoodie-back.jpg',
+    ];
+
+    try {
+        let uploadedCount = 0;
+        let skippedCount = 0;
+        const errors: string[] = [];
+
+        for (const template of templates) {
+            try {
+                const storagePath = `apparel-templates/${template}`;
+                const file = bucket.file(storagePath);
+                
+                // Check if file already exists
+                const [exists] = await file.exists();
+                if (exists) {
+                    logger.info(`Template ${template} already exists, skipping...`);
+                    skippedCount++;
+                    continue;
+                }
+
+                // Note: In production, you'd download from public folder or another source
+                // For now, we'll log that manual upload is required
+                logger.warn(`Template ${template} needs manual upload to Storage`);
+                errors.push(`${template} - requires manual upload from public/images/apparel/`);
+                
+            } catch (error: any) {
+                logger.error(`Error processing template ${template}:`, error);
+                errors.push(`${template} - ${error.message}`);
+            }
+        }
+
+        const message = errors.length > 0 
+            ? `Upload status: ${uploadedCount} uploaded, ${skippedCount} skipped. ${errors.length} require manual upload.`
+            : `Successfully processed: ${uploadedCount} uploaded, ${skippedCount} already existed.`;
+
+        logger.info(message);
+
+        return {
+            success: true,
+            message,
+            uploaded: uploadedCount,
+            skipped: skippedCount,
+            errors: errors.length > 0 ? errors : undefined,
+        };
+    } catch (error: any) {
+        logger.error('Error in uploadApparelTemplates:', error);
+        throw new HttpsError('internal', `Failed to upload templates: ${error.message}`);
+    }
+});
+
 // Define OpenAI API Key as a secret
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 

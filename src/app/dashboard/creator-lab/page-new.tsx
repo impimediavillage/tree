@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Wand2, Plus, Loader2, AlertTriangle, Package, Edit, Trash2, Power, PowerOff } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Sparkles, Wand2, Plus, Loader2, AlertTriangle, Package } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,13 +12,10 @@ import { CategoryFilterButtons } from '@/components/creator-lab/CategoryFilterBu
 import { ApparelSelector } from '@/components/creator-lab/ApparelSelector';
 import { DesignStudioModal } from '@/components/creator-lab/DesignStudioModal';
 import { ModelShowcase } from '@/components/creator-lab/ModelShowcase';
-import { ProductEditModal } from '@/components/creator-lab/ProductEditModal';
-import { ProductDetailsModal } from '@/components/creator-lab/ProductDetailsModal';
 import type { CreatorDesign, ProductCategory, ApparelType, TreehouseProduct } from '@/types/creator-lab';
 import { APPAREL_PRICES } from '@/types/creator-lab';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db, functions } from '@/lib/firebase';
-import { httpsCallable } from 'firebase/functions';
+import { db } from '@/lib/firebase';
 import Image from 'next/image';
 
 export default function CreatorLabPage() {
@@ -34,12 +31,9 @@ export default function CreatorLabPage() {
   const [selectedApparelType, setSelectedApparelType] = useState<ApparelType | null>(null);
   const [selectedSurface, setSelectedSurface] = useState<'front' | 'back' | undefined>(undefined);
   const [currentDesign, setCurrentDesign] = useState<CreatorDesign | null>(null);
-  const [showProductDetails, setShowProductDetails] = useState(false);
-  const [tempModelData, setTempModelData] = useState<{ modelImageUrl: string; modelPrompt: string } | null>(null);
   
   const [myProducts, setMyProducts] = useState<TreehouseProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<TreehouseProduct | null>(null);
 
   const canAccessCreatorLab = isLeafUser || isDispensaryOwner || isDispensaryStaff;
   const userCredits = currentUser?.credits || 0;
@@ -111,55 +105,44 @@ export default function CreatorLabPage() {
   };
 
   const handleModelComplete = async (modelImageUrl: string, modelPrompt: string) => {
-    // Store model data temporarily and show product details modal
-    setTempModelData({ modelImageUrl, modelPrompt });
-    setShowModelShowcase(false);
-    setShowProductDetails(true);
-  };
-
-  const handleProductDetailsComplete = async (productName: string, productDescription: string) => {
-    // Publish product to Treehouse using Firebase Function
+    // Save product to Treehouse
     try {
-      const publishProduct = httpsCallable(functions, 'publishCreatorProduct');
+      const idToken = await currentUser?.getIdToken();
       
-      const productData: any = {
-        designId: currentDesign?.id,
-        productName,
-        productDescription,
-        category: selectedCategory,
-        apparelType: selectedApparelType,
-        surface: selectedSurface,
-        modelImageUrl: tempModelData?.modelImageUrl || undefined,
-        modelPrompt: tempModelData?.modelPrompt || undefined,
-      };
+      const response = await fetch('/api/creator-lab/publish-product', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          designId: currentDesign?.id,
+          apparelTypes: [selectedApparelType],
+          category: selectedCategory,
+          surface: selectedSurface,
+          modelImageUrl: modelImageUrl || undefined,
+          tags: [],
+        }),
+      });
 
-      // Note: Dispensary fields are automatically populated by the Firebase Function
-      // based on the authenticated user's data. This works for:
-      // - LeafUser: No dispensary fields (independent creator)
-      // - DispensaryOwner: Includes dispensaryId, dispensaryName, dispensaryType
-      // - DispensaryStaff: Includes dispensaryId, dispensaryName, dispensaryType
+      const data = await response.json();
 
-      const result = await publishProduct(productData);
-
-      const data = result.data as { productId: string; success: boolean };
-
-      if (!data.success) {
-        throw new Error('Failed to publish product');
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to publish product');
       }
 
       toast({
         title: '🎉 Product Published!',
-        description: `"${productName}" is now live in The Treehouse Store!`,
+        description: 'Your creation is now live in The Treehouse Store!',
       });
 
-      setShowProductDetails(false);
+      setShowModelShowcase(false);
       loadMyProducts(); // Refresh products list
 
       // Reset state
       setCurrentDesign(null);
       setSelectedApparelType(null);
       setSelectedSurface(undefined);
-      setTempModelData(null);
     } catch (error: any) {
       console.error('Error publishing product:', error);
       toast({
@@ -172,51 +155,6 @@ export default function CreatorLabPage() {
 
   const calculateCommission = (price: number) => {
     return Math.round(price * 0.2); // 25% commission
-  };
-
-  const handleToggleStatus = async (productId: string) => {
-    try {
-      const toggleStatus = httpsCallable(functions, 'toggleProductStatus');
-      const result = await toggleStatus({ productId });
-      const data = result.data as { success: boolean; isActive: boolean };
-
-      toast({
-        title: 'Status Updated',
-        description: data.isActive ? 'Product is now active' : 'Product is now inactive',
-      });
-
-      loadMyProducts();
-    } catch (error: any) {
-      toast({
-        title: 'Update Failed',
-        description: error.message || 'Failed to update status',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDelete = async (productId: string, productName: string) => {
-    if (!confirm(`Are you sure you want to delete "${productName}"? This cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      const deleteProduct = httpsCallable(functions, 'deleteTreehouseProduct');
-      await deleteProduct({ productId });
-
-      toast({
-        title: 'Product Deleted',
-        description: 'Product removed from Treehouse',
-      });
-
-      loadMyProducts();
-    } catch (error: any) {
-      toast({
-        title: 'Delete Failed',
-        description: error.message || 'Failed to delete product',
-        variant: 'destructive',
-      });
-    }
   };
 
   if (authLoading) {
@@ -338,104 +276,34 @@ export default function CreatorLabPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {myProducts.map((product) => (
                   <Card key={product.id} className="border-2 border-[#5D4E37]/30 overflow-hidden">
-                    {/* Image Section - Show both design and model if available */}
-                    {product.modelImageUrl && product.designImageUrl ? (
-                      // Both images available - split view
-                      <div className="relative aspect-square bg-black grid grid-cols-2 gap-px">
-                        <div className="relative">
-                          <Image
-                            src={product.designImageUrl}
-                            alt="Design"
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="absolute bottom-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                            Design
-                          </div>
-                        </div>
-                        <div className="relative">
-                          <Image
-                            src={product.modelImageUrl}
-                            alt="Model"
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">
-                            Model
-                          </div>
-                        </div>
-                        <Badge className="absolute top-2 left-2 bg-[#006B3E]">
-                          {product.category}
-                        </Badge>
-                        <Badge className={`absolute top-2 right-2 ${product.isActive ? 'bg-green-500' : 'bg-gray-500'}`}>
-                          {product.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    ) : (
-                      // Single image view
-                      <div className="relative aspect-square bg-black">
-                        {(product.modelImageUrl || product.designImageUrl) && (
-                          <Image
-                            src={product.modelImageUrl || product.designImageUrl}
-                            alt={product.apparelType || 'Product'}
-                            fill
-                            className="object-cover"
-                          />
-                        )}
-                        <Badge className="absolute top-2 left-2 bg-[#006B3E]">
-                          {product.category}
-                        </Badge>
-                        <Badge className={`absolute top-2 right-2 ${product.isActive ? 'bg-green-500' : 'bg-gray-500'}`}>
-                          {product.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    )}
-                    
-                    <CardContent className="p-4 space-y-3">
+                    <div className="relative aspect-square bg-black">
+                      <Image
+                        src={product.modelImageUrl || product.designImageUrl}
+                        alt={product.apparelType || 'Product'}
+                        fill
+                        className="object-cover"
+                      />
+                      <Badge className="absolute top-2 right-2 bg-[#006B3E]">
+                        {product.category}
+                      </Badge>
+                    </div>
+                    <CardContent className="p-4">
                       <p className="font-bold text-[#3D2E17]">
                         {product.apparelType || product.category}
                       </p>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-lg font-extrabold text-[#006B3E]">
-                          R{(product.price || 0).toFixed(2)}
+                          R{product.price.toFixed(2)}
                         </span>
                         <Badge variant="secondary" className="bg-green-100 text-green-700">
-                          You earn R{calculateCommission(product.price || 0)}
+                          You earn R{calculateCommission(product.price)}
                         </Badge>
                       </div>
                       <div className="mt-2 text-xs text-[#5D4E37]">
-                        <p>Sales: {product.salesCount || 0}</p>
-                        <p>Revenue: R{(product.totalRevenue || 0).toFixed(2)}</p>
+                        <p>Sales: {product.salesCount}</p>
+                        <p>Revenue: R{product.totalRevenue.toFixed(2)}</p>
                       </div>
                     </CardContent>
-
-                    <CardFooter className="p-4 pt-0 flex gap-2">
-                      <Button 
-                        onClick={() => setEditingProduct(product)} 
-                        size="sm" 
-                        variant="outline"
-                        className="flex-1"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        onClick={() => handleToggleStatus(product.id)} 
-                        size="sm" 
-                        variant={product.isActive ? 'secondary' : 'default'}
-                        className="flex-1"
-                      >
-                        {product.isActive ? <PowerOff className="h-4 w-4 mr-1" /> : <Power className="h-4 w-4 mr-1" />}
-                        {product.isActive ? 'Deactivate' : 'Activate'}
-                      </Button>
-                      <Button 
-                        onClick={() => handleDelete(product.id, product.apparelType || product.productName)} 
-                        size="sm" 
-                        variant="destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </CardFooter>
                   </Card>
                 ))}
               </div>
@@ -464,32 +332,10 @@ export default function CreatorLabPage() {
         <ModelShowcase
           open={showModelShowcase}
           onOpenChange={setShowModelShowcase}
-          designId={currentDesign.id || ''}
-          designImageUrl={currentDesign.designImageUrl || currentDesign.imageUrl || ''}
+          designImageUrl={currentDesign.imageUrl}
           apparelType={selectedApparelType || ''}
           onComplete={handleModelComplete}
           userCredits={userCredits}
-        />
-      )}
-
-      {/* Product Details Modal */}
-      {showProductDetails && (
-        <ProductDetailsModal
-          open={showProductDetails}
-          onOpenChange={setShowProductDetails}
-          apparelType={selectedApparelType || 'Product'}
-          defaultName={`Custom ${selectedApparelType}`}
-          defaultDescription={currentDesign?.prompt || ''}
-          onComplete={handleProductDetailsComplete}
-        />
-      )}
-
-      {/* Product Edit Modal */}
-      {editingProduct && (
-        <ProductEditModal
-          product={editingProduct}
-          onClose={() => setEditingProduct(null)}
-          onUpdate={loadMyProducts}
         />
       )}
     </div>
