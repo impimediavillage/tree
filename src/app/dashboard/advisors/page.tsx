@@ -58,11 +58,11 @@ const AdvisorsPage = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8 bg-muted/50 border border-border/50 rounded-lg p-8 shadow-lg">
-        <h1 className="text-4xl font-bold mb-2 flex items-center gap-2">
+        <h1 className="text-4xl font-extrabold mb-2 flex items-center gap-2 text-[#3D2E17]">
           <Brain className="h-14 w-14 text-[#006B3E]" />
           AI Advisors
         </h1>
-        <p className="text-[#5D4E37] text-lg font-bold">
+        <p className="text-[#3D2E17] text-lg font-extrabold">
           Consult with our specialized AI advisors for personalized wellness guidance.
           {currentUser && (
             <span className="ml-2">
