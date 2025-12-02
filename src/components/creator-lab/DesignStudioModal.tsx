@@ -251,6 +251,11 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
     setLogoScale(prev => Math.max(prev - 0.1, 0.2)); // Min 20%
   };
 
+  const handleResetPosition = () => {
+    setLogoPosition({ x: 0, y: 0 });
+    setLogoScale(0.5);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
@@ -472,7 +477,7 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
                     Position on {apparelType} {surface ? `(${surface})` : ''}:
                   </p>
                   <div 
-                    ref={containerRef}
+                    ref={apparelContainerRef}
                     className="relative aspect-square bg-black rounded-lg overflow-hidden border-4 border-[#006B3E]"
                   >
                     {/* Background: Apparel Image */}
@@ -538,10 +543,10 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
                 </Button>
                 <Button
                   onClick={handleConfirmPosition}
-                  disabled={isFinalizingComposite}
+                  disabled={isFinalizing}
                   className="flex-1 h-12 bg-[#006B3E] hover:bg-[#005230] font-extrabold"
                 >
-                  {isFinalizingComposite ? (
+                  {isFinalizing ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       Creating Mockup...
@@ -552,7 +557,7 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
                 </Button>
               </div>
             </div>
-          ) : generatedDesign ? (
+          ) : (
             /* Generated Design Preview */
             <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">

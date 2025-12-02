@@ -66,6 +66,7 @@ export default function LeafHistoryPage() {
   }, [currentUser, authLoading]);
 
   const getAdvisorName = (advisorSlug: string) => {
+    if (!advisorSlug) return 'Unknown Advisor';
     const advisor = advisors.find(a => a.slug === advisorSlug);
     return advisor ? advisor.name : advisorSlug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
@@ -88,11 +89,15 @@ export default function LeafHistoryPage() {
     // Most used advisor
     const advisorCounts: { [key: string]: number } = {};
     interactions.forEach(log => {
-      advisorCounts[log.advisorSlug] = (advisorCounts[log.advisorSlug] || 0) + 1;
+      if (log.advisorSlug) {
+        advisorCounts[log.advisorSlug] = (advisorCounts[log.advisorSlug] || 0) + 1;
+      }
     });
-    const mostUsedAdvisorSlug = Object.keys(advisorCounts).reduce((a, b) => 
-      advisorCounts[a] > advisorCounts[b] ? a : b
-    );
+    const mostUsedAdvisorSlug = Object.keys(advisorCounts).length > 0 
+      ? Object.keys(advisorCounts).reduce((a, b) => 
+          advisorCounts[a] > advisorCounts[b] ? a : b
+        )
+      : null;
 
     // Credits over time (last 7 days)
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -128,7 +133,7 @@ export default function LeafHistoryPage() {
       freeInteractions,
       paidInteractions,
       avgCreditsPerInteraction,
-      mostUsedAdvisor: getAdvisorName(mostUsedAdvisorSlug),
+      mostUsedAdvisor: mostUsedAdvisorSlug ? getAdvisorName(mostUsedAdvisorSlug) : 'N/A',
       creditsOverTime: last7Days,
       advisorUsage,
     };

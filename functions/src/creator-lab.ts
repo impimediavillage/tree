@@ -186,7 +186,6 @@ export const generateCreatorDesign = onCall(
       const logoImageUrl = `https://storage.googleapis.com/${bucket.name}/${logoFileName}`;
 
       // Store position configuration for later use
-      const templateKey = `${apparelType}-${surfaceText}`;
       const positionKey = `${apparelType}-${surfaceText}-${badgeShape}`;
       const defaultPosition = LOGO_POSITIONS[positionKey];
 
@@ -200,7 +199,7 @@ export const generateCreatorDesign = onCall(
         badgeShape: badgeShape || null,
         badgeDimensions: badgeDimensions || null,
         logoImageUrl, // Transparent PNG logo
-        designImageUrl: null, // Will be created after user positions logo
+        designImageUrl: '', // Will be created after user positions logo
         logoPosition: defaultPosition || { x: 392, y: 300, width: 240, height: 240, scale: 0.5 }, // Default 50% centered
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         isPublished: false,
@@ -236,7 +235,7 @@ export const generateCreatorDesign = onCall(
       return {
         designId: designRef.id,
         logoImageUrl, // Transparent PNG logo only
-        designImageUrl: null, // No composite yet
+        designImageUrl: '', // No composite yet
         creditsRemaining: Math.max(0, currentCredits - 10),
       };
     } catch (error: any) {

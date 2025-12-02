@@ -46,11 +46,6 @@ export const APPAREL_SIZES: Record<ApparelType, string[]> = {
   'Beanie': ['Standard'],
   'Backpack': ['Standard'],
 };
-  'Long T-Shirt': 937.50,
-  'Hoodie': 1250,
-  'Cap': 437.50,
-  'Beanie': 437.50,
-};
 
 // Commission split
 export const CREATOR_COMMISSION_RATE = 0.25; // 25% to creator

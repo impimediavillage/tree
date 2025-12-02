@@ -6,7 +6,7 @@ import { defineSecret } from 'firebase-functions/params';
 import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload, AIAdvisor } from './types';
 
 // Export Creator Lab functions
-export { generateCreatorDesign, generateModelShowcase, publishCreatorProduct, updateTreehouseProduct, toggleProductStatus, deleteTreehouseProduct } from './creator-lab';
+export { generateCreatorDesign, finalizeDesignComposite, generateModelShowcase, publishCreatorProduct, updateTreehouseProduct, toggleProductStatus, deleteTreehouseProduct } from './creator-lab';
 
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {

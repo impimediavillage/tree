@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.generateCreatorDesign = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -42,6 +42,7 @@ const params_1 = require("firebase-functions/params");
 // Export Creator Lab functions
 var creator_lab_1 = require("./creator-lab");
 Object.defineProperty(exports, "generateCreatorDesign", { enumerable: true, get: function () { return creator_lab_1.generateCreatorDesign; } });
+Object.defineProperty(exports, "finalizeDesignComposite", { enumerable: true, get: function () { return creator_lab_1.finalizeDesignComposite; } });
 Object.defineProperty(exports, "generateModelShowcase", { enumerable: true, get: function () { return creator_lab_1.generateModelShowcase; } });
 Object.defineProperty(exports, "publishCreatorProduct", { enumerable: true, get: function () { return creator_lab_1.publishCreatorProduct; } });
 Object.defineProperty(exports, "updateTreehouseProduct", { enumerable: true, get: function () { return creator_lab_1.updateTreehouseProduct; } });
