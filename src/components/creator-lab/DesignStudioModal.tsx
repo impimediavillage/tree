@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 import type { CreatorDesign, ApparelType } from '@/types/creator-lab';
-import { DESIGN_OPTIONS, type BadgeShape } from '@/types/apparel-design';
+import { DESIGN_OPTIONS, ASPECT_RATIO_OPTIONS, type BadgeShape, type AspectRatio } from '@/types/apparel-design';
 import { STYLE_TEMPLATES, type StyleTemplate } from '@/types/promptTemplate';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,11 +26,12 @@ interface DesignStudioModalProps {
 }
 
 export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }: DesignStudioModalProps) {
-  const { currentUser } = useAuth();
+  const { currentUser, refreshUserProfile } = useAuth();
   const { toast } = useToast();
   const [subject, setSubject] = useState('');
   const [selectedDesignOption, setSelectedDesignOption] = useState<string>('0'); // Index of selected option
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<string>('1:1'); // Default square
   const [editablePrompt, setEditablePrompt] = useState(''); // User can edit final prompt
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedDesign, setGeneratedDesign] = useState<CreatorDesign | null>(null);
@@ -39,6 +40,7 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
   const [logoPosition, setLogoPosition] = useState({ x: 0, y: 0 }); // NEW: Logo drag position
   const [logoScale, setLogoScale] = useState(0.5); // NEW: Logo size (50% default)
   const apparelContainerRef = useRef<HTMLDivElement>(null); // NEW: For positioning calculations
+  const draggableNodeRef = useRef<HTMLDivElement>(null); // NEW: Ref for draggable element
 
   // Get style templates for current apparel type
   const styleTemplates = STYLE_TEMPLATES.filter(t => t.apparelType === apparelType);
@@ -113,14 +115,36 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
 
     setIsGenerating(true);
     try {
+      // Build shape prefix based on selection
+      const isCircular = selectedOption.shape === 'circular';
+      const finalAspectRatio = isCircular ? '1:1' : selectedAspectRatio;
+      
+      let shapePrefix = '';
+      if (isCircular) {
+        shapePrefix = 'Create a 2D circular logo design on a pure white background with a thin black border around the circle edge. ';
+      } else {
+        // Rectangular
+        if (finalAspectRatio === '2:3') {
+          shapePrefix = 'Create a 2D rectangular logo design in vertical portrait orientation (2:3 aspect ratio) on a pure white background with a thin black border around the rectangle edge. ';
+        } else if (finalAspectRatio === '3:2') {
+          shapePrefix = 'Create a 2D rectangular logo design in horizontal landscape orientation (3:2 aspect ratio) on a pure white background with a thin black border around the rectangle edge. ';
+        } else {
+          shapePrefix = 'Create a 2D rectangular logo design in square format (1:1 aspect ratio) on a pure white background with a thin black border around the rectangle edge. ';
+        }
+      }
+      
+      // Combine shape prefix with user's edited prompt
+      const finalPrompt = shapePrefix + editablePrompt.trim();
+      
       const generateDesign = httpsCallable(functions, 'generateCreatorDesign');
       const result = await generateDesign({
-        prompt: editablePrompt.trim(),
+        prompt: finalPrompt,
         apparelType,
         surface: surface || 'front',
         category: 'Apparel',
         badgeShape: selectedOption.shape,
         badgeDimensions: selectedOption.dimensions,
+        aspectRatio: selectedOption.shape === 'circular' ? '1:1' : selectedAspectRatio, // Circular = always 1:1
       });
 
       const data = result.data as { designId: string; logoImageUrl: string; designImageUrl: string; creditsRemaining: number };
@@ -141,6 +165,9 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
 
       setGeneratedDesign(design);
       setIsPositioning(true); // NEW: Show positioning UI instead of preview
+
+      // Refresh user profile to update credits
+      await refreshUserProfile();
 
       toast({
         title: 'Logo Generated! ✨',
@@ -191,24 +218,48 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
       
       // Convert logo position from drag coordinates to actual apparel coordinates
       const container = apparelContainerRef.current;
-      if (!container) {
-        throw new Error('Container not found');
+      const draggableNode = draggableNodeRef.current;
+      if (!container || !draggableNode) {
+        throw new Error('Container or draggable node not found');
       }
 
-      // Apparel images are 1024x1024, calculate actual position
+      // Get container and logo dimensions
       const containerRect = container.getBoundingClientRect();
+      const logoRect = draggableNode.getBoundingClientRect();
+      
+      // The logoPosition from Draggable is the TOP-LEFT corner in container pixels
+      // We need to convert this to reference 1024x1024 coordinates (backend will scale to actual 512x512)
+      
+      // Convert container pixels to percentages
       const xPercent = logoPosition.x / containerRect.width;
       const yPercent = logoPosition.y / containerRect.height;
       
+      // Convert to reference pixel coordinates on 1024x1024 (backend scales to 512x512)
       const actualX = Math.round(1024 * xPercent);
       const actualY = Math.round(1024 * yPercent);
+      
+      // Calculate the logo width on 1024x1024 reference image
+      // The draggable is logoScale * 100% of the container
+      const logoWidthOnContainer = containerRect.width * logoScale;
+      const logoWidthOn1024 = Math.round((logoWidthOnContainer / containerRect.width) * 1024);
+
+      console.log('Position calculation:', {
+        containerSize: { width: containerRect.width, height: containerRect.height },
+        logoPosition: logoPosition, // TOP-LEFT corner in container pixels
+        logoScale: logoScale, // e.g., 0.5 = 50% of container
+        logoWidthOnContainer: logoWidthOnContainer,
+        logoWidthOn1024: logoWidthOn1024,
+        percentages: { xPercent, yPercent },
+        actualPosition: { actualX, actualY }, // TOP-LEFT on 1024x1024 reference
+        note: 'Backend will scale to actual 512x512 template size',
+      });
 
       const result = await finalizeComposite({
         designId: generatedDesign.id,
         logoPosition: {
-          x: actualX,
-          y: actualY,
-          scale: logoScale,
+          x: actualX, // TOP-LEFT X on 1024x1024 reference
+          y: actualY, // TOP-LEFT Y on 1024x1024 reference
+          width: logoWidthOn1024, // Width on 1024x1024 reference
         },
       });
 
@@ -220,12 +271,12 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
         designImageUrl: data.designImageUrl,
       };
 
-      setGeneratedDesign(updatedDesign);
-      setIsPositioning(false);
+      // Skip the preview modal and go directly to completion
+      onComplete(updatedDesign);
 
       toast({
         title: 'Mockup Created! ✨',
-        description: 'Your design is ready to showcase.',
+        description: 'Ready for model showcase!',
       });
     } catch (error: any) {
       console.error('Error finalizing composite:', error);
@@ -325,81 +376,190 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
               <div className="space-y-4">
                 {/* Style Template Selection */}
                 <div>
-                  <Label className="block text-sm font-bold text-[#3D2E17] mb-2">
+                  <Label className="block text-sm font-bold text-[#3D2E17] mb-3">
                     1. Choose Your Style Template:
                   </Label>
-                  <Select 
-                    value={selectedTemplateId?.toString()} 
-                    onValueChange={(val) => setSelectedTemplateId(parseInt(val))}
-                  >
-                    <SelectTrigger className="w-full border-2 border-[#5D4E37]/30 focus:border-[#006B3E]">
-                      <SelectValue placeholder="Choose a style" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {styleTemplates.map((template) => (
-                        <SelectItem key={template.id} value={template.id.toString()}>
-                          {template.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                    {styleTemplates.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => setSelectedTemplateId(template.id)}
+                        className={`relative p-4 rounded-xl border-2 transition-all text-left hover:scale-105 ${
+                          selectedTemplateId === template.id
+                            ? 'border-[#006B3E] bg-[#006B3E]/10 shadow-lg'
+                            : 'border-[#5D4E37]/20 hover:border-[#006B3E]/50 bg-white'
+                        }`}
+                      >
+                        {selectedTemplateId === template.id && (
+                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-[#006B3E] rounded-full flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                        <p className="font-bold text-sm text-[#3D2E17] mb-1">{template.name}</p>
+                        <p className="text-xs text-[#5D4E37] line-clamp-2">{template.prompt.substring(0, 60)}...</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Subject Input */}
                 <div>
                   <Label className="block text-sm font-bold text-[#3D2E17] mb-2">
-                    2. What Do You Want on Your {apparelType}?
+                    2. What Do You Want on Your {apparelType}? ✨
                   </Label>
-                  <Input
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g., neon lion head, RV initials, anime skull with flames"
-                    className="border-2 border-[#5D4E37]/30 focus:border-[#006B3E]"
-                    maxLength={100}
-                  />
-                  <p className="text-xs text-[#5D4E37] mt-1">{subject.length} / 100 characters</p>
+                  <div className="relative">
+                    <Input
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="e.g., neon lion head, RV initials, anime skull with flames"
+                      className={`border-2 transition-all ${
+                        subject.trim() 
+                          ? 'border-[#006B3E] bg-[#006B3E]/5' 
+                          : 'border-[#5D4E37]/30'
+                      } focus:border-[#006B3E] pr-16`}
+                      maxLength={100}
+                    />
+                    {subject.trim() && (
+                      <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#006B3E] animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className={`text-xs font-semibold ${
+                      subject.length > 80 ? 'text-amber-600' : 'text-[#5D4E37]'
+                    }`}>
+                      {subject.length} / 100 characters
+                    </p>
+                    {subject.trim() && (
+                      <span className="text-xs text-[#006B3E] font-bold">✓ Ready</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Badge/Logo Size Selection */}
                 <div>
-                  <Label className="block text-sm font-bold text-[#3D2E17] mb-2">
+                  <Label className="block text-sm font-bold text-[#3D2E17] mb-3">
                     3. Select Logo Size & Shape:
                   </Label>
-                  <Select value={selectedDesignOption} onValueChange={setSelectedDesignOption}>
-                    <SelectTrigger className="w-full border-2 border-[#5D4E37]/30 focus:border-[#006B3E]">
-                      <SelectValue placeholder="Choose size and shape" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {designOptions.map((option, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-[#5D4E37] mt-1">
-                    {selectedOption.shape === 'circular' ? '⭕' : '▭'} {selectedOption.dimensions}
-                  </p>
+                  <div className="space-y-2">
+                    {designOptions.map((option, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => setSelectedDesignOption(index.toString())}
+                        className={`w-full p-3 rounded-lg border-2 transition-all text-left flex items-center gap-3 ${
+                          selectedDesignOption === index.toString()
+                            ? 'border-[#006B3E] bg-[#006B3E]/10 shadow-md'
+                            : 'border-[#5D4E37]/20 hover:border-[#006B3E]/50 bg-white'
+                        }`}
+                      >
+                        <div className={`text-2xl ${
+                          selectedDesignOption === index.toString() ? 'animate-pulse' : ''
+                        }`}>
+                          {option.shape === 'circular' ? '⭕' : '▭'}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-sm text-[#3D2E17]">{option.label}</p>
+                          <p className="text-xs text-[#5D4E37]">{option.description}</p>
+                        </div>
+                        {selectedDesignOption === index.toString() && (
+                          <div className="w-5 h-5 bg-[#006B3E] rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Aspect Ratio Selection - Only for Rectangular logos */}
+                {selectedOption.shape === 'rectangular' && (
+                  <div>
+                    <Label className="block text-sm font-bold text-[#3D2E17] mb-3">
+                      4. Select Aspect Ratio (Rectangular Only):
+                    </Label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {ASPECT_RATIO_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setSelectedAspectRatio(option.value)}
+                          className={`p-4 rounded-lg border-2 transition-all text-center hover:scale-105 ${
+                            selectedAspectRatio === option.value
+                              ? 'border-[#006B3E] bg-[#006B3E]/10 shadow-md'
+                              : 'border-[#5D4E37]/20 hover:border-[#006B3E]/50 bg-white'
+                          }`}
+                        >
+                          <div className={`text-4xl mb-2 ${
+                            selectedAspectRatio === option.value ? 'animate-pulse' : ''
+                          }`}>
+                            {option.icon}
+                          </div>
+                          <p className="font-bold text-sm text-[#3D2E17]">{option.label}</p>
+                          <p className="text-xs text-[#5D4E37] mt-1">{option.value}</p>
+                          {selectedAspectRatio === option.value && (
+                            <div className="mt-2 w-5 h-5 bg-[#006B3E] rounded-full flex items-center justify-center mx-auto">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#5D4E37] mt-2 text-center">
+                      {ASPECT_RATIO_OPTIONS.find(o => o.value === selectedAspectRatio)?.description}
+                    </p>
+                  </div>
+                )}
 
                 {/* Final Prompt - Editable */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-semibold text-[#3D2E17] uppercase tracking-wide">
-                      4. Final Prompt (Editable):
+                    <Label className="text-xs font-semibold text-[#3D2E17] uppercase tracking-wide flex items-center gap-1">
+                      <Sparkles className="w-4 h-4" />
+                      {selectedOption.shape === 'rectangular' ? '5' : '4'}. Final AI Prompt (Editable):
                     </Label>
-                    <span className="text-xs font-bold text-[#006B3E]">
-                      Credits: {userCredits}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-bold ${
+                        userCredits >= 10 ? 'text-[#006B3E]' : 'text-red-600'
+                      }`}>
+                        Credits: {userCredits}
+                      </span>
+                      {subject.trim() && editablePrompt.trim() && userCredits >= 10 && (
+                        <span className="px-2 py-1 bg-[#006B3E] text-white text-xs font-bold rounded-full">
+                          Ready! ✓
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <Textarea
-                    value={editablePrompt}
-                    onChange={(e) => setEditablePrompt(e.target.value)}
-                    placeholder="Your final prompt will appear here. You can edit it before generating..."
-                    rows={5}
-                    className="resize-none border-2 border-[#5D4E37]/30 focus:border-[#006B3E] text-sm leading-relaxed"
-                  />
-                  <p className="text-xs text-[#5D4E37]">{editablePrompt.length} characters</p>
+                  <div className="relative">
+                    <Textarea
+                      value={editablePrompt}
+                      onChange={(e) => setEditablePrompt(e.target.value)}
+                      placeholder="Your final prompt will appear here. You can edit it before generating..."
+                      rows={5}
+                      className={`resize-none border-2 transition-all text-sm leading-relaxed custom-scrollbar ${
+                        editablePrompt.trim() 
+                          ? 'border-[#006B3E] bg-[#006B3E]/5' 
+                          : 'border-[#5D4E37]/30'
+                      } focus:border-[#006B3E]`}
+                    />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className={`text-xs font-semibold ${
+                      editablePrompt.length > 900 ? 'text-amber-600' : 'text-[#5D4E37]'
+                    }`}>
+                      {editablePrompt.length} characters
+                    </p>
+                    {editablePrompt.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setEditablePrompt(autoGeneratedPrompt)}
+                        className="text-xs text-[#006B3E] hover:text-[#005230] font-semibold underline"
+                      >
+                        Reset to template
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Info Box */}
@@ -411,8 +571,8 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
 
                 <Button
                   onClick={handleGenerate}
-                  disabled={isGenerating || !editablePrompt.trim() || userCredits < 10}
-                  className="w-full h-14 text-lg font-extrabold bg-[#006B3E] hover:bg-[#005230]"
+                  disabled={isGenerating || !subject.trim() || userCredits < 10}
+                  className="w-full h-14 text-lg font-extrabold bg-[#006B3E] hover:bg-[#005230] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {isGenerating ? (
                     <>
@@ -491,11 +651,13 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
                     {/* Overlay: Draggable/Resizable Logo */}
                     {generatedDesign?.logoImageUrl && (
                       <Draggable
+                        nodeRef={draggableNodeRef}
                         bounds="parent"
                         position={logoPosition}
                         onDrag={handleDrag}
                       >
                         <div
+                          ref={draggableNodeRef}
                           style={{
                             position: 'absolute',
                             width: `${logoScale * 100}%`,

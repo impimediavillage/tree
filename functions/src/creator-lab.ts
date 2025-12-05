@@ -73,6 +73,7 @@ interface GenerateDesignRequest {
   surface?: string;
   badgeShape?: string; // 'circular' or 'rectangular'
   badgeDimensions?: string; // e.g., "20cm diameter" or "25cm x 45cm"
+  aspectRatio?: string; // '1:1', '2:3', or '3:2'
 }
 
 interface GenerateDesignResponse {
@@ -142,12 +143,9 @@ export const generateCreatorDesign = onCall(
         throw new HttpsError('failed-precondition', 'Insufficient credits. Need 10 credits for logo generation.');
       }
 
-      // Build logo prompt - REQUEST TRANSPARENT BACKGROUND
-      const shapeDescription = badgeShape === 'circular' ? 'circular' : 'rectangular';
-      const surfaceText = surface === 'back' ? 'back' : 'front';
-      
-      // Generate LOGO ONLY with DALL-E 3 on TRANSPARENT background
-      const logoPrompt = `A high resolution ${shapeDescription} logo design on a completely transparent background. The design: ${prompt}. Professional quality, clean, sharp details, vibrant colors. Perfect for apparel printing. IMPORTANT: Transparent background, no white background.`;
+      // Build logo prompt - Frontend already includes shape/aspect ratio instructions
+      // Add explicit instructions for clean extraction
+      const logoPrompt = `${prompt} CRITICAL TECHNICAL REQUIREMENTS: Pure white (#FFFFFF) background with NO gradients, shadows, or soft edges. The border should be SOLID BLACK (3-4px thick) with NO anti-aliasing or feathering between the border and background. Flat graphic design style, NO depth, NO shadows, NO 3D effects. This is for digital printing with transparent background extraction. High contrast, clean sharp edges only. Do NOT create any clothing, apparel, or fabric textures.`;
 
       const logoResponse = await axios.post(
         'https://api.openai.com/v1/images/generations',
@@ -169,9 +167,64 @@ export const generateCreatorDesign = onCall(
 
       const logoUrl = logoResponse.data.data[0].url;
 
-      // Download and save logo
+      // Download logo
       const logoImageResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
-      const logoBuffer = Buffer.from(logoImageResponse.data);
+      let logoBuffer = Buffer.from(logoImageResponse.data);
+
+      // Remove white background outside the border - AGGRESSIVE THRESHOLD
+      try {
+        // First, ensure we have an alpha channel and convert to PNG
+        const imageWithAlpha = await sharp(logoBuffer)
+          .ensureAlpha()
+          .toBuffer();
+        
+        // Get the raw pixel data to manipulate
+        const { data, info } = await sharp(imageWithAlpha).raw().toBuffer({ resolveWithObject: true });
+        
+        // Use threshold of 245 with color variation check for smarter white removal
+        // This preserves colored borders/details while removing white background more reliably
+        const WHITE_THRESHOLD = 245;
+        
+        // Modify ALL channels (RGB + Alpha) for white pixels to achieve TRUE transparency
+        for (let i = 0; i < data.length; i += info.channels) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Check if pixel is very bright (close to white)
+          const isBright = r >= WHITE_THRESHOLD && g >= WHITE_THRESHOLD && b >= WHITE_THRESHOLD;
+          
+          // Check if pixel has low color variation (not colorful, just gray/white)
+          const colorVariation = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+          const isNeutral = colorVariation < 15; // Less than 15 points variation = neutral color
+          
+          // Make neutral bright pixels FULLY transparent (set all channels to 0)
+          // This prevents dark artifacts when compositing
+          if (isBright && isNeutral) {
+            data[i] = 0;     // R = 0
+            data[i + 1] = 0; // G = 0
+            data[i + 2] = 0; // B = 0
+            data[i + 3] = 0; // Alpha = 0 (transparent)
+          }
+        }
+        
+        // Reconstruct the image from modified raw data with high compression
+        logoBuffer = await sharp(data, {
+          raw: {
+            width: info.width,
+            height: info.height,
+            channels: info.channels,
+          },
+        })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+        
+        console.log('White background removed with threshold 250 - border preserved');
+      } catch (error) {
+        console.error('Background removal error:', error);
+        // Fallback: save as PNG without background removal
+        logoBuffer = await sharp(logoBuffer).png().toBuffer();
+      }
 
       const bucket = admin.storage().bucket();
       const timestamp = Date.now();
@@ -186,6 +239,7 @@ export const generateCreatorDesign = onCall(
       const logoImageUrl = `https://storage.googleapis.com/${bucket.name}/${logoFileName}`;
 
       // Store position configuration for later use
+      const surfaceText = surface === 'back' ? 'back' : 'front';
       const positionKey = `${apparelType}-${surfaceText}-${badgeShape}`;
       const defaultPosition = LOGO_POSITIONS[positionKey];
 
@@ -260,7 +314,7 @@ export const generateCreatorDesign = onCall(
  * Finalize design by creating composite with user-positioned logo
  */
 export const finalizeDesignComposite = onCall(
-  async (request: CallableRequest<{ designId: string; logoPosition: { x: number; y: number; scale: number } }>): Promise<{ designImageUrl: string }> => {
+  async (request: CallableRequest<{ designId: string; logoPosition: { x: number; y: number; width: number } }>): Promise<{ designImageUrl: string }> => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'You must be signed in.');
     }
@@ -286,7 +340,7 @@ export const finalizeDesignComposite = onCall(
         throw new HttpsError('permission-denied', 'Not your design');
       }
 
-      const { logoImageUrl, apparelType, surface, badgeShape } = designData;
+      const { logoImageUrl, apparelType, surface } = designData;
       
       if (!logoImageUrl) {
         throw new HttpsError('failed-precondition', 'Logo image not found');
@@ -313,24 +367,44 @@ export const finalizeDesignComposite = onCall(
       const templateFile = bucket.file(templatePath);
       const [templateBuffer] = await templateFile.download();
 
-      // Get default position for sizing
-      const positionKey = `${apparelType}-${surfaceText}-${badgeShape}`;
-      const defaultPosition = LOGO_POSITIONS[positionKey] || { x: 392, y: 300, width: 240, height: 240 };
+      // Get actual template dimensions
+      const templateMetadata = await sharp(templateBuffer).metadata();
+      const templateWidth = templateMetadata.width || 512;
+      const templateHeight = templateMetadata.height || 512;
+      
+      // Scale factor: Frontend calculates for 1024x1024 reference, scale to actual template size
+      const scaleFactor = templateWidth / 1024;
+      
+      // Scale position and size from 1024x1024 reference to actual template size (512x512)
+      const scaledX = Math.round(logoPosition.x * scaleFactor);
+      const scaledY = Math.round(logoPosition.y * scaleFactor);
+      const scaledWidth = Math.round(logoPosition.width * scaleFactor);
+      const scaledHeight = scaledWidth; // Maintain square aspect for now
 
-      // Calculate actual size based on user's scale
-      const finalWidth = Math.round(defaultPosition.width * logoPosition.scale);
-      const finalHeight = Math.round(defaultPosition.height * logoPosition.scale);
+      console.log('Composite creation:', {
+        originalPosition: logoPosition,
+        templateSize: { width: templateWidth, height: templateHeight },
+        scaleFactor,
+        scaledPosition: { x: scaledX, y: scaledY, width: scaledWidth, height: scaledHeight },
+        apparelType,
+        surface: surfaceText,
+      });
 
-      // Create composite
+      // Create composite with explicit alpha blending
+      // This ensures transparent pixels in the logo don't show on the apparel
       const compositeBuffer = await sharp(templateBuffer)
         .composite([{
           input: await sharp(logoBuffer)
-            .resize(finalWidth, finalHeight, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+            .resize(scaledWidth, scaledHeight, { 
+              fit: 'contain', 
+              background: { r: 0, g: 0, b: 0, alpha: 0 } // Fully transparent background
+            })
             .toBuffer(),
-          top: Math.round(logoPosition.y),
-          left: Math.round(logoPosition.x),
+          top: scaledY,
+          left: scaledX,
+          blend: 'over', // Explicit alpha blending (respects transparency)
         }])
-        .jpeg({ quality: 90 })
+        .jpeg({ quality: 95 }) // Higher quality for print-ready mockups
         .toBuffer();
 
       // Save composite
@@ -402,20 +476,15 @@ export const generateModelShowcase = onCall(
         throw new HttpsError('permission-denied', 'Not your design');
       }
 
-      // Get the original design prompt and specifications to ensure consistency
-      const originalPrompt = designData?.prompt || '';
-      const surface = designData?.surface || 'front';
-      
-      // Build enhanced prompt that recreates the exact apparel from first image
-      // We need to describe it in detail since DALL-E 3 API doesn't support image inputs
-      const enhancedPrompt = `${modelPrompt}, wearing a black ${apparelType.toLowerCase()} with a custom design on the ${surface}. The ${apparelType.toLowerCase()}'s design features: ${originalPrompt}. The ${apparelType.toLowerCase()} should be clearly visible and match the exact style of a professional product photography mockup. Natural lifestyle photography, realistic setting, high quality, professional composition.`;
+      // Build model-only prompt - NO apparel mentioned, just the human character
+      const cleanModelPrompt = `${modelPrompt}. Professional lifestyle photography, natural setting, high quality portrait, realistic lighting, centered composition, full body or upper body shot. IMPORTANT: Do NOT include any clothing designs, logos, or apparel graphics - just the person/model.`;
 
-      // Call OpenAI DALL-E 3
+      // Call OpenAI DALL-E 3 for model image (no apparel design)
       const response = await axios.post(
         'https://api.openai.com/v1/images/generations',
         {
           model: 'dall-e-3',
-          prompt: enhancedPrompt,
+          prompt: cleanModelPrompt,
           n: 1,
           size: '1024x1024',
           quality: 'hd',
@@ -431,17 +500,64 @@ export const generateModelShowcase = onCall(
 
       const imageUrl = response.data.data[0].url;
 
-      // Download image from OpenAI
-      const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const imageBuffer = Buffer.from(imageResponse.data);
+      // Download model image from OpenAI
+      const modelImageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      let modelImageBuffer = Buffer.from(modelImageResponse.data);
 
-      // Upload to Firebase Storage
+      // Get the transparent logo from design
+      const logoImageUrl = designData?.logoImageUrl;
+      if (!logoImageUrl) {
+        throw new HttpsError('failed-precondition', 'Design must have a logo');
+      }
+
       const bucket = admin.storage().bucket();
+      
+      // Download transparent logo
+      const logoPath = logoImageUrl.split(`${bucket.name}/`)[1];
+      const logoFile = bucket.file(logoPath);
+      const [logoBuffer] = await logoFile.download();
+
+      // Get model image dimensions
+      const modelMetadata = await sharp(modelImageBuffer).metadata();
+      const modelWidth = modelMetadata.width || 1024;
+      const modelHeight = modelMetadata.height || 1024;
+
+      // Calculate logo position: bottom center with padding
+      const logoWidth = Math.round(modelWidth * 0.25); // Logo is 25% of model width
+      const logoHeight = logoWidth; // Keep square
+      const logoPadding = 40; // 40px padding from bottom
+      const logoX = Math.round((modelWidth - logoWidth) / 2); // Center horizontally
+      const logoY = modelHeight - logoHeight - logoPadding; // Position at bottom with padding
+
+      console.log('Model showcase composite:', {
+        modelSize: { width: modelWidth, height: modelHeight },
+        logoSize: { width: logoWidth, height: logoHeight },
+        logoPosition: { x: logoX, y: logoY },
+        padding: logoPadding,
+      });
+
+      // Composite logo onto model image at bottom center
+      modelImageBuffer = await sharp(modelImageBuffer)
+        .composite([{
+          input: await sharp(logoBuffer)
+            .resize(logoWidth, logoHeight, {
+              fit: 'contain',
+              background: { r: 0, g: 0, b: 0, alpha: 0 }
+            })
+            .toBuffer(),
+          top: logoY,
+          left: logoX,
+          blend: 'over',
+        }])
+        .png()
+        .toBuffer();
+
+      // Upload final composite to Firebase Storage
       const timestamp = Date.now();
       const fileName = `creator-models/${userId}/${timestamp}.png`;
       const file = bucket.file(fileName);
 
-      await file.save(imageBuffer, {
+      await file.save(modelImageBuffer, {
         metadata: { contentType: 'image/png' },
         public: true,
       });

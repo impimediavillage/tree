@@ -1,8 +1,15 @@
 
 {
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs20"
+  "functions": [
+    {
+      "source": "functions",
+      "runtime": "nodejs20",
+      "codebase": "default"
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   },
   "storage": {
     "rules": "storage.rules"
@@ -12,10 +19,17 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**"
     ],
     "frameworksBackend": {
-      "region": "us-central1"
+      "region": "us-central1",
+      "maxInstances": 100,
+      "minInstances": 0,
+      "concurrency": 1000,
+      "timeoutSeconds": 540,
+      "memory": "2GiB",
+      "cpu": 2
     }
   }
 }

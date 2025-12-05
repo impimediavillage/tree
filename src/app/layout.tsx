@@ -14,6 +14,18 @@ import BackgroundVideo from '@/components/layout/BackgroundVideo';
 export const metadata: Metadata = {
   title: 'The Wellness Tree - AI-Powered Wellness & Cannabis Hub',
   description: 'Explore cannabis products and get AI-powered advice on cannabinoids, gardening, homeopathy, mushrooms, and traditional medicine at The Wellness Tree.',
+  manifest: '/manifest.json',
+  themeColor: '#221503',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'THE TREE',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
 };
 
 export default function RootLayout({
@@ -23,6 +35,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/512.png" />
+        <meta name="theme-color" content="#221503" />
+      </head>
       <body className={`antialiased flex flex-col min-h-screen bg-transparent text-foreground`}>
        <BackgroundVideo />
         <AuthProvider>

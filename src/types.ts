@@ -386,6 +386,7 @@ export interface CartItem {
   id: string; // Unique ID for the cart item, e.g., `${productId}-${unit}`
   productId: string; // Original product ID
   name: string;
+  originalName?: string; // For THC products that override display name
   description: string;
   price: number;
   currency: string;
@@ -394,6 +395,7 @@ export interface CartItem {
   quantityInStock: number;
   imageUrl?: string | null;
   category: string;
+  strain?: string | null; // For cannabis products
   dispensaryId: string;
   dispensaryName: string;
   dispensaryType: string; 

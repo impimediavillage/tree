@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/lib/firebase';
 
@@ -30,6 +31,7 @@ export function ModelShowcase({
   userCredits 
 }: ModelShowcaseProps) {
   const { toast } = useToast();
+  const { refreshUserProfile } = useAuth();
   const [modelPrompt, setModelPrompt] = useState('');
   const [generatedModelImage, setGeneratedModelImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -72,6 +74,9 @@ export function ModelShowcase({
 
       const data = result.data as { modelImageUrl: string; creditsRemaining: number };
       setGeneratedModelImage(data.modelImageUrl);
+      
+      // Refresh user profile to update credits
+      await refreshUserProfile();
       
       toast({
         title: 'Model Generated! ✨',

@@ -256,3 +256,14 @@ export interface AddressValues {
 }
 
 export type GroupedCart = Record<string, CartItem[]>;
+
+// Strain Sticker Generation Types
+export interface GenerateStrainStickerInput {
+  strainName: string;
+  dispensaryName: string;
+  flavors?: string[];
+}
+
+export interface GenerateStrainStickerOutput {
+  imageUrl: string;
+}

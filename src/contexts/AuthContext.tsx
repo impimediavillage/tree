@@ -22,6 +22,7 @@ interface AuthContextType {
   isLeafUser: boolean;
   currentDispensaryStatus: Dispensary['status'] | null;
   fetchUserProfile: (user: FirebaseUser) => Promise<AppUser | null>;
+  refreshUserProfile: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -72,6 +73,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [toast]);
   
+  const refreshUserProfile = useCallback(async () => {
+    const firebaseUser = auth.currentUser;
+    if (firebaseUser) {
+      await fetchUserProfile(firebaseUser);
+    }
+  }, [fetchUserProfile]);
+
   const logout = useCallback(async () => {
     try {
         await auth.signOut();
@@ -122,6 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLeafUser,
     currentDispensaryStatus,
     fetchUserProfile,
+    refreshUserProfile,
     logout,
   };
 

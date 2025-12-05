@@ -1,0 +1,35 @@
+{
+  "name": "THE WELLNESS TREE",
+  "short_name": "THE TREE",
+  "version": "0.02.58",
+  "theme_color": "#221503",
+  "background_color": "#dae6c3",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "description": "Wellness Store Hub",
+  "icons": [
+    {
+      "src": "/icons/512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/long1.gif",
+      "type": "image/gif",
+      "sizes": "460x629",
+      "form_factor": "narrow",
+      "label": "Install THE WELLNESS TREE"
+    },
+    {
+      "src": "/icons/square1.gif",
+      "sizes": "500x449",
+      "type": "image/gif",
+      "form_factor": "wide",
+      "label": "Install THE WELLNESS TREE"
+    }
+  ]
+}

@@ -3,13 +3,22 @@
  */
 
 export type BadgeShape = 'circular' | 'rectangular';
+export type AspectRatio = '1:1' | '2:3' | '3:2';
 
 export interface DesignSpecification {
   apparelType: string;
   surface?: 'front' | 'back';
   shape: BadgeShape;
   dimensions: string; // e.g., "20cm diameter" or "25cm x 45cm"
+  aspectRatio?: AspectRatio;
 }
+
+// Aspect ratio options with visual representations
+export const ASPECT_RATIO_OPTIONS = [
+  { value: '1:1' as AspectRatio, label: 'Square', icon: '■', description: '1:1 - Perfect for balanced logos' },
+  { value: '2:3' as AspectRatio, label: 'Portrait', icon: '▯', description: '2:3 - Vertical orientation' },
+  { value: '3:2' as AspectRatio, label: 'Landscape', icon: '▬', description: '3:2 - Horizontal orientation' },
+];
 
 // Design size options based on apparel type
 // All generate: Studio quality square image of black [apparel] on white background

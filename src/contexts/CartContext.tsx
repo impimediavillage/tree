@@ -5,7 +5,7 @@ import type { Product, CartItem, PriceTier } from '@/types';
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-interface GroupedCart {
+export interface GroupedCart {
   [dispensaryId: string]: {
     dispensaryName: string;
     items: CartItem[];
@@ -74,9 +74,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } else {
       const newItem: CartItem = {
         id: cartItemId,
-        productId: product.id,
+        productId: product.id || '',
         name: isThcProduct ? 'Triple S Design Pack with free gift.' : product.name,
         originalName: isThcProduct ? product.name : undefined,
+        description: product.description || '',
         category: product.category,
         strain: product.strain,
         price: tier.price,
@@ -87,7 +88,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         productOwnerEmail: product.productOwnerEmail,
         currency: product.currency,
         unit: tier.unit,
-        quantityInStock: tier.quantityInStock,
+        quantityInStock: tier.quantityInStock ?? 0,
         imageUrl: isThcProduct && overrideImageUrl ? overrideImageUrl : (product.imageUrls?.[0] || '/placeholder.svg'),
         productType: product.productType, 
         // Default dimensions for shipping if not provided: small package (10cm x 10cm x 5cm, 0.1kg)

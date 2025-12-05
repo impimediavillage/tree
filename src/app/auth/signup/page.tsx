@@ -1,6 +1,7 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 
 
-export default function SignUpPage() {
+function SignUpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -45,7 +46,7 @@ export default function SignUpPage() {
   });
 
   useEffect(() => {
-    const cartQueryParam = searchParams.get('cart');
+    const cartQueryParam = searchParams?.get('cart');
     if (cartQueryParam && cartItems.length === 0) { // Only load if cart is currently empty
       try {
         const decodedCartString = atob(decodeURIComponent(cartQueryParam));
@@ -108,7 +109,7 @@ export default function SignUpPage() {
       
       await fetchUserProfile(firebaseUser); // This will set the user in the AuthContext
 
-      const redirectUrl = searchParams.get('redirect');
+      const redirectUrl = searchParams?.get('redirect');
       if (redirectUrl) {
           router.push(redirectUrl);
       } else {
@@ -137,8 +138,8 @@ export default function SignUpPage() {
   };
 
   const selectedTypes = form.watch('preferredDispensaryTypes') || [];
-  const redirectParam = searchParams.get('redirect');
-  const cartParam = searchParams.get('cart');
+  const redirectParam = searchParams?.get('redirect');
+  const cartParam = searchParams?.get('cart');
   let signInHref = '/auth/signin';
   const signInParams = new URLSearchParams();
   if (redirectParam) signInParams.append('redirect', redirectParam);
@@ -247,5 +248,13 @@ export default function SignUpPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <SignUpContent />
+    </Suspense>
   );
 }

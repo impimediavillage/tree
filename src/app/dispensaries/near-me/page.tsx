@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
@@ -40,12 +41,12 @@ const ADVISOR_TO_DISPENSARY_TYPE: Record<string, string> = {
   'gardening-advisor': 'Permaculture & gardening store',
 };
 
-export default function NearbyDispensariesPage() {
+function NearbyDispensariesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
   
-  const advisorSlug = searchParams.get('advisor');
+  const advisorSlug = searchParams?.get('advisor');
   const preferredType = advisorSlug ? ADVISOR_TO_DISPENSARY_TYPE[advisorSlug] : null;
 
   const [allDispensaries, setAllDispensaries] = useState<DispensaryWithDistance[]>([]);
@@ -248,5 +249,13 @@ export default function NearbyDispensariesPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+export default function NearbyDispensariesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <NearbyDispensariesContent />
+    </Suspense>
   );
 }
