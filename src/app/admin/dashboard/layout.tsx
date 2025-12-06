@@ -103,6 +103,8 @@ export default function AdminDashboardLayout({
   }
 
   const getPageTitle = () => {
+    if (!pathname) return 'Admin Panel';
+    
     const allItems = [...mainSidebarNavItems, ...managementSidebarNavItems];
     const activeItem = allItems
         .filter(item => pathname.startsWith(item.href))
@@ -110,12 +112,12 @@ export default function AdminDashboardLayout({
 
     if (activeItem) return activeItem.title;
     
-    if (pathname.includes('/admin/dashboard/dispensary-types/edit-categories')) return 'Manage Categories';
     if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
     return 'Admin Panel';
   };
   
   const isNavItemActive = (itemHref: string) => {
+    if (!pathname) return false;
     if (itemHref === '/admin/dashboard') {
       return pathname === itemHref;
     }

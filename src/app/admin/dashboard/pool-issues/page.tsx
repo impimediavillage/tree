@@ -19,10 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Badge } from '@/components/ui/badge';
 
-const issueStatusOptions: PoolIssue['issueStatus'][] = [
-  "new", "under_review", "awaiting_reporter_response", 
-  "awaiting_reported_party_response", "resolved", "closed"
-];
+const issueStatusOptions = ["new", "under_review", "awaiting_reporter_response", "awaiting_reported_party_response", "resolved", "closed"] as const;
 
 const issueUpdateSchema = z.object({
   issueStatus: z.enum(issueStatusOptions),
