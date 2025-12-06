@@ -89,22 +89,22 @@ function AddCreditPackageDialog({ onSave }: AddCreditPackageDialogProps) {
             )} />
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="credits" render={({ field }) => (
-                    <FormItem><FormLabel>Credits</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Credits</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? 0} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="bonusCredits" render={({ field }) => (
-                    <FormItem><FormLabel>Bonus Credits</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Bonus Credits</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? 0} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="price" render={({ field }) => (
-                    <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Price</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? 0} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="currency" render={({ field }) => (
                     <FormItem><FormLabel>Currency</FormLabel><FormControl><Input {...field} maxLength={3} placeholder="ZAR" /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="Optional description" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} value={field.value ?? ''} placeholder="Optional description" /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={form.control} name="isActive" render={({ field }) => (
                 <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm">
