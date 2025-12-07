@@ -114,11 +114,13 @@ export default function TreehousePage() {
     });
   };
 
-  const filteredProducts = products.filter((product) =>
-    searchQuery.trim() === '' ||
-    product.creatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.apparelType.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products
+    .filter(product => product.apparelType) // Only include products with apparelType
+    .filter((product) =>
+      searchQuery.trim() === '' ||
+      product.creatorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.apparelType!.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-[#5D4E37]/5">

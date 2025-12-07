@@ -69,7 +69,7 @@ function EditUserDialogComponent({ user, isOpen, onOpenChange, onUserUpdate, dis
         displayName: user.displayName || '',
         email: user.email,
         role: user.role || 'User',
-        status: user.status || 'Active',
+        status: user.status === 'Rejected' ? 'PendingApproval' : (user.status || 'Active'),
         credits: user.credits || 0,
         dispensaryId: user.dispensaryId || null,
         newPassword: '',

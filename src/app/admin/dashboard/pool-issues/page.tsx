@@ -119,7 +119,7 @@ function ManageIssueDialog({ issue, onIssueUpdate }: ManageIssueDialogProps) {
             <FormField control={form.control} name="resolutionDetails" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Resolution Details / Admin Notes</FormLabel>
-                    <FormControl><Textarea {...field} placeholder="Add notes about the resolution or investigation..." rows={4} /></FormControl>
+                    <FormControl><Textarea {...field} value={field.value || ''} placeholder="Add notes about the resolution or investigation..." rows={4} /></FormControl>
                     <FormMessage />
                 </FormItem>
             )} />

@@ -35,11 +35,6 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  experimental: {
-    allowedDevOrigins: [
-      "http://localhost:9002"
-    ],
   }
 };
 
@@ -49,3 +44,11 @@ module.exports = withPWA({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
 })(nextConfig);
+/**
+ * ,
+ * 
+ *  experimental: {
+    allowedDevOrigins: [
+      "http://localhost:9002"
+    ],
+  } */

@@ -15,7 +15,7 @@ import { ModelShowcase } from '@/components/creator-lab/ModelShowcase';
 import type { CreatorDesign, ProductCategory, ApparelType, TreehouseProduct } from '@/types/creator-lab';
 import { APPAREL_PRICES } from '@/types/creator-lab';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import Image from 'next/image';
 
 export default function CreatorLabPage() {
@@ -107,7 +107,9 @@ export default function CreatorLabPage() {
   const handleModelComplete = async (modelImageUrl: string, modelPrompt: string) => {
     // Save product to Treehouse
     try {
-      const idToken = await currentUser?.getIdToken();
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('Not authenticated');
+      const idToken = await firebaseUser.getIdToken();
       
       const response = await fetch('/api/creator-lab/publish-product', {
         method: 'POST',
@@ -328,10 +330,11 @@ export default function CreatorLabPage() {
         />
       )}
 
-      {showModelShowcase && currentDesign && (
+      {showModelShowcase && currentDesign && currentDesign.imageUrl && (
         <ModelShowcase
           open={showModelShowcase}
           onOpenChange={setShowModelShowcase}
+          designId={currentDesign.id}
           designImageUrl={currentDesign.imageUrl}
           apparelType={selectedApparelType || ''}
           onComplete={handleModelComplete}

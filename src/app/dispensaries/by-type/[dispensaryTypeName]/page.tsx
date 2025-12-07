@@ -33,7 +33,7 @@ export default function PublicWellnessProfilesByTypePage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const wellnessTypeNameParam = params.dispensaryTypeName;
+  const wellnessTypeNameParam = params?.dispensaryTypeName;
   const wellnessTypeName = wellnessTypeNameParam ? decodeURIComponent(wellnessTypeNameParam as string) : null;
 
   const [wellnessProfiles, setWellnessProfiles] = useState<DispensaryWithDistance[]>([]);

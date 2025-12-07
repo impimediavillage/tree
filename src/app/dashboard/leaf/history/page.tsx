@@ -81,7 +81,7 @@ export default function LeafHistoryPage() {
     if (interactions.length === 0) return null;
 
     const totalInteractions = interactions.length;
-    const totalCredits = interactions.reduce((sum, log) => sum + (log.creditsDeducted || 0), 0);
+    const totalCredits = interactions.reduce((sum, log) => sum + (log.creditsUsed || 0), 0);
     const freeInteractions = interactions.filter(log => log.wasFreeInteraction).length;
     const paidInteractions = totalInteractions - freeInteractions;
     const avgCreditsPerInteraction = totalCredits / totalInteractions;
@@ -110,10 +110,18 @@ export default function LeafHistoryPage() {
     });
 
     interactions.forEach(log => {
-      const logDate = format(startOfDay(new Date(log.timestamp)), 'MMM dd');
+      let timestamp: Date;
+      if (log.timestamp instanceof Date) {
+        timestamp = log.timestamp;
+      } else if (typeof log.timestamp === 'string') {
+        timestamp = new Date(log.timestamp);
+      } else {
+        timestamp = (log.timestamp as any)?.toDate?.() || new Date();
+      }
+      const logDate = format(startOfDay(timestamp), 'MMM dd');
       const dayData = last7Days.find(d => d.date === logDate);
       if (dayData) {
-        dayData.credits += log.creditsDeducted || 0;
+        dayData.credits += log.creditsUsed || 0;
         dayData.interactions += 1;
       }
     });
@@ -124,7 +132,7 @@ export default function LeafHistoryPage() {
       value: count,
       credits: interactions
         .filter(log => log.advisorSlug === slug)
-        .reduce((sum, log) => sum + (log.creditsDeducted || 0), 0),
+        .reduce((sum, log) => sum + (log.creditsUsed || 0), 0),
     })).sort((a, b) => b.value - a.value);
 
     return {
@@ -381,11 +389,6 @@ export default function LeafHistoryPage() {
                         <Badge variant={log.wasFreeInteraction ? "secondary" : "default"} className="text-xs bg-[#006B3E] text-white">
                           {log.wasFreeInteraction ? 'Free' : 'Paid'}
                         </Badge>
-                        {log.hasImage && (
-                          <Badge variant="outline" className="text-xs border-purple-500 text-purple-700">
-                            📷 Image
-                          </Badge>
-                        )}
                       </div>
                       {getAdvisorDescription(log.advisorSlug) && (
                         <p className="text-sm text-[#5D4E37]/70 font-semibold mb-2">
@@ -398,16 +401,11 @@ export default function LeafHistoryPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-3xl font-black text-[#006B3E]">
-                        {log.creditsDeducted || 0}
+                        {log.creditsUsed || 0}
                       </div>
                       <div className="text-xs text-[#5D4E37]/60 font-bold">
                         credits used
                       </div>
-                      {log.tokensUsed && (
-                        <div className="text-xs text-[#5D4E37]/50 mt-1">
-                          {log.tokensUsed} tokens
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardContent>

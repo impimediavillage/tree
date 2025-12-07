@@ -87,9 +87,12 @@ export default function AdminProductPoolPage() {
       header: "Category",
     },
     {
-      accessorKey: "price",
+      accessorKey: "priceTiers",
       header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Price <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
-      cell: ({ row }) => `${row.original.price.toFixed(2)} ${row.original.currency}`,
+      cell: ({ row }) => {
+        const tier = row.original.priceTiers?.[0];
+        return tier ? `${tier.price.toFixed(2)} ${row.original.currency}` : 'N/A';
+      },
     },
     {
       accessorKey: "quantityInStock",

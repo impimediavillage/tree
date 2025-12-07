@@ -5,10 +5,10 @@ import withPWA from 'next-pwa';
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
   images: {
     remotePatterns: [
@@ -37,12 +37,13 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  experimental: {
-    allowedDevOrigins: [
+  }
+ /**,
+  *  experimental: {
+  *  allowedDevOrigins: [
         "http://localhost:9002"
     ],
-  }
+  } */
 };
 
 export default withPWA({

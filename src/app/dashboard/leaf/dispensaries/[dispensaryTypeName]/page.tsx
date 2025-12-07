@@ -18,7 +18,7 @@ export default function WellnessProfilesByTypePage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const wellnessTypeNameParam = params.dispensaryTypeName;
+  const wellnessTypeNameParam = params?.dispensaryTypeName;
   const wellnessTypeName = wellnessTypeNameParam ? decodeURIComponent(wellnessTypeNameParam as string) : null;
 
   const [wellnessProfiles, setWellnessProfiles] = useState<Dispensary[]>([]);
@@ -114,7 +114,7 @@ export default function WellnessProfilesByTypePage() {
       {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {wellnessProfiles.map(profile => (
-            <DispensaryListingCard key={profile.id} dispensary={profile} typeBannerImageUrl={profile.bannerUrl} />
+            <DispensaryListingCard key={profile.id} dispensary={profile} />
           ))}
         </div>
       ) : (

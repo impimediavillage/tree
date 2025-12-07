@@ -108,12 +108,13 @@ export default function TreehouseAnalyticsPage() {
 
       // Top products
       const topProducts = products
+        .filter(p => p.apparelType) // Only include products with apparelType
         .sort((a, b) => (b.totalRevenue || 0) - (a.totalRevenue || 0))
         .slice(0, 5)
         .map(p => ({
           productId: p.id,
           designImageUrl: p.designImageUrl,
-          apparelType: p.apparelType,
+          apparelType: p.apparelType!,
           creatorName: p.creatorName,
           sales: p.totalRevenue || 0,
           units: p.salesCount || 0,
@@ -122,6 +123,7 @@ export default function TreehouseAnalyticsPage() {
       // Apparel breakdown
       const apparelMap = new Map<string, { units: number; revenue: number }>();
       products.forEach(p => {
+        if (!p.apparelType) return; // Skip products without apparelType
         const existing = apparelMap.get(p.apparelType) || { units: 0, revenue: 0 };
         apparelMap.set(p.apparelType, {
           units: existing.units + (p.salesCount || 0),

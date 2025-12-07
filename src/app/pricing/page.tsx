@@ -63,6 +63,7 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
 export default function PublicCreditsPage() {
   const { toast } = useToast();
   const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
   const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([]);
