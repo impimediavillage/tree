@@ -12,8 +12,8 @@ apiVersion: 0.2.0
 # Specifies the commands for building and running your app.
 # If you don't specify `bundleCommand` and `startCommand`, App Hosting
 # attempts to automatically detect these for you.
-# bundleCommand: npm run build
-# startCommand: npm run start
+bundleCommand: npm run build
+startCommand: npm run start
 
 # Controls the number of instances of your app that are spun up.
 # If you don't specify `runConfig`, App Hosting uses default values.
