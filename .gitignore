@@ -34,8 +34,8 @@ lerna-debug.log*
 .DS_Store
 Thumbs.db
 
-# npm package lock v3
-package-lock.json
+# npm package lock v3 - COMMENTED OUT FOR FIREBASE APP HOSTING
+# package-lock.json
 
 # yarn lock v2+
 .yarn/cache
