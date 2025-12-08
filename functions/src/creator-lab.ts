@@ -260,7 +260,7 @@ export const generateCreatorDesign = onCall(
       });
 
       // Deduct credits and log interaction
-      await db.runTransaction(async (transaction) => {
+      await db.runTransaction(async (transaction: any) => {
         const userRef = db.collection('users').doc(userId);
         const userSnapshot = await transaction.get(userRef);
         const currentCredits = userSnapshot.data()?.credits || 0;
@@ -572,7 +572,7 @@ export const generateModelShowcase = onCall(
       });
 
       // Deduct credits and log interaction
-      await db.runTransaction(async (transaction) => {
+      await db.runTransaction(async (transaction: any) => {
         const userRef = db.collection('users').doc(userId);
         const userSnapshot = await transaction.get(userRef);
         const currentCredits = userSnapshot.data()?.credits || 0;

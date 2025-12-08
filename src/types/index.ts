@@ -49,8 +49,9 @@ export interface PriceTier {
 export interface PoolPriceTier {
   unit: string;
   price: number;
+  quantityInStock: number;
   description?: string;
-  weightCm?: number;
+  weightKgs?: number;
   lengthCm?: number;
   widthCm?: number;
   heightCm?: number;
@@ -266,4 +267,12 @@ export interface GenerateStrainStickerInput {
 
 export interface GenerateStrainStickerOutput {
   imageUrl: string;
+}
+
+// Cart grouping type for checkout
+export interface GroupedCart {
+  dispensaryId: string;
+  dispensaryName: string;
+  items: any[];
+  shippingRate?: any;
 }

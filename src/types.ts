@@ -78,6 +78,7 @@ export interface Dispensary {
   averageRating?: number | null;
   reviewCount?: number;
   inHouseDeliveryFee?: number;
+  bannerUrl?: string | null;
 }
 
 // Represents the structure for Wellness Type documents (basic info)
@@ -158,6 +159,8 @@ export interface Product {
   labTested?: boolean;
   labTestReportUrl?: string | null;
   isAvailableForPool?: boolean;
+  poolSharingRule?: 'same_type' | 'all_types' | 'specific_stores' | null;
+  allowedPoolDispensaryIds?: string[];
   tags?: string[] | null;
   
   createdAt: Timestamp | Date | string;
@@ -196,10 +199,22 @@ export interface ProductRequest {
   requesterEmail: string;
 
   quantityRequested: number;
+  requestedTier?: {
+    unit: string;
+    price: number;
+    lengthCm?: number;
+    widthCm?: number;
+    heightCm?: number;
+    weightKgs?: number;
+  };
   preferredDeliveryDate?: string | null;
   deliveryAddress: string;
+  destinationLocker?: PUDOLocker | null;
   contactPerson: string;
   contactPhone: string;
+  orderDate?: string | null;
+  actualDeliveryDate?: string | null;
+  requesterConfirmed?: boolean;
 
   requestStatus:
     | "pending_owner_approval"
@@ -219,8 +234,10 @@ export interface ProductRequest {
     name: string;
     category: string;
     currency: string;
-    priceTiers: PriceTier[]; 
+    priceTiers: PriceTier[];
     imageUrl?: string | null;
+    dispensaryName?: string;
+    dispensaryType?: string;
   } | null;
 }
 

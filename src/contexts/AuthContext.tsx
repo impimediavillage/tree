@@ -12,6 +12,7 @@ import { httpsCallable, FunctionsError } from 'firebase/functions';
 
 interface AuthContextType {
   currentUser: AppUser | null;
+  user: AppUser | null; // Alias for compatibility
   setCurrentUser: React.Dispatch<React.SetStateAction<AppUser | null>>;
   currentDispensary: Dispensary | null;
   loading: boolean;
@@ -132,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchUserProfile,
     refreshUserProfile,
     logout,
+    user: currentUser, // Add alias
   };
 
   return (

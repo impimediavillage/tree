@@ -177,6 +177,10 @@ export const priceTierSchema = z.object({
     }),
   quantityInStock: z.coerce.number().int().min(0, "Stock must be a non-negative number.").optional().nullable(),
   description: z.string().optional().nullable(),
+  weightKgs: z.coerce.number().positive().optional().nullable(),
+  lengthCm: z.coerce.number().positive().optional().nullable(),
+  widthCm: z.coerce.number().positive().optional().nullable(),
+  heightCm: z.coerce.number().positive().optional().nullable(),
 });
 export type PriceTierFormData = z.infer<typeof priceTierSchema>;
 
@@ -505,12 +509,15 @@ export const productRequestDbSchema = productRequestSchema.extend({
   id: z.string().optional(),
   createdAt: z.any(),
   updatedAt: z.any(),
+  orderDate: z.any().optional(),
   productDetails: z.object({ 
     name: z.string(),
     category: z.string(),
     currency: z.string(),
     priceTiers: z.array(priceTierSchema), 
     imageUrl: z.string().url().optional().nullable(),
+    dispensaryType: z.string(),
+    dispensaryName: z.string(),
   }).optional().nullable(),
 });
 export type ProductRequest = z.infer<typeof productRequestDbSchema>;

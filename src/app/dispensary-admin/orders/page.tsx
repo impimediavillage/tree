@@ -135,7 +135,7 @@ export default function DispensaryOrdersPage() {
           shippingStatusFilter,
           dateRange,
           sortBy,
-          dispensaryId: currentUser.dispensaryId
+          dispensaryId: currentUser.dispensaryId!
         });
         console.log('Orders after filtering:', filtered.length);
         console.log('Applied filters:', { 

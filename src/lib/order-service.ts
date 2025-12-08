@@ -6,7 +6,6 @@ import type { AddressValues } from '@/types/checkout';
 import type { Order } from '@/types/order'; // Changed from @/types/orders
 import type { OrderItem } from '@/types/order'; // Changed from @/types/orders/items
 import type { OrderStatus } from '@/types/order'; // Changed from @/types/orders/status
-import type { BaseAddress } from '@/types/base/shipping';
 
 /**
  * Main orders collection in Firestore.

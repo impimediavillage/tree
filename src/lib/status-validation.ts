@@ -4,12 +4,14 @@ import type { ShippingStatus } from '@/types/shipping';
  * Defines valid status transitions for order shipments
  */
 export const STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[]> = {
-  'pending': ['ready_for_shipping'],
-  'ready_for_shipping': ['in_transit'],
+  'pending': ['ready_for_shipping', 'cancelled'],
+  'ready_for_shipping': ['label_generated', 'cancelled'],
+  'label_generated': ['in_transit', 'cancelled'],
   'in_transit': ['out_for_delivery', 'delivered', 'failed'],
   'out_for_delivery': ['delivered', 'failed'],
   'delivered': [], // Terminal state - no transitions
   'failed': ['pending', 'returned'], // Can retry or mark as returned
+  'cancelled': [], // Terminal state - no transitions
   'returned': [], // Terminal state - no transitions
 };
 
@@ -19,10 +21,12 @@ export const STATUS_TRANSITIONS: Record<ShippingStatus, ShippingStatus[]> = {
 export const STATUS_LABELS: Record<ShippingStatus, string> = {
   'pending': 'Pending',
   'ready_for_shipping': 'Ready for Shipping',
+  'label_generated': 'Label Generated',
   'in_transit': 'In Transit',
   'out_for_delivery': 'Out for Delivery',
   'delivered': 'Delivered',
   'failed': 'Failed',
+  'cancelled': 'Cancelled',
   'returned': 'Returned',
 };
 
@@ -32,10 +36,12 @@ export const STATUS_LABELS: Record<ShippingStatus, string> = {
 export const STATUS_DESCRIPTIONS: Record<ShippingStatus, string> = {
   'pending': 'Order is awaiting processing',
   'ready_for_shipping': 'Order is ready to ship - generate labels to proceed',
+  'label_generated': 'Shipping label has been generated',
   'in_transit': 'Package is with the courier and on its way',
   'out_for_delivery': 'Package is out for delivery today',
   'delivered': 'Package has been successfully delivered',
   'failed': 'Delivery attempt failed - requires attention',
+  'cancelled': 'Order has been cancelled',
   'returned': 'Package has been returned to sender',
 };
 
@@ -83,7 +89,7 @@ export function getTransitionErrorMessage(
  * Check if status requires confirmation (high-impact statuses)
  */
 export function requiresConfirmation(status: ShippingStatus): boolean {
-  return ['delivered', 'failed', 'returned'].includes(status);
+  return ['delivered', 'failed', 'cancelled', 'returned'].includes(status);
 }
 
 /**
@@ -109,6 +115,13 @@ export function getConfirmationMessage(
         title: 'Mark as Failed',
         description: `Mark order ${orderNumber} as failed? You may need to follow up with the customer or retry delivery.`,
         confirmText: 'Mark Failed'
+      };
+    
+    case 'cancelled':
+      return {
+        title: 'Cancel Order',
+        description: `Are you sure you want to cancel order ${orderNumber}? This action may not be reversible.`,
+        confirmText: 'Cancel Order'
       };
     
     case 'returned':

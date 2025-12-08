@@ -116,10 +116,10 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                 return (
                   <React.Fragment key={item.title}>
                     <Button
-                        variant={pathname.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard' ? 'secondary' : (pathname === item.href ? 'secondary' : 'ghost')}
+                        variant={(pathname?.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') ? 'secondary' : ((pathname === item.href) ? 'secondary' : 'ghost')}
                         className={cn(
                         'w-full justify-start text-sm',
-                        (pathname.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') || pathname === item.href
+                        ((pathname?.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') || pathname === item.href)
                             ? 'bg-primary/10 text-primary hover:bg-primary/20'
                             : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                         itemDisabled && 'opacity-50 cursor-not-allowed'

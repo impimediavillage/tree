@@ -60,7 +60,7 @@ export function BulkActions({
         const timestamp = new Date();
         
         // Update only the shipments belonging to this dispensary
-        const updatedShipments = order.shipments.map(shipment => {
+        const updatedShipments = order.shipments.map((shipment: any) => {
           if (shipment.dispensaryId === currentUser?.dispensaryId) {
             return {
               ...shipment,
@@ -191,8 +191,8 @@ export function BulkActions({
                 </thead>
                 <tbody>
                   ${order.shipments
-                    .flatMap(s => s.items)
-                    .map(item => `
+                    .flatMap((s: any) => s.items)
+                    .map((item: any) => `
                       <tr>
                         <td>${item.name}</td>
                         <td>${item.quantity}</td>

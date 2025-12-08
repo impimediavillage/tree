@@ -109,7 +109,6 @@ export default function LeafDashboardOverviewPage() {
                   <DispensaryTypeCard 
                     key={type.id} 
                     dispensaryType={type} 
-                    isPreferred 
                     basePath="/dashboard/leaf/dispensaries" 
                   />
                 ))}

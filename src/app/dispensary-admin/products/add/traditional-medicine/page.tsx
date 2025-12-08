@@ -175,10 +175,10 @@ useEffect(() => {
         if (files.length > 0) {
             toast({ title: "Uploading Images...", description: "Please wait...", variant: "default" });
             const uploadPromises = files.map(file => {
-                const sRef = storageRef(storage, `products/${currentUser!.uid}/${Date.now()}_${file.name}`);
+                const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`);
                 return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref));
             });
-            uploadedImageUrls = await Promise.all(uploadPromises);
+            uploadedImageUrls = await Promise.all(uploadPromises) as string[];
         }
 
         const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
@@ -403,7 +403,7 @@ useEffect(() => {
                               <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
                                   <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
                                   <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                  <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                   {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                               </div>
                           ))}

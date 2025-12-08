@@ -165,7 +165,7 @@ export default function AdminWellnessPage() {
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map(opt => (
+                  {statusOptions.map((opt: any) => (
                      <SelectItem key={opt} value={opt}>{opt === 'all' ? 'All Statuses' : opt}</SelectItem>
                   ))}
                 </SelectContent>

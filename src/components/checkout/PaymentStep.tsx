@@ -54,7 +54,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
         if (!shipping) continue;
 
         const groupItems = group.items;
-        const groupSubtotal = groupItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const groupSubtotal = groupItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
         const groupShippingCost = shipping.rate;
         const groupTotal = groupSubtotal + groupShippingCost;
 

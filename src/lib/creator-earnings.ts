@@ -48,7 +48,7 @@ export async function processSale(params: ProcessSaleParams): Promise<void> {
 
   const earningsRef = db.collection('creatorEarnings').doc(creatorId);
 
-  await db.runTransaction(async (transaction) => {
+  await db.runTransaction(async (transaction: any) => {
     const earningsDoc = await transaction.get(earningsRef);
 
     const saleRecord: SaleRecord = {
@@ -145,7 +145,7 @@ export async function processPayout(params: ProcessPayoutParams): Promise<{ succ
   const earningsRef = db.collection('creatorEarnings').doc(userId);
 
   try {
-    await db.runTransaction(async (transaction) => {
+    await db.runTransaction(async (transaction: any) => {
       const earningsDoc = await transaction.get(earningsRef);
 
       if (!earningsDoc.exists) {

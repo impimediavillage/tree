@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import type { Order, OrderItem } from '@/types/order';
-import type { User } from '@/types/user';
-import type { EnhancedOrderShipment, OrderHandler } from '@/types/enhanced-shipping';
+import type { User } from '@/types';
+import type { OrderShipment } from '@/types/order';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface StaffPerformance {

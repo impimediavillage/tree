@@ -176,10 +176,10 @@ export default function AddPermacultureProductPage() {
                 const sRef = storageRef(storage, `products/${currentUser.uid}/${Date.now()}_${file.name}`);
                 return uploadBytesResumable(sRef, file).then(snapshot => getDownloadURL(snapshot.ref));
             });
-            uploadedImageUrls = await Promise.all(uploadPromises);
+            uploadedImageUrls = await Promise.all(uploadPromises) as string[];
         }
 
-        const totalStock = data.priceTiers.reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
+        const totalStock = (data.priceTiers as any[]).reduce((acc, tier) => acc + (Number(tier.quantityInStock) || 0), 0);
         
         const sanitizedData = Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
@@ -357,7 +357,7 @@ export default function AddPermacultureProductPage() {
                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                                      <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
                                      <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                     <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                     <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                  </div>
                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                                   <Collapsible>
@@ -366,10 +366,10 @@ export default function AddPermacultureProductPage() {
                                      </CollapsibleTrigger>
                                      <CollapsibleContent className="pt-4 space-y-4">
                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                             <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                             <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                             <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                             <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                             <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                          </div>
                                      </CollapsibleContent>
                                  </Collapsible>
@@ -413,7 +413,7 @@ export default function AddPermacultureProductPage() {
                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                                           <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
                                           <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                          <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                          <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                       </div>
                                       {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                                       <Collapsible>
@@ -422,10 +422,10 @@ export default function AddPermacultureProductPage() {
                                           </CollapsibleTrigger>
                                           <CollapsibleContent className="pt-4 space-y-4">
                                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
                                               </div>
                                           </CollapsibleContent>
                                       </Collapsible>

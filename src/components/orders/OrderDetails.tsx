@@ -180,7 +180,7 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
               <h4 className="font-medium mb-4">Status History</h4>
               <div className="relative space-y-4">
                 <div className="absolute left-2.5 top-2.5 h-full w-0.5 bg-border"></div>
-                {order.statusHistory?.map((status, index) => (
+                {order.statusHistory?.map((status: any, index: number) => (
                   <div key={index} className="relative pl-8">
                     <div className="absolute left-0 rounded-full bg-background border-2 border-primary w-5 h-5"></div>
                     <div>

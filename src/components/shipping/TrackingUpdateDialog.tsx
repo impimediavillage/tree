@@ -48,7 +48,7 @@ export function TrackingUpdateDialog({
         const timestamp = new Date();
         
         // Update only the shipment belonging to this dispensary
-        const updatedShipments = order.shipments.map(shipment => {
+        const updatedShipments = order.shipments.map((shipment: any) => {
           if (shipment.dispensaryId === currentUser.dispensaryId) {
             return {
               ...shipment,

@@ -260,7 +260,7 @@ export const deductCreditsAndLogInteraction = onCall(async (request: CallableReq
     let newCreditBalance = 0;
 
     try {
-        await db.runTransaction(async (transaction) => {
+        await db.runTransaction(async (transaction: any) => {
             const freshUserDoc = await transaction.get(userRef);
             if (!freshUserDoc.exists) {
                 throw new HttpsError('not-found', 'User not found during transaction.');
@@ -453,7 +453,7 @@ export const chatWithAdvisor = onCall(
             const totalCredits = advisor.creditCostBase + tokenCredits + imageCost;
 
             // Deduct credits and log interaction
-            await db.runTransaction(async (transaction) => {
+            await db.runTransaction(async (transaction: any) => {
                 const userRef = db.collection('users').doc(userId);
                 const freshUserDoc = await transaction.get(userRef);
 
@@ -795,7 +795,7 @@ export const searchStrains = onCall({ cors: true }, async (request: CallableRequ
             return [];
         }
 
-        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const results = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
         return results;
 
     } catch (error: any) {

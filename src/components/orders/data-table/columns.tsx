@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency } from '@/lib/utils';
 import { MoreHorizontal, PrinterIcon, TruckIcon } from 'lucide-react';
 import { Order, OrderStatus } from '@/types/order';
 import { format } from 'date-fns';

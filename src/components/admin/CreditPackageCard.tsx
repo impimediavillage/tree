@@ -121,7 +121,7 @@ function EditableCreditPackageDialog({ creditPackage, onSave, triggerButton }: C
                     <FormItem><FormLabel>Credits</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="bonusCredits" render={({ field }) => (
-                    <FormItem><FormLabel>Bonus Credits</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Bonus Credits</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
             <div className="grid grid-cols-2 gap-4">

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Card, DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2 } from 'lucide-react'; 
+import { DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2, AlertTriangle } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
