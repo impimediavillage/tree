@@ -49,12 +49,15 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
 
   useEffect(() => {
     if (user && isOpen) {
-      form.reset({
+      const formData: WellnessUserEditFormData = {
         displayName: user.displayName || '',
         role: user.role as 'DispensaryStaff' | 'LeafUser' | 'User',
         status: (user.status === 'Rejected' ? 'PendingApproval' : user.status || 'Active') as 'Active' | 'Suspended' | 'PendingApproval',
-        credits: user.role === 'LeafUser' ? (user.credits || 0) : undefined,
-      });
+      };
+      if (user.role === 'LeafUser') {
+        formData.credits = user.credits || 0;
+      }
+      form.reset(formData);
     }
   }, [user, isOpen, form]);
 

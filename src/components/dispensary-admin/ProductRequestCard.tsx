@@ -44,7 +44,6 @@ const getStatusProps = (status: ProductRequest['requestStatus']) => {
         case 'fulfilled_by_sender': return { color: 'bg-purple-100 text-purple-800 border-purple-300', icon: <Truck className="h-3 w-3" /> };
         case 'received_by_requester': return { color: 'bg-green-100 text-green-800 border-green-300', icon: <Package className="h-3 w-3" /> };
         case 'issue_reported': return { color: 'bg-orange-100 text-orange-800 border-orange-300', icon: <AlertTriangle className="h-3 w-3" /> };
-        case 'ordered': return { color: 'bg-green-200 text-green-900 border-green-400', icon: <Check className="h-3 w-3" /> };
         default: return { color: 'bg-gray-200 text-gray-800 border-gray-400', icon: <MessageSquare className="h-3 w-3" /> };
     }
 };

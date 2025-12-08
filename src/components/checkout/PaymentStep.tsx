@@ -15,7 +15,7 @@ import { CREATOR_COMMISSION_RATE, PLATFORM_COMMISSION_RATE } from '@/types/creat
 
 interface PaymentStepProps {
   cart: CartItem[];
-  groupedCart: GroupedCart;
+  groupedCart: Record<string, { dispensaryName: string; dispensaryType?: string; items: CartItem[] }>;
   shippingSelections: Record<string, ShippingRate | null>;
   shippingAddress: AddressValues['shippingAddress'];
   onBack: () => void;
@@ -49,12 +49,12 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
       const orderPromises = [];
 
       // Create separate orders for each dispensary/vendor
-      for (const [dispensaryId, group] of Object.entries(groupedCart)) {
+      for (const [dispensaryId, group] of Object.entries(groupedCart) as [string, { dispensaryName: string; dispensaryType?: string; items: CartItem[] }][]) {
         const shipping = shippingSelections[dispensaryId];
         if (!shipping) continue;
 
         const groupItems = group.items;
-        const groupSubtotal = groupItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+        const groupSubtotal = groupItems.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0);
         const groupShippingCost = shipping.rate;
         const groupTotal = groupSubtotal + groupShippingCost;
 
@@ -68,7 +68,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
         // Get creator ID from first item (all items in Treehouse order should have same creatorId)
         const creatorId = isTreehouseOrder ? groupItems[0]?.creatorId : undefined;
 
-        const orderParams = {
+        const orderParams: any = {
           userId: currentUser.uid,
           userEmail: currentUser.email || '',
           dispensaryId,
@@ -170,7 +170,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
               </div>
               <h3 className="font-semibold text-lg">Shipping Methods</h3>
                 <div className='space-y-2'>
-                    {Object.entries(shippingSelections).map(([dispensaryId, rate]) => (
+                    {Object.entries(shippingSelections).map(([dispensaryId, rate]) => rate && (
                         <div key={dispensaryId} className='p-3 rounded-md border bg-muted/50 text-sm'>
                             <p className='font-bold'>From: {groupedCart[dispensaryId]?.dispensaryName}</p>
                             <div className='flex justify-between items-center'>

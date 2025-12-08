@@ -385,7 +385,7 @@ export const useOrderAnalytics = (daysRange: number = 30): {
 
         // Calculate staff performance if user is owner
         const staffPerformance = !isStaff ? orders.reduce((acc, order) => {
-          const shipment = order.shipments[0] as unknown as EnhancedOrderShipment | undefined;
+          const shipment = Object.values(order.shipments)[0] as any;
           const handler = shipment?.handledBy;
           if (!handler) return acc;
           

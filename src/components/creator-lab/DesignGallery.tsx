@@ -72,7 +72,7 @@ export function DesignGallery({ onDesignSelect, refreshTrigger }: DesignGalleryP
       unpublished: { label: 'Unpublished', className: 'bg-gray-500' },
     };
 
-    const config = statusConfig[status] || statusConfig.completed;
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.completed;
     return (
       <Badge className={`${config.className} text-white font-bold text-xs`}>
         {config.label}

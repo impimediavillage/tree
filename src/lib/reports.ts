@@ -19,18 +19,18 @@ export const generateOrdersCsv = async (orders: Order[]): Promise<string> => {
   ].join(',');
 
   // Generate CSV rows
-  const rows = orders.map(order => {
+  const rows = orders.map((order: any) => {
     // Combine all items from all shipments
-    const items = order.shipments
-      .flatMap(s => s.items)
-      .map(item => `${item.name} (${item.quantity})`)
+    const items = Object.values(order.shipments)
+      .flatMap((s: any) => s.items)
+      .map((item: any) => `${item.name} (${item.quantity})`)
       .join('; ');
 
     // Format shipping address
     const shippingAddress = `${order.shippingAddress.streetAddress}, ${order.shippingAddress.suburb}, ${order.shippingAddress.city}, ${order.shippingAddress.province}, ${order.shippingAddress.postalCode}`;
 
     // Get tracking info from the first shipment (assuming single shipment for now)
-    const mainShipment = order.shipments[0];
+    const mainShipment = Object.values(order.shipments)[0] as any;
     const trackingNumber = mainShipment?.trackingNumber || 'N/A';
     const shippingMethod = mainShipment?.shippingMethod?.name || 'N/A';
 

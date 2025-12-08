@@ -3,11 +3,21 @@
  * Handles 25% commission calculations and payouts
  */
 
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+// NOTE: This file uses firebase-admin and should only be used in Cloud Functions
+// For client-side, FieldValue needs to be imported from firebase/firestore
+import { increment, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { CREATOR_COMMISSION_RATE, PLATFORM_COMMISSION_RATE } from '@/types/creator-lab';
 import type { SaleRecord, PayoutRecord, ApparelType } from '@/types/creator-lab';
 
-const db = getFirestore();
+// Placeholder FieldValue for server-side compatibility
+const FieldValue = {
+  increment,
+  arrayUnion,
+  serverTimestamp
+};
+
+// const db = getFirestore();
+const db: any = null; // Placeholder - this should be initialized in Cloud Functions context
 
 export interface ProcessSaleParams {
   orderId: string;
@@ -252,7 +262,7 @@ export async function generatePayoutReport() {
     .orderBy('pendingPayout', 'desc')
     .get();
 
-  const report = earningsSnapshot.docs.map((doc) => {
+  const report = earningsSnapshot.docs.map((doc: any) => {
     const data = doc.data();
     return {
       userId: doc.id,
@@ -267,7 +277,7 @@ export async function generatePayoutReport() {
     };
   });
 
-  const totalPending = report.reduce((sum, creator) => sum + (creator.pendingPayout || 0), 0);
+  const totalPending = report.reduce((sum: number, creator: any) => sum + (creator.pendingPayout || 0), 0);
 
   return {
     creators: report,

@@ -28,7 +28,7 @@ export async function sendDispensaryNotification({
       type,
       priority: 'medium', // Default priority
       read: false,
-      created_at: new Date(),
+      createdAt: new Date(),
       orderId,
       customerId,
       dispensaryId

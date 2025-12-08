@@ -12,7 +12,6 @@ import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy,
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { updateOrderStatus } from "@/lib/orders";
-import { PDFViewer } from "@react-pdf/renderer";
 import { LabelGenerationDialog } from "@/components/dispensary-admin/LabelGenerationDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { OrderNotes } from "./OrderNotes";

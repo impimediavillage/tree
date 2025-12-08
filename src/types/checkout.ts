@@ -1,4 +1,5 @@
 import type { PudoLocker } from './shipping';
+import type { AddressValues as BaseAddressValues } from './index';
 
 export interface ShippingRate {
   id: string;
@@ -22,29 +23,5 @@ export interface ShippingRate {
   isActive?: boolean;
 }
 
-export interface AddressValues {
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  shippingAddress: {
-    address: string;
-    streetAddress: string;
-    suburb: string;
-    city: string;
-    province: string;
-    postalCode: string;
-    country: string;
-    latitude: number;
-    longitude: number;
-  };
-  billingAddress?: {
-    streetAddress?: string;
-    suburb?: string;
-    city?: string;
-    postalCode?: string;
-    province?: string;
-    country?: string;
-    latitude?: number;
-    longitude?: number;
-  };
-}
+// Re-export AddressValues for backward compatibility
+export type { BaseAddressValues as AddressValues };

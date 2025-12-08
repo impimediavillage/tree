@@ -48,25 +48,27 @@ export function TrackingUpdateDialog({
         const timestamp = new Date();
         
         // Update only the shipment belonging to this dispensary
-        const updatedShipments = order.shipments.map((shipment: any) => {
-          if (shipment.dispensaryId === currentUser.dispensaryId) {
-            return {
-              ...shipment,
-              trackingNumber: trackingNumbers[order.id] || shipment.trackingNumber,
-              trackingLastUpdated: timestamp,
-              status: 'shipped',
-              statusHistory: [
-                ...(shipment.statusHistory || []),
-                { 
-                  status: 'shipped', 
-                  timestamp, 
-                  message: `Tracking number updated: ${trackingNumbers[order.id]}` 
-                }
-              ]
-            };
-          }
-          return shipment;
-        });
+        const updatedShipments = Object.fromEntries(
+          Object.entries(order.shipments).map(([dispensaryId, shipment]: [string, any]) => {
+            if (dispensaryId === currentUser.dispensaryId) {
+              return [dispensaryId, {
+                ...shipment,
+                trackingNumber: trackingNumbers[order.id] || shipment.trackingNumber,
+                trackingLastUpdated: timestamp,
+                status: 'shipped',
+                statusHistory: [
+                  ...(shipment.statusHistory || []),
+                  {
+                    status: 'shipped', 
+                    timestamp, 
+                    message: `Tracking number updated: ${trackingNumbers[order.id]}` 
+                  }
+                ]
+              }];
+            }
+            return [dispensaryId, shipment];
+          })
+        );
 
         batch.update(orderRef, { 
           shipments: updatedShipments,

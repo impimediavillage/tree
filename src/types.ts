@@ -296,6 +296,31 @@ export interface User {
   welcomeCreditsAwarded?: boolean;
   signupSource?: string; 
   updatedAt?: Timestamp | Date | string | null;
+  
+  // Checkout workflow fields (optional for backward compatibility)
+  name?: string; // Alternative to displayName for checkout forms
+  phoneNumber?: string;
+  shippingAddress?: {
+    address?: string;
+    streetAddress?: string;
+    suburb?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  billingAddress?: {
+    streetAddress?: string;
+    suburb?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  };
 }
 
 // Represents a User document in Firestore (for server-side functions)
@@ -314,6 +339,43 @@ export interface UserDocData {
   welcomeCreditsAwarded?: boolean;
   preferredDispensaryTypes?: string[];
   updatedAt?: Timestamp | Date | string | null | firestore.FieldValue;
+}
+
+// Address values for checkout forms
+export interface AddressValues {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  shippingAddress: {
+    address: string;
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  };
+  billingAddress?: {
+    streetAddress?: string;
+    suburb?: string;
+    city?: string;
+    postalCode?: string;
+    province?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  };
+}
+
+// Grouped cart type for checkout (matches CartContext structure)
+export interface GroupedCart {
+  [dispensaryId: string]: {
+    dispensaryName: string;
+    dispensaryType?: string;
+    items: CartItem[];
+  };
 }
 
 // Represents a Credit Package document in Firestore
@@ -417,12 +479,14 @@ export interface CartItem {
   dispensaryName: string;
   dispensaryType: string; 
   productOwnerEmail: string;
-  productType?: string | null;  
+  productType: 'THC' | 'CBD' | 'HEMP' | 'Apparel' | 'Gear' | 'Other' | 'Homeopathy' | 'Mushroom' | 'Permaculture' | 'Traditional Medicine';
   // Shipping-related dimension fields, mapped from PriceTier
-  weight?: number | null;
-  length?: number | null;
-  width?: number | null;
-  height?: number | null;
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  // Treehouse-specific field
+  creatorId?: string; // Creator UID for Treehouse marketplace orders
 }
 
 // Types for generated brand assets
@@ -454,29 +518,6 @@ export interface ShippingRate {
   service_level: any;
   delivery_time: any;
   courier_name: any;
-}
-
-// --- ADDED: Definition for AddressValues wrapper used in checkout ---
-export interface AddressValues {
-  shippingAddress: {
-    streetAddress: string;
-    suburb: string;
-    city: string;
-    postalCode: string;
-    province: string;
-    country: string;
-    latitude: number;
-    longitude: number;
-  };
-  billingAddress: {
-    streetAddress: string;
-    suburb: string;
-    city: string;
-    postalCode: string;
-    province: string;
-    country: string;
-  };
-  useShippingForBilling: boolean;
 }
 
 // --- AI ADVISOR INTERFACES ---

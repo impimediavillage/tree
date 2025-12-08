@@ -256,8 +256,6 @@ export interface AddressValues {
   };
 }
 
-export type GroupedCart = Record<string, CartItem[]>;
-
 // Strain Sticker Generation Types
 export interface GenerateStrainStickerInput {
   strainName: string;
@@ -270,9 +268,9 @@ export interface GenerateStrainStickerOutput {
 }
 
 // Cart grouping type for checkout
-export interface GroupedCart {
-  dispensaryId: string;
+export type GroupedCart = Record<string, {
   dispensaryName: string;
-  items: any[];
+  dispensaryType?: string;
+  items: CartItem[];
   shippingRate?: any;
-}
+}>;

@@ -133,7 +133,7 @@ function EditableCreditPackageDialog({ creditPackage, onSave, triggerButton }: C
                 )} />
             </div>
              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="Optional description" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} value={field.value || ''} placeholder="Optional description" /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={form.control} name="isActive" render={({ field }) => (
                 <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 shadow-sm">

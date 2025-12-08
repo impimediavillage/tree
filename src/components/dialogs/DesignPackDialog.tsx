@@ -51,7 +51,7 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                         toast({ title: "Error", description: "Could not load Triple S designs. Please try again.", variant: "destructive" });
                         return;
                     }
-                    const imagePaths = data.map((name: string) => `/images/2025-triple-s-400/${name}`);
+                    const imagePaths = (data as string[]).map((name: string) => `/images/2025-triple-s-400/${name}`);
                     const shuffled = shuffleArray(imagePaths);
                     setRandomStrainImages(shuffled.slice(0, 33));
                     setIsRandomSetReady(true);

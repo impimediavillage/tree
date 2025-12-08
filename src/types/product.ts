@@ -41,8 +41,6 @@ export interface Product {
   productType: ProductType;
   labTested: boolean;
   labTestReportUrl?: string | null;
-  poolSharingRule?: 'same_type' | 'all_types' | 'specific_stores' | null;
-  allowedPoolDispensaryIds?: string[];
   effects?: ProductAttribute[];
   medicalUses?: ProductAttribute[];
   flavors?: string[];

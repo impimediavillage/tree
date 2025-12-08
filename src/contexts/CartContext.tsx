@@ -90,7 +90,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         unit: tier.unit,
         quantityInStock: tier.quantityInStock ?? 0,
         imageUrl: isThcProduct && overrideImageUrl ? overrideImageUrl : (product.imageUrls?.[0] || '/placeholder.svg'),
-        productType: product.productType, 
+        productType: (product.productType || 'Other') as 'THC' | 'CBD' | 'HEMP' | 'Apparel' | 'Gear' | 'Other' | 'Homeopathy' | 'Mushroom' | 'Permaculture' | 'Traditional Medicine',
         // Default dimensions for shipping if not provided: small package (10cm x 10cm x 5cm, 0.1kg)
         weight: tier.weightKgs ?? 0.1,
         length: tier.lengthCm ?? 10,

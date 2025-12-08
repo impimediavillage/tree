@@ -259,7 +259,17 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
           fullName: currentUser.name || '',
           email: currentUser.email || '',
           phoneNumber: currentUser.phoneNumber || '',
-          shippingAddress: { ...currentUser.shippingAddress }
+          shippingAddress: { 
+            address: currentUser.shippingAddress.address || '',
+            streetAddress: currentUser.shippingAddress.streetAddress || '',
+            suburb: currentUser.shippingAddress.suburb || '',
+            city: currentUser.shippingAddress.city || '',
+            province: currentUser.shippingAddress.province || '',
+            postalCode: currentUser.shippingAddress.postalCode || '',
+            country: currentUser.shippingAddress.country || 'South Africa',
+            latitude: currentUser.shippingAddress.latitude || 0,
+            longitude: currentUser.shippingAddress.longitude || 0
+          }
         });
       }
     }, [currentUser, form]);

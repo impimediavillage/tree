@@ -309,7 +309,7 @@ export default function AddTHCProductPage() {
         const sanitizedData = Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, value === undefined ? null : value])
         );
-  
+
         const productData: Omit<ProductType, 'id'> = {
             ...(sanitizedData as unknown as ProductFormData),
             dispensaryId: currentUser.dispensaryId!,

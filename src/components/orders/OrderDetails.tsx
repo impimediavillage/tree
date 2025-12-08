@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OrderStatusUpdate } from './OrderStatusUpdate';
 import { Package, MapPin, Phone, Mail, Clock, ArrowRight } from 'lucide-react';
-import type { DispensaryOrder, OrderItem } from '@/types/order';
+import type { Order, OrderItem } from '@/types/order';
 
 interface OrderDetailsProps {
-  order: DispensaryOrder;
+  order: Order;
   onStatusUpdate: () => void;
   dispensaryId: string;
 }
@@ -18,7 +18,7 @@ interface OrderDetailsProps {
 export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetailsProps) {
   const [showStatusDialog, setShowStatusDialog] = useState(false);
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     'pending': 'bg-yellow-500',
     'processing': 'bg-blue-500',
     'ready_for_pickup': 'bg-purple-500',
@@ -27,7 +27,7 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
     'out_for_delivery': 'bg-indigo-500',
     'delivered': 'bg-green-500',
     'cancelled': 'bg-red-500'
-  } as const;
+  };
 
   return (
     <div className="space-y-6">
@@ -157,16 +157,16 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <h4 className="font-medium mb-2">Shipping Method</h4>
-                <p className="text-sm">{order.shipping.name}</p>
-                <p className="text-sm text-muted-foreground">{order.shipping.courier_name}</p>
+                <p className="text-sm">{Object.values(order.shipments || {})[0]?.shippingMethod?.name || 'N/A'}</p>
+                <p className="text-sm text-muted-foreground">{Object.values(order.shipments || {})[0]?.shippingMethod?.courier_name || ''}</p>
               </div>
-              {order.shipping.trackingNumber && (
+              {Object.values(order.shipments || {})[0]?.trackingNumber && (
                 <div>
                   <h4 className="font-medium mb-2">Tracking Information</h4>
-                  <p className="text-sm">Tracking #: {order.shipping.trackingNumber}</p>
-                  {order.shipping.trackingUrl && (
+                  <p className="text-sm">Tracking #: {Object.values(order.shipments || {})[0].trackingNumber}</p>
+                  {Object.values(order.shipments || {})[0].trackingUrl && (
                     <Button variant="link" className="px-0" asChild>
-                      <a href={order.shipping.trackingUrl} target="_blank" rel="noopener noreferrer">
+                      <a href={Object.values(order.shipments || {})[0].trackingUrl || ''} target="_blank" rel="noopener noreferrer">
                         Track Shipment <ArrowRight className="ml-2 h-4 w-4" />
                       </a>
                     </Button>
@@ -206,7 +206,7 @@ export function OrderDetails({ order, onStatusUpdate, dispensaryId }: OrderDetai
             <DialogTitle>Update Order Status</DialogTitle>
           </DialogHeader>
           <OrderStatusUpdate
-            orderId={order.orderId}
+            orderId={order.orderNumber}
             dispensaryId={dispensaryId}
             currentStatus={order.status}
             onStatusUpdate={() => {

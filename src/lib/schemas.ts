@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import type { ProductCategory as ProductCategoryType } from '../functions/src/types';
+// ProductCategory type (from functions)
+interface ProductCategory {
+  name: string;
+  subcategories?: ProductCategory[];
+}
 
 const timeFormatRegex = /^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
 const timeErrorMessage = "Invalid time format (HH:MM). Leave empty if not applicable.";
@@ -124,7 +128,7 @@ export const userProfileSchema = z.object({
 });
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;
 
-export const productCategorySchema: z.ZodType<ProductCategoryType> = z.object({
+export const productCategorySchema: z.ZodType<ProductCategory> = z.object({
   name: z.string().min(1, "Category name cannot be empty.").max(100, "Category name too long."),
   subcategories: z.array(z.lazy(() => productCategorySchema)).optional().default([]),
 });
@@ -226,7 +230,7 @@ const baseProductObjectSchema = z.object({
   labTestReportUrl: z.string().url().optional().nullable(),
   isAvailableForPool: z.boolean().default(false).optional(),
   poolSharingRule: z.enum(['same_type', 'all_types', 'specific_stores']).optional().nullable(),
-  allowedPoolDispensaryIds: z.array(z.string()).optional().nullable().default([]),
+  allowedPoolDispensaryIds: z.array(z.string()).optional().default([]),
   tags: z.array(z.string()).optional().nullable(),
 });
 

@@ -10,16 +10,18 @@ import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag 
 const statusColors: Record<OrderStatus | ShippingStatus, string> = {
   // Order statuses
   pending: "text-yellow-500",
+  pending_payment: "text-yellow-500",
+  paid: "text-green-500",
   processing: "text-blue-500",
+  ready_for_shipping: "text-blue-500",
+  label_generated: "text-purple-500",
   ready_for_pickup: "text-indigo-500",
   picked_up: "text-purple-500",
   shipped: "text-indigo-500",
+  in_transit: "text-indigo-500",
   out_for_delivery: "text-purple-500",
   delivered: "text-green-500",
   cancelled: "text-red-500",
-  // Shipping statuses
-  ready_for_shipping: "text-blue-500",
-  in_transit: "text-indigo-500",
   failed: "text-red-500",
   returned: "text-red-500"
 } as const;
@@ -27,16 +29,18 @@ const statusColors: Record<OrderStatus | ShippingStatus, string> = {
 const statusDescriptions: Record<OrderStatus | ShippingStatus, string> = {
   // Order statuses
   pending: "Order placed",
+  pending_payment: "Awaiting payment",
+  paid: "Payment received",
   processing: "Being prepared",
+  ready_for_shipping: "Ready to ship",
+  label_generated: "Label generated",
   ready_for_pickup: "Ready for pickup",
   picked_up: "Picked up",
   shipped: "Shipped",
+  in_transit: "In transit",
   out_for_delivery: "Out for delivery",
   delivered: "Delivered",
   cancelled: "Cancelled",
-  // Shipping statuses
-  ready_for_shipping: "Ready to ship",
-  in_transit: "In transit",
   failed: "Failed",
   returned: "Returned"
 } as const;

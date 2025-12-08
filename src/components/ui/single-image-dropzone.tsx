@@ -47,12 +47,13 @@ const SingleImageDropzone = React.forwardRef<HTMLInputElement, InputProps>(
           let errorMessage = '';
           rejectedFiles.forEach(({ errors }: any) => {
             errors.forEach((error: any) => {
-              if (error.code === 'file-too-large') {
-                errorMessage = ERROR_MESSAGES[error.code](maxSize);
-              } else if (error.code === 'too-many-files') {
-                errorMessage = ERROR_MESSAGES[error.code]();
+              const errorMsg = ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES];
+              if (error.code === 'file-too-large' && typeof errorMsg === 'function') {
+                errorMessage = errorMsg(maxSize);
+              } else if (error.code === 'too-many-files' && typeof errorMsg === 'function') {
+                errorMessage = errorMsg(1); // maxFiles is always 1 for single image
               } else {
-                errorMessage = ERROR_MESSAGES[error.code as keyof typeof ERROR_MESSAGES] || 'Upload error';
+                errorMessage = typeof errorMsg === 'string' ? errorMsg : 'Upload error';
               }
             });
           });

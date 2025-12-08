@@ -201,7 +201,16 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     originalPrice: item.price // Save the original price
   }));
 
-  const shippingAddress: BaseAddress = shipping.address ? {
+  const shippingAddress: {
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+    latitude?: number;
+    longitude?: number;
+  } = shipping.address ? {
     streetAddress: shipping.address.streetAddress || '',
     suburb: shipping.address.suburb || '',
     city: shipping.address.city || '',
@@ -273,6 +282,11 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
       ...(shipping.destinationLocker && { destinationLocker: shipping.destinationLocker })
     }},
     status: 'pending',
+    statusHistory: [{
+      status: 'pending',
+      timestamp: Timestamp.now(),
+      message: 'Order created'
+    }],
     shippingAddress,
     subtotal,
     shippingCost,

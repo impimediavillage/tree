@@ -43,7 +43,7 @@ export function Header() {
 
   // Do not render header on auth pages or specific dashboard layouts
   const noHeaderPaths = ['/auth/', '/admin/dashboard', '/dashboard/leaf', '/dispensary-admin/dashboard'];
-  if (noHeaderPaths.some(p => pathname.startsWith(p))) {
+  if (pathname && noHeaderPaths.some(p => pathname.startsWith(p))) {
     return null;
   }
 

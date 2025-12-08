@@ -19,13 +19,20 @@ import { format } from 'date-fns';
 
 const statusColorMap: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
+  pending_payment: 'bg-yellow-100 text-yellow-800',
+  paid: 'bg-green-100 text-green-800',
   processing: 'bg-blue-100 text-blue-800',
+  ready_for_shipping: 'bg-purple-100 text-purple-800',
+  label_generated: 'bg-purple-100 text-purple-800',
   ready_for_pickup: 'bg-purple-100 text-purple-800',
   picked_up: 'bg-green-100 text-green-800',
   shipped: 'bg-indigo-100 text-indigo-800',
+  in_transit: 'bg-cyan-100 text-cyan-800',
   out_for_delivery: 'bg-cyan-100 text-cyan-800',
   delivered: 'bg-green-100 text-green-800',
   cancelled: 'bg-red-100 text-red-800',
+  failed: 'bg-red-100 text-red-800',
+  returned: 'bg-orange-100 text-orange-800',
 };
 
 export const columns: ColumnDef<Order>[] = [

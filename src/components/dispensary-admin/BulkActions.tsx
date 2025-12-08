@@ -60,20 +60,22 @@ export function BulkActions({
         const timestamp = new Date();
         
         // Update only the shipments belonging to this dispensary
-        const updatedShipments = order.shipments.map((shipment: any) => {
-          if (shipment.dispensaryId === currentUser?.dispensaryId) {
-            return {
-              ...shipment,
-              status: newStatus,
-              lastStatusUpdate: timestamp,
-              statusHistory: [
-                ...(shipment.statusHistory || []),
-                { status: newStatus, timestamp, message: `Status updated to ${newStatus}` }
-              ]
-            };
-          }
-          return shipment;
-        });
+        const updatedShipments = Object.fromEntries(
+          Object.entries(order.shipments).map(([dispensaryId, shipment]: [string, any]) => {
+            if (dispensaryId === currentUser?.dispensaryId) {
+              return [dispensaryId, {
+                ...shipment,
+                status: newStatus,
+                lastStatusUpdate: timestamp,
+                statusHistory: [
+                  ...(shipment.statusHistory || []),
+                  { status: newStatus, timestamp, message: `Status updated to ${newStatus}` }
+                ]
+              }];
+            }
+            return [dispensaryId, shipment];
+          })
+        );
 
         batch.update(orderRef, { 
           shipments: updatedShipments,
@@ -190,7 +192,7 @@ export function BulkActions({
                   </tr>
                 </thead>
                 <tbody>
-                  ${order.shipments
+                  ${Object.values(order.shipments)
                     .flatMap((s: any) => s.items)
                     .map((item: any) => `
                       <tr>

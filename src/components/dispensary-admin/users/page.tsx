@@ -51,7 +51,7 @@ function EditWellnessUserDialog({ user, isOpen, onOpenChange, onUserUpdate }: Ed
       form.reset({
         displayName: user.displayName || '',
         role: user.role as 'DispensaryStaff' | 'LeafUser' | 'User',
-        status: user.status || 'Active',
+        status: (user.status as 'Active' | 'Suspended' | 'PendingApproval') || 'Active',
         credits: user.role === 'LeafUser' ? (user.credits || 0) : undefined,
       });
     }

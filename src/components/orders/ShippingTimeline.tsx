@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import type { CustomerFriendlyTrackingUpdate } from '@/lib/order-tracking-service';
 import { cn } from '@/lib/utils';
+import type { LucideIcon } from 'lucide-react';
 
 interface ShippingTimelineProps {
   updates: CustomerFriendlyTrackingUpdate[];
@@ -34,7 +35,7 @@ export function ShippingTimeline({ updates, className }: ShippingTimelineProps) 
           {/* Timeline items */}
           <div className="space-y-6">
             {updates.map((update, index) => {
-              const Icon = update.icon;
+              const IconComponent = update.icon;
               const isLast = index === updates.length - 1;
 
               return (
@@ -52,7 +53,7 @@ export function ShippingTimeline({ updates, className }: ShippingTimelineProps) 
                         : 'border-muted bg-background text-muted-foreground'
                     )}
                   >
-                    <Icon className="h-5 w-5" />
+                    {IconComponent && React.createElement(IconComponent as unknown as React.ComponentType<{ className: string }>, { className: 'h-5 w-5' })}
                   </div>
 
                   {/* Content */}

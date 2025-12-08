@@ -21,10 +21,8 @@ export const useBulkShipping = (options: UseBulkShippingOptions = {}) => {
 
     try {
       // Prepare shipment requests
-      const shipmentRequests = orders.map(order => {
-        const dispensaryShipment = order.shipments.find(
-          (s: any) => s.dispensaryId === dispensaryId
-        );
+      const shipmentRequests = orders.map((order: any) => {
+        const dispensaryShipment = order.shipments[dispensaryId];
         if (!dispensaryShipment) throw new Error(`No shipment found for order ${order.id}`);
 
         return {
