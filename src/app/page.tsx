@@ -136,7 +136,7 @@ export default function HolisticAiHubPage() {
                 Need Wellness information now?
               </h2>
               <p className="text-lg font-semibold text-foreground/90 mt-2">
-                Get instant assistance now. Sign up as Leaf user and get 10 free credits to get vital wellness info. Remember to connect with a real practitioner as AI can make mistakes.
+                Get instant access now. Sign up as Leaf user and get 10 free credits to get vital wellness info. Remember to connect with a real practitioner as AI can make mistakes.
               </p>
             </div>
             <div className="mt-8 space-y-4 text-center">
@@ -258,7 +258,7 @@ export default function HolisticAiHubPage() {
               <Palette className="mx-auto h-16 w-16 text-[#006B3E] mb-3"/>
               <CardTitle className="text-4xl font-black text-[#3D2E17]">Join the Creator Lab</CardTitle>
               <CardDescription className="text-[#3D2E17] font-bold max-w-2xl mx-auto text-lg">
-                Sign up for FREE as a leaf user. Buy budget friendly credits to chat to our AI research advisors, or dive into our AI Creator Lab and create your own apparel and print on demand caps, hoodies, tshirts. Earn cash and sell your designs in our Tree house collective store. Design your club art, flyers, furniture, wall art, lighting, decor project with AI. Your imagination, and real experienced artisans to bring your creations to life. Lets go !!
+                Sign up for FREE as a leaf user. Buy budget friendly credits to chat to our AI research advisors, or dive into our AI Creator Lab and create your own apparel and print on demand caps, hoodies, tshirts. Earn cash and sell your designs in our Tree house collective store. Bring your creations to life. Lets go !!
               </CardDescription>
           </CardHeader>
           <CardFooter className="p-6 pt-0 flex justify-center">
