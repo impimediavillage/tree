@@ -28,19 +28,28 @@ export default function TripleSClubPage() {
       .then((data: Quote) => setQuotes(data.quotes))
       .catch(err => console.error('Failed to load quotes:', err));
     
-    // Generate list of all AI club images from Firebase Storage
-    const images: string[] = [];
-    const storageBaseUrl = 'https://firebasestorage.googleapis.com/v0/b/tree-e8b7c.appspot.com/o/ai-club-low-res/';
-    for (let i = 1; i <= 116; i++) {
-      if (i !== 5) {
-        images.push(`${storageBaseUrl}${i}.jpg?alt=media`);
-      }
-    }
-    setImagesList(images);
+    // Load AI club images from API route
+    loadAiClubImages();
 
     // Dynamically load sticker images
     loadStickerImages();
   }, []);
+  
+  const loadAiClubImages = async () => {
+    try {
+      const response = await fetch('/api/ai-club');
+      const data = await response.json();
+      console.log('AI club images API response:', data);
+      if (data.images && Array.isArray(data.images)) {
+        setImagesList(data.images);
+        console.log('Loaded Triple S Canna club images:', data.images.length);
+      } else {
+        console.error('Invalid API response format:', data);
+      }
+    } catch (error) {
+      console.error('Failed to load Triple S Canna club images:', error);
+    }
+  };
   
   const loadStickerImages = async () => {
     try {
