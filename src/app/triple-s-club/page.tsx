@@ -32,7 +32,7 @@ export default function TripleSClubPage() {
     const images: string[] = [];
     for (let i = 1; i <= 116; i++) {
       if (i !== 5) {
-        images.push(`/images/ai-club-low-res/${i}.jpg`);
+        images.push(`/public/images/ai-club-low-res/${i}.jpg`);
       }
     }
     setImagesList(images);
@@ -165,7 +165,7 @@ export default function TripleSClubPage() {
                     <strong>Offer Free Samples:</strong> You cannot sell your home-grown THC products directly, but you can offer them as free samples to club members.
                   </li>
                   <li className="leading-relaxed">
-                    <strong>Get Design Packs:</strong> In exchange for sharing your products, we provide you with our exclusive Triple S design packs to sell and keep 100% of the profits.
+                    <strong>Get Design Packs:</strong> In exchange for sharing your products, we provide you with our exclusive Triple S design packs to sell and keep 100% of the price you set.
                   </li>
                   <li className="leading-relaxed">
                     <strong>Revenue Split:</strong> We take 25% commission on design pack sales, with weekly payouts to South African bank accounts.

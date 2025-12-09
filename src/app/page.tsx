@@ -58,7 +58,7 @@ export default function HolisticAiHubPage() {
 
   const leafUserBenefits = [
     { text: "Can't afford wellness advice? Now You can with The Wellness Tree FREE Leaf package.", icon: Gift },
-    { text: "20 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
+    { text: "10 FREE CREDITS on sign up for You to get immediate wellness advice. Always add your gender, age, diet,and any medication you are currently on before asking any question from the AI advisors. We want You to get the very best wellness advice without wasting your credits.", icon: Gift },
     { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
@@ -193,7 +193,7 @@ export default function HolisticAiHubPage() {
           </CardHeader>
           <CardContent>
              <Button asChild className="w-full md:w-auto text-lg py-3 bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white">
-                <Link href="/dispensary-admin/dashboard">Go to Wellness Panel</Link>
+                <Link href="/dispensary-admin/dashboard">Go to your Store panel</Link>
             </Button>
           </CardContent>
         </Card>
