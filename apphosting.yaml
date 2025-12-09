@@ -16,9 +16,10 @@ bundleCommand: npm run build
 startCommand: npm run start
 
 # Specifies static assets to be served directly by Firebase
-staticAssets:
-  - source: public
-    glob: "**/*"
+   # Temporarily remove or comment out this block:
+    # staticAssets:
+    #   - source: public
+    #     glob: "**/*"
 
 # Controls the number of instances of your app that are spun up.
 # If you don't specify `runConfig`, App Hosting uses default values.
