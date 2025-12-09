@@ -23,7 +23,7 @@ export default function TripleSClubPage() {
   
   useEffect(() => {
     // Load quotes
-    fetch('../public/data/triple-s-quotes.json')
+    fetch('/data/triple-s-quotes.json')
       .then(res => res.json())
       .then((data: Quote) => setQuotes(data.quotes))
       .catch(err => console.error('Failed to load quotes:', err));
@@ -32,7 +32,7 @@ export default function TripleSClubPage() {
     const images: string[] = [];
     for (let i = 1; i <= 116; i++) {
       if (i !== 5) {
-        images.push(`../public/images/ai-club-low-res/${i}.jpg`);
+        images.push(`/resources/ai-club-low-res/${i}.jpg`);
       }
     }
     setImagesList(images);
