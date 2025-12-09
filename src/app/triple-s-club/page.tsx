@@ -28,11 +28,12 @@ export default function TripleSClubPage() {
       .then((data: Quote) => setQuotes(data.quotes))
       .catch(err => console.error('Failed to load quotes:', err));
     
-    // Generate list of all AI club images except 5.jpg
+    // Generate list of all AI club images from Firebase Storage
     const images: string[] = [];
+    const storageBaseUrl = 'https://firebasestorage.googleapis.com/v0/b/tree-e8b7c.appspot.com/o/ai-club-low-res%2F';
     for (let i = 1; i <= 116; i++) {
       if (i !== 5) {
-        images.push(`/resources/ai-club-low-res/${i}.jpg`);
+        images.push(`${storageBaseUrl}${i}.jpg?alt=media`);
       }
     }
     setImagesList(images);
