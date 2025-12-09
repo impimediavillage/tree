@@ -167,7 +167,7 @@ export default function HolisticAiHubPage() {
         </>
       ) : (
         <div/>
-      )}
+      )}``
 
       {currentUser && currentUser.role === 'Super Admin' && (
         <Card className="shadow-lg animate-fade-in-scale-up bg-muted/50 border-border/50">
