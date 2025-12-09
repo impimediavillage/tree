@@ -35,6 +35,11 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+  },
+   experimental: {
+    allowedDevOrigins: [
+      "http://localhost:9002"
+    ],
   }
 };
 
