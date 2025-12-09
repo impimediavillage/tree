@@ -30,7 +30,7 @@ export default function TripleSClubPage() {
     
     // Generate list of all AI club images from Firebase Storage
     const images: string[] = [];
-    const storageBaseUrl = 'https://firebasestorage.googleapis.com/v0/b/tree-e8b7c.appspot.com/o/ai-club-low-res%2F';
+    const storageBaseUrl = 'https://firebasestorage.googleapis.com/v0/b/tree-e8b7c.appspot.com/o/ai-club-low-res/';
     for (let i = 1; i <= 116; i++) {
       if (i !== 5) {
         images.push(`${storageBaseUrl}${i}.jpg?alt=media`);
