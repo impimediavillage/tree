@@ -35,12 +35,14 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-  },
-   experimental: {
+  }/**
+ * ,
+ * 
+ *  experimental: {
     allowedDevOrigins: [
       "http://localhost:9002"
     ],
-  }
+  } */  
 };
 
 module.exports = withPWA({

@@ -38,15 +38,15 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  ...(process.env.NODE_ENV === 'development' && {
-    experimental: {
+  }/**
+   * ,
+   * 
+   *  experimental: {
       allowedDevOrigins: [
         "http://localhost:9002"
       ],
-    }
-  })
-};
+    } */
+  };
 
 export default withPWA({
   dest: 'public',
