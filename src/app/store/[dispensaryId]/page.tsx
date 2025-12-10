@@ -46,8 +46,7 @@ export default function DispensaryStorePage() {
         // Fetch products for this dispensary
         const productsQuery = query(
           collection(db, 'products'),
-          where('dispensaryId', '==', dispensaryId),
-          where('status', '==', 'active')
+          where('dispensaryId', '==', dispensaryId)
         );
         const productsSnapshot = await getDocs(productsQuery);
         const fetchedProducts = productsSnapshot.docs.map(doc => ({
