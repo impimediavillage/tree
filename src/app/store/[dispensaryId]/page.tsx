@@ -7,9 +7,10 @@ import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firesto
 import type { Dispensary, Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, ArrowLeft, Store, ShoppingCart } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeft, Store } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { PublicProductCard } from '@/components/cards/PublicProductCard';
 
 export default function DispensaryStorePage() {
   const params = useParams();
@@ -100,8 +101,8 @@ export default function DispensaryStorePage() {
         <Image
           src={bannerUrl}
           alt={dispensary.dispensaryName}
-          layout="fill"
-          objectFit="cover"
+          fill
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
           <div className="p-6">
@@ -137,48 +138,18 @@ export default function DispensaryStorePage() {
         </CardContent>
       </Card>
 
-      {/* Products */}
+      {/* Products - Using PublicProductCard for each tier */}
       <div>
-        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          <ShoppingCart className="h-6 w-6" />
-          Products
-        </h2>
+        <h2 className="text-2xl font-bold mb-6">Products</h2>
         {products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.flatMap(product => 
               product.priceTiers.map((tier, tierIndex) => (
-                <Card key={`${product.id}-tier-${tierIndex}`} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="relative w-full h-48">
-                    <Image
-                      src={product.imageUrl || 'https://placehold.co/400x300.png?text=Product'}
-                      alt={`${product.name} - ${tier.unit}`}
-                      layout="fill"
-                      objectFit="cover"
-                    />
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                    <p className="text-sm font-semibold text-muted-foreground">{tier.unit}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                      {tier.description || product.description}
-                    </p>
-                    {(tier.quantityInStock ?? 0) > 0 && (
-                      <p className="text-xs text-muted-foreground mb-3">
-                        In stock: {tier.quantityInStock}
-                      </p>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <span className="text-xl font-bold text-primary">
-                        {product.currency || dispensary.currency} {tier.price}
-                      </span>
-                      <Button size="sm" disabled={(tier.quantityInStock ?? 0) === 0}>
-                        {(tier.quantityInStock ?? 0) === 0 ? 'Out of Stock' : 'Add to Cart'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <PublicProductCard
+                  key={`${product.id}-tier-${tierIndex}`}
+                  product={product}
+                  tier={tier}
+                />
               ))
             )}
           </div>
