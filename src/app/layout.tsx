@@ -12,9 +12,9 @@ import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
 import BackgroundVideo from '@/components/layout/BackgroundVideo';
 
 export const metadata: Metadata = {
-  title: 'The Wellness Tree - AI-Powered Wellness & Cannabis Hub',
+  title: 'The Wellness Tree - AI-Powered Wellness Hub - ',
   description: 'Explore cannabis products and get AI-powered advice on cannabinoids, gardening, homeopathy, mushrooms, and traditional medicine at The Wellness Tree.',
-  manifest: '/manifest.json',
+  manifest: '/api/manifest',
   themeColor: '#221503',
   appleWebApp: {
     capable: true,
@@ -31,13 +31,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.reactNode;
 }>) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icons/512.png" />
+        <link rel="manifest" href="/api/manifest" />
+        <link rel="apple-touch-icon" href="/api/icons/512.png" />
         <meta name="theme-color" content="#221503" />
       </head>
       <body className={`antialiased flex flex-col min-h-screen bg-transparent text-foreground`}>
