@@ -2,23 +2,37 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 
+// Fisher-Yates shuffle algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export async function GET() {
   try {
-    const imagesDir = path.join(process.cwd(), 'public', 'images', '2025-triple-s-400');
+    const imageDirectory = path.join(process.cwd(), 'public', 'images', '2025-triple-s-400');
     
-    if (!fs.existsSync(imagesDir)) {
-      return NextResponse.json({ error: 'Images directory not found' }, { status: 404 });
+    if (!fs.existsSync(imageDirectory)) {
+      return NextResponse.json({ error: 'Image directory not found.' }, { status: 404 });
     }
 
-    const files = fs.readdirSync(imagesDir);
-    const imageFiles = files.filter(file => {
-      const ext = path.extname(file).toLowerCase();
-      return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
-    });
-
-    return NextResponse.json(imageFiles);
+    const filenames = fs.readdirSync(imageDirectory);
+    
+    // Filter for PNG files only (strain stickers are PNG)
+    const imageFiles = filenames.filter(file => file.toLowerCase().endsWith('.png'));
+    
+    // Randomly select 33 stickers server-side for bandwidth efficiency
+    const shuffled = shuffleArray(imageFiles);
+    const randomSelection = shuffled.slice(0, 33);
+    
+    return NextResponse.json(randomSelection);
   } catch (error) {
-    console.error('Error listing images:', error);
-    return NextResponse.json({ error: 'Failed to list images' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error('API Error: Failed to read image directory:', errorMessage);
+    return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
   }
 }

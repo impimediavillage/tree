@@ -51,9 +51,9 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                         toast({ title: "Error", description: "Could not load Triple S designs. Please try again.", variant: "destructive" });
                         return;
                     }
+                    // API now returns pre-shuffled 33 stickers for bandwidth efficiency
                     const imagePaths = (data as string[]).map((name: string) => `/images/2025-triple-s-400/${name}`);
-                    const shuffled = shuffleArray(imagePaths);
-                    setRandomStrainImages(shuffled.slice(0, 33));
+                    setRandomStrainImages(imagePaths);
                     setIsRandomSetReady(true);
                 })
                 .catch(() => toast({ title: "Error", description: "Failed to fetch designs. Please check your connection.", variant: "destructive" }));
