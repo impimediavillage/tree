@@ -702,7 +702,7 @@ exports.searchStrains = (0, https_1.onCall)({ cors: true }, async (request) => {
         if (snapshot.empty) {
             return [];
         }
-        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const results = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
         return results;
     }
     catch (error) {
