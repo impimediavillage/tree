@@ -104,6 +104,23 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
       // Wait for all orders to be created
       const orderRefs = await Promise.all(orderPromises);
 
+      // Save shipping address to user profile for future auto-fill
+      if (currentUser) {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          await updateDoc(doc(db, 'users', currentUser.uid), {
+            shippingAddress: shippingAddress,
+            phoneNumber: currentUser.phoneNumber || '',
+            name: currentUser.displayName || currentUser.email || 'Customer'
+          });
+          console.log('Shipping address saved to user profile');
+        } catch (error) {
+          console.error('Failed to save address to user profile:', error);
+          // Don't block order completion if address save fails
+        }
+      }
+
       toast({
         title: 'Order(s) Placed Successfully!',
         description: `${orderRefs.length} order(s) have been created. You will receive confirmation via email.`,
@@ -113,7 +130,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
       clearCart();
 
       // Redirect to orders page
-      router.push('/dashboard/leaf/orders');
+      router.push('/dashboard/orders');
     } catch (error) {
       console.error('Error creating orders:', error);
       toast({

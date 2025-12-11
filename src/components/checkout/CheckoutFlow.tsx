@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useToast } from '@/hooks/use-toast';
+import countryDialCodes from '@/../docs/country-dial-codes.json';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
@@ -42,11 +43,20 @@ const addressSchema = z.object({
 
 // --- CHILD COMPONENTS ---
 
+interface Country {
+    name: string;
+    iso: string;
+    flag: string;
+    dialCode: string;
+}
+
 const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean }) => {
     const locationInputRef = useRef<HTMLInputElement>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInitialized = useRef(false);
     const { toast } = useToast();
+    const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(countryDialCodes.find(c => c.iso === 'ZA'));
+    const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
 
     const initializeMap = useCallback(async () => {
         if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
@@ -75,8 +85,8 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
 
             const markerInstance = new google.maps.Marker({ map: mapInstance, position: initialPosition, draggable: true, title: 'Drag to set location' });
 
-            const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string): string =>
-                components.find(c => c.types.includes(type))?.long_name || '';
+            const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string, useShortName = false): string =>
+                components.find(c => c.types.includes(type))?.[useShortName ? 'short_name' : 'long_name'] || '';
 
             const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
                 const components = place.address_components;
@@ -90,6 +100,7 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
 
                 const streetNumber = getAddressComponent(components, 'street_number');
                 const route = getAddressComponent(components, 'route');
+                const countryShortName = getAddressComponent(components, 'country', true);
                 
                 form.setValue('shippingAddress.streetAddress', `${streetNumber} ${route}`.trim(), { shouldValidate: true, shouldDirty: true });
                 form.setValue('shippingAddress.suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
@@ -97,6 +108,12 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
                 form.setValue('shippingAddress.province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
                 form.setValue('shippingAddress.postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
                 form.setValue('shippingAddress.country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
+                
+                // Auto-detect and set country dial code
+                const matchedCountry = countryDialCodes.find(c => c.iso.toLowerCase() === countryShortName.toLowerCase());
+                if (matchedCountry) {
+                    setSelectedCountry(matchedCountry);
+                }
             };
             
             const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, {
@@ -145,6 +162,14 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
             initializeMap();
         }
     }, [initializeMap]);
+    
+    // Update phone number when dial code or national number changes
+    useEffect(() => {
+        if (selectedCountry) {
+            const combinedPhoneNumber = `${selectedCountry.dialCode}${nationalPhoneNumber}`.replace(/\D/g, '');
+            form.setValue('phoneNumber', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
+        }
+    }, [selectedCountry, nationalPhoneNumber, form]);
 
     return (
         <FormProvider {...form}>
@@ -154,7 +179,6 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
                     <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="you@email.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
-                <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 
                 <h3 className="text-lg font-extrabold text-[#3D2E17] border-b pb-2 pt-4">Shipping Location</h3>
                 <FormItem>
@@ -173,6 +197,18 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
                     <FormField control={form.control} name="shippingAddress.postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="shippingAddress.country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
+
+                <FormField control={form.control} name="phoneNumber" render={() => (
+                    <FormItem><FormLabel>Phone Number</FormLabel>
+                        <div className="flex items-center gap-2">
+                            <div className="w-[100px] shrink-0 border rounded-md h-10 flex items-center justify-center bg-muted">
+                                {selectedCountry && <span className='text-sm font-medium'>{selectedCountry.flag} {selectedCountry.dialCode}</span>}
+                            </div>
+                            <Input type="tel" placeholder="National number (e.g., 821234567)" value={nationalPhoneNumber} onChange={(e) => setNationalPhoneNumber(e.target.value.replace(/\D/g, ''))} />
+                        </div>
+                        <FormMessage />
+                    </FormItem>
+                )} />
 
                 <Button type="submit" disabled={isSubmitting} className="w-full pt-6">
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -255,12 +291,16 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
     useEffect(() => {
       // Pre-fill form if user is logged in and has address info
       if (currentUser && currentUser.shippingAddress) {
+        // Build full address from component parts if not present
+        const fullAddress = currentUser.shippingAddress.address || 
+          `${currentUser.shippingAddress.streetAddress || ''}, ${currentUser.shippingAddress.suburb || ''}, ${currentUser.shippingAddress.city || ''}, ${currentUser.shippingAddress.province || ''}, ${currentUser.shippingAddress.postalCode || ''}`.replace(/, ,/g, ',').trim();
+        
         form.reset({ 
           fullName: currentUser.name || '',
           email: currentUser.email || '',
           phoneNumber: currentUser.phoneNumber || '',
           shippingAddress: { 
-            address: currentUser.shippingAddress.address || '',
+            address: fullAddress,
             streetAddress: currentUser.shippingAddress.streetAddress || '',
             suburb: currentUser.shippingAddress.suburb || '',
             city: currentUser.shippingAddress.city || '',
@@ -271,26 +311,57 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
             longitude: currentUser.shippingAddress.longitude || 0
           }
         });
+        
+        console.log("Checkout form pre-filled with user address:", fullAddress);
       }
     }, [currentUser, form]);
+    
+    // Extract national phone number from full international number when user data loads
+    useEffect(() => {
+      if (currentUser?.phoneNumber && selectedCountry) {
+        // Remove dial code from stored phone number to get national number
+        const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
+        const fullNumber = currentUser.phoneNumber.replace(/\D/g, '');
+        if (fullNumber.startsWith(dialCodeDigits)) {
+          const national = fullNumber.substring(dialCodeDigits.length);
+          setNationalPhoneNumber(national);
+        } else {
+          // If dial code doesn't match, use full number
+          setNationalPhoneNumber(fullNumber);
+        }
+      }
+    }, [currentUser, selectedCountry]);
 
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
         try {
+            // If user is already logged in, skip account creation and proceed
             if (!currentUser) {
                 const methods = await fetchSignInMethodsForEmail(auth, values.email);
                 if (methods.length > 0) {
-                    toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });
-                    return;
-                }
-                toast({ title: "Creating your account...", description: "For your convenience, we are setting up an account to track your orders." });
-                const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-                const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
-                const newUser = userCredential.user;
-                if (newUser) {
-                    await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved' });
+                    // Check if this is the current Firebase auth user (race condition check)
+                    const firebaseUser = auth.currentUser;
+                    if (firebaseUser && firebaseUser.email === values.email) {
+                        // User is authenticated, just currentUser hasn't loaded from AuthContext yet
+                        // Proceed with checkout
+                        console.log("User is authenticated but AuthContext not updated yet, proceeding...");
+                    } else {
+                        // Email exists for a different user, block checkout
+                        toast({ title: "An account with this email already exists.", description: "Please log in to continue your purchase.", variant: "destructive", duration: 5000 });
+                        setIsSubmitting(false);
+                        return;
+                    }
                 } else {
-                    throw new Error("Could not create user account.");
+                    // No existing account, create one
+                    toast({ title: "Creating your account...", description: "For your convenience, we are setting up an account to track your orders." });
+                    const randomPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+                    const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
+                    const newUser = userCredential.user;
+                    if (newUser) {
+                        await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved' });
+                    } else {
+                        throw new Error("Could not create user account.");
+                    }
                 }
             }
             
