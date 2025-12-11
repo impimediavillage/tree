@@ -25,35 +25,55 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[600px] bg-card/90 backdrop-blur-md">
-        <ScrollArea className="flex-grow">
+        <ScrollArea className="flex-grow scroll-smooth">
             <div className="p-6">
                 <DialogHeader className="p-0 text-left">
-                <div className="relative h-48 w-full mb-4 rounded-lg overflow-hidden border-border/50 border">
-                    <Image src="/images/cbd1.png" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-lg" data-ai-hint="wellness plant" />
+                <div className="relative h-48 w-full mb-6 rounded-lg overflow-hidden border-border/50 border">
+                    <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-lg" />
                 </div>
-                <DialogTitle className="text-2xl font-bold text-primary">Join The Wellness Tree!</DialogTitle>
-                <DialogDescription className="mt-2 text-muted-foreground">
-                    To purchase credits and unlock our powerful AI tools, you need to create a free Leaf User account.
+                <DialogTitle className="text-2xl font-bold text-[#3D2E17]">Join The Wellness Tree!</DialogTitle>
+                <DialogDescription className="mt-2 text-[#3D2E17] font-semibold">
+                    To purchase credits and unlock our powerful AI tools, create a free Leaf User account.
                 </DialogDescription>
                 </DialogHeader>
                 <div className="my-6 space-y-4">
-                <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2"><Palette className="h-5 w-5 text-accent"/> Sticker & Promo Designer</h4>
-                    <p className="text-sm text-muted-foreground mt-1">Unleash your creativity and design unique sticker sets for your favorite strains or products.</p>
+                <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+                    <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Gift className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
+                      10 Free Credits on Sign Up
+                    </h4>
+                    <p className="text-sm text-[#3D2E17] mt-2">Get 10 free credits to ask an emergency or urgent question to our AI advisors.</p>
                 </div>
-                <div className="p-3 bg-muted/50 rounded-lg border border-border/50">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="h-5 w-5 text-accent"/> AI Advisors</h4>
-                    <p className="text-sm text-muted-foreground mt-1">Get personalized, expert-level advice on everything from gardening to traditional medicine.</p>
+                <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+                    <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Palette className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
+                      Buy Credits & Create Apparel
+                    </h4>
+                    <p className="text-sm text-[#3D2E17] mt-2">Buy credits and create your own Print on Demand Black Apparel. Purchase your unique design or add your apparel design to our "Treehouse store" and EARN A COMMISSION FROM EVERY SALE.</p>
                 </div>
+                <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+                    <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Sparkles className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
+                      Learn with AI Deep Research
+                    </h4>
+                    <p className="text-sm text-[#3D2E17] mt-2">Learn about flowers, permaculture, organic building, natural medicine, traditional medicine, mushrooms, and cannabinoids with our AI Deep Research Language Models (LMs).</p>
                 </div>
-                <div className="pt-4 border-t border-border/50">
-                    <Button size="lg" className="w-full text-lg bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
-                        <Leaf className="mr-2 h-6 w-6"/>
-                        Sign Up For Free
-                    </Button>
+                <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+                    <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
+                      <DollarSign className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
+                      Door to Door & Locker Shipping
+                    </h4>
+                    <p className="text-sm text-[#3D2E17] mt-2">Door to door and locker shipping with PUDO and Courier Guy.</p>
+                </div>
                 </div>
             </div>
         </ScrollArea>
+        <div className="p-6 border-t border-border/50 bg-card sticky bottom-0">
+            <Button size="lg" className="w-full text-lg bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
+                <Leaf className="mr-2 h-6 w-6"/>
+                Sign Up For Free
+            </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -119,7 +119,6 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser }: { form: an
             const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, {
                 fields: ['formatted_address', 'address_components', 'geometry.location'],
                 types: ['address'],
-                componentRestrictions: { country: 'za' },
             });
 
             autocomplete.addListener('place_changed', () => {
@@ -206,12 +205,12 @@ const AddressStep = ({ form, onContinue, isSubmitting, currentUser }: { form: an
                 <div ref={mapContainerRef} className="h-[250px] w-full rounded-md border bg-muted" />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField control={form.control} name="shippingAddress.streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="shippingAddress.suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="shippingAddress.city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="shippingAddress.province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="shippingAddress.postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="shippingAddress.country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} readOnly placeholder="Auto-filled from map" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.streetAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} placeholder="Auto-filled from map or enter manually" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} placeholder="Auto-filled from map or enter manually" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} placeholder="Auto-filled from map or enter manually" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} placeholder="Auto-filled from map or enter manually" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} placeholder="Auto-filled from map or enter manually" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="shippingAddress.country" render={({ field }) => (<FormItem><FormLabel>Country</FormLabel><FormControl><Input {...field} placeholder="Auto-filled from map or enter manually" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
 
                 <FormField control={form.control} name="phoneNumber" render={() => (

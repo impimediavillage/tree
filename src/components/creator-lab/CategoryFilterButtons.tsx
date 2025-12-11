@@ -23,11 +23,15 @@ const categories: Array<{
 ];
 
 export function CategoryFilterButtons({ selectedCategory, onCategorySelect }: CategoryFilterButtonsProps) {
+  // Temporarily hidden categories (not deleted, just hidden)
+  const hiddenCategories = ['Art', 'Metalwork', 'Furniture', 'Resin'];
+  
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
       {categories.map((category) => {
         const Icon = category.icon;
         const isSelected = selectedCategory === category.value;
+        const isHidden = hiddenCategories.includes(category.value);
         
         return (
           <Button
@@ -38,7 +42,7 @@ export function CategoryFilterButtons({ selectedCategory, onCategorySelect }: Ca
               isSelected
                 ? 'bg-[#006B3E] hover:bg-[#005230] text-white border-2 border-[#006B3E] shadow-lg scale-105'
                 : 'bg-white hover:bg-[#006B3E]/10 text-[#3D2E17] border-2 border-[#5D4E37]/30 hover:border-[#006B3E]'
-            }`}
+            } ${isHidden ? 'hidden' : ''}`}
           >
             <Icon className={`h-8 w-8 ${isSelected ? 'text-white' : 'text-[#006B3E]'}`} />
             <div className="text-center">
