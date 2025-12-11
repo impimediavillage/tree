@@ -149,14 +149,14 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
     return (
         <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onContinue)} className="space-y-6">
-                <h3 className="text-lg font-semibold border-b pb-2">Contact Information</h3>
+                <h3 className="text-lg font-extrabold text-[#3D2E17] border-b pb-2">Contact Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="fullName" render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="you@email.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <FormField control={form.control} name="phoneNumber" render={({ field }) => (<FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="082 123 4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 
-                <h3 className="text-lg font-semibold border-b pb-2 pt-4">Shipping Location</h3>
+                <h3 className="text-lg font-extrabold text-[#3D2E17] border-b pb-2 pt-4">Shipping Location</h3>
                 <FormItem>
                     <FormLabel>Location Search</FormLabel>
                     <FormControl><Input ref={locationInputRef} placeholder="Start typing an address to search..." /></FormControl>
@@ -191,8 +191,8 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
     return (
         <div className="space-y-8">
             <div>
-                 <h2 className="text-2xl font-bold tracking-tight">Delivery Options</h2>
-                 <p className="text-muted-foreground">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
+                 <h2 className="text-2xl font-extrabold text-[#3D2E17] tracking-tight">Delivery Options</h2>
+                 <p className="text-[#5D4E37] font-bold">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
             </div>
 
             {dispensaryIds.map(dispensaryId => {

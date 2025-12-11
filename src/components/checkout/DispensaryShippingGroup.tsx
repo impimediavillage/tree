@@ -312,20 +312,20 @@ export const DispensaryShippingGroup = ({
   return (
     <Card className="bg-muted/20 shadow-md">
       <CardHeader>
-        <CardTitle>Shipment from {dispensary?.dispensaryName || dispensaryName}</CardTitle>
-        <CardDescription>Select a delivery method for the items from this dispensary.</CardDescription>
+        <CardTitle className="text-[#3D2E17] font-extrabold">Shipment from {dispensary?.dispensaryName || dispensaryName}</CardTitle>
+        <CardDescription className="text-[#5D4E37] font-bold">Select a delivery method for the items from this dispensary.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         
         <div className='text-sm bg-background/50 rounded-md p-3 space-y-2'>
-          <p className='font-semibold'>Items in this shipment:</p>
+          <p className='font-extrabold text-[#3D2E17]'>Items in this shipment:</p>
           <ul className='list-disc list-inside pl-2 text-muted-foreground'>
             {items.map(item => <li key={item.id}>{item.quantity} x {item.name} ({item.unit})</li>)}
           </ul>
         </div>
 
         <div>
-          <p className="font-medium mb-2">1. Choose Delivery Type</p>
+          <p className="font-extrabold text-[#3D2E17] mb-2">1. Choose Delivery Type</p>
           <RadioGroup onValueChange={handleTierSelection} value={selectedTier || ''} className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {(dispensary?.shippingMethods || []).map(tier => (
               <Label key={tier} className="flex items-center space-x-3 border rounded-md p-3 hover:bg-accent has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all cursor-pointer">
@@ -343,7 +343,7 @@ export const DispensaryShippingGroup = ({
           <div className="space-y-4">
             {(selectedTier === 'ltd' || selectedTier === 'ltl') && (
               <div>
-                  <p className="font-medium mb-2">Origin Locker (Pre-selected by Dispensary)</p>
+                  <p className="font-extrabold text-[#3D2E17] mb-2">Origin Locker (Pre-selected by Dispensary)</p>
                   <div className="flex items-center gap-3 rounded-md border border-dashed p-3 bg-muted/50">
                       <MapPin className="h-6 w-6 text-muted-foreground" />
                       {originLocker ? (
@@ -360,7 +360,7 @@ export const DispensaryShippingGroup = ({
 
             {(selectedTier === 'dtl' || selectedTier === 'ltl') && (
                 <div>
-                    <p className="font-medium mb-2">2. Select Destination Locker</p>
+                    <p className="font-extrabold text-[#3D2E17] mb-2">2. Select Destination Locker</p>
                     <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={openLockerModal} disabled={!isAddressComplete(addressData.shippingAddress)}>
                         {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
                     </Button>
@@ -405,15 +405,15 @@ export const DispensaryShippingGroup = ({
 
         {rates.length > 0 && !isLoading && (
             <div>
-                <p className="font-medium mb-2">3. Confirm Service Level</p>
+                <p className="font-extrabold text-[#3D2E17] mb-2">3. Confirm Service Level</p>
                 <RadioGroup onValueChange={handleRateSelection} value={selectedRateId || ''} className="space-y-3">
                     {rates.map(rate => (
                         <Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all cursor-pointer">
                             <div>
-                                <p className="font-semibold">{rate.courier_name} ({rate.name})</p>
-                                <p className="text-sm text-muted-foreground">Est. Delivery: {rate.delivery_time}</p>
+                                <p className="font-extrabold text-[#3D2E17]">{rate.courier_name} ({rate.name})</p>
+                                <p className="text-sm font-bold text-[#5D4E37]">Est. Delivery: {rate.delivery_time}</p>
                             </div>
-                            <p className="font-bold text-lg">R{rate.rate.toFixed(2)}</p>
+                            <p className="font-extrabold text-lg text-[#3D2E17]">R{rate.rate.toFixed(2)}</p>
                             <RadioGroupItem value={rate.id.toString()} id={`${dispensaryId}-${rate.id}`} className="sr-only" />
                         </Label>
                     ))}

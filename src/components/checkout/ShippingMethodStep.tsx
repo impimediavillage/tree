@@ -112,8 +112,8 @@ export function ShippingMethodStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Shipping Method</CardTitle>
-        <CardDescription>Select a shipping option for your order.</CardDescription>
+        <CardTitle className="text-[#3D2E17] font-extrabold">Shipping Method</CardTitle>
+        <CardDescription className="text-[#5D4E37] font-bold">Select a shipping option for your order.</CardDescription>
       </CardHeader>
       <CardContent className='space-y-6'>
         {isLoading ? (
@@ -133,11 +133,11 @@ export function ShippingMethodStep({
                   <div className="flex items-center space-x-4">
                     <RadioGroupItem value={rate.id} id={rate.id} />
                     <div>
-                      <p className='font-semibold'>{rate.courier_name} ({rate.service_level})</p>
-                      <p className='text-sm text-muted-foreground'>{rate.delivery_time}</p>
+                      <p className='font-extrabold text-[#3D2E17]'>{rate.courier_name} ({rate.service_level})</p>
+                      <p className='text-sm font-bold text-[#5D4E37]'>{rate.delivery_time}</p>
                     </div>
                   </div>
-                  <p className='text-lg font-bold'>R {rate.rate.toFixed(2)}</p>
+                  <p className='text-lg font-extrabold text-[#3D2E17]'>R {rate.rate.toFixed(2)}</p>
                 </Label>
             ))}
           </RadioGroup>
