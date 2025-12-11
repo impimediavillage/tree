@@ -199,11 +199,13 @@ export default function PublicCreditsPage() {
             {creditPackages.map((pkg) => {
               const packageFeatures = [
                   { text: "Access to all AI Advisors", icon: Sparkles },
-                  { text: "Sticker & Promo Designer Tools", icon: Palette },
+                  { text: "Instant Access to The Creator Lab AI Tools", icon: Palette },
+                  { text: "Put your apparel designs in the Treehouse store and earn cash with our apparel print on demand service.", icon: Gift },                   
+                  { text: "Wired in Shipping with Courier guy and Pudo for S.A.", icon: Truck },
                   ...(pkg.bonusCredits && pkg.bonusCredits > 0
                       ? [{ text: `Includes ${pkg.bonusCredits} bonus credits`, icon: Gift }]
                       : []),
-                  { text: "Support The Wellness Tree Initiative", icon: Heart },
+                  { text: "Shop the Natural way with the Wellness tree", icon: Heart },
               ];
 
               return (
