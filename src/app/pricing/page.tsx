@@ -24,13 +24,13 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[700px] bg-card/90 backdrop-blur-md gap-0">
+      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[700px] bg-card/90 backdrop-blur-md gap-0 overflow-hidden">
+        <div className="relative h-56 w-full">
+            <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="cover" />
+        </div>
         <ScrollArea className="flex-1 overflow-y-auto">
             <div className="p-6 pb-4">
                 <DialogHeader className="p-0 text-left">
-                <div className="relative h-56 w-full mb-6 rounded-lg overflow-hidden border-border/50 border bg-muted/30">
-                    <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="contain" className="rounded-lg" />
-                </div>
                 <DialogTitle className="text-2xl font-bold text-[#3D2E17]">Join The Wellness Tree!</DialogTitle>
                 <DialogDescription className="mt-2 text-[#3D2E17] font-semibold">
                     To purchase credits and unlock our powerful AI tools, create a free Leaf User account.

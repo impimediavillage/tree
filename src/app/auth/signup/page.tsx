@@ -153,8 +153,8 @@ function SignUpContent() {
          <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
        </Button>
       <Card className="w-full max-w-md shadow-xl bg-white/80 overflow-hidden p-0">
-        <div className="relative h-56 w-full overflow-hidden bg-muted/30">
-          <Image src="/icons/square2.gif" alt="Wellness Tree" layout="fill" objectFit="contain" />
+        <div className="relative h-56 w-full">
+          <Image src="/icons/square2.gif" alt="Wellness Tree" layout="fill" objectFit="cover" />
         </div>
         <CardHeader className="text-center pt-6">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />

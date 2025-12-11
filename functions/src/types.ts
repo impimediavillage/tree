@@ -61,6 +61,15 @@ export interface Dispensary {
 
   averageRating?: number | null;
   reviewCount?: number;
+  
+  originLocker?: {
+    id: string;
+    name: string;
+    address: string;
+    city: string;
+    province: string;
+    postalCode: string;
+  } | null;
 }
 
 // Represents the structure for Wellness Type documents (basic info)
