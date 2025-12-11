@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { UserPlus, Mail, Lock, ArrowLeft, CheckSquare, Square, Loader2, ListFilter } from 'lucide-react';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -152,10 +153,18 @@ function SignUpContent() {
          <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
        </Button>
       <Card className="w-full max-w-md shadow-xl bg-white/80">
+        <div className="relative h-56 w-full rounded-t-lg overflow-hidden border-b border-border/50 bg-muted/30">
+          <Image src="/icons/square2.gif" alt="Wellness Tree" layout="fill" objectFit="contain" />
+        </div>
         <CardHeader className="text-center">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-3xl font-bold text-foreground">Create Your Leaf User Account</CardTitle>
           <CardDescription className="text-foreground">Join The Wellness Tree community.</CardDescription>
+          <div className="mt-4 p-4 bg-[#006B3E]/10 rounded-lg border border-[#006B3E]/20">
+            <p className="text-sm text-[#3D2E17] font-semibold leading-relaxed">
+              Get 10 free credits and instant access to The Creator Lab and Treehouse store - Create and Earn with our Print on Demand service - Design your new T or Cap or backpack with the Creator Lab. Earn 25% on every design sold in the Treehouse store.
+            </p>
+          </div>
         </CardHeader>
         <CardContent>
           <Form {...form}>

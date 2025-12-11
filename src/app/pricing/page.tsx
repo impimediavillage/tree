@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DollarSign, Loader2, Palette, Gift, Heart, Sparkles, Leaf } from 'lucide-react';
+import { Truck, Loader2, Palette, Gift, Heart, Sparkles, Leaf, DollarSign } from 'lucide-react';
 import type { CreditPackage } from '@/types';
 import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -24,12 +24,12 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[600px] bg-card/90 backdrop-blur-md">
-        <ScrollArea className="flex-grow scroll-smooth">
-            <div className="p-6">
+      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[700px] bg-card/90 backdrop-blur-md gap-0">
+        <ScrollArea className="flex-1 overflow-y-auto">
+            <div className="p-6 pb-4">
                 <DialogHeader className="p-0 text-left">
-                <div className="relative h-48 w-full mb-6 rounded-lg overflow-hidden border-border/50 border">
-                    <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="cover" className="rounded-lg" />
+                <div className="relative h-56 w-full mb-6 rounded-lg overflow-hidden border-border/50 border bg-muted/30">
+                    <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="contain" className="rounded-lg" />
                 </div>
                 <DialogTitle className="text-2xl font-bold text-[#3D2E17]">Join The Wellness Tree!</DialogTitle>
                 <DialogDescription className="mt-2 text-[#3D2E17] font-semibold">
@@ -42,14 +42,16 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
                       <Gift className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
                       10 Free Credits on Sign Up
                     </h4>
-                    <p className="text-sm text-[#3D2E17] mt-2">Get 10 free credits to ask an emergency or urgent question to our AI advisors.</p>
+                    <p className="text-sm text-[#3D2E17] mt-2">Get 10 free credits to ask any question to our AI advisors. Unlock or enhance your creative flow with our specialized Deep research language Models - LM's. Remember to consult a real practioner with our Find near me feature in all our AI advisor responses.</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
                     <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
                       <Palette className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
-                      Buy Credits & Create Apparel
+                     Free access to the Creator Lab 
                     </h4>
-                    <p className="text-sm text-[#3D2E17] mt-2">Buy credits and create your own Print on Demand Black Apparel. Purchase your unique design or add your apparel design to our "Treehouse store" and EARN A COMMISSION FROM EVERY SALE.</p>
+                    <p className="text-sm text-[#3D2E17] mt-2">Design your own Print on Demand Black Apparel. 
+                      Purchase your unique design or add your apparel design to our "Treehouse store" and EARN A COMMISSION FROM EVERY SALE. The Wellness Tree will handle
+                      the printing, and shipping for You. Earn cash and get creating. Easy credit top ups. Weekly payments to South African Bank accounts.</p>
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
                     <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
@@ -60,15 +62,19 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
                 </div>
                 <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
                     <h4 className="font-bold text-[#3D2E17] flex items-center gap-2">
-                      <DollarSign className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
+                      <Truck className="h-8 w-8 text-[#006B3E] flex-shrink-0"/> 
                       Door to Door & Locker Shipping
                     </h4>
                     <p className="text-sm text-[#3D2E17] mt-2">Door to door and locker shipping with PUDO and Courier Guy.</p>
+                    <div className="flex items-center justify-center gap-4 mt-4">
+                      <Image src="/images/courier-guy.png" alt="Courier Guy" width={190} height={80} className="object-contain" style={{ maxWidth: '190px' }} />
+                      <Image src="/images/pudo.png" alt="PUDO" width={190} height={80} className="object-contain" style={{ maxWidth: '190px' }} />
+                    </div>
                 </div>
                 </div>
             </div>
         </ScrollArea>
-        <div className="p-6 border-t border-border/50 bg-card sticky bottom-0">
+        <div className="flex-shrink-0 p-6 pt-4 border-t border-border/50 bg-card/95">
             <Button size="lg" className="w-full text-lg bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
                 <Leaf className="mr-2 h-6 w-6"/>
                 Sign Up For Free
