@@ -50,7 +50,7 @@ interface Country {
     dialCode: string;
 }
 
-const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean }) => {
+const AddressStep = ({ form, onContinue, isSubmitting, currentUser }: { form: any; onContinue: (values: AddressValues) => Promise<void>; isSubmitting: boolean; currentUser: any }) => {
     const locationInputRef = useRef<HTMLInputElement>(null);
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapInitialized = useRef(false);
@@ -170,6 +170,22 @@ const AddressStep = ({ form, onContinue, isSubmitting }: { form: any; onContinue
             form.setValue('phoneNumber', combinedPhoneNumber, { shouldValidate: true, shouldDirty: false });
         }
     }, [selectedCountry, nationalPhoneNumber, form]);
+    
+    // Extract national phone number from full international number when user data loads
+    useEffect(() => {
+      if (currentUser?.phoneNumber && selectedCountry) {
+        // Remove dial code from stored phone number to get national number
+        const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
+        const fullNumber = currentUser.phoneNumber.replace(/\D/g, '');
+        if (fullNumber.startsWith(dialCodeDigits)) {
+          const national = fullNumber.substring(dialCodeDigits.length);
+          setNationalPhoneNumber(national);
+        } else {
+          // If dial code doesn't match, use full number
+          setNationalPhoneNumber(fullNumber);
+        }
+      }
+    }, [currentUser, selectedCountry]);
 
     return (
         <FormProvider {...form}>
@@ -315,22 +331,6 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
         console.log("Checkout form pre-filled with user address:", fullAddress);
       }
     }, [currentUser, form]);
-    
-    // Extract national phone number from full international number when user data loads
-    useEffect(() => {
-      if (currentUser?.phoneNumber && selectedCountry) {
-        // Remove dial code from stored phone number to get national number
-        const dialCodeDigits = selectedCountry.dialCode.replace(/\D/g, '');
-        const fullNumber = currentUser.phoneNumber.replace(/\D/g, '');
-        if (fullNumber.startsWith(dialCodeDigits)) {
-          const national = fullNumber.substring(dialCodeDigits.length);
-          setNationalPhoneNumber(national);
-        } else {
-          // If dial code doesn't match, use full number
-          setNationalPhoneNumber(fullNumber);
-        }
-      }
-    }, [currentUser, selectedCountry]);
 
     const handleAddressContinue = async (values: AddressValues) => {
         setIsSubmitting(true);
@@ -401,7 +401,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
 
         switch(step) {
             case 1: 
-                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} />;
+                return <AddressStep form={form} onContinue={handleAddressContinue} isSubmitting={isSubmitting} currentUser={currentUser} />;
             case 2:
                 return addressData && (
                     <MultiDispensaryShippingStep

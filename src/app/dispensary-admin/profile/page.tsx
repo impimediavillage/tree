@@ -331,7 +331,8 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
         
         try {
             // 3. Send the complete, validated data to the backend function.
-            await updateDispensaryProfile({ dispensaryId: dispensary.id, ...submissionData });
+            // Note: dispensaryId is obtained from auth token on backend, not from request data
+            await updateDispensaryProfile(submissionData);
             toast({
                 title: "Profile Updated",
                 description: "Your dispensary profile has been successfully updated.",
