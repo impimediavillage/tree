@@ -80,19 +80,19 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, distance
         )}
       </div>
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-extrabold text-[#5D4E37] truncate" title={dispensary.dispensaryName}>
+        <CardTitle className="text-xl font-extrabold text-[#3D2E17] truncate" title={dispensary.dispensaryName}>
           {dispensary.dispensaryName}
         </CardTitle>
-        <CardDescription className="text-sm font-bold text-[#5D4E37]/80">
+        <CardDescription className="text-sm font-extrabold text-[#3D2E17]/90">
           {dispensary.dispensaryType}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm font-semibold text-[#5D4E37]/90 line-clamp-2 mb-2" title={dispensary.message || `${dispensary.city}, ${dispensary.province}`}>
+        <p className="text-sm font-bold text-[#3D2E17] line-clamp-2 mb-2" title={dispensary.message || `${dispensary.city}, ${dispensary.province}`}>
           {dispensary.message || `${dispensary.city || ''}, ${dispensary.province || ''}`.trim() || 'Visit us!'}
         </p>
         {(dispensary.city || dispensary.province) && (
-          <div className="flex items-center gap-1 text-xs font-bold text-[#5D4E37]">
+          <div className="flex items-center gap-1 text-xs font-extrabold text-[#3D2E17]">
             <MapPin className="h-5 w-5 text-[#006B3E]" /> {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
           </div>
         )}

@@ -97,7 +97,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                 <>
                     <div className="w-full text-right">
                         <p className="text-2xl font-bold text-foreground">
-                            <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
+                            <span className="text-sm font-bold text-[#3D2E17] align-top">{product.currency} </span>
                             {tier.price.toFixed(2)}
                         </p>
                         <div className="flex items-center justify-end text-xs text-muted-foreground">
@@ -105,18 +105,18 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                             <span className="mx-1">/</span>
                             <span>Design pack price</span>
                         </div>
-                        <p className="text-xs font-semibold text-primary mt-1">
+                        <p className="text-xs font-extrabold text-[#3D2E17] mt-1">
                             FREE INTERSTORE PRODUCT TRADING WITH TRIPLE S DESIGN SEASONAL BUY IN.
                         </p>
                     </div>
                     <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
-                        <p className="text-xs font-semibold text-primary">
+                        <p className="text-xs font-extrabold text-[#3D2E17]">
                            Buy seasonal design packs with free wholesale products for your store.
                         </p>
                     </div>
                     <div className="w-full space-y-2">
                         <Button
-                            className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
+                            className="w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
                             disabled={tierStock <= 0 || requestStatus === 'negotiating'}
                             onClick={() => onRequestProduct(product, tier)}
                             aria-label={`Request product ${product.name}`}
@@ -156,7 +156,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         <>
           <div className="w-full text-right">
             <p className="text-2xl font-bold text-foreground">
-              <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
+              <span className="text-sm font-bold text-[#3D2E17] align-top">{product.currency} </span>
               {tier.price.toFixed(2)}
             </p>
             <div className="flex items-center justify-end text-xs text-muted-foreground">
@@ -167,18 +167,18 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             <p className="text-1xl font-bold text-foreground">
              <span>{tier.unit} as FREE <Gift className="h-4 w-4 mr-1" />  gift included</span>  
              </p></div>
-              <p className="text-xs font-semibold text-primary mt-1">
+              <p className="text-xs font-extrabold text-[#3D2E17] mt-1">
                  FREE SAMPLE with this DESIGN PACK.
             </p>
           </div>
           <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
-            <p className="text-xs font-semibold text-primary">
+            <p className="text-xs font-extrabold text-[#3D2E17]">
               Press Buy Design Pack below to receive your free sample.
             </p>
           </div>
           <div className="w-full space-y-2">
             <Button
-              className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
+              className="w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
               disabled={tierStock <= 0}
               onClick={() => setIsDesignPackOpen(true)}
               aria-label={`Buy design for ${product.name}`}
@@ -204,7 +204,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         </div>
         <div className="w-full">
             <Button
-                className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                className="w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
                 disabled={tierStock <= 0 || !canAddToCart}
                 onClick={handleAddToCartClick}
                 aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}

@@ -152,11 +152,11 @@ function SignUpContent() {
       <Button variant="outline" size="sm" className="absolute top-4 left-4" asChild>
          <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
        </Button>
-      <Card className="w-full max-w-md shadow-xl bg-white/80">
-        <div className="relative h-56 w-full rounded-t-lg overflow-hidden border-b border-border/50 bg-muted/30">
+      <Card className="w-full max-w-md shadow-xl bg-white/80 overflow-hidden p-0">
+        <div className="relative h-56 w-full overflow-hidden bg-muted/30">
           <Image src="/icons/square2.gif" alt="Wellness Tree" layout="fill" objectFit="contain" />
         </div>
-        <CardHeader className="text-center">
+        <CardHeader className="text-center pt-6">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-3xl font-bold text-foreground">Create Your Leaf User Account</CardTitle>
           <CardDescription className="text-foreground">Join The Wellness Tree community.</CardDescription>
