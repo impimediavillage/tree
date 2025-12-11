@@ -44,9 +44,23 @@ export default function DispensaryStorePage() {
         const dispensaryData = { id: dispensaryDoc.id, ...dispensaryDoc.data() } as Dispensary;
         setDispensary(dispensaryData);
 
-        // Fetch products for this dispensary
+        // Get the correct collection name based on dispensary type
+        const getCollectionName = (dispensaryType: string): string => {
+          const typeMap: Record<string, string> = {
+            'Cannibinoid store': 'cannibinoid_store_products',
+            'Traditional Medicine dispensary': 'traditional_medicine_dispensary_products',
+            'Homeopathic store': 'homeopathy_store_products',
+            'Mushroom store': 'mushroom_store_products',
+            'Permaculture & gardening store': 'permaculture_store_products',
+          };
+          return typeMap[dispensaryType] || 'products';
+        };
+
+        const collectionName = getCollectionName(dispensaryData.dispensaryType);
+
+        // Fetch products for this dispensary from the correct collection
         const productsQuery = query(
-          collection(db, 'products'),
+          collection(db, collectionName),
           where('dispensaryId', '==', dispensaryId)
         );
         const productsSnapshot = await getDocs(productsQuery);
