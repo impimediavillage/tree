@@ -24,12 +24,12 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0 flex flex-col h-[90vh] max-h-[700px] bg-card/90 backdrop-blur-md gap-0 overflow-hidden">
-        <div className="relative h-56 w-full">
-            <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="cover" />
-        </div>
-        <ScrollArea className="flex-1 overflow-y-auto">
-            <div className="p-6 pb-4">
+      <DialogContent className="sm:max-w-md p-0 h-[90vh] max-h-[700px] bg-card/90 backdrop-blur-md overflow-hidden">
+        <ScrollArea className="h-full w-full">
+            <div className="relative h-80 w-full">
+                <Image src="/icons/square1.gif" alt="Wellness Tree" layout="fill" objectFit="cover" />
+            </div>
+            <div className="p-6">
                 <DialogHeader className="p-0 text-left">
                 <DialogTitle className="text-2xl font-bold text-[#3D2E17]">Join The Wellness Tree!</DialogTitle>
                 <DialogDescription className="mt-2 text-[#3D2E17] font-semibold">
@@ -72,14 +72,14 @@ function SignupPromptDialog({ isOpen, onOpenChange }: { isOpen: boolean; onOpenC
                     </div>
                 </div>
                 </div>
+                <div className="mt-6 pb-6">
+                    <Button size="lg" className="w-full text-lg bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
+                        <Leaf className="mr-2 h-6 w-6"/>
+                        Sign Up For Free
+                    </Button>
+                </div>
             </div>
         </ScrollArea>
-        <div className="flex-shrink-0 p-6 pt-4 border-t border-border/50 bg-card/95">
-            <Button size="lg" className="w-full text-lg bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl" onClick={() => { onOpenChange(false); router.push('/auth/signup'); }}>
-                <Leaf className="mr-2 h-6 w-6"/>
-                Sign Up For Free
-            </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
