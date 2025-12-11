@@ -11,10 +11,10 @@ interface PageHeaderProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({ title, description, children }) => {
   return (
     <div className="bg-muted/50 border border-border/50 rounded-lg p-8 shadow-lg mb-12 text-center animate-fade-in-scale-up">
-      <h1 className="text-5xl font-extrabold tracking-tight text-foreground">
+      <h1 className="text-5xl font-extrabold tracking-tight text-[#3D2E17]">
         {title}
       </h1>
-      <div className="text-xl font-bold text-foreground mt-4 max-w-3xl mx-auto">
+      <div className="text-xl font-bold text-[#3D2E17] mt-4 max-w-3xl mx-auto">
         {description}
       </div>
       {children && (

@@ -313,7 +313,7 @@ export const DispensaryShippingGroup = ({
     <Card className="bg-muted/20 shadow-md">
       <CardHeader>
         <CardTitle className="text-[#3D2E17] font-extrabold">Shipment from {dispensary?.dispensaryName || dispensaryName}</CardTitle>
-        <CardDescription className="text-[#5D4E37] font-bold">Select a delivery method for the items from this dispensary.</CardDescription>
+        <CardDescription className="text-[#3D2E17] font-bold">Select a delivery method for the items from this dispensary.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         
@@ -411,7 +411,7 @@ export const DispensaryShippingGroup = ({
                         <Label key={rate.id} className="flex justify-between items-center border rounded-md p-4 has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all cursor-pointer">
                             <div>
                                 <p className="font-extrabold text-[#3D2E17]">{rate.courier_name} ({rate.name})</p>
-                                <p className="text-sm font-bold text-[#5D4E37]">Est. Delivery: {rate.delivery_time}</p>
+                                <p className="text-sm font-bold text-[#3D2E17]">Est. Delivery: {rate.delivery_time}</p>
                             </div>
                             <p className="font-extrabold text-lg text-[#3D2E17]">R{rate.rate.toFixed(2)}</p>
                             <RadioGroupItem value={rate.id.toString()} id={`${dispensaryId}-${rate.id}`} className="sr-only" />

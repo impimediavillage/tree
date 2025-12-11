@@ -100,7 +100,7 @@ export default function HolisticAiHubPage() {
               <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                 Join Our Growing Ecosystem
               </h2>
-              <p className="text-lg font-semibold text-foreground/90 mt-2">
+              <p className="text-lg font-semibold text-[#3D2E17] mt-2">
                 Create you own Cannabinoid store, Permaculture / Organic farming store, Homeopathy store, Traditional Medicine store, or Mushroom store.
               </p>
             </div>
@@ -135,7 +135,7 @@ export default function HolisticAiHubPage() {
               <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                 Need Wellness information now?
               </h2>
-              <p className="text-lg font-semibold text-foreground/90 mt-2">
+              <p className="text-lg font-semibold text-[#3D2E17] mt-2">
                 Get instant access now. Sign up as Leaf user and get 10 free credits to get vital wellness info. Remember to connect with a real practitioner as AI can make mistakes.
               </p>
             </div>
@@ -218,10 +218,10 @@ export default function HolisticAiHubPage() {
       <div id="advisors-section" style={{ scrollMarginTop: '100px' }} />
       <section className="p-8 rounded-lg animate-fade-in-scale-up bg-muted/50 border-border/50 shadow-lg" style={{ animationFillMode: 'backwards', animationDelay: '0.3s' }}>
         <div className="text-center mb-10">
-          <h2 className="text-4xl font-extrabold text-foreground tracking-tight flex items-center justify-center gap-2">
+          <h2 className="text-4xl font-extrabold text-[#3D2E17] tracking-tight flex items-center justify-center gap-2">
             <Brain className="h-14 w-14 text-[#006B3E]"/> Explore Our AI Advisors
           </h2>
-          <p className="text-lg font-semibold text-foreground/90 max-w-2xl mx-auto mt-3">
+          <p className="text-lg font-semibold text-[#3D2E17] max-w-2xl mx-auto mt-3">
             Get specialized insights and recommendations across various domains of holistic wellness and knowledge.
           </p>
           {currentUser && (

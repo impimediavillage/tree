@@ -244,7 +244,7 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
         <div className="space-y-8">
             <div>
                  <h2 className="text-2xl font-extrabold text-[#3D2E17] tracking-tight">Delivery Options</h2>
-                 <p className="text-[#5D4E37] font-bold">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
+                 <p className="text-[#3D2E17] font-bold">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
             </div>
 
             {dispensaryIds.map(dispensaryId => {
@@ -396,7 +396,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
             return <div className="flex justify-center items-center min-h-[50vh]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
         }
         if (Object.keys(groupedCart).length === 0 && !cartLoading) {
-             return <div className="text-center p-8 text-muted-foreground"><h3>Your Cart is Empty</h3><p>Add some items to your cart to begin the checkout process.</p></div>;
+             return <div className="text-center p-8 text-[#3D2E17]"><h3 className="font-bold text-xl">Your Cart is Empty</h3><p className="mt-2">Add some items to your cart to begin the checkout process.</p></div>;
         }
 
         switch(step) {
@@ -432,7 +432,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
             <div className="lg:col-span-2">
                 <Card className="border-0 shadow-none">
                     <CardHeader>
-                        <CardDescription>Step {step} of 3 - {step === 1 ? 'Shipping Details' : step === 2 ? 'Delivery Options' : 'Payment'}</CardDescription>
+                        <CardDescription className="text-[#3D2E17] font-bold text-base">Step {step} of 3 - {step === 1 ? 'Shipping Details' : step === 2 ? 'Delivery Options' : 'Payment'}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {renderContent()}
@@ -441,39 +441,39 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
             </div>
             <div className="lg:col-span-1">
                 <Card className="sticky top-24 bg-muted/30">
-                    <CardHeader><p className='font-semibold text-lg'>Order Summary</p></CardHeader>
+                    <CardHeader><p className='font-semibold text-lg text-[#3D2E17]'>Order Summary</p></CardHeader>
                     <CardContent>
                         {cartItems.length > 0 ? (
                             <div className="space-y-3">
                                 {cartItems.map((item) => (
-                                    <div key={item.id} className="flex justify-between items-start">
+                                    <div key={item.id} className="flex justify-between items-start text-[#3D2E17]">
                                         <div>
                                             <p className="font-semibold">{item.name}</p>
-                                            <p className="text-sm text-muted-foreground">Qty: {item.quantity} - from {item.dispensaryName}</p>
+                                            <p className="text-sm text-[#3D2E17] font-medium">Qty: {item.quantity} - from {item.dispensaryName}</p>
                                         </div>
                                         <span>R{((item.price || 0) * item.quantity).toFixed(2)}</span>
                                     </div>
                                 ))}
                                 <hr className="my-2" />
-                                <div className="space-y-1 text-sm">
+                                <div className="space-y-1 text-sm text-[#3D2E17]">
                                     <div className="flex justify-between"><span>Subtotal</span><span>R{getCartTotal().toFixed(2)}</span></div>
                                     {Object.keys(shippingSelections).length > 0 && (
                                          <div className="flex justify-between font-medium"><span>Shipping</span><span>R{totalShippingCost.toFixed(2)}</span></div>
                                     )}
                                     {Object.entries(shippingSelections).map(([id, rate]) => rate && (
-                                        <div key={id} className="flex justify-between pl-4 text-muted-foreground">
+                                        <div key={id} className="flex justify-between pl-4 text-[#3D2E17] font-medium">
                                             <span>from {groupedCart[id]?.dispensaryName}</span>
                                             <span>R{rate.rate.toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <hr className="my-2" />
-                                <div className="flex justify-between font-bold text-lg">
+                                <div className="flex justify-between font-bold text-lg text-[#3D2E17]">
                                     <span>Total</span>
                                     <span>R{(getCartTotal() + totalShippingCost).toFixed(2)}</span>
                                 </div>
                             </div>
-                        ) : <p>Your cart is empty.</p>}
+                        ) : <p className="text-[#3D2E17]">Your cart is empty.</p>}
                     </CardContent>
                 </Card>
             </div>

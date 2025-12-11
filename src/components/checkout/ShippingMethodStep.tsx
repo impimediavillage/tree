@@ -113,7 +113,7 @@ export function ShippingMethodStep({
     <Card>
       <CardHeader>
         <CardTitle className="text-[#3D2E17] font-extrabold">Shipping Method</CardTitle>
-        <CardDescription className="text-[#5D4E37] font-bold">Select a shipping option for your order.</CardDescription>
+        <CardDescription className="text-[#3D2E17] font-bold">Select a shipping option for your order.</CardDescription>
       </CardHeader>
       <CardContent className='space-y-6'>
         {isLoading ? (
@@ -134,7 +134,7 @@ export function ShippingMethodStep({
                     <RadioGroupItem value={rate.id} id={rate.id} />
                     <div>
                       <p className='font-extrabold text-[#3D2E17]'>{rate.courier_name} ({rate.service_level})</p>
-                      <p className='text-sm font-bold text-[#5D4E37]'>{rate.delivery_time}</p>
+                      <p className='text-sm font-bold text-[#3D2E17]'>{rate.delivery_time}</p>
                     </div>
                   </div>
                   <p className='text-lg font-extrabold text-[#3D2E17]'>R {rate.rate.toFixed(2)}</p>
