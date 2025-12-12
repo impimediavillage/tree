@@ -260,7 +260,11 @@ export const DispensaryShippingGroup = ({
         setIsFetchingLockers(true);
         try {
           const getPudoLockersFn = httpsCallable(functions, 'getPudoLockers');
-          const result = await getPudoLockersFn({ city: addressData.shippingAddress.city });
+          const result = await getPudoLockersFn({ 
+            latitude: addressData.shippingAddress.latitude, 
+            longitude: addressData.shippingAddress.longitude,
+            city: addressData.shippingAddress.city 
+          });
           const lockerData = (result.data as any)?.data as PUDOLocker[];
 
           if (lockerData && lockerData.length > 0) {

@@ -230,23 +230,24 @@ export default function HolisticAiHubPage() {
             </p>
           )}
         </div>
-        {isLoadingAdvisors ? (
-          <div className="flex justify-center items-center py-16">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          </div>
-        ) : advisors.length === 0 ? (
-          <div className="text-center py-16">
-            <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-lg text-muted-foreground">No advisors available at the moment.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {advisors.map((advisor) => (
-              <AdvisorCard key={advisor.id} advisor={advisor} />
-            ))}
-          </div>
-        )}
       </section>
+
+      {isLoadingAdvisors ? (
+        <div className="flex justify-center items-center py-16">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : advisors.length === 0 ? (
+        <div className="text-center py-16">
+          <Brain className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <p className="text-lg text-muted-foreground">No advisors available at the moment.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {advisors.map((advisor) => (
+            <AdvisorCard key={advisor.id} advisor={advisor} />
+          ))}
+        </div>
+      )}
 
       {/* Creator Lab & Triple S Club Side by Side */}
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-16 animate-fade-in-scale-up" style={{ animationFillMode: 'backwards', animationDelay: '0.4s' }}>
