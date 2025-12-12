@@ -160,7 +160,7 @@ export default function PublicWellnessProfilesByTypePage() {
              <div className="h-10 w-32 bg-muted rounded animate-pulse"></div>
         </div>
         <div className="w-full h-24 rounded-lg bg-muted animate-pulse mb-6"></div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1,2,3,4].map(i => <Card key={i} className="h-[380px] animate-pulse bg-muted/50"><CardContent className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary/50"/></CardContent></Card>)}
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function PublicWellnessProfilesByTypePage() {
       </div>
 
       {wellnessProfiles.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {wellnessTypeName === 'Cannibinoid store' && (
             <TripleSEntry />
           )}
