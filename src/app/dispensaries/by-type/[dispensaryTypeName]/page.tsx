@@ -208,7 +208,8 @@ export default function PublicWellnessProfilesByTypePage() {
               key={wellness.id} 
               dispensary={wellness} 
               distance={wellness.distance}
-              typeBannerImageUrl={wellnessTypeDetails?.image} 
+              typeBannerImageUrl={wellnessTypeDetails?.image}
+              typeIconPath={wellnessTypeDetails?.iconPath}
             />
           ))}
         </div>
