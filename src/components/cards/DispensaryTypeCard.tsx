@@ -6,8 +6,19 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { DispensaryType } from '@/types';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Trees, Store, Leaf, Flower, Sprout, Droplet, Sparkles } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+// Map dispensary type names to appropriate Lucide icon names
+const typeIconMap: Record<string, string> = {
+  "Cannibinoid store": "Leaf",
+  "Homeopathic store": "Droplet",
+  "Traditional Medicine dispensary": "Flower",
+  "Permaculture & gardening store": "Sprout",
+  "Flower Store": "Flower",
+  "Mushroom store": "Sparkles"
+};
 
 interface DispensaryTypeCardProps {
   dispensaryType: DispensaryType;
@@ -18,60 +29,110 @@ interface DispensaryTypeCardProps {
 export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: DispensaryTypeCardProps) {
   const { name, description, storeCount } = dispensaryType;
   
-  // To robustly handle potential inconsistencies in the Firestore data,
-  // we intelligently search for the image URL across common property names.
-  // This ensures the card displays an image if one is available, even if the field name varies.
-  const imageUrl = dispensaryType.image || (dispensaryType as any).imageUrl || (dispensaryType as any).iconPath || null;
+  // Banner image for the top of the card
+  const imageUrl = dispensaryType.image || (dispensaryType as any).imageUrl || null;
+  
+  // Icon path for the header icon (separate from banner image)
+  const iconPath = dispensaryType.iconPath || null;
 
   const linkHref = `${basePath}/${encodeURIComponent(name)}`;
 
+  // Render the icon with priority: iconPath (custom image) -> typeIconMap (Lucide icon) -> Trees (fallback)
+  const renderIcon = () => {
+    // Priority 1: If iconPath is provided and it's an image URL
+    if (iconPath && (iconPath.startsWith('http') || iconPath.startsWith('/'))) {
+      return (
+        <div className="relative h-8 w-8 flex-shrink-0">
+          <Image
+            src={iconPath}
+            alt={`${name} icon`}
+            fill
+            className="object-contain"
+            unoptimized
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        </div>
+      );
+    }
+
+    // Priority 2: Check if the dispensary type name maps to a Lucide icon
+    const iconName = typeIconMap[name];
+    if (iconName) {
+      const IconComponent = (LucideIcons as any)[iconName];
+      if (IconComponent) {
+        return <IconComponent className="h-8 w-8" />;
+      }
+    }
+
+    // Priority 3: Default fallback icon
+    return <Trees className="h-8 w-8" />;
+  };
+
   return (
     <Card 
-        className="group relative flex flex-col overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-[380px] bg-muted/50 border-border/30 hover:border-primary/50 animate-fade-in-scale-up"
+        className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden animate-fade-in-scale-up"
         style={{ animationDelay: `${delay}ms`, animationFillMode: 'backwards' }}
         data-ai-hint={`dispensary type ${name.toLowerCase()}`}
     >
-        <div className="absolute inset-0 z-0">
-            {imageUrl ? (
-                <Image 
-                    src={imageUrl}
-                    alt={name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-            ) : (
-                <div className="w-full h-full bg-muted"></div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent"></div>
+      {/* Image at top with h-64 like AI advisor cards */}
+      {imageUrl && (
+        <div className="relative h-64 w-full bg-muted">
+          <Image
+            src={imageUrl}
+            alt={name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
+            unoptimized
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
         </div>
+      )}
 
-        <div className="relative z-10 flex flex-col h-full p-6 text-white">
-            <CardHeader className="p-0">
-                <CardTitle className="text-2xl font-extrabold tracking-tight text-white shadow-text leading-tight">
-                    {name}
-                </CardTitle>
-                {storeCount !== undefined && (
-                    <Badge variant="secondary" className="mt-2 w-fit bg-primary/20 text-primary-foreground backdrop-blur-sm border border-primary/30">
-                        {storeCount} {storeCount === 1 ? 'Store' : 'Stores'}
-                    </Badge>
-                )}
-            </CardHeader>
-
-            <CardContent className="p-0 flex-grow mt-3">
-                <p className="text-sm font-semibold text-white/95 line-clamp-4 shadow-text">
-                    {description}
-                </p>
-            </CardContent>
-
-            <CardFooter className="p-0 mt-auto">
-                <Button asChild className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
-                    <Link href={linkHref}>
-                        View Stores <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
-                </Button>
-            </CardFooter>
+      {/* Header with dark brown text and dynamic icon */}
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start mb-2">
+          <CardTitle className="text-xl font-black text-[#3D2E17] flex items-center gap-2">
+            <div className="text-[#006B3E]">
+              {renderIcon()}
+            </div>
+            {name}
+          </CardTitle>
+          {storeCount !== undefined && (
+            <Badge variant="secondary" className="bg-[#3D2E17] text-white font-bold">
+              {storeCount} {storeCount === 1 ? 'Store' : 'Stores'}
+            </Badge>
+          )}
         </div>
+      </CardHeader>
+
+      {/* Content section */}
+      <CardContent className="flex-grow space-y-3">
+        <p className="text-sm font-bold text-[#3D2E17]/80 line-clamp-4">
+          {description}
+        </p>
+
+        <div className="flex items-center gap-2 text-sm">
+          <Store className="h-5 w-5 text-[#006B3E]" />
+          <span className="font-bold text-[#3D2E17]">
+            Browse all stores in this category
+          </span>
+        </div>
+      </CardContent>
+
+      {/* Footer with border-t like AI advisor cards */}
+      <CardFooter className="border-t pt-4">
+        <Button asChild className="w-full font-bold bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white">
+          <Link href={linkHref}>
+            View Stores
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Link>
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
