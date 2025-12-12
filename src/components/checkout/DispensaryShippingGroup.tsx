@@ -357,7 +357,7 @@ export const DispensaryShippingGroup = ({
                 <span>{allShippingMethodsMap[tier] || tier}</span>
               </Label>
             ))}
-            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods{!originLocker && dispensary?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
+            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods{!dispensary?.originLocker && dispensary?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
           </RadioGroup>
         </div>
 
