@@ -130,8 +130,15 @@ export const DispensaryShippingGroup = ({
         payload.originLockerCode = originLocker.id;
         payload.deliveryAddress = deliveryAddressForApi;
       } else if (selectedTier === 'ltl') {
-        if (!originLocker || !destinationLocker) return;
-        if (!originLocker) { setError("This dispensary has not configured an origin locker for this shipping method."); return; }
+        if (!originLocker) { 
+          setError("This dispensary has not configured an origin locker for this shipping method."); 
+          setIsLoading(false);
+          return; 
+        }
+        if (!destinationLocker) {
+          setIsLoading(false);
+          return; // Wait for user to select destination locker
+        }
         payload.originLockerCode = originLocker.id;
         payload.destinationLockerCode = destinationLocker.id;
       }
@@ -300,6 +307,19 @@ export const DispensaryShippingGroup = ({
 
   const isLockerTier = ['dtl', 'ltd', 'ltl'].includes(selectedTier || '');
   
+  // Filter out LTL and LTD if no origin locker is configured
+  const availableShippingMethods = useMemo(() => {
+    if (!dispensary?.shippingMethods) return [];
+    
+    return dispensary.shippingMethods.filter(method => {
+      // If method is LTL or LTD, only show if dispensary has an origin locker
+      if (method === 'ltl' || method === 'ltd') {
+        return !!dispensary.originLocker;
+      }
+      return true;
+    });
+  }, [dispensary?.shippingMethods, dispensary?.originLocker]);
+  
   if (isLoading && !dispensary && !rates.length) {
     return (
       <Card className='bg-muted/20'><CardContent className='p-6 flex items-center'><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading shipping options...</CardContent></Card>
@@ -307,7 +327,7 @@ export const DispensaryShippingGroup = ({
   }
 
   const shouldShowError = error && !rates.length;
-  const shouldShowNoMethods = dispensary?.shippingMethods?.length === 0;
+  const shouldShowNoMethods = availableShippingMethods.length === 0;
 
   return (
     <Card className="bg-muted/20 shadow-md">
@@ -327,13 +347,13 @@ export const DispensaryShippingGroup = ({
         <div>
           <p className="font-extrabold text-[#3D2E17] mb-2">1. Choose Delivery Type</p>
           <RadioGroup onValueChange={handleTierSelection} value={selectedTier || ''} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {(dispensary?.shippingMethods || []).map(tier => (
+            {availableShippingMethods.map(tier => (
               <Label key={tier} className="flex items-center space-x-3 border rounded-md p-3 hover:bg-accent has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all cursor-pointer">
                 <RadioGroupItem value={tier} id={`${dispensaryId}-${tier}`} />
                 <span>{allShippingMethodsMap[tier] || tier}</span>
               </Label>
             ))}
-            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods.</p>}
+            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods{!originLocker && dispensary?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
           </RadioGroup>
         </div>
 
@@ -365,6 +385,7 @@ export const DispensaryShippingGroup = ({
                         {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
                     </Button>
                     {!isAddressComplete(addressData.shippingAddress) && <p className='text-xs text-muted-foreground mt-1'>Please complete your address to select a locker.</p>}
+                    {!destinationLocker && isAddressComplete(addressData.shippingAddress) && <p className='text-xs text-primary font-semibold mt-1'>⬆️ Please select a destination locker above to see shipping rates</p>}
                 </div>
             )}
           </div>
