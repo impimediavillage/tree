@@ -52,7 +52,6 @@ export const DispensaryShippingGroup = ({
   const [selectedRateId, setSelectedRateId] = useState<string | null>(null);
   
   const [pickupPoints, setPickupPoints] = useState<PUDOLocker[]>([]);
-  const [originLocker, setOriginLocker] = useState<PUDOLocker | null>(null);
   const [destinationLocker, setDestinationLocker] = useState<PUDOLocker | null>(null);
   
   const [lockerSearchTerm, setLockerSearchTerm] = useState('');
@@ -67,9 +66,6 @@ export const DispensaryShippingGroup = ({
         if (docSnap.exists()) {
           const dispensaryData = { id: docSnap.id, ...docSnap.data() } as Dispensary;
           setDispensary(dispensaryData);
-          if (dispensaryData.originLocker) {
-            setOriginLocker(dispensaryData.originLocker);
-          }
         } else {
           setError('Dispensary details could not be found.');
         }
@@ -126,11 +122,15 @@ export const DispensaryShippingGroup = ({
         if (!destinationLocker) return;
         payload.destinationLockerCode = destinationLocker.id;
       } else if (selectedTier === 'ltd') {
-        if (!originLocker) { setError("This dispensary has not configured an origin locker for this shipping method."); return; }
-        payload.originLockerCode = originLocker.id;
+        if (!dispensary?.originLocker) { 
+          setError("This dispensary has not configured an origin locker for this shipping method."); 
+          setIsLoading(false);
+          return; 
+        }
+        payload.originLockerCode = dispensary.originLocker.id;
         payload.deliveryAddress = deliveryAddressForApi;
       } else if (selectedTier === 'ltl') {
-        if (!originLocker) { 
+        if (!dispensary?.originLocker) { 
           setError("This dispensary has not configured an origin locker for this shipping method."); 
           setIsLoading(false);
           return; 
@@ -139,7 +139,7 @@ export const DispensaryShippingGroup = ({
           setIsLoading(false);
           return; // Wait for user to select destination locker
         }
-        payload.originLockerCode = originLocker.id;
+        payload.originLockerCode = dispensary.originLocker.id;
         payload.destinationLockerCode = destinationLocker.id;
       }
       
@@ -164,7 +164,7 @@ export const DispensaryShippingGroup = ({
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTier, items, dispensaryId, originLocker, destinationLocker, addressData, toast]);
+  }, [selectedTier, items, dispensaryId, dispensary?.originLocker, destinationLocker, addressData, toast]);
 
   const fetchShiplogicRates = useCallback(async () => {
     if (!isAddressComplete(addressData.shippingAddress)) {
@@ -214,17 +214,21 @@ export const DispensaryShippingGroup = ({
   }, [items, dispensaryId, addressData, toast]);
 
   useEffect(() => {
-    if (!selectedTier) return;
+    if (!selectedTier || !dispensary) return;
+    
+    // DTL: Needs destination locker only
     if (selectedTier === 'dtl' && destinationLocker) {
       fetchPudoRates();
-    } else if ((selectedTier === 'ltd' || selectedTier === 'ltl') && originLocker) {
-      if (selectedTier === 'ltl') {
-        if (destinationLocker) fetchPudoRates();
-      } else {
-        fetchPudoRates();
-      }
+    } 
+    // LTD: Needs origin locker only (fetches immediately when tier is selected)
+    else if (selectedTier === 'ltd' && dispensary.originLocker) {
+      fetchPudoRates();
+    } 
+    // LTL: Needs both origin and destination lockers
+    else if (selectedTier === 'ltl' && dispensary.originLocker && destinationLocker) {
+      fetchPudoRates();
     }
-  }, [selectedTier, originLocker, destinationLocker, fetchPudoRates]);
+  }, [selectedTier, dispensary, destinationLocker, fetchPudoRates]);
 
   useEffect(() => {
     if (rates.length === 1 && !selectedRateId) {
@@ -247,7 +251,7 @@ export const DispensaryShippingGroup = ({
       fetchShiplogicRates();
     } 
     else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
-      if ((tier === 'ltd' || tier === 'ltl') && !originLocker) {
+      if ((tier === 'ltd' || tier === 'ltl') && !dispensary?.originLocker) {
         setError("This dispensary has not configured an origin locker for this shipping method. Please select another method.");
         return;
       }
@@ -366,10 +370,10 @@ export const DispensaryShippingGroup = ({
                   <p className="font-extrabold text-[#3D2E17] mb-2">Origin Locker (Pre-selected by Dispensary)</p>
                   <div className="flex items-center gap-3 rounded-md border border-dashed p-3 bg-muted/50">
                       <MapPin className="h-6 w-6 text-muted-foreground" />
-                      {originLocker ? (
+                      {dispensary?.originLocker ? (
                           <div>
-                              <p className='font-semibold'>{originLocker.name}</p>
-                              <p className='text-sm text-muted-foreground'>{originLocker.address}</p>
+                              <p className='font-semibold'>{dispensary.originLocker.name}</p>
+                              <p className='text-sm text-muted-foreground'>{dispensary.originLocker.address}</p>
                           </div>
                       ) : (
                           <p className="text-sm text-destructive">Origin locker not configured by the dispensary.</p>
