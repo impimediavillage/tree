@@ -33,6 +33,15 @@ export interface Dispensary {
   currency: 'ZAR' | 'USD' | 'EUR' | 'GBP';
   minimumOrderAmount?: number;
   originLocker?: PUDOLocker | null;
+  shippingMethods?: string[];
+  status?: 'Pending Approval' | 'Approved' | 'Rejected' | 'Suspended';
+  message?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  streetAddress?: string;
+  suburb?: string;
+  showLocation?: boolean;
+  inHouseDeliveryFee?: number;
 }
 
 export interface PriceTier {
