@@ -49,7 +49,7 @@ export default function BrowseWellnessTypesPage() {
         />
 
       {isLoadingTypes ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1,2,3,4].map(i => 
             <Card key={i} className="h-[380px] bg-card/70 dark:bg-card/80 backdrop-blur-md border-border/50 flex items-center justify-center"> 
               <Loader2 className="h-10 w-10 animate-spin text-primary/50"/>
@@ -57,7 +57,7 @@ export default function BrowseWellnessTypesPage() {
           )}
         </div>
       ) : allWellnessTypes.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {allWellnessTypes.map((type, index) => (
             <DispensaryTypeCard 
               key={type.id} 

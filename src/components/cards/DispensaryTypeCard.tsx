@@ -72,19 +72,19 @@ export function DispensaryTypeCard({ dispensaryType, basePath, delay = 0 }: Disp
 
   return (
     <Card 
-        className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden animate-fade-in-scale-up p-0"
+        className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden animate-fade-in-scale-up"
         style={{ animationDelay: `${delay}ms`, animationFillMode: 'backwards' }}
         data-ai-hint={`dispensary type ${name.toLowerCase()}`}
     >
       {/* Image at top with h-64 like AI advisor cards */}
       {imageUrl && (
-        <div className="relative h-64 w-full bg-muted overflow-hidden">
+        <div className="relative h-64 w-full bg-muted">
           <Image
             src={imageUrl}
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover w-full h-full"
+            className="object-cover"
             unoptimized
             onError={(e) => {
               e.currentTarget.style.display = 'none';
