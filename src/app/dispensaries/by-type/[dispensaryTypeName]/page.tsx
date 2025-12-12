@@ -87,12 +87,22 @@ export default function PublicWellnessProfilesByTypePage() {
   }, [fetchData]);
 
   const handleGeoSearch = () => {
+    // Check if geolocation is available
+    if (!navigator.geolocation) {
+      toast({ 
+        title: "Not Supported", 
+        description: "Geolocation is not supported by your browser.", 
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lon: longitude });
-        toast({ title: "Location Found!", description: "Sorting stores by your location." });
+        toast({ title: "Location Found!", description: "Sorting stores by distance from you.", variant: "default" });
 
         const sortedProfiles = [...wellnessProfiles].map(profile => {
             if (profile.latitude && profile.longitude) {
@@ -111,13 +121,33 @@ export default function PublicWellnessProfilesByTypePage() {
       },
       (error) => {
         console.error("Geolocation error:", error);
-        toast({ title: "Geolocation Error", description: "Could not access your location. Please ensure location services are enabled.", variant: "destructive"});
+        let errorMessage = "Could not access your location.";
+        
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location permission denied. Please enable location access in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable. Please check your device settings.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again.";
+            break;
+          default:
+            errorMessage = "An unknown error occurred while getting your location.";
+        }
+        
+        toast({ 
+          title: "Geolocation Error", 
+          description: errorMessage, 
+          variant: "destructive"
+        });
         setIsLocating(false);
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+        timeout: 15000,
+        maximumAge: 60000
       }
     );
   };
