@@ -818,11 +818,11 @@ const pudoApiKeySecret = (0, params_1.defineSecret)('PUDO_API_KEY'); // Pudo/TCG
 const SHIPLOGIC_RATES_API_URL = 'https://api.shiplogic.com/v2/rates';
 const PUDO_BASE_URL = 'https://sandbox.api-pudo.co.za/api/v1';
 exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: true }, async (request) => {
-    logger.info("getPudoLockers invoked with dynamic radius logic.");
+    logger.info("getPudoLockers invoked with dynamic radius logic and parcel size filtering.");
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to fetch Pudo lockers.');
     }
-    const { latitude, longitude, radius = 100, city } = request.data;
+    const { latitude, longitude, radius = 100, city, cart } = request.data;
     const pudoApiKey = pudoApiKeySecret.value();
     if (!pudoApiKey) {
         logger.error("CRITICAL: PUDO_API_KEY not found in secrets.");
@@ -919,11 +919,74 @@ exports.getPudoLockers = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors
             logger.error("No location data (lat/lng or city) provided to getPudoLockers.");
             throw new https_1.HttpsError('invalid-argument', 'No location data was provided to find lockers.');
         }
+        // Calculate parcel dimensions if cart provided
+        let parcelSizeCategory = 'UNKNOWN';
+        let parcelInfo = null;
+        if (cart && cart.length > 0) {
+            // Calculate total dimensions and weight
+            let totalWeight = 0;
+            let maxLength = 0;
+            let maxWidth = 0;
+            let maxHeight = 0;
+            cart.forEach(item => {
+                const qty = (typeof item.quantity === 'number' && item.quantity > 0) ? item.quantity : 1;
+                if (item.weight)
+                    totalWeight += item.weight * qty;
+                if (item.length && item.length > maxLength)
+                    maxLength = item.length;
+                if (item.width && item.width > maxWidth)
+                    maxWidth = item.width;
+                if (item.height && item.height > maxHeight)
+                    maxHeight = item.height;
+            });
+            parcelInfo = {
+                totalWeight,
+                maxLength,
+                maxWidth,
+                maxHeight,
+                volume: maxLength * maxWidth * maxHeight
+            };
+            // Determine size category based on dimensions (standard locker sizes)
+            // XS: up to 35x35x5 cm, ~3kg
+            // S: up to 40x38x10 cm, ~5kg
+            // M: up to 45x40x20 cm, ~10kg
+            // L: up to 55x45x30 cm, ~20kg
+            // XL: up to 60x50x40 cm, ~25kg
+            const maxDim = Math.max(maxLength, maxWidth, maxHeight);
+            const midDim = [maxLength, maxWidth, maxHeight].sort((a, b) => b - a)[1];
+            if (maxDim <= 35 && midDim <= 35 && totalWeight <= 3) {
+                parcelSizeCategory = 'XS';
+            }
+            else if (maxDim <= 40 && midDim <= 38 && totalWeight <= 5) {
+                parcelSizeCategory = 'S';
+            }
+            else if (maxDim <= 45 && midDim <= 40 && totalWeight <= 10) {
+                parcelSizeCategory = 'M';
+            }
+            else if (maxDim <= 55 && midDim <= 45 && totalWeight <= 20) {
+                parcelSizeCategory = 'L';
+            }
+            else if (maxDim <= 60 && midDim <= 50 && totalWeight <= 25) {
+                parcelSizeCategory = 'XL';
+            }
+            else {
+                parcelSizeCategory = 'OVERSIZED';
+                logger.warn(`Parcel dimensions exceed standard locker sizes: ${maxLength}x${maxWidth}x${maxHeight}cm, ${totalWeight}kg`);
+            }
+            logger.info(`Calculated parcel size: ${parcelSizeCategory}`, parcelInfo);
+        }
         logger.info(`Successfully fetched and formatted ${formattedLockers.length} Pudo lockers with complete structure.`);
         if (formattedLockers.length === 0) {
             logger.warn("No lockers found within the specified radius or matching the city.");
         }
-        return { data: formattedLockers };
+        return {
+            data: formattedLockers,
+            parcelSizeCategory,
+            parcelInfo: parcelInfo ? {
+                weight: parcelInfo.totalWeight,
+                dimensions: `${parcelInfo.maxLength}x${parcelInfo.maxWidth}x${parcelInfo.maxHeight}cm`
+            } : undefined
+        };
     }
     catch (error) {
         logger.error('CRITICAL ERROR in getPudoLockers function:', error);

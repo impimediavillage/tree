@@ -1,0 +1,297 @@
+THE COURIER GUY SOUTH AFRICA (PTY) LTD
+Tel: 0861 203 203
+Email: support@thecourierguy.co.za
+Web: www.thecourierguy.co.za
+Company Registration No: 2023 / 172080 / 07
+VAT No: 4850317670
+Physical Address: 37 Malta Road, Cosmo Business Park, Malibongwe Drive, Kya Sands
+Postal Address: 532 Lanseria, 1748
+
+====================================================================
+THE COURIER GUY LOCKER API DOCUMENTATION
+====================================================================
+
+GETTING PICKUP POINTS
+--------------------------------------------------------------------
+Endpoint:
+https://api.shiplogic.com/pickup-points?type=locker
+
+Method:
+GET
+
+When fetching pickup points, several filters can be used to find an
+appropriate locker or kiosk. You can filter for lockers or kiosks
+using the types parameter with a value of locker or counter.
+
+Pickup Points Close to a Point
+Example:
+https://api.shiplogic.com/pickup-points?lat=-26.0048046&lng=27.9412084&order_closest=true
+
+Use the lat and lng filters to find pickup points within a 20 km
+radius around the coordinates. The order_closest parameter orders
+results by distance.
+
+Pickup Points in a Bounding Box
+Example:
+https://api.shiplogic.com/pickup-points?min_lat=-26.07529882894088&max_lat=-25.967471024220487&min_lng=27.875394544865816&max_lng=28.01341029193613
+
+Use min_lat, min_lng, max_lat and max_lng to locate pickup points
+within a map area.
+
+Pickup Points by Name
+Example:
+https://api.shiplogic.com/pickup-points?search=kya%20sands
+
+Use the search parameter to match pickup points by name or address.
+
+====================================================================
+GETTING RATES
+--------------------------------------------------------------------
+Endpoint:
+https://api.shiplogic.com/rates
+
+Method:
+GET
+
+When requesting rates for pickup point shipments, use
+collection_pickup_point_id or delivery_pickup_point_id instead of
+addresses. If a pickup point ID is used, the corresponding address
+must not be sent.
+
+The following fields are required:
+collection_pickup_point_provider
+delivery_pickup_point_provider
+
+Both must have the value: tcg-locker
+
+--------------------------------------------------------------------
+Pickup Point Collection (Rates)
+--------------------------------------------------------------------
+Use the generic locker ID CG0000 or generic kiosk ID K0000.
+
+{
+  "collection_pickup_point_id": "CG0000",
+  "collection_pickup_point_provider": "tcg-locker",
+  "delivery_address": {
+    "company": "The Courier Guy - Johannesburg",
+    "street_address": "37 Malta Road",
+    "local_area": "Kya Sand",
+    "code": "2163",
+    "city": "City of Johannesburg Metropolitan Municipality",
+    "zone": "Gauteng",
+    "country": "ZA",
+    "lat": -26.004805,
+    "lng": 27.941208,
+    "type": "business"
+  },
+  "parcels": [
+    {
+      "parcel_description": "",
+      "submitted_length_cm": 40,
+      "submitted_width_cm": 38,
+      "submitted_height_cm": 5,
+      "submitted_weight_kg": 2,
+      "packaging": "Standard flyer"
+    }
+  ],
+  "collection_min_date": "2025-08-01",
+  "delivery_min_date": "2025-08-01"
+}
+
+--------------------------------------------------------------------
+Pickup Point Delivery (Rates)
+--------------------------------------------------------------------
+{
+  "collection_address": {
+    "company": "The Courier Guy - Johannesburg",
+    "street_address": "37 Malta Road",
+    "local_area": "Kya Sand",
+    "code": "2163",
+    "city": "City of Johannesburg Metropolitan Municipality",
+    "zone": "Gauteng",
+    "country": "ZA",
+    "lat": -26.004805,
+    "lng": 27.941208,
+    "type": "business"
+  },
+  "delivery_pickup_point_id": "CG341",
+  "delivery_pickup_point_provider": "tcg-locker",
+  "parcels": [
+    {
+      "parcel_description": "",
+      "submitted_length_cm": 40,
+      "submitted_width_cm": 38,
+      "submitted_height_cm": 5,
+      "submitted_weight_kg": 2,
+      "packaging": "Standard flyer"
+    }
+  ],
+  "collection_min_date": "2025-08-01",
+  "delivery_min_date": "2025-08-01"
+}
+
+--------------------------------------------------------------------
+Pickup Point to Pickup Point (Rates)
+--------------------------------------------------------------------
+{
+  "collection_pickup_point_id": "K0000",
+  "collection_pickup_point_provider": "tcg-locker",
+  "delivery_pickup_point_id": "CG341",
+  "delivery_pickup_point_provider": "tcg-locker",
+  "parcels": [
+    {
+      "parcel_description": "",
+      "submitted_length_cm": 40,
+      "submitted_width_cm": 38,
+      "submitted_height_cm": 5,
+      "submitted_weight_kg": 2,
+      "packaging": "Standard flyer"
+    }
+  ],
+  "collection_min_date": "2025-08-01",
+  "delivery_min_date": "2025-08-01"
+}
+
+====================================================================
+CREATING SHIPMENTS
+--------------------------------------------------------------------
+Replace collection_address or delivery_address with pickup point IDs.
+The pickup point provider fields remain mandatory.
+
+--------------------------------------------------------------------
+Pickup Point Collection (Shipments)
+NOTE: Do NOT send custom_tracking_reference.
+--------------------------------------------------------------------
+{
+  "collection_pickup_point_id": "CG0000",
+  "collection_pickup_point_provider": "tcg-locker",
+  "collection_contact": {
+    "name": "John Doe",
+    "mobile_number": "0741234567",
+    "email": "example@email.com"
+  },
+  "delivery_address": {
+    "company": "The Courier Guy - Johannesburg",
+    "street_address": "37 Malta Road",
+    "local_area": "Kya Sand",
+    "code": "2163",
+    "city": "City of Johannesburg Metropolitan Municipality",
+    "zone": "Gauteng",
+    "country": "ZA",
+    "lat": -26.004805,
+    "lng": 27.941208,
+    "type": "business"
+  },
+  "delivery_contact": {
+    "name": "Jane Doe",
+    "mobile_number": "0831234567",
+    "email": "example@email.com"
+  },
+  "parcels": [
+    {
+      "parcel_description": "",
+      "submitted_length_cm": 40,
+      "submitted_width_cm": 38,
+      "submitted_height_cm": 5,
+      "submitted_weight_kg": 2,
+      "packaging": "Standard flyer"
+    }
+  ],
+  "special_instructions_delivery": "This is a test shipment",
+  "collection_min_date": "2025-08-01T00:00:00.000Z",
+  "collection_after": "08:00",
+  "collection_before": "16:00",
+  "delivery_min_date": "2025-08-01T00:00:00.000Z",
+  "delivery_after": "10:00",
+  "delivery_before": "17:00",
+  "customer_reference": "ORDERNO123",
+  "service_level_code": "L2DM - ECO"
+}
+
+--------------------------------------------------------------------
+Pickup Point Delivery (Shipments)
+--------------------------------------------------------------------
+{
+  "collection_address": {
+    "company": "The Courier Guy - Johannesburg",
+    "street_address": "37 Malta Road",
+    "local_area": "Kya Sand",
+    "code": "2163",
+    "city": "City of Johannesburg Metropolitan Municipality",
+    "zone": "Gauteng",
+    "country": "ZA",
+    "lat": -26.004805,
+    "lng": 27.941208,
+    "type": "business"
+  },
+  "collection_contact": {
+    "name": "John Doe",
+    "mobile_number": "0741234567",
+    "email": "example@email.com"
+  },
+  "delivery_pickup_point_id": "CG341",
+  "delivery_pickup_point_provider": "tcg-locker",
+  "delivery_contact": {
+    "name": "Jane Doe",
+    "mobile_number": "0831234567",
+    "email": "example@email.com"
+  },
+  "parcels": [
+    {
+      "parcel_description": "",
+      "submitted_length_cm": 40,
+      "submitted_width_cm": 38,
+      "submitted_height_cm": 5,
+      "submitted_weight_kg": 2,
+      "packaging": "Standard flyer"
+    }
+  ],
+  "special_instructions_collection": "This is a test shipment",
+  "collection_min_date": "2025-08-01T00:00:00.000Z",
+  "collection_after": "08:00",
+  "collection_before": "16:00",
+  "delivery_min_date": "2025-08-01T00:00:00.000Z",
+  "delivery_after": "10:00",
+  "delivery_before": "17:00",
+  "custom_tracking_reference": "",
+  "customer_reference": "ORDERNO123",
+  "service_level_code": "D2LXS - ECO"
+}
+
+--------------------------------------------------------------------
+Pickup Point to Pickup Point (Shipments)
+--------------------------------------------------------------------
+{
+  "collection_pickup_point_id": "K0000",
+  "collection_pickup_point_provider": "tcg-locker",
+  "collection_contact": {
+    "name": "John Doe",
+    "mobile_number": "0741234567",
+    "email": "example@email.com"
+  },
+  "delivery_pickup_point_id": "K120",
+  "delivery_pickup_point_provider": "tcg-locker",
+  "delivery_contact": {
+    "name": "Jane Doe",
+    "mobile_number": "0831234567",
+    "email": "example@email.com"
+  },
+  "parcels": [
+    {
+      "parcel_description": "",
+      "submitted_length_cm": 40,
+      "submitted_width_cm": 38,
+      "submitted_height_cm": 5,
+      "submitted_weight_kg": 2,
+      "packaging": "Standard flyer"
+    }
+  ],
+  "collection_min_date": "2025-08-01T00:00:00.000Z",
+  "collection_after": "08:00",
+  "collection_before": "16:00",
+  "delivery_min_date": "2025-08-01T00:00:00.000Z",
+  "delivery_after": "10:00",
+  "delivery_before": "17:00",
+  "customer_reference": "ORDERNO123",
+  "service_level_code": "K2KS - ECO"
+}

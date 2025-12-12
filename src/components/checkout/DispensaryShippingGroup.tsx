@@ -53,6 +53,7 @@ export const DispensaryShippingGroup = ({
   
   const [pickupPoints, setPickupPoints] = useState<PUDOLocker[]>([]);
   const [destinationLocker, setDestinationLocker] = useState<PUDOLocker | null>(null);
+  const [parcelSizeCategory, setParcelSizeCategory] = useState<string>('');
   
   const [lockerSearchTerm, setLockerSearchTerm] = useState('');
   const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
@@ -263,12 +264,30 @@ export const DispensaryShippingGroup = ({
           const result = await getPudoLockersFn({ 
             latitude: addressData.shippingAddress.latitude, 
             longitude: addressData.shippingAddress.longitude,
-            city: addressData.shippingAddress.city 
+            city: addressData.shippingAddress.city,
+            cart: items // Pass cart items to determine parcel size compatibility
           });
           const lockerData = (result.data as any)?.data as PUDOLocker[];
+          const parcelSizeCategory = (result.data as any)?.parcelSizeCategory;
+          const parcelInfo = (result.data as any)?.parcelInfo;
 
           if (lockerData && lockerData.length > 0) {
             setPickupPoints(lockerData);
+            setParcelSizeCategory(parcelSizeCategory || '');
+            
+            // Show size info to user if available
+            if (parcelSizeCategory && parcelSizeCategory !== 'UNKNOWN') {
+              if (parcelSizeCategory === 'OVERSIZED') {
+                toast({ 
+                  title: "Large Parcel Warning", 
+                  description: `Your parcel (${parcelInfo?.dimensions}, ${parcelInfo?.weight}kg) may be too large for standard lockers. Please verify locker compatibility.`,
+                  variant: "destructive",
+                  duration: 8000
+                });
+              } else {
+                console.log(`Showing lockers for ${parcelSizeCategory} size parcels:`, parcelInfo);
+              }
+            }
           } else {
             throw new Error('Could not retrieve any Pudo lockers in your specified city.');
           }
@@ -388,7 +407,14 @@ export const DispensaryShippingGroup = ({
 
             {(selectedTier === 'dtl' || selectedTier === 'ltl') && (
                 <div>
-                    <p className="font-extrabold text-[#3D2E17] mb-2">2. Select Destination Locker</p>
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="font-extrabold text-[#3D2E17]">2. Select Destination Locker</p>
+                        {parcelSizeCategory && parcelSizeCategory !== 'UNKNOWN' && (
+                            <span className={`text-xs px-2 py-1 rounded font-bold ${parcelSizeCategory === 'OVERSIZED' ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'}`}>
+                                {parcelSizeCategory === 'OVERSIZED' ? '⚠️ Oversized' : `Size: ${parcelSizeCategory}`}
+                            </span>
+                        )}
+                    </div>
                     <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={openLockerModal} disabled={!isAddressComplete(addressData.shippingAddress)}>
                         {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
                     </Button>
