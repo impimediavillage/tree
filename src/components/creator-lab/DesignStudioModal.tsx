@@ -202,10 +202,16 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
   const handleRegenerate = () => {
     setGeneratedDesign(null);
     setIsPositioning(false);
-    setEditablePrompt('');
-    setSubject('');
+    // Keep subject and editablePrompt so user can modify and regenerate
+    // setEditablePrompt('');
+    // setSubject('');
     setLogoPosition({ x: 0, y: 0 });
     setLogoScale(0.5);
+    
+    toast({
+      title: 'Ready to Remix! 🎨',
+      description: 'Modify your prompt above and generate again.',
+    });
   };
 
   // NEW: Finalize design with user's logo position
@@ -696,6 +702,13 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
 
               {/* Action Buttons */}
               <div className="flex gap-4">
+                <Button
+                  onClick={handleRegenerate}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-[#5D4E37]/30 font-bold"
+                >
+                  🎨 Remix Prompt
+                </Button>
                 <Button
                   onClick={handleResetPosition}
                   variant="outline"

@@ -144,8 +144,8 @@ export const generateCreatorDesign = onCall(
       }
 
       // Build logo prompt - Frontend already includes shape/aspect ratio instructions
-      // Add explicit instructions for clean extraction
-      const logoPrompt = `${prompt} CRITICAL TECHNICAL REQUIREMENTS: Pure white (#FFFFFF) background with NO gradients, shadows, or soft edges. The border should be SOLID BLACK (3-4px thick) with NO anti-aliasing or feathering between the border and background. Flat graphic design style, NO depth, NO shadows, NO 3D effects. This is for digital printing with transparent background extraction. High contrast, clean sharp edges only. Do NOT create any clothing, apparel, or fabric textures.`;
+      // Add explicit instructions for clean extraction - emphasize white OUTSIDE border only
+      const logoPrompt = `${prompt} CRITICAL TECHNICAL REQUIREMENTS FOR BACKGROUND: The image must be on a PURE WHITE (#FFFFFF) background ONLY in the area OUTSIDE the ${badgeShape || 'circular'} border. Inside the border, use ANY vibrant colors you want for the design. The border itself should be SOLID BLACK (4-5px thick, crisp edges, NO blur, NO anti-aliasing with the white background). Outside the black border = pure flat white (#FFFFFF) with NO gradients, NO shadows, NO texture. Inside the border = colorful vibrant design. This is a 2D flat logo for print extraction, NOT clothing or fabric. The design must be perfectly centered on the canvas at exactly 25cm diameter (for circular) or 25cm x 45cm (for rectangular portrait).`;
 
       const logoResponse = await axios.post(
         'https://api.openai.com/v1/images/generations',
@@ -171,59 +171,78 @@ export const generateCreatorDesign = onCall(
       const logoImageResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       let logoBuffer = Buffer.from(logoImageResponse.data);
 
-      // Remove white background outside the border - AGGRESSIVE THRESHOLD
+      // Remove white background ONLY outside the border using shape-based masking
+      // This preserves ALL colors inside the design including whites/pastels
       try {
-        // First, ensure we have an alpha channel and convert to PNG
-        const imageWithAlpha = await sharp(logoBuffer)
-          .ensureAlpha()
-          .toBuffer();
+        const metadata = await sharp(logoBuffer).metadata();
+        const width = metadata.width || 1024;
+        const height = metadata.height || 1024;
         
-        // Get the raw pixel data to manipulate
-        const { data, info } = await sharp(imageWithAlpha).raw().toBuffer({ resolveWithObject: true });
+        // Image is always 1024x1024 from DALL-E, design should be centered at 25cm
+        // For circular: 25cm diameter = ~950px on 1024px canvas (with border)
+        // For rectangular portrait: 25cm x 45cm = ~950px x 1710px (scaled to fit)
         
-        // Use threshold of 245 with color variation check for smarter white removal
-        // This preserves colored borders/details while removing white background more reliably
-        const WHITE_THRESHOLD = 245;
+        let maskBuffer: Buffer;
         
-        // Modify ALL channels (RGB + Alpha) for white pixels to achieve TRUE transparency
-        for (let i = 0; i < data.length; i += info.channels) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
+        if (badgeShape === 'circular') {
+          // Create circular mask - design is centered with ~950px diameter
+          const centerX = width / 2;
+          const centerY = height / 2;
+          const radius = 475; // 950px diameter / 2, leaves edge padding
           
-          // Check if pixel is very bright (close to white)
-          const isBright = r >= WHITE_THRESHOLD && g >= WHITE_THRESHOLD && b >= WHITE_THRESHOLD;
+          // Create SVG circle mask
+          const circleMask = Buffer.from(
+            `<svg width="${width}" height="${height}">
+              <rect width="${width}" height="${height}" fill="black"/>
+              <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="white"/>
+            </svg>`
+          );
           
-          // Check if pixel has low color variation (not colorful, just gray/white)
-          const colorVariation = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
-          const isNeutral = colorVariation < 15; // Less than 15 points variation = neutral color
+          maskBuffer = await sharp(circleMask).png().toBuffer();
+          console.log(`Created circular mask: radius ${radius}px at center (${centerX}, ${centerY})`);
+        } else {
+          // Rectangular mask - centered on canvas
+          // Assume portrait 2:3 ratio fits within 1024x1024
+          const rectWidth = 650; // 25cm equivalent
+          const rectHeight = 950; // ~45cm equivalent, maintains 2:3 ratio
+          const rectX = (width - rectWidth) / 2;
+          const rectY = (height - rectHeight) / 2;
           
-          // Make neutral bright pixels FULLY transparent (set all channels to 0)
-          // This prevents dark artifacts when compositing
-          if (isBright && isNeutral) {
-            data[i] = 0;     // R = 0
-            data[i + 1] = 0; // G = 0
-            data[i + 2] = 0; // B = 0
-            data[i + 3] = 0; // Alpha = 0 (transparent)
-          }
+          // Create SVG rectangle mask
+          const rectMask = Buffer.from(
+            `<svg width="${width}" height="${height}">
+              <rect width="${width}" height="${height}" fill="black"/>
+              <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${rectHeight}" fill="white"/>
+            </svg>`
+          );
+          
+          maskBuffer = await sharp(rectMask).png().toBuffer();
+          console.log(`Created rectangular mask: ${rectWidth}x${rectHeight}px at (${rectX}, ${rectY})`);
         }
         
-        // Reconstruct the image from modified raw data with high compression
-        logoBuffer = await sharp(data, {
-          raw: {
-            width: info.width,
-            height: info.height,
-            channels: info.channels,
-          },
-        })
-        .png({ compressionLevel: 9 })
-        .toBuffer();
+        // Apply mask using composite with dest-in blend mode
+        // This keeps ONLY the pixels where mask is white (inside the shape)
+        logoBuffer = await sharp(logoBuffer)
+          .ensureAlpha()
+          .composite([{
+            input: maskBuffer,
+            blend: 'dest-in' // Keep only pixels where mask is opaque
+          }])
+          .png({ compressionLevel: 9 })
+          .toBuffer();
         
-        console.log('White background removed with threshold 250 - border preserved');
+        console.log(`Background removed using ${badgeShape} shape-based mask - all interior colors preserved`);
       } catch (error) {
-        console.error('Background removal error:', error);
-        // Fallback: save as PNG without background removal
-        logoBuffer = await sharp(logoBuffer).png().toBuffer();
+        console.error('Shape-based background removal error:', error);
+        // Fallback: try simple threshold as last resort
+        try {
+          logoBuffer = await sharp(logoBuffer)
+            .ensureAlpha()
+            .png()
+            .toBuffer();
+        } catch (fallbackError) {
+          console.error('Fallback PNG conversion failed:', fallbackError);
+        }
       }
 
       const bucket = admin.storage().bucket();
