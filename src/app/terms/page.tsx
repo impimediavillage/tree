@@ -15,7 +15,11 @@ import {
   MapPin,
   Mail,
   Phone,
-  Globe
+  Globe,
+  Truck,
+  Store,
+  Brain,
+  Stethoscope
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -103,22 +107,85 @@ Delivery times are estimates and not guaranteed.
 Risk passes to you upon delivery or collection.`
     },
     {
+      icon: Truck,
+      title: "9. NO LIABILITY FOR DELIVERY DELAYS",
+      content: `The Wellness Tree does not accept any responsibility or liability for late, delayed, or non-delivery of Goods.
+
+Delivery is performed by third-party Carriers who are independent contractors.
+
+We are not liable for any losses, damages, or inconvenience arising from delivery delays, regardless of cause.
+
+Estimated delivery times are provided for guidance only and do not constitute a binding commitment.
+
+Claims regarding delivery delays must be directed to the Carrier or Seller, not to The Wellness Tree.`
+    },
+    {
       icon: Globe,
-      title: "9. FOREIGN TAXES AND DUTIES",
+      title: "10. FOREIGN TAXES AND DUTIES",
       content: `We deliver only within South Africa.
 
 Any export is at your own risk and expense.`
     },
     {
+      icon: Store,
+      title: "11. MARKETPLACE FACILITATION AND PRODUCT QUALITY",
+      content: `The Wellness Tree operates as a marketplace platform that facilitates connections between independent Sellers and Buyers.
+
+We do not manufacture, inspect, or guarantee the quality, safety, legality, or authenticity of any Goods listed on the Platform.
+
+The Wellness Tree makes NO WARRANTIES OR GUARANTEES regarding product quality, fitness for purpose, or merchantability.
+
+All Goods are sold by independent third-party Sellers. The contract of sale is directly between the Seller and the Buyer.
+
+The Wellness Tree is not a party to the transaction and accepts no liability for:
+• Product defects, quality issues, or non-conformity
+• Misrepresentation of products by Sellers
+• Health effects or adverse reactions from using products
+• Compliance of products with applicable laws and regulations
+
+Buyers assume all risks associated with purchasing and using Goods from the Platform.
+
+All disputes regarding product quality must be resolved directly between Buyer and Seller.`
+    },
+    {
+      icon: Brain,
+      title: "12. AI ADVISORS - MEDICAL AND HEALTH DISCLAIMER",
+      content: `The Wellness Tree provides AI-powered advisory services ("AI Advisors") for informational and educational purposes only.
+
+CRITICAL WARNING: AI Advisors DO NOT provide medical, health, therapeutic, or professional advice.
+
+The Wellness Tree accepts NO RESPONSIBILITY OR LIABILITY for any advice, recommendations, or information provided by AI Advisors.
+
+AI-generated content may contain errors, inaccuracies, or outdated information and should NOT be relied upon for health decisions.
+
+YOU ARE STRONGLY RECOMMENDED TO:
+• Consult qualified, licensed practitioners in your chosen holistic or medical field
+• Seek professional medical advice before using any products or treatments
+• Verify all information with appropriate healthcare professionals
+• Never disregard professional medical advice based on AI-generated content
+
+AI Advisors are NOT a substitute for professional healthcare consultation.
+
+By using AI Advisors, you acknowledge and accept that:
+• You use AI-generated information entirely at your own risk
+• You will not rely solely on AI advice for health or medical decisions
+• The Wellness Tree is not liable for any consequences arising from following AI recommendations
+• The Wellness Tree makes no representation regarding the accuracy, completeness, or reliability of AI-generated content
+
+If you experience a medical emergency, contact emergency services immediately. Do not rely on AI Advisors for urgent medical matters.`
+    },
+    {
       icon: AlertCircle,
-      title: "10. LIMITATION OF LIABILITY",
+      title: "13. LIMITATION OF LIABILITY",
       content: `Our liability is limited to the value of the Goods purchased.
 
-We are not liable for indirect or consequential loss.`
+We are not liable for indirect or consequential loss.
+
+The Wellness Tree's total liability to you for any claims arising from the Platform shall not exceed the amount you paid for Goods in the relevant transaction.`
     },
     {
       icon: Shield,
-      title: "11. DISCLAIMERS",
+      title: "14. DISCLAIMERS",
       content: `Goods and services are provided "as is".
 
 We make no warranty of fitness for a particular purpose.
@@ -127,53 +194,59 @@ Use of the Platform is at your own risk.`
     },
     {
       icon: User,
-      title: "12. USER ACCOUNTS",
+      title: "15. USER ACCOUNTS",
       content: `You are responsible for maintaining the confidentiality of your account.
 
 You may not use the Platform for unauthorised commercial purposes.`
     },
     {
       icon: AlertCircle,
-      title: "13. CONTENT RESTRICTIONS",
+      title: "16. CONTENT RESTRICTIONS",
       content: `You may not post unlawful, misleading, offensive, or infringing content.`
     },
     {
       icon: FileText,
-      title: "14. CONTENT LICENCE",
+      title: "17. CONTENT LICENCE",
       content: `You grant us a licence to use content you post for Platform operations.`
     },
     {
       icon: Eye,
-      title: "15. REMOVAL OF CONTENT",
+      title: "18. REMOVAL OF CONTENT",
       content: `We may remove content at our discretion.
 
 Frivolous complaints may incur investigation costs.`
     },
     {
       icon: Shield,
-      title: "16. PLATFORM SECURITY",
+      title: "19. PLATFORM SECURITY",
       content: `Unauthorised access or misuse will result in legal action.`
     },
     {
       icon: Scale,
-      title: "17. INDEMNITY",
-      content: `You indemnify us against all claims arising from your breach of these Terms.`
+      title: "20. INDEMNITY",
+      content: `You indemnify us against all claims arising from your breach of these Terms.
+
+You further indemnify The Wellness Tree against any claims arising from:
+• Your use of AI Advisors or reliance on AI-generated content
+• Your purchase or use of Goods from Sellers on the Platform
+• Delivery delays or issues
+• Product quality, safety, or defects`
     },
     {
       icon: Copyright,
-      title: "18. INTELLECTUAL PROPERTY",
+      title: "21. INTELLECTUAL PROPERTY",
       content: `All Platform intellectual property remains our exclusive property.
 
 Limited personal-use licences are granted.`
     },
     {
       icon: Eye,
-      title: "19. PRIVACY",
+      title: "22. PRIVACY",
       content: `Personal information is processed in accordance with POPIA and our Privacy Policy.`
     },
     {
       icon: Scale,
-      title: "20. GOVERNING LAW",
+      title: "23. GOVERNING LAW",
       content: `This Agreement is governed by the laws of the Republic of South Africa.`
     }
   ];
