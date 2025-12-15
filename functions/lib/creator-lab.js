@@ -113,8 +113,8 @@ exports.generateCreatorDesign = (0, https_1.onCall)({ secrets: [openaiApiKey] },
             throw new https_1.HttpsError('failed-precondition', 'Insufficient credits. Need 10 credits for logo generation.');
         }
         // Build logo prompt - Frontend already includes shape/aspect ratio instructions
-        // Add explicit instructions for clean extraction
-        const logoPrompt = `${prompt} CRITICAL TECHNICAL REQUIREMENTS: Pure white (#FFFFFF) background with NO gradients, shadows, or soft edges. The border should be SOLID BLACK (3-4px thick) with NO anti-aliasing or feathering between the border and background. Flat graphic design style, NO depth, NO shadows, NO 3D effects. This is for digital printing with transparent background extraction. High contrast, clean sharp edges only. Do NOT create any clothing, apparel, or fabric textures.`;
+        // Add explicit instructions for clean extraction - emphasize white OUTSIDE border only
+        const logoPrompt = `${prompt} CRITICAL TECHNICAL REQUIREMENTS FOR BACKGROUND: The image must be on a PURE WHITE (#FFFFFF) background ONLY in the area OUTSIDE the ${badgeShape || 'circular'} border. Inside the border, use ANY vibrant colors you want for the design. The border itself should be SOLID BLACK (4-5px thick, crisp edges, NO blur, NO anti-aliasing with the white background). Outside the black border = pure flat white (#FFFFFF) with NO gradients, NO shadows, NO texture. Inside the border = colorful vibrant design. This is a 2D flat logo for print extraction, NOT clothing or fabric. The design must be perfectly centered on the canvas at exactly 25cm diameter (for circular) or 25cm x 45cm (for rectangular portrait).`;
         const logoResponse = await axios_1.default.post('https://api.openai.com/v1/images/generations', {
             model: 'dall-e-3',
             prompt: logoPrompt,
@@ -132,52 +132,157 @@ exports.generateCreatorDesign = (0, https_1.onCall)({ secrets: [openaiApiKey] },
         // Download logo
         const logoImageResponse = await axios_1.default.get(logoUrl, { responseType: 'arraybuffer' });
         let logoBuffer = Buffer.from(logoImageResponse.data);
-        // Remove white background outside the border - AGGRESSIVE THRESHOLD
+        // Remove white background and residual colors OUTSIDE the border
+        // Preserve ALL colors INSIDE the border (including white within the logo)
         try {
-            // First, ensure we have an alpha channel and convert to PNG
-            const imageWithAlpha = await (0, sharp_1.default)(logoBuffer)
+            const metadata = await (0, sharp_1.default)(logoBuffer).metadata();
+            const width = metadata.width || 1024;
+            const height = metadata.height || 1024;
+            // Convert to raw pixel data for processing
+            const { data, info } = await (0, sharp_1.default)(logoBuffer)
                 .ensureAlpha()
-                .toBuffer();
-            // Get the raw pixel data to manipulate
-            const { data, info } = await (0, sharp_1.default)(imageWithAlpha).raw().toBuffer({ resolveWithObject: true });
-            // Use threshold of 245 with color variation check for smarter white removal
-            // This preserves colored borders/details while removing white background more reliably
-            const WHITE_THRESHOLD = 245;
-            // Modify ALL channels (RGB + Alpha) for white pixels to achieve TRUE transparency
-            for (let i = 0; i < data.length; i += info.channels) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                // Check if pixel is very bright (close to white)
-                const isBright = r >= WHITE_THRESHOLD && g >= WHITE_THRESHOLD && b >= WHITE_THRESHOLD;
-                // Check if pixel has low color variation (not colorful, just gray/white)
-                const colorVariation = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
-                const isNeutral = colorVariation < 15; // Less than 15 points variation = neutral color
-                // Make neutral bright pixels FULLY transparent (set all channels to 0)
-                // This prevents dark artifacts when compositing
-                if (isBright && isNeutral) {
-                    data[i] = 0; // R = 0
-                    data[i + 1] = 0; // G = 0
-                    data[i + 2] = 0; // B = 0
-                    data[i + 3] = 0; // Alpha = 0 (transparent)
+                .raw()
+                .toBuffer({ resolveWithObject: true });
+            // Image is always 1024x1024 from DALL-E, design should be centered
+            // For circular: 25cm diameter = ~950px on 1024px canvas (with border)
+            // For rectangular portrait: 25cm x 45cm = ~650x950px (scaled to fit)
+            const centerX = width / 2;
+            const centerY = height / 2;
+            // Detect the actual border by finding dark pixels (black border)
+            // We'll scan for the outermost dark pixels to define the shape
+            let shapeRadius = 475; // Default for circular
+            let rectX = 0, rectY = 0, rectWidth = width, rectHeight = height;
+            if (badgeShape === 'circular') {
+                // Find the circular border by detecting the outermost black ring
+                // Scan from center outward to find where black border is
+                for (let r = 500; r > 100; r -= 5) {
+                    let blackPixelsFound = 0;
+                    const testPoints = 36; // Check 36 points around the circle
+                    for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / testPoints) {
+                        const x = Math.round(centerX + Math.cos(angle) * r);
+                        const y = Math.round(centerY + Math.sin(angle) * r);
+                        if (x >= 0 && x < width && y >= 0 && y < height) {
+                            const idx = (y * width + x) * 4;
+                            const r = data[idx];
+                            const g = data[idx + 1];
+                            const b = data[idx + 2];
+                            // Check if pixel is dark (part of black border)
+                            if (r < 50 && g < 50 && b < 50) {
+                                blackPixelsFound++;
+                            }
+                        }
+                    }
+                    // If we found a ring of black pixels, this is our border
+                    if (blackPixelsFound > testPoints * 0.7) {
+                        shapeRadius = r + 10; // Add padding inside the border
+                        console.log(`Detected circular border at radius: ${r}px`);
+                        break;
+                    }
                 }
             }
-            // Reconstruct the image from modified raw data with high compression
+            else {
+                // For rectangular, find bounding box of dark pixels
+                let minX = width, maxX = 0, minY = height, maxY = 0;
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        const r = data[idx];
+                        const g = data[idx + 1];
+                        const b = data[idx + 2];
+                        // Check if pixel is dark (part of black border)
+                        if (r < 50 && g < 50 && b < 50) {
+                            minX = Math.min(minX, x);
+                            maxX = Math.max(maxX, x);
+                            minY = Math.min(minY, y);
+                            maxY = Math.max(maxY, y);
+                        }
+                    }
+                }
+                rectX = minX + 5; // Add padding inside the border
+                rectY = minY + 5;
+                rectWidth = maxX - minX - 10;
+                rectHeight = maxY - minY - 10;
+                console.log(`Detected rectangular border: ${rectWidth}x${rectHeight}px at (${rectX}, ${rectY})`);
+            }
+            // Create transparency mask: make everything OUTSIDE the border transparent
+            // Keep everything INSIDE the border as-is (all colors preserved)
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+                    let isInside = false;
+                    if (badgeShape === 'circular') {
+                        // Check if pixel is inside the circle
+                        const dx = x - centerX;
+                        const dy = y - centerY;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        isInside = distance <= shapeRadius;
+                    }
+                    else {
+                        // Check if pixel is inside the rectangle
+                        isInside = x >= rectX && x < rectX + rectWidth &&
+                            y >= rectY && y < rectY + rectHeight;
+                    }
+                    // If pixel is OUTSIDE the border, make it fully transparent
+                    if (!isInside) {
+                        data[idx + 3] = 0; // Set alpha to 0 (fully transparent)
+                    }
+                    // If INSIDE the border, keep the original alpha (preserve all colors)
+                }
+            }
+            // Convert back to PNG with transparency
             logoBuffer = await (0, sharp_1.default)(data, {
                 raw: {
                     width: info.width,
                     height: info.height,
-                    channels: info.channels,
-                },
+                    channels: 4
+                }
             })
                 .png({ compressionLevel: 9 })
                 .toBuffer();
-            console.log('White background removed with threshold 250 - border preserved');
+            console.log(`Background removed: Everything outside ${badgeShape} border is now transparent. All colors inside preserved.`);
         }
         catch (error) {
-            console.error('Background removal error:', error);
-            // Fallback: save as PNG without background removal
-            logoBuffer = await (0, sharp_1.default)(logoBuffer).png().toBuffer();
+            console.error('Advanced background removal error:', error);
+            // Fallback: Use simple shape-based mask
+            try {
+                const metadata = await (0, sharp_1.default)(logoBuffer).metadata();
+                const width = metadata.width || 1024;
+                const height = metadata.height || 1024;
+                let maskBuffer;
+                if (badgeShape === 'circular') {
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const radius = 475;
+                    const circleMask = Buffer.from(`<svg width="${width}" height="${height}">
+                <rect width="${width}" height="${height}" fill="black"/>
+                <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="white"/>
+              </svg>`);
+                    maskBuffer = await (0, sharp_1.default)(circleMask).png().toBuffer();
+                }
+                else {
+                    const rectWidth = 650;
+                    const rectHeight = 950;
+                    const rectX = (width - rectWidth) / 2;
+                    const rectY = (height - rectHeight) / 2;
+                    const rectMask = Buffer.from(`<svg width="${width}" height="${height}">
+                <rect width="${width}" height="${height}" fill="black"/>
+                <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${rectHeight}" fill="white"/>
+              </svg>`);
+                    maskBuffer = await (0, sharp_1.default)(rectMask).png().toBuffer();
+                }
+                logoBuffer = await (0, sharp_1.default)(logoBuffer)
+                    .ensureAlpha()
+                    .composite([{
+                        input: maskBuffer,
+                        blend: 'dest-in'
+                    }])
+                    .png({ compressionLevel: 9 })
+                    .toBuffer();
+                console.log(`Fallback: Applied simple ${badgeShape} mask`);
+            }
+            catch (fallbackError) {
+                console.error('Fallback masking failed:', fallbackError);
+            }
         }
         const bucket = admin.storage().bucket();
         const timestamp = Date.now();
