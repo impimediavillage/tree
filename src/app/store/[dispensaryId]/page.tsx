@@ -149,20 +149,22 @@ export default function DispensaryStorePage() {
     );
   }
 
-  const bannerUrl = dispensary.bannerUrl || 'https://placehold.co/1200x400.png?text=' + encodeURIComponent(dispensary.dispensaryName);
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen">
       {/* Compact Header with Banner */}
-      <div className="relative w-full h-48 md:h-64">
-        <Image
-          src={bannerUrl}
-          alt={dispensary.dispensaryName}
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      <div className="relative w-full h-48 md:h-64 bg-gradient-to-br from-[#006B3E] to-[#004D2C]">
+        {dispensary.bannerUrl && (
+          <>
+            <Image
+              src={dispensary.bannerUrl}
+              alt={dispensary.dispensaryName}
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          </>
+        )}
         
         {/* Header Content */}
         <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
@@ -185,7 +187,7 @@ export default function DispensaryStorePage() {
               <Badge variant="secondary" className="bg-white/90 text-foreground">
                 {dispensary.dispensaryType}
               </Badge>
-              {dispensary.city && dispensary.province && (
+              {dispensary.showLocation && dispensary.city && dispensary.province && (
                 <div className="flex items-center gap-1 text-white/90">
                   <MapPin className="h-4 w-4" />
                   <span>{dispensary.city}, {dispensary.province}</span>
@@ -199,7 +201,7 @@ export default function DispensaryStorePage() {
       <div className="container mx-auto py-6 px-4 md:px-6 lg:px-8">
         {/* About Section - Collapsible/Compact */}
         {dispensary.message && (
-          <Card className="mb-6 border-2">
+          <Card className="mb-6 border-2 bg-background/80 backdrop-blur-sm">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Info className="h-5 w-5 text-primary" />
@@ -215,7 +217,7 @@ export default function DispensaryStorePage() {
         )}
 
         {/* Search and Category Filters */}
-        <Card className="mb-6 border-2">
+        <Card className="mb-6 border-2 bg-background/80 backdrop-blur-sm">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
               <div className="relative flex-1">
@@ -277,7 +279,7 @@ export default function DispensaryStorePage() {
               </div>
             </>
           ) : (
-            <Card className="border-2 border-dashed">
+            <Card className="border-2 border-dashed bg-background/80 backdrop-blur-sm">
               <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
                 <Store className="mx-auto h-16 w-16 mb-4 opacity-50" />
                 <h3 className="text-xl font-semibold mb-2">

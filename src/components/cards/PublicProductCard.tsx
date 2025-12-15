@@ -220,7 +220,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   return (
     <>
       <Card 
-          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-muted/50 border-border/50 group animate-fade-in-scale-up"
+          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-background/80 backdrop-blur-sm border-border/50 group animate-fade-in-scale-up"
           style={{ animationFillMode: 'backwards' }}
           data-ai-hint={dataAiHintProduct}
       >
