@@ -171,77 +171,181 @@ export const generateCreatorDesign = onCall(
       const logoImageResponse = await axios.get(logoUrl, { responseType: 'arraybuffer' });
       let logoBuffer = Buffer.from(logoImageResponse.data);
 
-      // Remove white background ONLY outside the border using shape-based masking
-      // This preserves ALL colors inside the design including whites/pastels
+      // Remove white background and residual colors OUTSIDE the border
+      // Preserve ALL colors INSIDE the border (including white within the logo)
       try {
         const metadata = await sharp(logoBuffer).metadata();
         const width = metadata.width || 1024;
         const height = metadata.height || 1024;
         
-        // Image is always 1024x1024 from DALL-E, design should be centered at 25cm
-        // For circular: 25cm diameter = ~950px on 1024px canvas (with border)
-        // For rectangular portrait: 25cm x 45cm = ~950px x 1710px (scaled to fit)
+        // Convert to raw pixel data for processing
+        const { data, info } = await sharp(logoBuffer)
+          .ensureAlpha()
+          .raw()
+          .toBuffer({ resolveWithObject: true });
         
-        let maskBuffer: Buffer;
+        // Image is always 1024x1024 from DALL-E, design should be centered
+        // For circular: 25cm diameter = ~950px on 1024px canvas (with border)
+        // For rectangular portrait: 25cm x 45cm = ~650x950px (scaled to fit)
+        
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        // Detect the actual border by finding dark pixels (black border)
+        // We'll scan for the outermost dark pixels to define the shape
+        let shapeRadius = 475; // Default for circular
+        let rectX = 0, rectY = 0, rectWidth = width, rectHeight = height;
         
         if (badgeShape === 'circular') {
-          // Create circular mask - design is centered with ~950px diameter
-          const centerX = width / 2;
-          const centerY = height / 2;
-          const radius = 475; // 950px diameter / 2, leaves edge padding
-          
-          // Create SVG circle mask
-          const circleMask = Buffer.from(
-            `<svg width="${width}" height="${height}">
-              <rect width="${width}" height="${height}" fill="black"/>
-              <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="white"/>
-            </svg>`
-          );
-          
-          maskBuffer = await sharp(circleMask).png().toBuffer();
-          console.log(`Created circular mask: radius ${radius}px at center (${centerX}, ${centerY})`);
+          // Find the circular border by detecting the outermost black ring
+          // Scan from center outward to find where black border is
+          for (let r = 500; r > 100; r -= 5) {
+            let blackPixelsFound = 0;
+            const testPoints = 36; // Check 36 points around the circle
+            
+            for (let angle = 0; angle < Math.PI * 2; angle += (Math.PI * 2) / testPoints) {
+              const x = Math.round(centerX + Math.cos(angle) * r);
+              const y = Math.round(centerY + Math.sin(angle) * r);
+              
+              if (x >= 0 && x < width && y >= 0 && y < height) {
+                const idx = (y * width + x) * 4;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+                
+                // Check if pixel is dark (part of black border)
+                if (r < 50 && g < 50 && b < 50) {
+                  blackPixelsFound++;
+                }
+              }
+            }
+            
+            // If we found a ring of black pixels, this is our border
+            if (blackPixelsFound > testPoints * 0.7) {
+              shapeRadius = r + 10; // Add padding inside the border
+              console.log(`Detected circular border at radius: ${r}px`);
+              break;
+            }
+          }
         } else {
-          // Rectangular mask - centered on canvas
-          // Assume portrait 2:3 ratio fits within 1024x1024
-          const rectWidth = 650; // 25cm equivalent
-          const rectHeight = 950; // ~45cm equivalent, maintains 2:3 ratio
-          const rectX = (width - rectWidth) / 2;
-          const rectY = (height - rectHeight) / 2;
+          // For rectangular, find bounding box of dark pixels
+          let minX = width, maxX = 0, minY = height, maxY = 0;
           
-          // Create SVG rectangle mask
-          const rectMask = Buffer.from(
-            `<svg width="${width}" height="${height}">
-              <rect width="${width}" height="${height}" fill="black"/>
-              <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${rectHeight}" fill="white"/>
-            </svg>`
-          );
+          for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+              const idx = (y * width + x) * 4;
+              const r = data[idx];
+              const g = data[idx + 1];
+              const b = data[idx + 2];
+              
+              // Check if pixel is dark (part of black border)
+              if (r < 50 && g < 50 && b < 50) {
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+              }
+            }
+          }
           
-          maskBuffer = await sharp(rectMask).png().toBuffer();
-          console.log(`Created rectangular mask: ${rectWidth}x${rectHeight}px at (${rectX}, ${rectY})`);
+          rectX = minX + 5; // Add padding inside the border
+          rectY = minY + 5;
+          rectWidth = maxX - minX - 10;
+          rectHeight = maxY - minY - 10;
+          console.log(`Detected rectangular border: ${rectWidth}x${rectHeight}px at (${rectX}, ${rectY})`);
         }
         
-        // Apply mask using composite with dest-in blend mode
-        // This keeps ONLY the pixels where mask is white (inside the shape)
-        logoBuffer = await sharp(logoBuffer)
-          .ensureAlpha()
-          .composite([{
-            input: maskBuffer,
-            blend: 'dest-in' // Keep only pixels where mask is opaque
-          }])
-          .png({ compressionLevel: 9 })
-          .toBuffer();
+        // Create transparency mask: make everything OUTSIDE the border transparent
+        // Keep everything INSIDE the border as-is (all colors preserved)
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const idx = (y * width + x) * 4;
+            
+            let isInside = false;
+            
+            if (badgeShape === 'circular') {
+              // Check if pixel is inside the circle
+              const dx = x - centerX;
+              const dy = y - centerY;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              isInside = distance <= shapeRadius;
+            } else {
+              // Check if pixel is inside the rectangle
+              isInside = x >= rectX && x < rectX + rectWidth && 
+                        y >= rectY && y < rectY + rectHeight;
+            }
+            
+            // If pixel is OUTSIDE the border, make it fully transparent
+            if (!isInside) {
+              data[idx + 3] = 0; // Set alpha to 0 (fully transparent)
+            }
+            // If INSIDE the border, keep the original alpha (preserve all colors)
+          }
+        }
         
-        console.log(`Background removed using ${badgeShape} shape-based mask - all interior colors preserved`);
+        // Convert back to PNG with transparency
+        logoBuffer = await sharp(data, {
+          raw: {
+            width: info.width,
+            height: info.height,
+            channels: 4
+          }
+        })
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+        
+        console.log(`Background removed: Everything outside ${badgeShape} border is now transparent. All colors inside preserved.`);
       } catch (error) {
-        console.error('Shape-based background removal error:', error);
-        // Fallback: try simple threshold as last resort
+        console.error('Advanced background removal error:', error);
+        // Fallback: Use simple shape-based mask
         try {
+          const metadata = await sharp(logoBuffer).metadata();
+          const width = metadata.width || 1024;
+          const height = metadata.height || 1024;
+          
+          let maskBuffer: Buffer;
+          
+          if (badgeShape === 'circular') {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = 475;
+            
+            const circleMask = Buffer.from(
+              `<svg width="${width}" height="${height}">
+                <rect width="${width}" height="${height}" fill="black"/>
+                <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="white"/>
+              </svg>`
+            );
+            
+            maskBuffer = await sharp(circleMask).png().toBuffer();
+          } else {
+            const rectWidth = 650;
+            const rectHeight = 950;
+            const rectX = (width - rectWidth) / 2;
+            const rectY = (height - rectHeight) / 2;
+            
+            const rectMask = Buffer.from(
+              `<svg width="${width}" height="${height}">
+                <rect width="${width}" height="${height}" fill="black"/>
+                <rect x="${rectX}" y="${rectY}" width="${rectWidth}" height="${rectHeight}" fill="white"/>
+              </svg>`
+            );
+            
+            maskBuffer = await sharp(rectMask).png().toBuffer();
+          }
+          
           logoBuffer = await sharp(logoBuffer)
             .ensureAlpha()
-            .png()
+            .composite([{
+              input: maskBuffer,
+              blend: 'dest-in'
+            }])
+            .png({ compressionLevel: 9 })
             .toBuffer();
+          
+          console.log(`Fallback: Applied simple ${badgeShape} mask`);
         } catch (fallbackError) {
-          console.error('Fallback PNG conversion failed:', fallbackError);
+          console.error('Fallback masking failed:', fallbackError);
         }
       }
 

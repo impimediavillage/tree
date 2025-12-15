@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartIcon } from './CartIcon';
+import { GoogleTranslate } from './GoogleTranslate';
 
 const getInitials = (name?: string | null, fallback = 'U') => {
   if (!name) return fallback;
@@ -70,6 +71,7 @@ export function Header() {
 
           <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2" />
 
+          <GoogleTranslate />
           <CartIcon />
 
           {authLoading ? (

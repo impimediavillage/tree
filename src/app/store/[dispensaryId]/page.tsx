@@ -1,16 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import type { Dispensary, Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, AlertTriangle, ArrowLeft, Store } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Loader2, AlertTriangle, ArrowLeft, Store, Search, MapPin, Info } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
+import { Badge } from '@/components/ui/badge';
 
 export default function DispensaryStorePage() {
   const params = useParams();
@@ -22,6 +25,8 @@ export default function DispensaryStorePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
   useEffect(() => {
     const fetchDispensaryAndProducts = async () => {
@@ -86,6 +91,44 @@ export default function DispensaryStorePage() {
     fetchDispensaryAndProducts();
   }, [dispensaryId, toast]);
 
+  // Extract unique categories from products
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+    return ['all', ...uniqueCategories.sort()];
+  }, [products]);
+
+  // Filter products based on search and category
+  const filteredProducts = useMemo(() => {
+    let filtered = [...products];
+
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(lowerSearchTerm) ||
+        product.description.toLowerCase().includes(lowerSearchTerm) ||
+        product.category.toLowerCase().includes(lowerSearchTerm) ||
+        (product.tags && product.tags.some(tag => tag.toLowerCase().includes(lowerSearchTerm)))
+      );
+    }
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    return filtered;
+  }, [products, searchTerm, selectedCategory]);
+
+  // Count products per category
+  const categoryCount = useMemo(() => {
+    const counts: Record<string, number> = { all: products.length };
+    products.forEach(product => {
+      if (product.category) {
+        counts[product.category] = (counts[product.category] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [products]);
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4 flex justify-center items-center min-h-[60vh]">
@@ -109,73 +152,160 @@ export default function DispensaryStorePage() {
   const bannerUrl = dispensary.bannerUrl || 'https://placehold.co/1200x400.png?text=' + encodeURIComponent(dispensary.dispensaryName);
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-      {/* Banner */}
-      <div className="relative w-full h-64 mb-8 rounded-lg overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+      {/* Compact Header with Banner */}
+      <div className="relative w-full h-48 md:h-64">
         <Image
           src={bannerUrl}
           alt={dispensary.dispensaryName}
           fill
           className="object-cover"
+          priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
-          <div className="p-6">
-            <h1 className="text-4xl font-bold text-white mb-2">{dispensary.dispensaryName}</h1>
-            <p className="text-white/90">{dispensary.dispensaryType}</p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        
+        {/* Header Content */}
+        <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
+          {/* Back Button */}
+          <div>
+            <Button
+              variant="secondary"
+              onClick={() => router.back()}
+              className="bg-white/90 hover:bg-white backdrop-blur-sm"
+              size="sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+          </div>
+
+          {/* Dispensary Info */}
+          <div className="text-white">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">{dispensary.dispensaryName}</h1>
+            <div className="flex flex-wrap items-center gap-3 text-sm md:text-base">
+              <Badge variant="secondary" className="bg-white/90 text-foreground">
+                {dispensary.dispensaryType}
+              </Badge>
+              {dispensary.city && dispensary.province && (
+                <div className="flex items-center gap-1 text-white/90">
+                  <MapPin className="h-4 w-4" />
+                  <span>{dispensary.city}, {dispensary.province}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Back Button */}
-      <Button
-        variant="outline"
-        onClick={() => router.back()}
-        className="mb-6"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" /> Back
-      </Button>
-
-      {/* Dispensary Info */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>About {dispensary.dispensaryName}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">
-            {dispensary.message || 'Welcome to our store!'}
-          </p>
-          {dispensary.city && dispensary.province && (
-            <p className="text-sm">
-              <strong>Location:</strong> {dispensary.city}, {dispensary.province}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Products - Using PublicProductCard for each tier */}
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Products</h2>
-        {products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.flatMap(product => 
-              product.priceTiers.map((tier, tierIndex) => (
-                <PublicProductCard
-                  key={`${product.id}-tier-${tierIndex}`}
-                  product={product}
-                  tier={tier}
-                />
-              ))
-            )}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="pt-6 text-center text-muted-foreground">
-              <Store className="mx-auto h-12 w-12 mb-3" />
-              <h3 className="text-xl font-semibold">No Products Yet</h3>
-              <p>This dispensary hasn&apos;t listed any products yet.</p>
+      <div className="container mx-auto py-6 px-4 md:px-6 lg:px-8">
+        {/* About Section - Collapsible/Compact */}
+        {dispensary.message && (
+          <Card className="mb-6 border-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Info className="h-5 w-5 text-primary" />
+                About this store
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-muted-foreground text-sm md:text-base">
+                {dispensary.message}
+              </p>
             </CardContent>
           </Card>
         )}
+
+        {/* Search and Category Filters */}
+        <Card className="mb-6 border-2">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Category Tabs */}
+            {categories.length > 1 && (
+              <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
+                <TabsList className="w-full justify-start flex-wrap h-auto gap-2 bg-muted/50 p-2">
+                  {categories.map(category => (
+                    <TabsTrigger
+                      key={category}
+                      value={category}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      {category === 'all' ? 'All Products' : category}
+                      <Badge variant="secondary" className="ml-2 bg-background/50">
+                        {categoryCount[category] || 0}
+                      </Badge>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Products Grid */}
+        <div>
+          {filteredProducts.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">
+                  {selectedCategory === 'all' ? 'All Products' : selectedCategory}
+                </h2>
+                <p className="text-muted-foreground">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProducts.flatMap(product => 
+                  product.priceTiers.map((tier, tierIndex) => (
+                    <PublicProductCard
+                      key={`${product.id}-tier-${tierIndex}`}
+                      product={product}
+                      tier={tier}
+                    />
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <Card className="border-2 border-dashed">
+              <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
+                <Store className="mx-auto h-16 w-16 mb-4 opacity-50" />
+                <h3 className="text-xl font-semibold mb-2">
+                  {searchTerm || selectedCategory !== 'all' 
+                    ? 'No products found' 
+                    : 'No Products Yet'}
+                </h3>
+                <p className="text-sm">
+                  {searchTerm || selectedCategory !== 'all'
+                    ? 'Try adjusting your search or filter'
+                    : 'This dispensary hasn\'t listed any products yet.'}
+                </p>
+                {(searchTerm || selectedCategory !== 'all') && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('all');
+                    }}
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

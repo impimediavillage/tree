@@ -248,22 +248,22 @@ export default function CreatorLabPage() {
       {/* Header with White Opacity Background (no blur) */}
       <div className="relative">
         <div className="absolute inset-0 bg-white/80" />
-        <div className="relative container mx-auto px-4 py-12">
-          <div className="flex items-center justify-between">
-            <div>
+        <div className="relative container mx-auto px-4 py-8 md:py-12">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <Sparkles className="h-10 w-10 text-[#006B3E]" />
-                <h1 className="text-5xl font-extrabold text-[#3D2E17]">The Creator Lab</h1>
+                <Sparkles className="h-8 w-8 md:h-10 md:w-10 text-[#006B3E]" />
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-[#3D2E17]">The Creator Lab</h1>
               </div>
-              <p className="text-xl text-[#5D4E37] font-semibold mt-2">
+              <p className="text-lg md:text-xl text-[#5D4E37] font-semibold mt-2">
                 Design, Create, Earn — The Easy Way! 🎨💰
               </p>
-              <p className="text-[#5D4E37] mt-2">
+              <p className="text-sm md:text-base text-[#5D4E37] mt-2">
                 Create stunning designs, add them to The Treehouse Store, and earn <strong>25% commission</strong> on every sale. 
                 We handle printing, shipping, and customer service — you just create and get paid! 🌳✨
               </p>
             </div>
-            <Card className="border-2 border-[#006B3E]">
+            <Card className="border-2 border-[#006B3E] w-full lg:w-auto">
               <CardContent className="p-6 text-center">
                 <p className="text-sm text-[#5D4E37] font-semibold">Your Credits</p>
                 <p className="text-4xl font-extrabold text-[#006B3E]">{userCredits}</p>
@@ -291,14 +291,14 @@ export default function CreatorLabPage() {
 
         {/* Dynamic ADD NEW Button */}
         {selectedCategory && (
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-6 md:mb-8">
             <Button
               onClick={handleAddNew}
               size="lg"
-              className="h-20 px-12 bg-[#006B3E] hover:bg-[#005230] text-white font-extrabold text-xl shadow-lg"
+              className="h-16 md:h-20 px-8 md:px-12 bg-[#006B3E] hover:bg-[#005230] text-white font-extrabold text-lg md:text-xl shadow-lg w-full sm:w-auto"
             >
-              <Wand2 className="h-8 w-8 mr-3" />
-              <Plus className="h-8 w-8 mr-2" />
+              <Wand2 className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3" />
+              <Plus className="h-6 w-6 md:h-8 md:w-8 mr-1 md:mr-2" />
               ADD NEW
             </Button>
           </div>
@@ -335,7 +335,7 @@ export default function CreatorLabPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {myProducts.map((product) => (
                   <Card key={product.id} className="border-2 border-[#5D4E37]/30 overflow-hidden">
                     {/* Image Section - Show both design and model if available */}

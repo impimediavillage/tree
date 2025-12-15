@@ -327,10 +327,10 @@ export default function DispensaryOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4">
             <div>
               <CardTitle className="text-2xl flex items-center gap-2">
                 <Package2 className="h-6 w-6 text-primary" />
@@ -340,13 +340,14 @@ export default function DispensaryOrdersPage() {
                 View and manage all orders for {currentDispensary?.dispensaryName}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <OrdersDashboardHelp />
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="whitespace-nowrap">
                     <BarChart3 className="h-4 w-4 mr-2" />
-                    View Analytics
+                    <span className="hidden sm:inline">View Analytics</span>
+                    <span className="sm:hidden">Analytics</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -389,7 +390,7 @@ export default function DispensaryOrdersPage() {
         orders={filteredOrders}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

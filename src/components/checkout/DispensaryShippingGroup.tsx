@@ -438,10 +438,19 @@ export const DispensaryShippingGroup = ({
                 <div className="mt-2 max-h-[400px] overflow-y-auto space-y-2 p-1">
                     {filteredLockers.length > 0 ? (
                         filteredLockers.map(locker => (
-                            <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-2 text-left" onClick={() => handleLockerSelect(locker)}>
-                                <div>
-                                    <p className="font-semibold">{locker.name}</p>
-                                    <p className="text-sm text-muted-foreground">{locker.address}</p>
+                            <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-3 text-left" onClick={() => handleLockerSelect(locker)}>
+                                <div className="w-full">
+                                    <div className="flex items-start justify-between w-full">
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{locker.name}</p>
+                                            <p className="text-sm text-muted-foreground">{locker.address}</p>
+                                        </div>
+                                        {locker.distanceKm !== null && locker.distanceKm !== undefined && (
+                                            <div className="ml-3 flex-shrink-0">
+                                                <p className="text-sm font-bold text-primary">{locker.distanceKm.toFixed(1)} km</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </Button>
                         ))
