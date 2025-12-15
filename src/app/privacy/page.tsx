@@ -173,27 +173,36 @@ We will process opt-out requests promptly.`
         className="container mx-auto px-4 py-12 max-w-5xl"
       >
         {/* Header */}
-        <div className="text-center mb-12">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="inline-block mb-6"
-          >
-            <Shield className="h-20 w-20 text-[#006B3E] mx-auto" />
-          </motion.div>
-          
-          <h1 className="text-5xl font-bold text-[#3D2E17] mb-4">
-            PRIVACY POLICY
-          </h1>
-          
-          <div className="text-[#3D2E17] font-bold text-lg space-y-2 mb-6">
-            <p>THE WELLNESS TREE (PTY) LTD</p>
-            <p className="text-base">Registration Number: 2025/934950/07</p>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-muted/50 border-border/50 rounded-xl shadow-lg p-8 mb-8"
+        >
+          <div className="text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="inline-block mb-6"
+            >
+              <Shield className="h-20 w-20 text-[#006B3E] mx-auto" />
+            </motion.div>
+            
+            <h1 className="text-5xl font-bold text-[#3D2E17] mb-4">
+              PRIVACY POLICY
+            </h1>
+            
+            <div className="text-[#3D2E17] font-bold text-lg space-y-2">
+              <p>THE WELLNESS TREE (PTY) LTD</p>
+              <p className="text-base">Registration Number: 2025/934950/07</p>
+            </div>
           </div>
+        </motion.div>
 
-          {/* Contact Information Card */}
-          <div className="bg-muted/50 border-border/50 rounded-xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
+        {/* Contact Information Card */}
+        <div className="mb-8">
+          <div className="bg-muted/50 border-border/50 rounded-xl shadow-lg p-6 max-w-2xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-[#3D2E17]">
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-[#006B3E] mt-1 flex-shrink-0" />
@@ -235,7 +244,7 @@ We will process opt-out requests promptly.`
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="bg-muted/50 border-l-4 border-[#006B3E] p-6 mb-12 rounded-r-lg shadow-md"
         >
           <p className="text-[#3D2E17] font-bold mb-2">
