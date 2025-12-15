@@ -252,7 +252,7 @@ Limited personal-use licences are granted.`
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50">
+    <div className="min-h-screen">
       <motion.div 
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
@@ -281,7 +281,7 @@ Limited personal-use licences are granted.`
           </div>
 
           {/* Contact Information Card */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
+          <div className="bg-muted/50 border-border/50 rounded-xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-[#3D2E17]">
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-[#006B3E] mt-1 flex-shrink-0" />
@@ -328,7 +328,7 @@ Limited personal-use licences are granted.`
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-amber-50 border-l-4 border-[#006B3E] p-6 mb-12 rounded-r-lg shadow-md"
+          className="bg-muted/50 border-l-4 border-[#006B3E] p-6 mb-12 rounded-r-lg shadow-md"
         >
           <p className="text-[#3D2E17] font-bold mb-2">
             This Agreement is the contract between The Wellness Tree (Pty) Ltd ("we", "us", "our") and any person who accesses or uses the Platform ("you", "your").
@@ -349,7 +349,7 @@ Limited personal-use licences are granted.`
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 + (index * 0.05) }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
+              className="bg-muted/50 border-border/50 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300"
             >
               <div className="flex items-start gap-4">
                 <div className="bg-[#006B3E] p-3 rounded-lg flex-shrink-0">

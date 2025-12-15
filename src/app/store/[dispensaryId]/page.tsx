@@ -7,8 +7,8 @@ import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firesto
 import type { Dispensary, Product } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, AlertTriangle, ArrowLeft, Store, Search, MapPin, Info } from 'lucide-react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
@@ -151,49 +151,30 @@ export default function DispensaryStorePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Compact Header with Banner */}
-      <div className="relative w-full h-48 md:h-64 bg-gradient-to-br from-[#006B3E] to-[#004D2C]">
-        {dispensary.bannerUrl && (
-          <>
-            <Image
-              src={dispensary.bannerUrl}
-              alt={dispensary.dispensaryName}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-          </>
-        )}
-        
-        {/* Header Content */}
-        <div className="absolute inset-0 flex flex-col justify-between p-4 md:p-6">
-          {/* Back Button */}
-          <div>
-            <Button
-              variant="secondary"
-              onClick={() => router.back()}
-              className="bg-white/90 hover:bg-white backdrop-blur-sm"
-              size="sm"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back
-            </Button>
-          </div>
-
-          {/* Dispensary Info */}
-          <div className="text-white">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">{dispensary.dispensaryName}</h1>
-            <div className="flex flex-wrap items-center gap-3 text-sm md:text-base">
-              <Badge variant="secondary" className="bg-white/90 text-foreground">
-                {dispensary.dispensaryType}
-              </Badge>
+      {/* Simple Header */}
+      <div className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-40">
+        <div className="container mx-auto px-4 md:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between gap-4">
+            {/* Store Info */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1 truncate">{dispensary.dispensaryName}</h1>
               {dispensary.showLocation && dispensary.city && dispensary.province && (
-                <div className="flex items-center gap-1 text-white/90">
-                  <MapPin className="h-4 w-4" />
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
                   <span>{dispensary.city}, {dispensary.province}</span>
                 </div>
               )}
             </div>
+            
+            {/* Back Button */}
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              size="sm"
+              className="flex-shrink-0"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
           </div>
         </div>
       </div>
@@ -201,7 +182,7 @@ export default function DispensaryStorePage() {
       <div className="container mx-auto py-6 px-4 md:px-6 lg:px-8">
         {/* About Section - Collapsible/Compact */}
         {dispensary.message && (
-          <Card className="mb-6 border-2 bg-background/80 backdrop-blur-sm">
+          <Card className="mb-6 border-2 bg-muted/50 border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Info className="h-5 w-5 text-primary" />
@@ -217,9 +198,9 @@ export default function DispensaryStorePage() {
         )}
 
         {/* Search and Category Filters */}
-        <Card className="mb-6 border-2 bg-background/80 backdrop-blur-sm">
+        <Card className="mb-6 border-2 bg-muted/50 border-border/50">
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -230,27 +211,28 @@ export default function DispensaryStorePage() {
                   className="pl-10"
                 />
               </div>
+              
+              {/* Category Dropdown */}
+              {categories.length > 1 && (
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-full sm:w-[250px]">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        <span className="flex items-center gap-2">
+                          {category === 'all' ? 'All Products' : category}
+                          <Badge variant="secondary" className="ml-auto">
+                            {categoryCount[category] || 0}
+                          </Badge>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-
-            {/* Category Tabs */}
-            {categories.length > 1 && (
-              <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-                <TabsList className="w-full justify-start flex-wrap h-auto gap-2 bg-muted/50 p-2">
-                  {categories.map(category => (
-                    <TabsTrigger
-                      key={category}
-                      value={category}
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                    >
-                      {category === 'all' ? 'All Products' : category}
-                      <Badge variant="secondary" className="ml-2 bg-background/50">
-                        {categoryCount[category] || 0}
-                      </Badge>
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            )}
           </CardContent>
         </Card>
 
@@ -279,7 +261,7 @@ export default function DispensaryStorePage() {
               </div>
             </>
           ) : (
-            <Card className="border-2 border-dashed bg-background/80 backdrop-blur-sm">
+            <Card className="border-2 border-dashed bg-muted/50 border-border/50">
               <CardContent className="pt-12 pb-12 text-center text-muted-foreground">
                 <Store className="mx-auto h-16 w-16 mb-4 opacity-50" />
                 <h3 className="text-xl font-semibold mb-2">

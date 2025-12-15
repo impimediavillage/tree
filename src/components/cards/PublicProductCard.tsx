@@ -121,7 +121,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                             onClick={() => onRequestProduct(product, tier)}
                             aria-label={`Request product ${product.name}`}
                         >
-                          {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Sparkles className="h-5 w-5" /> Buy Design Pack</>}
+                          {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-6 w-6" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Sparkles className="h-6 w-6" /> Buy Design Pack</>}
                         </Button>
                     </div>
                 </>
@@ -144,7 +144,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                         onClick={() => onRequestProduct(product, tier)}
                         disabled={requestStatus === 'negotiating' || tierStock <= 0}
                     >
-                        {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-5 w-5" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Truck className="mr-2 h-5 w-5" /> Request Product</>}
+                        {requestStatus === 'negotiating' ? <><Handshake className="mr-2 h-6 w-6" /> Negotiating</> : tierStock <= 0 ? 'Out of Stock' : <><Truck className="mr-2 h-6 w-6" /> Request Product</>}
                     </Button>
                 </div>
             </>
@@ -183,7 +183,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               onClick={() => setIsDesignPackOpen(true)}
               aria-label={`Buy design for ${product.name}`}
             >
-              <Sparkles className="h-5 w-5" />
+              <Sparkles className="h-6 w-6" />
               Buy Design Pack
             </Button>
           </div>
@@ -209,7 +209,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                 onClick={handleAddToCartClick}
                 aria-label={tierStock > 0 ? (canAddToCart ? `Add ${product.name} to cart` : `Max stock of ${product.name} in cart`) : `${product.name} is out of stock`}
             >
-                <ShoppingCart className="mr-2 h-5 w-5" />
+                <ShoppingCart className="mr-2 h-6 w-6" />
                 {tierStock <= 0 ? 'Out of Stock' : 'Add to Cart'}
             </Button>
         </div>
@@ -220,7 +220,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   return (
     <>
       <Card 
-          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-background/80 backdrop-blur-sm border-border/50 group animate-fade-in-scale-up"
+          className="flex flex-col overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 h-full bg-muted/50 border-border/50 group animate-fade-in-scale-up"
           style={{ animationFillMode: 'backwards' }}
           data-ai-hint={dataAiHintProduct}
       >
@@ -273,9 +273,9 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           )}
         </div>
         <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-lg font-bold truncate text-primary" title={product.name}>{product.name}</CardTitle>
-          <div className="flex items-center gap-2 text-xs font-semibold text-foreground/80">
-              <Tag className="h-3.5 w-3.5"/> <span>{product.category}</span>
+          <CardTitle className="text-xl font-black text-[#3D2E17]" title={product.name}>{product.name}</CardTitle>
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+              <Tag className="h-5 w-5 text-[#006B3E]"/> <span>{product.category}</span>
               {product.strain && <span className="truncate">| {product.strain}</span>}
           </div>
         </CardHeader>
