@@ -98,6 +98,7 @@ interface PublishProductRequest {
   designId: string;
   productName: string;
   productDescription: string;
+  creatorName?: string;
   category: string;
   apparelType?: string;
   surface?: string;
@@ -754,6 +755,7 @@ export const publishCreatorProduct = onCall(
       designId,
       productName,
       productDescription,
+      creatorName,
       category,
       apparelType,
       surface,
@@ -810,7 +812,7 @@ export const publishCreatorProduct = onCall(
       // Prepare product data
       const productData: any = {
         creatorId: userId,
-        creatorName: userData?.displayName || 'Anonymous Creator',
+        creatorName: creatorName || userData?.displayName || 'Anonymous Creator',
         creatorEmail: userData?.email || request.auth?.token?.email || '',
         designId,
         productName,

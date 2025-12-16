@@ -14,7 +14,9 @@ import { DesignStudioModal } from '@/components/creator-lab/DesignStudioModal';
 import { ModelShowcase } from '@/components/creator-lab/ModelShowcase';
 import { ProductEditModal } from '@/components/creator-lab/ProductEditModal';
 import { ProductDetailsModal } from '@/components/creator-lab/ProductDetailsModal';
+import { CreatorStoreSetupModal } from '@/components/creator-lab/CreatorStoreSetupModal';
 import type { CreatorDesign, ProductCategory, ApparelType, TreehouseProduct } from '@/types/creator-lab';
+import type { CreatorStore } from '@/types/creator-store';
 import { APPAREL_PRICES } from '@/types/creator-lab';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, functions } from '@/lib/firebase';
@@ -41,8 +43,38 @@ export default function CreatorLabPage() {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [editingProduct, setEditingProduct] = useState<TreehouseProduct | null>(null);
 
+  // Creator Store
+  const [userStore, setUserStore] = useState<CreatorStore | null>(null);
+  const [showStoreSetup, setShowStoreSetup] = useState(false);
+  const [checkingStore, setCheckingStore] = useState(true);
+
   const canAccessCreatorLab = isLeafUser || isDispensaryOwner || isDispensaryStaff;
   const userCredits = currentUser?.credits || 0;
+
+  // Check if user has a creator store
+  useEffect(() => {
+    const checkUserStore = async () => {
+      if (!currentUser?.uid) return;
+      
+      setCheckingStore(true);
+      try {
+        const storesRef = collection(db, 'creator_stores');
+        const q = query(storesRef, where('ownerId', '==', currentUser.uid));
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+          const storeData = snapshot.docs[0].data() as CreatorStore;
+          setUserStore({ ...storeData, id: snapshot.docs[0].id });
+        }
+      } catch (error) {
+        console.error('Error checking store:', error);
+      } finally {
+        setCheckingStore(false);
+      }
+    };
+
+    checkUserStore();
+  }, [currentUser]);
 
   // Load user's Treehouse products
   useEffect(() => {
@@ -87,6 +119,12 @@ export default function CreatorLabPage() {
   };
 
   const handleAddNew = () => {
+    // Check if user has a store first
+    if (!userStore) {
+      setShowStoreSetup(true);
+      return;
+    }
+
     if (selectedCategory === 'Apparel') {
       setShowApparelSelector(true);
     } else {
@@ -94,6 +132,18 @@ export default function CreatorLabPage() {
         title: 'Coming Soon! 🎨',
         description: `${selectedCategory} creation tools are under development.`,
       });
+    }
+  };
+
+  const handleStoreCreated = (store: CreatorStore) => {
+    setUserStore(store);
+    toast({
+      title: '🎉 Store Created!',
+      description: 'You can now start creating products!',
+    });
+    // Continue with product creation
+    if (selectedCategory === 'Apparel') {
+      setShowApparelSelector(true);
     }
   };
 
@@ -117,7 +167,7 @@ export default function CreatorLabPage() {
     setShowProductDetails(true);
   };
 
-  const handleProductDetailsComplete = async (productName: string, productDescription: string) => {
+  const handleProductDetailsComplete = async (productName: string, productDescription: string, creatorName: string) => {
     // Publish product to Treehouse using Firebase Function
     try {
       const publishProduct = httpsCallable(functions, 'publishCreatorProduct');
@@ -126,6 +176,7 @@ export default function CreatorLabPage() {
         designId: currentDesign?.id,
         productName,
         productDescription,
+        creatorName,
         category: selectedCategory,
         apparelType: selectedApparelType,
         surface: selectedSurface,
@@ -480,7 +531,17 @@ export default function CreatorLabPage() {
           apparelType={selectedApparelType || 'Product'}
           defaultName={`Custom ${selectedApparelType}`}
           defaultDescription={currentDesign?.prompt || ''}
+          defaultCreatorName={userStore?.creatorNickname || currentUser?.displayName || ''}
           onComplete={handleProductDetailsComplete}
+        />
+      )}
+
+      {/* Creator Store Setup Modal */}
+      {showStoreSetup && (
+        <CreatorStoreSetupModal
+          open={showStoreSetup}
+          onOpenChange={setShowStoreSetup}
+          onStoreCreated={handleStoreCreated}
         />
       )}
 

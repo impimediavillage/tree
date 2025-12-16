@@ -54,6 +54,9 @@ export default function HolisticAiHubPage() {
     { text: "Engage in private, inter-store trading and bulk product transactions.", icon: Truck },
     { text: "Unlimited access to the Product Sharing Pool with other wellness stores.", icon: Users },
     { text: "Payouts paid out once a week direct to your bank account.", icon: DollarSign },
+    { text: "Secure payment processing with trusted South African payment gateway Payfast.", icon: ShieldCheck },
+    { text: "Manage inventory, orders, and customer relationships with ease.", icon: Settings },
+    { text: "Build your brand and reach customers across South Africa.", icon: Briefcase },
   ];
 
   const leafUserBenefits = [
@@ -62,6 +65,28 @@ export default function HolisticAiHubPage() {
     { text: "Get instant wellness assistance with already trained, deep research Language models to plan, learn, create your optimum wellness lifestyle.", icon: Gift },
     { text: "Sign up for FREE to browse and shop our hosted wellness profiles.", icon: Gift },
     { text: "Get instant access to all current and NEW AI advisors.", icon: Gift },
+  ];
+
+  const treehouseBenefits = [
+    { text: "Create your own mini-store with a unique URL - e.g., thewellnesstree.co.za/treehouse/store/your-brand", icon: Globe },
+    { text: "Design custom apparel (t-shirts, hoodies, caps) using AI-powered Creator Lab.", icon: Palette },
+    { text: "Earn 70% commission on every sale - R280 on a R400 hoodie!", icon: DollarSign },
+    { text: "Weekly payouts direct to your bank account every Friday.", icon: Coins },
+    { text: "No upfront costs - we handle printing, inventory, and shipping.", icon: Gift },
+    { text: "Your designs featured in the Treehouse collective marketplace.", icon: Store },
+    { text: "Build your brand identity with a personalized storefront.", icon: Sparkles },
+    { text: "Access to DALL-E 3 AI for professional design generation.", icon: Brain },
+  ];
+
+  const membershipBenefits = [
+    { text: "Browse and shop from curated wellness stores across South Africa.", icon: ShoppingCart },
+    { text: "Get 10 FREE credits on signup to access AI wellness advisors instantly.", icon: Gift },
+    { text: "Access ALL AI advisors for personalized wellness guidance (Herbalist, Nutritionist, Fitness, Mental Health, and more).", icon: Brain },
+    { text: "Create and sell custom apparel through Creator Lab - earn real income!", icon: Palette },
+    { text: "70% commission on all Creator Lab sales - keep most of what you earn.", icon: DollarSign },
+    { text: "Weekly payouts every Friday - consistent income stream.", icon: Coins },
+    { text: "Your own mini-store with unique URL for brand building.", icon: Globe },
+    { text: "No subscription fees - pay only for credits you use.", icon: Heart },
   ];
 
 
@@ -112,18 +137,34 @@ export default function HolisticAiHubPage() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">Learn more</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Benefits of creating a store or club:</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Store className="h-8 w-8 text-[#006B3E]" />
+                      Transform Your Wellness Business
+                    </DialogTitle>
+                    <DialogDescription className="text-base">
+                      Join South Africa's premier wellness marketplace and grow your business with our comprehensive e-commerce platform.
+                    </DialogDescription>
                   </DialogHeader>
-                  <ul className="space-y-3 p-4">
-                    {wellnessBenefits.map((benefit, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <benefit.icon className="h-12 w-12 text-[#006B3E] mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-muted-foreground">{benefit.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4 p-4">
+                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
+                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">What You Get:</h3>
+                      <ul className="space-y-3">
+                        {wellnessBenefits.map((benefit, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{benefit.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="text-center pt-2">
+                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
+                        <Link href="/dispensary-signup">Start Your Store Today</Link>
+                      </Button>
+                    </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
@@ -147,18 +188,189 @@ export default function HolisticAiHubPage() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">Learn more</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Benefits of signing up as a Leaf on our Tree:</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Leaf className="h-8 w-8 text-[#006B3E]" />
+                      Your Wellness Journey Starts Here
+                    </DialogTitle>
+                    <DialogDescription className="text-base">
+                      Join for FREE and unlock instant access to AI-powered wellness guidance with 10 complimentary credits.
+                    </DialogDescription>
                   </DialogHeader>
-                  <ul className="space-y-3 p-4">
-                    {leafUserBenefits.map((benefit, index) => (
-                      <li key={index} className="flex items-start gap-3">
-                        <benefit.icon className="h-10 w-10 text-primary mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-muted-foreground">{benefit.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="space-y-4 p-4">
+                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
+                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">Free Leaf Member Benefits:</h3>
+                      <ul className="space-y-3">
+                        {leafUserBenefits.map((benefit, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{benefit.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Important:</strong> Always include your gender, age, diet, and current medications when consulting AI advisors for personalized wellness advice.
+                      </p>
+                    </div>
+                    <div className="text-center pt-2">
+                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
+                        <Link href="/auth/signup">Join Free Today</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </Card>
+        </div>
+
+        {/* New Sections: Treehouse Store & Healers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+          {/* Treehouse Store Section */}
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="relative w-full h-48 mb-6 rounded-lg overflow-hidden">
+              <Image
+                src="/images/treehouse/th2.jpg"
+                alt="Treehouse Store"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="text-center">
+              <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                Treehouse Collective Store
+              </h2>
+              <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                Discover unique creator-designed apparel. Shop from talented creators and support independent brands.
+              </p>
+            </div>
+            <div className="mt-8 space-y-4 text-center">
+              <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                <Link href="/treehouse">Enter Treehouse Store</Link>
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">Learn About Creator Earnings</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Palette className="h-8 w-8 text-[#006B3E]" />
+                      Creator Lab: Your Path to Earning
+                    </DialogTitle>
+                    <DialogDescription className="text-base">
+                      Turn your creativity into cash! Design custom apparel and earn 70% commission on every sale.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 p-4">
+                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
+                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">How It Works:</h3>
+                      <ul className="space-y-3">
+                        {treehouseBenefits.map((benefit, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{benefit.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-2 border-green-500">
+                      <h4 className="font-bold text-lg mb-2 text-green-700 dark:text-green-300">💰 Example Earnings:</h4>
+                      <div className="space-y-2 text-sm">
+                        <p className="flex justify-between"><span>Hoodie Sale (R400):</span> <strong className="text-green-600 dark:text-green-400">R280 for you</strong></p>
+                        <p className="flex justify-between"><span>T-Shirt Sale (R250):</span> <strong className="text-green-600 dark:text-green-400">R175 for you</strong></p>
+                        <p className="flex justify-between"><span>Cap Sale (R180):</span> <strong className="text-green-600 dark:text-green-400">R126 for you</strong></p>
+                        <Separator className="my-2" />
+                        <p className="flex justify-between text-base"><span className="font-bold">10 Sales/Week:</span> <strong className="text-green-600 dark:text-green-400">R2,000+ weekly income!</strong></p>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>Weekly Payouts:</strong> Get paid every Friday directly to your bank account. No minimums, no delays.
+                      </p>
+                    </div>
+                    <div className="text-center pt-2">
+                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
+                        <Link href="/auth/signup">Start Creating & Earning</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </Card>
+
+          {/* Healers/Stores Section */}
+          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
+            <div className="relative w-full h-48 mb-6 rounded-lg overflow-hidden">
+              <Image
+                src="/images/healers/healers.jpg"
+                alt="Wellness Healers"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="text-center">
+              <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
+                Wellness Marketplace
+              </h2>
+              <p className="text-lg font-semibold text-[#3D2E17] mt-2">
+                Connect with authentic wellness stores. From cannabinoids to traditional medicine, find everything you need.
+              </p>
+            </div>
+            <div className="mt-8 space-y-4 text-center">
+              <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] hover:scale-105 active:scale-95 transition-all duration-300 text-white w-full">
+                <Link href="/browse-dispensary-types">Browse Stores</Link>
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full">Membership Benefits</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
+                      <Heart className="h-8 w-8 text-[#006B3E]" />
+                      Wellness Tree Membership
+                    </DialogTitle>
+                    <DialogDescription className="text-base">
+                      One membership, unlimited possibilities. Shop, create, earn, and access wellness guidance - all in one place.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 p-4">
+                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
+                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">Complete Member Benefits:</h3>
+                      <ul className="space-y-3">
+                        {membershipBenefits.map((benefit, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
+                            <span className="text-sm">{benefit.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border-2 border-purple-500">
+                      <h4 className="font-bold text-lg mb-2 text-purple-700 dark:text-purple-300">🎨 Creator Lab Highlights:</h4>
+                      <div className="space-y-2 text-sm">
+                        <p>✓ <strong>AI-Powered Design:</strong> Use DALL-E 3 to generate professional designs</p>
+                        <p>✓ <strong>Your Own Store:</strong> Get a branded URL like thewellnesstree.co.za/treehouse/store/yourname</p>
+                        <p>✓ <strong>70% Commission:</strong> Keep R280 on every R400 hoodie sold</p>
+                        <p>✓ <strong>Weekly Payouts:</strong> Get paid every Friday, no exceptions</p>
+                      </div>
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>🎁 Signup Bonus:</strong> Get 10 FREE credits to start chatting with AI wellness advisors immediately!
+                      </p>
+                    </div>
+                    <div className="text-center pt-2">
+                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
+                        <Link href="/auth/signup">Become a Member Today</Link>
+                      </Button>
+                    </div>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>

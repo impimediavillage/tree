@@ -14,7 +14,8 @@ interface ProductDetailsModalProps {
   apparelType: string;
   defaultName?: string;
   defaultDescription?: string;
-  onComplete: (productName: string, productDescription: string) => void;
+  defaultCreatorName?: string;
+  onComplete: (productName: string, productDescription: string, creatorName: string) => void;
 }
 
 export function ProductDetailsModal({ 
@@ -23,10 +24,12 @@ export function ProductDetailsModal({
   apparelType,
   defaultName,
   defaultDescription,
+  defaultCreatorName,
   onComplete 
 }: ProductDetailsModalProps) {
   const [productName, setProductName] = useState(defaultName || `Custom ${apparelType}`);
   const [productDescription, setProductDescription] = useState(defaultDescription || '');
+  const [creatorName, setCreatorName] = useState(defaultCreatorName || '');
 
   const nameSuggestions = [
     `Irie ${apparelType} Vibes`,
@@ -37,11 +40,22 @@ export function ProductDetailsModal({
     `Earthbound ${apparelType} Spirit`,
   ];
 
+  const creatorNicknames = [
+    'Urban Roots',
+    'Sacred Vibes',
+    'Natural Flow',
+    'Conscious Creator',
+    'Unity Designs',
+    'Earth Walker',
+    'Irie Spirit',
+    'Peace Maker',
+  ];
+
   const handleComplete = () => {
-    if (!productName.trim()) {
+    if (!productName.trim() || !creatorName.trim()) {
       return;
     }
-    onComplete(productName.trim(), productDescription.trim());
+    onComplete(productName.trim(), productDescription.trim(), creatorName.trim());
     onOpenChange(false);
   };
 
@@ -54,11 +68,43 @@ export function ProductDetailsModal({
             Name Your Creation
           </DialogTitle>
           <DialogDescription className="text-[#5D4E37] text-base font-semibold">
-            Give your {apparelType} a funky, irie name that captures its vibe! ✨
+            Name your {apparelType} and claim your creator identity! ✨
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4 overflow-y-auto flex-1">
+          {/* Creator Nickname */}
+          <div className="space-y-2">
+            <Label htmlFor="creatorName" className="text-sm font-bold text-[#3D2E17]">
+              Your Creator Nickname * 🎨
+            </Label>
+            <Input
+              id="creatorName"
+              value={creatorName}
+              onChange={(e) => setCreatorName(e.target.value)}
+              placeholder="e.g., Urban Roots, Sacred Vibes, Natural Flow..."
+              className="border-2 border-[#5D4E37]/30 focus:border-[#006B3E]"
+              maxLength={40}
+            />
+            <p className="text-xs text-[#5D4E37]">{creatorName.length}/40 characters</p>
+          </div>
+
+          {/* Creator Nickname Suggestions */}
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-[#3D2E17]">🎨 Nickname Ideas:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {creatorNicknames.map((nickname, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCreatorName(nickname)}
+                  className="text-left text-sm p-2 rounded-lg border-2 border-[#5D4E37]/20 hover:border-[#006B3E] hover:bg-[#006B3E]/5 transition-all"
+                >
+                  {nickname}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Product Name */}
           <div className="space-y-2">
             <Label htmlFor="productName" className="text-sm font-bold text-[#3D2E17]">
@@ -126,7 +172,7 @@ export function ProductDetailsModal({
           </Button>
           <Button
             onClick={handleComplete}
-            disabled={!productName.trim()}
+            disabled={!productName.trim() || !creatorName.trim()}
             className="bg-[#006B3E] hover:bg-[#005230] font-extrabold"
           >
             Continue to Treehouse 🌳
