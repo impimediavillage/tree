@@ -614,7 +614,7 @@ exports.publishCreatorProduct = (0, https_1.onCall)(async (request) => {
     if (!request.auth) {
         throw new https_1.HttpsError('unauthenticated', 'You must be signed in.');
     }
-    const { designId, productName, productDescription, category, apparelType, surface, modelImageUrl, modelPrompt, } = request.data;
+    const { designId, productName, productDescription, creatorName, category, apparelType, surface, modelImageUrl, modelPrompt, } = request.data;
     const userId = request.auth.uid;
     if (!designId || !productName || !category) {
         throw new https_1.HttpsError('invalid-argument', 'Missing required fields: designId, productName, category');
@@ -655,7 +655,7 @@ exports.publishCreatorProduct = (0, https_1.onCall)(async (request) => {
         // Prepare product data
         const productData = {
             creatorId: userId,
-            creatorName: userData?.displayName || 'Anonymous Creator',
+            creatorName: creatorName || userData?.displayName || 'Anonymous Creator',
             creatorEmail: userData?.email || request.auth?.token?.email || '',
             designId,
             productName,
