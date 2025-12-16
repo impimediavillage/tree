@@ -70,8 +70,8 @@ export default function HolisticAiHubPage() {
   const treehouseBenefits = [
     { text: "Create your own mini-store with a unique URL - e.g., thewellnesstree.co.za/treehouse/store/your-brand", icon: Globe },
     { text: "Design custom apparel (t-shirts, hoodies, caps) using AI-powered Creator Lab.", icon: Palette },
-    { text: "Earn 70% commission on every sale - R280 on a R400 hoodie!", icon: DollarSign },
-    { text: "Weekly payouts direct to your bank account every Friday.", icon: Coins },
+    { text: "Earn 25% commission on every sale - R100 on a R400 hoodie!", icon: DollarSign },
+    { text: "Request payouts from your dashboard once you reach R500 minimum.", icon: Coins },
     { text: "No upfront costs - we handle printing, inventory, and shipping.", icon: Gift },
     { text: "Your designs featured in the Treehouse collective marketplace.", icon: Store },
     { text: "Build your brand identity with a personalized storefront.", icon: Sparkles },
@@ -83,8 +83,8 @@ export default function HolisticAiHubPage() {
     { text: "Get 10 FREE credits on signup to access AI wellness advisors instantly.", icon: Gift },
     { text: "Access ALL AI advisors for personalized wellness guidance (Herbalist, Nutritionist, Fitness, Mental Health, and more).", icon: Brain },
     { text: "Create and sell custom apparel through Creator Lab - earn real income!", icon: Palette },
-    { text: "70% commission on all Creator Lab sales - keep most of what you earn.", icon: DollarSign },
-    { text: "Weekly payouts every Friday - consistent income stream.", icon: Coins },
+    { text: "25% commission on all Creator Lab sales - earn while you create.", icon: DollarSign },
+    { text: "Request payouts from your dashboard once you reach R500 minimum.", icon: Coins },
     { text: "Your own mini-store with unique URL for brand building.", icon: Globe },
     { text: "No subscription fees - pay only for credits you use.", icon: Heart },
   ];
@@ -231,7 +231,7 @@ export default function HolisticAiHubPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
           {/* Treehouse Store Section */}
           <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
-            <div className="relative w-full h-48 mb-6 rounded-lg overflow-hidden">
+            <div className="relative h-64 w-full bg-muted rounded-lg overflow-hidden mb-6">
               <Image
                 src="/images/treehouse/th2.jpg"
                 alt="Treehouse Store"
@@ -262,7 +262,7 @@ export default function HolisticAiHubPage() {
                       Creator Lab: Your Path to Earning
                     </DialogTitle>
                     <DialogDescription className="text-base">
-                      Turn your creativity into cash! Design custom apparel and earn 70% commission on every sale.
+                      Turn your creativity into cash! Design custom apparel and earn 25% commission on every sale.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 p-4">
@@ -278,18 +278,18 @@ export default function HolisticAiHubPage() {
                       </ul>
                     </div>
                     <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border-2 border-green-500">
-                      <h4 className="font-bold text-lg mb-2 text-green-700 dark:text-green-300">💰 Example Earnings:</h4>
+                      <h4 className="font-bold text-lg mb-2 text-green-700 dark:text-green-300">💰 Example Earnings (25% Commission):</h4>
                       <div className="space-y-2 text-sm">
-                        <p className="flex justify-between"><span>Hoodie Sale (R400):</span> <strong className="text-green-600 dark:text-green-400">R280 for you</strong></p>
-                        <p className="flex justify-between"><span>T-Shirt Sale (R250):</span> <strong className="text-green-600 dark:text-green-400">R175 for you</strong></p>
-                        <p className="flex justify-between"><span>Cap Sale (R180):</span> <strong className="text-green-600 dark:text-green-400">R126 for you</strong></p>
+                        <p className="flex justify-between"><span>Hoodie Sale (R400):</span> <strong className="text-green-600 dark:text-green-400">R100 for you</strong></p>
+                        <p className="flex justify-between"><span>T-Shirt Sale (R250):</span> <strong className="text-green-600 dark:text-green-400">R62.50 for you</strong></p>
+                        <p className="flex justify-between"><span>Cap Sale (R180):</span> <strong className="text-green-600 dark:text-green-400">R45 for you</strong></p>
                         <Separator className="my-2" />
-                        <p className="flex justify-between text-base"><span className="font-bold">10 Sales/Week:</span> <strong className="text-green-600 dark:text-green-400">R2,000+ weekly income!</strong></p>
+                        <p className="flex justify-between text-base"><span className="font-bold">5 Hoodies Sold:</span> <strong className="text-green-600 dark:text-green-400">R500 - ready to cash out!</strong></p>
                       </div>
                     </div>
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
-                        <strong>Weekly Payouts:</strong> Get paid every Friday directly to your bank account. No minimums, no delays.
+                        <strong>Payout System:</strong> Request payouts from your dashboard once you reach R500 minimum. Funds transferred directly to your bank account.
                       </p>
                     </div>
                     <div className="text-center pt-2">
@@ -305,7 +305,7 @@ export default function HolisticAiHubPage() {
 
           {/* Healers/Stores Section */}
           <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
-            <div className="relative w-full h-48 mb-6 rounded-lg overflow-hidden">
+            <div className="relative h-64 w-full bg-muted rounded-lg overflow-hidden mb-6">
               <Image
                 src="/images/healers/healers.jpg"
                 alt="Wellness Healers"
@@ -318,7 +318,7 @@ export default function HolisticAiHubPage() {
                 Wellness Marketplace
               </h2>
               <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                Connect with authentic wellness stores. From cannabinoids to traditional medicine, find everything you need.
+                Connect with authentic wellness stores. From cannabinoids to traditional medicine, natural health permaculture, and fungi, find everything you need.
               </p>
             </div>
             <div className="mt-8 space-y-4 text-center">
@@ -327,7 +327,7 @@ export default function HolisticAiHubPage() {
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full">Membership Benefits</Button>
+                  <Button variant="outline" className="w-full">Leaf members benefits</Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[650px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
@@ -356,8 +356,8 @@ export default function HolisticAiHubPage() {
                       <div className="space-y-2 text-sm">
                         <p>✓ <strong>AI-Powered Design:</strong> Use DALL-E 3 to generate professional designs</p>
                         <p>✓ <strong>Your Own Store:</strong> Get a branded URL like thewellnesstree.co.za/treehouse/store/yourname</p>
-                        <p>✓ <strong>70% Commission:</strong> Keep R280 on every R400 hoodie sold</p>
-                        <p>✓ <strong>Weekly Payouts:</strong> Get paid every Friday, no exceptions</p>
+                        <p>✓ <strong>25% Commission:</strong> Keep R100 on every R400 hoodie sold</p>
+                        <p>✓ <strong>Dashboard Payouts:</strong> Request payout once you reach R500 minimum</p>
                       </div>
                     </div>
                     <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-200 dark:border-amber-800">
