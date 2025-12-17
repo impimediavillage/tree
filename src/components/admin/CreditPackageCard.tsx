@@ -171,7 +171,7 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
             <CardTitle className="text-xl font-extrabold text-[#3D2E17]">{creditPackage.name}</CardTitle>
-            <Badge variant={creditPackage.isActive ? "default" : "outline"} className={creditPackage.isActive ? "bg-[#006B3E] hover:bg-[#005230] font-bold" : "font-bold"}>>
+            <Badge variant={creditPackage.isActive ? "default" : "outline"} className={creditPackage.isActive ? "bg-[#006B3E] hover:bg-[#005230] font-bold" : "font-bold"}>
                 {creditPackage.isActive ? <CheckCircle className="mr-1 h-4 w-4" /> : <XCircle className="mr-1 h-4 w-4" />}
                 {creditPackage.isActive ? 'Active' : 'Inactive'}
             </Badge>
