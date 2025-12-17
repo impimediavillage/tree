@@ -2,10 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Wand2, Plus, Loader2, AlertTriangle, Package, Edit, Trash2, Power, PowerOff } from 'lucide-react';
+import { Sparkles, Wand2, Plus, Loader2, AlertTriangle, Package, Edit, Trash2, Power, PowerOff, Store } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { CategoryFilterButtons } from '@/components/creator-lab/CategoryFilterButtons';
@@ -47,6 +57,10 @@ export default function CreatorLabPage() {
   const [userStore, setUserStore] = useState<CreatorStore | null>(null);
   const [showStoreSetup, setShowStoreSetup] = useState(false);
   const [checkingStore, setCheckingStore] = useState(true);
+
+  // Confirmation dialogs
+  const [deleteConfirmProduct, setDeleteConfirmProduct] = useState<TreehouseProduct | null>(null);
+  const [toggleConfirmProduct, setToggleConfirmProduct] = useState<TreehouseProduct | null>(null);
 
   const canAccessCreatorLab = isLeafUser || isDispensaryOwner || isDispensaryStaff;
   const userCredits = currentUser?.credits || 0;
@@ -236,6 +250,7 @@ export default function CreatorLabPage() {
         description: data.isActive ? 'Product is now active' : 'Product is now inactive',
       });
 
+      setToggleConfirmProduct(null);
       loadMyProducts();
     } catch (error: any) {
       toast({
@@ -246,11 +261,7 @@ export default function CreatorLabPage() {
     }
   };
 
-  const handleDelete = async (productId: string, productName: string) => {
-    if (!confirm(`Are you sure you want to delete "${productName}"? This cannot be undone.`)) {
-      return;
-    }
-
+  const handleDelete = async (productId: string) => {
     try {
       const deleteProduct = httpsCallable(functions, 'deleteTreehouseProduct');
       await deleteProduct({ productId });
@@ -260,6 +271,7 @@ export default function CreatorLabPage() {
         description: 'Product removed from Treehouse',
       });
 
+      setDeleteConfirmProduct(null);
       loadMyProducts();
     } catch (error: any) {
       toast({
@@ -313,6 +325,13 @@ export default function CreatorLabPage() {
                 Create stunning designs, add them to The Treehouse Store, and earn <strong>25% commission</strong> on every sale. 
                 We handle printing, shipping, and customer service — you just create and get paid! 🌳✨
               </p>
+              {userStore && (
+                <div className="mt-3 flex items-center gap-2 text-sm md:text-base">
+                  <Store className="h-5 w-5 text-[#006B3E]" />
+                  <span className="text-[#3D2E17] font-bold">Your Store:</span>
+                  <span className="text-[#006B3E] font-semibold">{userStore.storeName}</span>
+                </div>
+              )}
             </div>
             <Card className="border-2 border-[#006B3E] w-full lg:w-auto">
               <CardContent className="p-6 text-center">
@@ -460,31 +479,33 @@ export default function CreatorLabPage() {
                       </div>
                     </CardContent>
 
-                    <CardFooter className="p-4 pt-0 flex gap-2">
+                    <CardFooter className="p-4 pt-0 flex gap-3">
+                      <Button 
+                        onClick={() => setToggleConfirmProduct(product)} 
+                        size="sm" 
+                        variant={product.isActive ? 'outline' : 'default'}
+                        className="w-10 h-10 p-0 flex items-center justify-center"
+                        title={product.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        {product.isActive ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                      </Button>
                       <Button 
                         onClick={() => setEditingProduct(product)} 
                         size="sm" 
                         variant="outline"
                         className="flex-1"
                       >
-                        <Edit className="h-4 w-4 mr-1" />
+                        <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
                       <Button 
-                        onClick={() => handleToggleStatus(product.id)} 
-                        size="sm" 
-                        variant={product.isActive ? 'secondary' : 'default'}
-                        className="flex-1"
-                      >
-                        {product.isActive ? <PowerOff className="h-4 w-4 mr-1" /> : <Power className="h-4 w-4 mr-1" />}
-                        {product.isActive ? 'Deactivate' : 'Activate'}
-                      </Button>
-                      <Button 
-                        onClick={() => handleDelete(product.id, product.apparelType || product.productName)} 
+                        onClick={() => setDeleteConfirmProduct(product)} 
                         size="sm" 
                         variant="destructive"
+                        className="flex-1"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
                       </Button>
                     </CardFooter>
                   </Card>
@@ -553,6 +574,80 @@ export default function CreatorLabPage() {
           onUpdate={loadMyProducts}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteConfirmProduct} onOpenChange={(open) => !open && setDeleteConfirmProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete Product?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Are you sure you want to delete <strong>{deleteConfirmProduct?.productName || deleteConfirmProduct?.apparelType}</strong>?
+              <br />
+              <br />
+              This action cannot be undone. The product will be permanently removed from The Treehouse Store.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteConfirmProduct && handleDelete(deleteConfirmProduct.id)}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Delete Product
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Status Confirmation Dialog */}
+      <AlertDialog open={!!toggleConfirmProduct} onOpenChange={(open) => !open && setToggleConfirmProduct(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {toggleConfirmProduct?.isActive ? (
+                <>
+                  <PowerOff className="h-5 w-5 text-amber-600" />
+                  Deactivate Product?
+                </>
+              ) : (
+                <>
+                  <Power className="h-5 w-5 text-green-600" />
+                  Activate Product?
+                </>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {toggleConfirmProduct?.isActive ? (
+                <>
+                  Deactivating <strong>{toggleConfirmProduct?.productName || toggleConfirmProduct?.apparelType}</strong> will hide it from The Treehouse Store.
+                  <br />
+                  <br />
+                  You can reactivate it anytime.
+                </>
+              ) : (
+                <>
+                  Activating <strong>{toggleConfirmProduct?.productName || toggleConfirmProduct?.apparelType}</strong> will make it visible in The Treehouse Store.
+                  <br />
+                  <br />
+                  Customers will be able to purchase this product.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => toggleConfirmProduct && handleToggleStatus(toggleConfirmProduct.id)}
+              className={toggleConfirmProduct?.isActive ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'}
+            >
+              {toggleConfirmProduct?.isActive ? 'Deactivate' : 'Activate'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
