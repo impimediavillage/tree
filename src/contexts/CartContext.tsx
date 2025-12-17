@@ -68,7 +68,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     if (existingItemIndex > -1) {
       newCartItems[existingItemIndex].quantity += quantity;
-      if (isThcProduct && overrideImageUrl) {
+      if (overrideImageUrl) {
           newCartItems[existingItemIndex].imageUrl = overrideImageUrl;
       }
     } else {
@@ -89,7 +89,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         currency: product.currency,
         unit: tier.unit,
         quantityInStock: tier.quantityInStock ?? 0,
-        imageUrl: isThcProduct && overrideImageUrl ? overrideImageUrl : (product.imageUrls?.[0] || '/placeholder.svg'),
+        imageUrl: overrideImageUrl || (product.imageUrls?.[0] || '/placeholder.svg'),
         productType: (product.productType || 'Other') as 'THC' | 'CBD' | 'HEMP' | 'Apparel' | 'Gear' | 'Other' | 'Homeopathy' | 'Mushroom' | 'Permaculture' | 'Traditional Medicine',
         // Default dimensions for shipping if not provided: small package (10cm x 10cm x 5cm, 0.1kg)
         weight: tier.weightKgs ?? 0.1,

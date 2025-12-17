@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Building, ListChecks, Package,
-  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain
+  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -44,6 +44,12 @@ const mainSidebarNavItems: NavItem[] = [
   { title: 'Users', href: '/admin/dashboard/users', icon: Users },
   { title: 'Store types', href: '/admin/dashboard/dispensary-types', icon: ListChecks },
   { title: 'AI Advisors', href: '/admin/dashboard/ai-advisors', icon: Brain },
+];
+
+const treehouseSidebarNavItems: NavItem[] = [
+  { title: 'Treehouse Products', href: '/admin/treehouse', icon: Store },
+  { title: 'Treehouse Orders', href: '/admin/dashboard/treehouse-orders', icon: ShoppingCart },
+  { title: 'Treehouse Analytics', href: '/admin/dashboard/treehouse-analytics', icon: TrendingUp },
 ];
 
 const managementSidebarNavItems: NavItem[] = [
@@ -105,7 +111,7 @@ export default function AdminDashboardLayout({
   const getPageTitle = () => {
     if (!pathname) return 'Admin Panel';
     
-    const allItems = [...mainSidebarNavItems, ...managementSidebarNavItems];
+    const allItems = [...mainSidebarNavItems, ...treehouseSidebarNavItems, ...managementSidebarNavItems];
     const activeItem = allItems
         .filter(item => pathname.startsWith(item.href))
         .sort((a,b) => b.href.length - a.href.length)[0];
@@ -113,6 +119,7 @@ export default function AdminDashboardLayout({
     if (activeItem) return activeItem.title;
     
     if (pathname.includes('/admin/dashboard/dispensaries/create')) return 'Create Store';
+    if (pathname.includes('/admin/treehouse')) return 'Treehouse Management';
     return 'Admin Panel';
   };
   
@@ -162,6 +169,33 @@ export default function AdminDashboardLayout({
                 ))}
               </SidebarGroup>
               
+              <SidebarSeparator />
+
+              <SidebarGroup>
+                <SidebarGroupLabel className="group-data-[collapsible=icon]:px-2">Treehouse</SidebarGroupLabel>
+                {treehouseSidebarNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
+                      <SidebarMenuButton
+                        tooltip={item.title}
+                        isActive={isNavItemActive(item.href)}
+                        disabled={item.disabled}
+                        className={cn(
+                          isNavItemActive(item.href)
+                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                            : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                          item.disabled && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                        {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarGroup>
+
               <SidebarSeparator />
 
               <SidebarGroup>

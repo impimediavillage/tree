@@ -180,18 +180,12 @@ export default function AdminCreditPackagesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
         <div>
-          <h1 
-            className="text-3xl font-bold flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <PackagePlus className="h-8 w-8 text-primary"/>Credit System Management
+          <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#3D2E17]">
+            <PackagePlus className="h-14 w-14 text-[#006B3E]"/>Credit System Management
           </h1>
-          <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <p className="text-lg font-bold text-[#5D4E37] mt-2">
             Create, edit, and manage credit packages available for purchase.
           </p>
         </div>

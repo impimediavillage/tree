@@ -172,14 +172,14 @@ export default function TreehouseAnalyticsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
         <div className="flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-[#006B3E]/10">
-            <TrendingUp className="h-12 w-12 text-[#006B3E]" />
-          </div>
           <div>
-            <h1 className="text-4xl font-extrabold text-[#3D2E17]">Treehouse Analytics</h1>
-            <p className="text-lg text-[#5D4E37] font-semibold mt-1">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="h-14 w-14 text-[#006B3E]" />
+              <h1 className="text-4xl font-extrabold text-[#3D2E17]">Treehouse Analytics</h1>
+            </div>
+            <p className="text-lg font-bold text-[#5D4E37]">
               Marketplace Performance Dashboard
             </p>
           </div>

@@ -25,7 +25,7 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, description, link, linkText, isLoading, badgeCount, badgeColor }) => (
-  <Card className="shadow-md hover:shadow-lg transition-shadow relative overflow-hidden">
+  <Card className="shadow-lg hover:shadow-xl transition-shadow relative overflow-hidden bg-muted/50 border-border/50">
     {badgeCount && badgeCount > 0 && (
         <div 
             className={`absolute top-2 right-2 h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${badgeColor || 'bg-destructive'}`}
@@ -35,18 +35,18 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, descripti
         </div>
     )}
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className="h-5 w-5 text-muted-foreground" />
+      <CardTitle className="text-sm font-bold text-[#3D2E17]">{title}</CardTitle>
+      <Icon className="h-8 w-8 text-[#006B3E]" />
     </CardHeader>
     <CardContent>
       {isLoading ? (
-         <div className="text-2xl font-bold">Loading...</div>
+         <div className="text-3xl font-extrabold text-[#3D2E17]">Loading...</div>
       ) : (
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-3xl font-extrabold text-[#3D2E17]">{value}</div>
       )}
-      {description && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
+      {description && <p className="text-xs text-[#5D4E37] font-semibold pt-1">{description}</p>}
       {link && linkText && (
-        <Button variant="link" asChild className="px-0 pt-2 text-primary">
+        <Button variant="link" asChild className="px-0 pt-2 text-[#006B3E] font-bold">
           <Link href={link}>{linkText}</Link>
         </Button>
       )}
@@ -72,15 +72,15 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, i
     );
 
     return (
-        <Card className="hover:shadow-lg transition-shadow bg-muted/50">
+        <Card className="hover:shadow-xl transition-shadow bg-muted/50 border-border/50">
         <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl text-card-foreground">
-            <Icon className="text-accent h-6 w-6" /> {title}
+            <CardTitle className="flex items-center gap-3 text-xl font-extrabold text-[#3D2E17]">
+            <Icon className="text-[#006B3E] h-10 w-10" /> {title}
             </CardTitle>
         </CardHeader>
         <CardContent>
-            <p className="text-muted-foreground mb-4">{description}</p>
-            <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={disabled}>
+            <p className="text-[#5D4E37] font-semibold mb-4">{description}</p>
+            <Button asChild className="w-full bg-[#006B3E] hover:bg-[#5D4E37] text-white font-bold" disabled={disabled}>
                 {link ? <Link href={link}>{buttonText}</Link> : <span onClick={onClick}>{buttonText}</span>}
             </Button>
         </CardContent>
@@ -127,18 +127,12 @@ export default function AdminDashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg bg-muted/50 border-primary/30">
+      <Card className="shadow-lg bg-muted/50 border-border/50">
         <CardHeader>
-          <CardTitle 
-            className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <Settings className="mr-3 h-8 w-8 text-primary" /> Super Admin Dashboard
+          <CardTitle className="text-4xl font-extrabold text-[#3D2E17] flex items-center gap-3">
+            <Settings className="h-14 w-14 text-[#006B3E]" /> Super Admin Dashboard
           </CardTitle>
-          <CardDescription 
-            className="text-md text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <CardDescription className="text-lg font-bold text-[#5D4E37] mt-2">
             Welcome to the control center. Oversee and manage all aspects of The Wellness Tree platform.
           </CardDescription>
         </CardHeader>

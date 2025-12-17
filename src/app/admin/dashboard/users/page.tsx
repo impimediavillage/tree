@@ -282,25 +282,19 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
         <div>
-          <h1 
-            className="text-3xl font-bold flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <UsersIcon className="h-8 w-8 text-primary" /> Manage Users
+          <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#3D2E17]">
+            <UsersIcon className="h-14 w-14 text-[#006B3E]" /> Manage Users
           </h1>
-          <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <p className="text-lg font-bold text-[#5D4E37] mt-2">
             View, edit, and add user accounts and roles.
           </p>
         </div>
         <AddUserDialog onUserAdded={fetchUsersAndWellnessProfiles} dispensaries={wellnessProfiles} />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50">
+      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
         <Input
             placeholder="Search by name or email..."
             value={searchTerm}

@@ -117,23 +117,23 @@ export default function AdminWellnessPage() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2 text-foreground">
-              <Building className="h-8 w-8 text-primary" /> Manage Dispensaries
+            <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#3D2E17]">
+              <Building className="h-14 w-14 text-[#006B3E]" /> Manage Dispensaries
             </h1>
-            <p className="text-foreground">
+            <p className="text-lg font-bold text-[#5D4E37] mt-2">
               View, edit, approve, or suspend applications and dispensary profiles.
             </p>
           </div>
-          <Button asChild>
+          <Button asChild className="bg-[#006B3E] hover:bg-[#5D4E37] text-white font-bold">
             <Link href="/admin/dashboard/dispensaries/create">
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New
+              <PlusCircle className="mr-2 h-5 w-5" /> Add New
             </Link>
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
           <div className="relative flex-grow sm:w-1/2 md:w-1/3 lg:flex-grow-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
