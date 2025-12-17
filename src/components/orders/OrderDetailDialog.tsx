@@ -265,7 +265,7 @@ export function OrderDetailDialog({
                         return (
                           <div key={dispensaryId} className="space-y-3">
                             {shipment.items[0]?.dispensaryName && (
-                              <p className="text-sm font-medium text-muted-foreground">
+                              <p className="text-sm font-bold text-[#3D2E17]">
                                 {shipment.items[0].dispensaryName}
                               </p>
                             )}
@@ -273,9 +273,9 @@ export function OrderDetailDialog({
                             {showOrigin && shipment.originLocker && typeof shipment.originLocker === 'object' && (
                               <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <div className="flex items-start gap-2">
-                                  <MapPin className="h-4 w-4 text-blue-600 mt-1" />
+                                  <MapPin className="h-5 w-5 text-blue-600 mt-1" />
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold text-blue-900">Origin Locker</p>
+                                    <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
                                     {(() => {
                                       const name = getLockerProp(shipment.originLocker, 'name');
                                       const address = getLockerProp(shipment.originLocker, 'address');
@@ -284,10 +284,10 @@ export function OrderDetailDialog({
                                       
                                       return (
                                         <>
-                                          {name && <p className="text-sm font-medium text-blue-800">{String(name)}</p>}
-                                          {address && <p className="text-xs text-blue-700">{String(address)}</p>}
-                                          {city && <p className="text-xs text-blue-600">{String(city)}</p>}
-                                          {id && <p className="text-xs text-blue-600 mt-1">ID: {String(id)}</p>}
+                                          {name && <p className="text-base font-bold text-blue-900">{String(name)}</p>}
+                                          {address && <p className="text-sm text-blue-700 mt-1">{String(address)}</p>}
+                                          {city && <p className="text-sm text-blue-600">{String(city)}</p>}
+                                          {id && <p className="text-xs text-blue-600 mt-2">Locker ID: {String(id)}</p>}
                                         </>
                                       );
                                     })()}
@@ -299,9 +299,9 @@ export function OrderDetailDialog({
                             {showDestination && shipment.destinationLocker && typeof shipment.destinationLocker === 'object' && (
                               <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                                 <div className="flex items-start gap-2">
-                                  <MapPin className="h-4 w-4 text-green-600 mt-1" />
+                                  <MapPin className="h-5 w-5 text-green-600 mt-1" />
                                   <div className="flex-1">
-                                    <p className="text-sm font-semibold text-green-900">Destination Locker</p>
+                                    <p className="text-xs font-semibold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
                                     {(() => {
                                       const name = getLockerProp(shipment.destinationLocker, 'name');
                                       const address = getLockerProp(shipment.destinationLocker, 'address');
@@ -311,13 +311,13 @@ export function OrderDetailDialog({
                                       
                                       return (
                                         <>
-                                          {name && <p className="text-sm font-medium text-green-800">{String(name)}</p>}
-                                          {address && <p className="text-xs text-green-700">{String(address)}</p>}
-                                          {city && <p className="text-xs text-green-600">{String(city)}</p>}
+                                          {name && <p className="text-base font-bold text-green-900">{String(name)}</p>}
+                                          {address && <p className="text-sm text-green-700 mt-1">{String(address)}</p>}
+                                          {city && <p className="text-sm text-green-600">{String(city)}</p>}
                                           {distanceKm && typeof distanceKm === 'number' && (
-                                            <p className="text-xs text-green-600 mt-1">{distanceKm.toFixed(1)} km from customer</p>
+                                            <p className="text-sm text-green-600 mt-1">{distanceKm.toFixed(1)} km from customer</p>
                                           )}
-                                          {id && <p className="text-xs text-green-600 mt-1">ID: {String(id)}</p>}
+                                          {id && <p className="text-xs text-green-600 mt-2">Locker ID: {String(id)}</p>}
                                         </>
                                       );
                                     })()}
@@ -506,8 +506,13 @@ export function OrderDetailDialog({
           <TabsContent value="shipments" className="mt-4">
             <ScrollArea className="h-[60vh]">
               <div className="space-y-4">
-                {/* Label Generation Section - Show if labels not generated yet */}
-                {isDispensaryView && Object.values(order.shipments).some(s => !s.trackingNumber) && (
+                {/* Label Generation Section - Show if labels not generated yet OR status allows regeneration */}
+                {isDispensaryView && Object.values(order.shipments).some(s => {
+                  // Show button if no label exists OR if label exists but not yet shipped
+                  const hasNoLabel = !s.trackingNumber || !s.labelUrl;
+                  const canRegenerate = s.status && !['shipped', 'in-transit', 'delivered'].includes(s.status);
+                  return hasNoLabel || canRegenerate;
+                }) && (
                   <Card className="border-dashed border-2 bg-muted/50">
                     <CardContent className="pt-6">
                       <div className="flex flex-col items-center text-center space-y-4">
@@ -543,8 +548,12 @@ export function OrderDetailDialog({
           <TabsContent value="shipping-label" className="mt-4">
             <ScrollArea className="h-[60vh]">
               <div className="space-y-4">
-                {/* Generate New Label Section */}
-                {isDispensaryView && (
+                {/* Generate New Label Section - Only show if not yet shipped/in-transit/delivered */}
+                {isDispensaryView && Object.values(order.shipments).some(s => {
+                  const hasNoLabel = !s.trackingNumber || !s.labelUrl;
+                  const canRegenerate = s.status && !['shipped', 'in-transit', 'delivered'].includes(s.status);
+                  return hasNoLabel || canRegenerate;
+                }) && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">Generate Shipping Labels</CardTitle>

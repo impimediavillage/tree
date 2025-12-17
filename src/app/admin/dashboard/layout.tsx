@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Building, ListChecks, Package,
-  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp
+  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp, DollarSign
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,10 @@ const treehouseSidebarNavItems: NavItem[] = [
   { title: 'Treehouse Products', href: '/admin/treehouse', icon: Store },
   { title: 'Treehouse Orders', href: '/admin/dashboard/treehouse-orders', icon: ShoppingCart },
   { title: 'Treehouse Analytics', href: '/admin/dashboard/treehouse-analytics', icon: TrendingUp },
+];
+
+const dispensarySidebarNavItems: NavItem[] = [
+  { title: 'Dispensary Payouts', href: '/admin/dashboard/dispensary-payouts', icon: DollarSign },
 ];
 
 const managementSidebarNavItems: NavItem[] = [
@@ -111,7 +115,7 @@ export default function AdminDashboardLayout({
   const getPageTitle = () => {
     if (!pathname) return 'Admin Panel';
     
-    const allItems = [...mainSidebarNavItems, ...treehouseSidebarNavItems, ...managementSidebarNavItems];
+    const allItems = [...mainSidebarNavItems, ...treehouseSidebarNavItems, ...dispensarySidebarNavItems, ...managementSidebarNavItems];
     const activeItem = allItems
         .filter(item => pathname.startsWith(item.href))
         .sort((a,b) => b.href.length - a.href.length)[0];
@@ -174,6 +178,33 @@ export default function AdminDashboardLayout({
               <SidebarGroup>
                 <SidebarGroupLabel className="group-data-[collapsible=icon]:px-2">Treehouse</SidebarGroupLabel>
                 {treehouseSidebarNavItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
+                      <SidebarMenuButton
+                        tooltip={item.title}
+                        isActive={isNavItemActive(item.href)}
+                        disabled={item.disabled}
+                        className={cn(
+                          isNavItemActive(item.href)
+                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                            : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                          item.disabled && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                        {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarGroup>
+
+              <SidebarSeparator />
+
+              <SidebarGroup>
+                <SidebarGroupLabel className="group-data-[collapsible=icon]:px-2">Dispensaries</SidebarGroupLabel>
+                {dispensarySidebarNavItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <Link href={item.disabled ? '#' : item.href} legacyBehavior passHref>
                       <SidebarMenuButton
