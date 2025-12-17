@@ -57,6 +57,27 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
     }
 
+    // Creator Stores Collection
+    match /creator_stores/{storeId} {
+      // Public read access for browsing creator stores
+      allow read: if true;
+      
+      // Only authenticated users can create stores (one per user)
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.ownerId &&
+        (request.resource.data.userRole == 'LeafUser' || 
+         request.resource.data.userRole == 'DispensaryOwner' || 
+         request.resource.data.userRole == 'DispensaryStaff');
+      
+      // Only store owners can update their own stores
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.ownerId;
+      
+      // Super Admins can delete stores
+      allow delete: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
     // Creator Earnings Collection
     match /creatorEarnings/{userId} {
       // Creators can read their own earnings
