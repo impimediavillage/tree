@@ -209,7 +209,7 @@ export default function AdminCreditPackagesPage() {
             <p className="ml-2 text-[#5D4E37] font-semibold">Loading packages...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
           {filteredPackages.length > 0 ? (
             filteredPackages.map((pkg) => (
               <CreditPackageCard 
@@ -221,7 +221,7 @@ export default function AdminCreditPackagesPage() {
             ))
           ) : (
             <div className="col-span-full text-center py-10 text-muted-foreground">
-              <PackagePlus className="mx-auto h-12 w-12 mb-3 text-orange-500" />
+              <PackagePlus className="mx-auto h-12 w-12 mb-3 text-[#B8651B]" />
               No credit packages found {searchTerm ? 'matching your criteria' : ''}.
             </div>
           )}

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable, type ColumnDef } from '@/components/ui/data-table';
-import { ArrowUpDown, Edit, Eye, Loader2 } from 'lucide-react';
+import { ArrowUpDown, Edit, Eye, Loader2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -84,7 +84,7 @@ function ManageIssueDialog({ issue, onIssueUpdate }: ManageIssueDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm"><Eye className="mr-2 h-4 w-4" /> View/Manage</Button>
+        <Button variant="outline" size="sm" className="font-bold"><Eye className="mr-2 h-5 w-5 text-[#006B3E]" /> View/Manage</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -191,37 +191,41 @@ export default function AdminPoolIssuesPage() {
   const columns: ColumnDef<PoolIssue>[] = [
     {
       accessorKey: "productName",
-      header: "Product",
+      header: () => <span className="font-bold text-[#3D2E17]">Product</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#3D2E17]">{row.original.productName}</span>,
     },
     {
       accessorKey: "reporterDispensaryName",
-      header: "Reported By (Store)",
+      header: () => <span className="font-bold text-[#3D2E17]">Reported By (Store)</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{row.original.reporterDispensaryName}</span>,
     },
     {
       accessorKey: "reportedDispensaryName",
-      header: "Reported Against (Store)",
+      header: () => <span className="font-bold text-[#3D2E17]">Reported Against (Store)</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{row.original.reportedDispensaryName}</span>,
     },
     {
       accessorKey: "issueType",
-      header: "Issue Type",
-      cell: ({ row }) => row.original.issueType.replace(/_/g, ' ').toUpperCase(),
+      header: () => <span className="font-bold text-[#3D2E17]">Issue Type</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{row.original.issueType.replace(/_/g, ' ').toUpperCase()}</span>,
     },
     {
       accessorKey: "issueStatus",
-      header: "Status",
+      header: () => <span className="font-bold text-[#3D2E17]">Status</span>,
       cell: ({ row }) => (
-        <Badge className={`${getStatusBadgeColor(row.original.issueStatus)} text-white`}>
+        <Badge className={`${getStatusBadgeColor(row.original.issueStatus)} text-white font-bold`}>
           {row.original.issueStatus.replace(/_/g, ' ').toUpperCase()}
         </Badge>
       ),
     },
     {
       accessorKey: "createdAt",
-      header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Reported At <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
-      cell: ({ row }) => format(new Date(row.original.createdAt.toString()), 'MMM d, yyyy HH:mm'),
+      header: ({ column }) => <Button variant="ghost" className="font-bold text-[#3D2E17]" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Reported At <ArrowUpDown className="ml-2 h-5 w-5 text-[#006B3E]" /></Button>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{format(new Date(row.original.createdAt.toString()), 'MMM d, yyyy HH:mm')}</span>,
     },
     {
       id: "actions",
+      header: () => <span className="font-bold text-[#3D2E17]">Actions</span>,
       cell: ({ row }) => (
         <ManageIssueDialog issue={row.original} onIssueUpdate={handleIssueUpdate} />
       ),
@@ -230,18 +234,15 @@ export default function AdminPoolIssuesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 
-            className="text-2xl font-semibold text-foreground" 
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >
+      <div className="p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <AlertTriangle className="h-14 w-14 text-[#006B3E]" />
+          <h1 className="text-4xl font-extrabold text-[#3D2E17]">
             Product Pool Issues
-        </h1>
-        <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Review and manage reported issues between stores in the product pool.
+          </h1>
+        </div>
+        <p className="text-lg font-bold text-[#5D4E37]">
+          Review and manage reported issues between stores in the product pool.
         </p>
       </div>
       <DataTable

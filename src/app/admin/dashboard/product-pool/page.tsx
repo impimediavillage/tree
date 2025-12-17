@@ -56,7 +56,7 @@ export default function AdminProductPoolPage() {
   const columns: ColumnDef<Product>[] = [
     {
         accessorKey: "imageUrl",
-        header: "Image",
+        header: () => <span className="font-bold text-[#3D2E17]">Image</span>,
         cell: ({ row }) => {
             const imageUrl = row.original.imageUrl;
             const productName = row.original.name;
@@ -64,43 +64,47 @@ export default function AdminProductPoolPage() {
                 <Image 
                     src={imageUrl} 
                     alt={productName} 
-                    width={40} 
-                    height={40} 
-                    className="rounded object-cover h-10 w-10" 
+                    width={50} 
+                    height={50} 
+                    className="rounded object-cover h-12 w-12" 
                     data-ai-hint={`product ${productName.split(" ")[0] || ""}`}
                 />
             ) : (
-                <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs">No Img</div>
+                <div className="h-12 w-12 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs font-bold">No Img</div>
             );
         },
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Product Name <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+      header: ({ column }) => <Button variant="ghost" className="font-bold text-[#3D2E17]" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Product Name <ArrowUpDown className="ml-2 h-5 w-5 text-[#006B3E]" /></Button>,
+      cell: ({ row }) => <span className="font-semibold text-[#3D2E17]">{row.original.name}</span>,
     },
     {
       accessorKey: "dispensaryName",
-      header: "Store Name",
+      header: () => <span className="font-bold text-[#3D2E17]">Store Name</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{row.original.dispensaryName}</span>,
     },
     {
       accessorKey: "category",
-      header: "Category",
+      header: () => <span className="font-bold text-[#3D2E17]">Category</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{row.original.category}</span>,
     },
     {
       accessorKey: "priceTiers",
-      header: ({ column }) => <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Price <ArrowUpDown className="ml-2 h-4 w-4" /></Button>,
+      header: ({ column }) => <Button variant="ghost" className="font-bold text-[#3D2E17]" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>Price <ArrowUpDown className="ml-2 h-5 w-5 text-[#006B3E]" /></Button>,
       cell: ({ row }) => {
         const tier = row.original.priceTiers?.[0];
-        return tier ? `${tier.price.toFixed(2)} ${row.original.currency}` : 'N/A';
+        return <span className="font-bold text-[#006B3E]">{tier ? `${tier.price.toFixed(2)} ${row.original.currency}` : 'N/A'}</span>;
       },
     },
     {
       accessorKey: "quantityInStock",
-      header: "Stock",
+      header: () => <span className="font-bold text-[#3D2E17]">Stock</span>,
+      cell: ({ row }) => <span className="font-semibold text-[#5D4E37]">{row.original.quantityInStock}</span>,
     },
     {
       accessorKey: "isAvailableForPool",
-      header: "In Pool?",
+      header: () => <span className="font-bold text-[#3D2E17]">In Pool?</span>,
       cell: ({ row }) => (
         <div className="flex items-center space-x-2">
             <Switch
@@ -109,7 +113,7 @@ export default function AdminProductPoolPage() {
                 onCheckedChange={(value) => handleTogglePoolAvailability(row.original, value)}
                 aria-label="Toggle pool availability"
             />
-            {row.original.isAvailableForPool ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />}
+            {row.original.isAvailableForPool ? <CheckCircle className="h-6 w-6 text-[#006B3E]" /> : <XCircle className="h-6 w-6 text-red-600" />}
         </div>
       ),
     },
@@ -117,18 +121,15 @@ export default function AdminProductPoolPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 
-            className="text-2xl font-semibold text-foreground" 
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-        >
+      <div className="p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <CheckCircle className="h-14 w-14 text-[#006B3E]" />
+          <h1 className="text-4xl font-extrabold text-[#3D2E17]">
             Product Pool Administration
-        </h1>
-        <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Oversee all products and manage their availability in the sharing pool.
+          </h1>
+        </div>
+        <p className="text-lg font-bold text-[#5D4E37]">
+          Oversee all products and manage their availability in the sharing pool.
         </p>
       </div>
       <DataTable

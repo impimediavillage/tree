@@ -198,9 +198,9 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
         {typeof creditPackage.bonusCredits === 'number' && creditPackage.bonusCredits > 0 && (
             <div className="flex items-center justify-between text-lg">
                 <span className="flex items-center text-[#3D2E17] font-bold">
-                    <Gift className="mr-2 h-6 w-6 text-orange-500" /> Bonus:
+                    <Gift className="mr-2 h-6 w-6 text-[#B8651B]" /> Bonus:
                 </span>
-                <span className="font-extrabold text-orange-600">{creditPackage.bonusCredits}</span>
+                <span className="font-extrabold text-[#B8651B]">{creditPackage.bonusCredits}</span>
             </div>
         )}
       </CardContent>
