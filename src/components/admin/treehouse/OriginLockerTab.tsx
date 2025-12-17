@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader } from '@googlemaps/js-api-loader';
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -25,7 +27,19 @@ import {
   AlertCircle,
   Search,
   Building2,
+  Truck,
+  Mail,
 } from "lucide-react";
+
+const allShippingMethods = [
+  { id: "dtd", label: "DTD - Door to Door (The Courier Guy)" },
+  { id: "dtl", label: "DTL - Door to Locker (Pudo)" },
+  { id: "ltd", label: "LTD - Locker to Door (Pudo)" },
+  { id: "ltl", label: "LTL - Locker to Locker (Pudo)" },
+  { id: "collection", label: "Collection from location" },
+  { id: "in_house", label: "In-house delivery service" },
+];
+
 
 interface PudoLocker {
   LockerID: string;
@@ -41,18 +55,23 @@ interface PudoLocker {
 }
 
 interface OriginLockerConfig {
-  lockerId: string;
-  lockerCode: string;
-  lockerName: string;
+  lockerId?: string;
+  lockerCode?: string;
+  lockerName?: string;
   address: string;
+  streetAddress: string;
   suburb: string;
   city: string;
   province: string;
   postalCode: string;
+  country: string;
   latitude: number;
   longitude: number;
+  email?: string;
+  shippingMethods?: string[];
   updatedAt: Timestamp | Date;
   updatedBy?: string;
+  isPudoLocker?: boolean;
 }
 
 export default function OriginLockerTab() {
@@ -65,6 +84,25 @@ export default function OriginLockerTab() {
   const [filteredLockers, setFilteredLockers] = useState<PudoLocker[]>([]);
   const [selectedLocker, setSelectedLocker] = useState<PudoLocker | null>(null);
   const { toast } = useToast();
+  
+  // Address autocomplete refs
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInitialized = useRef(false);
+  
+  // Address state
+  const [manualAddress, setManualAddress] = useState({
+    streetAddress: '',
+    suburb: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    country: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
+    email: '',
+    shippingMethods: [] as string[],
+  });
 
   useEffect(() => {
     fetchOriginLocker();
@@ -73,6 +111,125 @@ export default function OriginLockerTab() {
   useEffect(() => {
     filterLockers();
   }, [lockers, searchTerm]);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !mapInitialized.current) {
+      initializeMap();
+    }
+  }, []);
+
+  const initializeMap = useCallback(() => {
+    if (mapInitialized.current || !mapContainerRef.current) return;
+    
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      toast({ 
+        title: "Map Error", 
+        description: "Google Maps API key is not configured.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    mapInitialized.current = true;
+    const loader = new Loader({ apiKey, version: 'weekly', libraries: ['places', 'geocoding'] });
+
+    loader.load().then(google => {
+      const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string, useShortName = false): string =>
+        components.find(c => c.types.includes(type))?.[useShortName ? 'short_name' : 'long_name'] || '';
+
+      const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
+        const components = place.address_components;
+        if (!components) return;
+
+        const streetNumber = getAddressComponent(components, 'street_number');
+        const route = getAddressComponent(components, 'route');
+        
+        setManualAddress(prev => ({
+          ...prev,
+          streetAddress: `${streetNumber} ${route}`.trim(),
+          suburb: getAddressComponent(components, 'locality'),
+          city: getAddressComponent(components, 'administrative_area_level_2') || getAddressComponent(components, 'administrative_area_level_1'),
+          province: getAddressComponent(components, 'administrative_area_level_1'),
+          postalCode: getAddressComponent(components, 'postal_code'),
+          country: getAddressComponent(components, 'country'),
+        }));
+      };
+
+      const initialLatLng = manualAddress.latitude && manualAddress.longitude
+        ? { lat: manualAddress.latitude, lng: manualAddress.longitude }
+        : { lat: -29.8587, lng: 31.0218 }; // Default to South Africa
+
+      const map = new google.maps.Map(mapContainerRef.current!, { 
+        center: initialLatLng, 
+        zoom: manualAddress.latitude ? 15 : 6, 
+        mapId: 'b39f3f8b7139051d' 
+      });
+      
+      const marker = new google.maps.Marker({ 
+        map, 
+        draggable: true, 
+        position: initialLatLng 
+      });
+
+      if (locationInputRef.current) {
+        const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current, { 
+          fields: ["address_components", "geometry", "formatted_address"], 
+          types: ["address"] 
+        });
+        
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry?.location) {
+            const loc = place.geometry.location;
+            map.setCenter(loc); 
+            map.setZoom(17); 
+            marker.setPosition(loc);
+            
+            setManualAddress(prev => ({
+              ...prev,
+              latitude: loc.lat(),
+              longitude: loc.lng(),
+            }));
+            
+            setAddressFields(place);
+          }
+        });
+      }
+
+      const geocoder = new google.maps.Geocoder();
+      const handleMapInteraction = (pos: google.maps.LatLng) => {
+        marker.setPosition(pos); 
+        map.panTo(pos);
+        
+        setManualAddress(prev => ({
+          ...prev,
+          latitude: pos.lat(),
+          longitude: pos.lng(),
+        }));
+        
+        geocoder.geocode({ location: pos }, (results, status) => {
+          if (status === 'OK' && results?.[0]) {
+            setAddressFields(results[0]);
+            if (locationInputRef.current) {
+              locationInputRef.current.value = results[0].formatted_address;
+            }
+          }
+        });
+      };
+
+      map.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+      marker.addListener('dragend', () => marker.getPosition() && handleMapInteraction(marker.getPosition()!));
+
+    }).catch(e => {
+      console.error("Error loading Google Maps:", e);
+      toast({ 
+        title: 'Map Error', 
+        description: 'Could not load Google Maps.', 
+        variant: 'destructive' 
+      });
+    });
+  }, [toast, manualAddress.latitude, manualAddress.longitude]);
 
   const fetchOriginLocker = async () => {
     try {
@@ -170,13 +327,16 @@ export default function OriginLockerTab() {
         lockerCode: selectedLocker.LockerCode,
         lockerName: selectedLocker.LockerName,
         address: selectedLocker.Address,
+        streetAddress: selectedLocker.Address,
         suburb: selectedLocker.SuburbName,
         city: selectedLocker.CityName,
         province: selectedLocker.ProvinceName,
         postalCode: selectedLocker.PostalCode,
+        country: 'South Africa',
         latitude: selectedLocker.Latitude,
         longitude: selectedLocker.Longitude,
         updatedAt: Timestamp.now(),
+        isPudoLocker: true,
       };
 
       const configRef = doc(db, "treehouse_config", "origin_locker");
@@ -193,6 +353,77 @@ export default function OriginLockerTab() {
       toast({
         title: "Error",
         description: "Failed to save origin locker",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveManualAddress = async () => {
+    // Validate manual address
+    if (!manualAddress.streetAddress || !manualAddress.city || !manualAddress.latitude || !manualAddress.longitude) {
+      toast({
+        title: "Incomplete Address",
+        description: "Please select a complete address from the map",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!manualAddress.email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter an email address for the Treehouse",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!manualAddress.shippingMethods || manualAddress.shippingMethods.length === 0) {
+      toast({
+        title: "Shipping Methods Required",
+        description: "Please select at least one shipping method",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const fullAddress = `${manualAddress.streetAddress}, ${manualAddress.suburb}, ${manualAddress.city}`;
+
+      const originConfig: OriginLockerConfig = {
+        address: fullAddress,
+        streetAddress: manualAddress.streetAddress,
+        suburb: manualAddress.suburb,
+        city: manualAddress.city,
+        province: manualAddress.province,
+        postalCode: manualAddress.postalCode,
+        country: manualAddress.country,
+        latitude: manualAddress.latitude,
+        longitude: manualAddress.longitude,
+        email: manualAddress.email,
+        shippingMethods: manualAddress.shippingMethods,
+        updatedAt: Timestamp.now(),
+        isPudoLocker: false,
+      };
+
+      const configRef = doc(db, "treehouse_config", "origin_locker");
+      await setDoc(configRef, originConfig, { merge: true });
+
+      setConfig(originConfig);
+      
+      toast({
+        title: "Success",
+        description: "Origin address and shipping configuration set successfully",
+      });
+    } catch (error) {
+      console.error("Error saving origin address:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save origin address",
         variant: "destructive",
       });
     } finally {
@@ -235,16 +466,26 @@ export default function OriginLockerTab() {
 
         {config ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Locker Code</Label>
-                <p className="font-mono font-bold text-[#006B3E] text-lg">{config.lockerCode}</p>
+            {config.isPudoLocker && config.lockerCode && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Locker Code</Label>
+                  <p className="font-mono font-bold text-[#006B3E] text-lg">{config.lockerCode}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Locker Name</Label>
+                  <p className="font-medium text-[#3D2E17]">{config.lockerName}</p>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Locker Name</Label>
-                <p className="font-medium text-[#3D2E17]">{config.lockerName}</p>
+            )}
+            
+            {!config.isPudoLocker && (
+              <div className="mb-3">
+                <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/20">
+                  Custom Address
+                </Badge>
               </div>
-            </div>
+            )}
 
             <div>
               <Label className="text-xs text-muted-foreground">Address</Label>
@@ -261,6 +502,33 @@ export default function OriginLockerTab() {
                 <span className="font-mono">{config.latitude}, {config.longitude}</span>
               </div>
             </div>
+
+            {config.email && (
+              <div className="mt-3">
+                <Label className="text-xs text-muted-foreground">Contact Email</Label>
+                <p className="text-sm flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-[#006B3E]" />
+                  {config.email}
+                </p>
+              </div>
+            )}
+
+            {config.shippingMethods && config.shippingMethods.length > 0 && (
+              <div className="mt-3">
+                <Label className="text-xs text-muted-foreground mb-2 block">Shipping Methods</Label>
+                <div className="flex flex-wrap gap-2">
+                  {config.shippingMethods.map((methodId) => {
+                    const method = allShippingMethods.find(m => m.id === methodId);
+                    return method ? (
+                      <Badge key={methodId} variant="secondary" className="bg-[#006B3E]/10 text-[#006B3E]">
+                        <Truck className="h-3 w-3 mr-1" />
+                        {method.label.split(' - ')[0]}
+                      </Badge>
+                    ) : null;
+                  })}
+                </div>
+              </div>
+            )}
 
             {config.updatedAt && (
               <div className="text-xs text-muted-foreground">
@@ -279,13 +547,189 @@ export default function OriginLockerTab() {
         )}
       </Card>
 
+      {/* Google Address Section */}
+      <Card className="p-6">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-[#3D2E17] flex items-center gap-2 mb-1">
+            <MapPin className="h-5 w-5 text-[#006B3E]" />
+            Set Custom Origin Address
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Use Google Maps to select a custom address as the shipping origin point
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {/* Address Search */}
+          <div>
+            <Label className="text-[#3D2E17] font-bold mb-2">Address Search</Label>
+            <Input 
+              ref={locationInputRef}
+              placeholder="Start typing an address to search..."
+              className="w-full"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Select an address to auto-fill the fields below. You can also click the map or drag the pin.
+            </p>
+          </div>
+
+          {/* Google Map */}
+          <div ref={mapContainerRef} className="h-96 w-full rounded-md border shadow-sm bg-muted" />
+
+          {/* Address Fields */}
+          <div className="grid md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+            <div>
+              <Label className="text-xs text-muted-foreground">Street Address</Label>
+              <Input 
+                value={manualAddress.streetAddress} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, streetAddress: e.target.value }))}
+                placeholder="Auto-filled from map"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Suburb</Label>
+              <Input 
+                value={manualAddress.suburb} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, suburb: e.target.value }))}
+                placeholder="Auto-filled from map"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">City</Label>
+              <Input 
+                value={manualAddress.city} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, city: e.target.value }))}
+                placeholder="Auto-filled from map"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Province</Label>
+              <Input 
+                value={manualAddress.province} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, province: e.target.value }))}
+                placeholder="Auto-filled from map"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Postal Code</Label>
+              <Input 
+                value={manualAddress.postalCode} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+                placeholder="Auto-filled from map"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Country</Label>
+              <Input 
+                value={manualAddress.country} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, country: e.target.value }))}
+                placeholder="Auto-filled from map"
+              />
+            </div>
+          </div>
+
+          {/* Email and Shipping Methods Section */}
+          <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+            <h4 className="font-semibold text-[#3D2E17] flex items-center gap-2">
+              <Mail className="h-4 w-4 text-[#006B3E]" />
+              Contact & Shipping Configuration
+            </h4>
+            
+            {/* Email Field */}
+            <div>
+              <Label className="text-[#3D2E17] font-bold">Email Address</Label>
+              <Input 
+                type="email"
+                value={manualAddress.email} 
+                onChange={(e) => setManualAddress(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="treehouse@example.com"
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                This email will be used for shipping notifications and order confirmations
+              </p>
+            </div>
+
+            {/* Shipping Methods */}
+            <div>
+              <Label className="text-[#3D2E17] font-bold mb-3 flex items-center gap-2">
+                <Truck className="h-4 w-4 text-[#006B3E]" />
+                Available Shipping Methods
+              </Label>
+              <div className="space-y-3 mt-2">
+                {allShippingMethods.map((method) => (
+                  <div key={method.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`shipping-${method.id}`}
+                      checked={manualAddress.shippingMethods.includes(method.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setManualAddress(prev => ({
+                            ...prev,
+                            shippingMethods: [...prev.shippingMethods, method.id]
+                          }));
+                        } else {
+                          setManualAddress(prev => ({
+                            ...prev,
+                            shippingMethods: prev.shippingMethods.filter(m => m !== method.id)
+                          }));
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor={`shipping-${method.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {method.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Select the shipping methods available for Treehouse orders
+              </p>
+            </div>
+          </div>
+
+          {/* Coordinates Display */}
+          {manualAddress.latitude && manualAddress.longitude && (
+            <div className="flex items-center gap-4 text-sm p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+              <MapPin className="h-4 w-4 text-[#006B3E]" />
+              <span className="text-muted-foreground">Coordinates:</span>
+              <span className="font-mono text-[#006B3E]">
+                {manualAddress.latitude.toFixed(6)}, {manualAddress.longitude.toFixed(6)}
+              </span>
+            </div>
+          )}
+
+          {/* Save Button */}
+          <Button
+            onClick={handleSaveManualAddress}
+            disabled={saving || !manualAddress.latitude || !manualAddress.streetAddress || !manualAddress.email || manualAddress.shippingMethods.length === 0}
+            className="w-full bg-[#006B3E] hover:bg-[#005a33]"
+          >
+            {saving ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Set Custom Address as Origin
+              </>
+            )}
+          </Button>
+        </div>
+      </Card>
+
       {/* Load Pudo Lockers Section */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-[#3D2E17] flex items-center gap-2">
               <Building2 className="h-5 w-5 text-[#006B3E]" />
-              Select Origin Locker
+              Or Select Pudo Locker
             </h3>
             <p className="text-sm text-muted-foreground">
               Load Pudo lockers and choose one as the shipping origin point

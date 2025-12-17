@@ -16,7 +16,7 @@ export default function AdminTreehousePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
         <div className="flex items-center gap-3 mb-2">
           <Store className="h-10 w-10 text-[#006B3E]" />
           <h1 className="text-4xl font-extrabold text-[#3D2E17]">Treehouse Management</h1>
