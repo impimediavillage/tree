@@ -182,28 +182,6 @@ export default function CreatorStorePage() {
           </Card>
         )}
 
-        {/* Store Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-muted/50 border-border/50">
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-[#006B3E]">{store.stats.totalProducts}</p>
-              <p className="text-sm text-muted-foreground">Products</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-muted/50 border-border/50">
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-[#006B3E]">{store.stats.totalSales}</p>
-              <p className="text-sm text-muted-foreground">Sales</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-muted/50 border-border/50">
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-[#006B3E]">R{store.stats.totalRevenue.toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">Revenue</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Search and Category Filters */}
         <Card className="mb-6 border-2 bg-muted/50 border-border/50">
           <CardContent className="pt-6">
@@ -291,10 +269,36 @@ export default function CreatorStorePage() {
                       <Button
                         className="w-full bg-[#006B3E] hover:bg-[#005230]"
                         onClick={() => {
-                          // TODO: Add to cart functionality
+                          // Convert Treehouse product to CartItem format
+                          const cartItem = {
+                            id: product.id,
+                            productId: product.id,
+                            name: `${product.apparelType || product.productName} - Black (Creator Design)`,
+                            description: product.productDescription || `Unique creator design by ${product.creatorName}`,
+                            category: 'Treehouse',
+                            dispensaryId: 'treehouse',
+                            dispensaryName: 'The Treehouse',
+                            dispensaryType: 'treehouse',
+                            productOwnerEmail: product.creatorEmail,
+                            currency: 'ZAR',
+                            price: product.price,
+                            unit: '1 item',
+                            quantity: 1,
+                            quantityInStock: 999, // POD - always in stock
+                            imageUrl: product.designImageUrl,
+                            productType: 'Apparel' as const,
+                            weight: 0.3, // Average apparel weight
+                            length: 30,
+                            width: 25,
+                            height: 5,
+                          };
+
+                          // @ts-ignore - addToCart expects Product and PriceTier, but we're providing compatible CartItem
+                          addToCart(cartItem, { unit: '1 item', price: product.price, quantityInStock: 999 }, 1, product.designImageUrl);
+
                           toast({
-                            title: 'Added to Cart',
-                            description: `${product.productName} added to your cart.`,
+                            title: 'Added to Cart!',
+                            description: `${product.productName} by ${product.creatorName}`,
                           });
                         }}
                       >

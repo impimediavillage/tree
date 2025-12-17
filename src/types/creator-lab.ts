@@ -138,6 +138,13 @@ export interface TreehouseProduct {
   viewCount: number; // Product page views
   addToCartCount: number; // Times added to cart
   tags?: string[]; // Searchable tags (auto-generated from prompt)
+  // Shipping fields (for Pudo API integration)
+  weight?: number; // Weight in kg
+  dimensions?: {
+    length: number; // cm
+    width: number; // cm
+    height: number; // cm
+  };
   // Dispensary fields (if created by dispensary owner/staff)
   dispensaryId?: string;
   dispensaryName?: string;

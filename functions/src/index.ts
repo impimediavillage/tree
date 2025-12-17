@@ -5,8 +5,25 @@ import * as logger from 'firebase-functions/logger';
 import { defineSecret } from 'firebase-functions/params';
 import type { Dispensary, User as AppUser, UserDocData, AllowedUserRole, DeductCreditsRequestBody, CartItem, OwnerUpdateDispensaryPayload, AIAdvisor } from './types';
 
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
+// MUST be initialized BEFORE importing any modules that use admin.firestore()
+if (admin.apps.length === 0) {
+    try {
+        admin.initializeApp();
+        logger.info("Firebase Admin SDK initialized successfully.");
+    } catch (e: any) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
+}
+
 // Export Creator Lab functions
 export { generateCreatorDesign, finalizeDesignComposite, generateModelShowcase, publishCreatorProduct, updateTreehouseProduct, toggleProductStatus, deleteTreehouseProduct } from './creator-lab';
+
+// Export Treehouse Earnings functions
+export { recordTreehouseEarning, createPayoutRequest } from './treehouse-earnings';
+
+// Export Dispensary Earnings functions
+export { recordDispensaryEarning, createDispensaryPayoutRequest } from './dispensary-earnings';
 
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
@@ -84,15 +101,6 @@ export const uploadApparelTemplates = onCall(async (request: CallableRequest) =>
 // Define OpenAI API Key as a secret
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 
-// ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
-if (admin.apps.length === 0) {
-    try {
-        admin.initializeApp();
-        logger.info("Firebase Admin SDK initialized successfully.");
-    } catch (e: any) {
-        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
-    }
-}
 const db = admin.firestore();
 // ============== END INITIALIZATION =============
 

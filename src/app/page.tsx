@@ -230,16 +230,17 @@ export default function HolisticAiHubPage() {
         {/* New Sections: Treehouse Store & Healers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
           {/* Treehouse Store Section */}
-          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
-            <div className="relative h-64 w-full bg-muted rounded-lg overflow-hidden mb-6">
+          <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+            <div className="relative aspect-video w-full">
               <Image
                 src="/images/treehouse/th2.jpg"
                 alt="Treehouse Store"
                 fill
                 className="object-cover"
+                priority
               />
             </div>
-            <div className="text-center">
+            <div className="p-6 text-center">
               <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                 Treehouse Collective Store
               </h2>
@@ -304,16 +305,17 @@ export default function HolisticAiHubPage() {
           </Card>
 
           {/* Healers/Stores Section */}
-          <Card className="p-8 animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg flex flex-col justify-between">
-            <div className="relative h-64 w-full bg-muted rounded-lg overflow-hidden mb-6">
+          <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+            <div className="relative aspect-video w-full">
               <Image
                 src="/images/healers/healers.jpg"
                 alt="Wellness Healers"
                 fill
                 className="object-cover"
+                priority
               />
             </div>
-            <div className="text-center">
+            <div className="p-6 text-center">
               <h2 className="text-3xl font-extrabold text-foreground tracking-tight">
                 Wellness Marketplace
               </h2>

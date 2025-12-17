@@ -79,13 +79,65 @@ service cloud.firestore {
     }
 
     // Creator Earnings Collection
-    match /creatorEarnings/{userId} {
+    match /creator_earnings/{userId} {
       // Creators can read their own earnings
       allow read: if request.auth != null && request.auth.uid == userId;
       
-      // Only system/admins can write earnings (handled by backend)
+      // Super Admins can read all earnings
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // Only system/admins can write earnings (handled by backend/functions)
       allow write: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Earnings Transactions Collection
+    match /earnings_transactions/{transactionId} {
+      // Creators can read their own transactions
+      allow read: if request.auth != null && request.auth.uid == resource.data.creatorId;
+      
+      // Super Admins can read all transactions
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // Only system can write (handled by Cloud Functions)
+      allow write: if false;
+    }
+
+    // Payout Requests Collection
+    match /payout_requests/{requestId} {
+      // Creators can read their own payout requests
+      allow read: if request.auth != null && request.auth.uid == resource.data.creatorId;
+      
+      // Creators can create their own payout requests
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.creatorId;
+      
+      // Super Admins can read and update all payout requests
+      allow read, update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // No deletes allowed
+      allow delete: if false;
+    }
+
+    // Treehouse Orders Collection
+    match /treehouse_orders/{orderId} {
+      // Users can read their own orders
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Creators can read orders for their products
+      allow read: if request.auth != null && request.auth.uid == resource.data.creatorId;
+      
+      // Super Admins can read and update all orders
+      allow read, update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // Users can create orders (via checkout)
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      
+      // No direct deletes
+      allow delete: if false;
     }
 
     // Orders Collection (extend existing rules)
@@ -99,6 +151,83 @@ service cloud.firestore {
       // Allow Super Admin to update POD status
       allow update: if request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Apparel Items Collection (templates for Creator Lab)
+    match /apparel_items/{itemId} {
+      // Public read access for Creator Lab browsing
+      allow read: if true;
+      
+      // Only Super Admins can write
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Treehouse Config Collection (origin locker, etc.)
+    match /treehouse_config/{configId} {
+      // Public read access for origin locker info
+      allow read: if true;
+      
+      // Only Super Admins can write
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+    }
+
+    // Dispensary Earnings Collection
+    match /dispensary_earnings/{userId} {
+      // Staff can read their own earnings
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Dispensary admins can read all staff earnings from their dispensary
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.dispensaryId;
+      
+      // Super Admins can read all earnings
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // Only system/functions can write
+      allow write: if false;
+    }
+
+    // Dispensary Transactions Collection
+    match /dispensary_transactions/{transactionId} {
+      // Staff can read their own transactions
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Dispensary admins can read all transactions from their dispensary
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.dispensaryId;
+      
+      // Super Admins can read all transactions
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // Only system can write (handled by Cloud Functions)
+      allow write: if false;
+    }
+
+    // Dispensary Payout Requests Collection
+    match /dispensary_payout_requests/{requestId} {
+      // Staff can read their own payout requests
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      
+      // Staff and admins can create payout requests
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      
+      // Dispensary admins can read all requests from their dispensary
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'DispensaryOwner' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.dispensaryId == resource.data.dispensaryId;
+      
+      // Super Admins can read and update all payout requests
+      allow read, update: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SuperAdmin';
+      
+      // No deletes allowed
+      allow delete: if false;
     }
 
     // Placeholder for other rules - you can add more rules for other collections here

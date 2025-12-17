@@ -33,12 +33,23 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
 const logger = __importStar(require("firebase-functions/logger"));
 const params_1 = require("firebase-functions/params");
+// ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
+// MUST be initialized BEFORE importing any modules that use admin.firestore()
+if (admin.apps.length === 0) {
+    try {
+        admin.initializeApp();
+        logger.info("Firebase Admin SDK initialized successfully.");
+    }
+    catch (e) {
+        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
+    }
+}
 // Export Creator Lab functions
 var creator_lab_1 = require("./creator-lab");
 Object.defineProperty(exports, "generateCreatorDesign", { enumerable: true, get: function () { return creator_lab_1.generateCreatorDesign; } });
@@ -48,6 +59,14 @@ Object.defineProperty(exports, "publishCreatorProduct", { enumerable: true, get:
 Object.defineProperty(exports, "updateTreehouseProduct", { enumerable: true, get: function () { return creator_lab_1.updateTreehouseProduct; } });
 Object.defineProperty(exports, "toggleProductStatus", { enumerable: true, get: function () { return creator_lab_1.toggleProductStatus; } });
 Object.defineProperty(exports, "deleteTreehouseProduct", { enumerable: true, get: function () { return creator_lab_1.deleteTreehouseProduct; } });
+// Export Treehouse Earnings functions
+var treehouse_earnings_1 = require("./treehouse-earnings");
+Object.defineProperty(exports, "recordTreehouseEarning", { enumerable: true, get: function () { return treehouse_earnings_1.recordTreehouseEarning; } });
+Object.defineProperty(exports, "createPayoutRequest", { enumerable: true, get: function () { return treehouse_earnings_1.createPayoutRequest; } });
+// Export Dispensary Earnings functions
+var dispensary_earnings_1 = require("./dispensary-earnings");
+Object.defineProperty(exports, "recordDispensaryEarning", { enumerable: true, get: function () { return dispensary_earnings_1.recordDispensaryEarning; } });
+Object.defineProperty(exports, "createDispensaryPayoutRequest", { enumerable: true, get: function () { return dispensary_earnings_1.createDispensaryPayoutRequest; } });
 // Upload Apparel Templates to Storage
 exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
     // Check authentication
@@ -113,16 +132,6 @@ exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
 });
 // Define OpenAI API Key as a secret
 const openaiApiKey = (0, params_1.defineSecret)('OPENAI_API_KEY');
-// ============== FIREBASE ADMIN SDK INITIALIZATION ==============//
-if (admin.apps.length === 0) {
-    try {
-        admin.initializeApp();
-        logger.info("Firebase Admin SDK initialized successfully.");
-    }
-    catch (e) {
-        logger.error("CRITICAL: Firebase Admin SDK initialization failed:", e);
-    }
-}
 const db = admin.firestore();
 // ============== END INITIALIZATION =============
 // ============== AUTH TRIGGER FOR CUSTOM CLAIMS (CRITICAL FOR SECURITY) - V2 SYNTAX =============
