@@ -22,7 +22,7 @@ export interface BankAccountDetails {
   accountHolder: string;
   bankName: string;
   accountNumber: string;
-  accountType: 'savings' | 'current';
+  accountType: 'savings' | 'current' | 'cheque';
   branchCode: string;
 }
 

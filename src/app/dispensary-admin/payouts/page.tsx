@@ -459,7 +459,7 @@ export default function PayoutsPage() {
               <Label htmlFor="accountType" className="font-semibold">Account Type</Label>
               <Select
                 value={accountDetails.accountType}
-                onValueChange={(value: 'savings' | 'cheque' | 'current') =>
+                onValueChange={(value: 'savings' | 'current' | 'cheque') =>
                   setAccountDetails({ ...accountDetails, accountType: value })
                 }
               >
