@@ -175,8 +175,8 @@ export default function AdminWellnessPage() {
 
         {isLoading ? (
           <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2 text-muted-foreground">Loading profiles...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-[#006B3E]" />
+            <p className="ml-2 text-[#5D4E37] font-semibold">Loading profiles...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">

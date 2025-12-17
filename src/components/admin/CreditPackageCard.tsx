@@ -165,42 +165,42 @@ interface CreditPackageCardProps {
 export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDelete }: CreditPackageCardProps) {
   return (
     <Card 
-      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col animate-fade-in-scale-up"
+      className="w-full shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col bg-muted/50 border-border/50 animate-fade-in-scale-up"
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-semibold text-primary">{creditPackage.name}</CardTitle>
-            <Badge variant={creditPackage.isActive ? "default" : "outline"} className={creditPackage.isActive ? "bg-green-500 hover:bg-green-600" : ""}>
+            <CardTitle className="text-xl font-extrabold text-[#3D2E17]">{creditPackage.name}</CardTitle>
+            <Badge variant={creditPackage.isActive ? "default" : "outline"} className={creditPackage.isActive ? "bg-[#006B3E] hover:bg-[#005230] font-bold" : "font-bold"}>>
                 {creditPackage.isActive ? <CheckCircle className="mr-1 h-4 w-4" /> : <XCircle className="mr-1 h-4 w-4" />}
                 {creditPackage.isActive ? 'Active' : 'Inactive'}
             </Badge>
         </div>
-        <CardDescriptionComponent className="text-sm text-muted-foreground truncate h-10">
+        <CardDescriptionComponent className="text-sm text-[#5D4E37] font-semibold truncate h-10">
             {creditPackage.description || 'No description provided.'}
         </CardDescriptionComponent>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
         <div className="flex items-center justify-between text-lg">
-            <span className="flex items-center text-foreground">
+            <span className="flex items-center text-[#3D2E17] font-bold">
                  Price:
             </span>
-            <span className="font-semibold text-accent">
+            <span className="font-extrabold text-[#006B3E]">
                 {creditPackage.price.toFixed(2)} {creditPackage.currency}
             </span>
         </div>
         <div className="flex items-center justify-between text-lg">
-             <span className="flex items-center text-foreground">
-                <PlusCircleIcon className="mr-2 h-5 w-5 text-blue-500" /> Credits:
+             <span className="flex items-center text-[#3D2E17] font-bold">
+                <PlusCircleIcon className="mr-2 h-6 w-6 text-[#006B3E]" /> Credits:
             </span>
-            <span className="text-2xl font-bold text-primary">{creditPackage.credits}</span>
+            <span className="text-2xl font-extrabold text-[#006B3E]">{creditPackage.credits}</span>
         </div>
         {typeof creditPackage.bonusCredits === 'number' && creditPackage.bonusCredits > 0 && (
             <div className="flex items-center justify-between text-lg">
-                <span className="flex items-center text-foreground">
-                    <Gift className="mr-2 h-5 w-5 text-orange-500" /> Bonus:
+                <span className="flex items-center text-[#3D2E17] font-bold">
+                    <Gift className="mr-2 h-6 w-6 text-orange-500" /> Bonus:
                 </span>
-                <span className="font-semibold text-orange-600">{creditPackage.bonusCredits}</span>
+                <span className="font-extrabold text-orange-600">{creditPackage.bonusCredits}</span>
             </div>
         )}
       </CardContent>
@@ -209,12 +209,12 @@ export function CreditPackageCard({ creditPackage, onPackageUpdate, onPackageDel
             creditPackage={creditPackage}
             onSave={onPackageUpdate}
             triggerButton={
-                <Button variant="outline" className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                <Button variant="outline" className="w-full font-bold"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
             }
         />
         <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
+              <Button variant="destructive" className="w-full font-bold"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

@@ -63,8 +63,8 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete, isSuper
     >
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start mb-2">
-          <CardTitle className="text-xl font-semibold text-primary flex items-center gap-2">
-            <Building className="h-6 w-6" />
+          <CardTitle className="text-xl font-extrabold text-[#3D2E17] flex items-center gap-2">
+            <Building className="h-6 w-6 text-[#006B3E]" />
             <span className="truncate" title={wellness.dispensaryName}>{wellness.dispensaryName}</span>
           </CardTitle>
           <Badge className={statusBadgeClass}>
@@ -72,44 +72,44 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete, isSuper
             {wellness.status}
           </Badge>
         </div>
-        <CardDescription className="text-xs text-muted-foreground">
+        <CardDescription className="text-xs text-[#5D4E37] font-semibold">
           ID: {wellness.id?.substring(0, 10)}...
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow space-y-2.5 text-sm">
+      <CardContent className="flex-grow space-y-2.5 text-sm font-semibold text-[#5D4E37]">
         <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Mail className="h-5 w-5 text-[#006B3E] flex-shrink-0" />
           <span className="truncate" title={wellness.ownerEmail}>{wellness.ownerEmail}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Tag className="h-5 w-5 text-[#006B3E] flex-shrink-0" />
           <span className="truncate" title={wellness.dispensaryType}>{wellness.dispensaryType}</span>
         </div>
         <div className="flex items-start gap-2">
-          <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <MapPin className="h-5 w-5 text-[#006B3E] flex-shrink-0 mt-0.5" />
           <span className="truncate" title={fullAddress}>{fullAddress || 'No address specified'}</span>
         </div>
         {wellness.originLocker && (
           <div className="flex items-start gap-2 text-purple-600">
-            <Package className="h-4 w-4 flex-shrink-0 mt-0.5" />
-            <span className="truncate font-medium" title={`${wellness.originLocker.name} (${wellness.originLocker.address})`}>
+            <Package className="h-5 w-5 flex-shrink-0 mt-0.5" />
+            <span className="truncate font-bold" title={`${wellness.originLocker.name} (${wellness.originLocker.address})`}>
               Origin: {wellness.originLocker.name}
             </span>
           </div>
         )}
         <div className="flex items-center gap-2 pt-1">
-          <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Clock className="h-5 w-5 text-[#006B3E] flex-shrink-0" />
           <span>Applied: {formatDate(wellness.applicationDate)}</span>
         </div>
       </CardContent>
       <CardFooter className="flex gap-2 border-t pt-4 mt-auto">
-        <Button variant="outline" className="w-full" onClick={onEdit}>
+        <Button variant="outline" className="w-full font-bold" onClick={onEdit}>
             <Edit className="mr-2 h-4 w-4" /> Edit Details
         </Button>
         {isSuperAdmin && (
             <AlertDialog>
                 <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-full">
+                <Button variant="destructive" className="w-full font-bold">
                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                 </Button>
                 </AlertDialogTrigger>

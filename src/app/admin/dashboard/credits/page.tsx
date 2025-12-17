@@ -192,8 +192,8 @@ export default function AdminCreditPackagesPage() {
         <AddCreditPackageDialog onSave={fetchPackages} />
       </div>
 
-       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+       <div className="relative p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
+        <Search className="absolute left-7 top-1/2 -translate-y-1/2 h-5 w-5 text-[#006B3E]" />
         <Input
             type="text"
             placeholder="Filter by package name or description..."
@@ -205,8 +205,8 @@ export default function AdminCreditPackagesPage() {
 
       {isLoading ? (
         <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2 text-muted-foreground">Loading packages...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-[#006B3E]" />
+            <p className="ml-2 text-[#5D4E37] font-semibold">Loading packages...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
