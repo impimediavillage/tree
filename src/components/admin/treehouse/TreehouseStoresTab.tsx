@@ -347,12 +347,12 @@ export default function TreehouseStoresTab() {
       <Card className="p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#006B3E]" />
             <Input
               placeholder="Search stores, creators, descriptions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 font-semibold text-[#3D2E17]"
             />
           </div>
           <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
@@ -373,22 +373,22 @@ export default function TreehouseStoresTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Store</TableHead>
-              <TableHead>Creator</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Products</TableHead>
-              <TableHead>Sales</TableHead>
-              <TableHead>Revenue</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Store</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Creator</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Status</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Products</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Sales</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Revenue</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Created</TableHead>
+              <TableHead className="text-right font-bold text-[#3D2E17]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredStores.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8">
-                  <Store className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">No stores found</p>
+                  <Store className="h-12 w-12 text-[#006B3E] mx-auto mb-2" />
+                  <p className="text-[#3D2E17] font-bold">No stores found</p>
                 </TableCell>
               </TableRow>
             ) : (
@@ -397,7 +397,7 @@ export default function TreehouseStoresTab() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-10 w-10 rounded-full bg-[#006B3E]/10 flex items-center justify-center">
-                        <Store className="h-5 w-5 text-[#006B3E]" />
+                        <Store className="h-6 w-6 text-[#006B3E]" />
                       </div>
                       <div>
                         <p className="font-medium text-[#3D2E17]">{store.storeName}</p>

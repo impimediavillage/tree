@@ -379,12 +379,12 @@ export default function TreehouseOrdersTab() {
       <Card className="p-4">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#006B3E]" />
             <Input
               placeholder="Search by order ID, product, creator, customer, tracking..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 font-semibold text-[#3D2E17]"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -409,24 +409,24 @@ export default function TreehouseOrdersTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Creator</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Earnings</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Order ID</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Product</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Creator</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Customer</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Status</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Qty</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Amount</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Earnings</TableHead>
+              <TableHead className="font-bold text-[#3D2E17]">Date</TableHead>
+              <TableHead className="text-right font-bold text-[#3D2E17]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredOrders.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10} className="text-center py-8">
-                  <Package className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">No orders found</p>
+                  <Package className="h-12 w-12 text-[#006B3E] mx-auto mb-2" />
+                  <p className="text-[#3D2E17] font-bold">No orders found</p>
                 </TableCell>
               </TableRow>
             ) : (

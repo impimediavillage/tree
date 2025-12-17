@@ -29,28 +29,28 @@ export default function AdminTreehousePage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="stores" className="flex items-center gap-2">
-            <Store className="h-4 w-4" />
+          <TabsTrigger value="stores" className="flex items-center gap-2 font-bold text-[#3D2E17]">
+            <Store className="h-5 w-5 text-[#006B3E]" />
             <span className="hidden sm:inline">Stores</span>
           </TabsTrigger>
-          <TabsTrigger value="orders" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
+          <TabsTrigger value="orders" className="flex items-center gap-2 font-bold text-[#3D2E17]">
+            <Package className="h-5 w-5 text-[#006B3E]" />
             <span className="hidden sm:inline">Orders</span>
           </TabsTrigger>
-          <TabsTrigger value="payouts" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
+          <TabsTrigger value="payouts" className="flex items-center gap-2 font-bold text-[#3D2E17]">
+            <DollarSign className="h-5 w-5 text-[#006B3E]" />
             <span className="hidden sm:inline">Payouts</span>
           </TabsTrigger>
-          <TabsTrigger value="earnings" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
+          <TabsTrigger value="earnings" className="flex items-center gap-2 font-bold text-[#3D2E17]">
+            <TrendingUp className="h-5 w-5 text-[#006B3E]" />
             <span className="hidden sm:inline">Earnings</span>
           </TabsTrigger>
-          <TabsTrigger value="apparel" className="flex items-center gap-2">
-            <Shirt className="h-4 w-4" />
+          <TabsTrigger value="apparel" className="flex items-center gap-2 font-bold text-[#3D2E17]">
+            <Shirt className="h-5 w-5 text-[#006B3E]" />
             <span className="hidden sm:inline">Apparel</span>
           </TabsTrigger>
-          <TabsTrigger value="origin" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+          <TabsTrigger value="origin" className="flex items-center gap-2 font-bold text-[#3D2E17]">
+            <MapPin className="h-5 w-5 text-[#006B3E]" />
             <span className="hidden sm:inline">Origin</span>
           </TabsTrigger>
         </TabsList>

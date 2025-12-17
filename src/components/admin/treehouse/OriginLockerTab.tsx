@@ -111,12 +111,6 @@ export default function OriginLockerTab() {
   useEffect(() => {
     filterLockers();
   }, [lockers, searchTerm]);
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !mapInitialized.current) {
-      initializeMap();
-    }
-  }, []);
 
   const initializeMap = useCallback(() => {
     if (mapInitialized.current || !mapContainerRef.current) return;
@@ -229,7 +223,16 @@ export default function OriginLockerTab() {
         variant: 'destructive' 
       });
     });
-  }, [toast, manualAddress.latitude, manualAddress.longitude]);
+  }, [toast]);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !mapInitialized.current) {
+      const timer = setTimeout(() => {
+        initializeMap();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [initializeMap]);
 
   const fetchOriginLocker = async () => {
     try {
@@ -448,11 +451,11 @@ export default function OriginLockerTab() {
       <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#3D2E17] flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-[#006B3E]" />
+            <h3 className="text-xl font-extrabold text-[#3D2E17] flex items-center gap-2">
+              <MapPin className="h-6 w-6 text-[#006B3E]" />
               Current Origin Locker
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[#3D2E17] font-semibold">
               This locker is used as the origin point for all Treehouse product shipments
             </p>
           </div>
@@ -550,11 +553,11 @@ export default function OriginLockerTab() {
       {/* Google Address Section */}
       <Card className="p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-[#3D2E17] flex items-center gap-2 mb-1">
-            <MapPin className="h-5 w-5 text-[#006B3E]" />
+          <h3 className="text-xl font-extrabold text-[#3D2E17] flex items-center gap-2 mb-1">
+            <MapPin className="h-6 w-6 text-[#006B3E]" />
             Set Custom Origin Address
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[#3D2E17] font-semibold">
             Use Google Maps to select a custom address as the shipping origin point
           </p>
         </div>
@@ -630,8 +633,8 @@ export default function OriginLockerTab() {
 
           {/* Email and Shipping Methods Section */}
           <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border-2 border-blue-200 dark:border-blue-800">
-            <h4 className="font-semibold text-[#3D2E17] flex items-center gap-2">
-              <Mail className="h-4 w-4 text-[#006B3E]" />
+            <h4 className="font-extrabold text-[#3D2E17] flex items-center gap-2">
+              <Mail className="h-5 w-5 text-[#006B3E]" />
               Contact & Shipping Configuration
             </h4>
             
@@ -653,7 +656,7 @@ export default function OriginLockerTab() {
             {/* Shipping Methods */}
             <div>
               <Label className="text-[#3D2E17] font-bold mb-3 flex items-center gap-2">
-                <Truck className="h-4 w-4 text-[#006B3E]" />
+                <Truck className="h-5 w-5 text-[#006B3E]" />
                 Available Shipping Methods
               </Label>
               <div className="space-y-3 mt-2">
@@ -727,11 +730,11 @@ export default function OriginLockerTab() {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#3D2E17] flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-[#006B3E]" />
+            <h3 className="text-xl font-extrabold text-[#3D2E17] flex items-center gap-2">
+              <Building2 className="h-6 w-6 text-[#006B3E]" />
               Or Select Pudo Locker
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[#3D2E17] font-semibold">
               Load Pudo lockers and choose one as the shipping origin point
             </p>
           </div>
@@ -758,7 +761,7 @@ export default function OriginLockerTab() {
           <>
             {/* Search */}
             <div className="mb-4 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#006B3E]" />
               <Input
                 placeholder="Search by code, name, address, city, province..."
                 value={searchTerm}
