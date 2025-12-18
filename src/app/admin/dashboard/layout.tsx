@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Building, ListChecks, Package,
-  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp, DollarSign
+  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp, DollarSign, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -60,6 +60,7 @@ const dispensarySidebarNavItems: NavItem[] = [
 const managementSidebarNavItems: NavItem[] = [
   { title: 'Product Pool', href: '/admin/dashboard/product-pool', icon: Package },
   { title: 'Credit System', href: '/admin/dashboard/credits', icon: CreditCard },
+  { title: 'Shipping Reconciliation', href: '/admin/dashboard/shipping-reconciliation', icon: Truck },
   { title: 'Pool Issues', href: '/admin/dashboard/pool-issues', icon: ShieldAlert },
   { title: 'Notifications', href: '/admin/dashboard/notifications', icon: Bell, disabled: true, badge: 'Soon' },
 ];
