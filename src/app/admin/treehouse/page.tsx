@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Store, Package, DollarSign, TrendingUp, Shirt, MapPin } from 'lucide-react';
+import { Store, Package, DollarSign, TrendingUp, Shirt, MapPin, Loader2 } from 'lucide-react';
 import TreehouseStoresTab from '@/components/admin/treehouse/TreehouseStoresTab';
 import TreehouseOrdersTab from '@/components/admin/treehouse/TreehouseOrdersTab';
 import { TreehousePayoutsTab } from '@/components/admin/treehouse/TreehousePayoutsTab';
@@ -11,7 +11,7 @@ import TreehouseEarningsTab from '@/components/admin/treehouse/TreehouseEarnings
 import ApparelItemsTab from '@/components/admin/treehouse/ApparelItemsTab';
 import OriginLockerTab from '@/components/admin/treehouse/OriginLockerTab';
 
-export default function AdminTreehousePage() {
+function TreehouseContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('stores');
 
@@ -90,5 +90,17 @@ export default function AdminTreehousePage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function AdminTreehousePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    }>
+      <TreehouseContent />
+    </Suspense>
   );
 }
