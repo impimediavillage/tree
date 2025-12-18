@@ -206,6 +206,59 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
           </div>
         </div>
 
+        {/* Locker Information (for PUDO deliveries) */}
+        {Object.values(order.shipments || {}).some(s => s.originLocker || s.destinationLocker) && (
+          <div className="space-y-3">
+            {Object.values(order.shipments || {}).map((shipment, idx) => {
+              if (!shipment.originLocker && !shipment.destinationLocker) return null;
+              
+              const method = shipment.shippingMethod?.service_level?.toLowerCase() || '';
+              const showOrigin = method.includes('ltd') || method.includes('ltl') || method.includes('l2d') || method.includes('l2l');
+              const showDestination = method.includes('dtl') || method.includes('ltl') || method.includes('d2l') || method.includes('l2l');
+              
+              return (
+                <div key={idx} className="space-y-2">
+                  {showOrigin && shipment.originLocker && typeof shipment.originLocker === 'object' && (
+                    <div className="p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
+                          <p className="text-base font-bold text-blue-900 truncate">{shipment.originLocker.name}</p>
+                          {shipment.originLocker.address && (
+                            <p className="text-xs text-blue-700 mt-1 truncate">{shipment.originLocker.address}</p>
+                          )}
+                          {shipment.originLocker.id && (
+                            <p className="text-xs text-blue-600 mt-1 font-mono">ID: {shipment.originLocker.id}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {showDestination && shipment.destinationLocker && typeof shipment.destinationLocker === 'object' && (
+                    <div className="p-3 bg-green-50 border-2 border-green-300 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
+                          <p className="text-base font-bold text-green-900 truncate">{shipment.destinationLocker.name}</p>
+                          {shipment.destinationLocker.address && (
+                            <p className="text-xs text-green-700 mt-1 truncate">{shipment.destinationLocker.address}</p>
+                          )}
+                          {shipment.destinationLocker.id && (
+                            <p className="text-xs text-green-600 mt-1 font-mono">ID: {shipment.destinationLocker.id}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Shipment Status */}
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
