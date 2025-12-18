@@ -789,7 +789,7 @@ export default function ShippingReconciliationPage() {
             <div className="text-3xl font-extrabold text-[#006B3E]">
               R {stats.totalPaid.toFixed(2)}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm font-bold text-[#5D4E37] mt-1">
               {stats.paidCount} shipments
             </p>
           </CardContent>
@@ -806,7 +806,7 @@ export default function ShippingReconciliationPage() {
             <div className="text-3xl font-extrabold text-destructive">
               R {stats.totalDisputed.toFixed(2)}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm font-bold text-[#5D4E37] mt-1">
               {stats.disputedCount} shipments
             </p>
           </CardContent>
@@ -834,11 +834,11 @@ export default function ShippingReconciliationPage() {
                   type="number"
                   value={emailThreshold}
                   onChange={(e) => setEmailThreshold(Number(e.target.value))}
-                  className="w-32"
+                  className="w-full sm:w-32"
                 />
-                <span className="text-sm text-muted-foreground">Rands</span>
+                <span className="text-sm font-semibold text-[#5D4E37]">Rands</span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs font-semibold text-[#5D4E37]">
                 Send alert when pending payments exceed this amount
               </p>
             </div>
@@ -891,19 +891,19 @@ export default function ShippingReconciliationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-3 opacity-60">
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#3D2E17]">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span>One-click EFT payments</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#3D2E17]">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span>Automatic bank reconciliation</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#3D2E17]">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span>Payment proof generation</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#3D2E17]">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span>Multi-currency support</span>
               </div>
@@ -998,11 +998,11 @@ export default function ShippingReconciliationPage() {
 
           <Separator />
 
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="text-sm font-bold text-[#3D2E17]">
               Showing {filteredItems.length} of {reconciliationItems.length} shipments
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap w-full sm:w-auto">
               {/* Export & Analytics Buttons */}
               <Button
                 variant="outline"
@@ -1106,7 +1106,7 @@ export default function ShippingReconciliationPage() {
               <TableBody>
                 {filteredItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={12} className="text-center py-8 font-bold text-[#5D4E37]">
                       No shipments found matching your filters
                     </TableCell>
                   </TableRow>
@@ -1137,28 +1137,28 @@ export default function ShippingReconciliationPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">{item.dispensaryName}</span>
+                          <Building2 className="h-4 w-4 text-[#006B3E]" />
+                          <span className="text-sm font-bold text-[#3D2E17] truncate max-w-[150px] sm:max-w-none">{item.dispensaryName}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">{item.customerName}</TableCell>
+                      <TableCell className="text-sm font-semibold text-[#3D2E17] truncate max-w-[120px] sm:max-w-none">{item.customerName}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{item.shippingProvider.toUpperCase()}</Badge>
                       </TableCell>
                       <TableCell className="font-mono text-xs">
                         {item.trackingNumber || '-'}
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs font-semibold text-[#3D2E17]">
                         {item.originLocker && (
                           <div className="flex items-center gap-1 mb-1">
                             <MapPin className="h-3 w-3 text-blue-500" />
-                            <span className="truncate max-w-[120px]">{item.originLocker}</span>
+                            <span className="truncate max-w-[100px] sm:max-w-[120px]">{item.originLocker}</span>
                           </div>
                         )}
                         {item.destinationLocker && (
                           <div className="flex items-center gap-1">
                             <MapPin className="h-3 w-3 text-green-500" />
-                            <span className="truncate max-w-[120px]">{item.destinationLocker}</span>
+                            <span className="truncate max-w-[100px] sm:max-w-[120px]">{item.destinationLocker}</span>
                           </div>
                         )}
                         {!item.originLocker && !item.destinationLocker && item.destination}
@@ -1250,16 +1250,16 @@ export default function ShippingReconciliationPage() {
 
             <Separator />
 
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p className="font-semibold">Selected Shipments:</p>
+            <div className="text-sm font-semibold text-[#3D2E17] space-y-1">
+              <p className="font-bold text-[#3D2E17]">Selected Shipments:</p>
               {selectedItems.slice(0, 5).map((item) => (
                 <div key={`${item.orderId}-${item.dispensaryId}`} className="flex justify-between">
-                  <span>{item.orderNumber} - {item.dispensaryName}</span>
-                  <span className="font-mono">R {item.shippingCost.toFixed(2)}</span>
+                  <span className="truncate max-w-[200px]">{item.orderNumber} - {item.dispensaryName}</span>
+                  <span className="font-mono font-bold">R {item.shippingCost.toFixed(2)}</span>
                 </div>
               ))}
               {selectedItems.length > 5 && (
-                <p className="italic">... and {selectedItems.length - 5} more</p>
+                <p className="italic font-bold">... and {selectedItems.length - 5} more</p>
               )}
             </div>
           </div>
@@ -1314,10 +1314,10 @@ export default function ShippingReconciliationPage() {
                   <Calendar className="h-4 w-4" />
                   Monthly Spending (Last 6 Months)
                 </h3>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                   {analyticsData.monthlyTotals.map((item) => (
                     <div key={item.month} className="text-center p-3 bg-muted rounded-lg">
-                      <div className="text-xs text-muted-foreground mb-1">{item.month}</div>
+                      <div className="text-xs font-bold text-[#5D4E37] mb-1">{item.month}</div>
                       <div className="text-lg font-bold text-[#006B3E]">
                         R {item.amount.toFixed(0)}
                       </div>
@@ -1334,7 +1334,7 @@ export default function ShippingReconciliationPage() {
                 <div className="space-y-2">
                   {analyticsData.weeklyTrend.map((item, index) => (
                     <div key={item.week} className="flex items-center gap-3">
-                      <div className="text-sm font-medium text-muted-foreground w-20">{item.week}</div>
+                      <div className="text-sm font-bold text-[#3D2E17] w-20">{item.week}</div>
                       <div className="flex-1 bg-muted rounded-full h-6 relative overflow-hidden">
                         <div
                           className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#006B3E] to-[#3D2E17] rounded-full"
@@ -1367,13 +1367,13 @@ export default function ShippingReconciliationPage() {
                           {index + 1}
                         </div>
                         <div>
-                          <div className="font-semibold">{item.dispensary}</div>
-                          <div className="text-xs text-muted-foreground">{item.count} shipments</div>
+                          <div className="font-bold text-[#3D2E17]">{item.dispensary}</div>
+                          <div className="text-xs font-semibold text-[#5D4E37]">{item.count} shipments</div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-[#006B3E]">R {item.amount.toFixed(2)}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs font-semibold text-[#5D4E37]">
                           Avg: R {(item.amount / item.count).toFixed(2)}
                         </div>
                       </div>
@@ -1398,16 +1398,16 @@ export default function ShippingReconciliationPage() {
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Total Spent:</span>
+                          <span className="text-sm font-bold text-[#5D4E37]">Total Spent:</span>
                           <span className="font-bold text-[#006B3E]">R {item.amount.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Shipments:</span>
-                          <span className="font-semibold">{item.count}</span>
+                          <span className="text-sm font-bold text-[#5D4E37]">Shipments:</span>
+                          <span className="font-bold text-[#3D2E17]">{item.count}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-sm text-muted-foreground">Avg Cost:</span>
-                          <span className="font-semibold">R {item.avgCost.toFixed(2)}</span>
+                          <span className="text-sm font-bold text-[#5D4E37]">Avg Cost:</span>
+                          <span className="font-bold text-[#3D2E17]">R {item.avgCost.toFixed(2)}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -1449,18 +1449,18 @@ export default function ShippingReconciliationPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">{invoiceItems.length}</div>
-                <div className="text-sm text-muted-foreground">Invoice Items</div>
+                <div className="text-sm font-bold text-[#3D2E17]">Invoice Items</div>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">{matchedItems.size}</div>
-                <div className="text-sm text-muted-foreground">Matched</div>
+                <div className="text-sm font-bold text-[#3D2E17]">Matched</div>
               </div>
               <div className="p-4 bg-red-50 rounded-lg">
                 <div className="text-2xl font-bold text-red-600">{invoiceItems.length - matchedItems.size}</div>
-                <div className="text-sm text-muted-foreground">Unmatched</div>
+                <div className="text-sm font-bold text-[#3D2E17]">Unmatched</div>
               </div>
             </div>
 
@@ -1478,9 +1478,9 @@ export default function ShippingReconciliationPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="font-mono text-sm font-semibold">{invoiceItem.trackingNumber}</div>
+                          <div className="font-mono text-sm font-bold text-[#3D2E17]">{invoiceItem.trackingNumber}</div>
                           {matched && (
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="text-xs font-semibold text-[#5D4E37] mt-1">
                               Order: {matched.orderNumber} • {matched.dispensaryName}
                             </div>
                           )}
