@@ -92,9 +92,15 @@ export const DispensaryShippingGroup = ({
     const rate = rates.find(r => r.id.toString() === rateId);
     if (rate) {
       setSelectedRateId(rateId);
-      onShippingSelectionChange(dispensaryId, rate);
+      // Pass rate with locker data embedded
+      const rateWithLockers = {
+        ...rate,
+        originLocker: dispensary?.originLocker || null,
+        destinationLocker: destinationLocker || null
+      };
+      onShippingSelectionChange(dispensaryId, rateWithLockers);
     }
-  }, [rates, dispensaryId, onShippingSelectionChange]);
+  }, [rates, dispensaryId, dispensary?.originLocker, destinationLocker, onShippingSelectionChange]);
 
   const fetchPudoRates = useCallback(async () => {
     if (!selectedTier || !['dtl', 'ltd', 'ltl'].includes(selectedTier)) return;

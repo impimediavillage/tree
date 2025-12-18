@@ -68,6 +68,10 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
         // Get creator ID from first item (all items in Treehouse order should have same creatorId)
         const creatorId = isTreehouseOrder ? groupItems[0]?.creatorId : undefined;
 
+        // Extract locker data if present
+        const originLocker = (shipping as any).originLocker || null;
+        const destinationLocker = (shipping as any).destinationLocker || null;
+        
         const orderParams: any = {
           userId: currentUser.uid,
           userEmail: currentUser.email || '',
@@ -79,6 +83,8 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
             method: 'dtd' as const, // Default to door-to-door
             rate: shipping,
             address: shippingAddress,
+            ...(originLocker && { originLocker }),
+            ...(destinationLocker && { destinationLocker }),
           },
           subtotal: groupSubtotal,
           shippingCost: groupShippingCost,
