@@ -34,11 +34,14 @@ import {
   Building2,
   Leaf,
   ShoppingCart,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -184,6 +187,13 @@ export default function FinancialHubPage() {
   const [showAddCreditModal, setShowAddCreditModal] = useState(false);
   const [showAddFeeModal, setShowAddFeeModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+
+  // Form States
+  const [treehouseForm, setTreehouseForm] = useState({ creatorName: '', productName: '', amount: 0, commission: 0 });
+  const [dispensaryForm, setDispensaryForm] = useState({ dispensaryName: '', revenue: 0, orders: 0 });
+  const [creditForm, setCreditForm] = useState({ userName: '', type: 'purchase', amount: 0, credits: 0, description: '' });
+  const [feeForm, setFeeForm] = useState({ source: 'treehouse', baseAmount: 0, feePercentage: 5, notes: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load financial data
   useEffect(() => {
@@ -440,7 +450,18 @@ export default function FinancialHubPage() {
 
   const handleUpdateStatus = async (collection: string, id: string, status: string) => {
     try {
-      await updateDoc(doc(db, collection, id), { status });
+      if (collection === 'orders') {
+        // Update payment status for orders
+        await updateDoc(doc(db, collection, id), { 
+          paymentStatus: status,
+          updatedAt: Timestamp.now()
+        });
+      } else {
+        await updateDoc(doc(db, collection, id), { 
+          status,
+          updatedAt: Timestamp.now()
+        });
+      }
       toast({
         title: 'Success',
         description: 'Status updated successfully',
@@ -453,6 +474,106 @@ export default function FinancialHubPage() {
         description: 'Failed to update status',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleAddTreehouse = async () => {
+    if (!treehouseForm.creatorName || !treehouseForm.productName || treehouseForm.amount <= 0) {
+      toast({ title: 'Error', description: 'Please fill all required fields', variant: 'destructive' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, 'orders'), {
+        creatorName: treehouseForm.creatorName,
+        productName: treehouseForm.productName,
+        totalAmount: treehouseForm.amount,
+        commission: treehouseForm.amount * 0.25,
+        paymentStatus: 'pending',
+        orderType: 'treehouse',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      toast({ title: 'Success', description: 'Transaction added successfully' });
+      setShowAddTreehouseModal(false);
+      setTreehouseForm({ creatorName: '', productName: '', amount: 0, commission: 0 });
+      loadFinancialData();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      toast({ title: 'Error', description: 'Failed to add transaction', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddCredit = async () => {
+    if (!creditForm.userName || creditForm.amount <= 0 || creditForm.credits <= 0) {
+      toast({ title: 'Error', description: 'Please fill all required fields', variant: 'destructive' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, 'creditTransactions'), {
+        userName: creditForm.userName,
+        type: creditForm.type,
+        amount: creditForm.amount,
+        credits: creditForm.credits,
+        description: creditForm.description,
+        status: 'completed',
+        createdAt: Timestamp.now(),
+      });
+      toast({ title: 'Success', description: 'Credit transaction added successfully' });
+      setShowAddCreditModal(false);
+      setCreditForm({ userName: '', type: 'purchase', amount: 0, credits: 0, description: '' });
+      loadFinancialData();
+    } catch (error) {
+      console.error('Error adding credit:', error);
+      toast({ title: 'Error', description: 'Failed to add credit transaction', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAddFee = async () => {
+    if (feeForm.baseAmount <= 0 || feeForm.feePercentage <= 0) {
+      toast({ title: 'Error', description: 'Please enter valid amounts', variant: 'destructive' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const month = format(new Date(), 'yyyy-MM');
+      const feeAmount = (feeForm.baseAmount * feeForm.feePercentage) / 100;
+      await addDoc(collection(db, 'platformFees'), {
+        source: feeForm.source,
+        month,
+        baseAmount: feeForm.baseAmount,
+        feePercentage: feeForm.feePercentage,
+        feeAmount,
+        collected: false,
+        notes: feeForm.notes,
+        createdAt: Timestamp.now(),
+      });
+      toast({ title: 'Success', description: 'Platform fee added successfully' });
+      setShowAddFeeModal(false);
+      setFeeForm({ source: 'treehouse', baseAmount: 0, feePercentage: 5, notes: '' });
+      loadFinancialData();
+    } catch (error) {
+      console.error('Error adding fee:', error);
+      toast({ title: 'Error', description: 'Failed to add platform fee', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteFee = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this fee record?')) return;
+    try {
+      await deleteDoc(doc(db, 'platformFees', id));
+      toast({ title: 'Success', description: 'Fee deleted successfully' });
+      loadFinancialData();
+    } catch (error) {
+      console.error('Error deleting fee:', error);
+      toast({ title: 'Error', description: 'Failed to delete fee', variant: 'destructive' });
     }
   };
 
@@ -969,12 +1090,26 @@ export default function FinancialHubPage() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleUpdateStatus('dispensaryRevenue', revenue.id, 'processed')}
+                                onClick={() => {
+                                  toast({
+                                    title: 'Info',
+                                    description: 'Dispensary revenues are calculated from orders. Mark individual orders as paid to update status.',
+                                  });
+                                }}
                               >
                                 Process
                               </Button>
                             )}
-                            <Button size="sm" variant="ghost">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => {
+                                toast({
+                                  title: 'Info',
+                                  description: 'Revenue data is aggregated from orders. Edit individual orders to modify.',
+                                });
+                              }}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1190,7 +1325,11 @@ export default function FinancialHubPage() {
                             <Button size="sm" variant="ghost">
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button size="sm" variant="ghost">
+                            <Button 
+                              size="sm" 
+                              variant="ghost"
+                              onClick={() => handleDeleteFee(fee.id)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1204,6 +1343,183 @@ export default function FinancialHubPage() {
           )}
         </div>
       </div>
+
+      {/* Add Treehouse Transaction Modal */}
+      <Dialog open={showAddTreehouseModal} onOpenChange={setShowAddTreehouseModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Treehouse Transaction</DialogTitle>
+            <DialogDescription>Record a new creator commission transaction</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Creator Name</Label>
+              <Input
+                value={treehouseForm.creatorName}
+                onChange={(e) => setTreehouseForm({ ...treehouseForm, creatorName: e.target.value })}
+                placeholder="Enter creator name"
+              />
+            </div>
+            <div>
+              <Label>Product Name</Label>
+              <Input
+                value={treehouseForm.productName}
+                onChange={(e) => setTreehouseForm({ ...treehouseForm, productName: e.target.value })}
+                placeholder="Enter product name"
+              />
+            </div>
+            <div>
+              <Label>Order Amount (R)</Label>
+              <Input
+                type="number"
+                value={treehouseForm.amount || ''}
+                onChange={(e) => {
+                  const amount = parseFloat(e.target.value) || 0;
+                  setTreehouseForm({ ...treehouseForm, amount, commission: amount * 0.25 });
+                }}
+                placeholder="0.00"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Commission (25%): R{(treehouseForm.amount * 0.25).toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddTreehouseModal(false)}>Cancel</Button>
+            <Button onClick={handleAddTreehouse} disabled={isSubmitting} className="bg-[#006B3E]">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Transaction'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Credit Transaction Modal */}
+      <Dialog open={showAddCreditModal} onOpenChange={setShowAddCreditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Credit Transaction</DialogTitle>
+            <DialogDescription>Record a new credit purchase or usage</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>User Name</Label>
+              <Input
+                value={creditForm.userName}
+                onChange={(e) => setCreditForm({ ...creditForm, userName: e.target.value })}
+                placeholder="Enter user name"
+              />
+            </div>
+            <div>
+              <Label>Transaction Type</Label>
+              <Select value={creditForm.type} onValueChange={(v: any) => setCreditForm({ ...creditForm, type: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="purchase">Purchase</SelectItem>
+                  <SelectItem value="usage">Usage</SelectItem>
+                  <SelectItem value="refund">Refund</SelectItem>
+                  <SelectItem value="bonus">Bonus</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Amount (R)</Label>
+              <Input
+                type="number"
+                value={creditForm.amount || ''}
+                onChange={(e) => setCreditForm({ ...creditForm, amount: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label>Credits</Label>
+              <Input
+                type="number"
+                value={creditForm.credits || ''}
+                onChange={(e) => setCreditForm({ ...creditForm, credits: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={creditForm.description}
+                onChange={(e) => setCreditForm({ ...creditForm, description: e.target.value })}
+                placeholder="Transaction details..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddCreditModal(false)}>Cancel</Button>
+            <Button onClick={handleAddCredit} disabled={isSubmitting} className="bg-[#006B3E]">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Transaction'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Platform Fee Modal */}
+      <Dialog open={showAddFeeModal} onOpenChange={setShowAddFeeModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Platform Fee</DialogTitle>
+            <DialogDescription>Record a new platform fee collection</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Source</Label>
+              <Select value={feeForm.source} onValueChange={(v: any) => setFeeForm({ ...feeForm, source: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="treehouse">Treehouse</SelectItem>
+                  <SelectItem value="dispensary">Dispensary</SelectItem>
+                  <SelectItem value="shipping">Shipping</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Base Amount (R)</Label>
+              <Input
+                type="number"
+                value={feeForm.baseAmount || ''}
+                onChange={(e) => setFeeForm({ ...feeForm, baseAmount: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label>Fee Percentage (%)</Label>
+              <Input
+                type="number"
+                value={feeForm.feePercentage || ''}
+                onChange={(e) => setFeeForm({ ...feeForm, feePercentage: parseFloat(e.target.value) || 0 })}
+                placeholder="5"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Fee Amount: R{((feeForm.baseAmount * feeForm.feePercentage) / 100).toFixed(2)}
+              </p>
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={feeForm.notes}
+                onChange={(e) => setFeeForm({ ...feeForm, notes: e.target.value })}
+                placeholder="Additional notes..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddFeeModal(false)}>Cancel</Button>
+            <Button onClick={handleAddFee} disabled={isSubmitting} className="bg-[#006B3E]">
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Fee'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
