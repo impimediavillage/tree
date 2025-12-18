@@ -31,9 +31,12 @@ interface NavItem {
 const mainSidebarNavItems: NavItem[] = [
   { title: 'Overview', href: '/dispensary-admin/dashboard', icon: LayoutDashboard },
   { title: 'My Products', href: '/dispensary-admin/products', icon: Package },
+  { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered },
+];
+
+const productPoolNavItems: NavItem[] = [
   { title: 'Browse Pool', href: '/dispensary-admin/browse-pool', icon: ShoppingBasket, ownerOnly: true },
   { title: 'My Pool Activity', href: '/dispensary-admin/pool', icon: History, ownerOnly: true },
-  { title: 'Orders', href: '/dispensary-admin/orders', icon: ListOrdered },
   { title: 'Pool Orders', href: '/dispensary-admin/product-pool-orders', icon: PackageCheck, ownerOnly: true },
 ];
 
@@ -110,40 +113,152 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
         </div>
         <ScrollArea className="flex-1">
           <nav className="flex flex-col space-y-1 p-2">
-              {[...mainSidebarNavItems, ...managementSidebarNavItems, ...settingsSidebarNavItems].map((item, index) => {
-                 const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
-                 const needsSeparator = (item.title === 'Orders' && managementSidebarNavItems.length > 0) || 
-                                        (item.title === 'Marketing' && settingsSidebarNavItems.length > 0);
-                return (
-                  <React.Fragment key={item.title}>
+            {/* Main Section */}
+            <div className="px-2 py-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Main</p>
+            </div>
+            {mainSidebarNavItems.map((item) => {
+              const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+              return (
+                <Button
+                  key={item.title}
+                  variant={(pathname?.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') ? 'secondary' : ((pathname === item.href) ? 'secondary' : 'ghost')}
+                  className={cn(
+                    'w-full justify-start text-sm',
+                    ((pathname?.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') || pathname === item.href)
+                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                      : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                    itemDisabled && 'opacity-50 cursor-not-allowed'
+                  )}
+                  asChild
+                  onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                  disabled={itemDisabled}
+                >
+                  <Link href={itemDisabled ? '#' : item.href}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.title}
+                    {item.badge && (
+                      <Badge className={cn(
+                        "ml-auto",
+                        item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                      )}>{item.badge}</Badge>
+                    )}
+                  </Link>
+                </Button>
+              );
+            })}
+
+            {/* Product Pool Section */}
+            {(isDispensaryOwner && productPoolNavItems.length > 0) && (
+              <>
+                <Separator className="my-2" />
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Product Pool</p>
+                </div>
+                {productPoolNavItems.map((item) => {
+                  const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+                  return (
                     <Button
-                        variant={(pathname?.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') ? 'secondary' : ((pathname === item.href) ? 'secondary' : 'ghost')}
-                        className={cn(
+                      key={item.title}
+                      variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
+                      className={cn(
                         'w-full justify-start text-sm',
-                        ((pathname?.startsWith(item.href) && item.href !== '/dispensary-admin/dashboard') || pathname === item.href)
-                            ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                            : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                        pathname?.startsWith(item.href)
+                          ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                          : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                         itemDisabled && 'opacity-50 cursor-not-allowed'
-                        )}
-                        asChild
-                        onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
-                        disabled={itemDisabled}
+                      )}
+                      asChild
+                      onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                      disabled={itemDisabled}
                     >
-                        <Link href={itemDisabled ? '#' : item.href}>
+                      <Link href={itemDisabled ? '#' : item.href}>
                         <item.icon className="mr-2 h-4 w-4" />
                         {item.title}
                         {item.badge && (
                           <Badge className={cn(
                             "ml-auto",
-                            item.badge === 'Coming Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                            item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
                           )}>{item.badge}</Badge>
                         )}
-                        </Link>
+                      </Link>
                     </Button>
-                    {needsSeparator && <Separator className="my-2" />}
-                  </React.Fragment>
-                )
-              })}
+                  );
+                })}
+              </>
+            )}
+
+            {/* Management Section */}
+            <Separator className="my-2" />
+            <div className="px-2 py-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Management</p>
+            </div>
+            {managementSidebarNavItems.map((item) => {
+              const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+              return (
+                <Button
+                  key={item.title}
+                  variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'w-full justify-start text-sm',
+                    pathname?.startsWith(item.href)
+                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                      : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                    itemDisabled && 'opacity-50 cursor-not-allowed'
+                  )}
+                  asChild
+                  onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                  disabled={itemDisabled}
+                >
+                  <Link href={itemDisabled ? '#' : item.href}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.title}
+                    {item.badge && (
+                      <Badge className={cn(
+                        "ml-auto",
+                        item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                      )}>{item.badge}</Badge>
+                    )}
+                  </Link>
+                </Button>
+              );
+            })}
+
+            {/* Settings Section */}
+            <Separator className="my-2" />
+            <div className="px-2 py-1.5">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Settings</p>
+            </div>
+            {settingsSidebarNavItems.map((item) => {
+              const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+              return (
+                <Button
+                  key={item.title}
+                  variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
+                  className={cn(
+                    'w-full justify-start text-sm',
+                    pathname?.startsWith(item.href)
+                      ? 'bg-primary/10 text-primary hover:bg-primary/20'
+                      : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
+                    itemDisabled && 'opacity-50 cursor-not-allowed'
+                  )}
+                  asChild
+                  onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                  disabled={itemDisabled}
+                >
+                  <Link href={itemDisabled ? '#' : item.href}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.title}
+                    {item.badge && (
+                      <Badge className={cn(
+                        "ml-auto",
+                        item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                      )}>{item.badge}</Badge>
+                    )}
+                  </Link>
+                </Button>
+              );
+            })}
           </nav>
         </ScrollArea>
         <div className="mt-auto p-2 border-t border-border">

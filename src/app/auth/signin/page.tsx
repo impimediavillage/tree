@@ -154,7 +154,7 @@ function SignInContent() {
                     <FormLabel className="text-base">Email Address</FormLabel>
                     <FormControl><div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="email" placeholder="you@example.com" {...field} className="pl-10 text-base h-12"/>
+                        <Input type="email" inputMode="email" placeholder="you@example.com" {...field} className="pl-10 text-base h-12"/>
                     </div></FormControl>
                     <FormMessage />
                   </FormItem>)}
@@ -175,13 +175,13 @@ function SignInContent() {
             </form>
           </Form>
           <div className="mt-6 text-center">
-            <Button variant="link" onClick={handlePasswordReset} disabled={isLoading} className="text-sm text-primary hover:underline">
+            <Button variant="link" onClick={handlePasswordReset} disabled={isLoading} className="text-sm text-[#006B3E] font-bold hover:underline">
               Forgot Password?
             </Button>
           </div>
            <div className="mt-4 text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}
-            <Link href={signUpHref} className="font-semibold text-primary hover:underline">
+            <Link href={signUpHref} className="font-extrabold text-[#3D2E17] hover:underline">
                 Sign Up
             </Link>
           </div>

@@ -217,6 +217,7 @@ export function LabelGenerationDialog({
       parcelHeight: '10',
       parcelWeight: '0.5',
       specialInstructions: '',
+      pudoTerminalId: '',
     },
   });
 
