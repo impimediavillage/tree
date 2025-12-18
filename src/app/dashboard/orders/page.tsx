@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserOrders } from '@/lib/orders';
@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
-export default function OrderHistoryPage() {
+function OrderHistoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentUser, currentDispensary } = useAuth();
@@ -233,5 +233,17 @@ export default function OrderHistoryPage() {
         onOpenChange={(open: boolean) => !open && setSelectedOrder(null)}
       />
     </div>
+  );
+}
+
+export default function OrderHistoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <OrderHistoryContent />
+    </Suspense>
   );
 }
