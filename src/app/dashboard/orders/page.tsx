@@ -7,10 +7,11 @@ import type { Order } from '@/types/order';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package2, ShoppingCart } from 'lucide-react';
+import { Loader2, Package2, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { OrderDetailDialog } from '@/components/orders/OrderDetailDialog';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function OrderHistoryPage() {
   const { currentUser, currentDispensary } = useAuth();
@@ -61,11 +62,21 @@ export default function OrderHistoryPage() {
     <div className="container py-8 px-4 max-w-7xl mx-auto">
       <div className="space-y-6">
         {/* Header */}
-        <div className="text-center md:text-left">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Order History
-          </h1>
-          <p className="text-muted-foreground mt-2">View and track all your orders</p>
+        <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-[#3D2E17]">
+                Order History
+              </h1>
+              <p className="text-lg text-[#5D4E37] font-semibold mt-2">View and track all your orders</p>
+            </div>
+            <Button variant="outline" asChild className="hover:bg-[#5D4E37] hover:text-white">
+              <Link href="/dashboard/leaf">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {orders.length === 0 ? (

@@ -7,6 +7,23 @@ import type { OrderShipment, ShippingStatus } from "@/types/shipping";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag } from "lucide-react";
 
+// Helper to safely get locker properties
+const getLockerProp = (locker: any, prop: string): string | null => {
+  if (!locker || typeof locker !== 'object') return null;
+  const value = locker[prop];
+  
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' && value.length > 0) return value;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'object') {
+    // Try to extract string value from nested object
+    if ('id' in value && (typeof value.id === 'string' || typeof value.id === 'number')) {
+      return String(value.id);
+    }
+  }
+  return null;
+};
+
 const statusColors: Record<OrderStatus | ShippingStatus, string> = {
   // Order statuses
   pending: "text-yellow-500",
@@ -224,13 +241,19 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                         <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
-                          <p className="text-base font-bold text-blue-900 truncate">{shipment.originLocker.name}</p>
-                          {shipment.originLocker.address && (
-                            <p className="text-xs text-blue-700 mt-1 truncate">{shipment.originLocker.address}</p>
-                          )}
-                          {shipment.originLocker.id && (
-                            <p className="text-xs text-blue-600 mt-1 font-mono">ID: {shipment.originLocker.id}</p>
-                          )}
+                          {(() => {
+                            const name = getLockerProp(shipment.originLocker, 'name');
+                            const address = getLockerProp(shipment.originLocker, 'address');
+                            const id = getLockerProp(shipment.originLocker, 'id');
+                            
+                            return (
+                              <>
+                                {name && <p className="text-base font-bold text-blue-900 truncate">{name}</p>}
+                                {address && <p className="text-xs text-blue-700 mt-1 truncate">{address}</p>}
+                                {id && <p className="text-xs text-blue-600 mt-1 font-mono">ID: {id}</p>}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -242,13 +265,19 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                         <MapPin className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
-                          <p className="text-base font-bold text-green-900 truncate">{shipment.destinationLocker.name}</p>
-                          {shipment.destinationLocker.address && (
-                            <p className="text-xs text-green-700 mt-1 truncate">{shipment.destinationLocker.address}</p>
-                          )}
-                          {shipment.destinationLocker.id && (
-                            <p className="text-xs text-green-600 mt-1 font-mono">ID: {shipment.destinationLocker.id}</p>
-                          )}
+                          {(() => {
+                            const name = getLockerProp(shipment.destinationLocker, 'name');
+                            const address = getLockerProp(shipment.destinationLocker, 'address');
+                            const id = getLockerProp(shipment.destinationLocker, 'id');
+                            
+                            return (
+                              <>
+                                {name && <p className="text-base font-bold text-green-900 truncate">{name}</p>}
+                                {address && <p className="text-xs text-green-700 mt-1 truncate">{address}</p>}
+                                {id && <p className="text-xs text-green-600 mt-1 font-mono">ID: {id}</p>}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
