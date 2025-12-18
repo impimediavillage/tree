@@ -254,6 +254,7 @@ export default function ShippingReconciliationPage() {
 
       const items: ShippingReconciliationItem[] = [];
 
+      // Process regular orders
       ordersSnapshot.docs.forEach(orderDoc => {
         const order = { id: orderDoc.id, ...orderDoc.data() } as Order;
         
@@ -286,6 +287,46 @@ export default function ShippingReconciliationPage() {
         });
       });
 
+      // Fetch product pool orders with shipping
+      const poolOrdersQuery = query(
+        collection(db, 'productPoolOrders'),
+        orderBy('orderDate', 'desc')
+      );
+      const poolOrdersSnapshot = await getDocs(poolOrdersQuery);
+
+      poolOrdersSnapshot.docs.forEach(poolDoc => {
+        const poolOrder = { id: poolDoc.id, ...poolDoc.data() } as any;
+        
+        // Only include if there's a tracking number and shipping provider (means label was generated)
+        if (poolOrder.trackingNumber && poolOrder.shippingProvider) {
+          const shippingCost = poolOrder.shippingMethod?.price || 0;
+          const sellerDispensaryId = poolOrder.productOwnerDispensaryId;
+          const sellerDispensaryName = poolOrder.productOwnerDispensaryName || dispensaries.get(sellerDispensaryId) || 'Unknown';
+          
+          items.push({
+            orderId: poolOrder.id,
+            orderNumber: `POOL-${poolOrder.id.slice(-8)}`,
+            dispensaryId: sellerDispensaryId,
+            dispensaryName: sellerDispensaryName,
+            shippingCost,
+            shippingProvider: poolOrder.shippingProvider,
+            trackingNumber: poolOrder.trackingNumber,
+            status: poolOrder.shippingStatus || 'ready_for_shipping',
+            createdAt: poolOrder.orderDate?.toDate() || new Date(),
+            customerName: poolOrder.requesterDispensaryName || 'Pool Order',
+            destination: poolOrder.shippingAddress ? 
+              `${poolOrder.shippingAddress.city || ''}, ${poolOrder.shippingAddress.province || ''}` : 
+              'Inter-Dispensary',
+            reconciliationStatus: poolOrder.reconciliationStatus || 'pending',
+            paymentReference: poolOrder.paymentReference,
+            reconciliationDate: poolOrder.reconciliationDate?.toDate(),
+            reconciliationNotes: poolOrder.reconciliationNotes,
+            originLocker: poolOrder.originLocker?.name,
+            destinationLocker: poolOrder.destinationLocker?.name,
+          });
+        }
+      });
+
       setReconciliationItems(items);
     } catch (error) {
       console.error('Error loading shipping data:', error);
@@ -314,7 +355,9 @@ export default function ShippingReconciliationPage() {
       const batch = writeBatch(db);
       
       selectedItems.forEach(item => {
-        const orderRef = doc(db, 'orders', item.orderId);
+        // Determine collection based on order number prefix
+        const collectionName = item.orderNumber.startsWith('POOL-') ? 'productPoolOrders' : 'orders';
+        const orderRef = doc(db, collectionName, item.orderId);
         batch.update(orderRef, {
           reconciliationStatus: 'paid',
           paymentReference: paymentReference,

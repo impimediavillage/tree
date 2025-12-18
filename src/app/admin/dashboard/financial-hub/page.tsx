@@ -308,13 +308,33 @@ export default function FinancialHubPage() {
       });
       setPlatformFees(fees);
 
-      // Calculate shipping costs from existing reconciliation
-      const shippingQuery = query(
-        collection(db, 'shippingReconciliation'),
-        where('createdAt', '>=', Timestamp.fromDate(startDate))
+      // Calculate shipping costs from orders and pool orders
+      let totalShipping = 0;
+      
+      // Shipping costs from regular orders
+      dispensarySnap.docs.forEach(doc => {
+        const data = doc.data();
+        const shipments = data.shipments || {};
+        Object.values(shipments).forEach((shipment: any) => {
+          if (shipment.shippingMethod?.price && 
+              (shipment.shippingProvider === 'pudo' || shipment.shippingProvider === 'shiplogic')) {
+            totalShipping += shipment.shippingMethod.price;
+          }
+        });
+      });
+      
+      // Shipping costs from product pool orders
+      const poolOrdersQuery = query(
+        collection(db, 'productPoolOrders'),
+        where('orderDate', '>=', Timestamp.fromDate(startDate))
       );
-      const shippingSnap = await getDocs(shippingQuery);
-      const totalShipping = shippingSnap.docs.reduce((sum, doc) => sum + (doc.data().courierCost || 0), 0);
+      const poolOrdersSnap = await getDocs(poolOrdersQuery);
+      poolOrdersSnap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.shippingMethod?.price && data.trackingNumber) {
+          totalShipping += data.shippingMethod.price;
+        }
+      });
 
       // Calculate metrics
       const treehouseTotal = treehouseTxns.reduce((sum, t) => sum + t.commission, 0);
