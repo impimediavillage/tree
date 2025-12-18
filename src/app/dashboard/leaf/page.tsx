@@ -75,7 +75,7 @@ export default function LeafDashboardOverviewPage() {
       <Card className="shadow-md bg-muted/50 border-primary/20">
         <CardHeader>
           <CardTitle 
-            className="text-3xl font-semibold text-foreground"
+            className="text-3xl font-extrabold text-[#3D2E17]"
           >
             Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
           </CardTitle>
@@ -122,7 +122,7 @@ export default function LeafDashboardOverviewPage() {
             <section>
               <div className="flex justify-between items-center mb-6 bg-muted/50 p-4 rounded-lg border border-primary/20">
                   <h2 
-                    className="text-2xl font-bold text-foreground flex items-center"
+                    className="text-2xl font-extrabold text-[#3D2E17] flex items-center"
                   >
                       <Store className="mr-3 h-9 w-9 text-green-800" />
                       Browse Other Wellness Types

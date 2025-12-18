@@ -50,6 +50,7 @@ const treehouseSidebarNavItems: NavItem[] = [
   { title: 'Treehouse Products', href: '/admin/treehouse', icon: Store },
   { title: 'Treehouse Orders', href: '/admin/dashboard/treehouse-orders', icon: ShoppingCart },
   { title: 'Treehouse Analytics', href: '/admin/dashboard/treehouse-analytics', icon: TrendingUp },
+  { title: 'Treehouse Payouts', href: '/admin/treehouse?tab=payouts', icon: DollarSign },
 ];
 
 const dispensarySidebarNavItems: NavItem[] = [

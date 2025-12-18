@@ -241,7 +241,27 @@ export default function OriginLockerTab() {
       const configSnap = await getDoc(configRef);
 
       if (configSnap.exists()) {
-        setConfig(configSnap.data() as OriginLockerConfig);
+        const data = configSnap.data() as OriginLockerConfig;
+        setConfig(data);
+        
+        // Populate manualAddress state with existing config data
+        setManualAddress({
+          streetAddress: data.streetAddress || '',
+          suburb: data.suburb || '',
+          city: data.city || '',
+          province: data.province || '',
+          postalCode: data.postalCode || '',
+          country: data.country || '',
+          latitude: data.latitude || null,
+          longitude: data.longitude || null,
+          email: data.email || '',
+          shippingMethods: data.shippingMethods || [],
+        });
+        
+        // Update the location input if it exists
+        if (locationInputRef.current && data.address) {
+          locationInputRef.current.value = data.address;
+        }
       }
     } catch (error) {
       console.error("Error fetching origin locker:", error);

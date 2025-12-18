@@ -357,7 +357,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                     const userCredential = await createUserWithEmailAndPassword(auth, values.email, randomPassword);
                     const newUser = userCredential.user;
                     if (newUser) {
-                        await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved' });
+                        await setDoc(doc(db, "users", newUser.uid), { uid: newUser.uid, email: values.email, name: values.fullName, phoneNumber: values.phoneNumber, role: 'approved', credits: 10, welcomeCreditsAwarded: true, signupSource: 'checkout' });
                     } else {
                         throw new Error("Could not create user account.");
                     }

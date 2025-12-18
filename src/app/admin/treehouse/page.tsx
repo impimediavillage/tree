@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Store, Package, DollarSign, TrendingUp, Shirt, MapPin } from 'lucide-react';
 import TreehouseStoresTab from '@/components/admin/treehouse/TreehouseStoresTab';
@@ -11,7 +12,16 @@ import ApparelItemsTab from '@/components/admin/treehouse/ApparelItemsTab';
 import OriginLockerTab from '@/components/admin/treehouse/OriginLockerTab';
 
 export default function AdminTreehousePage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('stores');
+
+  // Handle URL query parameter for tab selection
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['stores', 'orders', 'payouts', 'earnings', 'apparel', 'origin'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   return (
     <div className="container mx-auto px-4 py-8">
