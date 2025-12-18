@@ -71,9 +71,69 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
         if (!request.id) return;
         setIsSubmitting(true);
         try {
-            const batch = writeBatch(db);
+            // Fetch both dispensary details to get origin and destination lockers
+            const [sellerDispensarySnap, buyerDispensarySnap] = await Promise.all([
+                getDoc(doc(db, 'dispensaries', request.productOwnerDispensaryId)),
+                getDoc(doc(db, 'dispensaries', request.requesterDispensaryId))
+            ]);
+
+            if (!sellerDispensarySnap.exists() || !buyerDispensarySnap.exists()) {
+                throw new Error('Could not fetch dispensary details');
+            }
+
+            const sellerDispensary = sellerDispensarySnap.data();
+            const buyerDispensary = buyerDispensarySnap.data();
+
+            // Create order data with proper shipping structure matching regular orders
+            const orderData = {
+                ...request,
+                orderDate: serverTimestamp(),
+                requestStatus: 'ordered',
+                
+                // Add shipping structure
+                originLocker: sellerDispensary.originLocker || null,
+                destinationLocker: request.destinationLocker || buyerDispensary.originLocker || null,
+                
+                // Seller info (for shipping from)
+                sellerDispensaryAddress: {
+                    name: sellerDispensary.name || '',
+                    streetAddress: sellerDispensary.address || '',
+                    city: sellerDispensary.city || '',
+                    province: sellerDispensary.province || '',
+                    postalCode: sellerDispensary.postalCode || '',
+                    latitude: sellerDispensary.latitude,
+                    longitude: sellerDispensary.longitude,
+                    contactName: sellerDispensary.contactPerson || '',
+                    contactPhone: sellerDispensary.phone || '',
+                    contactEmail: sellerDispensary.email || '',
+                    originLocker: sellerDispensary.originLocker || null,
+                },
+                
+                // Buyer info (for shipping to)
+                buyerDispensaryAddress: {
+                    name: buyerDispensary.name || '',
+                    streetAddress: buyerDispensary.address || request.deliveryAddress || '',
+                    city: buyerDispensary.city || '',
+                    province: buyerDispensary.province || '',
+                    postalCode: buyerDispensary.postalCode || '',
+                    latitude: buyerDispensary.latitude,
+                    longitude: buyerDispensary.longitude,
+                    contactName: request.contactPerson || buyerDispensary.contactPerson || '',
+                    contactPhone: request.contactPhone || buyerDispensary.phone || '',
+                    contactEmail: buyerDispensary.email || '',
+                    destinationLocker: request.destinationLocker || buyerDispensary.originLocker || null,
+                },
+                
+                // Shipping status tracking
+                shippingStatus: 'pending',
+                shippingProvider: null,
+                trackingNumber: null,
+                trackingUrl: null,
+                labelUrl: null,
+                accessCode: null,
+            };
             
-            const orderData = { ...request, orderDate: serverTimestamp(), requestStatus: 'ordered' };
+            const batch = writeBatch(db);
             const newOrderRef = doc(collection(db, 'productPoolOrders'));
             batch.set(newOrderRef, orderData);
             
@@ -81,13 +141,13 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
             batch.delete(requestRef);
             
             await batch.commit();
-            toast({ title: "Order Confirmed!", description: `Order for ${request.productName} has been created and finalized.` });
+            toast({ title: "Order Confirmed!", description: `Order for ${request.productName} has been created with shipping details.` });
 
             onUpdate();
             setIsOpen(false);
         } catch (error) {
             console.error("Error finalizing order:", error);
-            toast({ title: "Finalization Failed", variant: "destructive", description: "Could not create the final order." });
+            toast({ title: "Finalization Failed", variant: "destructive", description: "Could not create the final order. " + (error as Error).message });
         } finally {
             setIsSubmitting(false);
         }

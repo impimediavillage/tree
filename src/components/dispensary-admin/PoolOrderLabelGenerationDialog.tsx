@@ -141,25 +141,35 @@ export function PoolOrderLabelGenerationDialog({
       // Determine sender and recipient based on order type
       const isSender = type === 'incoming'; // incoming means you're selling, so you're the sender
       
+      // Use the new address structure from productPoolOrders
+      const sellerAddress = (order as any).sellerDispensaryAddress || dispensaryAddress;
+      const buyerAddress = (order as any).buyerDispensaryAddress || {
+        name: order.requesterDispensaryName,
+        streetAddress: order.deliveryAddress,
+        contactName: order.contactPerson,
+        contactPhone: order.contactPhone,
+        contactEmail: order.requesterEmail,
+      };
+      
       // Prepare contacts
       const senderContact = isSender ? {
-        name: dispensaryAddress.contactName || 'Dispensary Manager',
-        phone: dispensaryAddress.phone || '',
-        email: dispensaryAddress.email || '',
+        name: sellerAddress.contactName || 'Dispensary Manager',
+        phone: sellerAddress.contactPhone || '',
+        email: sellerAddress.contactEmail || '',
       } : {
-        name: order.contactPerson,
-        phone: order.contactPhone,
-        email: order.requesterEmail,
+        name: buyerAddress.contactName || order.contactPerson,
+        phone: buyerAddress.contactPhone || order.contactPhone,
+        email: buyerAddress.contactEmail || order.requesterEmail,
       };
 
       const recipientContact = isSender ? {
-        name: order.contactPerson,
-        phone: order.contactPhone,
-        email: order.requesterEmail,
+        name: buyerAddress.contactName || order.contactPerson,
+        phone: buyerAddress.contactPhone || order.contactPhone,
+        email: buyerAddress.contactEmail || order.requesterEmail,
       } : {
-        name: dispensaryAddress.contactName || 'Dispensary Manager',
-        phone: dispensaryAddress.phone || '',
-        email: dispensaryAddress.email || '',
+        name: sellerAddress.contactName || 'Dispensary Manager',
+        phone: sellerAddress.contactPhone || '',
+        email: sellerAddress.contactEmail || '',
       };
 
       console.log('Pool Order Label Generation:', {
@@ -167,6 +177,8 @@ export function PoolOrderLabelGenerationDialog({
         isSender,
         provider: data.provider,
         deliveryMethod: data.deliveryMethod,
+        sellerAddress,
+        buyerAddress,
         senderContact,
         recipientContact
       });
@@ -178,34 +190,39 @@ export function PoolOrderLabelGenerationDialog({
         const isLockerDelivery = data.deliveryMethod === 'door-to-locker' || data.deliveryMethod === 'locker-to-locker';
         const isLockerCollection = data.deliveryMethod === 'locker-to-locker' || data.deliveryMethod === 'locker-to-door';
 
-        // For locker addresses, we only need terminal_id
+        // Get lockers from the order structure
+        const originLocker = (order as any).originLocker || sellerAddress.originLocker;
+        const destinationLocker = (order as any).destinationLocker || buyerAddress.destinationLocker;
+
         console.log('Using locker addresses:', {
           isLockerDelivery,
           isLockerCollection,
-          originLocker: dispensaryAddress.originLocker,
-          destinationLocker: order.destinationLocker
+          originLocker,
+          destinationLocker
         });
 
-        const collectionAddress = isLockerCollection && dispensaryAddress.originLocker
-          ? preparePudoAddress({}, 'locker', dispensaryAddress.originLocker.id)
+        const collectionAddress = isLockerCollection && originLocker
+          ? preparePudoAddress({}, 'locker', originLocker.id)
           : preparePudoAddress({
-              street: dispensaryAddress.address,
-              city: dispensaryAddress.city,
-              province: dispensaryAddress.province,
-              postalCode: dispensaryAddress.postalCode,
+              street: sellerAddress.streetAddress || sellerAddress.address || '',
+              city: sellerAddress.city || '',
+              province: sellerAddress.province || '',
+              postalCode: sellerAddress.postalCode || '',
               country: 'ZA',
-              latitude: dispensaryAddress.location?.latitude,
-              longitude: dispensaryAddress.location?.longitude
+              latitude: sellerAddress.latitude,
+              longitude: sellerAddress.longitude
             }, 'business', undefined);
 
-        const deliveryAddress = isLockerDelivery && order.destinationLocker
-          ? preparePudoAddress({}, 'locker', order.destinationLocker.id)
+        const deliveryAddress = isLockerDelivery && destinationLocker
+          ? preparePudoAddress({}, 'locker', destinationLocker.id)
           : preparePudoAddress({
-              street: order.deliveryAddress,
-              city: '', // Would need to parse from deliveryAddress
-              province: '',
-              postalCode: '',
+              street: buyerAddress.streetAddress || buyerAddress.address || order.deliveryAddress || '',
+              city: buyerAddress.city || '',
+              province: buyerAddress.province || '',
+              postalCode: buyerAddress.postalCode || '',
               country: 'ZA',
+              latitude: buyerAddress.latitude,
+              longitude: buyerAddress.longitude
             }, 'residential', undefined);
 
         console.log('Prepared PUDO Addresses:', {

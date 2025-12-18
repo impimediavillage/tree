@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Truck, PackageCheck, Calendar, Inbox, Send } from 'lucide-react';
-import { ManageShippingDialog } from './ManageShippingDialog';
+import { PoolOrderLabelGenerationDialog } from './PoolOrderLabelGenerationDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProductPoolOrderCardProps {
   order: ProductRequest;
@@ -17,7 +18,45 @@ interface ProductPoolOrderCardProps {
 }
 
 export const ProductPoolOrderCard: React.FC<ProductPoolOrderCardProps> = ({ order, type }) => {
+    const { currentUser } = useAuth();
     const [isShippingDialogOpen, setIsShippingDialogOpen] = React.useState(false);
+    const [dispensaryAddress, setDispensaryAddress] = React.useState<any>(null);
+
+    // Load dispensary address for shipping
+    React.useEffect(() => {
+        const loadDispensaryAddress = async () => {
+            if (!currentUser?.dispensaryId) return;
+            
+            try {
+                const { doc, getDoc } = await import('firebase/firestore');
+                const { db } = await import('@/lib/firebase');
+                const dispensarySnap = await getDoc(doc(db, 'dispensaries', currentUser.dispensaryId));
+                
+                if (dispensarySnap.exists()) {
+                    const data = dispensarySnap.data();
+                    setDispensaryAddress({
+                        name: data.name || '',
+                        streetAddress: data.address || '',
+                        street: data.address || '',
+                        city: data.city || '',
+                        province: data.province || '',
+                        postalCode: data.postalCode || '',
+                        country: 'ZA',
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        contactName: data.contactPerson || '',
+                        contactPhone: data.phone || '',
+                        contactEmail: data.email || '',
+                        originLocker: data.originLocker || null,
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading dispensary address:', error);
+            }
+        };
+        
+        loadDispensaryAddress();
+    }, [currentUser]);
 
     return (
         <>
@@ -70,11 +109,20 @@ export const ProductPoolOrderCard: React.FC<ProductPoolOrderCardProps> = ({ orde
                     </Button>
                 </CardFooter>
             </Card>
-            <ManageShippingDialog
-                isOpen={isShippingDialogOpen}
-                onOpenChange={setIsShippingDialogOpen}
-                order={order}
-            />
+            {dispensaryAddress && currentUser?.dispensaryId && (
+                <PoolOrderLabelGenerationDialog
+                    open={isShippingDialogOpen}
+                    onOpenChange={setIsShippingDialogOpen}
+                    order={order}
+                    dispensaryId={currentUser.dispensaryId}
+                    dispensaryAddress={dispensaryAddress}
+                    onSuccess={(result) => {
+                        console.log('Label generated:', result);
+                        // Could refresh orders here if needed
+                    }}
+                    type={type}
+                />
+            )}
         </>
     );
 };
