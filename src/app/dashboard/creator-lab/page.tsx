@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, Wand2, Plus, Loader2, AlertTriangle, Package, Edit, Trash2, Power, PowerOff, Store } from 'lucide-react';
+import { Sparkles, Wand2, Plus, Loader2, AlertTriangle, Package, Edit, Trash2, Power, PowerOff, Store, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -333,20 +333,32 @@ export default function CreatorLabPage() {
                 </div>
               )}
             </div>
-            <Card className="border-2 border-[#006B3E] w-full lg:w-auto">
-              <CardContent className="p-6 text-center">
-                <p className="text-sm text-[#5D4E37] font-semibold">Your Credits</p>
-                <p className="text-4xl font-extrabold text-[#006B3E]">{userCredits}</p>
-                <Button 
-                  size="sm" 
-                  variant="link" 
-                  className="text-[#006B3E] font-bold mt-2"
-                  onClick={() => router.push('/dashboard/leaf/credits')}
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              {userStore && (
+                <Button
+                  size="lg"
+                  onClick={() => router.push('/dashboard/creator-lab/analytics')}
+                  className="bg-gradient-to-r from-[#006B3E] to-[#008B4E] hover:from-[#005230] hover:to-[#006B3E] text-white font-bold shadow-lg"
                 >
-                  Top Up
+                  <BarChart3 className="h-5 w-5 mr-2" />
+                  View Analytics
                 </Button>
-              </CardContent>
-            </Card>
+              )}
+              <Card className="border-2 border-[#006B3E] w-full sm:w-auto">
+                <CardContent className="p-6 text-center">
+                  <p className="text-sm text-[#5D4E37] font-semibold">Your Credits</p>
+                  <p className="text-4xl font-extrabold text-[#006B3E]">{userCredits}</p>
+                  <Button 
+                    size="sm" 
+                    variant="link" 
+                    className="text-[#006B3E] font-bold mt-2"
+                    onClick={() => router.push('/dashboard/leaf/credits')}
+                  >
+                    Top Up
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
