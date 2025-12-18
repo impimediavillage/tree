@@ -163,18 +163,12 @@ export default function LeafProfilePage() {
   if (!currentUser) {
     return <p>Please log in to view your profile.</p>;
   }
-              {isCheckoutUser 
-                ? "Set your new password below. You don't need your current password since your account was just created." 
-                : "Leave password fields blank if you do not want to change your password."}
-            </CardDescription>
-            
-            {!isCheckoutUser && (
-              <div>
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input id="currentPassword" type="password" {...form.register("currentPassword")} />
-                {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.currentPassword.message}</p>}
-              </div>
-            )}le 
+
+  return (
+    <div className="space-y-6">
+      <Card className="shadow-md">
+        <CardHeader>
+          <CardTitle 
             className="text-2xl text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >My Profile</CardTitle>
@@ -205,13 +199,19 @@ export default function LeafProfilePage() {
             <CardDescription 
                 className="text-xs text-foreground"
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Leave password fields blank if you do not want to change your password.</CardDescription>
+            >
+              {isCheckoutUser 
+                ? "Set your new password below. You don't need your current password since your account was just created." 
+                : "Leave password fields blank if you do not want to change your password."}
+            </CardDescription>
             
-            <div>
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input id="currentPassword" type="password" {...form.register("currentPassword")} />
-              {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.currentPassword.message}</p>}
-            </div>
+            {!isCheckoutUser && (
+              <div>
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input id="currentPassword" type="password" {...form.register("currentPassword")} />
+                {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.currentPassword.message}</p>}
+              </div>
+            )}
             <div>
               <Label htmlFor="newPassword">New Password</Label>
               <Input id="newPassword" type="password" {...form.register("newPassword")} />
