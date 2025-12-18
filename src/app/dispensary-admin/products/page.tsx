@@ -167,27 +167,23 @@ export default function WellnessProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h1 
-            className="text-3xl font-bold text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            My Products
-          </h1>
-          <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Manage all products for your wellness store.
-          </p>
+    <div className="space-y-6 p-8">
+      {/* Header */}
+      <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-extrabold text-[#3D2E17]">My Products</h1>
+            <p className="text-muted-foreground mt-1">Manage all products for your wellness store</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Package className="h-14 w-14 text-[#006B3E]" />
+            <Button asChild>
+              <Link href={addProductPath}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
+              </Link>
+            </Button>
+          </div>
         </div>
-        <Button asChild>
-          <Link href={addProductPath}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
-          </Link>
-        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
@@ -228,17 +224,11 @@ export default function WellnessProductsPage() {
         </div>
       ) : (
         <div className="text-center py-12 col-span-full">
-          <PackageSearch className="mx-auto h-16 w-16 text-orange-500" />
-          <h3 
-            className="mt-4 text-xl font-semibold text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <PackageSearch className="mx-auto h-16 w-16 text-[#006B3E]" />
+          <h3 className="mt-4 text-xl font-bold text-[#3D2E17]">
             No Products Found
           </h3>
-          <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
+          <p className="text-muted-foreground">
             {allProducts.length === 0 ? "You haven't added any products yet." : "No products match your current filters."}
           </p>
         </div>

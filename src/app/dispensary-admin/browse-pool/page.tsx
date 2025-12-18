@@ -196,23 +196,17 @@ export default function BrowsePoolPage() {
 
   return (
     <>
-      <div className="space-y-6">
-        <Card className="shadow-lg bg-muted/50 border-primary/30">
-            <CardHeader>
-            <CardTitle 
-                className="text-3xl font-bold text-foreground flex items-center"
-                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-                <ShoppingBasket className="mr-3 h-8 w-8 text-primary" /> Browse Product Pool
-            </CardTitle>
-            <CardDescription 
-                className="text-md text-foreground"
-                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-                Discover and request products from other participating wellness stores.
-            </CardDescription>
-            </CardHeader>
-        </Card>
+      <div className="space-y-6 p-8">
+        {/* Header */}
+        <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-extrabold text-[#3D2E17]">Browse Product Pool</h1>
+              <p className="text-muted-foreground mt-1">Discover and request products from other participating wellness stores</p>
+            </div>
+            <ShoppingBasket className="h-14 w-14 text-[#006B3E]" />
+          </div>
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
             <div className="relative flex-grow">

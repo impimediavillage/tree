@@ -88,23 +88,17 @@ export default function ProductPoolOrdersPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-lg bg-muted/50 border-primary/30">
-        <CardHeader>
-          <CardTitle 
-            className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <PackageCheck className="mr-3 h-8 w-8 text-primary" /> Finalized Pool Orders
-          </CardTitle>
-          <CardDescription 
-            className="text-md text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Manage shipping and view details for your completed product pool transactions.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="space-y-6 p-8">
+      {/* Header */}
+      <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-extrabold text-[#3D2E17]">Finalized Pool Orders</h1>
+            <p className="text-muted-foreground mt-1">Manage shipping and view details for your completed product pool transactions</p>
+          </div>
+          <PackageCheck className="h-14 w-14 text-[#006B3E]" />
+        </div>
+      </div>
       
       <Tabs defaultValue="incoming-orders" className="w-full">
         <TabsList className="grid w-full grid-cols-2">

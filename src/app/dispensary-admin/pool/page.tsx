@@ -125,23 +125,17 @@ export default function WellnessPoolPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <Card className="shadow-lg bg-muted/50 border-primary/30">
-        <CardHeader>
-          <CardTitle 
-            className="text-3xl font-bold text-foreground flex items-center"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <History className="mr-3 h-8 w-8 text-primary" /> Product Pool Activity
-          </CardTitle>
-          <CardDescription 
-            className="text-md text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Manage incoming and outgoing product sharing requests with other wellness stores.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <div className="space-y-6 p-8">
+      {/* Header */}
+      <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-extrabold text-[#3D2E17]">Product Pool Activity</h1>
+            <p className="text-muted-foreground mt-1">Manage incoming and outgoing product sharing requests with other wellness stores</p>
+          </div>
+          <History className="h-14 w-14 text-[#006B3E]" />
+        </div>
+      </div>
       
       <Tabs defaultValue="incoming-requests" className="w-full">
         <TabsList className="grid w-full grid-cols-2">

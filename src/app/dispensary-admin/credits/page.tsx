@@ -24,18 +24,18 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, description, isLoading }) => (
-  <Card className="shadow-md hover:shadow-lg transition-shadow bg-muted/50">
+  <Card className="bg-muted/50 border-border/50">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-card-foreground">{title}</CardTitle>
-      <Icon className="h-5 w-5 text-muted-foreground" />
+      <CardTitle className="text-sm font-bold text-[#3D2E17]">{title}</CardTitle>
+      <Icon className="h-6 w-6 text-[#006B3E]" />
     </CardHeader>
     <CardContent>
       {isLoading ? (
-         <Skeleton className="h-7 w-20" />
+         <Skeleton className="h-8 w-24" />
       ) : (
-        <div className="text-2xl font-bold text-primary">{value}</div>
+        <div className="text-3xl font-extrabold text-[#3D2E17]">{value}</div>
       )}
-      {description && <p className="text-xs text-muted-foreground pt-1">{description}</p>}
+      {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
     </CardContent>
   </Card>
 );
@@ -120,17 +120,17 @@ export default function DispensaryCreditsPage() {
     }, [logs]);
 
     return (
-        <div className="space-y-8">
-            <Card className="shadow-lg bg-muted/50 border-primary/30">
-                <CardHeader>
-                    <CardTitle className="text-3xl font-bold text-foreground flex items-center" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
-                        <CreditCard className="mr-3 h-8 w-8 text-primary" /> My Credit Analytics
-                    </CardTitle>
-                    <CardDescription className="text-md text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
-                        Track your store&apos;s credit balance and usage across all services.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+        <div className="space-y-8 p-8">
+            {/* Header */}
+            <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-4xl font-extrabold text-[#3D2E17]">Credit Analytics</h1>
+                        <p className="text-muted-foreground mt-1">Track your store&apos;s credit balance and usage across all services</p>
+                    </div>
+                    <CreditCard className="h-14 w-14 text-[#006B3E]" />
+                </div>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
@@ -156,12 +156,12 @@ export default function DispensaryCreditsPage() {
                 />
             </div>
 
-             <Card className="shadow-md bg-muted/50">
+             <Card className="bg-muted/50 border-border/50">
                 <CardHeader>
-                    <CardTitle className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
+                    <CardTitle className="text-lg font-bold text-[#3D2E17]">
                         Usage by Advisor
                     </CardTitle>
-                    <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
+                    <CardDescription>
                         Breakdown of credits spent on each AI service.
                     </CardDescription>
                 </CardHeader>
@@ -200,12 +200,12 @@ export default function DispensaryCreditsPage() {
                 </CardContent>
             </Card>
 
-            <Card className="shadow-md bg-muted/50">
+            <Card className="bg-muted/50 border-border/50">
                  <CardHeader>
-                    <CardTitle className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
+                    <CardTitle className="text-lg font-bold text-[#3D2E17]">
                         Recent Transactions
                     </CardTitle>
-                    <CardDescription className="text-foreground" style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}>
+                    <CardDescription>
                         A log of the most recent credit deductions.
                     </CardDescription>
                 </CardHeader>
