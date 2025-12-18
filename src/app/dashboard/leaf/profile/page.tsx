@@ -46,6 +46,9 @@ export default function LeafProfilePage() {
   const { toast } = useToast();
   const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Check if user is from checkout (they don't know their auto-generated password)
+  const isCheckoutUser = currentUser?.signupSource === 'checkout';
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
@@ -88,11 +91,48 @@ export default function LeafProfilePage() {
       }
       
       // Update password if new password is provided
-      if (data.newPassword && data.currentPassword) {
-        const credential = EmailAuthProvider.credential(firebaseUser.email!, data.currentPassword);
-        await reauthenticateWithCredential(firebaseUser, credential);
-        await updatePassword(firebaseUser, data.newPassword);
-        somethingChanged = true;
+      if (data.newPassword) {
+        // Check if this is a checkout user (they don't know their auto-generated password)
+        const isCheckoutUser = currentUser?.signupSource === 'checkout';
+        
+        if (isCheckoutUser) {
+          // For checkout users, we can update password without re-authentication
+          // since they were just created and don't know their random password
+          try {
+            await updatePassword(firebaseUser, data.newPassword);
+            // Update signupSource to indicate they've set their own password
+            await updateDoc(userDocRef, { signupSource: 'checkout-completed' });
+            setCurrentUser(prev => prev ? { ...prev, signupSource: 'checkout-completed' } : null);
+            somethingChanged = true;
+          } catch (error: any) {
+            if (error.code === 'auth/requires-recent-login') {
+              // User needs to be reauthenticated - send them to re-login
+              toast({ 
+                title: "Session Expired", 
+                description: "Please log out and log back in to update your password.",
+                variant: "destructive" 
+              });
+              setIsLoading(false);
+              return;
+            }
+            throw error;
+          }
+        } else {
+          // For regular users, require current password
+          if (!data.currentPassword) {
+            toast({ 
+              title: "Current Password Required", 
+              description: "Please enter your current password to change it.",
+              variant: "destructive" 
+            });
+            setIsLoading(false);
+            return;
+          }
+          const credential = EmailAuthProvider.credential(firebaseUser.email!, data.currentPassword);
+          await reauthenticateWithCredential(firebaseUser, credential);
+          await updatePassword(firebaseUser, data.newPassword);
+          somethingChanged = true;
+        }
       }
       
       if(somethingChanged) {
@@ -123,12 +163,18 @@ export default function LeafProfilePage() {
   if (!currentUser) {
     return <p>Please log in to view your profile.</p>;
   }
-
-  return (
-    <div className="space-y-6">
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle 
+              {isCheckoutUser 
+                ? "Set your new password below. You don't need your current password since your account was just created." 
+                : "Leave password fields blank if you do not want to change your password."}
+            </CardDescription>
+            
+            {!isCheckoutUser && (
+              <div>
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input id="currentPassword" type="password" {...form.register("currentPassword")} />
+                {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.currentPassword.message}</p>}
+              </div>
+            )}le 
             className="text-2xl text-foreground"
             style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
           >My Profile</CardTitle>

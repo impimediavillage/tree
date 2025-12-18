@@ -135,8 +135,8 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
       // Clear cart after successful order creation
       clearCart();
 
-      // Redirect to orders page
-      router.push('/dashboard/orders');
+      // Redirect to orders page with checkout flag
+      router.push('/dashboard/orders?from=checkout');
     } catch (error) {
       console.error('Error creating orders:', error);
       toast({

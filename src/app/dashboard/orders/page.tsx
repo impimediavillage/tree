@@ -1,24 +1,53 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserOrders } from '@/lib/orders';
 import type { Order } from '@/types/order';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package2, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Loader2, Package2, ShoppingCart, ArrowLeft, KeyRound, Sparkles } from 'lucide-react';
 import { OrderDetailDialog } from '@/components/orders/OrderDetailDialog';
 import { OrderCard } from '@/components/orders/OrderCard';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 export default function OrderHistoryPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser, currentDispensary } = useAuth();
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+
+  // Check if user came from checkout and needs to update password
+  useEffect(() => {
+    const fromCheckout = searchParams.get('from');
+    if (fromCheckout === 'checkout' && currentUser?.signupSource === 'checkout') {
+      setShowPasswordDialog(true);
+      
+      // Countdown timer
+      const countdownInterval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            setShowPasswordDialog(false);
+            router.push('/dashboard/leaf/profile');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(countdownInterval);
+    }
+  }, [searchParams, currentUser, router]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -60,6 +89,46 @@ export default function OrderHistoryPage() {
 
   return (
     <div className="container py-8 px-4 max-w-7xl mx-auto">
+      {/* Password Update Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 border-2 border-green-200">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="h-16 w-16 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center animate-pulse">
+                <KeyRound className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <DialogTitle className="text-center text-2xl font-extrabold text-[#3D2E17]">
+              <span className="flex items-center justify-center gap-2">
+                <Sparkles className="h-6 w-6 text-yellow-500" />
+                Welcome to The Wellness Tree!
+                <Sparkles className="h-6 w-6 text-yellow-500" />
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-center text-base text-[#3D2E17] font-semibold mt-4">
+              Let's secure your account by updating your password
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center py-6 space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-2">Redirecting in</p>
+              <div className="text-6xl font-extrabold text-[#006B3E] animate-bounce">
+                {countdown}
+              </div>
+            </div>
+            <Button 
+              onClick={() => {
+                setShowPasswordDialog(false);
+                router.push('/dashboard/leaf/profile');
+              }}
+              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold"
+            >
+              Update Password Now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-6">
         {/* Header */}
         <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
