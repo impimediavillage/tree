@@ -1,4 +1,3 @@
-// This file is intentionally being replaced. The old content is deleted.
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -23,10 +22,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Shirt } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, Trash2, Leaf, Shirt, Package, ChevronsUpDown } from 'lucide-react';
 import { MultiInputTags } from '@/components/ui/multi-input-tags';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { MultiImageDropzone } from '@/components/ui/multi-image-dropzone';
 import { cn } from '@/lib/utils';
 import { DispensarySelector } from '@/components/dispensary-admin/DispensarySelector';
@@ -264,13 +264,11 @@ useEffect(() => {
                             )}
                         >
                             <CardHeader className="p-0">
-                                <div className="w-full bg-muted">
+                                <div className="relative w-full aspect-video bg-muted">
                                     <Image
                                         src={cat.imageUrl}
                                         alt={cat.useCase}
-                                        width={768}
-                                        height={512}
-                                        layout="responsive"
+                                        fill
                                         className="object-contain transition-transform duration-300 group-hover:scale-105"
                                     />
                                 </div>
@@ -288,13 +286,11 @@ useEffect(() => {
                         )}
                     >
                         <CardHeader className="p-0">
-                            <div className="w-full bg-muted">
+                            <div className="relative w-full aspect-video bg-muted">
                                 <Image
                                     src="/images/traditional-medicine/san1.jpg"
                                     alt="Clothing"
-                                    width={768}
-                                    height={512}
-                                    layout="responsive"
+                                    fill
                                     className="object-contain transition-transform duration-300 group-hover:scale-105"
                                 />
                             </div>
@@ -325,13 +321,11 @@ useEffect(() => {
                                     )}
                                 >
                                     <CardHeader className="p-0">
-                                        <div className="w-full bg-muted">
+                                        <div className="relative w-full aspect-video bg-muted">
                                             <Image
                                                 src={cat.imageUrl}
                                                 alt={cat.type}
-                                                width={768}
-                                                height={512}
-                                                layout="responsive"
+                                                fill
                                                 className="object-contain transition-transform duration-300 group-hover:scale-105"
                                             />
                                         </div>
@@ -379,44 +373,61 @@ useEffect(() => {
                         )}
                       </div>
                       
-                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Product Name *</FormLabel><FormControl><Input {...field} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
                       
                       {isClothingStream && (
                         <>
                           <Separator/>
-                          <h3 className="text-xl font-semibold border-b pb-2">Apparel Details</h3>
+                          <h3 className="text-xl font-bold text-amber-900 border-b pb-2">Apparel Details</h3>
                            <div className="grid md:grid-cols-3 gap-4">
-                                <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel>Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel>Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                                <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel>Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="subcategory" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Apparel Type *</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl><SelectContent>{apparelTypes.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="gender" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Gender</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger></FormControl><SelectContent>{apparelGenders.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                                <FormField control={form.control} name="sizingSystem" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Sizing System</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger><SelectValue placeholder="Select sizing system" /></SelectTrigger></FormControl><SelectContent>{sizingSystemOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                             </div>
-                            <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel>Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="sizes" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Available Sizes</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="Add a size..." value={field.value || []} onChange={field.onChange} availableStandardSizes={availableStandardSizes} /></FormControl><FormMessage /></FormItem> )} />
                         </>
                       )}
                       
-                      <div className="space-y-6">
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                      <Card className="p-6 bg-muted/50">
+                          <Separator className="mb-4" />
+                          <h3 className="text-xl font-bold text-amber-900 mb-4">Pricing, Stock & Visibility</h3>
                           <div className="space-y-4">
                           {priceTierFields.map((field, index) => (
-                              <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-3 border rounded-md relative bg-muted/30">
-                                  <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                  <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                  <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem className="md:col-span-1"><FormLabel>Stock *</FormLabel><FormControl><Input type="number" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                              <div key={field.id} className="p-4 border rounded-lg relative bg-background/80 shadow-sm space-y-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                                      <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                      <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                      <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Stock *</FormLabel><FormControl><Input type="number" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                  </div>
+                                  {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-2 right-2 h-8 w-8 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                  <Collapsible>
+                                      <CollapsibleTrigger asChild>
+                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span className="font-semibold">Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                      </CollapsibleTrigger>
+                                      <CollapsibleContent className="pt-4">
+                                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-muted/30">
+                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                          </div>
+                                      </CollapsibleContent>
+                                  </Collapsible>
                               </div>
                           ))}
-                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '' })}>Add Price Tier</Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: '' as any, lengthCm: '' as any, widthCm: '' as any, heightCm: '' as any })}>Add Price Tier</Button>
                           </div>
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                      </Card>
+                      <Card className="p-6 bg-muted/50 mt-6">
+                          <Separator className="mb-4" />
+                          <h3 className="text-xl font-bold text-amber-900 mb-4">Product Pool Settings</h3>
+                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-background/80"><div className="space-y-0.5"><FormLabel className="text-base font-semibold text-amber-900">Available for Product Pool</FormLabel><FormDescription className="font-medium">Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                           {watchIsAvailableForPool && (
-                           <Card className="p-4 bg-muted/50 space-y-4">
+                           <Card className="p-4 bg-background/80 space-y-4 mt-4 border-2">
                               <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
                                   <FormItem>
-                                      <FormLabel className="text-base">Pool Sharing Rule *</FormLabel>
+                                      <FormLabel className="text-base font-semibold text-amber-900">Pool Sharing Rule *</FormLabel>
                                       <Select onValueChange={field.onChange} defaultValue={field.value || 'same_type'}>
                                           <FormControl><SelectTrigger><SelectValue placeholder="Select how to share this product" /></SelectTrigger></FormControl>
                                           <SelectContent>
@@ -438,30 +449,48 @@ useEffect(() => {
                                 />
                               )}
                           
-                              <CardHeader className="p-0 mb-2"><CardTitle className="text-lg">Pool Pricing Tiers *</CardTitle><CardDescription>Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
+                              <CardHeader className="p-0 mb-2"><CardTitle className="text-lg font-bold text-amber-900">Pool Pricing Tiers *</CardTitle><CardDescription className="font-medium">Define pricing for bulk transfers to other stores.</CardDescription></CardHeader>
                               <CardContent className="p-0 space-y-2">
                                   {poolPriceTierFields.map((field, index) => (
-                                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-3 border rounded-md relative bg-background">
-                                      <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" /></FormControl><FormMessage /></FormItem>)} />
-                                      <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel>Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem>)} />
-                                      {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                  <div key={field.id} className="p-4 border rounded-lg relative bg-muted/30 shadow-sm space-y-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                          <FormField control={form.control} name={`poolPriceTiers.${index}.unit`} render={({ field: f }) => (<FormItem><FormLabel className="font-semibold text-amber-900">Unit *</FormLabel><FormControl><Input {...f} list="pool-units-list" className="font-medium" /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`poolPriceTiers.${index}.price`} render={({ field: f }) => (<FormItem><FormLabel className="font-semibold text-amber-900">Price *</FormLabel><FormControl><Input type="number" step="0.01" {...f} className="font-medium" /></FormControl><FormMessage /></FormItem>)} />
+                                          <FormField control={form.control} name={`poolPriceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Stock *</FormLabel><FormControl><Input type="number" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                      </div>
+                                      {poolPriceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePoolPriceTier(index)} className="absolute top-2 right-2 h-8 w-8 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
+                                      <Collapsible>
+                                          <CollapsibleTrigger asChild>
+                                              <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span className="font-semibold">Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                          </CollapsibleTrigger>
+                                          <CollapsibleContent className="pt-4">
+                                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                                  <FormField control={form.control} name={`poolPriceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" onChange={f.onChange} onBlur={f.onBlur} name={f.name} ref={f.ref} disabled={f.disabled} value={f.value ?? ''} className="font-medium" /></FormControl><FormMessage /></FormItem> )} />
+                                              </div>
+                                          </CollapsibleContent>
+                                      </Collapsible>
                                   </div>
                                   ))}
-                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '' })}>Add Pool Price Tier</Button>
+                                  <Button type="button" variant="outline" size="sm" onClick={() => appendPoolPriceTier({ unit: '', price: '' as any, quantityInStock: 0, description: '', weightKgs: '' as any, lengthCm: '' as any, widthCm: '' as any, heightCm: '' as any })}>Add Pool Price Tier</Button>
                               </CardContent>
                             </Card>
                           )}
-                          <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Images & Tags</h3>
-                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel>Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription>Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
-                          <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel>Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
-                          <CardFooter className="p-0 pt-6">
-                              <Button type="submit" size="lg" className="w-full text-lg" disabled={isLoading}>
+                      </Card>
+                      <Card className="p-6 bg-muted/50 mt-6">
+                          <Separator className="mb-4" />
+                          <h3 className="text-xl font-bold text-amber-900 mb-4">Images & Tags</h3>
+                          <FormField control={form.control} name="imageUrls" render={() => ( <FormItem><FormLabel className="font-semibold text-amber-900">Product Images</FormLabel><FormControl><MultiImageDropzone value={files} onChange={(files) => setFiles(files)} /></FormControl><FormDescription className="font-medium">Upload up to 5 images. First image is the main one.</FormDescription><FormMessage /></FormItem> )} />
+                          <FormField control={form.control} name="tags" render={({ field }) => ( <FormItem><FormLabel className="font-semibold text-amber-900">Tags</FormLabel><FormControl><MultiInputTags inputType="string" placeholder="e.g., Organic, Potent" value={field.value || []} onChange={field.onChange} /></FormControl><FormMessage /></FormItem> )} />
+                          <div className="pt-6">
+                              <Button type="submit" size="lg" className="w-full text-lg font-bold" disabled={isLoading}>
                                   {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PackagePlus className="mr-2 h-5 w-5" />}
                                   Add Product
                               </Button>
-                          </CardFooter>
-                      </div>
+                          </div>
+                      </Card>
                   </div>
               )}
           </div>
