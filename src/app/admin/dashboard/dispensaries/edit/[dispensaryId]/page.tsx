@@ -244,24 +244,25 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
     }
 
     const fetchLockers = async () => {
-        const city = form.getValues('city');
+        const lat = form.getValues('latitude');
+        const lng = form.getValues('longitude');
 
-        if (!city) {
-            setLockerError('Dispensary city is not set. Please set a location to find lockers in the area.');
+        if (!lat || !lng) {
+            setLockerError('Your dispensary location is not set. Please set a location on the map to find nearby lockers.');
             return;
         }
 
         setIsFetchingLockers(true);
         setLockerError(null);
         try {
-            const result = await getPudoLockers({ city });
+            const result = await getPudoLockers({ latitude: lat, longitude: lng });
             
             const lockerData = (result.data as { data: PUDOLocker[] }).data;
 
             if (lockerData && lockerData.length > 0) {
                 setPudoLockers(lockerData);
             } else {
-                setLockerError('No Pudo lockers found for the specified city.');
+                setLockerError('No Pudo lockers found within a 100km radius of your location.');
             }
         } catch (error) {
             console.error("Error fetching Pudo lockers:", error);
@@ -402,7 +403,7 @@ function EditDispensaryForm({ initialData, allDispensaryTypes }: { initialData: 
             <DialogHeader>
                 <DialogTitle>Select an Origin Locker</DialogTitle>
                 <DialogDescription>
-                   Showing Pudo lockers for the city of &quot;{watchedCity}&quot;.
+                    Search for Pudo lockers within a 100km radius of your set location. This will be the default collection point for locker-based shipments.
                 </DialogDescription>
             </DialogHeader>
             <div className="relative mt-4">

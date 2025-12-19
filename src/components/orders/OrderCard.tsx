@@ -188,11 +188,20 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
           </div>
           <div className="space-y-2 pl-7">
             {order.items?.slice(0, 3).map((item, idx) => (
-              <div key={idx} className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground truncate flex-1">
-                  {item.quantity}x {item.name}
-                </span>
-                <span className="font-medium ml-2">{formatCurrency(item.price * item.quantity)}</span>
+              <div key={idx} className="flex justify-between items-start text-sm gap-2">
+                {item.productType === 'THC' ? (
+                  <div className="flex-1 truncate">
+                    <div className="text-muted-foreground font-medium">{item.name}</div>
+                    <div className="text-xs text-muted-foreground/80 mt-0.5">
+                      {item.quantity} FREE {item.unit}{item.quantity > 1 ? 's' : ''} {item.originalName}
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground truncate flex-1">
+                    {item.quantity}x {item.name}
+                  </span>
+                )}
+                <span className="font-medium ml-2 flex-shrink-0">{formatCurrency(item.price * item.quantity)}</span>
               </div>
             ))}
             {order.items && order.items.length > 3 && (

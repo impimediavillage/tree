@@ -103,21 +103,37 @@ export function OrderDetailDialog({
   const handleLabelGenerated = async (result: any) => {
     console.log('Label generated, result:', result);
     
-    // Close the label dialog first
-    setLabelDialogOpen(false);
-    
-    // Switch to shipments tab to show the updated tracking info
-    setActiveTab('shipments');
-    
-    // Show success toast
-    toast({
-      title: "Label Generated Successfully",
-      description: `Tracking: ${result.trackingNumber}${result.accessCode ? ` | Access Code: ${result.accessCode}` : ''}`,
-    });
-    
-    // Trigger parent to refresh order data
-    // The onOpenChange(false) will close the dialog, and the parent component
-    // will refresh the order list via its real-time listener
+    try {
+      // Update order status to 'label_generated'
+      if (onUpdateStatus && currentUser?.dispensaryId) {
+        await onUpdateStatus(order.id, currentUser.dispensaryId, 'label_generated');
+      }
+      
+      // Close the label dialog first
+      setLabelDialogOpen(false);
+      
+      // Switch to shipments tab to show the updated tracking info
+      setActiveTab('shipments');
+      
+      // Show success toast
+      toast({
+        title: "Label Generated Successfully",
+        description: `Tracking: ${result.trackingNumber}${result.accessCode ? ` | Access Code: ${result.accessCode}` : ''}`,
+      });
+      
+      // Trigger parent to refresh order data
+      // The onOpenChange(false) will close the dialog, and the parent component
+      // will refresh the order list via its real-time listener
+    } catch (error) {
+      console.error('Error updating order status after label generation:', error);
+      // Still close the dialog and show success since label was generated
+      setLabelDialogOpen(false);
+      setActiveTab('shipments');
+      toast({
+        title: "Label Generated",
+        description: `Tracking: ${result.trackingNumber}${result.accessCode ? ` | Access Code: ${result.accessCode}` : ''} (Status update pending)`,
+      });
+    }
   };
 
   const handleExportOrder = async () => {
@@ -361,21 +377,27 @@ export function OrderDetailDialog({
                             {order.status.replace(/_/g, ' ').toUpperCase()}
                           </Badge>
                         </div>
-                        {order.statusHistory && order.statusHistory.length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-muted-foreground">Status History:</p>
+                        {(() => {
+                          // Get status history from shipment if available, otherwise from order
+                          const shipment = Object.values(order.shipments || {})[0];
+                          const statusHistory = shipment?.statusHistory || order.statusHistory || [];
+                          
+                          return statusHistory.length > 0 && (
                             <div className="space-y-2">
-                              {order.statusHistory.slice().reverse().map((history, idx) => (
-                                <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
-                                  <span className="capitalize">{history.status.replace(/_/g, ' ')}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {history.timestamp?.toDate().toLocaleString()}
-                                  </span>
-                                </div>
-                              ))}
+                              <p className="text-sm font-medium text-muted-foreground">Status History:</p>
+                              <div className="space-y-2">
+                                {statusHistory.slice().reverse().map((history, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                                    <span className="capitalize">{history.status.replace(/_/g, ' ')}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {history.timestamp?.toDate().toLocaleString()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     )}
                   </CardContent>
@@ -397,10 +419,21 @@ export function OrderDetailDialog({
                             <Package className="h-6 w-6 text-muted-foreground" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Qty: {item.quantity} × {formatCurrency(item.price)}
-                            </p>
+                            {item.productType === 'THC' ? (
+                              <>
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.quantity} FREE {item.unit}{item.quantity > 1 ? 's' : ''} {item.originalName}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-medium truncate">{item.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Qty: {item.quantity} × {formatCurrency(item.price)}
+                                </p>
+                              </>
+                            )}
                             {item.dispensaryName && (
                               <p className="text-xs text-muted-foreground">
                                 From: {item.dispensaryName}
@@ -506,12 +539,12 @@ export function OrderDetailDialog({
           <TabsContent value="shipments" className="mt-4">
             <ScrollArea className="h-[60vh]">
               <div className="space-y-4">
-                {/* Label Generation Section - Show if labels not generated yet OR status allows regeneration */}
+                {/* Label Generation Section - Show if labels not generated yet and not in label_generated status */}
                 {isDispensaryView && Object.values(order.shipments).some(s => {
-                  // Show button if no label exists OR if label exists but not yet shipped
+                  // Show button if no label exists AND status is not label_generated and not shipped/in-transit/delivered
                   const hasNoLabel = !s.trackingNumber || !s.labelUrl;
-                  const canRegenerate = s.status && !['shipped', 'in-transit', 'delivered'].includes(s.status);
-                  return hasNoLabel || canRegenerate;
+                  const canRegenerate = s.status && !['label_generated', 'shipped', 'in-transit', 'delivered'].includes(s.status);
+                  return hasNoLabel && canRegenerate;
                 }) && (
                   <Card className="border-dashed border-2 bg-muted/50">
                     <CardContent className="pt-6">
@@ -548,11 +581,11 @@ export function OrderDetailDialog({
           <TabsContent value="shipping-label" className="mt-4">
             <ScrollArea className="h-[60vh]">
               <div className="space-y-4">
-                {/* Generate New Label Section - Only show if not yet shipped/in-transit/delivered */}
+                {/* Generate New Label Section - Only show if not yet shipped/in-transit/delivered and not label_generated */}
                 {isDispensaryView && Object.values(order.shipments).some(s => {
                   const hasNoLabel = !s.trackingNumber || !s.labelUrl;
-                  const canRegenerate = s.status && !['shipped', 'in-transit', 'delivered'].includes(s.status);
-                  return hasNoLabel || canRegenerate;
+                  const canRegenerate = s.status && !['label_generated', 'shipped', 'in-transit', 'delivered'].includes(s.status);
+                  return hasNoLabel && canRegenerate;
                 }) && (
                   <Card>
                     <CardHeader>

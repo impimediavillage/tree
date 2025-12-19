@@ -771,15 +771,15 @@ export default function ShippingReconciliationPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Header */}
       <Card className="shadow-lg bg-muted/50 border-border/50">
         <CardHeader>
-          <CardTitle className="text-4xl font-extrabold text-[#3D2E17] flex items-center gap-3">
-            <Truck className="h-10 w-10 text-[#006B3E]" />
-            Shipping Cost Reconciliation
+          <CardTitle className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#3D2E17] flex items-center gap-2 sm:gap-3">
+            <Truck className="h-8 w-8 sm:h-10 sm:w-10 text-[#006B3E] flex-shrink-0" />
+            <span className="break-words">Shipping Cost Reconciliation</span>
           </CardTitle>
-          <CardDescription className="text-lg font-semibold text-[#5D4E37] mt-2">
+          <CardDescription className="text-sm sm:text-base lg:text-lg font-semibold text-[#5D4E37] mt-2">
             Manage and reconcile shipping costs from The Courier Guy across all dispensaries
           </CardDescription>
         </CardHeader>
@@ -795,10 +795,10 @@ export default function ShippingReconciliationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-extrabold text-[#3D2E17]">
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#3D2E17] break-words">
               R {stats.totalPending.toFixed(2)}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {stats.pendingCount} shipments
             </p>
           </CardContent>
@@ -812,10 +812,10 @@ export default function ShippingReconciliationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-extrabold text-[#3D2E17]">
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#3D2E17] break-words">
               R {stats.totalProcessing.toFixed(2)}
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {stats.processingCount} shipments
             </p>
           </CardContent>
@@ -829,10 +829,10 @@ export default function ShippingReconciliationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-extrabold text-[#006B3E]">
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#006B3E] break-words">
               R {stats.totalPaid.toFixed(2)}
             </div>
-            <p className="text-sm font-bold text-[#5D4E37] mt-1">
+            <p className="text-xs sm:text-sm font-bold text-[#5D4E37] mt-1">
               {stats.paidCount} shipments
             </p>
           </CardContent>
@@ -846,10 +846,10 @@ export default function ShippingReconciliationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-extrabold text-destructive">
+            <div className="text-2xl sm:text-3xl font-extrabold text-destructive break-words">
               R {stats.totalDisputed.toFixed(2)}
             </div>
-            <p className="text-sm font-bold text-[#5D4E37] mt-1">
+            <p className="text-xs sm:text-sm font-bold text-[#5D4E37] mt-1">
               {stats.disputedCount} shipments
             </p>
           </CardContent>
@@ -1042,7 +1042,7 @@ export default function ShippingReconciliationPage() {
           <Separator />
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="text-sm font-bold text-[#3D2E17]">
+            <div className="text-xs sm:text-sm font-bold text-[#3D2E17]">
               Showing {filteredItems.length} of {reconciliationItems.length} shipments
             </div>
             <div className="flex gap-2 flex-wrap w-full sm:w-auto">
@@ -1051,25 +1051,28 @@ export default function ShippingReconciliationPage() {
                 variant="outline"
                 onClick={exportToCSV}
                 disabled={filteredItems.length === 0}
+                className="text-xs sm:text-sm"
               >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export CSV</span>
               </Button>
               
               <Button
                 variant="outline"
                 onClick={generateAnalytics}
+                className="text-xs sm:text-sm"
               >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
+                <BarChart3 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Analytics</span>
               </Button>
 
               <Button
                 variant="outline"
                 onClick={() => document.getElementById('invoice-upload')?.click()}
+                className="text-xs sm:text-sm"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                Match Invoice
+                <Upload className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Match Invoice</span>
               </Button>
               <input
                 id="invoice-upload"
@@ -1115,11 +1118,11 @@ export default function ShippingReconciliationPage() {
       {/* Reconciliation Table */}
       <Card className="shadow-lg">
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-visible">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">
+                  <TableHead className="w-8 sm:w-12">
                     <input
                       type="checkbox"
                       checked={selectedItems.length === filteredItems.filter(i => i.reconciliationStatus === 'pending').length && selectedItems.length > 0}
@@ -1133,17 +1136,17 @@ export default function ShippingReconciliationPage() {
                       className="rounded border-gray-300"
                     />
                   </TableHead>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Dispensary</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Tracking</TableHead>
-                  <TableHead>Origin/Dest</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment Ref</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="min-w-[100px] sm:min-w-[120px]">Order #</TableHead>
+                  <TableHead className="min-w-[90px] sm:min-w-[100px]">Date</TableHead>
+                  <TableHead className="min-w-[120px] sm:min-w-[150px]">Dispensary</TableHead>
+                  <TableHead className="min-w-[100px] sm:min-w-[130px]">Customer</TableHead>
+                  <TableHead className="min-w-[80px]">Provider</TableHead>
+                  <TableHead className="min-w-[100px] sm:min-w-[120px]">Tracking</TableHead>
+                  <TableHead className="min-w-[100px] sm:min-w-[140px]">Origin/Dest</TableHead>
+                  <TableHead className="min-w-[90px]">Amount</TableHead>
+                  <TableHead className="min-w-[90px]">Status</TableHead>
+                  <TableHead className="min-w-[100px]">Payment Ref</TableHead>
+                  <TableHead className="text-right min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1174,17 +1177,19 @@ export default function ShippingReconciliationPage() {
                           />
                         )}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{item.orderNumber}</TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="font-mono text-xs sm:text-sm">{item.orderNumber}</TableCell>
+                      <TableCell className="text-xs sm:text-sm whitespace-nowrap">
                         {format(item.createdAt, 'dd MMM yyyy')}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-[#006B3E]" />
-                          <span className="text-sm font-bold text-[#3D2E17] truncate max-w-[150px] sm:max-w-none">{item.dispensaryName}</span>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <Building2 className="h-3 w-3 sm:h-4 sm:w-4 text-[#006B3E] flex-shrink-0" />
+                          <span className="text-xs sm:text-sm font-bold text-[#3D2E17] truncate max-w-[100px] sm:max-w-[120px] lg:max-w-[150px]" title={item.dispensaryName}>{item.dispensaryName}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm font-semibold text-[#3D2E17] truncate max-w-[120px] sm:max-w-none">{item.customerName}</TableCell>
+                      <TableCell className="text-xs sm:text-sm font-semibold text-[#3D2E17]">
+                        <div className="truncate max-w-[90px] sm:max-w-[110px] lg:max-w-[130px]" title={item.customerName}>{item.customerName}</div>
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline">{item.shippingProvider.toUpperCase()}</Badge>
                       </TableCell>
