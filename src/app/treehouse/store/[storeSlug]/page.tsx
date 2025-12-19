@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { CreatorStore } from '@/types/creator-store';
 import type { TreehouseProduct } from '@/types/creator-lab';
+import { APPAREL_SIZES } from '@/types/creator-lab';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,7 @@ export default function CreatorStorePage() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchStoreAndProducts = async () => {
@@ -149,7 +151,7 @@ export default function CreatorStorePage() {
             {/* Store Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-1">
-                <Store className="h-8 w-8 text-[#006B3E] flex-shrink-0" />
+                <Image src="/icons/tree-house-300.png" alt="Treehouse" width={40} height={40} className="flex-shrink-0" />
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{store.storeName}</h1>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -234,7 +236,13 @@ export default function CreatorStorePage() {
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map(product => (
+                {filteredProducts.map(product => {
+                  const apparelType = product.apparelType || 'T-Shirt';
+                  const availableSizes = APPAREL_SIZES[apparelType] || ['Standard'];
+                  const needsSizeSelection = availableSizes.length > 1 && availableSizes[0] !== 'Standard';
+                  const selectedSize = selectedSizes[product.id] || (needsSizeSelection ? '' : availableSizes[0]);
+                  
+                  return (
                   <Card key={product.id} className="bg-muted/50 border-border/50 hover:shadow-xl transition-shadow">
                     <div className="relative h-48 sm:h-56 overflow-hidden bg-muted/30">
                       {product.designImageUrl && (
@@ -248,6 +256,19 @@ export default function CreatorStorePage() {
                       <Badge className="absolute top-2 right-2 bg-[#006B3E]">
                         {product.apparelType}
                       </Badge>
+                      {/* Badge counts */}
+                      <div className="absolute bottom-2 left-2 flex gap-2">
+                        {product.salesCount > 0 && (
+                          <Badge variant="secondary" className="bg-orange-500 text-white">
+                            {product.salesCount} sold
+                          </Badge>
+                        )}
+                        {product.addToCartCount > 0 && (
+                          <Badge variant="secondary" className="bg-blue-500 text-white">
+                            {product.addToCartCount} carts
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <CardHeader>
                       <CardTitle className="text-xl font-black text-[#3D2E17]">
@@ -266,14 +287,37 @@ export default function CreatorStorePage() {
                         </span>
                         <Badge variant="secondary">{product.category}</Badge>
                       </div>
+                      
+                      {/* Size Selection UI */}
+                      {needsSizeSelection && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-muted-foreground">Size (International)</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {availableSizes.map(size => (
+                              <Button
+                                key={size}
+                                variant={selectedSize === size ? 'default' : 'outline'}
+                                size="sm"
+                                className={selectedSize === size ? 'bg-[#006B3E] hover:bg-[#005230]' : ''}
+                                onClick={() => setSelectedSizes(prev => ({ ...prev, [product.id]: size }))}
+                              >
+                                {size}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <Button
                         className="w-full bg-[#006B3E] hover:bg-[#005230]"
+                        disabled={needsSizeSelection && !selectedSize}
                         onClick={() => {
                           // Convert Treehouse product to CartItem format
+                          const sizeText = selectedSize && selectedSize !== 'Standard' ? ` - Size ${selectedSize}` : '';
                           const cartItem = {
                             id: product.id,
                             productId: product.id,
-                            name: `${product.apparelType || product.productName} - Black (Creator Design)`,
+                            name: `${product.apparelType || product.productName} - Black${sizeText} (Creator Design)`,
                             description: product.productDescription || `Unique creator design by ${product.creatorName}`,
                             category: 'Treehouse',
                             dispensaryId: 'treehouse',
@@ -306,7 +350,8 @@ export default function CreatorStorePage() {
                       </Button>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : (

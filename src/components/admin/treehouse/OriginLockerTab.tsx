@@ -229,10 +229,21 @@ export default function OriginLockerTab() {
     if (typeof window !== 'undefined' && !mapInitialized.current) {
       const timer = setTimeout(() => {
         initializeMap();
-      }, 100);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [initializeMap]);
+  
+  // Re-center map when config loads with coordinates
+  useEffect(() => {
+    if (config && config.latitude && config.longitude && mapInitialized.current) {
+      // The map is already initialized, try to re-center it
+      const timer = setTimeout(() => {
+        initializeMap();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [config, initializeMap]);
 
   const fetchOriginLocker = async () => {
     try {
@@ -746,16 +757,17 @@ export default function OriginLockerTab() {
         </div>
       </Card>
 
-      {/* Load Pudo Lockers Section */}
+      {/* Load Pudo Lockers Section - Only show if LTD or LTL are selected */}
+      {(manualAddress.shippingMethods.includes('ltd') || manualAddress.shippingMethods.includes('ltl')) && (
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-xl font-extrabold text-[#3D2E17] flex items-center gap-2">
               <Building2 className="h-6 w-6 text-[#006B3E]" />
-              Or Select Pudo Locker
+              Select Pudo Origin Locker (Required for LTD/LTL)
             </h3>
             <p className="text-sm text-[#3D2E17] font-semibold">
-              Load Pudo lockers and choose one as the shipping origin point
+              Load Pudo lockers and choose one as the shipping origin point for Locker-to-Door and Locker-to-Locker shipments
             </p>
           </div>
           <Button
@@ -894,6 +906,22 @@ export default function OriginLockerTab() {
           </div>
         )}
       </Card>
+      )}
+      
+      {/* Warning when LTD/LTL selected but no Pudo locker section shown */}
+      {!(manualAddress.shippingMethods.includes('ltd') || manualAddress.shippingMethods.includes('ltl')) && (manualAddress.shippingMethods.length > 0) && (
+        <Card className="p-4 bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-[#3D2E17] mb-1">Pudo Locker Selection</p>
+              <p className="text-muted-foreground">
+                The Pudo locker selection will appear if you enable <strong>LTD - Locker to Door</strong> or <strong>LTL - Locker to Locker</strong> shipping methods above.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Info Card */}
       <Card className="p-4 bg-amber-50 dark:bg-amber-950/20">
