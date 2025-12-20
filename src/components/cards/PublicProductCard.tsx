@@ -197,7 +197,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             {product.thcContent && (
               <div className="flex justify-center">
                 <Badge variant="secondary" className="bg-red-500 text-white text-sm px-3 py-1">
-                  <Flame className="h-4 w-4 mr-1" /> THC: {product.thcContent}
+                  <Flame className="h-4 w-4 mr-1" /> : {product.thcContent}
                 </Badge>
               </div>
             )}
@@ -209,15 +209,17 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             </div>
             
             {/* View Product Info Button */}
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-auto px-6 flex items-center justify-center gap-2 text-[#006B3E] hover:text-white hover:bg-[#006B3E] border-[#006B3E] font-bold transition-all"
-              onClick={() => setIsProductDetailsOpen(true)}
-            >
-              <Info className="h-6 w-6" />
-              <span>Gift Info</span>
-            </Button>
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="lg"
+                className="px-6 flex items-center justify-center gap-2 text-[#006B3E] hover:text-white hover:bg-[#006B3E] border-[#006B3E] font-bold transition-all"
+                onClick={() => setIsProductDetailsOpen(true)}
+              >
+                <Info className="h-6 w-6" />
+                <span>Gift Info</span>
+              </Button>
+            </div>
             
             {/* Stock Info */}
             <p className="text-sm font-semibold text-muted-foreground">Gifts available: {tierStock}</p>
@@ -322,7 +324,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           {getBadgeContent()}
            {!isThcProduct && product.thcContent && (
               <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
-                  <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
+                  <Flame className="h-3.5 w-3.5 mr-1" /> : {product.thcContent}
               </Badge>
           )}
           {!isThcProduct && product.cbdContent && (
