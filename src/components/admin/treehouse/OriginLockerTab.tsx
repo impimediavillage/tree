@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, functions } from "@/lib/firebase";
+import { httpsCallable } from "firebase/functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -290,31 +291,66 @@ export default function OriginLockerTab() {
     try {
       setLoadingLockers(true);
       
-      // Call the getPudoLockers Cloud Function
-      const response = await fetch('/api/get-pudo-lockers');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch Pudo lockers');
+      // Check if manual address has coordinates
+      if (!manualAddress.latitude || !manualAddress.longitude) {
+        toast({
+          title: "Location Required",
+          description: "Please set your origin address on the map first before loading Pudo lockers.",
+          variant: "destructive",
+        });
+        setLoadingLockers(false);
+        return;
       }
-
-      const data = await response.json();
       
-      if (data.lockers && Array.isArray(data.lockers)) {
-        setLockers(data.lockers);
+      // Call the getPudoLockers Cloud Function with coordinates (same as checkout workflow)
+      const getPudoLockersFn = httpsCallable(functions, 'getPudoLockers');
+      const result = await getPudoLockersFn({
+        latitude: manualAddress.latitude,
+        longitude: manualAddress.longitude,
+        city: manualAddress.city,
+        radius: 100 // 100km radius
+      });
+      
+      const data = result.data as any;
+      const lockerData = data?.data as any[];
+      
+      if (lockerData && Array.isArray(lockerData) && lockerData.length > 0) {
+        // Transform the data to match the PudoLocker interface used in this component
+        const transformedLockers: PudoLocker[] = lockerData.map((locker: any) => ({
+          LockerID: locker.id || '',
+          LockerCode: locker.id || '',
+          LockerName: locker.name || '',
+          Address: locker.address || locker.street_address || '',
+          SuburbName: locker.suburb || '',
+          CityName: locker.city || '',
+          ProvinceName: locker.province || '',
+          PostalCode: locker.postalCode || '',
+          Latitude: locker.location?.lat || 0,
+          Longitude: locker.location?.lng || 0,
+        }));
+        
+        setLockers(transformedLockers);
         toast({
           title: "Success",
-          description: `Loaded ${data.lockers.length} Pudo lockers`,
+          description: `Loaded ${transformedLockers.length} Pudo lockers within 100km`,
         });
       } else {
-        throw new Error('Invalid response format');
+        toast({
+          title: "No Lockers Found",
+          description: "No Pudo lockers found within 100km of your origin address.",
+          variant: "destructive",
+        });
+        setLockers([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching Pudo lockers:", error);
+      const errorMessage = error.message || "Failed to load Pudo lockers. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to load Pudo lockers. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
+      setLockers([]);
     } finally {
       setLoadingLockers(false);
     }
