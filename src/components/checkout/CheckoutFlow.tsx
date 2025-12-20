@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, ShoppingCart, Package, Store, Truck, DollarSign } from 'lucide-react';
 import { PaymentStep } from './PaymentStep';
 import { DispensaryShippingGroup } from './DispensaryShippingGroup';
 
@@ -439,40 +439,96 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                 </Card>
             </div>
             <div className="lg:col-span-1">
-                <Card className="sticky top-24 bg-muted/30">
-                    <CardHeader><p className='font-semibold text-lg text-[#3D2E17]'>Order Summary</p></CardHeader>
-                    <CardContent>
+                <Card className="sticky top-24 bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950 shadow-2xl border-4 border-[#006B3E]/30">
+                    <CardHeader className="pb-4 border-b-2 border-[#006B3E]/30 bg-white/40 dark:bg-black/20">
+                        <p className='font-black text-2xl text-[#3D2E17] flex items-center gap-3'>
+                            <ShoppingCart className="h-7 w-7 text-[#006B3E]" />
+                            Order Summary
+                        </p>
+                    </CardHeader>
+                    <CardContent className="pt-6">
                         {cartItems.length > 0 ? (
-                            <div className="space-y-3">
-                                {cartItems.map((item) => (
-                                    <div key={item.id} className="flex justify-between items-start text-[#3D2E17]">
-                                        <div>
-                                            <p className="font-semibold">{item.name}</p>
-                                            <p className="text-sm text-[#3D2E17] font-medium">Qty: {item.quantity} - from {item.dispensaryName}</p>
-                                        </div>
-                                        <span>R{((item.price || 0) * item.quantity).toFixed(2)}</span>
-                                    </div>
-                                ))}
-                                <hr className="my-2" />
-                                <div className="space-y-1 text-sm text-[#3D2E17]">
-                                    <div className="flex justify-between"><span>Subtotal</span><span>R{getCartTotal().toFixed(2)}</span></div>
-                                    {Object.keys(shippingSelections).length > 0 && (
-                                         <div className="flex justify-between font-medium"><span>Shipping</span><span>R{totalShippingCost.toFixed(2)}</span></div>
-                                    )}
-                                    {Object.entries(shippingSelections).map(([id, rate]) => rate && (
-                                        <div key={id} className="flex justify-between pl-4 text-[#3D2E17] font-medium">
-                                            <span>from {groupedCart[id]?.dispensaryName}</span>
-                                            <span>R{rate.rate.toFixed(2)}</span>
+                            <div className="space-y-4">
+                                {/* Cart Items */}
+                                <div className="space-y-3 max-h-[300px] overflow-y-auto smooth-scroll pr-2" style={{ scrollBehavior: 'smooth' }}>
+                                    {cartItems.map((item) => (
+                                        <div key={item.id} className="flex justify-between items-start gap-3 p-3 rounded-xl bg-white/60 dark:bg-gray-800/50 border-2 border-[#006B3E]/20 hover:border-[#006B3E]/40 transition-all">
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-black text-[#3D2E17] text-base truncate">{item.name}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Package className="h-3.5 w-3.5 text-[#006B3E]" />
+                                                    <p className="text-sm text-[#5D4E37] font-bold">Qty: {item.quantity}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Store className="h-3.5 w-3.5 text-[#006B3E]" />
+                                                    <p className="text-xs text-[#5D4E37] font-semibold truncate">{item.dispensaryName}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex-shrink-0">
+                                                <div className="bg-[#006B3E]/10 px-3 py-1.5 rounded-lg">
+                                                    <p className="text-sm font-black text-[#006B3E]">R{((item.price || 0) * item.quantity).toFixed(2)}</p>
+                                                </div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
-                                <hr className="my-2" />
-                                <div className="flex justify-between font-bold text-lg text-[#3D2E17]">
-                                    <span>Total</span>
-                                    <span>R{(getCartTotal() + totalShippingCost).toFixed(2)}</span>
+                                
+                                {/* Divider */}
+                                <div className="border-t-2 border-[#006B3E]/30 my-4"></div>
+                                
+                                {/* Subtotal */}
+                                <div className="bg-gradient-to-r from-white/80 to-amber-50/80 dark:from-gray-800/80 dark:to-amber-950/80 p-4 rounded-xl border-2 border-[#006B3E]/20">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-base font-black text-[#3D2E17]">Subtotal</span>
+                                        <span className="text-xl font-black text-[#006B3E]">R{getCartTotal().toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Shipping Details */}
+                                {Object.keys(shippingSelections).length > 0 && (
+                                    <div className="bg-gradient-to-r from-blue-50/80 to-green-50/80 dark:from-blue-950/30 dark:to-green-950/30 p-4 rounded-xl border-2 border-blue-300/50 dark:border-blue-700/50 space-y-3">
+                                        <div className="flex justify-between items-center pb-2 border-b border-[#006B3E]/30">
+                                            <div className="flex items-center gap-2">
+                                                <Truck className="h-5 w-5 text-blue-600" />
+                                                <span className="text-base font-black text-[#3D2E17]">Shipping</span>
+                                            </div>
+                                            <span className="text-lg font-black text-blue-600">R{totalShippingCost.toFixed(2)}</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {Object.entries(shippingSelections).map(([id, rate]) => rate && (
+                                                <div key={id} className="flex justify-between items-center pl-2">
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></div>
+                                                        <span className="text-sm font-bold text-[#5D4E37] truncate">{groupedCart[id]?.dispensaryName}</span>
+                                                    </div>
+                                                    <span className="text-sm font-black text-blue-600 ml-2">R{rate.rate.toFixed(2)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                
+                                {/* Divider */}
+                                <div className="border-t-2 border-[#006B3E]/30 my-4"></div>
+                                
+                                {/* Grand Total */}
+                                <div className="bg-gradient-to-br from-[#006B3E] to-[#3D2E17] p-5 rounded-2xl shadow-xl">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xl font-black text-white flex items-center gap-2">
+                                            <DollarSign className="h-6 w-6" />
+                                            Grand Total
+                                        </span>
+                                        <span className="text-3xl font-black text-white">R{(getCartTotal() + totalShippingCost).toFixed(2)}</span>
+                                    </div>
                                 </div>
                             </div>
-                        ) : <p className="text-[#3D2E17]">Your cart is empty.</p>}
+                        ) : (
+                            <div className="text-center py-12 bg-white/60 rounded-xl border-2 border-dashed border-[#006B3E]/30">
+                                <ShoppingCart className="h-16 w-16 text-[#006B3E]/30 mx-auto mb-3" />
+                                <p className="text-lg font-bold text-[#5D4E37]">Your cart is empty.</p>
+                                <p className="text-sm font-semibold text-muted-foreground mt-1">Add some items to get started!</p>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

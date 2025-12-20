@@ -432,36 +432,94 @@ export const DispensaryShippingGroup = ({
         )}
 
         <Dialog open={isLockerModalOpen} onOpenChange={setIsLockerModalOpen}>
-            <DialogContent className="sm:max-w-[625px]">
-                <DialogHeader>
-                    <DialogTitle>Select a Destination Pudo Locker</DialogTitle>
-                    <DialogDescription>Showing lockers near {addressData.shippingAddress.city}.</DialogDescription>
+            <DialogContent className="sm:max-w-[700px] bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950">
+                <DialogHeader className="pb-4 border-b-2 border-[#006B3E]/30">
+                    <DialogTitle className="text-2xl font-black text-[#3D2E17] flex items-center gap-2">
+                        <MapPin className="h-6 w-6 text-[#006B3E]" />
+                        Select a Destination Pudo Locker
+                    </DialogTitle>
+                    <DialogDescription className="text-base font-semibold text-[#5D4E37]">Showing lockers near {addressData.shippingAddress.city}.</DialogDescription>
                 </DialogHeader>
-                <div className="relative mt-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input placeholder="Search by name or address..." value={lockerSearchTerm} onChange={(e) => setLockerSearchTerm(e.target.value)} className="pl-10"/>
+                <div className="relative mt-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#006B3E]" />
+                    <Input 
+                        placeholder="Search by name or address..." 
+                        value={lockerSearchTerm} 
+                        onChange={(e) => setLockerSearchTerm(e.target.value)} 
+                        className="pl-10 border-2 border-[#006B3E]/30 focus:border-[#006B3E] font-semibold"
+                    />
                 </div>
-                <div className="mt-2 max-h-[400px] overflow-y-auto space-y-2 p-1">
+                <div className="mt-4 max-h-[450px] overflow-y-auto space-y-3 p-2 smooth-scroll" style={{ scrollBehavior: 'smooth' }}>
                     {filteredLockers.length > 0 ? (
-                        filteredLockers.map(locker => (
-                            <Button key={locker.id} variant="ghost" className="w-full justify-start h-auto py-3 text-left" onClick={() => handleLockerSelect(locker)}>
-                                <div className="w-full">
-                                    <div className="flex items-start justify-between w-full">
-                                        <div className="flex-1">
-                                            <p className="font-semibold">{locker.name}</p>
-                                            <p className="text-sm text-muted-foreground">{locker.address}</p>
+                        filteredLockers.map(locker => {
+                            const isSelected = destinationLocker?.id === locker.id;
+                            return (
+                                <button
+                                    key={locker.id}
+                                    className={cn(
+                                        "w-full rounded-xl p-4 text-left transition-all duration-200 border-2",
+                                        isSelected 
+                                            ? "bg-[#006B3E] border-[#006B3E] shadow-xl scale-[1.02] ring-4 ring-[#006B3E]/30" 
+                                            : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:bg-gradient-to-br hover:from-white hover:to-green-50 dark:hover:from-gray-800 dark:hover:to-green-950/30 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+                                    )}
+                                    onClick={() => handleLockerSelect(locker)}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <MapPin className={cn(
+                                                    "h-5 w-5 flex-shrink-0",
+                                                    isSelected ? "text-white" : "text-[#006B3E]"
+                                                )} />
+                                                <p className={cn(
+                                                    "font-black text-base truncate",
+                                                    isSelected ? "text-white" : "text-[#3D2E17]"
+                                                )}>{locker.name}</p>
+                                            </div>
+                                            <p className={cn(
+                                                "text-sm font-semibold line-clamp-2 ml-7",
+                                                isSelected ? "text-green-50" : "text-[#5D4E37]"
+                                            )}>{locker.address}</p>
                                         </div>
                                         {locker.distanceKm !== null && locker.distanceKm !== undefined && (
-                                            <div className="ml-3 flex-shrink-0">
-                                                <p className="text-sm font-bold text-primary">{locker.distanceKm.toFixed(1)} km</p>
+                                            <div className="flex-shrink-0">
+                                                <div className={cn(
+                                                    "px-3 py-1.5 rounded-lg text-center min-w-[70px]",
+                                                    isSelected 
+                                                        ? "bg-white/20 backdrop-blur-sm" 
+                                                        : "bg-[#006B3E]/10"
+                                                )}>
+                                                    <p className={cn(
+                                                        "text-xs font-bold uppercase tracking-wide",
+                                                        isSelected ? "text-white" : "text-[#006B3E]"
+                                                    )}>Distance</p>
+                                                    <p className={cn(
+                                                        "text-lg font-black",
+                                                        isSelected ? "text-white" : "text-[#006B3E]"
+                                                    )}>{locker.distanceKm.toFixed(1)}</p>
+                                                    <p className={cn(
+                                                        "text-xs font-bold",
+                                                        isSelected ? "text-green-100" : "text-[#5D4E37]"
+                                                    )}>km</p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                </div>
-                            </Button>
-                        ))
+                                    {isSelected && (
+                                        <div className="mt-3 pt-3 border-t border-white/30 flex items-center justify-center gap-2">
+                                            <CheckCircle className="h-5 w-5 text-white" />
+                                            <span className="text-sm font-black text-white uppercase tracking-wide">Selected</span>
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })
                     ) : (
-                        <p className='text-center text-muted-foreground py-4'>No lockers match your search.</p>
+                        <div className="text-center py-12 bg-white/60 rounded-xl border-2 border-dashed border-[#006B3E]/30">
+                            <MapPin className="h-12 w-12 text-[#006B3E]/30 mx-auto mb-3" />
+                            <p className='text-lg font-bold text-[#5D4E37]'>No lockers match your search.</p>
+                            <p className='text-sm font-semibold text-muted-foreground mt-1'>Try adjusting your search terms.</p>
+                        </div>
                     )}
                 </div>
             </DialogContent>
