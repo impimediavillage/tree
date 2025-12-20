@@ -57,9 +57,14 @@ import {
   Palette,
   CheckCircle,
   XCircle,
+  Settings,
+  Image as ImageIcon,
 } from "lucide-react";
-import { ApparelItem, STANDARD_APPAREL_TYPES, STANDARD_COLORS } from "@/types/apparel-items";
+import { ApparelItem, ApparelType, STANDARD_APPAREL_TYPES, STANDARD_COLORS } from "@/types/apparel-items";
 import { format } from "date-fns";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { ApparelTypeManager } from "@/components/admin/treehouse/ApparelTypeManager";
+import { ApparelDataSeeder } from "@/components/admin/treehouse/ApparelDataSeeder";
 
 export default function ApparelItemsTab() {
   const [items, setItems] = useState<ApparelItem[]>([]);
@@ -67,11 +72,17 @@ export default function ApparelItemsTab() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [imageFilter, setImageFilter] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<ApparelItem | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [typeManagerOpen, setTypeManagerOpen] = useState(false);
+  const [apparelTypes, setApparelTypes] = useState<ApparelType[]>([]);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string>("");
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Form state
@@ -79,7 +90,7 @@ export default function ApparelItemsTab() {
     itemType: "tshirt",
     name: "",
     description: "",
-    category: "tops",
+    category: "tops" as "tops" | "headwear" | "outerwear" | "accessories",
     basePrice: 0,
     retailPrice: 0,
     availableSizes: [] as string[],
@@ -89,8 +100,13 @@ export default function ApparelItemsTab() {
     length: 30,
     width: 25,
     height: 2,
+    mockImageUrl: "",
+    mockImageFront: "",
+    mockImageBack: "",
     frontTemplateUrl: "",
     backTemplateUrl: "",
+    restrictions: "",
+    hasSurface: true,
     sku: "",
     manufacturer: "",
     materialComposition: "100% Cotton",
@@ -107,11 +123,29 @@ export default function ApparelItemsTab() {
 
   useEffect(() => {
     fetchItems();
+    fetchTypes();
   }, []);
 
   useEffect(() => {
     filterItems();
-  }, [items, searchTerm, categoryFilter]);
+  }, [items, searchTerm, categoryFilter, imageFilter]);
+
+  const fetchTypes = async () => {
+    try {
+      const typesQuery = query(
+        collection(db, "apparel_types"),
+        orderBy("displayOrder", "asc")
+      );
+      const snapshot = await getDocs(typesQuery);
+      const typesData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as ApparelType[];
+      setApparelTypes(typesData.filter((t) => t.isActive));
+    } catch (error) {
+      console.error("Error fetching apparel types:", error);
+    }
+  };
 
   const fetchItems = async () => {
     try {
@@ -144,6 +178,13 @@ export default function ApparelItemsTab() {
     // Filter by category
     if (categoryFilter !== "all") {
       filtered = filtered.filter((i) => i.category === categoryFilter);
+    }
+
+    // Filter by image status
+    if (imageFilter === "with-images") {
+      filtered = filtered.filter((i) => i.mockImageUrl || i.mockImageFront || i.mockImageBack);
+    } else if (imageFilter === "missing-images") {
+      filtered = filtered.filter((i) => !i.mockImageUrl && !i.mockImageFront && !i.mockImageBack);
     }
 
     // Filter by search term
@@ -182,8 +223,13 @@ export default function ApparelItemsTab() {
       length: 30,
       width: 25,
       height: 2,
+      mockImageUrl: "",
+      mockImageFront: "",
+      mockImageBack: "",
       frontTemplateUrl: "",
       backTemplateUrl: "",
+      restrictions: "",
+      hasSurface: true,
       sku: "",
       manufacturer: "",
       materialComposition: "100% Cotton",
@@ -211,8 +257,13 @@ export default function ApparelItemsTab() {
       length: item.dimensions.length,
       width: item.dimensions.width,
       height: item.dimensions.height,
+      mockImageUrl: item.mockImageUrl || "",
+      mockImageFront: item.mockImageFront || "",
+      mockImageBack: item.mockImageBack || "",
       frontTemplateUrl: item.frontTemplateUrl || "",
       backTemplateUrl: item.backTemplateUrl || "",
+      restrictions: item.restrictions || "",
+      hasSurface: item.hasSurface ?? true,
       sku: item.sku || "",
       manufacturer: item.manufacturer || "",
       materialComposition: item.materialComposition || "100% Cotton",
@@ -241,9 +292,16 @@ export default function ApparelItemsTab() {
           width: Number(formData.width),
           height: Number(formData.height),
         },
+        mockImageUrl: formData.mockImageUrl,
+        mockImageFront: formData.mockImageFront,
+        mockImageBack: formData.mockImageBack,
         frontTemplateUrl: formData.frontTemplateUrl,
         backTemplateUrl: formData.backTemplateUrl,
-        printAreas: STANDARD_APPAREL_TYPES[formData.itemType as keyof typeof STANDARD_APPAREL_TYPES].printAreas,
+        restrictions: formData.restrictions,
+        hasSurface: formData.hasSurface,
+        printAreas: STANDARD_APPAREL_TYPES[formData.itemType as keyof typeof STANDARD_APPAREL_TYPES]?.printAreas || {
+          front: { x: 0, y: 0, width: 280, height: 350 },
+        },
         sku: formData.sku,
         manufacturer: formData.manufacturer,
         materialComposition: formData.materialComposition,
@@ -309,6 +367,95 @@ export default function ApparelItemsTab() {
     }
   };
 
+  const toggleItemSelection = (itemId: string) => {
+    setSelectedItems((prev) =>
+      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.length === filteredItems.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(filteredItems.map((i) => i.id!).filter(Boolean));
+    }
+  };
+
+  const handleBulkActivate = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      const promises = selectedItems.map((itemId) =>
+        updateDoc(doc(db, "apparel_items", itemId), { isActive: true })
+      );
+      await Promise.all(promises);
+
+      toast({
+        title: "Success",
+        description: `Activated ${selectedItems.length} item(s)`,
+      });
+      setSelectedItems([]);
+      fetchItems();
+    } catch (error) {
+      console.error("Error bulk activating:", error);
+      toast({
+        title: "Error",
+        description: "Failed to activate items",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDeactivate = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      const promises = selectedItems.map((itemId) =>
+        updateDoc(doc(db, "apparel_items", itemId), { isActive: false })
+      );
+      await Promise.all(promises);
+
+      toast({
+        title: "Success",
+        description: `Deactivated ${selectedItems.length} item(s)`,
+      });
+      setSelectedItems([]);
+      fetchItems();
+    } catch (error) {
+      console.error("Error bulk deactivating:", error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate items",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      const promises = selectedItems.map((itemId) =>
+        deleteDoc(doc(db, "apparel_items", itemId))
+      );
+      await Promise.all(promises);
+
+      toast({
+        title: "Success",
+        description: `Deleted ${selectedItems.length} item(s)`,
+      });
+      setSelectedItems([]);
+      fetchItems();
+    } catch (error) {
+      console.error("Error bulk deleting:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete items",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleItemTypeChange = (itemType: string) => {
     const standard = STANDARD_APPAREL_TYPES[itemType as keyof typeof STANDARD_APPAREL_TYPES];
     if (standard) {
@@ -321,6 +468,14 @@ export default function ApparelItemsTab() {
         width: standard.dimensions.width,
         height: standard.dimensions.height,
         availableSizes: standard.availableSizes,
+        restrictions: standard.restrictions || "",
+        hasSurface: standard.hasSurface ?? true,
+      });
+    } else {
+      // For custom types not in STANDARD_APPAREL_TYPES
+      setFormData({
+        ...formData,
+        itemType,
       });
     }
   };
@@ -362,6 +517,11 @@ export default function ApparelItemsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Data Seeder Component */}
+      {items.length === 0 && (
+        <ApparelDataSeeder />
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-4 bg-blue-50 dark:bg-blue-950/20">
@@ -428,11 +588,56 @@ export default function ApparelItemsTab() {
               <SelectItem value="outerwear">Outerwear</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={imageFilter} onValueChange={setImageFilter}>
+            <SelectTrigger className="w-full md:w-[180px]">
+              <SelectValue placeholder="Filter by images" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Items</SelectItem>
+              <SelectItem value="with-images">With Images</SelectItem>
+              <SelectItem value="missing-images">Missing Images</SelectItem>
+            </SelectContent>
+          </Select>
           <Button onClick={handleAddNew} className="bg-[#006B3E] hover:bg-[#005a33]">
             <Plus className="h-4 w-4 mr-2" />
             Add Item
           </Button>
         </div>
+        
+        {/* Bulk Actions */}
+        {selectedItems.length > 0 && (
+          <div className="flex items-center gap-3 pt-3 border-t">
+            <span className="text-sm font-bold text-[#3D2E17]">
+              {selectedItems.length} item(s) selected
+            </span>
+            <Button
+              onClick={handleBulkActivate}
+              variant="outline"
+              size="sm"
+              className="border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Activate
+            </Button>
+            <Button
+              onClick={handleBulkDeactivate}
+              variant="outline"
+              size="sm"
+              className="border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white"
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Deactivate
+            </Button>
+            <Button
+              onClick={handleBulkDelete}
+              variant="destructive"
+              size="sm"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Items Table */}
@@ -440,7 +645,16 @@ export default function ApparelItemsTab() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.length === filteredItems.length && filteredItems.length > 0}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 cursor-pointer"
+                />
+              </TableHead>
               <TableHead>Item</TableHead>
+              <TableHead>Mock Image</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Sizes</TableHead>
@@ -454,7 +668,7 @@ export default function ApparelItemsTab() {
           <TableBody>
             {filteredItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={11} className="text-center py-8">
                   <Shirt className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">No apparel items found</p>
                 </TableCell>
@@ -462,6 +676,14 @@ export default function ApparelItemsTab() {
             ) : (
               filteredItems.map((item) => (
                 <TableRow key={item.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.includes(item.id!)}
+                      onChange={() => toggleItemSelection(item.id!)}
+                      className="h-4 w-4 cursor-pointer"
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-10 w-10 rounded-full bg-[#006B3E]/10 flex items-center justify-center">
@@ -472,6 +694,30 @@ export default function ApparelItemsTab() {
                         {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell>
+                    {item.mockImageUrl || item.mockImageFront ? (
+                      <button
+                        onClick={() => {
+                          setPreviewImageUrl(item.mockImageUrl || item.mockImageFront || "");
+                          setImagePreviewOpen(true);
+                        }}
+                        className="relative h-16 w-16 rounded-lg overflow-hidden border-2 border-[#006B3E]/30 hover:border-[#006B3E] transition-all hover:scale-105 cursor-pointer"
+                      >
+                        <img
+                          src={item.mockImageUrl || item.mockImageFront}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center">
+                          <Eye className="h-5 w-5 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                        </div>
+                      </button>
+                    ) : (
+                      <div className="h-16 w-16 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground/50" />
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{item.itemType.replace('_', ' ').toUpperCase()}</Badge>
@@ -519,6 +765,15 @@ export default function ApparelItemsTab() {
                         {item.isActive ? "Active" : "Inactive"}
                       </Badge>
                       {item.inStock && <Badge variant="outline" className="text-xs">In Stock</Badge>}
+                      {(item.mockImageUrl || item.mockImageFront || item.mockImageBack) ? (
+                        <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/20 text-purple-700 border-purple-300">
+                          Has Mock
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs bg-orange-50 dark:bg-orange-950/20 text-orange-700 border-orange-300">
+                          No Mock
+                        </Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -692,18 +947,43 @@ export default function ApparelItemsTab() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="itemType">Item Type *</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="itemType" className="text-sm font-bold text-[#3D2E17]">
+                    Item Type *
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTypeManagerOpen(true)}
+                    className="h-7 text-xs"
+                  >
+                    <Settings className="h-3 w-3 mr-1" />
+                    Manage Types
+                  </Button>
+                </div>
                 <Select value={formData.itemType} onValueChange={handleItemTypeChange}>
                   <SelectTrigger id="itemType">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="tshirt">T-Shirt</SelectItem>
-                    <SelectItem value="hoodie">Hoodie</SelectItem>
-                    <SelectItem value="sweatshirt">Sweatshirt</SelectItem>
-                    <SelectItem value="cap">Cap</SelectItem>
-                    <SelectItem value="beanie">Beanie</SelectItem>
-                    <SelectItem value="long_sleeve">Long Sleeve</SelectItem>
+                    {apparelTypes.length > 0 ? (
+                      apparelTypes.map((type) => (
+                        <SelectItem key={type.slug} value={type.slug}>
+                          {type.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="tshirt">T-Shirt</SelectItem>
+                        <SelectItem value="hoodie">Hoodie</SelectItem>
+                        <SelectItem value="sweatshirt">Sweatshirt</SelectItem>
+                        <SelectItem value="cap">Cap</SelectItem>
+                        <SelectItem value="beanie">Beanie</SelectItem>
+                        <SelectItem value="long_sleeve">Long Sleeve</SelectItem>
+                        <SelectItem value="backpack">Backpack</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -772,6 +1052,48 @@ export default function ApparelItemsTab() {
                   step="0.01"
                 />
               </div>
+            </div>
+
+            {/* Mock Images Section */}
+            <div className="p-6 bg-muted/50 rounded-xl border-2 border-[#006B3E]/20 space-y-4">
+              <div className="flex items-start gap-3 mb-4">
+                <ImageIcon className="h-6 w-6 text-[#006B3E] flex-shrink-0" />
+                <div>
+                  <h4 className="font-black text-[#3D2E17] text-lg">Product Images</h4>
+                  <p className="text-sm text-[#5D4E37] font-bold mt-1">
+                    Upload square images (1000x1000px max, &lt;100KB) showing flat 2D product view
+                  </p>
+                </div>
+              </div>
+
+              <ImageUploadField
+                label="Main Mock Image"
+                value={formData.mockImageUrl}
+                onChange={(url) => setFormData({ ...formData, mockImageUrl: url })}
+                storagePath={`apparel-items/${selectedItem?.id || "temp"}`}
+                required={true}
+                helpText="Main product image for Creator Lab selector (1000x1000px, <100KB, square, flat 2D)"
+              />
+
+              {formData.hasSurface && (
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-[#006B3E]/10">
+                  <ImageUploadField
+                    label="Front View (Optional)"
+                    value={formData.mockImageFront}
+                    onChange={(url) => setFormData({ ...formData, mockImageFront: url })}
+                    storagePath={`apparel-items/${selectedItem?.id || "temp"}/front`}
+                    helpText="Front view for items with surface selection"
+                  />
+
+                  <ImageUploadField
+                    label="Back View (Optional)"
+                    value={formData.mockImageBack}
+                    onChange={(url) => setFormData({ ...formData, mockImageBack: url })}
+                    storagePath={`apparel-items/${selectedItem?.id || "temp"}/back`}
+                    helpText="Back view for items with surface selection"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-4">
@@ -943,6 +1265,31 @@ export default function ApparelItemsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Apparel Type Manager Dialog */}
+      <ApparelTypeManager
+        open={typeManagerOpen}
+        onOpenChange={setTypeManagerOpen}
+        onTypesUpdated={fetchTypes}
+      />
+
+      {/* Image Preview Dialog */}
+      <Dialog open={imagePreviewOpen} onOpenChange={setImagePreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-extrabold text-[#3D2E17]">Mock Image Preview</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
+            {previewImageUrl && (
+              <img
+                src={previewImageUrl}
+                alt="Mock preview"
+                className="w-full h-full object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

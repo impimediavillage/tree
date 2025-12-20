@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Sparkles, Wand2, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
+import { Sparkles, Wand2, Image as ImageIcon, Loader2, AlertCircle, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { validatePrompt } from '@/lib/dalle-service';
 import type { CreatorDesign } from '@/types/creator-lab';
 import { PublishDialog } from './PublishDialog';
+import { DirectImageUpload } from './DirectImageUpload';
 
 interface DesignStudioProps {
   onDesignGenerated?: (design: CreatorDesign) => void;
@@ -112,30 +114,53 @@ export function DesignStudio({ onDesignGenerated }: DesignStudioProps) {
     setPrompt('');
   };
 
+  const handleImageUploaded = (design: CreatorDesign) => {
+    setGeneratedDesign(design);
+    
+    // Callback for parent component
+    if (onDesignGenerated) {
+      onDesignGenerated(design);
+    }
+  };
+
   return (
     <>
-      <Card className="border-[#5D4E37]">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-[#006B3E]/10">
-                <Sparkles className="h-10 w-10 text-[#006B3E]" />
+      <Tabs defaultValue="ai-generate" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="ai-generate" className="font-bold">
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Generate
+          </TabsTrigger>
+          <TabsTrigger value="upload-image" className="font-bold">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Image
+          </TabsTrigger>
+        </TabsList>
+
+        {/* AI Generation Tab */}
+        <TabsContent value="ai-generate">
+          <Card className="border-[#5D4E37]">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#006B3E]/10">
+                    <Sparkles className="h-10 w-10 text-[#006B3E]" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-extrabold text-[#3D2E17]">
+                      AI Design Studio
+                    </CardTitle>
+                    <CardDescription className="text-[#5D4E37] font-semibold">
+                      Create unique apparel designs with DALL-E 3
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-[#5D4E37] font-semibold">Your Credits</p>
+                  <p className="text-2xl font-extrabold text-[#006B3E]">{userCredits}</p>
+                </div>
               </div>
-              <div>
-                <CardTitle className="text-2xl font-extrabold text-[#3D2E17]">
-                  AI Design Studio
-                </CardTitle>
-                <CardDescription className="text-[#5D4E37] font-semibold">
-                  Create unique apparel designs with DALL-E 3
-                </CardDescription>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-[#5D4E37] font-semibold">Your Credits</p>
-              <p className="text-2xl font-extrabold text-[#006B3E]">{userCredits}</p>
-            </div>
-          </div>
-        </CardHeader>
+            </CardHeader>
 
         <CardContent className="space-y-6">
           {!generatedDesign ? (
@@ -251,6 +276,13 @@ export function DesignStudio({ onDesignGenerated }: DesignStudioProps) {
           )}
         </CardContent>
       </Card>
+    </TabsContent>
+
+    {/* Upload Image Tab */}
+    <TabsContent value="upload-image">
+      <DirectImageUpload onImageUploaded={handleImageUploaded} />
+    </TabsContent>
+  </Tabs>
 
       {/* Publish dialog */}
       {generatedDesign && (
