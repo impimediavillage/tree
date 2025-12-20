@@ -182,22 +182,44 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             <p className="text-sm font-bold text-[#006B3E] mt-1">Design pack price</p>
           </div>
           
-          {/* Category and Product Name */}
-          <div className="w-full text-center space-y-1">
-            <CardTitle className="text-xl font-black text-[#3D2E17]" title={product.name}>{product.name}</CardTitle>
-            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-foreground/80">
-              <Tag className="h-5 w-5 text-[#006B3E]"/> <span>{product.category}</span>
-              {product.strain && <span className="truncate">| {product.strain}</span>}
+          {/* Gift Section with Header, Category, THC Badge, Gift Info, Stock, and Info Button */}
+          <div className="w-full p-4 text-center bg-muted/50 border-2 border-[#006B3E]/30 rounded-md space-y-3">
+            {/* Product Name and Category */}
+            <div className="space-y-1">
+              <CardTitle className="text-xl font-black text-[#3D2E17]" title={product.name}>{product.name}</CardTitle>
+              <div className="flex items-center justify-center gap-2 text-sm font-semibold text-foreground/80">
+                <Tag className="h-5 w-5 text-[#006B3E]"/> <span>{product.category}</span>
+                {product.strain && <span className="truncate">| {product.strain}</span>}
+              </div>
             </div>
-          </div>
-          
-          {/* Gift Section */}
-          <div className="w-full p-3 text-center bg-green-50 dark:bg-green-950/20 border-2 border-[#006B3E]/30 rounded-md">
-            <div className="flex items-center justify-center gap-2">
-              <Gift className="h-5 w-5 text-[#006B3E]" />
-              <span className="text-base font-bold text-[#006B3E]">{tier.unit} as FREE gift included</span>
+            
+            {/* THC Content Badge */}
+            {product.thcContent && (
+              <div className="flex justify-center">
+                <Badge variant="secondary" className="bg-red-500 text-white text-sm px-3 py-1">
+                  <Flame className="h-4 w-4 mr-1" /> THC: {product.thcContent}
+                </Badge>
+              </div>
+            )}
+            
+            {/* View Product Info Button */}
+            <Button
+              variant="ghost"
+              size="lg"
+              className="w-full flex items-center justify-center text-[#006B3E] hover:text-[#005230] hover:bg-[#006B3E]/10"
+              onClick={() => setIsProductDetailsOpen(true)}
+            >
+              <Info className="h-8 w-8" />
+            </Button>
+            
+            {/* Gift Info */}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Gift className="h-8 w-8 text-[#006B3E]" />
+              <span className="text-lg font-bold text-[#006B3E]">{tier.unit} as FREE gift included</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Quantity available: {tierStock}</p>
+            
+            {/* Stock Info */}
+            <p className="text-sm font-semibold text-muted-foreground">Quantity available: {tierStock}</p>
           </div>
           
           {/* Buy Button */}
@@ -251,25 +273,15 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       >
         <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted/30 group">
           {isThcProduct && randomSticker ? (
-            <div className="relative h-full w-full">
+            <div className="relative h-full w-full p-0 m-0">
               <Image
                 src={randomSticker}
                 alt={`Triple S Sticker for ${product.name}`}
                 fill
                 sizes="(max-width: 640px) 100vw, 50vw"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                className="object-cover"
                 data-ai-hint={`triple s sticker ${product.name}`}
               />
-              {/* Product Details Button */}
-              <Button
-                variant="secondary"
-                size="sm"
-                className="absolute top-2 left-2 z-10 bg-[#006B3E]/90 hover:bg-[#006B3E] text-white backdrop-blur-sm shadow-lg"
-                onClick={() => setIsProductDetailsOpen(true)}
-              >
-                <ImageIconLucide className="h-4 w-4 mr-1" />
-                View Product
-              </Button>
             </div>
           ) : images.length > 0 ? (
             <div className={cn('grid h-full w-full gap-0.5', gridColsClass, gridRowsClass)}>
@@ -307,12 +319,12 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             </div>
           )}
           {getBadgeContent()}
-           {product.thcContent && (
+           {!isThcProduct && product.thcContent && (
               <Badge variant="secondary" className="absolute bottom-2 left-2 z-10 bg-red-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
                   <Flame className="h-3.5 w-3.5 mr-1" /> THC: {product.thcContent}
               </Badge>
           )}
-          {product.cbdContent && (
+          {!isThcProduct && product.cbdContent && (
               <Badge variant="secondary" className="absolute bottom-2 right-2 z-10 bg-blue-500/80 text-white backdrop-blur-sm text-xs px-2 py-1 shadow">
                   <LeafIcon className="h-3.5 w-3.5 mr-1" /> CBD: {product.cbdContent}
               </Badge>
@@ -328,9 +340,11 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           </CardHeader>
         )}
         <CardContent className="flex-grow flex flex-col space-y-2.5 py-2">
-            <div className="flex-grow">
-                <p className="text-sm font-medium text-foreground/90 line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
-            </div>
+            {!isThcProduct && (
+              <div className="flex-grow">
+                  <p className="text-sm font-medium text-foreground/90 line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
+              </div>
+            )}
              {requestStatus === 'negotiating' && (
               <div className="text-xs space-y-1 pt-1">
                 <p className="font-semibold text-muted-foreground">You requested: <span className="font-bold text-orange-600">{totalRequestedByUser} {tier.unit}</span></p>
@@ -414,76 +428,111 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       
       {/* Product Details Dialog for THC Products */}
       <Dialog open={isProductDetailsOpen} onOpenChange={setIsProductDetailsOpen}>
-        <DialogContent className="max-w-lg w-full p-4 bg-muted/50">
-          <DialogHeader className="p-2">
-            <DialogTitle className="text-2xl font-black text-[#3D2E17]">{product.name}</DialogTitle>
-            <DialogDescription className="text-base">
-              {product.description}
+        <DialogContent className="max-w-3xl w-full max-h-[90vh] overflow-hidden bg-gradient-to-br from-amber-50/95 to-green-50/95 dark:from-gray-900/95 dark:to-gray-800/95 backdrop-blur-sm">
+          <DialogHeader className="pb-3 border-b border-[#006B3E]/20">
+            <DialogTitle className="text-3xl font-extrabold text-[#3D2E17]">{product.name}</DialogTitle>
+            <DialogDescription className="text-base font-semibold text-[#5D4E37]">
+              {product.category} {product.strain && `• ${product.strain}`}
             </DialogDescription>
           </DialogHeader>
           
-          {/* Image Carousel */}
-          {images.length > 0 && (
-            <div className="space-y-3">
-              <div className="relative aspect-square w-full">
-                {images[selectedImageIndex] && (
-                  <Image
-                    src={images[selectedImageIndex]!}
-                    alt={`${product.name} image ${selectedImageIndex + 1}`}
-                    fill
-                    className="object-contain rounded-md"
-                    data-ai-hint={`product detail ${product.name}`}
-                  />
+          <div className="overflow-y-auto smooth-scroll pr-2 space-y-4" style={{ maxHeight: 'calc(90vh - 120px)' }}>
+            {/* Image Carousel at Top */}
+            {images.length > 0 && (
+              <div className="space-y-3 pb-4 border-b border-[#006B3E]/20">
+                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-lg">
+                  {images[selectedImageIndex] && (
+                    <Image
+                      src={images[selectedImageIndex]!}
+                      alt={`${product.name} image ${selectedImageIndex + 1}`}
+                      fill
+                      className="object-contain"
+                      data-ai-hint={`product detail ${product.name}`}
+                    />
+                  )}
+                </div>
+                
+                {images.length > 1 && (
+                  <div className="flex items-center justify-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="bg-[#006B3E]/10 hover:bg-[#006B3E] hover:text-white border-[#006B3E]"
+                      onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <div className="flex items-center gap-2 overflow-x-auto p-1 max-w-md">
+                      {images.map((url, i) => (
+                        url && (
+                          <button
+                            key={url}
+                            className={cn(
+                              "h-16 w-16 rounded-lg border-3 flex-shrink-0 overflow-hidden transition-all",
+                              i === selectedImageIndex ? "border-[#006B3E] scale-110 shadow-lg" : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"
+                            )}
+                            onClick={() => setSelectedImageIndex(i)}
+                          >
+                            <div className="relative h-full w-full">
+                              <Image src={url} alt={`Thumbnail ${i+1}`} fill className="object-cover"/>
+                            </div>
+                          </button>
+                        )
+                      ))}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="bg-[#006B3E]/10 hover:bg-[#006B3E] hover:text-white border-[#006B3E]"
+                      onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
                 )}
               </div>
-              
-              {images.length > 1 && (
-                <div className="flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="flex items-center gap-2 overflow-x-auto p-1">
-                    {images.map((url, i) => (
-                      url && (
-                        <button
-                          key={url}
-                          className={cn(
-                            "h-12 w-12 rounded-md border-2 flex-shrink-0",
-                            i === selectedImageIndex ? "border-[#006B3E]" : "border-transparent opacity-60 hover:opacity-100"
-                          )}
-                          onClick={() => setSelectedImageIndex(i)}
-                        >
-                          <div className="relative h-full w-full rounded overflow-hidden">
-                            <Image src={url} alt={`Thumbnail ${i+1}`} fill className="object-cover"/>
-                          </div>
-                        </button>
-                      )
-                    ))}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+            )}
+            
+            {/* Description */}
+            <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-4 border border-[#006B3E]/20">
+              <h3 className="text-xl font-extrabold text-[#3D2E17] mb-2 flex items-center gap-2">
+                <Info className="h-5 w-5 text-[#006B3E]" />
+                Description
+              </h3>
+              <p className="text-base font-semibold text-[#5D4E37] leading-relaxed">{product.description}</p>
             </div>
-          )}
-          
-          {/* Info Buttons */}
-          <div className="pt-3">
-            <div className="flex flex-wrap gap-2 justify-center">
-              <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
-              <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
-              <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+            
+            {/* Info Buttons */}
+            <div className="space-y-3">
+              <h3 className="text-xl font-extrabold text-[#3D2E17]">Product Information</h3>
+              <div className="flex flex-wrap gap-3">
+                <InfoDialog 
+                  className="flex-1 min-w-[140px] border-transparent bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-200 dark:hover:bg-purple-800/70 font-bold" 
+                  title={`Effects of ${product.name}`} 
+                  triggerText="Effects" 
+                  items={product.effects || []} 
+                  itemType="effect" 
+                  icon={Sparkles} 
+                />
+                <InfoDialog 
+                  className="flex-1 min-w-[140px] border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-200 dark:hover:bg-green-800/70 font-bold" 
+                  title={`Flavors in ${product.name}`} 
+                  triggerText="Flavors" 
+                  items={product.flavors || []} 
+                  itemType="flavor" 
+                  icon={LeafIcon} 
+                />
+                <InfoDialog 
+                  className="flex-1 min-w-[140px] border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-800/70 font-bold" 
+                  title={`Potential Medical Uses of ${product.name}`} 
+                  triggerText="Medical Uses" 
+                  items={product.medicalUses || []} 
+                  itemType="medical" 
+                  icon={Brain} 
+                />
+              </div>
             </div>
           </div>
         </DialogContent>
