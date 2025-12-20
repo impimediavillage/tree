@@ -202,24 +202,25 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               </div>
             )}
             
-            {/* View Product Info Button */}
-            <Button
-              variant="ghost"
-              size="lg"
-              className="w-full flex items-center justify-center text-[#006B3E] hover:text-[#005230] hover:bg-[#006B3E]/10"
-              onClick={() => setIsProductDetailsOpen(true)}
-            >
-              <Info className="h-8 w-8" />
-            </Button>
-            
             {/* Gift Info */}
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <Gift className="h-8 w-8 text-[#006B3E]" />
+            <div className="flex flex-col items-center justify-center gap-2 pt-2">
+              <Gift className="h-12 w-12 text-[#3D2E17]" />
               <span className="text-lg font-bold text-[#006B3E]">{tier.unit} as FREE gift included</span>
             </div>
             
+            {/* View Product Info Button */}
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-auto px-6 flex items-center justify-center gap-2 text-[#006B3E] hover:text-white hover:bg-[#006B3E] border-[#006B3E] font-bold transition-all"
+              onClick={() => setIsProductDetailsOpen(true)}
+            >
+              <Info className="h-6 w-6" />
+              <span>Gift Info</span>
+            </Button>
+            
             {/* Stock Info */}
-            <p className="text-sm font-semibold text-muted-foreground">Quantity available: {tierStock}</p>
+            <p className="text-sm font-semibold text-muted-foreground">Gifts available: {tierStock}</p>
           </div>
           
           {/* Buy Button */}
@@ -273,13 +274,13 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
       >
         <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted/30 group">
           {isThcProduct && randomSticker ? (
-            <div className="relative h-full w-full p-0 m-0">
+            <div className="relative h-full w-full flex items-center justify-center p-0 m-0">
               <Image
                 src={randomSticker}
                 alt={`Triple S Sticker for ${product.name}`}
                 fill
                 sizes="(max-width: 640px) 100vw, 50vw"
-                className="object-cover"
+                className="object-contain"
                 data-ai-hint={`triple s sticker ${product.name}`}
               />
             </div>
@@ -426,27 +427,32 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         />
       )}
       
-      {/* Product Details Dialog for THC Products */}
+      {/* Product Details Dialog for THC Products - Enhanced UI */}
       <Dialog open={isProductDetailsOpen} onOpenChange={setIsProductDetailsOpen}>
-        <DialogContent className="max-w-3xl w-full max-h-[90vh] overflow-hidden bg-gradient-to-br from-amber-50/95 to-green-50/95 dark:from-gray-900/95 dark:to-gray-800/95 backdrop-blur-sm">
-          <DialogHeader className="pb-3 border-b border-[#006B3E]/20">
-            <DialogTitle className="text-3xl font-extrabold text-[#3D2E17]">{product.name}</DialogTitle>
-            <DialogDescription className="text-base font-semibold text-[#5D4E37]">
+        <DialogContent className="max-w-4xl w-full max-h-[95vh] overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950 backdrop-blur-xl shadow-2xl border-4 border-[#006B3E]/30">
+          {/* Header with elegant styling */}
+          <DialogHeader className="pb-4 border-b-2 border-[#006B3E]/30 bg-white/40 dark:bg-black/20 -mx-6 -mt-6 px-6 pt-6 mb-4">
+            <DialogTitle className="text-4xl font-black text-[#3D2E17] tracking-tight flex items-center gap-3">
+              <LeafIcon className="h-10 w-10 text-[#006B3E]" />
+              {product.name}
+            </DialogTitle>
+            <DialogDescription className="text-lg font-bold text-[#5D4E37] flex items-center gap-2 mt-2">
+              <Tag className="h-5 w-5 text-[#006B3E]" />
               {product.category} {product.strain && `• ${product.strain}`}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="overflow-y-auto smooth-scroll pr-2 space-y-4" style={{ maxHeight: 'calc(90vh - 120px)' }}>
-            {/* Image Carousel at Top */}
+          <div className="overflow-y-auto smooth-scroll pr-2 space-y-6 pb-6" style={{ maxHeight: 'calc(95vh - 180px)', scrollBehavior: 'smooth' }}>
+            {/* Compact Image Carousel at Top */}
             {images.length > 0 && (
-              <div className="space-y-3 pb-4 border-b border-[#006B3E]/20">
-                <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-lg">
+              <div className="space-y-4 p-4 bg-white/60 dark:bg-black/20 rounded-2xl shadow-lg border-2 border-[#006B3E]/20">
+                <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-xl bg-white dark:bg-gray-800">
                   {images[selectedImageIndex] && (
                     <Image
                       src={images[selectedImageIndex]!}
                       alt={`${product.name} image ${selectedImageIndex + 1}`}
                       fill
-                      className="object-contain"
+                      className="object-contain p-2"
                       data-ai-hint={`product detail ${product.name}`}
                     />
                   )}
@@ -455,22 +461,24 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                 {images.length > 1 && (
                   <div className="flex items-center justify-center gap-3">
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="icon"
-                      className="bg-[#006B3E]/10 hover:bg-[#006B3E] hover:text-white border-[#006B3E]"
+                      className="bg-[#006B3E] hover:bg-[#3D2E17] text-white shadow-lg h-12 w-12"
                       onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
                       aria-label="Previous image"
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <ChevronLeft className="h-6 w-6" />
                     </Button>
-                    <div className="flex items-center gap-2 overflow-x-auto p-1 max-w-md">
+                    <div className="flex items-center gap-2 overflow-x-auto py-2 px-1 max-w-sm">
                       {images.map((url, i) => (
                         url && (
                           <button
                             key={url}
                             className={cn(
-                              "h-16 w-16 rounded-lg border-3 flex-shrink-0 overflow-hidden transition-all",
-                              i === selectedImageIndex ? "border-[#006B3E] scale-110 shadow-lg" : "border-transparent opacity-60 hover:opacity-100 hover:scale-105"
+                              "h-14 w-14 rounded-lg border-3 flex-shrink-0 overflow-hidden transition-all shadow-md",
+                              i === selectedImageIndex 
+                                ? "border-[#006B3E] scale-125 shadow-2xl ring-4 ring-[#006B3E]/50" 
+                                : "border-gray-300 dark:border-gray-600 opacity-50 hover:opacity-100 hover:scale-110 hover:shadow-lg"
                             )}
                             onClick={() => setSelectedImageIndex(i)}
                           >
@@ -482,34 +490,62 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                       ))}
                     </div>
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="icon"
-                      className="bg-[#006B3E]/10 hover:bg-[#006B3E] hover:text-white border-[#006B3E]"
+                      className="bg-[#006B3E] hover:bg-[#3D2E17] text-white shadow-lg h-12 w-12"
                       onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
                       aria-label="Next image"
                     >
-                      <ChevronRight className="h-5 w-5" />
+                      <ChevronRight className="h-6 w-6" />
                     </Button>
                   </div>
                 )}
+                <p className="text-center text-sm font-bold text-[#5D4E37]">Image {selectedImageIndex + 1} of {images.length}</p>
               </div>
             )}
             
-            {/* Description */}
-            <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-4 border border-[#006B3E]/20">
-              <h3 className="text-xl font-extrabold text-[#3D2E17] mb-2 flex items-center gap-2">
-                <Info className="h-5 w-5 text-[#006B3E]" />
-                Description
+            {/* Description with elegant card */}
+            <div className="bg-gradient-to-r from-white/80 to-amber-50/80 dark:from-gray-800/80 dark:to-amber-950/80 rounded-2xl p-6 shadow-xl border-2 border-[#006B3E]/30">
+              <h3 className="text-2xl font-black text-[#3D2E17] mb-3 flex items-center gap-3">
+                <div className="p-2 bg-[#006B3E]/10 rounded-lg">
+                  <Info className="h-6 w-6 text-[#006B3E]" />
+                </div>
+                About This Product
               </h3>
-              <p className="text-base font-semibold text-[#5D4E37] leading-relaxed">{product.description}</p>
+              <p className="text-lg font-semibold text-[#5D4E37] leading-relaxed">{product.description}</p>
             </div>
             
-            {/* Info Buttons */}
-            <div className="space-y-3">
-              <h3 className="text-xl font-extrabold text-[#3D2E17]">Product Information</h3>
-              <div className="flex flex-wrap gap-3">
+            {/* THC/CBD Content Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {product.thcContent && (
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/30 dark:to-orange-950/30 rounded-2xl p-6 shadow-lg border-2 border-red-300 dark:border-red-700">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Flame className="h-8 w-8 text-red-600" />
+                    <h4 className="text-xl font-black text-red-700 dark:text-red-400">THC Content</h4>
+                  </div>
+                  <p className="text-3xl font-black text-red-600 dark:text-red-400">{product.thcContent}</p>
+                </div>
+              )}
+              {product.cbdContent && (
+                <div className="bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30 rounded-2xl p-6 shadow-lg border-2 border-blue-300 dark:border-blue-700">
+                  <div className="flex items-center gap-3 mb-2">
+                    <LeafIcon className="h-8 w-8 text-blue-600" />
+                    <h4 className="text-xl font-black text-blue-700 dark:text-blue-400">CBD Content</h4>
+                  </div>
+                  <p className="text-3xl font-black text-blue-600 dark:text-blue-400">{product.cbdContent}</p>
+                </div>
+              )}
+            </div>
+            
+            {/* Info Buttons Section */}
+            <div className="space-y-4">
+              <h3 className="text-2xl font-black text-[#3D2E17] flex items-center gap-3">
+                <Sparkles className="h-6 w-6 text-[#006B3E]" />
+                Detailed Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <InfoDialog 
-                  className="flex-1 min-w-[140px] border-transparent bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-200 dark:hover:bg-purple-800/70 font-bold" 
+                  className="w-full py-6 text-lg border-2 bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/50 dark:to-purple-800/30 text-purple-900 dark:text-purple-200 hover:from-purple-200 hover:to-purple-100 dark:hover:from-purple-800/70 dark:hover:to-purple-700/50 font-black shadow-lg hover:shadow-2xl transition-all hover:scale-105 border-purple-300 dark:border-purple-700" 
                   title={`Effects of ${product.name}`} 
                   triggerText="Effects" 
                   items={product.effects || []} 
@@ -517,7 +553,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                   icon={Sparkles} 
                 />
                 <InfoDialog 
-                  className="flex-1 min-w-[140px] border-transparent bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-200 dark:hover:bg-green-800/70 font-bold" 
+                  className="w-full py-6 text-lg border-2 bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/50 dark:to-emerald-800/30 text-green-900 dark:text-green-200 hover:from-green-200 hover:to-emerald-100 dark:hover:from-green-800/70 dark:hover:to-emerald-700/50 font-black shadow-lg hover:shadow-2xl transition-all hover:scale-105 border-green-300 dark:border-green-700" 
                   title={`Flavors in ${product.name}`} 
                   triggerText="Flavors" 
                   items={product.flavors || []} 
@@ -525,7 +561,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                   icon={LeafIcon} 
                 />
                 <InfoDialog 
-                  className="flex-1 min-w-[140px] border-transparent bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-800/70 font-bold" 
+                  className="w-full py-6 text-lg border-2 bg-gradient-to-br from-blue-100 to-cyan-50 dark:from-blue-900/50 dark:to-cyan-800/30 text-blue-900 dark:text-blue-200 hover:from-blue-200 hover:to-cyan-100 dark:hover:from-blue-800/70 dark:hover:to-cyan-700/50 font-black shadow-lg hover:shadow-2xl transition-all hover:scale-105 border-blue-300 dark:border-blue-700" 
                   title={`Potential Medical Uses of ${product.name}`} 
                   triggerText="Medical Uses" 
                   items={product.medicalUses || []} 
