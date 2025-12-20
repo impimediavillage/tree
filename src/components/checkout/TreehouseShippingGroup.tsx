@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import type { CartItem, Dispensary, ShippingRate, AddressValues, PUDOLocker } from '@/types';
+import type { CartItem, ShippingRate, AddressValues, PUDOLocker } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -20,31 +20,52 @@ const allShippingMethodsMap: { [key: string]: string } = {
   "dtl": "Door-to-Locker",
   "ltd": "Locker-to-Door",
   "ltl": "Locker-to-Locker",
-  "collection": "Collection from Store",
+  "collection": "Collection from Location",
   "in_house": "In-house Delivery Service",
 };
 
-interface DispensaryShippingGroupProps {
-  dispensaryId: string;
-  dispensaryName: string;
+interface TreehouseConfig {
+  address: string;
+  streetAddress: string;
+  suburb: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  email?: string;
+  shippingMethods?: string[];
+  originLocker?: {
+    lockerId?: string;
+    lockerCode?: string;
+    lockerName?: string;
+    address?: string;
+  };
+  isPudoLocker?: boolean;
+}
+
+interface TreehouseShippingGroupProps {
+  storeId: string;
+  storeName: string;
   items: CartItem[];
   addressData: AddressValues;
-  onShippingSelectionChange: (dispensaryId: string, rate: ShippingRate | null) => void;
+  onShippingSelectionChange: (storeId: string, rate: ShippingRate | null) => void;
 }
 
 const isAddressComplete = (address: AddressValues['shippingAddress']) => {
     return address && address.streetAddress && address.city && address.postalCode && address.province;
-}
+};
 
-export const DispensaryShippingGroup = ({ 
-  dispensaryId, 
-  dispensaryName, 
+export const TreehouseShippingGroup = ({ 
+  storeId, 
+  storeName, 
   items, 
   addressData,
   onShippingSelectionChange
-}: DispensaryShippingGroupProps) => {
+}: TreehouseShippingGroupProps) => {
   const { toast } = useToast();
-  const [dispensary, setDispensary] = useState<Dispensary | null>(null);
+  const [treehouseConfig, setTreehouseConfig] = useState<TreehouseConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true); 
   const [isFetchingLockers, setIsFetchingLockers] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,31 +80,32 @@ export const DispensaryShippingGroup = ({
   const [lockerSearchTerm, setLockerSearchTerm] = useState('');
   const [isLockerModalOpen, setIsLockerModalOpen] = useState(false);
 
+  // Fetch Treehouse centralized configuration
   useEffect(() => {
-    const fetchDispensary = async () => {
+    const fetchTreehouseConfig = async () => {
       setIsLoading(true);
       try {
-        const docRef = doc(db, 'dispensaries', dispensaryId);
+        const docRef = doc(db, 'treehouseConfig', 'originLocker');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          const dispensaryData = { id: docSnap.id, ...docSnap.data() } as Dispensary;
-          setDispensary(dispensaryData);
+          const config = docSnap.data() as TreehouseConfig;
+          setTreehouseConfig(config);
         } else {
-          setError('Dispensary details could not be found.');
+          setError('Treehouse shipping configuration not found. Please contact support.');
         }
       } catch (err) {
-        setError('Failed to load dispensary information.');
+        setError('Failed to load Treehouse shipping configuration.');
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchDispensary();
-  }, [dispensaryId]);
+    fetchTreehouseConfig();
+  }, [storeId]);
 
   const resetSelections = () => {
     setSelectedRateId(null);
-    onShippingSelectionChange(dispensaryId, null);
+    onShippingSelectionChange(storeId, null);
     setRates([]);
     setError(null);
     setDestinationLocker(null);
@@ -93,15 +115,22 @@ export const DispensaryShippingGroup = ({
     const rate = rates.find(r => r.id.toString() === rateId);
     if (rate) {
       setSelectedRateId(rateId);
-      // Pass rate with locker data embedded
+      
+      // Build origin locker from config
+      const originLocker = treehouseConfig?.originLocker ? {
+        id: treehouseConfig.originLocker.lockerCode || '',
+        name: treehouseConfig.originLocker.lockerName || '',
+        address: treehouseConfig.originLocker.address || ''
+      } as PUDOLocker : null;
+      
       const rateWithLockers = {
         ...rate,
-        originLocker: dispensary?.originLocker || null,
+        originLocker: originLocker,
         destinationLocker: destinationLocker || null
       };
-      onShippingSelectionChange(dispensaryId, rateWithLockers);
+      onShippingSelectionChange(storeId, rateWithLockers);
     }
-  }, [rates, dispensaryId, dispensary?.originLocker, destinationLocker, onShippingSelectionChange]);
+  }, [rates, storeId, treehouseConfig, destinationLocker, onShippingSelectionChange]);
 
   const fetchPudoRates = useCallback(async () => {
     if (!selectedTier || !['dtl', 'ltd', 'ltl'].includes(selectedTier)) return;
@@ -124,30 +153,30 @@ export const DispensaryShippingGroup = ({
           lng: addressData.shippingAddress.longitude
       };
 
-      let payload: any = { cart: items, dispensaryId, type: selectedTier };
+      let payload: any = { cart: items, dispensaryId: storeId, type: selectedTier };
 
       if (selectedTier === 'dtl') {
         if (!destinationLocker) return;
         payload.destinationLockerCode = destinationLocker.id;
       } else if (selectedTier === 'ltd') {
-        if (!dispensary?.originLocker) { 
-          setError("This dispensary has not configured an origin locker for this shipping method."); 
+        if (!treehouseConfig?.originLocker?.lockerCode) { 
+          setError("Treehouse origin locker not configured. Please contact support."); 
           setIsLoading(false);
           return; 
         }
-        payload.originLockerCode = dispensary.originLocker.id;
+        payload.originLockerCode = treehouseConfig.originLocker.lockerCode;
         payload.deliveryAddress = deliveryAddressForApi;
       } else if (selectedTier === 'ltl') {
-        if (!dispensary?.originLocker) { 
-          setError("This dispensary has not configured an origin locker for this shipping method."); 
+        if (!treehouseConfig?.originLocker?.lockerCode) { 
+          setError("Treehouse origin locker not configured. Please contact support."); 
           setIsLoading(false);
           return; 
         }
         if (!destinationLocker) {
           setIsLoading(false);
-          return; // Wait for user to select destination locker
+          return;
         }
-        payload.originLockerCode = dispensary.originLocker.id;
+        payload.originLockerCode = treehouseConfig.originLocker.lockerCode;
         payload.destinationLockerCode = destinationLocker.id;
       }
       
@@ -172,22 +201,17 @@ export const DispensaryShippingGroup = ({
     } finally {
       setIsLoading(false);
     }
-  }, [selectedTier, items, dispensaryId, dispensary?.originLocker, destinationLocker, addressData, toast]);
+  }, [selectedTier, items, storeId, treehouseConfig, destinationLocker, addressData, toast]);
 
   const fetchShiplogicRates = useCallback(async () => {
-    if (!isAddressComplete(addressData.shippingAddress)) {
-      setError("Please provide a complete shipping address to get door-to-door rates.");
-      return;
-    }
     setIsLoading(true);
     setError(null);
     setRates([]);
     try {
-      const getShiplogicRatesFn = httpsCallable(functions, 'getShiplogicRates');
-      const payload = {
+      const getShiplogicRatesFn = httpsCallable(functions, 'getShipLogicRates');
+      const result = await getShiplogicRatesFn({
         cart: items,
-        dispensaryId,
-        type: 'std',
+        dispensaryId: storeId,
         deliveryAddress: {
           street_address: addressData.shippingAddress.streetAddress,
           local_area: addressData.shippingAddress.suburb,
@@ -196,47 +220,43 @@ export const DispensaryShippingGroup = ({
           code: addressData.shippingAddress.postalCode,
           country: addressData.shippingAddress.country,
           lat: addressData.shippingAddress.latitude,
-          lng: addressData.shippingAddress.longitude,
+          lng: addressData.shippingAddress.longitude
         }
-      };
-      const result = await getShiplogicRatesFn(payload);
-      const data = result.data as { rates?: ShippingRate[] };
-      if (data.rates && data.rates.length > 0) {
-        setRates(data.rates);
+      });
+      const fetchedRates = (result.data as { rates?: ShippingRate[] }).rates || [];
+      if (fetchedRates.length > 0) {
+        setRates(fetchedRates);
       } else {
-        setError("No door-to-door shipping rates were found for your address.");
+        setError("No door-to-door shipping rates available for this area.");
       }
     } catch (e: any) {
-      console.error("Error fetching ShipLogic rates:", e);
-        let errorMessage = "An unexpected error occurred while fetching shipping rates.";
+        console.error("Error fetching ShipLogic rates:", e);
+        let errorMessage = "An unexpected error occurred while fetching rates.";
         if (e instanceof FunctionsError) {
             errorMessage = e.message;
         } else if (e.message) {
             errorMessage = e.message;
         }
         setError(errorMessage);
-        toast({ title: "Shipping Rate Error", description: errorMessage, variant: "destructive" });
+        toast({ title: "Rate Error", description: errorMessage, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, [items, dispensaryId, addressData, toast]);
+  }, [items, storeId, addressData, toast]);
 
   useEffect(() => {
-    if (!selectedTier || !dispensary) return;
+    if (!selectedTier) return;
     
-    // DTL: Needs destination locker only
     if (selectedTier === 'dtl' && destinationLocker) {
       fetchPudoRates();
     } 
-    // LTD: Needs origin locker only (fetches immediately when tier is selected)
-    else if (selectedTier === 'ltd' && dispensary.originLocker) {
+    else if (selectedTier === 'ltd' && treehouseConfig?.originLocker) {
       fetchPudoRates();
     } 
-    // LTL: Needs both origin and destination lockers
-    else if (selectedTier === 'ltl' && dispensary.originLocker && destinationLocker) {
+    else if (selectedTier === 'ltl' && treehouseConfig?.originLocker && destinationLocker) {
       fetchPudoRates();
     }
-  }, [selectedTier, dispensary, destinationLocker, fetchPudoRates]);
+  }, [selectedTier, treehouseConfig, destinationLocker, fetchPudoRates]);
 
   useEffect(() => {
     if (rates.length === 1 && !selectedRateId) {
@@ -259,8 +279,8 @@ export const DispensaryShippingGroup = ({
       fetchShiplogicRates();
     } 
     else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
-      if ((tier === 'ltd' || tier === 'ltl') && !dispensary?.originLocker) {
-        setError("This dispensary has not configured an origin locker for this shipping method. Please select another method.");
+      if ((tier === 'ltd' || tier === 'ltl') && !treehouseConfig?.originLocker?.lockerCode) {
+        setError("Treehouse has not configured an origin locker for this shipping method. Please select another method.");
         return;
       }
 
@@ -272,7 +292,7 @@ export const DispensaryShippingGroup = ({
             latitude: addressData.shippingAddress.latitude, 
             longitude: addressData.shippingAddress.longitude,
             city: addressData.shippingAddress.city,
-            cart: items // Pass cart items to determine parcel size compatibility
+            cart: items
           });
           const lockerData = (result.data as any)?.data as PUDOLocker[];
           const parcelSizeCategory = (result.data as any)?.parcelSizeCategory;
@@ -280,21 +300,7 @@ export const DispensaryShippingGroup = ({
 
           if (lockerData && lockerData.length > 0) {
             setPickupPoints(lockerData);
-            setParcelSizeCategory(parcelSizeCategory || '');
-            
-            // Show size info to user if available
-            if (parcelSizeCategory && parcelSizeCategory !== 'UNKNOWN') {
-              if (parcelSizeCategory === 'OVERSIZED') {
-                toast({ 
-                  title: "Large Parcel Warning", 
-                  description: `Your parcel (${parcelInfo?.dimensions}, ${parcelInfo?.weight}kg) may be too large for standard lockers. Please verify locker compatibility.`,
-                  variant: "destructive",
-                  duration: 8000
-                });
-              } else {
-                console.log(`Showing lockers for ${parcelSizeCategory} size parcels:`, parcelInfo);
-              }
-            }
+            setParcelSizeCategory(parcelSizeCategory || 'UNKNOWN');
           } else {
             throw new Error('Could not retrieve any Pudo lockers in your specified city.');
           }
@@ -312,10 +318,10 @@ export const DispensaryShippingGroup = ({
         }
       }
     } else if (tier === 'collection') {
-      const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: dispensaryName };
+      const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: storeName };
       setRates([collectionRate]);
     } else if (tier === 'in_house') {
-      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: dispensary?.inHouseDeliveryFee ?? 50, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: dispensaryName };
+      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: 50, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: storeName };
       setRates([inHouseRate]);
     }
   };
@@ -331,7 +337,7 @@ export const DispensaryShippingGroup = ({
     } else {
         toast({ title: "No Lockers Loaded", description: "Could not find any lockers for the address provided.", variant: "destructive" });
     }
-  }
+  };
   
   const filteredLockers = useMemo(() => 
     pickupPoints.filter(locker => 
@@ -341,22 +347,20 @@ export const DispensaryShippingGroup = ({
 
   const isLockerTier = ['dtl', 'ltd', 'ltl'].includes(selectedTier || '');
   
-  // Filter out LTL and LTD if no origin locker is configured
   const availableShippingMethods = useMemo(() => {
-    if (!dispensary?.shippingMethods) return [];
+    if (!treehouseConfig?.shippingMethods) return [];
     
-    return dispensary.shippingMethods.filter(method => {
-      // If method is LTL or LTD, only show if dispensary has an origin locker
+    return treehouseConfig.shippingMethods.filter(method => {
       if (method === 'ltl' || method === 'ltd') {
-        return !!dispensary.originLocker;
+        return !!treehouseConfig.originLocker?.lockerCode;
       }
       return true;
     });
-  }, [dispensary?.shippingMethods, dispensary?.originLocker]);
+  }, [treehouseConfig?.shippingMethods, treehouseConfig?.originLocker]);
   
-  if (isLoading && !dispensary && !rates.length) {
+  if (isLoading && !treehouseConfig && !rates.length) {
     return (
-      <Card className='bg-muted/20'><CardContent className='p-6 flex items-center'><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading shipping options...</CardContent></Card>
+      <Card className='bg-muted/20'><CardContent className='p-6 flex items-center'><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading Treehouse shipping options...</CardContent></Card>
     );
   }
 
@@ -366,8 +370,8 @@ export const DispensaryShippingGroup = ({
   return (
     <Card className="bg-muted/20 shadow-md">
       <CardHeader>
-        <CardTitle className="text-[#3D2E17] font-extrabold">Shipment from {dispensary?.dispensaryName || dispensaryName}</CardTitle>
-        <CardDescription className="text-[#3D2E17] font-bold">Select a delivery method for the items from this dispensary.</CardDescription>
+        <CardTitle className="text-[#3D2E17] font-extrabold">Shipment from {storeName} (Treehouse Store)</CardTitle>
+        <CardDescription className="text-[#3D2E17] font-bold">Select a delivery method for the items from this Treehouse creator store.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         
@@ -379,15 +383,15 @@ export const DispensaryShippingGroup = ({
         </div>
 
         <div>
-          <p className="font-extrabold text-[#3D2E17] mb-2">1. Choose Delivery Type</p>
-          <RadioGroup onValueChange={handleTierSelection} value={selectedTier || ''} className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {availableShippingMethods.map(tier => (
-              <Label key={tier} className="flex items-center space-x-3 border rounded-md p-3 hover:bg-accent has-[:checked]:bg-accent has-[:checked]:ring-2 has-[:checked]:ring-primary transition-all cursor-pointer">
-                <RadioGroupItem value={tier} id={`${dispensaryId}-${tier}`} />
-                <span>{allShippingMethodsMap[tier] || tier}</span>
+          <p className="font-extrabold text-[#3D2E17] mb-3">1. Select Shipping Tier</p>
+          <RadioGroup onValueChange={handleTierSelection} value={selectedTier || ''} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {availableShippingMethods.map(methodId => (
+              <Label key={methodId} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer has-[:checked]:bg-green-100 has-[:checked]:border-green-400 has-[:checked]:ring-2 has-[:checked]:ring-green-400 transition-all">
+                <RadioGroupItem value={methodId} id={`treehouse-${storeId}-${methodId}`} />
+                <span className="text-sm font-bold text-[#3D2E17]">{allShippingMethodsMap[methodId]}</span>
               </Label>
             ))}
-            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>This dispensary has not configured any shipping methods{!dispensary?.originLocker && dispensary?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
+            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>Treehouse has not configured any shipping methods{!treehouseConfig?.originLocker && treehouseConfig?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
           </RadioGroup>
         </div>
 
@@ -397,16 +401,16 @@ export const DispensaryShippingGroup = ({
           <div className="space-y-4">
             {(selectedTier === 'ltd' || selectedTier === 'ltl') && (
               <div>
-                  <p className="font-extrabold text-[#3D2E17] mb-2">Origin Locker (Pre-selected by Dispensary)</p>
+                  <p className="font-extrabold text-[#3D2E17] mb-2">Origin Locker (Pre-configured by Treehouse)</p>
                   <div className="flex items-center gap-3 rounded-md border border-dashed p-3 bg-muted/50">
                       <MapPin className="h-6 w-6 text-muted-foreground" />
-                      {dispensary?.originLocker ? (
+                      {treehouseConfig?.originLocker?.lockerName ? (
                           <div>
-                              <p className='font-semibold'>{dispensary.originLocker.name}</p>
-                              <p className='text-sm text-muted-foreground'>{dispensary.originLocker.address}</p>
+                              <p className='font-semibold'>{treehouseConfig.originLocker.lockerName}</p>
+                              <p className='text-sm text-muted-foreground'>{treehouseConfig.originLocker.address}</p>
                           </div>
                       ) : (
-                          <p className="text-sm text-destructive">Origin locker not configured by the dispensary.</p>
+                          <p className="text-sm text-destructive">Origin locker not configured by Treehouse admin.</p>
                       )}
                   </div>
               </div>
@@ -417,12 +421,15 @@ export const DispensaryShippingGroup = ({
                     <div className="flex items-center justify-between mb-2">
                         <p className="font-extrabold text-[#3D2E17]">2. Select Destination Locker</p>
                         {parcelSizeCategory && parcelSizeCategory !== 'UNKNOWN' && (
-                            <span className={`text-xs px-2 py-1 rounded font-bold ${parcelSizeCategory === 'OVERSIZED' ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'}`}>
-                                {parcelSizeCategory === 'OVERSIZED' ? '⚠️ Oversized' : `Size: ${parcelSizeCategory}`}
-                            </span>
+                            <p className="text-xs text-muted-foreground">Parcel Category: <span className="font-bold">{parcelSizeCategory}</span></p>
                         )}
                     </div>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal h-auto py-2" onClick={openLockerModal} disabled={!isAddressComplete(addressData.shippingAddress)}>
+                    <Button 
+                        variant="outline" 
+                        className="w-full justify-between h-auto py-3 text-left"
+                        onClick={openLockerModal}
+                        disabled={!isAddressComplete(addressData.shippingAddress)}
+                    >
                         {destinationLocker ? <div><p className='font-semibold'>{destinationLocker.name}</p><p className='text-sm text-muted-foreground'>{destinationLocker.address}</p></div> : 'Click to select destination locker'}
                     </Button>
                     {!isAddressComplete(addressData.shippingAddress) && <p className='text-xs text-muted-foreground mt-1'>Please complete your address to select a locker.</p>}
@@ -542,7 +549,7 @@ export const DispensaryShippingGroup = ({
                             <Label 
                                 key={rate.id} 
                                 className={cn(
-                                    "flex justify-between items-center rounded-xl p-5 transition-all duration-200 cursor-pointer border-2",
+                                    "flex justify-between items-center rounded-xl p-5 transition-all duration-200 cursor-pointer border-2 relative",
                                     isSelected
                                         ? "bg-[#006B3E] border-[#006B3E] shadow-xl scale-[1.02] ring-4 ring-[#006B3E]/30"
                                         : "bg-white/80 dark:bg-gray-800/50 border-[#006B3E]/20 hover:border-[#006B3E] hover:bg-gradient-to-br hover:from-white hover:to-green-50 dark:hover:from-gray-800 dark:hover:to-green-950/30 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
@@ -579,7 +586,7 @@ export const DispensaryShippingGroup = ({
                                         )}>R{rate.rate.toFixed(2)}</p>
                                     </div>
                                 </div>
-                                <RadioGroupItem value={rate.id.toString()} id={`${dispensaryId}-${rate.id}`} className="sr-only" />
+                                <RadioGroupItem value={rate.id.toString()} id={`treehouse-${storeId}-${rate.id}`} className="sr-only" />
                                 {isSelected && (
                                     <div className="absolute top-3 right-3">
                                         <CheckCircle className="h-6 w-6 text-white" />

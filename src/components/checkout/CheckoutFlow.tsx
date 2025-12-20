@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ArrowRight, ArrowLeft, ShoppingCart, Package, Store, Truck, DollarSign } from 'lucide-react';
 import { PaymentStep } from './PaymentStep';
 import { DispensaryShippingGroup } from './DispensaryShippingGroup';
+import { TreehouseShippingGroup } from './TreehouseShippingGroup';
 
 // --- SCHEMAS ---
 const addressSchema = z.object({
@@ -243,11 +244,28 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
         <div className="space-y-8">
             <div>
                  <h2 className="text-2xl font-extrabold text-[#3D2E17] tracking-tight">Delivery Options</h2>
-                 <p className="text-[#3D2E17] font-bold">Your order is coming from multiple dispensaries. Please select a delivery method for each one.</p>
+                 <p className="text-[#3D2E17] font-bold">Your order is coming from multiple stores. Please select a delivery method for each one.</p>
             </div>
 
             {dispensaryIds.map(dispensaryId => {
                 const group = groupedCart[dispensaryId];
+                
+                // Check if this is a Treehouse store by checking if items have dispensaryType === "Treehouse"
+                const isTreehouseStore = group.items.some(item => item.dispensaryType === "Treehouse");
+                
+                if (isTreehouseStore) {
+                    return (
+                        <TreehouseShippingGroup 
+                            key={dispensaryId}
+                            storeId={dispensaryId}
+                            storeName={group.dispensaryName}
+                            items={group.items}
+                            addressData={addressData}
+                            onShippingSelectionChange={onShippingSelectionsChange}
+                        />
+                    );
+                }
+                
                 return (
                     <DispensaryShippingGroup 
                         key={dispensaryId}
@@ -439,7 +457,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                 </Card>
             </div>
             <div className="lg:col-span-1">
-                <Card className="sticky top-24 bg-gradient-to-br from-amber-50 via-orange-50 to-green-50 dark:from-gray-900 dark:via-amber-950 dark:to-green-950 shadow-2xl border-4 border-[#006B3E]/30">
+                <Card className="sticky top-24 bg-muted/50 shadow-2xl border-2 border-border/50">
                     <CardHeader className="pb-4 border-b-2 border-[#006B3E]/30 bg-white/40 dark:bg-black/20">
                         <p className='font-black text-2xl text-[#3D2E17] flex items-center gap-3'>
                             <ShoppingCart className="h-7 w-7 text-[#006B3E]" />
