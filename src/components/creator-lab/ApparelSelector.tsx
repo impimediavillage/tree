@@ -25,6 +25,24 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Map database itemType to ApparelType format
+  const mapItemTypeToApparelType = (itemType: string): ApparelType => {
+    const mapping: Record<string, ApparelType> = {
+      'tshirt': 'T-Shirt',
+      't-shirt': 'T-Shirt',
+      't_shirt': 'T-Shirt',
+      'hoodie': 'Hoodie',
+      'cap': 'Cap',
+      'beanie': 'Beanie',
+      'long_sleeve': 'Long T-Shirt',
+      'long-sleeve': 'Long T-Shirt',
+      'longsleeve': 'Long T-Shirt',
+      'sweatshirt': 'Long T-Shirt',
+      'backpack': 'Backpack',
+    };
+    return mapping[itemType.toLowerCase()] || 'T-Shirt';
+  };
+
   useEffect(() => {
     if (open) {
       fetchApparelItems();
@@ -57,13 +75,13 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
   };
 
   const selectedApparelItem = apparelItems.find((item) => 
-    item.name === selectedItem || item.itemType === selectedItem
+    mapItemTypeToApparelType(item.itemType) === selectedItem
   );
 
   const handleSelect = () => {
     if (!selectedItem) return;
     
-    const item = apparelItems.find((i) => i.name === selectedItem || i.itemType === selectedItem);
+    const item = apparelItems.find((i) => mapItemTypeToApparelType(i.itemType) === selectedItem);
     if (item?.hasSurface) {
       onSelect(selectedItem, selectedSurface);
     } else {
@@ -123,7 +141,8 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
               {/* Apparel Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {apparelItems.map((item) => {
-                  const isSelected = selectedItem === item.name || selectedItem === item.itemType;
+                  const mappedType = mapItemTypeToApparelType(item.itemType);
+                  const isSelected = selectedItem === mappedType;
                   const price = item.retailPrice;
                   const commission = calculateCommission(price);
                   const displayImage = item.mockImageUrl || item.mockImageFront || '/images/apparel/placeholder.jpg';
@@ -131,7 +150,7 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setSelectedItem(item.name as ApparelType)}
+                      onClick={() => setSelectedItem(mappedType)}
                       className={`relative rounded-lg overflow-hidden border-4 transition-all ${
                         isSelected
                           ? 'border-[#006B3E] shadow-lg scale-105'
