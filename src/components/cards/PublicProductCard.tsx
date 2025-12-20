@@ -28,9 +28,29 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [isDesignPackOpen, setIsDesignPackOpen] = React.useState(false);
+  const [isProductDetailsOpen, setIsProductDetailsOpen] = React.useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
+  const [stickerImages, setStickerImages] = React.useState<string[]>([]);
+  const [randomSticker, setRandomSticker] = React.useState<string | null>(null);
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
+  const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.productType === "THC";
+  // Fetch sticker images for THC products
+  React.useEffect(() => {
+    if (isThcProduct) {
+      fetch('/api/sticker-images')
+        .then(res => res.json())
+        .then(data => {
+          if (data.images && data.images.length > 0) {
+            setStickerImages(data.images);
+            // Select a random sticker
+            const randomIndex = Math.floor(Math.random() * data.images.length);
+            setRandomSticker(data.images[randomIndex]);
+          }
+        })
+        .catch(err => console.error('Error fetching sticker images:', err));
+    }
+  }, [isThcProduct]);
 
   const openViewer = (index: number) => {
     setSelectedImageIndex(index);
@@ -49,8 +69,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   const currentQuantityInCart = itemInCart?.quantity || 0;
   const canAddToCart = tierStock > currentQuantityInCart;
 
-  const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.productType === "THC";
-  
+   
   const handleAddToCartClick = () => {
     addToCart(product, tier, 1);
   };
@@ -154,28 +173,34 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
     if (isThcProduct) {
        return (
         <>
-          <div className="w-full text-right">
-            <p className="text-2xl font-bold text-foreground">
+          {/* Price Section */}
+          <div className="w-full text-center">
+            <p className="text-3xl font-bold text-foreground">
               <span className="text-sm font-bold text-[#3D2E17] align-top">{product.currency} </span>
               {tier.price.toFixed(2)}
             </p>
-            <div className="flex items-center justify-end text-xs text-muted-foreground">
-              <span>Design pack price</span>
-              <span className="mx-1"></span>
-             </div>
-             <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
-            <p className="text-1xl font-bold text-foreground">
-             <span>{tier.unit} as FREE <Gift className="h-4 w-4 mr-1" />  gift included</span>  
-             </p></div>
-              <p className="text-xs font-extrabold text-[#3D2E17] mt-1">
-                 FREE SAMPLE with this DESIGN PACK.
-            </p>
+            <p className="text-sm font-bold text-[#006B3E] mt-1">Design pack price</p>
           </div>
-          <div className="w-full p-2 text-center bg-primary/10 border border-primary/20 rounded-md">
-            <p className="text-xs font-extrabold text-[#3D2E17]">
-              Press Buy Design Pack below to receive your free sample.
-            </p>
+          
+          {/* Category and Product Name */}
+          <div className="w-full text-center space-y-1">
+            <CardTitle className="text-xl font-black text-[#3D2E17]" title={product.name}>{product.name}</CardTitle>
+            <div className="flex items-center justify-center gap-2 text-sm font-semibold text-foreground/80">
+              <Tag className="h-5 w-5 text-[#006B3E]"/> <span>{product.category}</span>
+              {product.strain && <span className="truncate">| {product.strain}</span>}
+            </div>
           </div>
+          
+          {/* Gift Section */}
+          <div className="w-full p-3 text-center bg-green-50 dark:bg-green-950/20 border-2 border-[#006B3E]/30 rounded-md">
+            <div className="flex items-center justify-center gap-2">
+              <Gift className="h-5 w-5 text-[#006B3E]" />
+              <span className="text-base font-bold text-[#006B3E]">{tier.unit} as FREE gift included</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Quantity available: {tierStock}</p>
+          </div>
+          
+          {/* Buy Button */}
           <div className="w-full space-y-2">
             <Button
               className="w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl flex items-center justify-center gap-2.5"
@@ -225,7 +250,28 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           data-ai-hint={dataAiHintProduct}
       >
         <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-muted/30 group">
-          {images.length > 0 ? (
+          {isThcProduct && randomSticker ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={randomSticker}
+                alt={`Triple S Sticker for ${product.name}`}
+                fill
+                sizes="(max-width: 640px) 100vw, 50vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                data-ai-hint={`triple s sticker ${product.name}`}
+              />
+              {/* Product Details Button */}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="absolute top-2 left-2 z-10 bg-[#006B3E]/90 hover:bg-[#006B3E] text-white backdrop-blur-sm shadow-lg"
+                onClick={() => setIsProductDetailsOpen(true)}
+              >
+                <ImageIconLucide className="h-4 w-4 mr-1" />
+                View Product
+              </Button>
+            </div>
+          ) : images.length > 0 ? (
             <div className={cn('grid h-full w-full gap-0.5', gridColsClass, gridRowsClass)}>
               {images.slice(0, 4).map((url, i) => (
                 <div
@@ -272,13 +318,15 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
               </Badge>
           )}
         </div>
-        <CardHeader className="pb-2 pt-4">
-          <CardTitle className="text-xl font-black text-[#3D2E17]" title={product.name}>{product.name}</CardTitle>
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
-              <Tag className="h-5 w-5 text-[#006B3E]"/> <span>{product.category}</span>
-              {product.strain && <span className="truncate">| {product.strain}</span>}
-          </div>
-        </CardHeader>
+        {!isThcProduct && (
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-xl font-black text-[#3D2E17]" title={product.name}>{product.name}</CardTitle>
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                <Tag className="h-5 w-5 text-[#006B3E]"/> <span>{product.category}</span>
+                {product.strain && <span className="truncate">| {product.strain}</span>}
+            </div>
+          </CardHeader>
+        )}
         <CardContent className="flex-grow flex flex-col space-y-2.5 py-2">
             <div className="flex-grow">
                 <p className="text-sm font-medium text-foreground/90 line-clamp-2 leading-relaxed h-10" title={product.description}>{product.description}</p>
@@ -363,6 +411,83 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           tier={tier}
         />
       )}
+      
+      {/* Product Details Dialog for THC Products */}
+      <Dialog open={isProductDetailsOpen} onOpenChange={setIsProductDetailsOpen}>
+        <DialogContent className="max-w-lg w-full p-4 bg-muted/50">
+          <DialogHeader className="p-2">
+            <DialogTitle className="text-2xl font-black text-[#3D2E17]">{product.name}</DialogTitle>
+            <DialogDescription className="text-base">
+              {product.description}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Image Carousel */}
+          {images.length > 0 && (
+            <div className="space-y-3">
+              <div className="relative aspect-square w-full">
+                {images[selectedImageIndex] && (
+                  <Image
+                    src={images[selectedImageIndex]!}
+                    alt={`${product.name} image ${selectedImageIndex + 1}`}
+                    fill
+                    className="object-contain rounded-md"
+                    data-ai-hint={`product detail ${product.name}`}
+                  />
+                )}
+              </div>
+              
+              {images.length > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSelectedImageIndex((prev) => (prev - 1 + images.length) % images.length)}
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-2 overflow-x-auto p-1">
+                    {images.map((url, i) => (
+                      url && (
+                        <button
+                          key={url}
+                          className={cn(
+                            "h-12 w-12 rounded-md border-2 flex-shrink-0",
+                            i === selectedImageIndex ? "border-[#006B3E]" : "border-transparent opacity-60 hover:opacity-100"
+                          )}
+                          onClick={() => setSelectedImageIndex(i)}
+                        >
+                          <div className="relative h-full w-full rounded overflow-hidden">
+                            <Image src={url} alt={`Thumbnail ${i+1}`} fill className="object-cover"/>
+                          </div>
+                        </button>
+                      )
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setSelectedImageIndex((prev) => (prev + 1) % images.length)}
+                    aria-label="Next image"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Info Buttons */}
+          <div className="pt-3">
+            <div className="flex flex-wrap gap-2 justify-center">
+              <InfoDialog className={effectsClasses} title={`Effects of ${product.name}`} triggerText="Effects" items={product.effects || []} itemType="effect" icon={Sparkles} />
+              <InfoDialog className={flavorsClasses} title={`Flavors in ${product.name}`} triggerText="Flavors" items={product.flavors || []} itemType="flavor" icon={LeafIcon} />
+              <InfoDialog className={medicalClasses} title={`Potential Medical Uses of ${product.name}`} triggerText="Medical Uses" items={product.medicalUses || []} itemType="medical" icon={Brain} />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

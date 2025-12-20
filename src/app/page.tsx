@@ -320,7 +320,7 @@ export default function HolisticAiHubPage() {
                 Wellness Marketplace
               </h2>
               <p className="text-lg font-semibold text-[#3D2E17] mt-2">
-                Connect with authentic wellness stores. From cannabinoids to traditional medicine, natural health permaculture, and fungi, find everything you need.
+                Connect with authentic wellness stores. From cbds to traditional medicine, natural health permaculture, and fungi, find everything you need.
               </p>
             </div>
             <div className="mt-8 space-y-4 text-center">
