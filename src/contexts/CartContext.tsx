@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 export interface GroupedCart {
   [dispensaryId: string]: {
     dispensaryName: string;
+    dispensaryType?: string;
     items: CartItem[];
   };
 }
@@ -137,9 +138,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const getGroupedCart = (): GroupedCart => {
     return cartItems.reduce((acc, item) => {
-      const { dispensaryId, dispensaryName } = item;
+      const { dispensaryId, dispensaryName, dispensaryType } = item;
       if (!acc[dispensaryId]) {
-        acc[dispensaryId] = { dispensaryName, items: [] };
+        acc[dispensaryId] = { dispensaryName, dispensaryType, items: [] };
       }
       acc[dispensaryId].items.push(item);
       return acc;

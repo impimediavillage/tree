@@ -485,8 +485,9 @@ export interface CartItem {
   length?: number;
   width?: number;
   height?: number;
-  // Treehouse-specific field
+  // Treehouse-specific fields
   creatorId?: string; // Creator UID for Treehouse marketplace orders
+  creatorName?: string; // Creator display name for Treehouse orders
 }
 
 // Types for generated brand assets

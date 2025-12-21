@@ -181,6 +181,7 @@ interface CreateOrderParams {
   platformCommission?: number; // 75% for Treehouse
   creatorCommission?: number; // 25% for Treehouse
   creatorId?: string; // Creator user ID
+  creatorName?: string; // Creator display name
 }
 
 export async function createOrder(params: CreateOrderParams): Promise<DocumentReference> {
@@ -301,7 +302,16 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     ...(params.podStatus && { podStatus: params.podStatus }),
     ...(params.platformCommission && { platformCommission: params.platformCommission }),
     ...(params.creatorCommission && { creatorCommission: params.creatorCommission }),
-    ...(params.creatorId && { creatorId: params.creatorId })
+    ...(params.creatorId && { creatorId: params.creatorId }),
+    // Additional Treehouse fields for earnings Cloud Function
+    ...(params.orderType === 'treehouse' && orderItems[0] && {
+      productId: orderItems[0].productId,
+      productName: orderItems[0].name,
+      quantity: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+      unitPrice: orderItems[0].price,
+      totalAmount: total,
+      creatorName: params.creatorName || 'Unknown Creator'
+    })
   };
 
   const validation = validateOrderInput(params);

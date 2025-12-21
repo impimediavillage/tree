@@ -65,8 +65,9 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
         const platformCommission = isTreehouseOrder ? Math.round(groupTotal * PLATFORM_COMMISSION_RATE) : undefined;
         const creatorCommission = isTreehouseOrder ? Math.round(groupTotal * CREATOR_COMMISSION_RATE) : undefined;
 
-        // Get creator ID from first item (all items in Treehouse order should have same creatorId)
+        // Get creator info from first item (all items in Treehouse order should have same creator)
         const creatorId = isTreehouseOrder ? groupItems[0]?.creatorId : undefined;
+        const creatorName = isTreehouseOrder ? (groupItems[0] as any)?.creatorName : undefined;
 
         // Extract locker data if present
         const originLocker = (shipping as any).originLocker || null;
@@ -101,6 +102,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
             platformCommission,
             creatorCommission,
             creatorId,
+            creatorName,
           }),
         };
 

@@ -322,7 +322,7 @@ export default function CreatorStorePage() {
                             category: 'Treehouse',
                             dispensaryId: 'treehouse',
                             dispensaryName: 'The Treehouse',
-                            dispensaryType: 'treehouse',
+                            dispensaryType: 'Treehouse',
                             productOwnerEmail: product.creatorEmail,
                             currency: 'ZAR',
                             price: product.price,
@@ -335,6 +335,8 @@ export default function CreatorStorePage() {
                             length: 30,
                             width: 25,
                             height: 5,
+                            creatorId: product.creatorId, // Critical for earnings tracking
+                            creatorName: product.creatorName, // For order display and earnings
                           };
 
                           // @ts-ignore - addToCart expects Product and PriceTier, but we're providing compatible CartItem
