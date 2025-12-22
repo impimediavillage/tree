@@ -394,7 +394,7 @@ export default function InfluencerDashboard() {
                     <div>
                       <p className="font-medium text-[#3D2E17] capitalize">{transaction.type.replace('-', ' ')}</p>
                       <p className="text-sm text-muted-foreground">
-                        {transaction.createdAt && new Date(transaction.createdAt).toLocaleDateString()}
+                        {transaction.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
                       </p>
                     </div>
                     <div className="text-right">

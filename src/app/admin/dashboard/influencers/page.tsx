@@ -477,7 +477,7 @@ export default function AdminInfluencersPage() {
                             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                               <span>Bonus: +{campaign.bonusCommission}%</span>
                               <span>Target: {campaign.targetSales} sales</span>
-                              <span>{new Date(campaign.startDate).toLocaleDateString()} - {new Date(campaign.endDate).toLocaleDateString()}</span>
+                              <span>{campaign.startDate?.toDate?.().toLocaleDateString() || 'N/A'} - {campaign.endDate?.toDate?.().toLocaleDateString() || 'N/A'}</span>
                             </div>
                           </div>
                           <Badge className="bg-[#006B3E]">Active</Badge>

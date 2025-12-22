@@ -278,7 +278,7 @@ export default function InfluencerProfilePage() {
                           <h3 className="font-semibold text-[#3D2E17]">{milestone.title}</h3>
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {new Date(milestone.date).toLocaleDateString()}
+                            {milestone.date?.toDate?.().toLocaleDateString() || 'N/A'}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mb-3">{milestone.description}</p>
