@@ -78,14 +78,14 @@ export default function PublicWellnessProfilesByTypePage() {
       // Fetch review stats for all dispensaries
       const statsPromises = fetchedWellness.map(async (dispensary) => {
         try {
-          const statsDoc = await getDoc(doc(db, 'dispensaryReviewStats', dispensary.id));
+          const statsDoc = await getDoc(doc(db, 'dispensaryReviewStats', dispensary.id!));
           if (statsDoc.exists()) {
-            return { id: dispensary.id, stats: statsDoc.data() as DispensaryReviewStats };
+            return { id: dispensary.id!, stats: statsDoc.data() as DispensaryReviewStats };
           }
         } catch (err) {
           console.error(`Error fetching review stats for ${dispensary.id}:`, err);
         }
-        return { id: dispensary.id, stats: null };
+        return { id: dispensary.id!, stats: null };
       });
 
       const statsResults = await Promise.all(statsPromises);
