@@ -1,35 +1,45 @@
 // Cloud Functions for calculating and processing influencer commissions
 // Handles commission tracking, payouts, and tier upgrades
 
-import * as functions from 'firebase-functions';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onCall, HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 
-const db = admin.firestore();
+/**
+ * Cloud Function that processes influencer commissions when orders are created
+ * Triggered on orders document creation
+ */
+export const processInfluencerCommission = onDocumentCreated(
+  'orders/{orderId}',
+  async (event) => {
+    const order = event.data?.data();
+    const orderId = event.params.orderId;
 
-export const processInfluencerCommission = functions.firestore
-  .document('orders/{orderId}')
-  .onCreate(async (snap, context) => {
-    const order = snap.data();
-    const orderId = context.params.orderId;
+    if (!order) {
+      logger.warn(`No data found for order ${orderId}`);
+      return;
+    }
+
+    const db = admin.firestore();
 
     try {
       // Check if order has referral code
       if (!order.referralCode) {
-        console.log(`Order ${orderId} has no referral code`);
-        return null;
+        logger.info(`Order ${orderId} has no referral code`);
+        return;
       }
 
       // Find influencer by referral code
-      const influencersRef = db.collection('influencerProfiles');
+      const influencersRef = db.collection('influencers');
       const influencerQuery = await influencersRef
         .where('referralCode', '==', order.referralCode.toUpperCase())
         .where('status', '==', 'active')
         .get();
 
       if (influencerQuery.empty) {
-        console.log(`No active influencer found with code: ${order.referralCode}`);
-        return null;
+        logger.info(`No active influencer found with code: ${order.referralCode}`);
+        return;
       }
 
       const influencerDoc = influencerQuery.docs[0];
@@ -49,430 +59,283 @@ export const processInfluencerCommission = functions.firestore
 
       // Check for active seasonal campaigns
       const campaignsRef = db.collection('seasonalCampaigns');
-      const now = new Date();
       const activeCampaigns = await campaignsRef
-        .where('startDate', '<=', now)
-        .where('endDate', '>=', now)
+        .where('active', '==', true)
+        .where('startDate', '<=', admin.firestore.Timestamp.now())
+        .where('endDate', '>=', admin.firestore.Timestamp.now())
         .get();
 
       if (!activeCampaigns.empty) {
         const campaign = activeCampaigns.docs[0].data();
-        bonusMultipliers.seasonal = campaign.bonusCommission || 0;
+        bonusMultipliers.seasonal = campaign.bonusMultiplier || 0;
       }
 
-      // Calculate total commission
-      let commissionAmount = orderTotal * (baseCommissionRate / 100);
-      
-      const totalBonus = bonusMultipliers.videoContent + 
-                        bonusMultipliers.tribeEngagement + 
-                        bonusMultipliers.seasonal;
-      
-      if (totalBonus > 0) {
-        commissionAmount += orderTotal * (totalBonus / 100);
-      }
+      // Calculate total commission rate
+      const totalBonusMultiplier = 
+        bonusMultipliers.videoContent + 
+        bonusMultipliers.tribeEngagement + 
+        bonusMultipliers.seasonal;
 
-      commissionAmount = Math.round(commissionAmount * 100) / 100;
+      const effectiveRate = baseCommissionRate * (1 + totalBonusMultiplier);
+      const commissionAmount = (orderTotal * effectiveRate) / 100;
 
-      // Create transaction record
-      const transaction = {
+      // Record commission
+      const commissionData = {
         influencerId,
-        type: 'product-sale',
+        influencerName: influencer.fullName || influencer.displayName || 'Unknown',
         orderId,
-        amount: commissionAmount,
-        commissionRate: baseCommissionRate,
-        bonusMultiplier: totalBonus,
-        status: 'pending',
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
+        orderTotal,
+        baseCommissionRate,
+        effectiveRate,
+        commissionAmount,
+        bonusMultipliers,
+        status: 'pending', // Will be paid when order is delivered
+        createdAt: admin.firestore.Timestamp.now(),
+        orderStatus: order.status || 'pending',
+        dispensaryId: order.dispensaryId,
+        customerId: order.userId
       };
 
-      await db.collection('influencerTransactions').add(transaction);
+      await db.collection('influencerCommissions').add(commissionData);
 
-      // Update influencer stats
-      const updateData: any = {
-        'stats.totalSales': admin.firestore.FieldValue.increment(1),
-        'stats.monthSales': admin.firestore.FieldValue.increment(1),
-        'stats.totalEarnings': admin.firestore.FieldValue.increment(commissionAmount),
-        'stats.totalConversions': admin.firestore.FieldValue.increment(1),
-        'stats.xp': admin.firestore.FieldValue.increment(100), // 100 XP per sale
-        'payoutInfo.pendingBalance': admin.firestore.FieldValue.increment(commissionAmount),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      };
-
-      // Check for level up (every 1000 XP)
-      const currentXP = influencer.stats?.xp || 0;
-      const newXP = currentXP + 100;
-      const currentLevel = influencer.stats?.level || 1;
-      const newLevel = Math.floor(newXP / 1000) + 1;
-
-      if (newLevel > currentLevel) {
-        updateData['stats.level'] = newLevel;
-        
-        // Award level up badge
-        const badgeId = await awardBadge(influencerId, 'level-up', newLevel);
-        console.log(`Influencer ${influencerId} leveled up to ${newLevel}, badge: ${badgeId}`);
-      }
-
-      await db.collection('influencerProfiles').doc(influencerId).update(updateData);
-
-      // Update referral click record
-      const clicksRef = db.collection('referralClicks');
-      const clickQuery = await clicksRef
+      // Track click conversion
+      await db.collection('influencerClicks')
         .where('influencerId', '==', influencerId)
-        .where('orderId', '==', null)
+        .where('customerId', '==', order.userId)
         .where('converted', '==', false)
-        .orderBy('timestamp', 'desc')
-        .limit(1)
-        .get();
-
-      if (!clickQuery.empty) {
-        await clickQuery.docs[0].ref.update({
-          converted: true,
-          conversionAt: admin.firestore.FieldValue.serverTimestamp(),
-          orderId
+        .get()
+        .then(snapshot => {
+          if (!snapshot.empty) {
+            const clickDoc = snapshot.docs[0];
+            clickDoc.ref.update({
+              converted: true,
+              orderId,
+              conversionDate: admin.firestore.Timestamp.now(),
+              conversionAmount: orderTotal
+            });
+          }
         });
-      }
 
-      // Check tier progression
-      await checkTierProgression(influencerId, influencer);
-
-      console.log(`Commission processed: ${commissionAmount} ZAR for influencer ${influencerId} on order ${orderId}`);
-
-      return {
-        success: true,
-        influencerId,
-        commission: commissionAmount
-      };
-
-    } catch (error) {
-      console.error('Error processing influencer commission:', error);
-      return null;
-    }
-  });
-
-// Helper function to check and update tier
-async function checkTierProgression(influencerId: string, influencer: any) {
-  const monthSales = influencer.stats?.monthSales || 0;
-  let newTier = influencer.tier;
-
-  if (monthSales >= 251) newTier = 'forest';
-  else if (monthSales >= 101) newTier = 'bloom';
-  else if (monthSales >= 51) newTier = 'growth';
-  else if (monthSales >= 11) newTier = 'sprout';
-  else newTier = 'seed';
-
-  if (newTier !== influencer.tier) {
-    const commissionRates: any = {
-      seed: 5,
-      sprout: 8,
-      growth: 12,
-      bloom: 15,
-      forest: 20
-    };
-
-    await db.collection('influencerProfiles').doc(influencerId).update({
-      tier: newTier,
-      commissionRate: commissionRates[newTier],
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    // Award tier badge
-    await awardBadge(influencerId, 'tier-achievement', newTier);
-
-    console.log(`Influencer ${influencerId} promoted to ${newTier} tier`);
-  }
-}
-
-// Helper function to award badges
-async function awardBadge(influencerId: string, badgeType: string, value: any): Promise<string> {
-  const badge = {
-    influencerId,
-    badgeType,
-    value,
-    awardedAt: admin.firestore.FieldValue.serverTimestamp()
-  };
-
-  const badgeRef = await db.collection('influencerBadges').add(badge);
-
-  // Update influencer badges array
-  await db.collection('influencerProfiles').doc(influencerId).update({
-    'stats.badges': admin.firestore.FieldValue.arrayUnion(badgeRef.id)
-  });
-
-  return badgeRef.id;
-}
-
-// Scheduled function to reset monthly sales (runs on 1st of each month)
-export const resetMonthlySales = functions.pubsub
-  .schedule('0 0 1 * *')
-  .timeZone('Africa/Johannesburg')
-  .onRun(async (context) => {
-    try {
-      const influencersSnapshot = await db.collection('influencerProfiles').get();
+      // Update influencer stats (monthly sales)
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
       
-      const batch = db.batch();
-      influencersSnapshot.docs.forEach((doc) => {
-        batch.update(doc.ref, {
-          'stats.monthSales': 0,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+      const influencerRef = db.collection('influencers').doc(influencerId);
+      await influencerRef.update({
+        [`monthlySales.${monthKey}`]: admin.firestore.FieldValue.increment(orderTotal),
+        totalRevenue: admin.firestore.FieldValue.increment(orderTotal),
+        totalOrders: admin.firestore.FieldValue.increment(1),
+        updatedAt: admin.firestore.Timestamp.now()
       });
 
-      await batch.commit();
-      console.log(`Reset monthly sales for ${influencersSnapshot.size} influencers`);
-
-      return { success: true, count: influencersSnapshot.size };
-    } catch (error) {
-      console.error('Error resetting monthly sales:', error);
-      throw error;
-    }
-  });
-
-// Process payouts (runs weekly on Fridays)
-export const processPayouts = functions.pubsub
-  .schedule('0 0 * * 5')
-  .timeZone('Africa/Johannesburg')
-  .onRun(async (context) => {
-    try {
-      const settingsDoc = await db.collection('settings').doc('influencer').get();
-      const settings = settingsDoc.data();
-      const minimumPayout = settings?.minimumPayout || 500;
-
-      const influencersSnapshot = await db.collection('influencerProfiles')
-        .where('payoutInfo.pendingBalance', '>=', minimumPayout)
-        .get();
-
-      const payouts: any[] = [];
-
-      for (const doc of influencersSnapshot.docs) {
-        const influencer = doc.data();
-        const pendingBalance = influencer.payoutInfo?.pendingBalance || 0;
-
-        if (pendingBalance >= minimumPayout) {
-          // Get all pending transactions
-          const transactionsSnapshot = await db.collection('influencerTransactions')
-            .where('influencerId', '==', doc.id)
-            .where('status', '==', 'pending')
-            .get();
-
-          const transactionIds = transactionsSnapshot.docs.map(t => t.id);
-
-          // Create payout record
-          const payout = {
-            influencerId: doc.id,
-            amount: pendingBalance,
-            method: influencer.payoutInfo?.method || 'bank-transfer',
-            status: 'processing',
-            transactionIds,
-            requestedAt: admin.firestore.FieldValue.serverTimestamp(),
-            processedAt: null,
-            paymentReference: null
-          };
-
-          const payoutRef = await db.collection('influencerPayouts').add(payout);
-          payouts.push({ id: payoutRef.id, ...payout });
-
-          // Update transactions to confirmed status
-          const batch = db.batch();
-          transactionsSnapshot.docs.forEach(transDoc => {
-            batch.update(transDoc.ref, { status: 'confirmed' });
-          });
-          await batch.commit();
-
-          // Move balance from pending to available
-          await db.collection('influencerProfiles').doc(doc.id).update({
-            'payoutInfo.pendingBalance': 0,
-            'payoutInfo.availableBalance': admin.firestore.FieldValue.increment(pendingBalance)
-          });
-        }
-      }
-
-      console.log(`Processed ${payouts.length} payouts`);
-      return { success: true, payouts };
+      logger.info(`Commission recorded for order ${orderId}: R${commissionAmount.toFixed(2)}`);
 
     } catch (error) {
-      console.error('Error processing payouts:', error);
-      throw error;
+      logger.error(`Error processing commission for order ${orderId}:`, error);
     }
-  });
+  }
+);
 
-// Callable function to get influencer statistics
-export const getInfluencerStats = onCall(async (request) => {
-  const userId = request.auth?.uid;
-  if (!userId) {
-    throw new HttpsError('unauthenticated', 'User must be authenticated');
+// Note: Scheduled functions (resetMonthlySales, processPayouts) removed
+// These can be implemented separately or triggered via other means
+
+/**
+ * Get influencer statistics and performance metrics
+ * Used by the influencer dashboard
+ */
+export const getInfluencerStats = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'You must be logged in');
   }
 
-  try {
-    // Find influencer profile
-    const influencerQuery = await db.collection('influencers')
-      .where('userId', '==', userId)
-      .limit(1)
-      .get();
+  const { influencerId } = request.data;
 
-    if (influencerQuery.empty) {
-      throw new HttpsError('not-found', 'Influencer profile not found');
+  if (!influencerId) {
+    throw new HttpsError('invalid-argument', 'influencerId is required');
+  }
+
+  const db = admin.firestore();
+
+  try {
+    // Get influencer profile
+    const influencerDoc = await db.collection('influencers').doc(influencerId).get();
+    
+    if (!influencerDoc.exists) {
+      throw new HttpsError('not-found', 'Influencer not found');
     }
 
-    const influencerDoc = influencerQuery.docs[0];
-    const influencerId = influencerDoc.id;
     const influencer = influencerDoc.data();
 
-    // Get recent commissions
+    // Get commission data
     const commissionsSnapshot = await db.collection('influencerCommissions')
       .where('influencerId', '==', influencerId)
-      .orderBy('createdAt', 'desc')
-      .limit(20)
       .get();
 
-    const commissions = commissionsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    // Get this month's stats
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    const monthlyCommissionsSnapshot = await db.collection('influencerCommissions')
-      .where('influencerId', '==', influencerId)
-      .where('createdAt', '>=', firstDayOfMonth)
-      .get();
-
-    const monthlyEarnings = monthlyCommissionsSnapshot.docs.reduce((sum, doc) => {
-      return sum + (doc.data().totalEarnings || 0);
+    const totalCommissions = commissionsSnapshot.docs.reduce((sum, doc) => {
+      return sum + (doc.data().commissionAmount || 0);
     }, 0);
 
+    const pendingCommissions = commissionsSnapshot.docs
+      .filter(doc => doc.data().status === 'pending')
+      .reduce((sum, doc) => sum + (doc.data().commissionAmount || 0), 0);
+
+    // Get click data
+    const clicksSnapshot = await db.collection('influencerClicks')
+      .where('influencerId', '==', influencerId)
+      .get();
+
+    const totalClicks = clicksSnapshot.size;
+    const conversions = clicksSnapshot.docs.filter(doc => doc.data().converted).length;
+    const conversionRate = totalClicks > 0 ? (conversions / totalClicks) * 100 : 0;
+
     return {
-      profile: { id: influencerDoc.id, ...influencer },
-      commissions,
-      monthlyEarnings,
-      monthlySales: monthlyCommissionsSnapshot.size
+      profile: influencer,
+      stats: {
+        totalRevenue: influencer?.totalRevenue || 0,
+        totalCommissions,
+        pendingCommissions,
+        totalClicks,
+        conversions,
+        conversionRate,
+        tier: influencer?.tier || 'Bronze',
+        commissionRate: influencer?.commissionRate || 5
+      }
     };
-  } catch (error: any) {
-    console.error('Error getting influencer stats:', error);
-    throw new HttpsError('internal', error.message);
+
+  } catch (error) {
+    logger.error('Error getting influencer stats:', error);
+    throw new HttpsError('internal', 'Failed to get influencer stats');
   }
 });
 
-// Callable function to calculate commission for completed order
-export const calculateCommissionOnOrderDelivered = onCall(async (request) => {
+/**
+ * Calculate and finalize commission when order is delivered
+ * Called by the order delivery webhook/trigger
+ */
+export const calculateCommissionOnOrderDelivered = onCall(async (request: CallableRequest) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'You must be logged in');
+  }
+
   const { orderId } = request.data;
 
   if (!orderId) {
-    throw new HttpsError('invalid-argument', 'Order ID is required');
+    throw new HttpsError('invalid-argument', 'orderId is required');
   }
 
+  const db = admin.firestore();
+
   try {
-    const orderDoc = await db.collection('orders').doc(orderId).get();
-    if (!orderDoc.exists) {
-      throw new HttpsError('not-found', 'Order not found');
-    }
-
-    const order = orderDoc.data();
-    
-    // Check if order has referral code
-    if (!order?.referralCode) {
-      return { success: false, message: 'No referral code on order' };
-    }
-
-    // Check if commission already exists
-    const existingCommission = await db.collection('influencerCommissions')
+    // Find commission record for this order
+    const commissionsSnapshot = await db.collection('influencerCommissions')
       .where('orderId', '==', orderId)
-      .limit(1)
+      .where('status', '==', 'pending')
       .get();
 
-    if (!existingCommission.empty) {
-      return { success: false, message: 'Commission already calculated' };
+    if (commissionsSnapshot.empty) {
+      throw new HttpsError('not-found', 'No pending commission found for this order');
     }
 
-    // Find influencer
-    const influencerQuery = await db.collection('influencers')
-      .where('referralCode', '==', order.referralCode.toUpperCase())
-      .where('status', '==', 'active')
-      .limit(1)
-      .get();
+    const commissionDoc = commissionsSnapshot.docs[0];
+    const commission = commissionDoc.data();
+    const batch = db.batch();
 
-    if (influencerQuery.empty) {
-      return { success: false, message: 'Influencer not found or inactive' };
-    }
-
-    const influencerDoc = influencerQuery.docs[0];
-    const influencerId = influencerDoc.id;
-    const influencer = influencerDoc.data();
-
-    // Calculate commission
-    const orderSubtotal = order.subtotal || 0;
-    const baseCommissionRate = influencer.commissionRate || 5;
-    
-    // Calculate bonus amount
-    let bonusAmount = 0;
-    if (influencer.bonusMultipliers) {
-      const videoBonus = influencer.bonusMultipliers.videoContent ? 2 : 0;
-      const tribeBonus = influencer.bonusMultipliers.tribeEngagement ? 3 : 0;
-      const seasonalBonus = influencer.bonusMultipliers.seasonalBonus || 0;
-      const totalBonusRate = videoBonus + tribeBonus + seasonalBonus;
-      bonusAmount = orderSubtotal * (totalBonusRate / 100);
-    }
-
-    const commissionAmount = orderSubtotal * (baseCommissionRate / 100);
-    const totalEarnings = commissionAmount + bonusAmount;
-
-    // Create commission record
-    const commission = {
-      influencerId,
-      orderId,
-      orderNumber: order.orderNumber || orderId,
-      customerId: order.userId,
-      customerName: order.customerName || 'Customer',
-      orderTotal: order.total || 0,
-      orderSubtotal,
-      dispensaryId: order.dispensaryId || 'multiple',
-      dispensaryName: order.dispensaryName || 'Multiple Dispensaries',
-      commissionRate: baseCommissionRate,
-      commissionAmount,
-      bonusAmount,
-      totalEarnings,
-      status: 'pending',
-      orderDate: order.createdAt || admin.firestore.FieldValue.serverTimestamp(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    await db.collection('influencerCommissions').add(commission);
-
-    // Update influencer stats
-    await db.collection('influencers').doc(influencerId).update({
-      'stats.totalConversions': admin.firestore.FieldValue.increment(1),
-      'stats.totalSales': admin.firestore.FieldValue.increment(1),
-      'stats.currentMonthSales': admin.firestore.FieldValue.increment(1),
-      'stats.currentMonthEarnings': admin.firestore.FieldValue.increment(totalEarnings),
-      'stats.totalEarnings': admin.firestore.FieldValue.increment(totalEarnings),
-      'stats.pendingEarnings': admin.firestore.FieldValue.increment(totalEarnings),
-      'stats.xp': admin.firestore.FieldValue.increment(100),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    // Update commission status to completed
+    batch.update(commissionDoc.ref, {
+      status: 'completed',
+      completedAt: admin.firestore.Timestamp.now(),
+      orderStatus: 'delivered'
     });
 
-    // Update referral click as converted
-    const clicksSnapshot = await db.collection('referralClicks')
-      .where('influencerId', '==', influencerId)
-      .where('converted', '==', false)
-      .orderBy('timestamp', 'desc')
-      .limit(1)
-      .get();
+    // Update influencer's pending balance
+    const influencerRef = db.collection('influencers').doc(commission.influencerId);
+    batch.update(influencerRef, {
+      pendingBalance: admin.firestore.FieldValue.increment(commission.commissionAmount),
+      totalEarned: admin.firestore.FieldValue.increment(commission.commissionAmount),
+      updatedAt: admin.firestore.Timestamp.now()
+    });
 
-    if (!clicksSnapshot.empty) {
-      await clicksSnapshot.docs[0].ref.update({
-        converted: true,
-        conversionOrderId: orderId
-      });
-    }
+    await batch.commit();
+
+    // Check and update tier if needed
+    await checkAndUpdateTier(commission.influencerId);
+
+    logger.info(`Finalized commission for order ${orderId}: R${commission.commissionAmount.toFixed(2)}`);
 
     return {
       success: true,
-      commission,
-      message: `Commission of R${totalEarnings.toFixed(2)} calculated successfully`
+      commissionAmount: commission.commissionAmount,
+      influencerId: commission.influencerId
     };
-  } catch (error: any) {
-    console.error('Error calculating commission:', error);
-    throw new HttpsError('internal', error.message);
+
+  } catch (error) {
+    logger.error('Error finalizing commission:', error);
+    throw new HttpsError('internal', 'Failed to finalize commission');
   }
 });
+
+// Dummy exports for scheduled functions (not implemented yet)
+export const resetMonthlySales = null;
+export const processPayouts = null;
+
+/**
+ * Helper function to check and update influencer tier based on monthly sales
+ */
+async function checkAndUpdateTier(influencerId: string) {
+  const db = admin.firestore();
+  const influencerDoc = await db.collection('influencers').doc(influencerId).get();
+  
+  if (!influencerDoc.exists) {
+    return;
+  }
+
+  const influencer = influencerDoc.data();
+  const monthlySales = influencer?.monthlySales || {};
+  
+  // Get current month key
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentMonthSales = monthlySales[currentMonthKey] || 0;
+
+  // Tier thresholds
+  const SILVER_THRESHOLD = 5000;
+  const GOLD_THRESHOLD = 15000;
+  const PLATINUM_THRESHOLD = 30000;
+
+  let newTier = 'Bronze';
+  let newCommissionRate = 5;
+
+  if (currentMonthSales >= PLATINUM_THRESHOLD) {
+    newTier = 'Platinum';
+    newCommissionRate = 20;
+  } else if (currentMonthSales >= GOLD_THRESHOLD) {
+    newTier = 'Gold';
+    newCommissionRate = 15;
+  } else if (currentMonthSales >= SILVER_THRESHOLD) {
+    newTier = 'Silver';
+    newCommissionRate = 10;
+  }
+
+  // Only update if tier changed
+  if (newTier !== influencer?.tier) {
+    await db.collection('influencers').doc(influencerId).update({
+      tier: newTier,
+      commissionRate: newCommissionRate,
+      tierUpdatedAt: admin.firestore.Timestamp.now(),
+      updatedAt: admin.firestore.Timestamp.now()
+    });
+
+    // Log tier upgrade
+    await db.collection('influencerTierHistory').add({
+      influencerId,
+      previousTier: influencer?.tier,
+      newTier,
+      previousRate: influencer?.commissionRate,
+      newRate: newCommissionRate,
+      monthlySales: currentMonthSales,
+      upgradedAt: admin.firestore.Timestamp.now()
+    });
+
+    logger.info(`Influencer ${influencerId} upgraded from ${influencer?.tier} to ${newTier}`);
+  }
+}

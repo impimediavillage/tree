@@ -14,9 +14,11 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Building } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db, functions } from '@/lib/firebase';
+import { db, functions, auth } from '@/lib/firebase';
 import { collection, getDocs, query as firestoreQuery } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import { signInWithCustomToken } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 import type { DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 import countryDialCodes from '@/../docs/country-dial-codes.json';
@@ -39,6 +41,7 @@ interface Country {
 }
 
 export default function WellnessSignupPage() {
+  const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -189,16 +192,57 @@ export default function WellnessSignupPage() {
     setIsLoading(true);
 
     try {
-      const result: any = await submitApplication(data);
+      // TESTING MODE: Auto-approve for friend testing (R100 payment will be added later)
+      const submissionData = { ...data, autoApprove: true };
+      
+      const result: any = await submitApplication(submissionData);
 
       if (result.data.success) {
+        // Check if auto-approved with auth token
+        if (result.data.autoApproved && result.data.customToken) {
+          toast({ 
+            title: "Store Activated! 🎉", 
+            description: "Logging you in to your dispensary dashboard..." 
+          });
+          
+          try {
+            // Sign in with custom token
+            await signInWithCustomToken(auth, result.data.customToken);
+            
+            // Show password if it was created
+            if (result.data.temporaryPassword) {
+              toast({
+                title: "Important: Save Your Password",
+                description: `Temporary Password: ${result.data.temporaryPassword}`,
+                duration: 10000,
+              });
+            }
+            
+            // Redirect to dispensary dashboard
+            setTimeout(() => {
+              router.push('/dispensary-owner/dashboard');
+            }, 1500);
+            
+          } catch (authError) {
+            console.error('Auto-login failed:', authError);
+            toast({
+              title: "Store Created!",
+              description: "Please sign in with your email.",
+            });
+            setTimeout(() => {
+              router.push('/login');
+            }, 2000);
+          }
+        } else {
+          // Regular submission (not auto-approved)
           setIsSuccess(true);
           toast({ 
-              title: "Application Submitted!", 
-              description: "We've received your application and will review it shortly." 
+            title: "Application Submitted!", 
+            description: "We've received your application and will review it shortly." 
           });
+        }
       } else {
-          throw new Error(result.data.message || 'An unknown server error occurred.');
+        throw new Error(result.data.message || 'An unknown server error occurred.');
       }
     } catch (error: any) {
       console.error("Error submitting dispensary application:", error);

@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.calculateCommissionOnOrderDelivered = exports.getInfluencerStats = exports.processInfluencerCommission = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -75,6 +75,11 @@ Object.defineProperty(exports, "recalculateDispensaryReviewStats", { enumerable:
 var shipping_label_generation_1 = require("./shipping-label-generation");
 Object.defineProperty(exports, "createShiplogicShipment", { enumerable: true, get: function () { return shipping_label_generation_1.createShiplogicShipment; } });
 Object.defineProperty(exports, "createPudoShipment", { enumerable: true, get: function () { return shipping_label_generation_1.createPudoShipment; } });
+// Export Influencer Commission functions
+var influencer_commissions_1 = require("./influencer-commissions");
+Object.defineProperty(exports, "processInfluencerCommission", { enumerable: true, get: function () { return influencer_commissions_1.processInfluencerCommission; } });
+Object.defineProperty(exports, "getInfluencerStats", { enumerable: true, get: function () { return influencer_commissions_1.getInfluencerStats; } });
+Object.defineProperty(exports, "calculateCommissionOnOrderDelivered", { enumerable: true, get: function () { return influencer_commissions_1.calculateCommissionOnOrderDelivered; } });
 // Upload Apparel Templates to Storage
 exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
     // Check authentication
@@ -1318,6 +1323,8 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
     if (data.acceptTerms !== true) {
         throw new https_1.HttpsError('failed-precondition', 'You must accept the Terms of Usage Agreement to submit an application.');
     }
+    // TESTING MODE: Auto-approve for friend testing (R100 payment hidden for later)
+    const autoApprove = data.autoApprove === true; // Flag from frontend
     // 2. Prepare the New Dispensary Document
     // CORRECTED: This version captures all fields from the signup form.
     const newApplicationData = {
@@ -1345,14 +1352,14 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
         deliveryRadius: data.deliveryRadius || 'none', // CORRECTED: Included from form
         message: data.message || '', // CORRECTED: Included from form
         // --- System-set initial values ---
-        status: 'Pending Approval',
+        status: autoApprove ? 'Approved' : 'Pending Approval',
         acceptTerms: true,
         // --- Server-side timestamps for data integrity ---
         applicationDate: admin.firestore.FieldValue.serverTimestamp(),
         lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
+        approvedDate: autoApprove ? admin.firestore.FieldValue.serverTimestamp() : null,
         // --- Fields to be populated later in the workflow ---
         ownerId: null,
-        approvedDate: null,
         publicStoreUrl: null,
         shippingMethods: [], // This is managed in the owner's profile after approval
         originLocker: null // This is managed in the owner's profile after approval
@@ -1361,8 +1368,78 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
     try {
         const dispensaryRef = await db.collection('dispensaries').add(newApplicationData);
         logger.info(`New dispensary application created with ID: ${dispensaryRef.id} for email: ${data.ownerEmail}`);
+        // If auto-approve, create user immediately and return auth token
+        if (autoApprove) {
+            try {
+                // Check if user already exists
+                let userUid;
+                let temporaryPassword;
+                const existingUser = await admin.auth().getUserByEmail(data.ownerEmail).catch(() => null);
+                if (existingUser) {
+                    // Update existing user
+                    userUid = existingUser.uid;
+                    await db.collection('users').doc(userUid).update({
+                        dispensaryId: dispensaryRef.id,
+                        role: 'DispensaryOwner',
+                        status: 'Active',
+                    });
+                }
+                else {
+                    // Create new user
+                    temporaryPassword = Math.random().toString(36).slice(-8);
+                    const newUserRecord = await admin.auth().createUser({
+                        email: data.ownerEmail,
+                        emailVerified: false,
+                        password: temporaryPassword,
+                        displayName: data.fullName,
+                        disabled: false,
+                    });
+                    userUid = newUserRecord.uid;
+                    const userDocData = {
+                        uid: userUid,
+                        email: data.ownerEmail,
+                        displayName: data.fullName,
+                        photoURL: null,
+                        role: 'DispensaryOwner',
+                        dispensaryId: dispensaryRef.id,
+                        credits: 0,
+                        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                        lastLoginAt: null,
+                        status: 'Active',
+                        welcomeCreditsAwarded: false,
+                        signupSource: 'dispensary_signup',
+                    };
+                    await db.collection('users').doc(userUid).set(userDocData);
+                }
+                // Update dispensary with owner ID
+                await dispensaryRef.update({ ownerId: userUid });
+                // Create custom token for auto-login
+                const customToken = await admin.auth().createCustomToken(userUid);
+                logger.info(`Auto-approved dispensary ${dispensaryRef.id} and created/updated user ${userUid}`);
+                return {
+                    success: true,
+                    autoApproved: true,
+                    message: "Your store has been activated! Logging you in...",
+                    customToken,
+                    email: data.ownerEmail,
+                    temporaryPassword,
+                    dispensaryId: dispensaryRef.id
+                };
+            }
+            catch (userError) {
+                logger.error(`Error creating user during auto-approval:`, userError);
+                // Dispensary created but user creation failed - return partial success
+                return {
+                    success: true,
+                    autoApproved: false,
+                    message: "Application submitted but auto-login failed. Please contact support.",
+                    dispensaryId: dispensaryRef.id
+                };
+            }
+        }
         return {
             success: true,
+            autoApproved: false,
             message: "Your application has been submitted successfully. You will be notified once it has been reviewed by an administrator."
         };
     }
