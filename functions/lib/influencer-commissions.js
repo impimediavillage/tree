@@ -97,21 +97,54 @@ exports.processInfluencerCommission = (0, firestore_1.onDocumentCreated)('orders
             bonusMultipliers.seasonal;
         const effectiveRate = baseCommissionRate * (1 + totalBonusMultiplier);
         const commissionAmount = (orderTotal * effectiveRate) / 100;
+        const baseCommissionAmount = (orderTotal * baseCommissionRate) / 100;
+        const bonusAmount = commissionAmount - baseCommissionAmount;
+        // Get dispensary name
+        let dispensaryName = 'Unknown Store';
+        if (order.dispensaryId) {
+            try {
+                const dispensaryDoc = await db.collection('dispensaries').doc(order.dispensaryId).get();
+                if (dispensaryDoc.exists) {
+                    dispensaryName = dispensaryDoc.data()?.dispensaryName || 'Unknown Store';
+                }
+            }
+            catch (error) {
+                logger.warn(`Could not fetch dispensary name for ${order.dispensaryId}`);
+            }
+        }
+        // Get customer name
+        let customerName = 'Anonymous';
+        if (order.userId) {
+            try {
+                const userDoc = await db.collection('users').doc(order.userId).get();
+                if (userDoc.exists) {
+                    customerName = userDoc.data()?.displayName || userDoc.data()?.fullName || 'Anonymous';
+                }
+            }
+            catch (error) {
+                logger.warn(`Could not fetch customer name for ${order.userId}`);
+            }
+        }
         // Record commission
         const commissionData = {
             influencerId,
             influencerName: influencer.fullName || influencer.displayName || 'Unknown',
             orderId,
+            orderNumber: order.orderNumber || orderId.substring(0, 8).toUpperCase(),
+            orderDate: order.createdAt || admin.firestore.Timestamp.now(),
             orderTotal,
             baseCommissionRate,
             effectiveRate,
             commissionAmount,
+            bonusAmount,
             bonusMultipliers,
             status: 'pending', // Will be paid when order is delivered
             createdAt: admin.firestore.Timestamp.now(),
             orderStatus: order.status || 'pending',
             dispensaryId: order.dispensaryId,
-            customerId: order.userId
+            dispensaryName,
+            customerId: order.userId,
+            customerName
         };
         await db.collection('influencerCommissions').add(commissionData);
         // Track click conversion
