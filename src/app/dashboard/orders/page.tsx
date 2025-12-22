@@ -102,7 +102,22 @@ function OrderHistoryContent() {
 
     // For now, use the first dispensary (multi-dispensary reviews can be enhanced later)
     const dispensaryId = dispensaryIds[0];
-    const dispensaryName = order.dispensaryName || 'Dispensary';
+    
+    // Fetch dispensary name from shipment data or use fallback
+    const shipment = order.shipments[dispensaryId];
+    let dispensaryName = 'Dispensary';
+    
+    // Try to get dispensary name from Firestore if we have the ID
+    try {
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+      const dispensaryDoc = await getDoc(doc(db, 'dispensaries', dispensaryId));
+      if (dispensaryDoc.exists()) {
+        dispensaryName = dispensaryDoc.data().businessName || 'Dispensary';
+      }
+    } catch (error) {
+      console.error('Error fetching dispensary name:', error);
+    }
     
     // Extract product IDs
     const productIds = order.items?.map(item => item.productId).filter(Boolean) || [];
