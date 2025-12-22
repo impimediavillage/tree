@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -67,6 +67,10 @@ Object.defineProperty(exports, "createPayoutRequest", { enumerable: true, get: f
 var dispensary_earnings_1 = require("./dispensary-earnings");
 Object.defineProperty(exports, "recordDispensaryEarning", { enumerable: true, get: function () { return dispensary_earnings_1.recordDispensaryEarning; } });
 Object.defineProperty(exports, "createDispensaryPayoutRequest", { enumerable: true, get: function () { return dispensary_earnings_1.createDispensaryPayoutRequest; } });
+// Export Dispensary Review functions
+var dispensary_reviews_1 = require("./dispensary-reviews");
+Object.defineProperty(exports, "processDispensaryReview", { enumerable: true, get: function () { return dispensary_reviews_1.processDispensaryReview; } });
+Object.defineProperty(exports, "recalculateDispensaryReviewStats", { enumerable: true, get: function () { return dispensary_reviews_1.recalculateDispensaryReviewStats; } });
 // Upload Apparel Templates to Storage
 exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
     // Check authentication

@@ -22,8 +22,6 @@ export const processDispensaryReview = onDocumentCreated(
     const {
       userId,
       dispensaryId,
-      rating,
-      categories,
       creditsAwarded,
     } = reviewData;
 
