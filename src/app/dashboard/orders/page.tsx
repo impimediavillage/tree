@@ -31,6 +31,7 @@ function OrderHistoryContent() {
     orderId: string;
     dispensaryId: string;
     dispensaryName: string;
+    dispensaryType: string;
     productIds: string[];
   } | null>(null);
 
@@ -103,9 +104,10 @@ function OrderHistoryContent() {
     // For now, use the first dispensary (multi-dispensary reviews can be enhanced later)
     const dispensaryId = dispensaryIds[0];
     
-    // Get dispensary name from order items (CartItem already has dispensaryName)
+    // Get dispensary name and type from order items (CartItem already has these)
     const dispensaryItems = order.items?.filter(item => item.dispensaryId === dispensaryId) || [];
     const dispensaryName = dispensaryItems[0]?.dispensaryName || 'Dispensary';
+    const dispensaryType = dispensaryItems[0]?.dispensaryType || 'general';
     
     // Extract product IDs
     const productIds = order.items?.map(item => item.productId).filter(Boolean) || [];
@@ -114,6 +116,7 @@ function OrderHistoryContent() {
       orderId: order.id,
       dispensaryId,
       dispensaryName,
+      dispensaryType,
       productIds
     });
     setReviewDialogOpen(true);
@@ -281,9 +284,9 @@ function OrderHistoryContent() {
           onOpenChange={setReviewDialogOpen}
           dispensaryId={reviewOrderData.dispensaryId}
           dispensaryName={reviewOrderData.dispensaryName}
+          dispensaryType={reviewOrderData.dispensaryType}
           orderId={reviewOrderData.orderId}
           productIds={reviewOrderData.productIds}
-          userId={currentUser?.uid || ''}
         />
       )}
     </div>
