@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebaseAdmin';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, doc, updateDoc, limit } from 'firebase/firestore';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,11 +11,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Find influencer by referral code
-    const influencerQuery = await adminDb
-      .collection('influencers')
-      .where('referralCode', '==', referralCode.toUpperCase())
-      .limit(1)
-      .get();
+    const influencerQueryRef = query(
+      collection(db, 'influencers'),
+      where('referralCode', '==', referralCode.toUpperCase()),
+      limit(1)
+    );
+    const influencerQuery = await getDocs(influencerQueryRef);
 
     if (influencerQuery.empty) {
       return NextResponse.json({ error: 'Invalid referral code' }, { status: 404 });
@@ -36,11 +38,12 @@ export async function POST(req: NextRequest) {
       converted: false
     };
 
-    await adminDb.collection('referralClicks').add(clickData);
+    await addDoc(collection(db, 'referralClicks'), clickData);
 
     // Increment click count
-    await adminDb.collection('influencers').doc(influencerId).update({
-      'stats.totalClicks': (influencerDoc.data().stats?.totalClicks || 0) + 1
+    const influencerDocRef = doc(db, 'influencers', influencerId);
+    await updateDoc(influencerDocRef, {
+      'stats.totalClicks': (influencerDoc.data()?.stats?.totalClicks || 0) + 1
     });
 
     return NextResponse.json({ success: true });

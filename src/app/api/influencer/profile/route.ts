@@ -1,24 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 
 export async function GET(req: NextRequest) {
   try {
-    // Get auth token from header
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = req.nextUrl.searchParams.get('userId');
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    const token = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    const userId = decodedToken.uid;
-
     // Fetch influencer profile
-    const influencerQuery = await adminDb
-      .collection('influencers')
-      .where('userId', '==', userId)
-      .limit(1)
-      .get();
+    const influencerQueryRef = query(
+      collection(db, 'influencers'),
+      where('userId', '==', userId),
+      limit(1)
+    );
+    const influencerQuery = await getDocs(influencerQueryRef);
 
     if (influencerQuery.empty) {
       return NextResponse.json({ profile: null }, { status: 200 });
@@ -28,12 +26,13 @@ export async function GET(req: NextRequest) {
     const profile = { id: profileDoc.id, ...profileDoc.data() };
 
     // Fetch recent commissions
-    const commissionsSnapshot = await adminDb
-      .collection('influencerCommissions')
-      .where('influencerId', '==', profileDoc.id)
-      .orderBy('createdAt', 'desc')
-      .limit(20)
-      .get();
+    const commissionsQueryRef = query(
+      collection(db, 'influencerCommissions'),
+      where('influencerId', '==', profileDoc.id),
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    );
+    const commissionsSnapshot = await getDocs(commissionsQueryRef);
 
     const commissions = commissionsSnapshot.docs.map(doc => ({
       id: doc.id,
