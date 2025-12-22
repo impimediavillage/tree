@@ -37,7 +37,7 @@ function OrderHistoryContent() {
 
   // Check if user came from checkout and needs to update password
   useEffect(() => {
-    const fromCheckout = searchParams.get('from');
+    const fromCheckout = searchParams?.get('from');
     if (fromCheckout === 'checkout' && currentUser?.signupSource === 'checkout') {
       setShowPasswordDialog(true);
       

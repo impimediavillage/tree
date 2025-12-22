@@ -139,7 +139,7 @@ export default function AdminReviewDashboard() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start bg-muted/50 rounded-lg p-6">
         <div>
           <h1 className="text-4xl font-extrabold text-[#3D2E17] tracking-tight flex items-center gap-3">
             <Star className="h-10 w-10 text-yellow-500 fill-yellow-400" />

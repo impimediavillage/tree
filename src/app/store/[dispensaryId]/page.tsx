@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Badge } from '@/components/ui/badge';
+import { VideoLibraryGallery } from '@/components/video-library/VideoLibraryGallery';
 
 export default function DispensaryStorePage() {
   const params = useParams();
@@ -195,6 +196,11 @@ export default function DispensaryStorePage() {
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Educational Video Library */}
+        {dispensary.dispensaryType && (
+          <VideoLibraryGallery dispensaryType={dispensary.dispensaryType} />
         )}
 
         {/* Search and Category Filters */}
