@@ -253,6 +253,9 @@ const MultiDispensaryShippingStep = ({ groupedCart, addressData, onBack, onConti
                 // Check if this is a Treehouse store by checking if items have dispensaryType === "Treehouse"
                 const isTreehouseStore = group.items.some(item => item.dispensaryType === "Treehouse");
                 
+                // Debug logging
+                console.log(`[CheckoutFlow] Dispensary: ${dispensaryId}, Type: ${group.dispensaryType}, isTreehouse: ${isTreehouseStore}`, group.items[0]);
+                
                 if (isTreehouseStore) {
                     return (
                         <TreehouseShippingGroup 
