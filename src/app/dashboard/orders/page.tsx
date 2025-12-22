@@ -269,6 +269,7 @@ function OrderHistoryContent() {
         order={selectedOrder}
         open={!!selectedOrder}
         onOpenChange={(open: boolean) => !open && setSelectedOrder(null)}
+      />
 
       {/* Review Dialog */}
       {reviewOrderData && (
@@ -282,7 +283,6 @@ function OrderHistoryContent() {
           userId={currentUser?.uid || ''}
         />
       )}
-      />
     </div>
   );
 }
