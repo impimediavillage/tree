@@ -253,7 +253,7 @@ export default function PublicWellnessProfilesByTypePage() {
               distance={wellness.distance}
               typeBannerImageUrl={wellnessTypeDetails?.image}
               typeIconPath={wellnessTypeDetails?.iconPath}
-              reviewStats={reviewStatsMap[wellness.id] || null}
+              reviewStats={reviewStatsMap[wellness.id!] || null}
             />
           ))}
         </div>
