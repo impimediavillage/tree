@@ -97,7 +97,7 @@ export default function AdminInfluencersPage() {
           minimumPayout: 500,
           payoutSchedule: 'monthly',
           approvalRequired: true,
-          updatedAt: new Date(),
+          updatedAt: serverTimestamp() as any,
           updatedBy: 'system'
         };
         await setDoc(doc(db, 'settings', 'influencer'), defaultSettings);
