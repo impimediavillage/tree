@@ -28,6 +28,9 @@ export { recordDispensaryEarning, createDispensaryPayoutRequest } from './dispen
 // Export Dispensary Review functions
 export { processDispensaryReview, recalculateDispensaryReviewStats } from './dispensary-reviews';
 
+// Export Shipping Label Generation functions
+export { createShiplogicShipment, createPudoShipment } from './shipping-label-generation';
+
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
     // Check authentication
