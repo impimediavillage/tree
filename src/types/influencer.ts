@@ -237,6 +237,29 @@ export interface InfluencerTransaction {
   paidAt?: Timestamp;
 }
 
+export interface InfluencerCommission {
+  id?: string;
+  influencerId: string;
+  influencerName: string;
+  orderId: string;
+  orderTotal: number;
+  baseCommissionRate: number;
+  effectiveRate: number;
+  commissionAmount: number;
+  bonusMultipliers?: {
+    videoContent: number;
+    tribeEngagement: number;
+    seasonal: number;
+  };
+  status: 'pending' | 'completed' | 'paid';
+  createdAt: Timestamp;
+  completedAt?: Timestamp;
+  paidAt?: Timestamp;
+  orderStatus?: string;
+  dispensaryId?: string;
+  customerId?: string;
+}
+
 export interface InfluencerPayout {
   id?: string;
   influencerId: string;

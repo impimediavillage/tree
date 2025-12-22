@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, TrendingUp, TrendingDown, ArrowLeft, Download, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { InfluencerProfile } from '@/types/influencer';
+import type { InfluencerProfile, InfluencerCommission } from '@/types/influencer';
 import {
   LineChart,
   Line,
