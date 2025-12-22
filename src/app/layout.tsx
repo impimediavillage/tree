@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { GeistSans } from 'geist/font/sans'; 
 import { GeistMono } from 'geist/font/mono'; 
@@ -17,17 +17,18 @@ export const metadata: Metadata = {
   title: 'The Wellness Tree - AI-Powered Wellness Hub - ',
   description: 'Explore cannabis products and get AI-powered advice on cannabinoids, gardening, homeopathy, mushrooms, and traditional medicine at The Wellness Tree.',
   manifest: '/api/manifest',
-  themeColor: '#221503',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'THE TREE',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#221503',
 };
 
 export default function RootLayout({

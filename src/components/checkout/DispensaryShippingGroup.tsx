@@ -391,26 +391,31 @@ export const DispensaryShippingGroup = ({
           </RadioGroup>
         </div>
 
+        {/* Show origin locker by default if dispensary has LTL or LTD shipping methods configured */}
+        {dispensary?.originLocker && dispensary?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') && (
+          <Card className="border-[#006B3E]/30 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-[#006B3E]" />
+                Origin Locker
+              </CardTitle>
+              <CardDescription className="text-sm">This dispensary ships locker-based orders from:</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-3">
+                <div className="flex-1">
+                  <p className='font-semibold text-[#3D2E17]'>{dispensary.originLocker.name}</p>
+                  <p className='text-sm text-muted-foreground'>{dispensary.originLocker.address}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {isFetchingLockers && <div className="flex items-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className='ml-3'>Fetching Pudo Lockers...</p></div>}
 
         {isLockerTier && !isFetchingLockers && !error && (
           <div className="space-y-4">
-            {(selectedTier === 'ltd' || selectedTier === 'ltl') && (
-              <div>
-                  <p className="font-extrabold text-[#3D2E17] mb-2">Origin Locker (Pre-selected by Dispensary)</p>
-                  <div className="flex items-center gap-3 rounded-md border border-dashed p-3 bg-muted/50">
-                      <MapPin className="h-6 w-6 text-muted-foreground" />
-                      {dispensary?.originLocker ? (
-                          <div>
-                              <p className='font-semibold'>{dispensary.originLocker.name}</p>
-                              <p className='text-sm text-muted-foreground'>{dispensary.originLocker.address}</p>
-                          </div>
-                      ) : (
-                          <p className="text-sm text-destructive">Origin locker not configured by the dispensary.</p>
-                      )}
-                  </div>
-              </div>
-            )}
 
             {(selectedTier === 'dtl' || selectedTier === 'ltl') && (
                 <div>
