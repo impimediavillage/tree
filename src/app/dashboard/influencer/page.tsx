@@ -141,7 +141,7 @@ export default function InfluencerDashboard() {
   }
 
   const nextTier = getNextTierRequirement(profile.tier);
-  const progress = nextTier.sales > 0 ? Math.min((profile.stats.monthSales / nextTier.sales) * 100, 100) : 100;
+  const progress = nextTier.sales > 0 ? Math.min((profile.stats.currentMonthSales / nextTier.sales) * 100, 100) : 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
@@ -243,7 +243,7 @@ export default function InfluencerDashboard() {
                 {profile.stats.totalSales}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                This month: {profile.stats.monthSales}
+                This month: {profile.stats.currentMonthSales}
               </p>
             </CardContent>
           </Card>
@@ -300,7 +300,7 @@ export default function InfluencerDashboard() {
                 Next Tier: {nextTier.name}
               </CardTitle>
               <CardDescription>
-                You need {nextTier.sales - profile.stats.monthSales} more sales this month to reach {nextTier.name} tier
+                You need {nextTier.sales - profile.stats.currentMonthSales} more sales this month to reach {nextTier.name} tier
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -312,7 +312,7 @@ export default function InfluencerDashboard() {
                   />
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{profile.stats.monthSales} sales</span>
+                  <span className="text-muted-foreground">{profile.stats.currentMonthSales} sales</span>
                   <span className="font-semibold text-[#006B3E]">{nextTier.sales} sales</span>
                 </div>
               </div>
