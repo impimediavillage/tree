@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { useReferral } from '@/contexts/ReferralContext';
 import { useToast } from '@/hooks/use-toast';
 import { createOrder } from '@/lib/order-service';
 import { Loader2 } from 'lucide-react';
@@ -25,6 +26,7 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
   const router = useRouter();
   const { currentUser } = useAuth();
   const { clearCart } = useCart();
+  const { referralCode } = useReferral();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -95,6 +97,8 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
             email: currentUser.email || '',
             phone: currentUser.phoneNumber || '',
           },
+          // Influencer referral tracking
+          ...(referralCode && { referralCode }),
           // Treehouse-specific fields
           orderType: (isTreehouseOrder ? 'treehouse' : 'dispensary') as 'treehouse' | 'dispensary',
           ...(isTreehouseOrder && {

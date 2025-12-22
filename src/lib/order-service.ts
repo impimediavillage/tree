@@ -175,6 +175,8 @@ interface CreateOrderParams {
     email: string;
     phone: string;
   };
+  // Influencer referral tracking
+  referralCode?: string;
   // Treehouse marketplace fields
   orderType?: 'dispensary' | 'treehouse' | 'healer-service';
   podStatus?: 'pending_print' | 'printing' | 'printed' | 'packaging' | 'shipped' | 'delivered';
@@ -297,6 +299,8 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     updatedAt: Timestamp.now(),
     paymentStatus: 'pending',
     paymentMethod: 'payfast',
+    // Influencer referral tracking
+    ...(params.referralCode && { referralCode: params.referralCode.toUpperCase() }),
     // Treehouse marketplace fields
     ...(params.orderType && { orderType: params.orderType }),
     ...(params.podStatus && { podStatus: params.podStatus }),

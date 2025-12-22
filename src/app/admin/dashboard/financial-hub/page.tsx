@@ -97,6 +97,9 @@ interface FinancialMetrics {
   platformFees: number;
   pendingPayments: number;
   completedPayments: number;
+  influencerRevenue: number;
+  influencerCommissions: number;
+  influencerROI: number;
 }
 
 interface TreehouseTransaction {
@@ -147,7 +150,7 @@ interface PlatformFee {
   notes: string;
 }
 
-type SidePanel = 'overview' | 'treehouse' | 'dispensaries' | 'shipping' | 'credits' | 'fees';
+type SidePanel = 'overview' | 'treehouse' | 'dispensaries' | 'shipping' | 'credits' | 'fees' | 'influencers';
 
 export default function FinancialHubPage() {
   const router = useRouter();
@@ -173,6 +176,9 @@ export default function FinancialHubPage() {
     platformFees: 0,
     pendingPayments: 0,
     completedPayments: 0,
+    influencerRevenue: 0,
+    influencerCommissions: 0,
+    influencerROI: 0,
   });
 
   const [treehouseTransactions, setTreehouseTransactions] = useState<TreehouseTransaction[]>([]);
@@ -318,6 +324,25 @@ export default function FinancialHubPage() {
       });
       setPlatformFees(fees);
 
+      // Fetch Influencer Program data
+      const influencerCommissionsQuery = query(
+        collection(db, 'influencerCommissions'),
+        where('createdAt', '>=', Timestamp.fromDate(startDate)),
+        orderBy('createdAt', 'desc')
+      );
+      const influencerCommissionsSnap = await getDocs(influencerCommissionsQuery);
+      const influencerRevenue = influencerCommissionsSnap.docs.reduce((sum, doc) => {
+        const data = doc.data();
+        return sum + (data.orderTotal || 0);
+      }, 0);
+      const influencerCommissions = influencerCommissionsSnap.docs.reduce((sum, doc) => {
+        const data = doc.data();
+        return sum + (data.commissionAmount || 0);
+      }, 0);
+      const influencerROI = influencerCommissions > 0 
+        ? ((influencerRevenue - influencerCommissions) / influencerCommissions) * 100 
+        : 0;
+
       // Calculate shipping costs from orders and pool orders
       let totalShipping = 0;
       
@@ -351,8 +376,8 @@ export default function FinancialHubPage() {
       const dispensaryTotal = Array.from(revenueMap.values()).reduce((sum, r) => sum + r.platformFee, 0);
       const creditTotal = creditTxns.filter(c => c.type === 'purchase').reduce((sum, c) => sum + c.amount, 0);
       const feesTotal = fees.reduce((sum, f) => sum + f.feeAmount, 0);
-      const totalRevenue = treehouseTotal + dispensaryTotal + creditTotal + feesTotal;
-      const totalExpenses = totalShipping;
+      const totalRevenue = treehouseTotal + dispensaryTotal + creditTotal + feesTotal + influencerRevenue;
+      const totalExpenses = totalShipping + influencerCommissions;
       const netProfit = totalRevenue - totalExpenses;
 
       setMetrics({
@@ -367,6 +392,9 @@ export default function FinancialHubPage() {
         platformFees: feesTotal,
         pendingPayments: treehouseTxns.filter(t => t.status === 'pending').reduce((sum, t) => sum + t.commission, 0),
         completedPayments: treehouseTxns.filter(t => t.status === 'paid').reduce((sum, t) => sum + t.commission, 0),
+        influencerRevenue,
+        influencerCommissions,
+        influencerROI,
       });
 
       // Calculate daily revenue for charts
@@ -582,6 +610,7 @@ export default function FinancialHubPage() {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'treehouse', label: 'Treehouse', icon: Leaf },
     { id: 'dispensaries', label: 'Dispensaries', icon: Building2 },
+    { id: 'influencers', label: 'Influencer Program', icon: Users },
     { id: 'shipping', label: 'Shipping', icon: Truck },
     { id: 'credits', label: 'Credits', icon: CreditCard },
     { id: 'fees', label: 'Platform Fees', icon: Receipt },
@@ -846,6 +875,24 @@ export default function FinancialHubPage() {
                         <div
                           className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full"
                           style={{ width: `${(metrics.platformFees / metrics.totalRevenue) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm font-medium">Influencer Program</span>
+                        </div>
+                        <span className="font-bold text-yellow-600">
+                          R{metrics.influencerRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2 rounded-full"
+                          style={{ width: `${(metrics.influencerRevenue / metrics.totalRevenue) * 100}%` }}
                         />
                       </div>
                     </div>
@@ -1339,6 +1386,213 @@ export default function FinancialHubPage() {
                   </TableBody>
                 </Table>
               </Card>
+            </div>
+          )}
+
+          {/* Influencer Program Panel */}
+          {activePanel === 'influencers' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#3D2E17] mb-2">Influencer Program</h2>
+                  <p className="text-[#5D4E37]">
+                    Revenue & commission tracking for the influencer/affiliate program
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => router.push('/admin/dashboard/influencers/analytics')} 
+                  className="bg-[#006B3E] hover:bg-[#005230]"
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  View Full Analytics
+                </Button>
+              </div>
+
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-[#5D4E37] flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-green-600" />
+                      Revenue Generated
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-green-600">
+                      R{metrics.influencerRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="flex items-center gap-1 mt-2 text-sm text-green-700">
+                      <TrendingUp className="h-4 w-4" />
+                      <span>From referred orders</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-orange-200 bg-gradient-to-br from-orange-50 to-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-[#5D4E37] flex items-center gap-2">
+                      <Users className="h-4 w-4 text-orange-600" />
+                      Commissions Paid
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-orange-600">
+                      R{metrics.influencerCommissions.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="flex items-center gap-1 mt-2 text-sm text-orange-700">
+                      <DollarSign className="h-4 w-4" />
+                      <span>To influencers</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-[#5D4E37] flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-600" />
+                      Program ROI
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {metrics.influencerROI.toFixed(1)}%
+                    </div>
+                    <div className="flex items-center gap-1 mt-2 text-sm text-blue-700">
+                      <PieChart className="h-4 w-4" />
+                      <span>Return on investment</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Revenue vs Commissions */}
+              <Card className="border-2 border-[#006B3E]">
+                <CardHeader>
+                  <CardTitle>Financial Impact</CardTitle>
+                  <CardDescription>
+                    How the influencer program affects overall platform revenue
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-[#5D4E37]">Revenue Generated</span>
+                          <span className="font-bold text-green-600">
+                            R{metrics.influencerRevenue.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-[#5D4E37]">Commissions Paid</span>
+                          <span className="font-bold text-orange-600">
+                            -R{metrics.influencerCommissions.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t-2">
+                          <span className="font-semibold text-[#3D2E17]">Net Contribution</span>
+                          <span className="text-xl font-bold text-[#006B3E]">
+                            R{(metrics.influencerRevenue - metrics.influencerCommissions).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-[#5D4E37]">Commission Rate (Avg)</span>
+                          <span className="font-bold">
+                            {metrics.influencerRevenue > 0 
+                              ? ((metrics.influencerCommissions / metrics.influencerRevenue) * 100).toFixed(1)
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-[#5D4E37]">% of Total Revenue</span>
+                          <span className="font-bold">
+                            {metrics.totalRevenue > 0
+                              ? ((metrics.influencerRevenue / metrics.totalRevenue) * 100).toFixed(1)
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t-2">
+                          <span className="font-semibold text-[#3D2E17]">ROI Multiple</span>
+                          <span className="text-xl font-bold text-blue-600">
+                            {metrics.influencerCommissions > 0
+                              ? (metrics.influencerRevenue / metrics.influencerCommissions).toFixed(2)
+                              : 0}x
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4">
+                      <div className="mb-2 flex items-center justify-between text-sm">
+                        <span className="font-medium text-[#5D4E37]">Net Revenue After Commissions</span>
+                        <span className="font-bold text-[#006B3E]">
+                          {metrics.influencerRevenue > 0
+                            ? (((metrics.influencerRevenue - metrics.influencerCommissions) / metrics.influencerRevenue) * 100).toFixed(1)
+                            : 0}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="bg-gradient-to-r from-[#006B3E] to-[#008B4E] h-3 rounded-full transition-all"
+                          style={{ 
+                            width: `${metrics.influencerRevenue > 0
+                              ? (((metrics.influencerRevenue - metrics.influencerCommissions) / metrics.influencerRevenue) * 100)
+                              : 0}%` 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="border-2 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/dashboard/influencers')}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="h-5 w-5 text-[#006B3E]" />
+                      Manage Influencers
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-[#5D4E37]">
+                      View and manage all influencer profiles, approvals, and tier assignments
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 hover:shadow-lg transition-shadow cursor-pointer" onClick={() => router.push('/admin/dashboard/influencers/analytics')}>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-[#006B3E]" />
+                      Program Analytics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-[#5D4E37]">
+                      Deep dive into program performance, leaderboards, and growth metrics
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-2 hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Wallet className="h-5 w-5 text-[#006B3E]" />
+                      Process Payouts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-[#5D4E37]">
+                      Review pending commissions and process weekly influencer payouts
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>

@@ -31,6 +31,15 @@ export { processDispensaryReview, recalculateDispensaryReviewStats } from './dis
 // Export Shipping Label Generation functions
 export { createShiplogicShipment, createPudoShipment } from './shipping-label-generation';
 
+// Export Influencer Commission functions
+export { 
+  processInfluencerCommission, 
+  resetMonthlySales, 
+  processPayouts,
+  getInfluencerStats,
+  calculateCommissionOnOrderDelivered
+} from './influencer-commissions';
+
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
     // Check authentication

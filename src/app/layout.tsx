@@ -9,6 +9,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext';
 import { CartProvider } from '@/contexts/CartContext'; // Import CartProvider
+import { ReferralProvider } from '@/contexts/ReferralContext'; // Import ReferralProvider
 import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
 import BackgroundVideo from '@/components/layout/BackgroundVideo';
 
@@ -45,13 +46,15 @@ export default function RootLayout({
        <BackgroundVideo />
         <AuthProvider>
           <CartProvider> {/* Wrap with CartProvider */}
-            <Header />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-            <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
-            <Toaster />
+            <ReferralProvider> {/* Wrap with ReferralProvider for influencer tracking */}
+              <Header />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+              <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
+              <Toaster />
+            </ReferralProvider>
           </CartProvider>
         </AuthProvider>
       </body>
