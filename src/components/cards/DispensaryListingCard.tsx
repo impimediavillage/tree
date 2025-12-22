@@ -3,12 +3,15 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import type { Dispensary } from '@/types';
+import type { Dispensary, DispensaryReviewStats } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Trees, Route, Store, Leaf, Flower, Sprout, Droplet, Sparkles } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { MapPin, Trees, Route, Store, Leaf, Flower, Sprout, Droplet, Sparkles, Star, Award, Zap, Package, TrendingUp, DollarSign } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { DispensaryRatingDisplay } from '@/components/reviews/DispensaryRatingDisplay';
 
 const hardcodedTypeImages: Record<string, string> = {
   "Cannibinoid store": "/images/cannibinoid-store/canna1.jpg",
@@ -34,9 +37,10 @@ interface DispensaryListingCardProps {
   typeBannerImageUrl?: string | null;
   typeIconPath?: string | null;
   distance?: number;
+  reviewStats?: DispensaryReviewStats | null;
 }
 
-export function DispensaryListingCard({ dispensary, typeBannerImageUrl, typeIconPath, distance }: DispensaryListingCardProps) {
+export function DispensaryListingCard({ dispensary, typeBannerImageUrl, typeIconPath, distance, reviewStats }: DispensaryListingCardProps) {
   const placeholderText = encodeURIComponent(dispensary.dispensaryName);
   const defaultPlaceholderUrl = `https://placehold.co/600x400.png?text=${placeholderText}`;
   
@@ -141,6 +145,12 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, typeIcon
             <span className="font-bold text-[#3D2E17]">
               {[dispensary.city, dispensary.province].filter(Boolean).join(', ')}
             </span>
+          </div>
+        )}
+        {/* Review Rating Display */}
+        {reviewStats && reviewStats.totalReviews > 0 && (
+          <div className="pt-2 border-t border-gray-200">
+            <DispensaryRatingDisplay stats={reviewStats} variant="compact" />
           </div>
         )}
       </CardContent>

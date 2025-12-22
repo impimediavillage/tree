@@ -558,3 +558,102 @@ export interface AdvisorInteraction {
   wasFreeInteraction: boolean;
   timestamp: any; // Firestore ServerTimestamp
 }
+
+// --- REVIEW SYSTEM INTERFACES ---
+export type ReviewCategory = 
+  | 'product_quality' 
+  | 'delivery_speed' 
+  | 'packaging' 
+  | 'accuracy' 
+  | 'freshness' 
+  | 'value' 
+  | 'communication';
+
+export type ReviewCategoryValue = 
+  | 'exceeded' | 'met' | 'below'  // product_quality
+  | 'very_fast' | 'on_time' | 'delayed' | 'never'  // delivery_speed
+  | 'excellent' | 'good' | 'damaged' | 'poor'  // packaging
+  | 'exact' | 'mostly' | 'different' | 'wrong'  // accuracy
+  | 'fresh' | 'acceptable'  // freshness (good/poor reuse excellent/poor from packaging)
+  | 'overpriced';  // value (excellent/fair reuse from packaging)
+
+export interface DispensaryReview {
+  id?: string;
+  orderId: string;
+  userId: string;
+  userName?: string; // Optional display name
+  dispensaryId: string;
+  dispensaryName: string;
+  dispensaryType: string;
+  productIds: string[]; // All products in order
+  
+  // Core Rating (1-10)
+  rating: number;
+  
+  // Optional Categories (null if not selected)
+  categories?: {
+    [key in ReviewCategory]?: ReviewCategoryValue;
+  };
+  
+  // Metadata
+  createdAt: Timestamp | Date;
+  verifiedPurchase: boolean; // Always true for order-based reviews
+  isAnonymous: boolean; // Default true
+  
+  // Credits reward tracking
+  creditsAwarded: number;
+  
+  // Moderation (for future use)
+  status?: 'active' | 'flagged' | 'hidden';
+  flagReason?: string;
+}
+
+export interface DispensaryReviewStats {
+  dispensaryId: string;
+  totalReviews: number;
+  averageRating: number; // 1-10
+  reviewScore: number; // Composite score for ranking
+  
+  // Rating distribution
+  ratingBreakdown: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+    6: number;
+    7: number;
+    8: number;
+    9: number;
+    10: number;
+  };
+  
+  // Category averages (if enough data)
+  categoryAverages?: {
+    productQuality?: number;
+    deliverySpeed?: number;
+    packaging?: number;
+    accuracy?: number;
+    freshness?: number;
+    value?: number;
+    communication?: number;
+  };
+  
+  // Badges earned
+  badges: DispensaryBadge[];
+  
+  // Performance metrics
+  recentRating: number; // Last 30 days average
+  consistencyScore: number; // Low variance = high score
+  
+  lastUpdated: Timestamp | Date;
+}
+
+export type DispensaryBadge = 
+  | 'top_rated'        // 9.0+ average
+  | 'fast_delivery'    // 8+ delivery rating
+  | 'perfect_packaging' // 9+ packaging rating
+  | 'consistent_quality' // Low variance
+  | 'community_favorite' // 100+ reviews
+  | 'excellent_value'   // 8+ value rating
+  | 'fresh_products';   // 9+ freshness rating

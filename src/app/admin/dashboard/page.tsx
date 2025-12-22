@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Building, ListChecks, CreditCard, ShieldAlert, Bell, Settings, Package, Loader2, Hourglass, DownloadCloud, Upload } from 'lucide-react';
+import { Users, Building, ListChecks, CreditCard, ShieldAlert, Bell, Settings, Package, Loader2, Hourglass, DownloadCloud, Upload, Star } from 'lucide-react';
 import { useEffect, useState, useCallback, use } from 'react';
 import { db, functions } from '@/lib/firebase';
 import { collection, getDocs, query, where, CollectionReference, DocumentData, doc, getDoc } from 'firebase/firestore';
@@ -207,6 +207,13 @@ export default function AdminDashboardOverviewPage() {
             icon={CreditCard}
             link="/admin/dashboard/credits"
             buttonText="Credit Admin"
+        />
+        <QuickActionCard
+            title="Review System"
+            description="Monitor, analyze, and manage dispensary reviews across the platform."
+            icon={Star}
+            link="/admin/dashboard/reviews"
+            buttonText="Manage Reviews"
         />
         <QuickActionCard
             title="Pool Issues"

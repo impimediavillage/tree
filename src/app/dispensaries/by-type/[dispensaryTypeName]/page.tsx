@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, doc, getDoc, limit } from 'firebase/firestore';
-import type { Dispensary, DispensaryType } from '@/types';
+import type { Dispensary, DispensaryType, DispensaryReviewStats } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Store, ArrowLeft, LocateFixed } from 'lucide-react';
@@ -38,6 +39,7 @@ export default function PublicWellnessProfilesByTypePage() {
 
   const [wellnessProfiles, setWellnessProfiles] = useState<DispensaryWithDistance[]>([]);
   const [wellnessTypeDetails, setWellnessTypeDetails] = useState<DispensaryType | null>(null);
+  const [reviewStatsMap, setReviewStatsMap] = useState<Record<string, DispensaryReviewStats>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isLocating, setIsLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +74,28 @@ export default function PublicWellnessProfilesByTypePage() {
       const wellnessSnapshot = await getDocs(wellnessQuery);
       const fetchedWellness: DispensaryWithDistance[] = wellnessSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Dispensary));
       setWellnessProfiles(fetchedWellness);
+
+      // Fetch review stats for all dispensaries
+      const statsPromises = fetchedWellness.map(async (dispensary) => {
+        try {
+          const statsDoc = await getDoc(doc(db, 'dispensaryReviewStats', dispensary.id));
+          if (statsDoc.exists()) {
+            return { id: dispensary.id, stats: statsDoc.data() as DispensaryReviewStats };
+          }
+        } catch (err) {
+          console.error(`Error fetching review stats for ${dispensary.id}:`, err);
+        }
+        return { id: dispensary.id, stats: null };
+      });
+
+      const statsResults = await Promise.all(statsPromises);
+      const statsMap: Record<string, DispensaryReviewStats> = {};
+      statsResults.forEach(result => {
+        if (result.stats) {
+          statsMap[result.id] = result.stats;
+        }
+      });
+      setReviewStatsMap(statsMap);
 
     } catch (err) {
       console.error("Error fetching wellness profiles by type:", err);
@@ -179,14 +203,33 @@ export default function PublicWellnessProfilesByTypePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 md:px-6 lg:px-8">
-        <div className="text-center mb-6">
-            <h1 
-            className="text-4xl font-extrabold text-foreground tracking-tight"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
-                {wellnessTypeName}
-            </h1>
-      </div>
+        {wellnessTypeName === 'Cannibinoid store' ? (
+          <div className="flex justify-center items-center mb-6 gap-6">
+            <Image 
+              src="/icons/boom-lovers.png" 
+              alt="Boom Lovers" 
+              width={150} 
+              height={150}
+              className="object-contain"
+            />
+            <Image 
+              src="/icons/triple-s-300.png" 
+              alt="Triple S" 
+              width={150} 
+              height={150}
+              className="object-contain"
+            />
+          </div>
+        ) : (
+          <div className="text-center mb-6">
+              <h1 
+              className="text-4xl font-extrabold text-foreground tracking-tight"
+              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
+              >
+                  {wellnessTypeName}
+              </h1>
+          </div>
+        )}
 
       <div className="flex justify-between items-center mb-8 gap-4">
         <Button onClick={handleGeoSearch} disabled={isLocating} className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -210,6 +253,7 @@ export default function PublicWellnessProfilesByTypePage() {
               distance={wellness.distance}
               typeBannerImageUrl={wellnessTypeDetails?.image}
               typeIconPath={wellnessTypeDetails?.iconPath}
+              reviewStats={reviewStatsMap[wellness.id] || null}
             />
           ))}
         </div>

@@ -5,7 +5,7 @@ import { Timestamp } from 'firebase/firestore';
 import type { Order, OrderItem, OrderStatus } from "@/types/order";
 import type { OrderShipment, ShippingStatus } from "@/types/shipping";
 import { formatCurrency } from "@/lib/utils";
-import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag } from "lucide-react";
+import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag, Star } from "lucide-react";
 
 // Helper to safely get locker properties
 const getLockerProp = (locker: any, prop: string): string | null => {
@@ -68,9 +68,10 @@ interface OrderCardProps {
   selected?: boolean;
   onSelect?: (orderId: string) => void;
   showSelection?: boolean;
+  onRateExperience?: (order: Order) => void;
 }
 
-export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false }: OrderCardProps) {
+export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience }: OrderCardProps) {
   console.log('Rendering OrderCard with order:', {
     id: order.id,
     orderNumber: order.orderNumber,
@@ -341,8 +342,27 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end pt-4 border-t-2">
-          <Button variant="default" size="lg" onClick={onClick} className="font-semibold">
+        <div className="flex justify-between items-center gap-3 pt-4 border-t-2">
+          {order.status === 'delivered' && onRateExperience && (
+            <Button 
+              variant="outline" 
+              size="lg" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onRateExperience(order);
+              }}
+              className="flex-1 font-semibold border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 text-yellow-900 hover:text-yellow-950"
+            >
+              <Star className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-600" />
+              Rate Experience
+            </Button>
+          )}
+          <Button 
+            variant="default" 
+            size="lg" 
+            onClick={onClick} 
+            className={`font-semibold ${order.status === 'delivered' && onRateExperience ? '' : 'flex-1'}`}
+          >
             View Details <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </div>

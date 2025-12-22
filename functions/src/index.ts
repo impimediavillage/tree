@@ -25,6 +25,9 @@ export { recordTreehouseEarning, createPayoutRequest } from './treehouse-earning
 // Export Dispensary Earnings functions
 export { recordDispensaryEarning, createDispensaryPayoutRequest } from './dispensary-earnings';
 
+// Export Dispensary Review functions
+export { processDispensaryReview, recalculateDispensaryReviewStats } from './dispensary-reviews';
+
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
     // Check authentication

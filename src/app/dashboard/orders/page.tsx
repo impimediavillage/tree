@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Package2, ShoppingCart, ArrowLeft, KeyRound, Sparkles } from 'lucide-react';
 import { OrderDetailDialog } from '@/components/orders/OrderDetailDialog';
 import { OrderCard } from '@/components/orders/OrderCard';
+import { ReviewSubmissionDialog } from '@/components/reviews/ReviewSubmissionDialog';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -25,6 +26,13 @@ function OrderHistoryContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewOrderData, setReviewOrderData] = useState<{
+    orderId: string;
+    dispensaryId: string;
+    dispensaryName: string;
+    productIds: string[];
+  } | null>(null);
 
   // Check if user came from checkout and needs to update password
   useEffect(() => {
@@ -78,6 +86,35 @@ function OrderHistoryContent() {
     !['delivered', 'cancelled'].includes(order.status));
   const completedOrders = orders.filter(order => 
     ['delivered', 'cancelled'].includes(order.status));
+
+  // Handler to open review dialog
+  const handleRateExperience = (order: Order) => {
+    // Get dispensary IDs from shipments
+    const dispensaryIds = Object.keys(order.shipments || {});
+    if (dispensaryIds.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Unable to find dispensary information for this order.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // For now, use the first dispensary (multi-dispensary reviews can be enhanced later)
+    const dispensaryId = dispensaryIds[0];
+    const dispensaryName = order.dispensaryName || 'Dispensary';
+    
+    // Extract product IDs
+    const productIds = order.items?.map(item => item.productId).filter(Boolean) || [];
+
+    setReviewOrderData({
+      orderId: order.id,
+      dispensaryId,
+      dispensaryName,
+      productIds
+    });
+    setReviewDialogOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -218,6 +255,7 @@ function OrderHistoryContent() {
                       key={order.id} 
                       order={order}
                       onClick={() => setSelectedOrder(order)}
+                      onRateExperience={order.status === 'delivered' ? handleRateExperience : undefined}
                     />
                   ))}
                 </div>
@@ -231,6 +269,19 @@ function OrderHistoryContent() {
         order={selectedOrder}
         open={!!selectedOrder}
         onOpenChange={(open: boolean) => !open && setSelectedOrder(null)}
+
+      {/* Review Dialog */}
+      {reviewOrderData && (
+        <ReviewSubmissionDialog
+          open={reviewDialogOpen}
+          onOpenChange={setReviewDialogOpen}
+          dispensaryId={reviewOrderData.dispensaryId}
+          dispensaryName={reviewOrderData.dispensaryName}
+          orderId={reviewOrderData.orderId}
+          productIds={reviewOrderData.productIds}
+          userId={currentUser?.uid || ''}
+        />
+      )}
       />
     </div>
   );
