@@ -242,10 +242,13 @@ export interface InfluencerCommission {
   influencerId: string;
   influencerName: string;
   orderId: string;
+  orderNumber?: string;
   orderTotal: number;
+  orderDate?: Timestamp;
   baseCommissionRate: number;
   effectiveRate: number;
   commissionAmount: number;
+  bonusAmount?: number;
   bonusMultipliers?: {
     videoContent: number;
     tribeEngagement: number;
@@ -257,7 +260,9 @@ export interface InfluencerCommission {
   paidAt?: Timestamp;
   orderStatus?: string;
   dispensaryId?: string;
+  dispensaryName?: string;
   customerId?: string;
+  customerName?: string;
 }
 
 export interface InfluencerPayout {

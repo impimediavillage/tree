@@ -94,7 +94,7 @@ export default function InfluencerAnalyticsPage() {
       };
     }
 
-    const totalRevenue = commissions.reduce((sum, c) => sum + c.totalEarnings, 0);
+    const totalRevenue = commissions.reduce((sum, c) => sum + c.commissionAmount, 0);
     const avgOrderValue = commissions.reduce((sum, c) => sum + c.orderTotal, 0) / commissions.length;
     const totalClicks = profile.stats.totalClicks || 1;
     const conversions = profile.stats.totalConversions || 0;
@@ -108,13 +108,14 @@ export default function InfluencerAnalyticsPage() {
       const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       
       const dayCommissions = commissions.filter(c => {
+        if (!c.orderDate) return false;
         const commissionDate = c.orderDate.toDate();
         return commissionDate.toDateString() === date.toDateString();
       });
 
       return {
         date: dateStr,
-        earnings: dayCommissions.reduce((sum, c) => sum + c.totalEarnings, 0),
+        earnings: dayCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
         orders: dayCommissions.length
       };
     });
@@ -122,10 +123,11 @@ export default function InfluencerAnalyticsPage() {
     // Dispensary breakdown
     const dispensaryMap = new Map<string, { name: string; earnings: number; orders: number }>();
     commissions.forEach(c => {
-      const existing = dispensaryMap.get(c.dispensaryId) || { name: c.dispensaryName, earnings: 0, orders: 0 };
-      existing.earnings += c.totalEarnings;
+      const dispensaryId = c.dispensaryId || 'unknown';
+      const existing = dispensaryMap.get(dispensaryId) || { name: c.dispensaryName || 'Unknown', earnings: 0, orders: 0 };
+      existing.earnings += c.commissionAmount;
       existing.orders += 1;
-      dispensaryMap.set(c.dispensaryId, existing);
+      dispensaryMap.set(dispensaryId, existing);
     });
 
     const dispensaryBreakdown = Array.from(dispensaryMap.values())
@@ -148,14 +150,14 @@ export default function InfluencerAnalyticsPage() {
 
   const exportData = () => {
     const csvData = commissions.map(c => ({
-      Date: c.orderDate.toDate().toLocaleDateString(),
-      OrderNumber: c.orderNumber,
-      Customer: c.customerName,
-      Dispensary: c.dispensaryName,
+      Date: c.orderDate?.toDate().toLocaleDateString() || 'N/A',
+      OrderNumber: c.orderNumber || 'N/A',
+      Customer: c.customerName || 'N/A',
+      Dispensary: c.dispensaryName || 'N/A',
       OrderTotal: c.orderTotal.toFixed(2),
       Commission: c.commissionAmount.toFixed(2),
-      Bonus: c.bonusAmount.toFixed(2),
-      TotalEarnings: c.totalEarnings.toFixed(2),
+      Bonus: (c.bonusAmount || 0).toFixed(2),
+      TotalEarnings: c.commissionAmount.toFixed(2),
       Status: c.status
     }));
 
@@ -494,15 +496,15 @@ export default function InfluencerAnalyticsPage() {
             {commissions.slice(0, 10).map((commission) => (
               <div key={commission.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="flex-1">
-                  <div className="font-semibold">{commission.dispensaryName}</div>
+                  <div className="font-semibold">{commission.dispensaryName || 'Unknown'}</div>
                   <div className="text-sm text-muted-foreground">
-                    Order #{commission.orderNumber} • {commission.orderDate.toDate().toLocaleDateString()}
+                    Order #{commission.orderNumber || 'N/A'} • {commission.orderDate?.toDate().toLocaleDateString() || 'N/A'}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-green-600">R{commission.totalEarnings.toFixed(2)}</div>
+                  <div className="font-bold text-green-600">R{commission.commissionAmount.toFixed(2)}</div>
                   <div className="text-xs text-muted-foreground">
-                    {commission.commissionRate}% + R{commission.bonusAmount.toFixed(2)} bonus
+                    {commission.baseCommissionRate}% + R{(commission.bonusAmount || 0).toFixed(2)} bonus
                   </div>
                 </div>
               </div>
