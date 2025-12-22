@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface ReferralContextType {
@@ -16,7 +16,7 @@ const REFERRAL_STORAGE_KEY = 'twt_referral_code';
 const REFERRAL_EXPIRY_KEY = 'twt_referral_expiry';
 const REFERRAL_VALID_DAYS = 30; // 30-day cookie
 
-export function ReferralProvider({ children }: { children: ReactNode }) {
+function ReferralProviderContent({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const [referralCode, setReferralCodeState] = useState<string | null>(null);
 
@@ -97,6 +97,23 @@ export function ReferralProvider({ children }: { children: ReactNode }) {
     }}>
       {children}
     </ReferralContext.Provider>
+  );
+}
+
+export function ReferralProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={
+      <ReferralContext.Provider value={{ 
+        referralCode: null, 
+        setReferralCode: () => {}, 
+        clearReferralCode: () => {},
+        trackReferralClick: async () => {} 
+      }}>
+        {children}
+      </ReferralContext.Provider>
+    }>
+      <ReferralProviderContent>{children}</ReferralProviderContent>
+    </Suspense>
   );
 }
 
