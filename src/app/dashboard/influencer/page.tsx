@@ -10,11 +10,14 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   TreePine, TrendingUp, Users, Sparkles, DollarSign, Copy, Check, 
-  Video, Package, Radio, Target, Calendar, Award, Zap, Share2
+  Video, Package, Radio, Target, Calendar, Award, Zap, Share2, GraduationCap
 } from 'lucide-react';
 import type { InfluencerProfile, InfluencerTransaction, DailyQuest } from '@/types/influencer';
 import { getCommissionRateForTier, createReferralLink } from '@/lib/influencer-utils';
 import Link from 'next/link';
+import { InfluencerOnboarding } from '@/components/influencer/InfluencerOnboarding';
+
+const ONBOARDING_KEY = 'influencer_onboarding_completed';
 
 export default function InfluencerDashboard() {
   const { user } = useAuth();
@@ -24,10 +27,18 @@ export default function InfluencerDashboard() {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     loadInfluencerData();
+    
+    // Check if user has seen onboarding
+    const hasSeenOnboarding = localStorage.getItem(ONBOARDING_KEY);
+    if (!hasSeenOnboarding) {
+      // Delay showing onboarding slightly to let page load
+      setTimeout(() => setShowOnboarding(true), 500);
+    }
   }, [user]);
 
   const loadInfluencerData = async () => {
@@ -84,6 +95,15 @@ export default function InfluencerDashboard() {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
+  };
+
+  const handleOnboardingComplete = () => {
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  };
+
+  const handleReopenOnboarding = () => {
+    setShowOnboarding(true);
   };
 
   const getTierColor = (tier: string) => {
@@ -150,17 +170,28 @@ export default function InfluencerDashboard() {
         {/* Header */}
         <div className="bg-muted/50 rounded-lg p-6">
           <div className="flex items-start justify-between flex-wrap gap-4">
-            <div>
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-[#3D2E17] flex items-center gap-2">
                 <TreePine className="w-8 h-8 text-[#006B3E]" />
                 {profile.displayName}'s Forest
               </h1>
               <p className="text-muted-foreground mt-1">{profile.bio}</p>
             </div>
-            <Badge className={`${getTierColor(profile.tier)} text-lg px-4 py-2 border-2`}>
-              <Award className="w-4 h-4 mr-2" />
-              {profile.tier.charAt(0).toUpperCase() + profile.tier.slice(1)} Tier
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReopenOnboarding}
+                className="gap-2 border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span className="hidden sm:inline">Training Guide</span>
+              </Button>
+              <Badge className={`${getTierColor(profile.tier)} text-lg px-4 py-2 border-2`}>
+                <Award className="w-4 h-4 mr-2" />
+                {profile.tier.charAt(0).toUpperCase() + profile.tier.slice(1)} Tier
+              </Badge>
+            </div>
           </div>
 
           {/* Referral Code & Link */}
@@ -411,6 +442,13 @@ export default function InfluencerDashboard() {
         </Card>
 
       </div>
+
+      {/* Onboarding Modal */}
+      <InfluencerOnboarding
+        open={showOnboarding}
+        onOpenChange={setShowOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }

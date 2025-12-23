@@ -86,7 +86,7 @@ export default function WellnessProfilesByTypePage() {
                 style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
             >Loading Wellness Profiles...</h1>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1,2,3,4,5,6].map(i => <Card key={i} className="h-[380px]"><CardContent className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></CardContent></Card>)}
         </div>
       </div>
@@ -112,7 +112,7 @@ export default function WellnessProfilesByTypePage() {
       </div>
 
       {wellnessProfiles.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {wellnessProfiles.map(profile => (
             <DispensaryListingCard key={profile.id} dispensary={profile} />
           ))}

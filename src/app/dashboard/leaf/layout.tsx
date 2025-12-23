@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2, AlertTriangle } from 'lucide-react'; 
+import { DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2, AlertTriangle, UserCheck, BarChart3 } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -32,6 +32,8 @@ const sidebarNavItems: NavItem[] = [
   { title: 'Interaction History', href: '/dashboard/leaf/history', icon: History },
   { title: 'AI Advisors', href: '/dashboard/advisors', icon: Brain },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Sparkles },
+  { title: 'Influencer Dashboard', href: '/dashboard/influencer', icon: UserCheck },
+  { title: 'Influencer Analytics', href: '/dashboard/influencer/analytics', icon: BarChart3 },
   { title: 'Triple S Club', href: '/triple-s-club', icon: Sparkles },
 ];
 

@@ -11,13 +11,17 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query as firestoreQuery } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard'; 
+import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard';
+import { InfluencerOnboarding } from '@/components/influencer/InfluencerOnboarding';
+
+const LEAF_ONBOARDING_KEY = 'leaf_influencer_onboarding_seen';
 
 export default function LeafDashboardOverviewPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [allWellnessTypes, setAllWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
 
    useEffect(() => {
@@ -26,6 +30,13 @@ export default function LeafDashboardOverviewPage() {
       try {
         const user = JSON.parse(storedUserString) as User;
         setCurrentUser(user);
+        
+        // Check if user has seen onboarding on leaf dashboard
+        const hasSeenOnboarding = localStorage.getItem(LEAF_ONBOARDING_KEY);
+        if (!hasSeenOnboarding) {
+          // Show onboarding after a short delay
+          setTimeout(() => setShowOnboarding(true), 1000);
+        }
       } catch (e) {
         console.error("Error parsing current user from localStorage on overview page", e);
       }
@@ -182,6 +193,16 @@ export default function LeafDashboardOverviewPage() {
             </Card>
         </div>
       </section>
+
+      {/* Influencer Onboarding Modal */}
+      <InfluencerOnboarding
+        open={showOnboarding}
+        onOpenChange={setShowOnboarding}
+        onComplete={() => {
+          localStorage.setItem(LEAF_ONBOARDING_KEY, 'true');
+          setShowOnboarding(false);
+        }}
+      />
     </div>
   );
 }
