@@ -37,7 +37,7 @@ export function TripleSEntry() {
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-muted/50 relative group">
       {/* Animated Background Images */}
-      <div className="relative aspect-video w-full overflow-hidden">
+      <div className="relative aspect-[9/16] w-full overflow-hidden bg-gradient-to-br from-[#006B3E]/10 to-[#3D2E17]/10">
         {GROWERS_IMAGES.map((imageSrc, index) => (
           <div
             key={imageSrc}
@@ -51,14 +51,14 @@ export function TripleSEntry() {
               src={imageSrc}
               alt={`Triple S Canna Club - Slide ${index + 1}`}
               fill
-              className="object-cover"
+              className="object-contain"
               priority={index === 0}
             />
           </div>
         ))}
         
-        {/* Overlay gradient for better text visibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+        {/* Overlay gradient for better text visibility at bottom */}
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
       </div>
 
       {/* Content Overlay */}
