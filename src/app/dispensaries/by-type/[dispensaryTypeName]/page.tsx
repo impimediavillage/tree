@@ -12,6 +12,7 @@ import { Loader2, AlertTriangle, Store, ArrowLeft, LocateFixed } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 import { DispensaryListingCard } from '@/components/cards/DispensaryListingCard';
 import { TripleSEntry } from '@/components/features/TripleSEntry';
+import { VideoLibraryGallery } from '@/components/video-library/VideoLibraryGallery';
 
 // Haversine formula to calculate distance between two lat/lon points
 const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -240,6 +241,11 @@ export default function PublicWellnessProfilesByTypePage() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
       </div>
+
+      {/* Educational Video Library */}
+      {wellnessTypeDetails?.name && (
+        <VideoLibraryGallery dispensaryType={wellnessTypeDetails.name} />
+      )}
 
       {wellnessProfiles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">

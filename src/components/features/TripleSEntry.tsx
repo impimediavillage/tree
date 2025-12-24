@@ -1,23 +1,68 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
+// All images in growers-onboard folder
+const GROWERS_IMAGES = [
+  '/images/growers-onboard/8.jpg', // Triple S - always first
+  '/images/growers-onboard/aunty-shans-perfume.png',
+  '/images/growers-onboard/bob-fela-smoking-with-mary-jane.png',
+  '/images/growers-onboard/franks-boom.png',
+  '/images/growers-onboard/green-ad.png',
+  '/images/growers-onboard/uncle-trichome.png',
+];
+
 export function TripleSEntry() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      
+      // Wait for fade out transition
+      setTimeout(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % GROWERS_IMAGES.length);
+        setIsTransitioning(false);
+      }, 500); // Half second for fade out
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-muted/50">
-      <div className="relative aspect-video w-full">
-        <Image
-          src="/images/ai-club-low-res/5.jpg"
-          alt="Triple S Canna Club"
-          fill
-          className="object-cover"
-          priority
-        />
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-muted/50 relative group">
+      {/* Animated Background Images */}
+      <div className="relative aspect-video w-full overflow-hidden">
+        {GROWERS_IMAGES.map((imageSrc, index) => (
+          <div
+            key={imageSrc}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              index === currentImageIndex && !isTransitioning
+                ? 'opacity-100'
+                : 'opacity-0'
+            }`}
+          >
+            <Image
+              src={imageSrc}
+              alt={`Triple S Canna Club - Slide ${index + 1}`}
+              fill
+              className="object-cover"
+              priority={index === 0}
+            />
+          </div>
+        ))}
+        
+        {/* Overlay gradient for better text visibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
       </div>
-      <div className="p-6 text-center">
+
+      {/* Content Overlay */}
+      <div className="p-6 text-center bg-white/95 backdrop-blur-sm">
         <h3 className="text-2xl font-black text-[#3D2E17] mb-3">
           Triple S Canna Club
         </h3>
@@ -30,6 +75,20 @@ export function TripleSEntry() {
         >
           <Link href="/triple-s-club">Enter Triple S Canna Club</Link>
         </Button>
+      </div>
+      
+      {/* Progress Indicator Dots */}
+      <div className="absolute top-4 right-4 flex gap-1.5 z-10">
+        {GROWERS_IMAGES.map((_, index) => (
+          <div
+            key={index}
+            className={`h-2 rounded-full transition-all duration-300 ${
+              index === currentImageIndex
+                ? 'w-8 bg-[#006B3E]'
+                : 'w-2 bg-white/60'
+            }`}
+          />
+        ))}
       </div>
     </Card>
   );

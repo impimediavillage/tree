@@ -158,11 +158,10 @@ export default function VideoLibraryManagementPage() {
       }
 
       const thumbnail = getVideoThumbnail(formData.videoUrl);
-      const videoData = {
+      const videoData: any = {
         title: formData.title,
         description: formData.description,
         videoUrl: formData.videoUrl,
-        thumbnailUrl: thumbnail || undefined,
         source: parsed.source,
         dispensaryType: formData.dispensaryType,
         isActive: true,
@@ -171,6 +170,11 @@ export default function VideoLibraryManagementPage() {
         updatedAt: serverTimestamp(),
         updatedBy: currentUser?.uid || 'system'
       };
+
+      // Only include thumbnailUrl if it exists
+      if (thumbnail) {
+        videoData.thumbnailUrl = thumbnail;
+      }
 
       if (editingVideo?.id) {
         // Update existing video
