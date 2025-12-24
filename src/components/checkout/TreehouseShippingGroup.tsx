@@ -36,12 +36,10 @@ interface TreehouseConfig {
   longitude: number;
   email?: string;
   shippingMethods?: string[];
-  originLocker?: {
-    lockerId?: string;
-    lockerCode?: string;
-    lockerName?: string;
-    address?: string;
-  };
+  // Locker fields at root level (not nested)
+  lockerId?: string;
+  lockerCode?: string;
+  lockerName?: string;
   isPudoLocker?: boolean;
 }
 
@@ -85,7 +83,7 @@ export const TreehouseShippingGroup = ({
     const fetchTreehouseConfig = async () => {
       setIsLoading(true);
       try {
-        const docRef = doc(db, 'treehouseConfig', 'originLocker');
+        const docRef = doc(db, 'treehouse_config', 'origin_locker');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const config = docSnap.data() as TreehouseConfig;
@@ -116,12 +114,12 @@ export const TreehouseShippingGroup = ({
     if (rate) {
       setSelectedRateId(rateId);
       
-      // Build origin locker from config
-      const originLocker = treehouseConfig?.originLocker ? {
-        id: treehouseConfig.originLocker.lockerCode || '',
-        name: treehouseConfig.originLocker.lockerName || '',
-        address: treehouseConfig.originLocker.address || ''
-      } as PUDOLocker : null;
+      // Build origin locker from flat config structure
+      const originLocker = treehouseConfig?.lockerCode ? {
+        id: treehouseConfig.lockerId || treehouseConfig.lockerCode || '',
+        name: treehouseConfig.lockerName || 'Treehouse Origin Locker',
+        address: treehouseConfig.address || '',
+      } : undefined;
       
       const rateWithLockers = {
         ...rate,
@@ -159,15 +157,15 @@ export const TreehouseShippingGroup = ({
         if (!destinationLocker) return;
         payload.destinationLockerCode = destinationLocker.id;
       } else if (selectedTier === 'ltd') {
-        if (!treehouseConfig?.originLocker?.lockerCode) { 
+        if (!treehouseConfig?.lockerCode) { 
           setError("Treehouse origin locker not configured. Please contact support."); 
           setIsLoading(false);
           return; 
         }
-        payload.originLockerCode = treehouseConfig.originLocker.lockerCode;
+        payload.originLockerCode = treehouseConfig.lockerCode;
         payload.deliveryAddress = deliveryAddressForApi;
       } else if (selectedTier === 'ltl') {
-        if (!treehouseConfig?.originLocker?.lockerCode) { 
+        if (!treehouseConfig?.lockerCode) { 
           setError("Treehouse origin locker not configured. Please contact support."); 
           setIsLoading(false);
           return; 
@@ -176,7 +174,7 @@ export const TreehouseShippingGroup = ({
           setIsLoading(false);
           return;
         }
-        payload.originLockerCode = treehouseConfig.originLocker.lockerCode;
+        payload.originLockerCode = treehouseConfig.lockerCode;
         payload.destinationLockerCode = destinationLocker.id;
       }
       
@@ -250,10 +248,10 @@ export const TreehouseShippingGroup = ({
     if (selectedTier === 'dtl' && destinationLocker) {
       fetchPudoRates();
     } 
-    else if (selectedTier === 'ltd' && treehouseConfig?.originLocker) {
+    else if (selectedTier === 'ltd' && treehouseConfig?.lockerCode) {
       fetchPudoRates();
     } 
-    else if (selectedTier === 'ltl' && treehouseConfig?.originLocker && destinationLocker) {
+    else if (selectedTier === 'ltl' && treehouseConfig?.lockerCode && destinationLocker) {
       fetchPudoRates();
     }
   }, [selectedTier, treehouseConfig, destinationLocker, fetchPudoRates]);
@@ -279,7 +277,7 @@ export const TreehouseShippingGroup = ({
       fetchShiplogicRates();
     } 
     else if (['dtl', 'ltd', 'ltl'].includes(tier)) {
-      if ((tier === 'ltd' || tier === 'ltl') && !treehouseConfig?.originLocker?.lockerCode) {
+      if ((tier === 'ltd' || tier === 'ltl') && !treehouseConfig?.lockerCode) {
         setError("Treehouse has not configured an origin locker for this shipping method. Please select another method.");
         return;
       }
@@ -352,11 +350,11 @@ export const TreehouseShippingGroup = ({
     
     return treehouseConfig.shippingMethods.filter(method => {
       if (method === 'ltl' || method === 'ltd') {
-        return !!treehouseConfig.originLocker?.lockerCode;
+        return !!treehouseConfig.lockerCode;
       }
       return true;
     });
-  }, [treehouseConfig?.shippingMethods, treehouseConfig?.originLocker]);
+  }, [treehouseConfig?.shippingMethods, treehouseConfig?.lockerCode]);
   
   if (isLoading && !treehouseConfig && !rates.length) {
     return (
@@ -391,7 +389,7 @@ export const TreehouseShippingGroup = ({
                 <span className="text-sm font-bold text-[#3D2E17]">{allShippingMethodsMap[methodId]}</span>
               </Label>
             ))}
-            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>Treehouse has not configured any shipping methods{!treehouseConfig?.originLocker && treehouseConfig?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
+            {shouldShowNoMethods && <p className='text-sm text-muted-foreground col-span-2'>Treehouse has not configured any shipping methods{!treehouseConfig?.lockerCode && treehouseConfig?.shippingMethods?.some(m => m === 'ltl' || m === 'ltd') ? ' (Locker-based methods hidden - no origin locker configured)' : ''}.</p>}
           </RadioGroup>
         </div>
 
@@ -404,10 +402,10 @@ export const TreehouseShippingGroup = ({
                   <p className="font-extrabold text-[#3D2E17] mb-2">Origin Locker (Pre-configured by Treehouse)</p>
                   <div className="flex items-center gap-3 rounded-md border border-dashed p-3 bg-muted/50">
                       <MapPin className="h-6 w-6 text-muted-foreground" />
-                      {treehouseConfig?.originLocker?.lockerName ? (
+                      {treehouseConfig?.lockerName ? (
                           <div>
-                              <p className='font-semibold'>{treehouseConfig.originLocker.lockerName}</p>
-                              <p className='text-sm text-muted-foreground'>{treehouseConfig.originLocker.address}</p>
+                              <p className='font-semibold'>{treehouseConfig.lockerName}</p>
+                              <p className='text-sm text-muted-foreground'>{treehouseConfig.address}</p>
                           </div>
                       ) : (
                           <p className="text-sm text-destructive">Origin locker not configured by Treehouse admin.</p>

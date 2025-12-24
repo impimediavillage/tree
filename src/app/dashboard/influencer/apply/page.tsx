@@ -127,43 +127,45 @@ export default function InfluencerApplicationPage() {
   return (
     <div className="container py-16 px-4 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-5xl font-extrabold text-[#3D2E17] mb-4 flex items-center justify-center gap-3">
-          <Sparkles className="h-12 w-12 text-yellow-500" />
-          Become an Influencer
-        </h1>
-        <p className="text-xl text-[#5D4E37] font-semibold">
-          Join our wellness community and earn while sharing healing
-        </p>
+      <div className="bg-muted/50 rounded-lg p-8 mb-12 border border-border/50">
+        <div className="text-center">
+          <h1 className="text-5xl font-extrabold text-[#3D2E17] mb-4 flex items-center justify-center gap-3">
+            <Sparkles className="h-12 w-12 text-[#006B3E]" />
+            Become an Influencer
+          </h1>
+          <p className="text-xl text-[#3D2E17] font-bold">
+            Join our wellness community and earn while sharing healing
+          </p>
+        </div>
       </div>
 
       {/* Benefits Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 bg-muted/50 hover:scale-105">
           <CardContent className="pt-6 text-center">
-            <DollarSign className="h-12 w-12 mx-auto mb-4 text-green-600" />
-            <h3 className="font-bold text-lg mb-2">Earn Up to 20%</h3>
-            <p className="text-sm text-muted-foreground">
+            <DollarSign className="h-16 w-16 mx-auto mb-4 text-[#006B3E]" />
+            <h3 className="font-black text-lg mb-2 text-[#3D2E17]">Earn Up to 20%</h3>
+            <p className="text-sm font-bold text-[#3D2E17]/70">
               Tiered commissions from 5% to 20% based on your performance
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 bg-muted/50 hover:scale-105">
           <CardContent className="pt-6 text-center">
-            <TrendingUp className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-            <h3 className="font-bold text-lg mb-2">Weekly Payouts</h3>
-            <p className="text-sm text-muted-foreground">
+            <TrendingUp className="h-16 w-16 mx-auto mb-4 text-[#006B3E]" />
+            <h3 className="font-black text-lg mb-2 text-[#3D2E17]">Weekly Payouts</h3>
+            <p className="text-sm font-bold text-[#3D2E17]/70">
               Automatic payments every Friday when you reach R500
             </p>
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:shadow-lg transition-shadow">
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 bg-muted/50 hover:scale-105">
           <CardContent className="pt-6 text-center">
-            <Users className="h-12 w-12 mx-auto mb-4 text-purple-600" />
-            <h3 className="font-bold text-lg mb-2">Build Your Tribe</h3>
-            <p className="text-sm text-muted-foreground">
+            <Users className="h-16 w-16 mx-auto mb-4 text-[#006B3E]" />
+            <h3 className="font-black text-lg mb-2 text-[#3D2E17]">Build Your Tribe</h3>
+            <p className="text-sm font-bold text-[#3D2E17]/70">
               Create your own wellness community and grow together
             </p>
           </CardContent>
@@ -171,46 +173,48 @@ export default function InfluencerApplicationPage() {
       </div>
 
       {/* Application Form */}
-      <Card className="border-2">
-        <CardHeader>
-          <CardTitle>Application Form</CardTitle>
-          <CardDescription>
+      <Card className="border-2 bg-muted/30">
+        <CardHeader className="bg-muted/50 border-b">
+          <CardTitle className="text-2xl font-black text-[#3D2E17]">Application Form</CardTitle>
+          <CardDescription className="text-base font-bold text-[#3D2E17]/70">
             Tell us about yourself and your wellness journey
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Bio */}
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio *</Label>
+            <div className="space-y-3">
+              <Label htmlFor="bio" className="text-base font-bold text-[#3D2E17]">Bio *</Label>
               <Textarea
                 id="bio"
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Tell us about yourself in a few sentences..."
+                className="text-[#3D2E17] font-semibold border-2 focus:border-[#006B3E]"
                 required
                 rows={3}
               />
             </div>
 
             {/* Healing Story */}
-            <div className="space-y-2">
-              <Label htmlFor="healingStory">Your Healing Story</Label>
+            <div className="space-y-3">
+              <Label htmlFor="healingStory" className="text-base font-bold text-[#3D2E17]">Your Healing Story</Label>
               <Textarea
                 id="healingStory"
                 value={formData.healingStory}
                 onChange={(e) => setFormData({ ...formData, healingStory: e.target.value })}
                 placeholder="Share your personal wellness journey (optional)"
+                className="text-[#3D2E17] font-semibold border-2 focus:border-[#006B3E]"
                 rows={4}
               />
             </div>
 
             {/* Wellness Niche */}
-            <div className="space-y-2">
-              <Label>Wellness Niche(s) *</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-3">
+              <Label className="text-base font-bold text-[#3D2E17]">Wellness Niche(s) *</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-background/50 p-4 rounded-lg border">
                 {wellnessNiches.map((niche) => (
-                  <div key={niche} className="flex items-center space-x-2">
+                  <div key={niche} className="flex items-center space-x-3">
                     <Checkbox
                       id={niche}
                       checked={formData.primaryNiche.includes(niche)}
@@ -227,8 +231,9 @@ export default function InfluencerApplicationPage() {
                           });
                         }
                       }}
+                      className="border-2 border-[#006B3E]"
                     />
-                    <label htmlFor={niche} className="text-sm cursor-pointer">
+                    <label htmlFor={niche} className="text-sm font-bold text-[#3D2E17] cursor-pointer">
                       {niche}
                     </label>
                   </div>
@@ -238,13 +243,14 @@ export default function InfluencerApplicationPage() {
 
             {/* Social Media Links */}
             <div className="space-y-4">
-              <Label>Social Media (Optional)</Label>
+              <Label className="text-base font-bold text-[#3D2E17]">Social Media (Optional)</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Input
                     placeholder="Instagram @username"
                     value={formData.instagram}
                     onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                    className="text-[#3D2E17] font-semibold border-2 focus:border-[#006B3E]"
                   />
                 </div>
                 <div>
@@ -252,6 +258,7 @@ export default function InfluencerApplicationPage() {
                     placeholder="TikTok @username"
                     value={formData.tiktok}
                     onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
+                    className="text-[#3D2E17] font-semibold border-2 focus:border-[#006B3E]"
                   />
                 </div>
                 <div>
@@ -259,6 +266,7 @@ export default function InfluencerApplicationPage() {
                     placeholder="YouTube Channel URL"
                     value={formData.youtube}
                     onChange={(e) => setFormData({ ...formData, youtube: e.target.value })}
+                    className="text-[#3D2E17] font-semibold border-2 focus:border-[#006B3E]"
                   />
                 </div>
                 <div>
@@ -266,22 +274,24 @@ export default function InfluencerApplicationPage() {
                     placeholder="Twitter/X @username"
                     value={formData.twitter}
                     onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
+                    className="text-[#3D2E17] font-semibold border-2 focus:border-[#006B3E]"
                   />
                 </div>
               </div>
             </div>
 
             {/* Terms */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 bg-amber-50 p-4 rounded-lg border-2 border-amber-200">
               <Checkbox
                 id="terms"
                 checked={formData.agreedToTerms}
                 onCheckedChange={(checked) =>
                   setFormData({ ...formData, agreedToTerms: checked as boolean })
                 }
+                className="border-2 border-[#006B3E]"
               />
-              <label htmlFor="terms" className="text-sm cursor-pointer">
-                I agree to the Influencer Program Terms and Conditions
+              <label htmlFor="terms" className="text-sm font-bold text-[#3D2E17] cursor-pointer">
+                I agree to the Influencer Program Terms and Conditions *
               </label>
             </div>
 
