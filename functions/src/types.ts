@@ -29,6 +29,7 @@ export interface Dispensary {
   dispensaryName: string;
   dispensaryType: string; 
   currency: string;
+  taxRate?: number; // VAT/GST percentage (e.g., 15 for 15%) - auto-populated from country
   openTime?: string | null;
   closeTime?: string | null;
   operatingDays: string[];

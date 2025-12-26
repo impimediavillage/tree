@@ -235,6 +235,7 @@ export default function BrowsePoolPage() {
                 requestStatus={item.requestStatus}
                 requestCount={item.requestCount}
                 totalRequestedByUser={item.totalRequestedByUser}
+                isProductPool={true}
               />
             ))}
           </div>

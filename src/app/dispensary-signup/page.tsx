@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import type { DispensaryType } from '@/types';
 import { Loader } from '@googlemaps/js-api-loader';
 import countryDialCodes from '@/../docs/country-dial-codes.json';
+import { getTaxRateByCountry, getTaxDataByCountry } from '@/lib/taxRates';
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const currencyOptions = [
@@ -52,6 +53,7 @@ export default function WellnessSignupPage() {
   const mapInitialized = useRef(false);
   const [selectedCountry, setSelectedCountry] = useState<Country | undefined>(countryDialCodes.find(c => c.iso === 'ZA'));
   const [nationalPhoneNumber, setNationalPhoneNumber] = useState('');
+  const [detectedTaxRate, setDetectedTaxRate] = useState<number | null>(null);
 
   const form = useForm<DispensarySignupFormData>({
     resolver: zodResolver(dispensarySignupSchema),
@@ -124,7 +126,25 @@ export default function WellnessSignupPage() {
             form.setValue('city', getAddressComponent(components, 'administrative_area_level_2') || getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
             form.setValue('province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
             form.setValue('postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
-            form.setValue('country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
+            
+            const countryName = getAddressComponent(components, 'country');
+            form.setValue('country', countryName, { shouldValidate: true, shouldDirty: true });
+            
+            // Auto-populate tax rate based on country
+            if (countryName) {
+              const taxRate = getTaxRateByCountry(countryName);
+              if (taxRate > 0) {
+                setDetectedTaxRate(taxRate);
+                const taxData = getTaxDataByCountry(countryName);
+                toast({
+                  title: "Tax Rate Detected",
+                  description: `${taxData?.tax_type || 'Tax'} for ${countryName}: ${taxRate}%`,
+                  duration: 4000,
+                });
+              } else {
+                setDetectedTaxRate(0);
+              }
+            }
 
             const matchedCountry = countryDialCodes.find(c => c.iso.toLowerCase() === countryShortName.toLowerCase());
             if (matchedCountry) {
@@ -193,7 +213,12 @@ export default function WellnessSignupPage() {
 
     try {
       // TESTING MODE: Auto-approve for friend testing (R100 payment will be added later)
-      const submissionData = { ...data, autoApprove: true };
+      // Include detected tax rate in submission
+      const submissionData = { 
+        ...data, 
+        autoApprove: true,
+        taxRate: detectedTaxRate ?? 0
+      };
       
       const result: any = await submitApplication(submissionData);
 
@@ -338,6 +363,21 @@ export default function WellnessSignupPage() {
                           </FormItem>
                       )} />
                       <FormField control={form.control} name="currency" render={({ field }) => (<FormItem><FormLabel className="text-[#3D2E17] font-bold">Default Currency</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a currency" /></SelectTrigger></FormControl><SelectContent>{currencyOptions.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                      
+                      {/* Tax Rate Display */}
+                      {detectedTaxRate !== null && (
+                        <FormItem>
+                          <FormLabel className="text-[#3D2E17] font-bold">Tax Rate (VAT/GST)</FormLabel>
+                          <div className="flex items-center h-10 px-3 py-2 rounded-md border border-input bg-muted/50">
+                            <span className="text-sm font-semibold text-[#3D2E17]">
+                              {detectedTaxRate}% {detectedTaxRate === 0 && '(No tax data available for this country)'}
+                            </span>
+                          </div>
+                          <FormDescription className="text-[#3D2E17] font-semibold">
+                            This tax rate was automatically detected based on your country and will be applied to all product sales for tax compliance.
+                          </FormDescription>
+                        </FormItem>
+                      )}
                   </div>
                 </section>
                 

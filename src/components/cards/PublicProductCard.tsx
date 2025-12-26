@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { InfoDialog } from '../dialogs/InfoDialog';
 import { DesignPackDialog } from '../dialogs/DesignPackDialog';
+import { getDisplayPrice } from '@/lib/pricing';
 
 
 interface PublicProductCardProps {
@@ -22,9 +23,10 @@ interface PublicProductCardProps {
   requestStatus?: 'negotiating';
   requestCount?: number;
   totalRequestedByUser?: number;
+  isProductPool?: boolean; // Indicates if this is from Product Pool (5% commission vs 25%)
 }
 
-export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount, totalRequestedByUser = 0 }: PublicProductCardProps) {
+export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestProduct, requestStatus, requestCount, totalRequestedByUser = 0, isProductPool = false }: PublicProductCardProps) {
   const { addToCart, cartItems } = useCart(); 
   const [isViewerOpen, setIsViewerOpen] = React.useState(false);
   const [isDesignPackOpen, setIsDesignPackOpen] = React.useState(false);
@@ -35,6 +37,12 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
 
   const images = (product.imageUrls && product.imageUrls.length > 0) ? product.imageUrls.filter(Boolean) as string[] : (product.imageUrl ? [product.imageUrl] : []);
   const isThcProduct = product.dispensaryType === "Cannibinoid store" && product.productType === "THC";
+  
+  // Calculate display price with proper tax extraction and commission
+  // tier.price is the dispensary-set price (includes their tax)
+  // We extract base, add commission, show subtotal (tax added at checkout)
+  const displayPrice = getDisplayPrice(tier.price, product.taxRate || 0, isProductPool);
+  
   // Fetch sticker images for THC products
   React.useEffect(() => {
     if (isThcProduct) {
@@ -117,7 +125,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                     <div className="w-full text-right">
                         <p className="text-2xl font-bold text-foreground">
                             <span className="text-sm font-bold text-[#3D2E17] align-top">{product.currency} </span>
-                            {tier.price.toFixed(2)}
+                            {displayPrice.toFixed(2)}
                         </p>
                         <div className="flex items-center justify-end text-xs text-muted-foreground">
                             <span>{tier.unit}</span>
@@ -151,7 +159,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
                 <div className="w-full text-right">
                     <p className="text-2xl font-bold text-foreground">
                         <span className="text-sm font-bold text-primary align-top">{product.currency} </span>
-                        {tier.price.toFixed(2)}
+                        {displayPrice.toFixed(2)}
                     </p>
                     <div className="flex items-center justify-end text-xs font-semibold text-foreground/70">
                         <span className="mr-1">/ {tier.unit}</span>
@@ -177,7 +185,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
           <div className="w-full text-center">
             <p className="text-3xl font-bold text-foreground">
               <span className="text-sm font-bold text-[#3D2E17] align-top">{product.currency} </span>
-              {tier.price.toFixed(2)}
+              {displayPrice.toFixed(2)}
             </p>
             <p className="text-sm font-bold text-[#006B3E] mt-1">Design pack price</p>
           </div>
@@ -246,7 +254,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         <div className="w-full text-right">
             <p className="text-2xl font-bold text-foreground">
                 <span className="text-sm font-semibold text-primary align-top">{product.currency} </span>
-                {tier.price.toFixed(2)}
+                {displayPrice.toFixed(2)}
             </p>
             <div className="flex items-center justify-end text-xs text-muted-foreground">
                 <span className="mr-1">/ {tier.unit}</span>

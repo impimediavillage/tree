@@ -243,17 +243,36 @@ export interface InfluencerCommission {
   influencerName: string;
   orderId: string;
   orderNumber?: string;
-  orderTotal: number;
+  
+  // New pricing breakdown fields
+  orderTotal: number; // Total customer paid
+  dispensaryEarnings: number; // Total base prices (what dispensaries get)
+  platformCommission: number; // Total platform commission from order
+  influencerEarnings: number; // Influencer's share of platform commission
+  influencerCommissionRate: number; // % of platform commission (e.g., 0.40 for 40%)
+  
+  // Legacy fields (keep for compatibility)
   orderDate?: Timestamp;
   baseCommissionRate: number;
   effectiveRate: number;
-  commissionAmount: number;
+  commissionAmount: number; // Same as influencerEarnings
   bonusAmount?: number;
   bonusMultipliers?: {
     videoContent: number;
     tribeEngagement: number;
     seasonal: number;
   };
+  
+  // Products breakdown
+  products?: Array<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    dispensarySetPrice: number;
+    basePrice: number;
+    commission: number;
+  }>;
+  
   status: 'pending' | 'completed' | 'paid';
   createdAt: Timestamp;
   completedAt?: Timestamp;

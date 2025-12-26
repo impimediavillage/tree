@@ -1,0 +1,1923 @@
+{
+  "generated_at": "2025-12-22T10:47:56",
+  "scope": "Standard national VAT/GST or similar consumption tax rates commonly applied to retail items; many countries have reduced/zero rates and exemptions; some have state/provincial/local sales taxes instead of VAT.",
+  "items": [
+    {
+      "country": "Albania",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Algeria",
+      "last_reviewed": "14 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Angola",
+      "last_reviewed": "15 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 14.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "14",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Argentina",
+      "last_reviewed": "05 February 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Armenia",
+      "last_reviewed": "12 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Australia",
+      "last_reviewed": "19 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Goods and services tax: 10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Austria",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Azerbaijan",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bahamas, The",
+      "last_reviewed": "16 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bahrain",
+      "last_reviewed": "30 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bangladesh",
+      "last_reviewed": "18 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Barbados",
+      "last_reviewed": "22 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 17.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "17.5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Belgium",
+      "last_reviewed": "17 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bermuda",
+      "last_reviewed": "30 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bolivia",
+      "last_reviewed": "17 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 13.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "13",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bosnia and Herzegovina",
+      "last_reviewed": "19 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 17.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "17",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Botswana",
+      "last_reviewed": "25 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 14.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "14",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Brazil",
+      "last_reviewed": "02 May 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": "Mixed indirect taxes (IPI, PIS/COFINS, ICMS, ISS)",
+      "notes": "Mixed indirect taxes (IPI, PIS/COFINS, ICMS, ISS)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Brunei Darussalam",
+      "last_reviewed": "09 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Bulgaria",
+      "last_reviewed": "28 October 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Cabo Verde",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Cambodia",
+      "last_reviewed": "08 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Cameroon, Republic of",
+      "last_reviewed": "04 March 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.25,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19.25",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Canada",
+      "last_reviewed": "13 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 5.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Combined federal and provincial/territorial sales taxes range from 5% to 15%",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Cayman Islands",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Chad",
+      "last_reviewed": "12 August 2024",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Chile",
+      "last_reviewed": "19 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "China, People's Republic of",
+      "last_reviewed": "02 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 13.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "13/9/6 (varies by category)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Colombia",
+      "last_reviewed": "14 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Congo, Democratic Republic of the",
+      "last_reviewed": "15 October 2024",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Congo, Republic of",
+      "last_reviewed": "10 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.9,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18.90 (18% VAT + 5% surtax)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Costa Rica",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 13.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "13",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Croatia",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 25.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "25",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Cyprus",
+      "last_reviewed": "01 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Czech Republic",
+      "last_reviewed": "24 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Denmark",
+      "last_reviewed": "05 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 25.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "25",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Dominican Republic",
+      "last_reviewed": "05 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Ecuador",
+      "last_reviewed": "29 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Egypt",
+      "last_reviewed": "13 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 14.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "14",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "El Salvador",
+      "last_reviewed": "05 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 13.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "13",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Equatorial Guinea",
+      "last_reviewed": "21 November 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Estonia",
+      "last_reviewed": "29 May 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 22.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "22",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Eswatini",
+      "last_reviewed": "13 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Ethiopia",
+      "last_reviewed": "18 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Finland",
+      "last_reviewed": "18 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 25.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "25.5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "France",
+      "last_reviewed": "05 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Gabon",
+      "last_reviewed": "04 March 2024",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Georgia",
+      "last_reviewed": "14 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Germany",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Ghana",
+      "last_reviewed": "28 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15 (plus levies; special schemes exist)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Gibraltar",
+      "last_reviewed": "09 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Greece",
+      "last_reviewed": "21 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 24.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "24",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Greenland",
+      "last_reviewed": "15 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Guatemala",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Guernsey, Channel Islands",
+      "last_reviewed": "17 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Guyana",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 14.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "14",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Honduras",
+      "last_reviewed": "17 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Sales tax: 15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Hong Kong SAR",
+      "last_reviewed": "02 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Hungary",
+      "last_reviewed": "07 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 27.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "27",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Iceland",
+      "last_reviewed": "20 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 24.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "24",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "India",
+      "last_reviewed": "26 November 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": {
+        "min": 5.0,
+        "max": 28.0
+      },
+      "rate_note": null,
+      "notes": "GST varies 5–28 (general 18)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Indonesia",
+      "last_reviewed": "15 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Iraq",
+      "last_reviewed": "01 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": "Sales tax varies by good/service",
+      "notes": "Sales tax varies by good/service",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Ireland",
+      "last_reviewed": "11 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 23.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "23",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Isle of Man",
+      "last_reviewed": "31 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Israel",
+      "last_reviewed": "02 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Italy",
+      "last_reviewed": "05 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 22.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "22",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Ivory Coast (Côte d'Ivoire)",
+      "last_reviewed": "20 November 2024",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Jamaica",
+      "last_reviewed": "12 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "GCT: 15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Japan",
+      "last_reviewed": "02 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Jersey, Channel Islands",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 5.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "GST: 5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Jordan",
+      "last_reviewed": "13 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Sales tax: 16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Kazakhstan",
+      "last_reviewed": "02 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Kenya",
+      "last_reviewed": "31 October 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Korea, Republic of",
+      "last_reviewed": "25 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Kosovo",
+      "last_reviewed": "11 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Kuwait",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Lao PDR",
+      "last_reviewed": "14 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Latvia",
+      "last_reviewed": "03 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Lebanon",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 11.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "11",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Liberia, Republic of",
+      "last_reviewed": "02 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "GST: 12",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Libya",
+      "last_reviewed": "02 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Liechtenstein",
+      "last_reviewed": "17 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 8.1,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "8.1",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Lithuania",
+      "last_reviewed": "05 March 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Luxembourg",
+      "last_reviewed": "29 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 17.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "17",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Macau SAR",
+      "last_reviewed": "09 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Madagascar",
+      "last_reviewed": "18 November 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Malaysia",
+      "last_reviewed": "07 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Sales tax: 10; Service tax: 8",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Malta",
+      "last_reviewed": "27 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Mauritania",
+      "last_reviewed": "18 July 2024",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Mauritius",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Mexico",
+      "last_reviewed": "31 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Moldova",
+      "last_reviewed": "02 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Mongolia",
+      "last_reviewed": "02 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Montenegro",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Morocco",
+      "last_reviewed": "13 March 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Mozambique",
+      "last_reviewed": "17 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Myanmar",
+      "last_reviewed": "03 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 5.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "No VAT; commercial tax general 5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Namibia, Republic of",
+      "last_reviewed": "18 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Netherlands",
+      "last_reviewed": "08 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "New Caledonia",
+      "last_reviewed": "25 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 11.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "TGC: 11",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "New Zealand",
+      "last_reviewed": "09 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "GST: 15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Nicaragua",
+      "last_reviewed": "16 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Nigeria",
+      "last_reviewed": "29 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 7.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "7.5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "North Macedonia",
+      "last_reviewed": "24 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Norway",
+      "last_reviewed": "09 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 25.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "25",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Oman",
+      "last_reviewed": "31 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 5.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Pakistan",
+      "last_reviewed": "04 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": {
+        "min": 18.0,
+        "max": 15.0
+      },
+      "rate_note": null,
+      "notes": "Goods: 18; Services: 15–16 (province-dependent)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Palestinian territories",
+      "last_reviewed": "21 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Panama",
+      "last_reviewed": "19 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 7.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "7",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Papua New Guinea",
+      "last_reviewed": "16 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "GST: 10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Paraguay",
+      "last_reviewed": "16 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Peru",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Philippines",
+      "last_reviewed": "13 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Poland",
+      "last_reviewed": "20 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 23.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "23",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Portugal",
+      "last_reviewed": "09 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 23.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "23",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Puerto Rico",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 11.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Sales/use tax: 11.5 (Tangible personal property & some services)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Romania",
+      "last_reviewed": "14 May 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Rwanda",
+      "last_reviewed": "28 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Saint Lucia",
+      "last_reviewed": "15 October 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12.5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Saudi Arabia",
+      "last_reviewed": "20 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Senegal",
+      "last_reviewed": "19 July 2024",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Serbia",
+      "last_reviewed": "15 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Singapore",
+      "last_reviewed": "29 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 9.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "GST: 9",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Slovak Republic",
+      "last_reviewed": "06 February 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 23.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "23",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Slovenia",
+      "last_reviewed": "27 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 22.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "22",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "South Africa",
+      "last_reviewed": "12 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 15.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "15",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Spain",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 21.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "21",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Sweden",
+      "last_reviewed": "17 December 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 25.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "25",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Switzerland",
+      "last_reviewed": "08 October 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 8.1,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "8.1",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Taiwan",
+      "last_reviewed": "03 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 5.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Tanzania",
+      "last_reviewed": "24 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18 (mainland; some special cases)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Thailand",
+      "last_reviewed": "30 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 7.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "7",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Timor-Leste",
+      "last_reviewed": "29 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 2.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "Sales tax (imports): 2.5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Trinidad and Tobago",
+      "last_reviewed": "24 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.5,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12.5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Tunisia",
+      "last_reviewed": "15 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 19.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "19",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Turkey",
+      "last_reviewed": "11 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Uganda",
+      "last_reviewed": "10 February 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 18.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "18",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Ukraine",
+      "last_reviewed": "18 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "United Arab Emirates",
+      "last_reviewed": "26 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 5.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "5",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "United Kingdom",
+      "last_reviewed": "01 July 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 20.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "20",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "United States",
+      "last_reviewed": "15 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": null,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "NA (state/local sales taxes vary)",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Uruguay",
+      "last_reviewed": "21 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 22.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "22",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Uzbekistan, Republic of",
+      "last_reviewed": "06 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 12.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "12",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Venezuela",
+      "last_reviewed": "20 August 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Vietnam",
+      "last_reviewed": "23 September 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 10.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "10",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    },
+    {
+      "country": "Zambia",
+      "last_reviewed": "02 June 2025",
+      "tax_type": "VAT/GST or similar consumption tax",
+      "standard_rate_percent": 16.0,
+      "rate_range_percent": null,
+      "rate_note": null,
+      "notes": "16",
+      "source": {
+        "name": "PwC Worldwide Tax Summaries - Quick Charts (VAT rates)",
+        "url": "https://taxsummaries.pwc.com/quick-charts/value-added-tax-vat-rates"
+      }
+    }
+  ]
+}
