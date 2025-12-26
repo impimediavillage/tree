@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Badge } from '@/components/ui/badge';
 import { VideoLibraryGallery } from '@/components/video-library/VideoLibraryGallery';
+import { DispensaryEventsShowcase } from '@/components/dispensary/DispensaryEventsShowcase';
 
 export default function DispensaryStorePage() {
   const params = useParams();
@@ -201,6 +202,15 @@ export default function DispensaryStorePage() {
         {/* Educational Video Library */}
         {dispensary.dispensaryType && (
           <VideoLibraryGallery dispensaryType={dispensary.dispensaryType} />
+        )}
+
+        {/* Events Showcase */}
+        {dispensary.id && (
+          <DispensaryEventsShowcase 
+            dispensaryId={dispensary.id} 
+            dispensaryName={dispensary.dispensaryName}
+            variant="full"
+          />
         )}
 
         {/* Search and Category Filters */}

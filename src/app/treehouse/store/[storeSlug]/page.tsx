@@ -16,6 +16,7 @@ import { Loader2, AlertTriangle, ArrowLeft, Store, Search, Package } from 'lucid
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/contexts/CartContext';
+import { DispensaryEventsShowcase } from '@/components/dispensary/DispensaryEventsShowcase';
 
 export default function CreatorStorePage() {
   const params = useParams();
@@ -182,6 +183,15 @@ export default function CreatorStorePage() {
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Events Showcase - if this is also a dispensary */}
+        {store.dispensaryId && (
+          <DispensaryEventsShowcase 
+            dispensaryId={store.dispensaryId} 
+            dispensaryName={store.storeName}
+            variant="compact"
+          />
         )}
 
         {/* Search and Category Filters */}
