@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt } from 'lucide-react';
+import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -98,12 +98,20 @@ export default function WellnessAdminOverviewPage() {
             variant="green"
         />
         <QuickActionCard
+            title="Events Calendar"
+            description="Create and manage awesome events to engage your community."
+            icon={Calendar}
+            link="/dispensary-admin/events"
+            buttonText="Manage Events"
+            variant="brown"
+        />
+        <QuickActionCard
             title="Pool Orders"
             description="View and manage all finalized product pool orders and shipping."
             icon={PackageCheck}
             link="/dispensary-admin/product-pool-orders"
             buttonText="View Pool Orders"
-            variant="brown"
+            variant="green"
         />
         <QuickActionCard
             title="Wellness Profile"

@@ -9,7 +9,7 @@ import { collection, getDocs, doc, updateDoc, query, where, serverTimestamp, set
 import type { User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card'; 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -256,26 +256,25 @@ export default function WellnessManageUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h1 
-            className="text-3xl font-bold flex items-center gap-2 text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            <UserCog className="h-8 w-8 text-primary" /> Manage Your Users
-          </h1>
-          <p 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Add, view, and manage wellness staff and linked Leaf Users for your wellness profile.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <DispensaryAddStaffDialog onUserAdded={() => dispensaryId && fetchManagedUsers(dispensaryId)} dispensaryId={dispensaryId!} />
-          <DispensaryAddLeafUserDialog onUserAdded={() => dispensaryId && fetchManagedUsers(dispensaryId)} dispensaryId={dispensaryId!} />
-        </div>
-      </div>
+      {/* Header Card with Dark Brown Theme */}
+      <Card className="shadow-lg bg-muted/50 border-primary/30">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-3xl font-black text-[#3D2E17] flex items-center gap-3">
+                <UserCog className="h-10 w-10 text-[#006B3E]" /> Manage Your Users
+              </CardTitle>
+              <CardDescription className="text-md text-[#3D2E17] font-bold mt-2">
+                Add, view, and manage wellness staff and linked Leaf Users for your wellness profile.
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              <DispensaryAddStaffDialog onUserAdded={() => dispensaryId && fetchManagedUsers(dispensaryId)} dispensaryId={dispensaryId!} />
+              <DispensaryAddLeafUserDialog onUserAdded={() => dispensaryId && fetchManagedUsers(dispensaryId)} dispensaryId={dispensaryId!} />
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
 
        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
         <Input
