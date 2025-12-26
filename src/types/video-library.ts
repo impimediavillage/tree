@@ -7,6 +7,7 @@ export interface EducationalVideo {
   title: string;
   description: string;
   videoUrl: string;
+  embedCode?: string; // Custom embed code for videos
   thumbnailUrl?: string;
   source: VideoSource;
   dispensaryType: string; // e.g., 'cannibinoid', 'traditional-medicine', 'homeopathy', etc.

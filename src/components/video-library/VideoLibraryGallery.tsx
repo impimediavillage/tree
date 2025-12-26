@@ -205,6 +205,50 @@ export function VideoLibraryGallery({ dispensaryType }: VideoLibraryGalleryProps
 
             {/* Video Player */}
             {selectedVideo && (() => {
+              // If custom embed code exists, use it
+              if (selectedVideo.embedCode && selectedVideo.embedCode.trim()) {
+                return (
+                  <div className="relative">
+                    <div 
+                      className="aspect-video bg-black"
+                      dangerouslySetInnerHTML={{ __html: selectedVideo.embedCode }}
+                    />
+                    {/* Video Info */}
+                    <div className="p-6 space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-extrabold text-[#3D2E17] mb-2">
+                            {selectedVideo.title}
+                          </h3>
+                          <p className="text-[#5D4E37] leading-relaxed">
+                            {selectedVideo.description}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getSourceIcon(selectedVideo.source)}
+                        </div>
+                      </div>
+
+                      {/* Tags */}
+                      {selectedVideo.tags && selectedVideo.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-[#5D4E37]/10">
+                          {selectedVideo.tags.map((tag, idx) => (
+                            <Badge 
+                              key={idx} 
+                              variant="outline"
+                              className="border-[#006B3E] text-[#006B3E] font-semibold"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Otherwise, parse the video URL
               const parsed = parseVideoUrl(selectedVideo.videoUrl);
               return parsed ? (
                 <div className="relative">

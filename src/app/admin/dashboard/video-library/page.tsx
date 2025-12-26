@@ -73,6 +73,7 @@ export default function VideoLibraryManagementPage() {
     title: '',
     description: '',
     videoUrl: '',
+    embedCode: '',
     dispensaryType: '',
     tags: ''
   });
@@ -171,9 +172,12 @@ export default function VideoLibraryManagementPage() {
         updatedBy: currentUser?.uid || 'system'
       };
 
-      // Only include thumbnailUrl if it exists
+      // Only include optional fields if they exist
       if (thumbnail) {
         videoData.thumbnailUrl = thumbnail;
+      }
+      if (formData.embedCode && formData.embedCode.trim()) {
+        videoData.embedCode = formData.embedCode.trim();
       }
 
       if (editingVideo?.id) {
@@ -263,6 +267,7 @@ export default function VideoLibraryManagementPage() {
       title: video.title,
       description: video.description,
       videoUrl: video.videoUrl,
+      embedCode: video.embedCode || '',
       dispensaryType: video.dispensaryType,
       tags: video.tags?.join(', ') || ''
     });
@@ -274,6 +279,7 @@ export default function VideoLibraryManagementPage() {
       title: '',
       description: '',
       videoUrl: '',
+      embedCode: '',
       dispensaryType: '',
       tags: ''
     });
@@ -477,6 +483,18 @@ export default function VideoLibraryManagementPage() {
             </div>
 
             <div>
+              <Label className="text-[#3D2E17] font-bold">Custom Embed Code (Optional)</Label>
+              <Textarea
+                value={formData.embedCode}
+                onChange={(e) => setFormData({ ...formData, embedCode: e.target.value })}
+                placeholder="Paste custom embed code here (e.g., <iframe>...</iframe>)"
+                rows={4}
+                className="border-[#5D4E37]/30 font-mono text-xs"
+              />
+              <p className="text-xs text-[#5D4E37] mt-1">If provided, this embed code will be used instead of the video URL</p>
+            </div>
+
+            <div>
               <Label className="text-[#3D2E17] font-bold">Title *</Label>
               <Input
                 value={formData.title}
@@ -562,6 +580,17 @@ export default function VideoLibraryManagementPage() {
             <DialogDescription className="text-[#5D4E37]">{previewVideo?.description}</DialogDescription>
           </DialogHeader>
           {previewVideo && (() => {
+            // If custom embed code exists, use it
+            if (previewVideo.embedCode && previewVideo.embedCode.trim()) {
+              return (
+                <div 
+                  className="aspect-video bg-black rounded-lg overflow-hidden"
+                  dangerouslySetInnerHTML={{ __html: previewVideo.embedCode }}
+                />
+              );
+            }
+            
+            // Otherwise, parse the video URL
             const parsed = parseVideoUrl(previewVideo.videoUrl);
             return parsed ? (
               <div className="aspect-video bg-black rounded-lg overflow-hidden">

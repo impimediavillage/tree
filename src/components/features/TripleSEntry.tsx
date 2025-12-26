@@ -35,9 +35,9 @@ export function TripleSEntry() {
   }, []);
 
   return (
-    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-muted/50 relative group">
+    <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-muted/50 relative group max-w-sm mx-auto">
       {/* Animated Background Images */}
-      <div className="relative aspect-[9/16] w-full overflow-hidden bg-gradient-to-br from-[#006B3E]/10 to-[#3D2E17]/10">
+      <div className="relative aspect-[9/16] w-full overflow-hidden bg-gradient-to-br from-[#006B3E]/10 to-[#3D2E17]/10 max-h-[400px]">
         {GROWERS_IMAGES.map((imageSrc, index) => (
           <div
             key={imageSrc}
@@ -75,20 +75,6 @@ export function TripleSEntry() {
         >
           <Link href="/triple-s-club">Enter Triple S Canna Club</Link>
         </Button>
-      </div>
-      
-      {/* Progress Indicator Dots */}
-      <div className="absolute top-4 right-4 flex gap-1.5 z-10">
-        {GROWERS_IMAGES.map((_, index) => (
-          <div
-            key={index}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              index === currentImageIndex
-                ? 'w-8 bg-[#006B3E]'
-                : 'w-2 bg-white/60'
-            }`}
-          />
-        ))}
       </div>
     </Card>
   );
