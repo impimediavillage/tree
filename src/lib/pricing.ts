@@ -178,12 +178,12 @@ export function calculateCheckoutSummary(
 export function formatPrice(price: number, currency: string = 'ZAR'): string {
   const symbols: Record<string, string> = {
     ZAR: 'R',
-    USD: '$',
-    EUR: '€',
-    GBP: '£'
+    USD: 'R',
+    EUR: 'R',
+    GBP: 'R'
   };
   
-  const symbol = symbols[currency] || currency;
+  const symbol = symbols[currency] || 'R';
   return `${symbol}${price.toFixed(2)}`;
 }
 
