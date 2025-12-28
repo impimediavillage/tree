@@ -73,7 +73,8 @@ export default function AdminCreateDispensaryPage() {
       streetAddress: '', suburb: '', city: '', postalCode: '', province: '', country: '',
       latitude: undefined, longitude: undefined,
       showLocation: true, deliveryRadius: 'none',
-      message: '', openTime: '', closeTime: '', originLocker: null
+      message: '', openTime: '', closeTime: '', originLocker: null,
+      inHouseDeliveryPrice: undefined, sameDayDeliveryCutoff: '', inHouseDeliveryCutoffTime: ''
     },
   });
 

@@ -43,6 +43,11 @@ export const baseWellnessSchema = z.object({
   deliveryRadius: z.string().optional().nullable(),
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
   originLocker: pudoLockerSchema.nullable().optional(),
+  
+  // In-house delivery fields
+  inHouseDeliveryPrice: z.number().optional().nullable(),
+  sameDayDeliveryCutoff: z.string().optional().nullable(),
+  inHouseDeliveryCutoffTime: z.string().optional().nullable(),
 });
 export type BaseWellnessFormData = z.infer<typeof baseWellnessSchema>;
 
