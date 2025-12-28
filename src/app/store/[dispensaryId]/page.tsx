@@ -73,7 +73,8 @@ export default function DispensaryStorePage() {
         const productsSnapshot = await getDocs(productsQuery);
         const fetchedProducts = productsSnapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data()
+          ...doc.data(),
+          taxRate: dispensaryData.taxRate || 0 // Add dispensary's tax rate to each product for pricing
         })) as Product[];
 
         setProducts(fetchedProducts);
