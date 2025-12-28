@@ -459,8 +459,8 @@ export default function VideoLibraryManagementPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-2xl bg-white">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] bg-white">
+          <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-[#5D4E37]/10">
             <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-[#006B3E]" />
               {editingVideo ? 'Edit Video' : 'Add New Video'}
@@ -469,7 +469,8 @@ export default function VideoLibraryManagementPage() {
               {editingVideo ? 'Update video details below' : 'Add educational content to your video library'}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="overflow-y-auto max-h-[calc(90vh-180px)] pr-2 smooth-scroll">
+            <form onSubmit={handleSubmit} className="space-y-6 pb-4">
             <div>
               <Label className="text-[#3D2E17] font-bold">Video URL *</Label>
               <Input
@@ -545,30 +546,31 @@ export default function VideoLibraryManagementPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => { setShowAddDialog(false); resetForm(); }}
-                className="border-[#5D4E37]/30"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="bg-[#006B3E] hover:bg-[#006B3E]/90 text-white font-bold"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                {editingVideo ? 'Update Video' : 'Add Video'}
-              </Button>
-            </div>
-          </form>
+            </form>
+          </div>
+          <div className="sticky bottom-0 bg-white border-t border-[#5D4E37]/10 pt-4 mt-4 flex justify-end gap-3">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => { setShowAddDialog(false); resetForm(); }}
+              className="border-[#5D4E37]/30"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="bg-[#006B3E] hover:bg-[#006B3E]/90 text-white font-bold"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {editingVideo ? 'Update Video' : 'Add Video'}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
