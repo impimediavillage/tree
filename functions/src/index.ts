@@ -961,7 +961,8 @@ interface ShipLogicDeliveryAddress {
 
 interface GetRatesRequestPayload {
     cart: CartItem[];
-    dispensaryId: string;
+    dispensaryId?: string; // Optional for Treehouse orders
+    collectionAddress?: any; // For Treehouse - provides address directly
     deliveryAddress?: ShipLogicDeliveryAddress;
     type: 'std' | 'dtl' | 'ltd' | 'ltl';
     originLockerCode?: string;
@@ -1185,10 +1186,15 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
     }
     
     // CORRECTED: The cart IS required to calculate parcel dimensions.
-    const { cart, dispensaryId, deliveryAddress, type, originLockerCode, destinationLockerCode } = request.data;
+    const { cart, dispensaryId, collectionAddress, deliveryAddress, type, originLockerCode, destinationLockerCode } = request.data;
 
-    if (!cart || cart.length === 0 || !dispensaryId || !type) {
-        throw new HttpsError('invalid-argument', 'Request is missing required cart, dispensaryId, or type data.');
+    if (!cart || cart.length === 0 || !type) {
+        throw new HttpsError('invalid-argument', 'Request is missing required cart or type data.');
+    }
+
+    // Either dispensaryId or collectionAddress must be provided
+    if (!dispensaryId && !collectionAddress) {
+        throw new HttpsError('invalid-argument', 'Either dispensaryId or collectionAddress must be provided.');
     }
 
     const pudoApiKey = pudoApiKeySecret.value();
@@ -1198,11 +1204,33 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
     }
 
     try {
-        const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
-        if (!dispensaryDoc.exists) {
-            throw new HttpsError('not-found', `Dispensary '${dispensaryId}' not found.`);
+        // For Treehouse orders, collectionAddress is provided directly
+        // For dispensary orders, fetch from dispensaries collection
+        let dispensaryCollectionAddress: any;
+        
+        if (collectionAddress) {
+            // Use provided collection address (Treehouse orders)
+            dispensaryCollectionAddress = collectionAddress;
+        } else if (dispensaryId) {
+            // Fetch dispensary and build collection address
+            const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
+            if (!dispensaryDoc.exists) {
+                throw new HttpsError('not-found', `Dispensary '${dispensaryId}' not found.`);
+            }
+            const dispensary = dispensaryDoc.data() as Dispensary;
+            dispensaryCollectionAddress = {
+                lat: dispensary.latitude,
+                lng: dispensary.longitude,
+                street_address: dispensary.streetAddress,
+                local_area: dispensary.suburb || dispensary.city,
+                city: dispensary.city,
+                code: dispensary.postalCode,
+                zone: dispensary.province,
+                country: "South Africa",
+                type: "business",
+                company: dispensary.dispensaryName
+            };
         }
-        const dispensary = dispensaryDoc.data() as Dispensary;
         
         // --- CORRECTED: Logic to build 'parcels' array from cart items IS included ---
         // Pudo expects string values for parcel dimensions from the docs.
@@ -1225,20 +1253,6 @@ export const getPudoRates = onCall({ secrets: [pudoApiKeySecret], cors: true }, 
         if (parcels.length === 0) {
             throw new HttpsError('invalid-argument', 'No items in the cart have valid shipping dimensions.');
         }
-
-        // Base collection address from the dispensary's physical location for D2L
-        const dispensaryCollectionAddress = {
-            lat: dispensary.latitude,
-            lng: dispensary.longitude,
-            street_address: dispensary.streetAddress,
-            local_area: dispensary.suburb || dispensary.city,
-            city: dispensary.city,
-            code: dispensary.postalCode,
-            zone: dispensary.province,
-            country: "South Africa",
-            type: "business",
-            company: dispensary.dispensaryName
-        };
 
         // --- CORRECTED PAYLOAD: INCLUDES 'parcels' ARRAY ---
         let pudoPayload: any = {

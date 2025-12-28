@@ -36,6 +36,8 @@ interface TreehouseConfig {
   longitude: number;
   email?: string;
   shippingMethods?: string[];
+  inHouseDeliveryPrice?: number;
+  sameDayDeliveryCutoff?: string;
   // Locker fields at root level (not nested)
   lockerId?: string;
   lockerCode?: string;
@@ -151,11 +153,26 @@ export const TreehouseShippingGroup = ({
           lng: addressData.shippingAddress.longitude
       };
 
-      let payload: any = { cart: items, dispensaryId: storeId, type: selectedTier };
+      // For Treehouse, we need to provide collection address directly instead of dispensaryId
+      const collectionAddress = {
+        lat: treehouseConfig?.latitude,
+        lng: treehouseConfig?.longitude,
+        street_address: treehouseConfig?.streetAddress,
+        local_area: treehouseConfig?.suburb,
+        city: treehouseConfig?.city,
+        code: treehouseConfig?.postalCode,
+        zone: treehouseConfig?.province,
+        country: treehouseConfig?.country || "South Africa",
+        type: "business" as const,
+        company: "The Wellness Tree Treehouse"
+      };
+
+      let payload: any = { cart: items, type: selectedTier, collectionAddress };
 
       if (selectedTier === 'dtl') {
         if (!destinationLocker) return;
         payload.destinationLockerCode = destinationLocker.id;
+        // DTL needs collection address (from Treehouse) and destination locker
       } else if (selectedTier === 'ltd') {
         if (!treehouseConfig?.lockerCode) { 
           setError("Treehouse origin locker not configured. Please contact support."); 
@@ -319,7 +336,11 @@ export const TreehouseShippingGroup = ({
       const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: storeName };
       setRates([collectionRate]);
     } else if (tier === 'in_house') {
-      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: 50, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: storeName };
+      const deliveryFee = treehouseConfig?.inHouseDeliveryPrice ?? 50;
+      const deliveryTime = treehouseConfig?.sameDayDeliveryCutoff 
+        ? `Same-day if ordered before ${treehouseConfig.sameDayDeliveryCutoff}` 
+        : 'Same-day or next-day';
+      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: deliveryFee, service_level: 'local', delivery_time: deliveryTime, courier_name: storeName };
       setRates([inHouseRate]);
     }
   };

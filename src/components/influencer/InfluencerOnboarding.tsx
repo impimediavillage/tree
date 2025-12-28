@@ -28,12 +28,14 @@ const earningsPotentialData = [
   { name: 'Seasonal Bonus', value: 20, color: '#FFB84D' },
 ];
 
+// Commission rates are % of platform commission (25% of order)
+// Actual earnings = commission% × 25% × order
 const tierProgressData = [
-  { tier: 'Seedling', sales: 5, commission: 8 },
-  { tier: 'Sprout', sales: 15, commission: 10 },
-  { tier: 'Sapling', sales: 30, commission: 12 },
-  { tier: 'Tree', sales: 50, commission: 15 },
-  { tier: 'Forest', sales: 100, commission: 18 },
+  { tier: 'Seed', sales: 5, commission: 5 },     // 5% of platform = 1.25% of order
+  { tier: 'Sprout', sales: 15, commission: 10 }, // 10% of platform = 2.5% of order
+  { tier: 'Growth', sales: 30, commission: 15 }, // 15% of platform = 3.75% of order
+  { tier: 'Bloom', sales: 50, commission: 18 },  // 18% of platform = 4.5% of order
+  { tier: 'Forest', sales: 100, commission: 20 }, // 20% of platform = 5% of order (MAX)
 ];
 
 const monthlyGrowthData = [
@@ -70,7 +72,7 @@ const steps = [
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-white/80 rounded-lg">
                 <Trophy className="h-8 w-8 text-[#006B3E] mx-auto mb-2" />
-                <div className="text-2xl font-black text-[#3D2E17]">8-18%</div>
+                <div className="text-2xl font-black text-[#3D2E17]">1.25-5%</div>
                 <div className="text-sm text-muted-foreground">Commission Rate</div>
               </div>
               <div className="text-center p-4 bg-white/80 rounded-lg">

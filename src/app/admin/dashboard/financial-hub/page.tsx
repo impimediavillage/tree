@@ -223,6 +223,9 @@ export default function FinancialHubPage() {
       const treehouseSnap = await getDocs(treehouseQuery);
       const treehouseTxns = treehouseSnap.docs.map(doc => {
         const data = doc.data();
+        // Use new pricing fields if available, fallback to legacy calculation
+        const amount = data.totalAmount || 0;
+        const commission = data.totalPlatformCommission ?? (amount * 0.25); // New field or 25% legacy
         return {
           id: doc.id,
           creatorId: data.creatorId || '',
@@ -230,8 +233,8 @@ export default function FinancialHubPage() {
           productId: data.productId || '',
           productName: data.productName || 'Unknown Product',
           orderDate: data.createdAt?.toDate() || new Date(),
-          amount: data.totalAmount || 0,
-          commission: (data.totalAmount || 0) * 0.25, // 25% commission
+          amount,
+          commission,
           status: data.paymentStatus || 'pending',
           paymentDate: data.paymentDate?.toDate(),
         } as TreehouseTransaction;
@@ -255,23 +258,27 @@ export default function FinancialHubPage() {
         const month = format(data.createdAt?.toDate() || new Date(), 'yyyy-MM');
         const key = `${dispensaryId}-${month}`;
         
+        // Use new pricing fields if available
+        const totalAmount = data.totalAmount || 0;
+        const platformCommission = data.totalPlatformCommission ?? (totalAmount * 0.25); // Default to 25% for legacy
+        const dispensaryEarnings = data.totalDispensaryEarnings ?? (totalAmount - platformCommission);
+        
         if (revenueMap.has(key)) {
           const existing = revenueMap.get(key)!;
-          existing.revenue += data.totalAmount || 0;
+          existing.revenue += totalAmount;
           existing.orders += 1;
-          existing.platformFee = existing.revenue * 0.05; // 5% platform fee
-          existing.netRevenue = existing.revenue - existing.platformFee;
+          existing.platformFee += platformCommission;
+          existing.netRevenue += dispensaryEarnings;
         } else {
-          const revenue = data.totalAmount || 0;
           revenueMap.set(key, {
             id: key,
             dispensaryId,
             dispensaryName: data.dispensaryName || 'Unknown',
             month,
-            revenue,
+            revenue: totalAmount,
             orders: 1,
-            platformFee: revenue * 0.05,
-            netRevenue: revenue * 0.95,
+            platformFee: platformCommission,
+            netRevenue: dispensaryEarnings,
             status: 'pending',
           });
         }

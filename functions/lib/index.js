@@ -1026,9 +1026,13 @@ exports.getPudoRates = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: 
         throw new https_1.HttpsError('unauthenticated', 'Must be authenticated to fetch Pudo rates.');
     }
     // CORRECTED: The cart IS required to calculate parcel dimensions.
-    const { cart, dispensaryId, deliveryAddress, type, originLockerCode, destinationLockerCode } = request.data;
-    if (!cart || cart.length === 0 || !dispensaryId || !type) {
-        throw new https_1.HttpsError('invalid-argument', 'Request is missing required cart, dispensaryId, or type data.');
+    const { cart, dispensaryId, collectionAddress, deliveryAddress, type, originLockerCode, destinationLockerCode } = request.data;
+    if (!cart || cart.length === 0 || !type) {
+        throw new https_1.HttpsError('invalid-argument', 'Request is missing required cart or type data.');
+    }
+    // Either dispensaryId or collectionAddress must be provided
+    if (!dispensaryId && !collectionAddress) {
+        throw new https_1.HttpsError('invalid-argument', 'Either dispensaryId or collectionAddress must be provided.');
     }
     const pudoApiKey = pudoApiKeySecret.value();
     if (!pudoApiKey) {
@@ -1036,11 +1040,33 @@ exports.getPudoRates = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: 
         throw new https_1.HttpsError('internal', 'Server configuration error: Pudo API key not found.');
     }
     try {
-        const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
-        if (!dispensaryDoc.exists) {
-            throw new https_1.HttpsError('not-found', `Dispensary '${dispensaryId}' not found.`);
+        // For Treehouse orders, collectionAddress is provided directly
+        // For dispensary orders, fetch from dispensaries collection
+        let dispensaryCollectionAddress;
+        if (collectionAddress) {
+            // Use provided collection address (Treehouse orders)
+            dispensaryCollectionAddress = collectionAddress;
         }
-        const dispensary = dispensaryDoc.data();
+        else if (dispensaryId) {
+            // Fetch dispensary and build collection address
+            const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
+            if (!dispensaryDoc.exists) {
+                throw new https_1.HttpsError('not-found', `Dispensary '${dispensaryId}' not found.`);
+            }
+            const dispensary = dispensaryDoc.data();
+            dispensaryCollectionAddress = {
+                lat: dispensary.latitude,
+                lng: dispensary.longitude,
+                street_address: dispensary.streetAddress,
+                local_area: dispensary.suburb || dispensary.city,
+                city: dispensary.city,
+                code: dispensary.postalCode,
+                zone: dispensary.province,
+                country: "South Africa",
+                type: "business",
+                company: dispensary.dispensaryName
+            };
+        }
         // --- CORRECTED: Logic to build 'parcels' array from cart items IS included ---
         // Pudo expects string values for parcel dimensions from the docs.
         const parcels = cart.map(item => {
@@ -1061,19 +1087,6 @@ exports.getPudoRates = (0, https_1.onCall)({ secrets: [pudoApiKeySecret], cors: 
         if (parcels.length === 0) {
             throw new https_1.HttpsError('invalid-argument', 'No items in the cart have valid shipping dimensions.');
         }
-        // Base collection address from the dispensary's physical location for D2L
-        const dispensaryCollectionAddress = {
-            lat: dispensary.latitude,
-            lng: dispensary.longitude,
-            street_address: dispensary.streetAddress,
-            local_area: dispensary.suburb || dispensary.city,
-            city: dispensary.city,
-            code: dispensary.postalCode,
-            zone: dispensary.province,
-            country: "South Africa",
-            type: "business",
-            company: dispensary.dispensaryName
-        };
         // --- CORRECTED PAYLOAD: INCLUDES 'parcels' ARRAY ---
         let pudoPayload = {
             parcels: parcels,

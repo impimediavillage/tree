@@ -174,19 +174,21 @@ const detectDevice = (): string => {
 };
 
 // Calculate commission for order
+// Note: commissionRate is % of PLATFORM COMMISSION, not order total
+// Platform commission is 25% of order, so influencer gets % of that 25%
 export const calculateInfluencerCommission = (
-  orderTotal: number,
-  commissionRate: number,
+  platformCommission: number, 
+  commissionRate: number, 
   bonusMultipliers?: { videoContent?: number; tribeEngagement?: number; seasonal?: number }
 ): number => {
-  let commission = orderTotal * (commissionRate / 100);
+  let commission = platformCommission * (commissionRate / 100);
   
-  // Apply bonus multipliers
+  // Apply bonus multipliers (as % of base commission)
   if (bonusMultipliers) {
     const totalBonus = (bonusMultipliers.videoContent || 0) + 
                        (bonusMultipliers.tribeEngagement || 0) + 
                        (bonusMultipliers.seasonal || 0);
-    commission += orderTotal * (totalBonus / 100);
+    commission += commission * (totalBonus / 100);
   }
   
   return Math.round(commission * 100) / 100; // Round to 2 decimal places
@@ -201,14 +203,16 @@ export const calculateTierFromSales = (monthSales: number): 'seed' | 'sprout' | 
   return 'seed';
 };
 
-// Get commission rate for tier
+// Get commission rate for tier (as % of platform commission, not order total)
+// Platform gets 25% commission, influencer gets % of that
+// Max is 20% of platform commission = 5% of order total
 export const getCommissionRateForTier = (tier: string): number => {
   const rates = {
-    seed: 5,
-    sprout: 8,
-    growth: 12,
-    bloom: 15,
-    forest: 20
+    seed: 5,      // 5% of platform commission = 1.25% of order
+    sprout: 10,   // 10% of platform commission = 2.5% of order
+    growth: 15,   // 15% of platform commission = 3.75% of order
+    bloom: 18,    // 18% of platform commission = 4.5% of order
+    forest: 20    // 20% of platform commission = 5% of order (MAX)
   };
   return rates[tier as keyof typeof rates] || 5;
 };

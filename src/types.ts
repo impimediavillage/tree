@@ -78,7 +78,9 @@ export interface Dispensary {
   outgoingRequestCount?: number;
   averageRating?: number | null;
   reviewCount?: number;
-  inHouseDeliveryFee?: number;
+  inHouseDeliveryFee?: number; // Legacy field
+  inHouseDeliveryPrice?: number; // New field - cost for in-house delivery
+  sameDayDeliveryCutoff?: string; // Time orders must be placed by for same-day delivery (format: "14:00")
   bannerUrl?: string | null;
 }
 

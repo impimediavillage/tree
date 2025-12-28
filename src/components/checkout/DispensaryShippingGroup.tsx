@@ -315,7 +315,7 @@ export const DispensaryShippingGroup = ({
       const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: dispensaryName };
       setRates([collectionRate]);
     } else if (tier === 'in_house') {
-      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: dispensary?.inHouseDeliveryFee ?? 50, service_level: 'local', delivery_time: 'Same-day or next-day', courier_name: dispensaryName };
+      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: dispensary?.inHouseDeliveryPrice ?? dispensary?.inHouseDeliveryFee ?? 50, service_level: 'local', delivery_time: dispensary?.sameDayDeliveryCutoff ? `Same-day if ordered before ${dispensary.sameDayDeliveryCutoff}` : 'Same-day or next-day', courier_name: dispensaryName };
       setRates([inHouseRate]);
     }
   };

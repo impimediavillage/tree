@@ -44,6 +44,9 @@ export interface Dispensary {
   longitude?: number | null;
   deliveryRadius?: string | null;
   bulkDeliveryRadius?: string | null;
+  inHouseDeliveryFee?: number; // Legacy field
+  inHouseDeliveryPrice?: number; // New field - cost for in-house delivery
+  sameDayDeliveryCutoff?: string; // Time orders must be placed by for same-day delivery (format: "14:00")
   collectionOnly?: boolean;
   orderType?: 'small' | 'bulk' | 'both' | null;
   participateSharing?: 'yes' | 'no' | null;

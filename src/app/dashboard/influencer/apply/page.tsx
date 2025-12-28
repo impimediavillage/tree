@@ -144,9 +144,9 @@ export default function InfluencerApplicationPage() {
         <Card className="border-2 hover:shadow-xl transition-all duration-300 bg-muted/50 hover:scale-105">
           <CardContent className="pt-6 text-center">
             <DollarSign className="h-16 w-16 mx-auto mb-4 text-[#006B3E]" />
-            <h3 className="font-black text-lg mb-2 text-[#3D2E17]">Earn Up to 20%</h3>
+            <h3 className="font-black text-lg mb-2 text-[#3D2E17]">Earn Up to 5%</h3>
             <p className="text-sm font-bold text-[#3D2E17]/70">
-              Tiered commissions from 5% to 20% based on your performance
+              Tiered commissions from 1.25% to 5% based on your performance
             </p>
           </CardContent>
         </Card>

@@ -26,7 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useOrderAnalytics } from '@/hooks/use-order-analytics';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { BarChart3, TrendingUp, ShoppingCart, DollarSign } from 'lucide-react';
+import { BarChart3, TrendingUp, ShoppingCart, DollarSign, Wallet } from 'lucide-react';
 
 const DATE_RANGES = [
   { label: 'Last 7 Days', value: '7' },

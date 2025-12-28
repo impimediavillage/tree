@@ -78,9 +78,19 @@ exports.recordDispensaryEarning = (0, firestore_1.onDocumentUpdated)('orders/{or
                 console.error('Dispensary owner not found');
                 return;
             }
-            // Calculate commission (default 15%)
-            const commissionRate = dispensaryData?.commissionRate || dispensary_earnings_1.DISPENSARY_COMMISSION_RATE;
-            const commission = (0, dispensary_earnings_1.calculateDispensaryCommission)(orderTotal, commissionRate);
+            // Use new pricing system field if available, fallback to legacy calculation
+            let commission;
+            if (afterData.totalDispensaryEarnings !== undefined) {
+                // New pricing system - use the pre-calculated dispensary earnings
+                commission = afterData.totalDispensaryEarnings;
+                console.log('Using new pricing system totalDispensaryEarnings:', commission);
+            }
+            else {
+                // Legacy system - calculate commission (default 15%)
+                const commissionRate = dispensaryData?.commissionRate || dispensary_earnings_1.DISPENSARY_COMMISSION_RATE;
+                commission = (0, dispensary_earnings_1.calculateDispensaryCommission)(orderTotal, commissionRate);
+                console.log('Using legacy commission calculation:', commission);
+            }
             // For now, assign all commission to the dispensary owner
             // In the future, this could be split among staff who worked on the order
             const earningsRef = db.collection('dispensary_earnings').doc(ownerId);

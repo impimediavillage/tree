@@ -71,10 +71,12 @@ exports.processInfluencerCommission = (0, firestore_1.onDocumentCreated)('orders
         const influencerDoc = influencerQuery.docs[0];
         const influencerId = influencerDoc.id;
         const influencer = influencerDoc.data();
-        // Calculate commission
+        // Calculate commission from PLATFORM COMMISSION (new pricing system)
+        // Influencer gets % of platform's 25% commission, not % of order total
         const orderTotal = order.total || 0;
-        const baseCommissionRate = influencer.commissionRate || 5;
-        // Get bonus multipliers
+        const platformCommission = order.totalPlatformCommission || 0;
+        const baseCommissionRate = influencer.commissionRate || 5; // % of platform commission
+        // Get bonus multipliers (applied to base commission)
         const bonusMultipliers = {
             videoContent: influencer.bonusMultipliers?.videoContent || 0,
             tribeEngagement: influencer.bonusMultipliers?.tribeEngagement || 0,
@@ -91,14 +93,15 @@ exports.processInfluencerCommission = (0, firestore_1.onDocumentCreated)('orders
             const campaign = activeCampaigns.docs[0].data();
             bonusMultipliers.seasonal = campaign.bonusMultiplier || 0;
         }
-        // Calculate total commission rate
+        // Calculate influencer commission as % of platform commission
+        const baseCommissionAmount = (platformCommission * baseCommissionRate) / 100;
+        // Apply bonus multipliers to base commission
         const totalBonusMultiplier = bonusMultipliers.videoContent +
             bonusMultipliers.tribeEngagement +
             bonusMultipliers.seasonal;
-        const effectiveRate = baseCommissionRate * (1 + totalBonusMultiplier);
-        const commissionAmount = (orderTotal * effectiveRate) / 100;
-        const baseCommissionAmount = (orderTotal * baseCommissionRate) / 100;
-        const bonusAmount = commissionAmount - baseCommissionAmount;
+        const bonusAmount = baseCommissionAmount * (totalBonusMultiplier / 100);
+        const commissionAmount = baseCommissionAmount + bonusAmount;
+        const effectiveRate = baseCommissionRate * (1 + (totalBonusMultiplier / 100));
         // Get dispensary name
         let dispensaryName = 'Unknown Store';
         if (order.dispensaryId) {
