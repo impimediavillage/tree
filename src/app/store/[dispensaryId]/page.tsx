@@ -71,11 +71,14 @@ export default function DispensaryStorePage() {
           where('dispensaryId', '==', dispensaryId)
         );
         const productsSnapshot = await getDocs(productsQuery);
-        const fetchedProducts = productsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          taxRate: dispensaryData.taxRate || 0 // Add dispensary's tax rate to each product for pricing
-        })) as Product[];
+        const fetchedProducts = productsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            taxRate: dispensaryData.taxRate || 0 // Add dispensary's tax rate to each product for pricing
+          } as Product;
+        });
 
         setProducts(fetchedProducts);
       } catch (err) {
