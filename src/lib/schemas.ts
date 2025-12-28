@@ -104,6 +104,11 @@ export const ownerEditDispensarySchema = z.object({
   deliveryRadius: z.string().optional().nullable(),
   originLocker: pudoLockerSchema.nullable().optional(),
   message: z.string().max(500, { message: "Message cannot exceed 500 characters." }).optional().nullable(),
+  
+  // In-house delivery fields
+  inHouseDeliveryPrice: z.number().optional().nullable(),
+  sameDayDeliveryCutoff: z.string().optional().nullable(),
+  inHouseDeliveryCutoffTime: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Open time must be before close time.', path: ['openTime'] });
