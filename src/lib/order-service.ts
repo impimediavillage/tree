@@ -253,10 +253,18 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     dispensaryId,
     customerDetails
   } = params;
-  // Convert CartItems to OrderItems
+  
+  // Convert CartItems to OrderItems with pricing breakdown
   const orderItems: OrderItem[] = items.map(item => ({
     ...item,
-    originalPrice: item.price // Save the original price
+    originalPrice: item.price, // Save the original price
+    dispensarySetPrice: item.price, // The price set by dispensary (includes their tax)
+    basePrice: item.price, // TODO: Calculate actual base price if tax system is implemented
+    platformCommission: 0, // TODO: Calculate from pricing system
+    commissionRate: 0.25, // 25% platform commission
+    subtotalBeforeTax: item.price * item.quantity,
+    taxAmount: 0, // TODO: Calculate from pricing system
+    lineTotal: item.price * item.quantity
   }));
 
   const shippingAddress: {
