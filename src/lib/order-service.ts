@@ -358,6 +358,10 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     shippingCost,
     shippingTotal: shippingCost,
     total,
+    tax: 0, // TODO: Calculate from pricing system when implemented
+    taxRate: 0, // TODO: Get from dispensary when implemented
+    totalDispensaryEarnings: subtotal, // TODO: Calculate with commission deduction
+    totalPlatformCommission: 0, // TODO: Calculate from pricing system
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
     paymentStatus: 'pending',
