@@ -22,7 +22,7 @@ import {
   Heart
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -66,8 +66,7 @@ interface TribeMember {
 
 export default function WellnessTribesPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();  const { toast } = useToast();  const [loading, setLoading] = useState(true);
   const [tribes, setTribes] = useState<Tribe[]>([]);
   const [selectedTribe, setSelectedTribe] = useState<Tribe | null>(null);
   const [members, setMembers] = useState<TribeMember[]>([]);
@@ -100,7 +99,7 @@ export default function WellnessTribesPage() {
       setTribes(tribesData);
     } catch (error) {
       console.error('Error loading tribes:', error);
-      toast.error('Failed to load tribes');
+      toast({ variant: "destructive", description: 'Failed to load tribes' });
     } finally {
       setLoading(false);
     }
@@ -124,7 +123,7 @@ export default function WellnessTribesPage() {
       setViewingMembers(true);
     } catch (error) {
       console.error('Error loading members:', error);
-      toast.error('Failed to load tribe members');
+      toast({ variant: "destructive", description: 'Failed to load tribe members' });
     }
   };
 
@@ -144,13 +143,13 @@ export default function WellnessTribesPage() {
       );
       await Promise.all(deletePromises);
 
-      toast.success('Tribe deleted successfully');
+      toast({ description: 'Tribe deleted successfully' });
       loadTribes();
       setDeleteId(null);
       setViewingMembers(false);
     } catch (error) {
       console.error('Error deleting tribe:', error);
-      toast.error('Failed to delete tribe');
+      toast({ variant: "destructive", description: 'Failed to delete tribe' });
     }
   };
 
@@ -160,11 +159,11 @@ export default function WellnessTribesPage() {
         isPrivate: !tribe.isPrivate
       });
 
-      toast.success(`Tribe is now ${!tribe.isPrivate ? 'private' : 'public'}`);
+      toast({ description: `Tribe is now ${!tribe.isPrivate ? 'private' : 'public'}` });
       loadTribes();
     } catch (error) {
       console.error('Error updating privacy:', error);
-      toast.error('Failed to update tribe privacy');
+      toast({ variant: "destructive", description: 'Failed to update tribe privacy' });
     }
   };
 

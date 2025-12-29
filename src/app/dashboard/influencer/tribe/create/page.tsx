@@ -21,12 +21,13 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 
 export default function CreateTribePage() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [influencerName, setInfluencerName] = useState('');
 
@@ -65,7 +66,7 @@ export default function CreateTribePage() {
       setPerks([...perks, currentPerk.trim()]);
       setCurrentPerk('');
     } else if (perks.length >= 10) {
-      toast.error('Maximum 10 perks allowed');
+      toast({ variant: "destructive", description: 'Maximum 10 perks allowed' });
     }
   };
 
@@ -77,22 +78,22 @@ export default function CreateTribePage() {
     e.preventDefault();
 
     if (!user) {
-      toast.error('You must be logged in');
+      toast({ variant: "destructive", description: 'You must be logged in' });
       return;
     }
 
     if (!name.trim() || name.length < 3) {
-      toast.error('Tribe name must be at least 3 characters');
+      toast({ variant: "destructive", description: 'Tribe name must be at least 3 characters' });
       return;
     }
 
     if (!tagline.trim()) {
-      toast.error('Please add a tagline');
+      toast({ variant: "destructive", description: 'Please add a tagline' });
       return;
     }
 
     if (!description.trim() || description.length < 20) {
-      toast.error('Description must be at least 20 characters');
+      toast({ variant: "destructive", description: 'Description must be at least 20 characters' });
       return;
     }
 
@@ -117,11 +118,11 @@ export default function CreateTribePage() {
         updatedAt: serverTimestamp(),
       });
 
-      toast.success('Tribe created successfully!');
+      toast({ description: 'Tribe created successfully!' });
       router.push('/dashboard/influencer/tribe');
     } catch (error) {
       console.error('Error creating tribe:', error);
-      toast.error('Failed to create tribe');
+      toast({ variant: "destructive", description: 'Failed to create tribe' });
     } finally {
       setLoading(false);
     }
