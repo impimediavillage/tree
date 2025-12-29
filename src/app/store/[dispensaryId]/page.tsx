@@ -77,7 +77,7 @@ export default function DispensaryStorePage() {
             id: doc.id,
             ...data,
             taxRate: dispensaryData.taxRate || 0 // Add dispensary's tax rate to each product for pricing
-          } as Product;
+          } as unknown as Product;
         });
 
         setProducts(fetchedProducts);

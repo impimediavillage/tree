@@ -1,5 +1,5 @@
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, DocumentReference, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, DocumentReference, Timestamp, runTransaction, doc } from 'firebase/firestore';
 import type { CartItem } from '@/types/shared';
 import type { ShippingRate, PudoLocker, ShippingStatus } from '@/types/shipping';
 import type { AddressValues } from '@/types/checkout';
@@ -16,8 +16,6 @@ import type { OrderStatus } from '@/types/order'; // Changed from @/types/orders
  * 3. /productPoolOrders - Separate collection for product pool related orders
  */
 const ORDERS_COLLECTION = 'orders';
-
-let orderCounter = 0;
 
 // Helper function to remove undefined values from an object
 function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
@@ -42,11 +40,68 @@ function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
   return cleaned as Partial<T>;
 }
 
-function generateOrderNumber(): string {
+/**
+ * Generates unique order number with format: ORD-WELL-2412291345-A0000001
+ * - WELL: Fixed platform prefix for all orders
+ * - 241229: Year(2) + Month + Day
+ * - 1345: Hours + Minutes
+ * - A0000001: Letter (A-Z) + 7-digit counter
+ * Counter increments atomically using Firestore transactions.
+ * When counter reaches 9999999, letter increments (A→B) and counter resets to 0000001.
+ */
+async function generateOrderNumber(): Promise<string> {
   const date = new Date();
-  const year = date.getFullYear();
-  orderCounter += 1;
-  return `ORD-${year}-${orderCounter.toString().padStart(4, '0')}`;
+  const year = date.getFullYear().toString().slice(-2); // Last 2 digits (e.g., '25')
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  
+  // Fixed platform prefix for all orders
+  const code = 'WELL';
+  
+  // Get or create counter using Firestore transaction for atomicity
+  const counterRef = doc(db, 'order_counters', 'global');
+  
+  let counterLetter = 'A';
+  let counterNumber = 1;
+  
+  try {
+    await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      
+      if (counterDoc.exists()) {
+        const data = counterDoc.data();
+        counterLetter = data.letter || 'A';
+        counterNumber = (data.number || 0) + 1;
+        
+        // Check if we need to roll over to next letter
+        if (counterNumber > 9999999) {
+          counterNumber = 1;
+          counterLetter = String.fromCharCode(counterLetter.charCodeAt(0) + 1);
+          if (counterLetter > 'Z') {
+            counterLetter = 'A'; // Wrap around (though 260M orders is unlikely!)
+          }
+        }
+      }
+      
+      // Update counter atomically
+      transaction.set(counterRef, {
+        letter: counterLetter,
+        number: counterNumber,
+        lastUpdated: serverTimestamp()
+      });
+    });
+  } catch (error) {
+    console.error('Error generating order number:', error);
+    // Fallback to timestamp-based if transaction fails
+    const timestamp = Date.now().toString().slice(-7);
+    return `ORD-${code}-${year}${month}${day}${hours}${minutes}-X${timestamp}`;
+  }
+  
+  // Format: ORD-WELL-2412291345-A0000001
+  const counterStr = counterLetter + counterNumber.toString().padStart(7, '0');
+  return `ORD-${code}-${year}${month}${day}${hours}${minutes}-${counterStr}`;
 }
 
 function validateOrderInput(data: CreateOrderParams): { isValid: boolean; errors: string[] } {
@@ -247,7 +302,7 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
   });
   
   const orderData: Omit<Order, 'id'> = {
-    orderNumber: generateOrderNumber(),
+    orderNumber: await generateOrderNumber(),
     userId,
     items: orderItems,
     customerDetails: customerDetails || {
