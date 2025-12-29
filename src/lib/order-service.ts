@@ -1,5 +1,6 @@
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, DocumentReference, Timestamp, runTransaction, doc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, DocumentReference, Timestamp, runTransaction, doc, getDoc } from 'firebase/firestore';
+import { calculatePriceBreakdown } from '@/lib/pricing';
 import type { CartItem } from '@/types/shared';
 import type { ShippingRate, PudoLocker, ShippingStatus } from '@/types/shipping';
 import type { AddressValues } from '@/types/checkout';
@@ -254,18 +255,80 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     customerDetails
   } = params;
   
-  // Convert CartItems to OrderItems with pricing breakdown
-  const orderItems: OrderItem[] = items.map(item => ({
-    ...item,
-    originalPrice: item.price, // Save the original price
-    dispensarySetPrice: item.price, // The price set by dispensary (includes their tax)
-    basePrice: item.price, // TODO: Calculate actual base price if tax system is implemented
-    platformCommission: 0, // TODO: Calculate from pricing system
-    commissionRate: 0.25, // 25% platform commission
-    subtotalBeforeTax: item.price * item.quantity,
-    taxAmount: 0, // TODO: Calculate from pricing system
-    lineTotal: item.price * item.quantity
-  }));
+  // Fetch dispensary to get taxRate for pricing calculations
+  // Skip for Treehouse orders (they use different commission structure)
+  let dispensaryTaxRate = 0;
+  if (params.orderType !== 'treehouse') {
+    try {
+      const dispensaryDoc = await getDoc(doc(db, 'dispensaries', dispensaryId));
+      if (dispensaryDoc.exists()) {
+        const dispensaryData = dispensaryDoc.data();
+        dispensaryTaxRate = dispensaryData.taxRate || 0;
+      }
+    } catch (error) {
+      console.warn('Could not fetch dispensary tax rate, using 0:', error);
+    }
+  }
+  
+  // Convert CartItems to OrderItems with accurate pricing breakdown
+  const orderItems: OrderItem[] = items.map(item => {
+    // For Treehouse orders, use simple pricing (no commission breakdown needed here)
+    if (params.orderType === 'treehouse') {
+      return {
+        ...item,
+        originalPrice: item.price,
+        dispensarySetPrice: item.price,
+        basePrice: item.price,
+        platformCommission: 0, // Handled at order level for Treehouse
+        commissionRate: 0,
+        subtotalBeforeTax: item.price * item.quantity,
+        taxAmount: 0,
+        lineTotal: item.price * item.quantity
+      };
+    }
+    
+    // Determine if item is from Product Pool (5% commission) or regular store (25% commission)
+    const isProductPool = item.dispensaryType === 'Product Pool';
+    
+    // Calculate accurate price breakdown using pricing utilities
+    const breakdown = calculatePriceBreakdown(
+      item.price,
+      dispensaryTaxRate,
+      isProductPool
+    );
+    
+    console.log(`📊 Pricing breakdown for "${item.name}":`, {
+      itemPrice: item.price,
+      quantity: item.quantity,
+      taxRate: dispensaryTaxRate,
+      isProductPool,
+      breakdown: {
+        dispensarySetPrice: breakdown.dispensarySetPrice,
+        basePrice: breakdown.basePrice,
+        commission: breakdown.commission,
+        commissionRate: breakdown.commissionRate,
+        tax: breakdown.tax,
+        finalPrice: breakdown.finalPrice
+      },
+      calculated: {
+        platformCommission: breakdown.commission * item.quantity,
+        taxAmount: breakdown.tax * item.quantity,
+        lineTotal: breakdown.finalPrice * item.quantity
+      }
+    });
+    
+    return {
+      ...item,
+      originalPrice: item.price,
+      dispensarySetPrice: breakdown.dispensarySetPrice,
+      basePrice: breakdown.basePrice,
+      platformCommission: breakdown.commission * item.quantity,
+      commissionRate: breakdown.commissionRate,
+      subtotalBeforeTax: breakdown.subtotalBeforeTax * item.quantity,
+      taxAmount: breakdown.tax * item.quantity,
+      lineTotal: breakdown.finalPrice * item.quantity
+    };
+  });
 
   const shippingAddress: {
     streetAddress: string;
@@ -358,10 +421,11 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
     shippingCost,
     shippingTotal: shippingCost,
     total,
-    tax: 0, // TODO: Calculate from pricing system when implemented
-    taxRate: 0, // TODO: Get from dispensary when implemented
-    totalDispensaryEarnings: subtotal, // TODO: Calculate with commission deduction
-    totalPlatformCommission: 0, // TODO: Calculate from pricing system
+    // Calculate accurate pricing totals from OrderItems
+    tax: orderItems.reduce((sum, item) => sum + item.taxAmount, 0),
+    taxRate: dispensaryTaxRate,
+    totalDispensaryEarnings: orderItems.reduce((sum, item) => sum + (item.basePrice * item.quantity), 0),
+    totalPlatformCommission: orderItems.reduce((sum, item) => sum + item.platformCommission, 0),
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
     paymentStatus: 'pending',
@@ -384,6 +448,15 @@ export async function createOrder(params: CreateOrderParams): Promise<DocumentRe
       creatorName: params.creatorName || 'Unknown Creator'
     })
   };
+  
+  console.log('✅ Order totals calculated:', {
+    itemsCount: orderItems.length,
+    totalTax: orderData.tax.toFixed(2),
+    totalDispensaryEarnings: orderData.totalDispensaryEarnings.toFixed(2),
+    totalPlatformCommission: orderData.totalPlatformCommission.toFixed(2),
+    orderTotal: total.toFixed(2),
+    taxRate: `${dispensaryTaxRate}%`
+  });
 
   const validation = validateOrderInput(params);
   if (!validation.isValid) {
