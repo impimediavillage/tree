@@ -101,6 +101,7 @@ export interface Product {
   imageUrl?: string | null;
   imageUrls?: string[];
   currency?: string;
+  taxRate?: number; // Inherited from dispensary for pricing calculations
   gender?: 'Mens' | 'Womens' | 'Unisex' | null;
   sizingSystem?: 'UK/SA' | 'US' | 'EURO' | 'Alpha (XS-XXXL)' | 'Other' | null;
   sizes?: string[];
