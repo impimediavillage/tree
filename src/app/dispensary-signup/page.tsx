@@ -245,7 +245,7 @@ export default function WellnessSignupPage() {
             
             // Redirect to dispensary dashboard
             setTimeout(() => {
-              router.push('/dispensary-owner/dashboard');
+              router.push('/dispensary-admin/dashboard');
             }, 1500);
             
           } catch (authError) {

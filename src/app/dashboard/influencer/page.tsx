@@ -16,6 +16,7 @@ import type { InfluencerProfile, InfluencerTransaction, DailyQuest } from '@/typ
 import { getCommissionRateForTier, createReferralLink } from '@/lib/influencer-utils';
 import Link from 'next/link';
 import { InfluencerOnboarding } from '@/components/influencer/InfluencerOnboarding';
+import { SocialShareModal } from '@/components/influencer/SocialShareModal';
 
 const ONBOARDING_KEY = 'influencer_onboarding_completed';
 
@@ -28,6 +29,7 @@ export default function InfluencerDashboard() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -178,12 +180,7 @@ export default function InfluencerDashboard() {
               <p className="text-muted-foreground mt-1">{profile.bio}</p>
             </div>
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReopenOnboarding}
-                className="gap-2 border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
-              >
+              <Button variant="outline" size="sm" onClick={handleReopenOnboarding} className="gap-2 border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white">
                 <GraduationCap className="w-4 h-4" />
                 <span className="hidden sm:inline">Training Guide</span>
               </Button>
@@ -202,11 +199,7 @@ export default function InfluencerDashboard() {
                 <code className="flex-1 bg-muted px-4 py-2 rounded font-mono text-lg font-bold text-[#006B3E]">
                   {profile.referralCode}
                 </code>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => copyToClipboard(profile.referralCode, 'code')}
-                >
+                <Button variant="outline" size="icon" onClick={() => copyToClipboard(profile.referralCode, 'code')}>
                   {copiedCode ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                 </Button>
               </div>
@@ -218,25 +211,11 @@ export default function InfluencerDashboard() {
                 <code className="flex-1 bg-muted px-4 py-2 rounded text-xs truncate">
                   {createReferralLink(profile.referralCode)}
                 </code>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => copyToClipboard(createReferralLink(profile.referralCode), 'link')}
-                >
+                <Button variant="outline" size="icon" onClick={() => copyToClipboard(createReferralLink(profile.referralCode), 'link')}>
                   {copiedLink ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  asChild
-                >
-                  <a 
-                    href={`https://twitter.com/intent/tweet?text=Check out The Wellness Tree!&url=${encodeURIComponent(createReferralLink(profile.referralCode))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Share2 className="w-4 h-4" />
-                  </a>
+                <Button variant="outline" size="icon" onClick={() => setShowShareModal(true)} className="bg-[#006B3E] text-white hover:bg-[#005530] hover:text-white">
+                  <Share2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -449,6 +428,16 @@ export default function InfluencerDashboard() {
         onOpenChange={setShowOnboarding}
         onComplete={handleOnboardingComplete}
       />
+
+      {/* Social Share Modal */}
+      {profile && (
+        <SocialShareModal
+          open={showShareModal}
+          onOpenChange={setShowShareModal}
+          referralCode={profile.referralCode}
+          type="profile"
+        />
+      )}
     </div>
   );
 }
