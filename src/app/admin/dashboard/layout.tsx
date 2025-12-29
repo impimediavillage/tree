@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Building, ListChecks, Package,
-  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp, DollarSign, Truck, Wallet, Video, UserCheck, BarChart3
+  CreditCard, ShieldAlert, Bell, Settings, LogOut, UserCircle, ShoppingCart, Menu, Loader2, AlertTriangle, Brain, Store, TrendingUp, DollarSign, Truck, Wallet, Video, UserCheck, BarChart3, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -69,6 +69,7 @@ const managementSidebarNavItems: NavItem[] = [
   { title: 'Financial Hub', href: '/admin/dashboard/financial-hub', icon: Wallet },
   { title: 'Shipping Reconciliation', href: '/admin/dashboard/shipping-reconciliation', icon: Truck },
   { title: 'Pool Issues', href: '/admin/dashboard/pool-issues', icon: ShieldAlert },
+  { title: 'System Migration', href: '/admin/dashboard/system/migrate', icon: Database },
   { title: 'Notifications', href: '/admin/dashboard/notifications', icon: Bell, disabled: true, badge: 'Soon' },
 ];
 

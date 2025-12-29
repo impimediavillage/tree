@@ -41,7 +41,8 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
   // Calculate display price with proper tax extraction and commission
   // tier.price is the dispensary-set price (includes their tax)
   // We extract base, add commission, show subtotal (tax added at checkout)
-  const displayPrice = getDisplayPrice(tier.price, product.taxRate || 0, isProductPool);
+  const productTaxRate = (product as any).taxRate ?? 0;
+  const displayPrice = getDisplayPrice(tier.price, productTaxRate, isProductPool);
   
   // Fetch sticker images for THC products
   React.useEffect(() => {
