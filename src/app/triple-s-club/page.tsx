@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, Leaf, Store, Palette, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, Leaf, Store, Palette } from 'lucide-react';
 
 interface Quote {
   quotes: string[];
@@ -19,8 +18,6 @@ export default function TripleSClubPage() {
   const [showStickerSets, setShowStickerSets] = useState(false);
   const [stickerPage, setStickerPage] = useState(0);
   const [stickerImages, setStickerImages] = useState<string[]>([]);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [viewerImageIndex, setViewerImageIndex] = useState(0);
   
   const imagesPerPage = 12;
   
@@ -145,41 +142,13 @@ export default function TripleSClubPage() {
     return quotes[(startIndex + index) % quotes.length];
   };
 
-  // Image viewer functions
-  const openImageViewer = (index: number) => {
-    setViewerImageIndex(stickerStartIndex + index);
-    setViewerOpen(true);
-  };
-
-  const closeImageViewer = () => {
-    setViewerOpen(false);
-  };
-
-  const viewNextImage = () => {
-    setViewerImageIndex((prev) => (prev + 1) % stickerImages.length);
-  };
-
-  const viewPreviousImage = () => {
-    setViewerImageIndex((prev) => (prev - 1 + stickerImages.length) % stickerImages.length);
-  };
-
   // How to Join slide-in page
   if (showHowToJoin) {
     return (
       <div className="min-h-screen bg-background p-4 animate-in slide-in-from-right duration-300">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button
-                  variant="outline"
-                  className="border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#3D2E17]">How to Join Triple S Club</h1>
-            </div>
+            <h1 className="text-4xl font-black text-[#3D2E17]">How to Join Triple S Club</h1>
             <Button
               onClick={() => setShowHowToJoin(false)}
               className="bg-[#3D2E17] hover:bg-[#006B3E] text-white"
@@ -280,8 +249,22 @@ export default function TripleSClubPage() {
               <p className="text-amber-900 leading-relaxed">
                 <strong>THC Products Only:</strong> Our design pack sticker system is specifically designed for THC products to ensure legal compliance. 
                 Home growers cannot sell THC products directly, but can offer them as free samples when attached to our design packs. 
-                This system ensures legality while creating value for all participants in the cannabis community.
+                This system ensures all parties comply with local cannabis regulations while building a supportive community.
               </p>
+              <p className="text-amber-900 leading-relaxed mt-3">
+                <strong>Payment Terms:</strong> Currently, we only support weekly payouts to South African bank accounts. 
+                International payment options will be added in future updates.
+              </p>
+            </div>
+
+            <div className="flex justify-center gap-4 mt-8">
+              <Button
+                onClick={() => window.location.href = '/dispensary-signup'}
+                className="bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg px-8 py-6"
+              >
+                <Store className="mr-2 h-6 w-6" />
+                Sign Up Your Store
+              </Button>
             </div>
           </div>
         </div>
@@ -294,22 +277,12 @@ export default function TripleSClubPage() {
     return (
       <div className="min-h-screen bg-background p-4 animate-in slide-in-from-right duration-300">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Button
-                  variant="outline"
-                  className="border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#3D2E17]">Triple S Sticker Design Sets</h1>
-                <p className="text-sm sm:text-base md:text-lg text-[#006B3E] font-bold mt-2">
-                  Premium Design Packs for THC Products • Page {stickerPage + 1} of {stickerTotalPages}
-                </p>
-              </div>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-black text-[#3D2E17]">Triple S Sticker Design Sets</h1>
+              <p className="text-lg text-[#006B3E] font-bold mt-2">
+                Premium Design Packs for THC Products • Page {stickerPage + 1} of {stickerTotalPages}
+              </p>
             </div>
             <Button
               onClick={() => setShowStickerSets(false)}
@@ -325,7 +298,6 @@ export default function TripleSClubPage() {
               <div
                 key={`${imagePath}-${index}`}
                 className="relative aspect-square cursor-pointer group bg-white rounded-lg shadow-md hover:shadow-xl border-2 border-[#006B3E]/20 hover:border-[#006B3E] transition-all overflow-hidden"
-                onClick={() => openImageViewer(index)}
               >
                 <Image
                   src={imagePath}
@@ -335,109 +307,6 @@ export default function TripleSClubPage() {
                   sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                   unoptimized
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#006B3E]/0 to-[#006B3E]/0 group-hover:from-[#006B3E]/10 group-hover:to-transparent transition-all duration-200" />
-              </div>
-            ))}
-          </div>
-          
-          <div className="flex items-center justify-center gap-4 mt-8">
-            <Button
-              onClick={handleStickerPrevious}
-              disabled={stickerPage === 0}
-              className="bg-[#006B3E] hover:bg-[#3D2E17] text-white transition-all duration-200 active:scale-95"
-            >
-              <ChevronLeft className="mr-2 h-5 w-5" />
-              Previous
-            </Button>
-            
-            <span className="text-[#3D2E17] font-bold">
-              {stickerPage + 1} / {stickerTotalPages}
-            </span>
-            
-            <Button
-              onClick={handleStickerNext}
-              disabled={stickerPage === stickerTotalPages - 1}
-              className="bg-[#3D2E17] hover:bg-[#006B3E] text-white transition-all duration-200 active:scale-95"
-            >
-              Next
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>flex items-center justify-center gap-4 mb-4">
-          <Link href="/">
-            <Button
-              variant="outline"
-              className="border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
-            >
-              <ArrowLeft className="mr-2 h-5 w-5" />
-              Back to Home
-            </Button>
-          </Link>
-        </div>
-        
-        <div className="
-          </div>
-
-          {/* Image Viewer Modal */}
-          {viewerOpen && (
-            <div 
-              className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
-              onClick={closeImageViewer}
-            >
-              <div className="relative w-full max-w-4xl h-full max-h-[90vh] flex items-center justify-center">
-                {/* Close Button */}
-                <Button
-                  onClick={closeImageViewer}
-                  className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 text-white border-2 border-white/30"
-                  size="icon"
-                >
-                  <X className="h-6 w-6" />
-                </Button>
-
-                {/* Image Counter */}
-                <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-4 py-2 rounded-lg font-bold">
-                  {viewerImageIndex + 1} / {stickerImages.length}
-                </div>
-
-                {/* Previous Button */}
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    viewPreviousImage();
-                  }}
-                  className="absolute left-4 z-10 bg-white/10 hover:bg-white/20 text-white border-2 border-white/30"
-                  size="icon"
-                >
-                  <ChevronLeft className="h-8 w-8" />
-                </Button>
-
-                {/* Image */}
-                <div 
-                  className="relative w-full h-full flex items-center justify-center"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Image
-                    src={stickerImages[viewerImageIndex]}
-                    alt={`Sticker Design ${viewerImageIndex + 1}`}
-                    fill
-                    className="object-contain"
-                    sizes="90vw"
-                    unoptimized
-                  />
-                </div>
-
-                {/* Next Button */}
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    viewNextImage();
-                  }}
-                  className="absolute right-4 z-10 bg-white/10 hover:bg-white/20 text-white border-2 border-white/30"
-                  size="icon"
-                >
-                  <ChevronRight className="h-8 w-8" />
-                </Button>
-              </div>
-            </div>
-          )}/>
                 <div className="absolute inset-0 bg-gradient-to-t from-[#006B3E]/0 to-[#006B3E]/0 group-hover:from-[#006B3E]/10 group-hover:to-transparent transition-all duration-200" />
               </div>
             ))}
@@ -476,20 +345,9 @@ export default function TripleSClubPage() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <Link href="/">
-              <Button
-                variant="outline"
-                className="border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
-                size="icon"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-4xl font-black text-[#3D2E17]">
-              Triple S Canna Club
-            </h1>
-          </div>
+          <h1 className="text-4xl font-black text-[#3D2E17] mb-2">
+            Triple S Canna Club
+          </h1>
           
           {/* Three Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 my-6">
