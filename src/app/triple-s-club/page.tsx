@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X, Leaf, Store, Palette } from 'lucide-react';
 
