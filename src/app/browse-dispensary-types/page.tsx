@@ -22,11 +22,15 @@ export default function BrowseWellnessTypesPage() {
     setIsLoadingTypes(true);
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
-      const q = firestoreQuery(typesCollectionRef, where('isActive', '==', true), orderBy('name'));
+      const q = firestoreQuery(typesCollectionRef, orderBy('name'));
       const querySnapshot = await getDocs(q);
       const fetchedTypes: DispensaryType[] = [];
       querySnapshot.forEach((docSnap) => {
-        fetchedTypes.push({ id: docSnap.id, ...docSnap.data() } as DispensaryType);
+        const data = docSnap.data() as DispensaryType;
+        // Only add active types
+        if (data.isActive === true) {
+          fetchedTypes.push({ id: docSnap.id, ...data });
+        }
       });
       setAllWellnessTypes(fetchedTypes);
     } catch (error) {

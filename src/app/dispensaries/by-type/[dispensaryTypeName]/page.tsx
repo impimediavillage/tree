@@ -56,12 +56,19 @@ export default function PublicWellnessProfilesByTypePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const typeQuery = query(collection(db, 'dispensaryTypes'), where('name', '==', wellnessTypeName), where('isActive', '==', true), limit(1));
+      const typeQuery = query(collection(db, 'dispensaryTypes'), where('name', '==', wellnessTypeName), limit(1));
       const typeQuerySnapshot = await getDocs(typeQuery);
       
       if (!typeQuerySnapshot.empty) {
         const docData = typeQuerySnapshot.docs[0];
-        setWellnessTypeDetails({ id: docData.id, ...docData.data() } as DispensaryType);
+        const typeData = { id: docData.id, ...docData.data() } as DispensaryType;
+        // Check if type is active
+        if (typeData.isActive !== true) {
+          setError('This dispensary type is not currently available.');
+          setIsLoading(false);
+          return;
+        }
+        setWellnessTypeDetails(typeData);
       } else {
         toast({ title: "Type Info Missing", description: `Details for '${wellnessTypeName}' type not found.`, variant: "default"});
       }

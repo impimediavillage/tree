@@ -88,7 +88,9 @@ export default function WellnessSignupPage() {
     const fetchWellnessTypes = async () => {
       try {
         const querySnapshot = await getDocs(firestoreQuery(collection(db, 'dispensaryTypes')));
-        const fetchedTypes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DispensaryType));
+        const fetchedTypes = querySnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as DispensaryType))
+          .filter(type => type.isActive === true); // Only show active types
         setWellnessTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
       } catch (error) {
         console.error("Error fetching dispensary types:", error);

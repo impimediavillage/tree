@@ -66,9 +66,11 @@ function SignUpContent() {
     setIsLoadingTypes(true);
     try {
       const typesCollectionRef = collection(db, 'dispensaryTypes');
-      const q = firestoreQuery(typesCollectionRef, where('isActive', '==', true), orderBy('name'));
+      const q = firestoreQuery(typesCollectionRef, orderBy('name'));
       const querySnapshot = await getDocs(q);
-      const fetchedTypes: DispensaryType[] = querySnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType));
+      const fetchedTypes: DispensaryType[] = querySnapshot.docs
+        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as DispensaryType))
+        .filter(type => type.isActive === true); // Only show active types
       setWellnessTypes(fetchedTypes);
     } catch (error) {
       console.error("Error fetching wellness types for signup:", error);
