@@ -43,18 +43,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import type { EducationalVideo, VideoLibrarySettings } from '@/types/video-library';
+import type { DispensaryType } from '@/types';
 import { parseVideoUrl, getVideoThumbnail } from '@/lib/video-utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
-
-const DISPENSARY_TYPES = [
-  { value: 'cannibinoid', label: 'Cannabis & CBD' },
-  { value: 'traditional-medicine', label: 'Traditional Medicine' },
-  { value: 'homeopathy', label: 'Homeopathy' },
-  { value: 'mushroom', label: 'Mushrooms' },
-  { value: 'permaculture', label: 'Permaculture' },
-  { value: 'healers', label: 'Muti Lounge & Healers' }
-];
 
 export default function VideoLibraryManagementPage() {
   const { currentUser } = useAuth();
@@ -67,6 +59,7 @@ export default function VideoLibraryManagementPage() {
   const [editingVideo, setEditingVideo] = useState<EducationalVideo | null>(null);
   const [previewVideo, setPreviewVideo] = useState<EducationalVideo | null>(null);
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [dispensaryTypes, setDispensaryTypes] = useState<DispensaryType[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -81,7 +74,23 @@ export default function VideoLibraryManagementPage() {
   useEffect(() => {
     fetchVideos();
     fetchSettings();
+    fetchDispensaryTypes();
   }, []);
+
+  const fetchDispensaryTypes = async () => {
+    try {
+      const typesRef = collection(db, 'dispensaryTypes');
+      const q = query(typesRef, where('isActive', '==', true), orderBy('name', 'asc'));
+      const snapshot = await getDocs(q);
+      const types = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as DispensaryType[];
+      setDispensaryTypes(types);
+    } catch (error) {
+      console.error('Error fetching dispensary types:', error);
+    }
+  };
 
   const fetchVideos = async () => {
     try {
@@ -356,9 +365,12 @@ export default function VideoLibraryManagementPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {DISPENSARY_TYPES.map(type => (
-                  <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                ))}
+                {dispensaryTypes.map(type => {
+                  const slug = type.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and').replace(/[^a-z0-9-]/g, '');
+                  return (
+                    <SelectItem key={type.id} value={slug}>{type.name}</SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
             <Badge variant="outline" className="border-[#006B3E] text-[#006B3E] font-bold">
@@ -406,7 +418,10 @@ export default function VideoLibraryManagementPage() {
               <p className="text-sm text-[#5D4E37] line-clamp-2 mb-3">{video.description}</p>
               <div className="flex items-center justify-between mb-3">
                 <Badge variant="outline" className="border-[#006B3E] text-[#006B3E] text-xs">
-                  {DISPENSARY_TYPES.find(t => t.value === video.dispensaryType)?.label}
+                  {dispensaryTypes.find(t => {
+                    const slug = t.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and').replace(/[^a-z0-9-]/g, '');
+                    return slug === video.dispensaryType;
+                  })?.name || video.dispensaryType}
                 </Badge>
               </div>
               <div className="flex gap-2">
@@ -529,9 +544,12 @@ export default function VideoLibraryManagementPage() {
                   <SelectValue placeholder="Select dispensary type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DISPENSARY_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                  ))}
+                  {dispensaryTypes.map(type => {
+                    const slug = type.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and').replace(/[^a-z0-9-]/g, '');
+                    return (
+                      <SelectItem key={type.id} value={slug}>{type.name}</SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

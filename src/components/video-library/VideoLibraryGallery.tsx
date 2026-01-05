@@ -47,10 +47,20 @@ export function VideoLibraryGallery({ dispensaryType }: VideoLibraryGalleryProps
 
   const fetchVideos = async () => {
     try {
+      // Convert dispensary type name to slug for querying
+      const typeSlug = dispensaryType
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9-]/g, '');
+      
+      console.log('VideoLibraryGallery - Dispensary Type:', dispensaryType);
+      console.log('VideoLibraryGallery - Type Slug for query:', typeSlug);
+      
       const videosRef = collection(db, 'educationalVideos');
       const q = query(
         videosRef,
-        where('dispensaryType', '==', dispensaryType),
+        where('dispensaryType', '==', typeSlug),
         where('isActive', '==', true),
         orderBy('order', 'asc')
       );
@@ -61,6 +71,7 @@ export function VideoLibraryGallery({ dispensaryType }: VideoLibraryGalleryProps
         ...doc.data()
       })) as EducationalVideo[];
       
+      console.log('VideoLibraryGallery - Found videos:', videosData.length);
       setVideos(videosData);
     } catch (error) {
       console.error('Error fetching videos:', error);
