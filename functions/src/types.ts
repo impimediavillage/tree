@@ -85,6 +85,7 @@ export interface DispensaryType {
   image?: string | null;
   advisorFocusPrompt?: string | null;
   recommendedAdvisorIds?: string[]; // Array of AI Advisor IDs linked to this dispensary type
+  isActive?: boolean; // Controls whether this type is visible to public users
   createdAt?: Timestamp | Date | string;
   updatedAt?: Timestamp | Date | string;
 }

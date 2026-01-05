@@ -319,7 +319,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 bg-gradient-to-r from-[#3D2E17]/10 to-[#006B3E]/10 border-2 border-[#3D2E17]/30 rounded-lg shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
         <div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black flex items-center gap-2 sm:gap-3 text-[#3D2E17]">
             <UsersIcon className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-[#006B3E] flex-shrink-0" />
@@ -368,7 +368,7 @@ export default function AdminUsersPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 py-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i} className="shadow-lg p-6 space-y-3 animate-pulse bg-muted/50">
               <div className="flex items-center gap-4">
@@ -385,7 +385,7 @@ export default function AdminUsersPage() {
           ))}
         </div>
       ) : filteredUsers.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 py-6">
           {filteredUsers.map((user) => (
             <UserCard
               key={user.uid}
