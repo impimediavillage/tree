@@ -87,7 +87,7 @@ export default function WellnessSignupPage() {
   useEffect(() => {
     const fetchWellnessTypes = async () => {
       try {
-        const querySnapshot = await getDocs(firestoreQuery(collection(db, 'dispensaryTypes'), where('isActive', '==', true)));
+        const querySnapshot = await getDocs(firestoreQuery(collection(db, 'dispensaryTypes')));
         const fetchedTypes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DispensaryType));
         setWellnessTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
       } catch (error) {
