@@ -272,36 +272,36 @@ function NewEventForm() {
       const startDateTime = new Date(`${formData.eventDate}T${formData.eventTime}`);
       const endDateTime = formData.endDate && formData.endTime
         ? new Date(`${formData.endDate}T${formData.endTime}`)
-        : undefined;
+        : null;
 
+      // Build event data without undefined fields
       const eventData: any = {
         dispensaryId: currentDispensary.id,
         dispensaryName: currentDispensary.dispensaryName,
         title: formData.title,
         description: formData.description,
         eventDate: Timestamp.fromDate(startDateTime),
-        endDate: endDateTime ? Timestamp.fromDate(endDateTime) : undefined,
-        location: formData.location || undefined,
-        streetAddress: formData.streetAddress || undefined,
-        city: formData.city || undefined,
-        state: formData.state || undefined,
-        postalCode: formData.postalCode || undefined,
-        country: formData.country || undefined,
-        latitude: formData.latitude || undefined,
-        longitude: formData.longitude || undefined,
         isVirtual: formData.isVirtual,
-        virtualLink: formData.virtualLink || undefined,
         category: formData.category,
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()) : [],
-        maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : undefined,
         isPublished: formData.isPublished,
         isFeatured: formData.isFeatured,
         updatedAt: serverTimestamp(),
       };
 
-      if (flyerUrl) {
-        eventData.flyerUrl = flyerUrl;
-      }
+      // Only add optional fields if they have values
+      if (endDateTime) eventData.endDate = Timestamp.fromDate(endDateTime);
+      if (formData.location) eventData.location = formData.location;
+      if (formData.streetAddress) eventData.streetAddress = formData.streetAddress;
+      if (formData.city) eventData.city = formData.city;
+      if (formData.state) eventData.state = formData.state;
+      if (formData.postalCode) eventData.postalCode = formData.postalCode;
+      if (formData.country) eventData.country = formData.country;
+      if (formData.latitude) eventData.latitude = formData.latitude;
+      if (formData.longitude) eventData.longitude = formData.longitude;
+      if (formData.virtualLink) eventData.virtualLink = formData.virtualLink;
+      if (formData.maxAttendees) eventData.maxAttendees = parseInt(formData.maxAttendees);
+      if (flyerUrl) eventData.flyerUrl = flyerUrl;
 
       if (eventId) {
         await updateDoc(doc(db, 'dispensaryEvents', eventId), eventData);
