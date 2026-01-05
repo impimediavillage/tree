@@ -345,9 +345,20 @@ export default function TripleSClubPage() {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-[#3D2E17] mb-2">
-            Triple S Canna Club
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <Link href="/">
+              <Button
+                variant="outline"
+                className="border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white"
+                size="icon"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-4xl font-black text-[#3D2E17]">
+              Triple S Canna Club
+            </h1>
+          </div>
           
           {/* Three Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 my-6">
