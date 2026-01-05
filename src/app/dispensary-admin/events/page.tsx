@@ -189,8 +189,8 @@ export default function DispensaryEventsPage() {
               state,
               postalCode,
               country,
-              latitude: place.geometry.location?.lat() || null,
-              longitude: place.geometry.location?.lng() || null,
+              latitude: place.geometry?.location?.lat() || null,
+              longitude: place.geometry?.location?.lng() || null,
             }));
           }
         });
