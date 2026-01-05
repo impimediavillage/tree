@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, Building, X, FileText, Scale, ShoppingCart, CreditCard, Shield, Package, AlertCircle, User, Eye, Copyright, MapPin, Mail, Phone, Globe, Truck, Store, Brain } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { db, functions, auth } from '@/lib/firebase';
-import { collection, getDocs, query as firestoreQuery } from 'firebase/firestore';
+import { collection, getDocs, query as firestoreQuery, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { signInWithCustomToken } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -87,7 +87,7 @@ export default function WellnessSignupPage() {
   useEffect(() => {
     const fetchWellnessTypes = async () => {
       try {
-        const querySnapshot = await getDocs(firestoreQuery(collection(db, 'dispensaryTypes')));
+        const querySnapshot = await getDocs(firestoreQuery(collection(db, 'dispensaryTypes'), where('isActive', '==', true)));
         const fetchedTypes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DispensaryType));
         setWellnessTypes(fetchedTypes.sort((a, b) => a.name.localeCompare(b.name)));
       } catch (error) {

@@ -56,7 +56,7 @@ export default function PublicWellnessProfilesByTypePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const typeQuery = query(collection(db, 'dispensaryTypes'), where('name', '==', wellnessTypeName), limit(1));
+      const typeQuery = query(collection(db, 'dispensaryTypes'), where('name', '==', wellnessTypeName), where('isActive', '==', true), limit(1));
       const typeQuerySnapshot = await getDocs(typeQuery);
       
       if (!typeQuerySnapshot.empty) {
