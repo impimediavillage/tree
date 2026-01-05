@@ -104,9 +104,9 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const SidebarNavigation = () => (
     <>
        <div className="flex items-center gap-2 p-3 border-b border-sidebar-border">
-          <Store className="h-7 w-7 text-primary" />
-          <div className="overflow-hidden">
-            <p className="text-lg font-semibold text-foreground truncate" title={currentDispensary.dispensaryName}>
+          <Store className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
+          <div className="overflow-hidden flex-1 min-w-0">
+            <p className="text-base sm:text-lg font-semibold text-foreground truncate" title={currentDispensary.dispensaryName}>
               {currentDispensary.dispensaryName}
             </p>
             <p className="text-xs text-muted-foreground">My Store Panel</p> 

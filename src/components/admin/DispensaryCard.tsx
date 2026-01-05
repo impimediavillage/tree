@@ -62,37 +62,38 @@ export function DispensaryCard({ dispensary: wellness, onEdit, onDelete, isSuper
       style={{ animationFillMode: 'backwards' }}
     >
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start mb-2">
-          <CardTitle className="text-xl font-extrabold text-[#3D2E17] flex items-center gap-2">
-            <Building className="h-6 w-6 text-[#006B3E]" />
+        <div className="flex justify-between items-start gap-2 mb-2">
+          <CardTitle className="text-lg sm:text-xl font-extrabold text-[#3D2E17] flex items-center gap-2 flex-1 min-w-0">
+            <Building className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E] flex-shrink-0" />
             <span className="truncate" title={wellness.dispensaryName}>{wellness.dispensaryName}</span>
           </CardTitle>
-          <Badge className={statusBadgeClass}>
-            <StatusIcon className="mr-1.5 h-4 w-4" />
-            {wellness.status}
+          <Badge className={`${statusBadgeClass} flex-shrink-0 text-xs`}>
+            <StatusIcon className="mr-1 sm:mr-1.5 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{wellness.status}</span>
+            <span className="sm:hidden">{wellness.status.split(' ')[0]}</span>
           </Badge>
         </div>
         <CardDescription className="text-xs text-[#5D4E37] font-semibold">
           ID: {wellness.id?.substring(0, 10)}...
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow space-y-2.5 text-sm font-semibold text-[#5D4E37]">
+      <CardContent className="flex-grow space-y-2.5 text-xs sm:text-sm font-semibold text-[#5D4E37]">
         <div className="flex items-center gap-2">
-          <Mail className="h-5 w-5 text-[#006B3E] flex-shrink-0" />
+          <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-[#006B3E] flex-shrink-0" />
           <span className="truncate" title={wellness.ownerEmail}>{wellness.ownerEmail}</span>
         </div>
         <div className="flex items-center gap-2">
-          <Tag className="h-5 w-5 text-[#006B3E] flex-shrink-0" />
+          <Tag className="h-4 w-4 sm:h-5 sm:w-5 text-[#006B3E] flex-shrink-0" />
           <span className="truncate" title={wellness.dispensaryType}>{wellness.dispensaryType}</span>
         </div>
         <div className="flex items-start gap-2">
-          <MapPin className="h-5 w-5 text-[#006B3E] flex-shrink-0 mt-0.5" />
+          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#006B3E] flex-shrink-0 mt-0.5" />
           <span className="truncate" title={fullAddress}>{fullAddress || 'No address specified'}</span>
         </div>
         {wellness.originLocker && (
           <div className="flex items-start gap-2 text-purple-600">
-            <Package className="h-5 w-5 flex-shrink-0 mt-0.5" />
-            <span className="truncate font-bold" title={`${wellness.originLocker.name} (${wellness.originLocker.address})`}>
+            <Package className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 mt-0.5" />
+            <span className="truncate font-bold text-xs sm:text-sm" title={`${wellness.originLocker.name} (${wellness.originLocker.address})`}>
               Origin: {wellness.originLocker.name}
             </span>
           </div>

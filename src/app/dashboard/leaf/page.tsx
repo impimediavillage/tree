@@ -86,12 +86,12 @@ export default function LeafDashboardOverviewPage() {
       <Card className="shadow-md bg-muted/50 border-primary/20">
         <CardHeader>
           <CardTitle 
-            className="text-3xl font-extrabold text-[#3D2E17]"
+            className="text-2xl sm:text-3xl font-extrabold text-[#3D2E17]"
           >
             Welcome back, {currentUser?.displayName || currentUser?.email?.split('@')[0] || 'User'}!
           </CardTitle>
           <CardDescription 
-            className="text-lg text-foreground"
+            className="text-base sm:text-lg text-foreground"
           >
             Manage your AI interactions, credits, and explore wellness entities. Current Credits: 
             <span className="font-bold text-green-600 ml-1">{currentUser?.credits ?? 0}</span>
@@ -109,10 +109,10 @@ export default function LeafDashboardOverviewPage() {
             <section>
               <div className="flex justify-between items-center mb-6">
                   <h2 
-                    className="text-2xl font-bold text-foreground flex items-center"
+                    className="text-xl sm:text-2xl font-bold text-foreground flex items-center"
                   >
-                      <Heart className="mr-3 h-9 w-9 text-green-800" />
-                      Your Preferred Wellness Types
+                      <Heart className="mr-2 sm:mr-3 h-7 w-7 sm:h-9 sm:w-9 text-green-800" />
+                      <span className="break-words">Your Preferred Wellness Types</span>
                   </h2>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -131,15 +131,15 @@ export default function LeafDashboardOverviewPage() {
 
           {otherWellnessTypes.length > 0 && (
             <section>
-              <div className="flex justify-between items-center mb-6 bg-muted/50 p-4 rounded-lg border border-primary/20">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 bg-muted/50 p-4 rounded-lg border border-primary/20">
                   <h2 
-                    className="text-2xl font-extrabold text-[#3D2E17] flex items-center"
+                    className="text-xl sm:text-2xl font-extrabold text-[#3D2E17] flex items-center"
                   >
-                      <Store className="mr-3 h-9 w-9 text-green-800" />
-                      Browse Other Wellness Types
+                      <Store className="mr-2 sm:mr-3 h-7 w-7 sm:h-9 sm:w-9 text-green-800" />
+                      <span className="break-words">Browse Other Wellness Types</span>
                   </h2>
                   {(preferredWellnessTypes.length === 0) && (
-                     <Button variant="outline" asChild className="hover:bg-[#5D4E37] hover:text-white active:bg-[#5D4E37]/80 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
+                     <Button variant="outline" asChild className="w-full sm:w-auto hover:bg-[#5D4E37] hover:text-white active:bg-[#5D4E37]/80 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
                         <Link href="/dashboard/leaf/credits">
                             <DollarSign className="mr-2 h-4 w-4"/> Buy Credits
                         </Link>

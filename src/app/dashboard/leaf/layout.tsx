@@ -90,7 +90,7 @@ export default function LeafDashboardLayout({
   const SidebarContentLayout = () => (
     <>
       <div className="p-3 border-b">
-        <h2 className="text-xl font-semibold text-primary px-1">Leaf Dashboard</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-primary px-1">Leaf Dashboard</h2>
       </div>
       <div className="flex-grow overflow-y-auto p-2 space-y-1">
         <nav className="flex flex-col space-y-1">
@@ -133,8 +133,8 @@ export default function LeafDashboardLayout({
                   {getInitials(currentUser.displayName, 'LU')}
                 </AvatarFallback>
               </Avatar>
-              <div className="ml-2 text-left overflow-hidden">
-                <p className="text-sm font-medium text-foreground truncate max-w-[150px]">
+              <div className="ml-2 text-left overflow-hidden flex-1">
+                <p className="text-sm font-medium text-foreground truncate max-w-[100px] sm:max-w-[150px]">
                   {currentUser.displayName || currentUser.email?.split('@')[0]}
                 </p>
                 <p className="text-xs text-muted-foreground">

@@ -21,12 +21,13 @@ interface QuickActionCardProps {
 const QuickActionCard: React.FC<QuickActionCardProps> = ({ title, description, icon: Icon, link, buttonText, disabled, variant = 'green' }) => (
     <Card className="hover:shadow-lg transition-shadow bg-muted/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-3 text-xl font-black text-[#3D2E17]">
-          <Icon className="text-[#006B3E] h-10 w-10" /> {title}
+        <CardTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl font-black text-[#3D2E17]">
+          <Icon className="text-[#006B3E] h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0" />
+          <span className="break-words">{title}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p className="text-[#3D2E17] font-bold mb-4">{description}</p>
+        <p className="text-sm sm:text-base text-[#3D2E17] font-bold mb-4">{description}</p>
         <Button 
           asChild 
           className={`w-full transition-all duration-200 ${
@@ -63,16 +64,17 @@ export default function WellnessAdminOverviewPage() {
     <div className="space-y-8">
       <Card className="shadow-lg bg-muted/50 border-primary/30">
         <CardHeader>
-          <CardTitle className="text-3xl font-black text-[#3D2E17] flex items-center">
-            <Store className="mr-3 h-10 w-10 text-[#006B3E]" /> {currentDispensary?.dispensaryName || "Your Wellness Profile"}
+          <CardTitle className="text-xl sm:text-2xl md:text-3xl font-black text-[#3D2E17] flex items-center gap-2">
+            <Store className="h-8 w-8 sm:h-10 sm:w-10 text-[#006B3E] flex-shrink-0" />
+            <span className="break-words">{currentDispensary?.dispensaryName || "Your Wellness Profile"}</span>
           </CardTitle>
-          <CardDescription className="text-md text-[#3D2E17] font-bold">
+          <CardDescription className="text-sm sm:text-base md:text-md text-[#3D2E17] font-bold">
             Welcome to your control panel. Manage products, pool interactions, and settings.
           </CardDescription>
         </CardHeader>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <QuickActionCard
             title="Manage My Products"
             description="Add new products, update existing listings, and manage your inventory."

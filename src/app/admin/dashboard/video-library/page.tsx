@@ -313,18 +313,18 @@ export default function VideoLibraryManagementPage() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl space-y-8">
       {/* Header */}
-      <div className="bg-muted/50 rounded-lg p-6">
-        <div className="flex justify-between items-start">
+      <div className="bg-muted/50 rounded-lg p-4 sm:p-6">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-4xl font-extrabold text-[#3D2E17] tracking-tight flex items-center gap-3">
-              <Video className="h-10 w-10 text-[#006B3E]" />
-              Video Library Management
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#3D2E17] tracking-tight flex items-center gap-2 sm:gap-3">
+              <Video className="h-8 w-8 sm:h-10 sm:w-10 text-[#006B3E] flex-shrink-0" />
+              <span className="break-words">Video Library Management</span>
             </h1>
-            <p className="text-lg text-[#5D4E37] font-semibold mt-2">
+            <p className="text-sm sm:text-base md:text-lg text-[#5D4E37] font-semibold mt-2">
               Manage educational videos for each dispensary type
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2 bg-white/80 rounded-lg px-4 py-2 border border-[#5D4E37]/20">
               <Power className={`h-5 w-5 ${libraryEnabled ? 'text-[#006B3E]' : 'text-gray-400'}`} />
               <span className="text-sm font-semibold text-[#3D2E17]">Library Status</span>
@@ -347,11 +347,11 @@ export default function VideoLibraryManagementPage() {
 
       {/* Filter */}
       <Card className="shadow-lg border-[#5D4E37]/20 bg-white/80">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <Label className="text-[#3D2E17] font-bold">Filter by Type:</Label>
             <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-64 border-[#5D4E37]/30">
+              <SelectTrigger className="w-full sm:w-64 border-[#5D4E37]/30">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -369,7 +369,7 @@ export default function VideoLibraryManagementPage() {
       </Card>
 
       {/* Video Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredVideos.map((video) => (
           <Card 
             key={video.id} 
@@ -459,18 +459,18 @@ export default function VideoLibraryManagementPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] bg-white">
-          <DialogHeader className="sticky top-0 bg-white z-10 pb-4 border-b border-[#5D4E37]/10">
-            <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-[#006B3E]" />
-              {editingVideo ? 'Edit Video' : 'Add New Video'}
+        <DialogContent className="max-w-2xl sm:max-w-4xl max-h-[90vh] bg-white overflow-hidden flex flex-col">
+          <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[#5D4E37]/10 flex-shrink-0">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E] flex-shrink-0" />
+              <span>{editingVideo ? 'Edit Video' : 'Add New Video'}</span>
             </DialogTitle>
-            <DialogDescription className="text-[#5D4E37]">
+            <DialogDescription className="text-sm sm:text-base text-[#5D4E37]">
               {editingVideo ? 'Update video details below' : 'Add educational content to your video library'}
             </DialogDescription>
           </DialogHeader>
-          <div className="overflow-y-auto max-h-[calc(90vh-180px)] pr-2 smooth-scroll">
-            <form onSubmit={handleSubmit} className="space-y-6 pb-4">
+          <div className="overflow-y-auto flex-1 px-4 sm:px-6 py-4">
+            <form id="video-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <Label className="text-[#3D2E17] font-bold">Video URL *</Label>
               <Input
@@ -548,28 +548,31 @@ export default function VideoLibraryManagementPage() {
 
             </form>
           </div>
-          <div className="sticky bottom-0 bg-white border-t border-[#5D4E37]/10 pt-4 mt-4 flex justify-end gap-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => { setShowAddDialog(false); resetForm(); }}
-              className="border-[#5D4E37]/30"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="bg-[#006B3E] hover:bg-[#006B3E]/90 text-white font-bold"
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {editingVideo ? 'Update Video' : 'Add Video'}
-            </Button>
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t border-[#5D4E37]/10 flex-shrink-0">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => { setShowAddDialog(false); resetForm(); }}
+                className="border-[#5D4E37]/30 w-full sm:w-auto"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                form="video-form"
+                disabled={isSubmitting}
+                className="bg-[#006B3E] hover:bg-[#006B3E]/90 text-white font-bold w-full sm:w-auto"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {editingVideo ? 'Update Video' : 'Add Video'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

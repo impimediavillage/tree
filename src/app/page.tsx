@@ -231,12 +231,13 @@ export default function HolisticAiHubPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
           {/* Treehouse Store Section */}
           <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <div className="relative aspect-video w-full">
+            <div className="relative aspect-video w-full overflow-hidden">
               <Image
                 src="/images/treehouse/th2.jpg"
                 alt="Treehouse Store"
                 fill
-                className="object-cover"
+                className="object-cover object-top"
+                style={{ objectFit: 'cover', objectPosition: 'top' }}
                 priority
               />
             </div>
@@ -306,12 +307,13 @@ export default function HolisticAiHubPage() {
 
           {/* Healers/Stores Section */}
           <Card className="overflow-hidden animate-fade-in-scale-up bg-muted/50 border-border/50 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <div className="relative aspect-video w-full">
+            <div className="relative aspect-video w-full overflow-hidden">
               <Image
                 src="/images/healers/healers.jpg"
                 alt="Wellness Healers"
                 fill
-                className="object-cover"
+                className="object-cover object-top"
+                style={{ objectFit: 'cover', objectPosition: 'top' }}
                 priority
               />
             </div>

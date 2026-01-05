@@ -186,8 +186,8 @@ export default function WellnessProductsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 shadow-sm">
-        <div className="relative flex-grow">
+      <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 shadow-sm">
+        <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
                 type="text"
@@ -197,6 +197,7 @@ export default function WellnessProductsPage() {
                 className="pl-10 w-full"
             />
         </div>
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue placeholder="Filter by category" />
@@ -210,10 +211,11 @@ export default function WellnessProductsPage() {
             </SelectContent>
         </Select>
         {(searchTerm || selectedCategory !== 'all') && (
-             <Button variant="ghost" onClick={handleClearFilters} className="text-muted-foreground hover:text-destructive">
+             <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto text-muted-foreground hover:text-destructive">
                 <FilterX className="mr-2 h-4 w-4"/> Clear Filters
             </Button>
         )}
+        </div>
       </div>
       
       {displayItems.length > 0 ? (

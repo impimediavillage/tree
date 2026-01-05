@@ -117,12 +117,13 @@ export default function AdminWellnessPage() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
           <div>
-            <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#3D2E17]">
-              <Building className="h-14 w-14 text-[#006B3E]" /> Manage Dispensaries
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold flex items-center gap-2 sm:gap-3 text-[#3D2E17]">
+              <Building className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-[#006B3E] flex-shrink-0" />
+              <span className="break-words">Manage Dispensaries</span>
             </h1>
-            <p className="text-lg font-bold text-[#5D4E37] mt-2">
+            <p className="text-sm sm:text-base md:text-lg font-bold text-[#5D4E37] mt-2">
               View, edit, approve, or suspend applications and dispensary profiles.
             </p>
           </div>
@@ -133,8 +134,8 @@ export default function AdminWellnessPage() {
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
-          <div className="relative flex-grow sm:w-1/2 md:w-1/3 lg:flex-grow-0">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
+          <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               type="text"
@@ -144,10 +145,10 @@ export default function AdminWellnessPage() {
               className="pl-10 w-full"
             />
           </div>
-           <div className="flex-grow sm:flex-grow-0 relative">
+           <div className="relative w-full sm:w-auto">
               <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
               <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as WellnessTypeFilter)}>
-                <SelectTrigger className="pl-10 w-full sm:w-[240px]">
+                <SelectTrigger className="pl-10 w-full sm:w-[220px]">
                   <SelectValue placeholder="Filter by store type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -158,10 +159,10 @@ export default function AdminWellnessPage() {
                 </SelectContent>
               </Select>
           </div>
-          <div className="flex-grow sm:flex-grow-0 relative">
+          <div className="relative w-full sm:w-auto">
               <CheckCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as WellnessStatusFilter)}>
-                <SelectTrigger className="pl-10 w-full sm:w-[240px]">
+                <SelectTrigger className="pl-10 w-full sm:w-[220px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>

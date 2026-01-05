@@ -239,6 +239,9 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<User['role'] | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<User['status'] | 'all'>('all');
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsersAndWellnessProfiles = useCallback(async () => {
     setIsLoading(true);
@@ -272,6 +275,40 @@ export default function AdminUsersPage() {
     setIsEditUserDialogOpen(true);
   };
 
+  const handleDeleteUser = (user: User) => {
+    setUserToDelete(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setIsDeleting(true);
+    try {
+      const deleteUserCallable = httpsCallable(functions, 'adminDeleteUser');
+      await deleteUserCallable({ userId: userToDelete.uid });
+      
+      toast({ 
+        title: "Success", 
+        description: `User ${userToDelete.displayName || userToDelete.email} has been deleted.` 
+      });
+      
+      // Refresh users list
+      await fetchUsersAndWellnessProfiles();
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Could not delete user. Please try again.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => {
     const nameMatch = user.displayName?.toLowerCase().includes(searchTerm.toLowerCase());
     const emailMatch = user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -282,28 +319,29 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6 bg-muted/50 border-border/50 rounded-lg shadow-lg">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 bg-gradient-to-r from-[#3D2E17]/10 to-[#006B3E]/10 border-2 border-[#3D2E17]/30 rounded-lg shadow-xl">
         <div>
-          <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#3D2E17]">
-            <UsersIcon className="h-14 w-14 text-[#006B3E]" /> Manage Users
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black flex items-center gap-2 sm:gap-3 text-[#3D2E17]">
+            <UsersIcon className="h-10 w-10 sm:h-12 sm:w-12 md:h-14 md:w-14 text-[#006B3E] flex-shrink-0" />
+            <span className="break-words">Manage Users</span>
           </h1>
-          <p className="text-lg font-bold text-[#5D4E37] mt-2">
-            View, edit, and add user accounts and roles.
+          <p className="text-sm sm:text-base md:text-lg font-black text-[#3D2E17]/80 mt-2">
+            View, edit, and manage user accounts and roles.
           </p>
         </div>
         <AddUserDialog onUserAdded={fetchUsersAndWellnessProfiles} dispensaries={wellnessProfiles} />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
+      <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 border-border/50 shadow-lg">
         <Input
             placeholder="Search by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:max-w-xs"
+            className="w-full"
         />
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-2 w-full">
             <Select value={filterRole} onValueChange={(value) => setFilterRole(value as User['role'] | 'all')}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue placeholder="Filter by role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -316,7 +354,7 @@ export default function AdminUsersPage() {
                 </SelectContent>
             </Select>
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as User['status'] | 'all')}>
-                <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                     <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -354,6 +392,7 @@ export default function AdminUsersPage() {
               user={user}
               dispensaryName={user.role === 'DispensaryOwner' && user.dispensaryId ? wellnessProfiles.find(d => d.id === user.dispensaryId)?.dispensaryName : undefined}
               onEdit={handleEditUser}
+              onDelete={handleDeleteUser}
             />
           ))}
         </div>
@@ -381,6 +420,34 @@ export default function AdminUsersPage() {
         onUserUpdate={fetchUsersAndWellnessProfiles}
         dispensaries={wellnessProfiles}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-red-600">Delete User?</DialogTitle>
+            <DialogDescription className="text-base font-semibold">
+              Are you sure you want to permanently delete this user? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {userToDelete && (
+            <div className="bg-muted/50 p-4 rounded-lg my-4">
+              <p className="font-bold text-[#3D2E17]">User: <span className="text-[#006B3E]">{userToDelete.displayName || 'Unnamed User'}</span></p>
+              <p className="font-bold text-[#3D2E17]">Email: <span className="text-[#006B3E]">{userToDelete.email}</span></p>
+              <p className="font-bold text-[#3D2E17]">Role: <span className="text-[#006B3E]">{userToDelete.role}</span></p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteUser} disabled={isDeleting}>
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

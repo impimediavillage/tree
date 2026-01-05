@@ -57,12 +57,13 @@ export const AdvisorCard: React.FC<AdvisorCardProps> = ({ advisor }) => {
   return (
     <Card className="flex flex-col hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-border/50 overflow-hidden">
       {imageUrl && (
-        <div className="relative h-64 w-full bg-muted">
+        <div className="relative h-64 w-full bg-muted overflow-hidden">
           <Image
             src={imageUrl}
             alt={advisor.name}
             fill
-            className="object-cover"
+            className="object-cover object-top"
+            style={{ objectFit: 'cover', objectPosition: 'top' }}
             unoptimized
             onError={(e) => {
               e.currentTarget.style.display = 'none';

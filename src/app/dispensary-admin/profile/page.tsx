@@ -63,6 +63,7 @@ export default function WellnessOwnerProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
+    const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
 
     useEffect(() => {
         if (!authLoading && !currentDispensary) {
@@ -71,6 +72,14 @@ export default function WellnessOwnerProfilePage() {
         }
         if (!authLoading && currentDispensary) {
             setIsLoading(false);
+            
+            // Check for first login parameter
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('firstLogin') === 'true') {
+                setShowWelcomeDialog(true);
+                // Clean up URL
+                router.replace('/dispensary-admin/profile');
+            }
         }
     }, [currentDispensary, authLoading, router, toast]);
 
@@ -89,10 +98,10 @@ export default function WellnessOwnerProfilePage() {
         );
     }
 
-    return <EditProfileForm dispensary={currentDispensary} user={currentUser} />;
+    return <EditProfileForm dispensary={currentDispensary} user={currentUser} showWelcome={showWelcomeDialog} onCloseWelcome={() => setShowWelcomeDialog(false)} />;
 }
 
-function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: any }) {
+function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { dispensary: Dispensary, user: any, showWelcome: boolean, onCloseWelcome: () => void }) {
     const { toast } = useToast();
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -420,10 +429,34 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
                             
                             <section>
-                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Core Information</h2>
+                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Owner Account Settings</h2>
                                 <div className="grid md:grid-cols-2 gap-6">
-                                    <FormItem><FormLabel>Owner Name (Read-only)</FormLabel><Input value={user?.displayName || ''} readOnly disabled /></FormItem>
-                                    <FormItem><FormLabel>Owner Email (Read-only)</FormLabel><Input value={user?.email || ''} readOnly disabled /></FormItem>
+                                    <FormItem>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <Input value={user?.displayName || ''} readOnly disabled />
+                                        <FormDescription className="text-xs">Contact support to change your name</FormDescription>
+                                    </FormItem>
+                                    <FormItem>
+                                        <FormLabel>Email Address (Read-only)</FormLabel>
+                                        <Input value={user?.email || ''} readOnly disabled />
+                                        <FormDescription className="text-xs">Email cannot be changed as it identifies your store</FormDescription>
+                                    </FormItem>
+                                </div>
+                                <div className="mt-6 p-4 border rounded-lg bg-muted/30">
+                                    <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                                        <Shield className="h-4 w-4 text-[#006B3E]" />
+                                        Change Password
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground mb-4">
+                                        To change your password, please use the <strong>Forgot Password</strong> link on the login page.
+                                        You'll receive a password reset email.
+                                    </p>
+                                </div>
+                            </section>
+                            
+                            <section>
+                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Store Information</h2>
+                                <div className="grid md:grid-cols-2 gap-6">
                                     <FormField control={form.control} name="dispensaryName" render={({ field }) => ( <FormItem><FormLabel>Dispensary Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                                     <FormField control={form.control} name="phone" render={() => (
                                         <FormItem>
@@ -609,6 +642,65 @@ function EditProfileForm({ dispensary, user }: { dispensary: Dispensary, user: a
                     </div>
                     <DialogFooter>
                         <Button variant="secondary" onClick={() => setIsLockerModalOpen(false)}>Cancel</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Welcome Dialog for First-Time Users */}
+            <Dialog open={showWelcome} onOpenChange={onCloseWelcome}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl text-[#3D2E17] font-bold flex items-center gap-2">
+                            <StoreIcon className="h-8 w-8 text-[#006B3E]" />
+                            Welcome to Your Dispensary Dashboard! 🎉
+                        </DialogTitle>
+                        <DialogDescription className="text-base text-[#3D2E17] font-semibold pt-4">
+                            Your store has been successfully activated and you're now logged in!
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-4 rounded-r-lg">
+                            <h3 className="font-bold text-[#3D2E17] text-lg mb-2">📍 Complete Your Profile</h3>
+                            <p className="text-[#3D2E17] font-semibold text-sm">
+                                You're currently on your <strong>Profile Page</strong>. Please take a moment to review and update your store details.
+                            </p>
+                        </div>
+
+                        <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-4 rounded-r-lg">
+                            <h3 className="font-bold text-[#3D2E17] text-lg mb-2">🚚 Important: Origin Locker Setup</h3>
+                            <p className="text-[#3D2E17] font-semibold text-sm mb-2">
+                                Even if you don't offer LTD (Locker to Door) or LTL (Locker to Locker) shipping right now, we <strong>strongly recommend</strong> setting up an <strong>Origin Locker</strong>.
+                            </p>
+                            <ul className="list-disc list-inside text-[#3D2E17] font-semibold text-sm space-y-1 ml-2">
+                                <li>It gives you flexibility to enable these shipping methods later</li>
+                                <li>Customers often prefer locker-based shipping for convenience</li>
+                                <li>Setting it up now saves time when you're ready to offer more options</li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-[#3D2E17]/10 border-l-4 border-[#3D2E17] p-4 rounded-r-lg">
+                            <h3 className="font-bold text-[#3D2E17] text-lg mb-2">💡 How to Set Your Origin Locker</h3>
+                            <ol className="list-decimal list-inside text-[#3D2E17] font-semibold text-sm space-y-1 ml-2">
+                                <li>Scroll down to <strong>Operations & Services</strong></li>
+                                <li>Under <strong>Shipping Methods</strong>, select "LTD" or "LTL"</li>
+                                <li>Click <strong>"Select Origin Locker"</strong> to choose a Pudo locker near you</li>
+                                <li>Save your changes</li>
+                            </ol>
+                            <p className="text-[#3D2E17] font-semibold text-xs mt-2 italic">
+                                💡 Tip: You can uncheck LTD/LTL later if you don't want to offer them yet, but keeping the origin locker saved is smart planning!
+                            </p>
+                        </div>
+
+                        <div className="bg-green-100 border-l-4 border-green-600 p-4 rounded-r-lg">
+                            <p className="text-[#3D2E17] font-bold text-sm">
+                                ✅ Once you've reviewed your profile, head to <strong>Dashboard</strong> to start adding products and managing your store!
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={onCloseWelcome} className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold">
+                            Got It, Let's Get Started!
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

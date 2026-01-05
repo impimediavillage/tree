@@ -47,7 +47,7 @@ import { getCommissionRateForTier } from '@/lib/influencer-utils';
 import { useRouter } from 'next/navigation';
 
 export default function AdminInfluencersPage() {
-  const { user } = useAuth();
+  const { currentUser, isSuperAdmin } = useAuth();
   const router = useRouter();
   const [influencers, setInfluencers] = useState<(InfluencerProfile & { id: string })[]>([]);
   const [settings, setSettings] = useState<InfluencerSettings | null>(null);
@@ -61,10 +61,10 @@ export default function AdminInfluencersPage() {
 
   // Check super admin
   useEffect(() => {
-    if (user && user.email !== 'admin@wellnesstree.com') {
+    if (currentUser && !isSuperAdmin) {
       router.push('/dashboard');
     }
-  }, [user, router]);
+  }, [currentUser, isSuperAdmin, router]);
 
   useEffect(() => {
     loadData();
@@ -213,26 +213,26 @@ export default function AdminInfluencersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/30 to-background">
-      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
         
         {/* Header */}
-        <div className="bg-muted/50 rounded-lg p-6">
-          <div className="flex items-start justify-between flex-wrap gap-4">
+        <div className="bg-muted/50 rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-[#3D2E17] flex items-center gap-2">
-                <TreePine className="w-8 h-8 text-[#006B3E]" />
-                Influencer Management
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#3D2E17] flex items-center gap-2">
+                <TreePine className="w-6 h-6 sm:w-8 sm:h-8 text-[#006B3E] flex-shrink-0" />
+                <span className="break-words">Influencer Management</span>
               </h1>
-              <p className="text-muted-foreground mt-1">Manage influencers, settings, and campaigns</p>
+              <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage influencers, settings, and campaigns</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge className={settings?.isSystemEnabled ? 'bg-green-500' : 'bg-red-500'}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <Badge className={`${settings?.isSystemEnabled ? 'bg-green-500' : 'bg-red-500'} justify-center`}>
                 {settings?.isSystemEnabled ? 'System Enabled' : 'System Disabled'}
               </Badge>
               <Button 
                 variant="outline" 
                 onClick={toggleSystemEnabled}
-                className="border-[#006B3E] text-[#006B3E]"
+                className="border-[#006B3E] text-[#006B3E] w-full sm:w-auto"
               >
                 {settings?.isSystemEnabled ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
                 {settings?.isSystemEnabled ? 'Disable System' : 'Enable System'}
@@ -242,7 +242,7 @@ export default function AdminInfluencersPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function AdminInfluencersPage() {
                 <CardTitle className="text-[#3D2E17]">Filters</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <Label>Search</Label>
                     <div className="relative">
@@ -363,6 +363,7 @@ export default function AdminInfluencersPage() {
                 <CardTitle className="text-[#3D2E17]">All Influencers ({filteredInfluencers.length})</CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="overflow-x-auto -mx-2 sm:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -441,6 +442,7 @@ export default function AdminInfluencersPage() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -502,7 +504,7 @@ export default function AdminInfluencersPage() {
                   <>
                     <div>
                       <Label className="text-base font-semibold">Default Commission Rates by Tier</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mt-4">
                         {Object.entries(settings.defaultCommissionRates).map(([tier, rate]) => (
                           <div key={tier}>
                             <Label className="capitalize">{tier}</Label>
@@ -520,7 +522,7 @@ export default function AdminInfluencersPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <Label>Minimum Payout (ZAR)</Label>
                         <Input 

@@ -415,7 +415,7 @@ export default function LeafEventsPage() {
           </div>
 
           {/* Category Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {EVENT_CATEGORIES.map((cat) => (
               <Button
                 key={cat.value}
