@@ -57,11 +57,15 @@ export function VideoLibraryGallery({ dispensaryType }: VideoLibraryGalleryProps
       console.log('VideoLibraryGallery - Dispensary Type:', dispensaryType);
       console.log('VideoLibraryGallery - Type Slug for query:', typeSlug);
       
+      // First, try to get all videos to see what's in the database
+      const allVideosRef = collection(db, 'educationalVideos');
+      const allSnapshot = await getDocs(allVideosRef);
+      console.log('All videos in database:', allSnapshot.docs.map(d => ({ id: d.id, dispensaryType: d.data().dispensaryType, title: d.data().title })));
+      
       const videosRef = collection(db, 'educationalVideos');
       const q = query(
         videosRef,
         where('dispensaryType', '==', typeSlug),
-        where('isActive', '==', true),
         orderBy('order', 'asc')
       );
       
@@ -71,7 +75,7 @@ export function VideoLibraryGallery({ dispensaryType }: VideoLibraryGalleryProps
         ...doc.data()
       })) as EducationalVideo[];
       
-      console.log('VideoLibraryGallery - Found videos:', videosData.length);
+      console.log('VideoLibraryGallery - Found videos:', videosData.length, videosData);
       setVideos(videosData);
     } catch (error) {
       console.error('Error fetching videos:', error);
