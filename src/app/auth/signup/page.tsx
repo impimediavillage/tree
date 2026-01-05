@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { userSignupSchema, type UserSignupFormData } from '@/lib/schemas';
 import { auth, db } from '@/lib/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp, collection, getDocs, query as firestoreQuery, orderBy } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDocs, query as firestoreQuery, where, orderBy } from 'firebase/firestore';
 import type { User, DispensaryType, CartItem } from '@/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
