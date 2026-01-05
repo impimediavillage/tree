@@ -141,7 +141,9 @@ export default function TripleSClubPage() {
   };
   
   const getRandomQuote = (index: number) => {
-    
+    if (quotes.length === 0) return '';
+    return quotes[(startIndex + index) % quotes.length];
+  };
 
   // Image viewer functions
   const openImageViewer = (index: number) => {
@@ -151,7 +153,23 @@ export default function TripleSClubPage() {
 
   const closeImageViewer = () => {
     setViewerOpen(false);
-  };div className="flex items-center gap-4">
+  };
+
+  const viewNextImage = () => {
+    setViewerImageIndex((prev) => (prev + 1) % stickerImages.length);
+  };
+
+  const viewPreviousImage = () => {
+    setViewerImageIndex((prev) => (prev - 1 + stickerImages.length) % stickerImages.length);
+  };
+
+  // How to Join slide-in page
+  if (showHowToJoin) {
+    return (
+      <div className="min-h-screen bg-background p-4 animate-in slide-in-from-right duration-300">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
               <Link href="/">
                 <Button
                   variant="outline"
@@ -161,25 +179,7 @@ export default function TripleSClubPage() {
                 </Button>
               </Link>
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#3D2E17]">How to Join Triple S Club</h1>
-            </div
-
-  const viewNextImage = () => {
-    setViewerImageIndex((prev) => (prev + 1) % stickerImages.length);
-  };
-
-  const viewPreviousImage = () => {
-    setViewerImageIndex((prev) => (prev - 1 + stickerImages.length) % stickerImages.length);
-  };if (quotes.length === 0) return '';
-    return quotes[(startIndex + index) % quotes.length];
-  };
-
-  // How to Join slide-in page
-  if (showHowToJoin) {
-    return (
-      <div className="min-h-screen bg-background p-4 animate-in slide-in-from-right duration-300">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-black text-[#3D2E17]">How to Join Triple S Club</h1>
+            </div>
             <Button
               onClick={() => setShowHowToJoin(false)}
               className="bg-[#3D2E17] hover:bg-[#006B3E] text-white"
