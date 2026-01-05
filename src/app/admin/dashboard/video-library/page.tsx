@@ -80,15 +80,21 @@ export default function VideoLibraryManagementPage() {
   const fetchDispensaryTypes = async () => {
     try {
       const typesRef = collection(db, 'dispensaryTypes');
-      const q = query(typesRef, where('isActive', '==', true), orderBy('name', 'asc'));
+      const q = query(typesRef, orderBy('name', 'asc'));
       const snapshot = await getDocs(q);
       const types = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as DispensaryType[];
+      console.log('Fetched dispensary types:', types);
       setDispensaryTypes(types);
     } catch (error) {
       console.error('Error fetching dispensary types:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load dispensary types',
+        variant: 'destructive'
+      });
     }
   };
 
