@@ -222,10 +222,14 @@ export default function WellnessSignupPage() {
       };
       
       const result: any = await submitApplication(submissionData);
+      
+      console.log('Submission result:', result.data);
 
       if (result.data.success) {
         // Check if auto-approved with auth token
         if (result.data.autoApproved && result.data.customToken) {
+          console.log('Auto-approved! Token received, signing in...');
+          
           toast({ 
             title: "Store Activated! 🎉", 
             description: "Logging you in to your dispensary dashboard..." 
@@ -234,9 +238,11 @@ export default function WellnessSignupPage() {
           try {
             // Sign in with custom token
             await signInWithCustomToken(auth, result.data.customToken);
+            console.log('Sign in successful!');
             
             // Show password if it was created
             if (result.data.temporaryPassword) {
+              console.log('Showing temporary password toast');
               toast({
                 title: "Important: Save Your Password",
                 description: `Temporary Password: ${result.data.temporaryPassword}`,
@@ -244,9 +250,10 @@ export default function WellnessSignupPage() {
               });
             }
             
-            // Redirect to dispensary profile for setup
+            // Redirect to dispensary admin dashboard with welcome dialog
+            console.log('Redirecting to dashboard with firstLogin=true');
             setTimeout(() => {
-              router.push('/dispensary-admin/profile?firstLogin=true');
+              router.push('/dispensary-admin/dashboard?firstLogin=true');
             }, 1500);
             
           } catch (authError) {
