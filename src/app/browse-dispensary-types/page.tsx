@@ -7,7 +7,7 @@ import { Loader2, AlertTriangle, Trees } from 'lucide-react';
 import type { DispensaryType } from '@/types';
 import { useEffect, useState, useCallback } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, orderBy, query as firestoreQuery } from 'firebase/firestore';
+import { collection, getDocs, orderBy, where, query as firestoreQuery } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { DispensaryTypeCard } from '@/components/cards/DispensaryTypeCard';
 import Link from 'next/link';
