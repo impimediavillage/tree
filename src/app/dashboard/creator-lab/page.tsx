@@ -352,7 +352,12 @@ export default function CreatorLabPage() {
                     size="sm" 
                     variant="link" 
                     className="text-[#006B3E] font-bold mt-2"
-                    onClick={() => router.push('/dashboard/leaf/credits')}
+                    onClick={() => {
+                      const creditsRoute = currentUser?.role === 'DispensaryOwner' 
+                        ? '/dispensary-admin/credits' 
+                        : '/dashboard/leaf/credits';
+                      router.push(creditsRoute);
+                    }}
                   >
                     Top Up
                   </Button>

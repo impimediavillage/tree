@@ -1,19 +1,20 @@
 
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { CreditCard, History, Loader2, Sparkles, WandSparkles } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { CreditCard, History, Loader2, Sparkles, WandSparkles, DollarSign, Gift, Heart, Palette } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
-import type { AIInteractionLog, User } from '@/types';
+import type { AIInteractionLog, User, CreditPackage } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 interface StatCardProps {
   title: string;
@@ -58,10 +59,13 @@ const formatAdvisorSlug = (slug: string) => {
 };
 
 export default function DispensaryCreditsPage() {
-    const { currentUser, loading: authLoading } = useAuth();
+    const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
     const { toast } = useToast();
     const [logs, setLogs] = useState<AIInteractionLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([]);
+    const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+    const [isPurchasing, setIsPurchasing] = useState(false);
 
     useEffect(() => {
         if (authLoading) return;
@@ -98,6 +102,57 @@ export default function DispensaryCreditsPage() {
 
         fetchLogs();
     }, [currentUser, authLoading, toast]);
+
+    const fetchCreditPackages = useCallback(async () => {
+        setIsLoadingPackages(true);
+        try {
+            const packagesCollectionRef = collection(db, 'creditPackages');
+            const q = query(packagesCollectionRef, where('isActive', '==', true), orderBy('price'));
+            const querySnapshot = await getDocs(q);
+            const fetchedPackages: CreditPackage[] = [];
+            querySnapshot.forEach((doc) => {
+                fetchedPackages.push({ id: doc.id, ...doc.data() } as CreditPackage);
+            });
+            setCreditPackages(fetchedPackages);
+        } catch (error) {
+            console.error("Error fetching credit packages:", error);
+            toast({ title: "Error", description: "Could not load credit packages.", variant: "destructive" });
+        } finally {
+            setIsLoadingPackages(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchCreditPackages();
+    }, [fetchCreditPackages]);
+
+    const handlePurchase = (pkg: CreditPackage) => {
+        if (!currentUser) return;
+
+        setIsPurchasing(true);
+        toast({
+            title: `Simulating Purchase of ${pkg.name}`,
+            description: "Processing... In a real app, this would redirect to a payment gateway.",
+        });
+
+        setTimeout(() => {
+            const totalCreditsToAdd = pkg.credits + (pkg.bonusCredits || 0);
+            
+            const updatedUser = { 
+                ...currentUser, 
+                credits: (currentUser.credits || 0) + totalCreditsToAdd 
+            };
+            setCurrentUser(updatedUser);
+            localStorage.setItem('currentUserHolisticAI', JSON.stringify(updatedUser));
+            toast({
+                title: "Purchase Simulated Successfully!",
+                description: `You've "added" ${totalCreditsToAdd} credits. Your balance has been updated locally.`,
+                variant: "default",
+                duration: 7000,
+            });
+            setIsPurchasing(false);
+        }, 2500);
+    };
     
     const { totalCreditsUsed, assetGenCredits, advisorUsageData } = useMemo(() => {
         const total = logs.reduce((sum, log) => sum + log.creditsUsed, 0);
@@ -155,6 +210,96 @@ export default function DispensaryCreditsPage() {
                     isLoading={isLoading}
                 />
             </div>
+
+            {/* Top Up Credits Section */}
+            <Card className="bg-gradient-to-br from-[#006B3E]/10 to-[#3D2E17]/10 border-[#006B3E]/30">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
+                        <DollarSign className="h-7 w-7 text-[#006B3E]" />
+                        Top Up Your Credits
+                    </CardTitle>
+                    <CardDescription className="text-base">
+                        Purchase credit packages to power your AI tools, designer services, and marketing campaigns.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingPackages ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <Card key={i} className="flex flex-col">
+                                    <CardHeader><Skeleton className="h-8 w-32 mx-auto" /><Skeleton className="h-12 w-full mt-2" /></CardHeader>
+                                    <CardContent><Skeleton className="h-32 w-full" /></CardContent>
+                                    <CardFooter><Skeleton className="h-10 w-full" /></CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    ) : creditPackages.length === 0 ? (
+                        <Card>
+                            <CardContent className="pt-6 text-center text-muted-foreground">
+                                <DollarSign className="mx-auto h-12 w-12 mb-3 text-[#006B3E]/40" />
+                                <h3 className="text-xl font-semibold">No Credit Packages Available</h3>
+                                <p>There are currently no credit packages available for purchase. Please check back later.</p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {creditPackages.map((pkg) => {
+                                const packageFeatures = [
+                                    { text: "Access to AI Advisors", icon: Sparkles },
+                                    { text: "Creator Lab Design Tools", icon: Palette },
+                                    { text: "Promo Asset Generator", icon: WandSparkles },
+                                    ...(pkg.bonusCredits && pkg.bonusCredits > 0
+                                        ? [{ text: `Includes ${pkg.bonusCredits} bonus credits`, icon: Gift }]
+                                        : []),
+                                    { text: "Grow Your Wellness Business", icon: Heart },
+                                ];
+
+                                return (
+                                    <Card 
+                                        key={pkg.id} 
+                                        className="flex flex-col shadow-lg hover:shadow-xl transition-shadow duration-300 bg-muted/50 border-[#006B3E]/30 hover:border-[#006B3E]"
+                                    >
+                                        <CardHeader className="pb-4">
+                                            <CardTitle className="text-2xl font-black text-center text-[#3D2E17]">{pkg.name}</CardTitle>
+                                            <p className="text-4xl font-black text-center text-[#006B3E] my-2">
+                                                {pkg.price.toFixed(2)} <span className="text-xl font-bold text-muted-foreground">{pkg.currency}</span>
+                                            </p>
+                                            <div className="text-xl text-center font-bold">
+                                                <span className="text-3xl font-black text-[#006B3E]">{pkg.credits}</span>
+                                                <span className="text-muted-foreground font-bold"> Credits</span>
+                                                {pkg.bonusCredits && pkg.bonusCredits > 0 && (
+                                                    <Badge variant="default" className="ml-2 bg-[#B8651B] hover:bg-[#B8651B]/90 text-white font-bold">+{pkg.bonusCredits} Bonus</Badge>
+                                                )}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-grow flex flex-col">
+                                            {pkg.description && <p className="text-sm font-semibold text-muted-foreground mb-4 text-center">{pkg.description}</p>}
+                                            <ul className="space-y-2 mb-6 text-sm font-semibold">
+                                                {packageFeatures.map((feature, index) => (
+                                                    <li key={index} className="flex items-center gap-2">
+                                                        <feature.icon className="h-5 w-5 text-[#006B3E] flex-shrink-0" />
+                                                        <span>{feature.text}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            <Button 
+                                                className="mt-auto w-full bg-[#006B3E] hover:bg-[#3D2E17] active:bg-[#005230] text-white text-lg font-bold py-6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+                                                onClick={() => handlePurchase(pkg)}
+                                                disabled={isPurchasing}
+                                            >
+                                                {isPurchasing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : `Purchase ${pkg.name}`}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                    <p className="text-xs text-muted-foreground text-center mt-6">
+                        Payments are processed securely. Credit purchases are non-refundable. This is a simulated purchase environment.
+                    </p>
+                </CardContent>
+            </Card>
 
              <Card className="bg-muted/50 border-border/50">
                 <CardHeader>
