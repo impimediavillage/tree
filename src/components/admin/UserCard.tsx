@@ -12,7 +12,7 @@ interface UserCardProps {
   user: User;
   dispensaryName?: string; 
   onEdit: (user: User) => void;
-  onDelete: (user: User) => void;
+  onDelete?: (user: User) => void;
 }
 
 const getInitials = (name?: string | null) => {
@@ -115,9 +115,11 @@ export function UserCard({ user, dispensaryName, onEdit, onDelete }: UserCardPro
         <Button variant="outline" className="flex-1 border-[#006B3E] text-[#006B3E] hover:bg-[#006B3E] hover:text-white font-bold" onClick={() => onEdit(user)}>
           <Edit className="mr-2 h-4 w-4" /> Edit
         </Button>
-        <Button variant="outline" className="flex-1 border-red-600 text-red-600 hover:bg-red-600 hover:text-white font-bold" onClick={() => onDelete(user)}>
-          <Trash2 className="mr-2 h-4 w-4" /> Delete
-        </Button>
+        {onDelete && (
+          <Button variant="outline" className="flex-1 border-red-600 text-red-600 hover:bg-red-600 hover:text-white font-bold" onClick={() => onDelete?.(user)}>
+            <Trash2 className="mr-2 h-4 w-4" /> Delete
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
