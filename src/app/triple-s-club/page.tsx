@@ -280,7 +280,21 @@ export default function TripleSClubPage() {
               <p className="text-amber-900 leading-relaxed">
                 <strong>THC Products Only:</strong> Our design pack sticker system is specifically designed for THC products to ensure legal compliance. 
                 Home growers cannot sell THC products directly, but can offer them as free samples when attached to our design packs. 
-                This system ensflex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                This system ensures legality while creating value for all participants in the cannabis community.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Sticker Sets slide-in page
+  if (showStickerSets) {
+    return (
+      <div className="min-h-screen bg-background p-4 animate-in slide-in-from-right duration-300">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
               <Link href="/">
                 <Button
