@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User as UserIcon, Mail, Lock, Shield, Save } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 
@@ -166,65 +166,100 @@ export default function LeafProfilePage() {
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-md">
+      {/* Header Section */}
+      <Card className="shadow-lg bg-muted/50 border-border/50">
+        <CardContent className="p-8">
+          <div className="flex items-center gap-4">
+            <div className="bg-[#006B3E] p-4 rounded-2xl">
+              <UserIcon className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-[#3D2E17] tracking-tight">
+                My Profile
+              </h1>
+              <p className="text-[#5D4E37] text-lg font-bold mt-1">
+                Update your personal information and manage your account settings.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Profile Form */}
+      <Card className="shadow-lg bg-muted/50 border-border/50">
         <CardHeader>
-          <CardTitle 
-            className="text-2xl text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >My Profile</CardTitle>
-          <CardDescription 
-            className="text-foreground"
-            style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-          >
-            Update your personal information and manage your account settings.
-          </CardDescription>
+          <CardTitle className="text-2xl font-black text-[#3D2E17] flex items-center gap-2">
+            <Shield className="h-6 w-6 text-[#006B3E]" />
+            Account Information
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div>
-              <Label htmlFor="displayName">Display Name</Label>
-              <Input id="displayName" {...form.register("displayName")} />
-              {form.formState.errors.displayName && <p className="text-sm text-destructive mt-1">{form.formState.errors.displayName.message}</p>}
+              <Label htmlFor="displayName" className="text-sm font-bold text-[#3D2E17] flex items-center gap-2">
+                <UserIcon className="h-4 w-4 text-[#006B3E]" />
+                Display Name
+              </Label>
+              <Input id="displayName" {...form.register("displayName")} className="font-semibold text-[#3D2E17]" />
+              {form.formState.errors.displayName && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.displayName.message}</p>}
             </div>
             <div>
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" value={currentUser.email} disabled readOnly />
-               <p className="text-xs text-muted-foreground mt-1">Email cannot be changed.</p>
+              <Label htmlFor="email" className="text-sm font-bold text-[#3D2E17] flex items-center gap-2">
+                <Mail className="h-4 w-4 text-[#006B3E]" />
+                Email Address
+              </Label>
+              <Input id="email" type="email" value={currentUser.email} disabled readOnly className="font-semibold text-[#3D2E17] bg-muted" />
+               <p className="text-xs text-[#5D4E37] mt-1 font-semibold">Email cannot be changed.</p>
             </div>
             
-            <CardTitle 
-              className="text-lg pt-4 border-t mt-4 text-foreground"
-              style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >Change Password</CardTitle>
-            <CardDescription 
-                className="text-xs text-foreground"
-                style={{ textShadow: '0 0 5px #fff, 0 0 10px #fff, 0 0 15px #fff' }}
-            >
+            <div className="pt-4 border-t">
+              <CardTitle className="text-xl font-black text-[#3D2E17] flex items-center gap-2 mb-2">
+                <Lock className="h-5 w-5 text-[#006B3E]" />
+                Change Password
+              </CardTitle>
+              <CardDescription className="text-sm text-[#5D4E37] font-semibold">
               {isCheckoutUser 
                 ? "Set your new password below. You don't need your current password since your account was just created." 
                 : "Leave password fields blank if you do not want to change your password."}
-            </CardDescription>
+              </CardDescription>
+            </div>
             
             {!isCheckoutUser && (
               <div>
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input id="currentPassword" type="password" {...form.register("currentPassword")} />
-                {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.currentPassword.message}</p>}
+                <Label htmlFor="currentPassword" className="text-sm font-bold text-[#3D2E17] flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-[#006B3E]" />
+                  Current Password
+                </Label>
+                <Input id="currentPassword" type="password" {...form.register("currentPassword")} className="font-semibold" />
+                {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.currentPassword.message}</p>}
               </div>
             )}
             <div>
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input id="newPassword" type="password" {...form.register("newPassword")} />
-              {form.formState.errors.newPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.newPassword.message}</p>}
+              <Label htmlFor="newPassword" className="text-sm font-bold text-[#3D2E17] flex items-center gap-2">
+                <Lock className="h-4 w-4 text-[#006B3E]" />
+                New Password
+              </Label>
+              <Input id="newPassword" type="password" {...form.register("newPassword")} className="font-semibold" />
+              {form.formState.errors.newPassword && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.newPassword.message}</p>}
             </div>
             <div>
-              <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-              <Input id="confirmNewPassword" type="password" {...form.register("confirmNewPassword")} />
-              {form.formState.errors.confirmNewPassword && <p className="text-sm text-destructive mt-1">{form.formState.errors.confirmNewPassword.message}</p>}
+              <Label htmlFor="confirmNewPassword" className="text-sm font-bold text-[#3D2E17] flex items-center gap-2">
+                <Lock className="h-4 w-4 text-[#006B3E]" />
+                Confirm New Password
+              </Label>
+              <Input id="confirmNewPassword" type="password" {...form.register("confirmNewPassword")} className="font-semibold" />
+              {form.formState.errors.confirmNewPassword && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.confirmNewPassword.message}</p>}
             </div>
-            <Button type="submit" disabled={isLoading} className="w-full bg-primary hover:bg-[#5D4E37] active:bg-primary/80 text-primary-foreground transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+            <Button 
+              type="submit" 
+              disabled={isLoading || form.formState.isSubmitting} 
+              className="w-full bg-[#006B3E] hover:bg-[#005230] text-white font-black text-lg py-6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"
+            >
+              {isLoading ? (
+                <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Saving...</>
+              ) : (
+                <><Save className="mr-2 h-5 w-5" /> Save Changes</>
+              )}
             </Button>
           </form>
         </CardContent>

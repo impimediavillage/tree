@@ -397,11 +397,10 @@ export default function LeafEventsPage() {
   return (
     <div className="space-y-6 pb-20">
       {/* Header */}
-      <Card className="shadow-lg bg-gradient-to-br from-[#006B3E]/10 to-[#3D2E17]/10 border-[#006B3E]/30 overflow-hidden relative">
-        <div className="absolute inset-0 bg-[url('/images/pattern.svg')] opacity-5"></div>
-        <CardContent className="p-8 relative z-10">
+      <Card className="shadow-lg bg-muted/50 border-border/50 overflow-hidden relative">
+        <CardContent className="p-8">
           <div className="flex items-center gap-4 mb-4">
-            <div className="bg-[#006B3E] p-4 rounded-2xl animate-pulse">
+            <div className="bg-[#006B3E] p-4 rounded-2xl">
               <CalendarIcon className="h-12 w-12 text-white" />
             </div>
             <div>
@@ -415,8 +414,8 @@ export default function LeafEventsPage() {
           </div>
 
           {/* Category Pills */}
-          <div className="flex flex-wrap sm:flex-nowrap gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {EVENT_CATEGORIES.map((cat) => (
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 overflow-x-auto pb-2 scrollbar-hide">{
+            EVENT_CATEGORIES.map((cat) => (
               <Button
                 key={cat.value}
                 variant={selectedCategory === cat.value ? 'default' : 'outline'}

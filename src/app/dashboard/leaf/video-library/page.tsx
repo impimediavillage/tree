@@ -10,6 +10,7 @@ import { Video, Play, Youtube, Facebook, Instagram, Twitter, Film, Loader2, Aler
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Image from 'next/image';
 import type { EducationalVideo } from '@/types/video-library';
+import type { DispensaryType } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Helper function to parse video URLs
@@ -84,25 +85,35 @@ function getSourceIcon(source: string) {
   }
 }
 
-const DISPENSARY_TYPES = [
-  { label: 'All Videos', value: 'all' },
-  { label: 'Cannabinoid Store', value: 'cannibinoid' },
-  { label: 'Traditional Medicine', value: 'traditional-medicine' },
-  { label: 'Homeopathy', value: 'homeopathy' },
-  { label: 'Supplements', value: 'supplements' },
-  { label: 'Apparel & Merch', value: 'apparel' },
-  { label: 'Muti Lounge', value: 'muti-lounge' },
-];
-
 export default function LeafVideoLibraryPage() {
   const [videos, setVideos] = useState<EducationalVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<EducationalVideo | null>(null);
   const [selectedType, setSelectedType] = useState('all');
+  const [dispensaryTypes, setDispensaryTypes] = useState<DispensaryType[]>([]);
 
   useEffect(() => {
+    fetchDispensaryTypes();
+    fetchDispensaryTypes();
     fetchVideos();
   }, [selectedType]);
+
+  const fetchDispensaryTypes = async () => {
+    try {
+      const typesRef = collection(db, 'dispensaryTypes');
+      const q = query(typesRef, orderBy('name', 'asc'));
+      const snapshot = await getDocs(q);
+      const types = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as DispensaryType[];
+      // Filter to show only active types
+      const activeTypes = types.filter(type => type.isActive === true);
+      setDispensaryTypes(activeTypes);
+    } catch (error) {
+      console.error('Error fetching dispensary types:', error);
+    }
+  };
 
   const fetchVideos = async () => {
     try {
@@ -151,21 +162,46 @@ export default function LeafVideoLibraryPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-[#3D2E17]">Video Library</h1>
-          <p className="text-[#5D4E37] mt-1">Educational videos about natural wellness</p>
-        </div>
-      </div>
+      <Card className="shadow-lg bg-muted/50 border-border/50">
+        <CardContent className="p-8">
+          <div className="flex items-center gap-4">
+            <div className="bg-[#006B3E] p-4 rounded-2xl">
+              <Video className="h-10 w-10 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-[#3D2E17] tracking-tight">
+                Video Library
+              </h1>
+              <p className="text-[#5D4E37] text-lg font-bold mt-1">
+                Educational videos about natural wellness
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Type Filter */}
       <Tabs value={selectedType} onValueChange={setSelectedType} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 gap-2">
-          {DISPENSARY_TYPES.map((type) => (
-            <TabsTrigger key={type.value} value={type.value} className="text-xs lg:text-sm">
-              {type.label}
-            </TabsTrigger>
-          ))}
+        <TabsList className="w-full flex flex-wrap justify-start gap-2 h-auto bg-muted/50 p-2">
+          <TabsTrigger 
+            key="all" 
+            value="all" 
+            className="font-bold text-[#3D2E17] data-[state=active]:bg-[#006B3E] data-[state=active]:text-white"
+          >
+            All Videos
+          </TabsTrigger>
+          {dispensaryTypes.map((type) => {
+            const slug = type.name.toLowerCase().replace(/\s+/g, '-');
+            return (
+              <TabsTrigger
+                key={type.id}
+                value={slug}
+                className="font-bold text-[#3D2E17] data-[state=active]:bg-[#006B3E] data-[state=active]:text-white"
+              >
+                {type.name}
+              </TabsTrigger>
+            );
+          })}
         </TabsList>
       </Tabs>
 
@@ -251,7 +287,7 @@ export default function LeafVideoLibraryPage() {
 
       {/* Video Player Dialog */}
       <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)}>
-        <DialogContent className="max-w-5xl bg-gradient-to-br from-white to-[#5D4E37]/5 border-[#5D4E37]/20 p-0 overflow-hidden">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white border-[#006B3E]/30 p-0">
           <div className="relative">
             {selectedVideo && (() => {
               // If custom embed code exists, use it
@@ -259,7 +295,7 @@ export default function LeafVideoLibraryPage() {
                 return (
                   <div className="relative">
                     <div
-                      className="aspect-video bg-black"
+                      className="w-full min-h-[400px] max-h-[70vh] bg-black flex items-center justify-center"
                       dangerouslySetInnerHTML={{ __html: selectedVideo.embedCode }}
                     />
                     <div className="p-6 space-y-4">
@@ -299,15 +335,15 @@ export default function LeafVideoLibraryPage() {
               const parsed = parseVideoUrl(selectedVideo.videoUrl);
               return parsed ? (
                 <div className="relative">
-                  <div className="aspect-video bg-black">
+                  <div className="w-full min-h-[400px] max-h-[70vh] bg-black flex items-center justify-center">
                     {parsed.source === 'youtube' && (
                       <iframe
                         width="100%"
-                        height="100%"
+                        height="600"
                         src={`${parsed.embedUrl}?autoplay=1`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        className="w-full h-full"
+                        className="w-full h-full min-h-[400px]"
                       />
                     )}
                     {parsed.source === 'tiktok' && (
