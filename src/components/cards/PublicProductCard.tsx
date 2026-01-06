@@ -231,7 +231,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
             </div>
             
             {/* Stock Info */}
-            <p className="text-sm font-semibold text-muted-foreground">Gifts available: {tierStock}</p>
+            <p className="text-sm font-semibold text-muted-foreground">Design packs with free gifts available: {tierStock}</p>
           </div>
           
           {/* Buy Button */}
@@ -366,7 +366,7 @@ export function PublicProductCard({ product, tier, onGenerateDesigns, onRequestP
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-3 pt-3 mt-auto">
             {renderFooterContent()}
-            {infoButtons}
+            {!isThcProduct && infoButtons}
         </CardFooter>
       </Card>
       
