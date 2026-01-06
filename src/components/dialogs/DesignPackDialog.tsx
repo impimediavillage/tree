@@ -9,13 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Loader2, Sparkles, ShoppingCart, CheckSquare, Square, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn, shuffleArray } from '@/lib/utils';
+import { Loader2, Sparkles, ShoppingCart, CheckSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import JSZip from 'jszip';
 import type { Product, PriceTier } from '@/types';
-
-const allTripleSImages = Array.from({ length: 81 }, (_, i) => `/images/2025-triple-s/t${i + 1}.jpg`);
 
 interface DesignPackDialogProps {
   isOpen: boolean;
@@ -28,14 +26,10 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const { toast } = useToast();
     const { addToCart } = useCart();
     
-    const [step, setStep] = useState<'select_freebies' | 'select_strain'>('select_freebies');
-    const [selectedFreebies, setSelectedFreebies] = useState<string[]>([]);
-    const [isProcessingCart, setIsProcessingCart] = React.useState(false);
-    
-    const [randomStrainImages, setRandomStrainImages] = useState<string[]>([]);
-    const [isRandomSetReady, setIsRandomSetReady] = useState(false);
-    const [selectedSticker, setSelectedSticker] = useState<string | null>(null);
-
+    const [selectedStickers, setSelectedStickers] = useState<string[]>([]);
+    const [isProcessingCart, setIsProcessingCart] = useState(false);
+    const [stickerImages, setStickerImages] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [viewingImageIndex, setViewingImageIndex] = useState<number>(0);
 
@@ -43,33 +37,38 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
     useEffect(() => {
         if (isOpen) {
-            setIsRandomSetReady(false);
-            fetch('/api/list-images')
+            setIsLoading(true);
+            // Load the same sticker images as used in /triple-s-club
+            fetch('/api/sticker-images')
                 .then(res => res.json())
                 .then(data => {
                     if (data.error) {
-                        toast({ title: "Error", description: "Could not load Triple S designs. Please try again.", variant: "destructive" });
+                        toast({ title: "Error", description: "Could not load Triple S sticker designs. Please try again.", variant: "destructive" });
                         return;
                     }
-                    // API now returns pre-shuffled 33 stickers for bandwidth efficiency
-                    const imagePaths = (data as string[]).map((name: string) => `/images/2025-triple-s-400/${name}`);
-                    setRandomStrainImages(imagePaths);
-                    setIsRandomSetReady(true);
+                    if (data.images && Array.isArray(data.images)) {
+                        setStickerImages(data.images);
+                    } else {
+                        toast({ title: "Error", description: "Invalid sticker images data.", variant: "destructive" });
+                    }
+                    setIsLoading(false);
                 })
-                .catch(() => toast({ title: "Error", description: "Failed to fetch designs. Please check your connection.", variant: "destructive" }));
+                .catch((error) => {
+                    console.error('Failed to load sticker images:', error);
+                    toast({ title: "Error", description: "Failed to fetch sticker designs. Please check your connection.", variant: "destructive" });
+                    setIsLoading(false);
+                });
         } else {
             setTimeout(() => {
-                setStep('select_freebies');
-                setSelectedFreebies([]);
-                setSelectedSticker(null);
-                setRandomStrainImages([]);
-                setIsRandomSetReady(false);
+                setSelectedStickers([]);
+                setStickerImages([]);
+                setIsLoading(false);
             }, 300);
         }
     }, [isOpen, toast]);
 
     const handleSelectFreebie = (imageUrl: string) => {
-        setSelectedFreebies(prev => {
+        setSelectedStickers(prev => {
             if (prev.includes(imageUrl)) {
                 return prev.filter(item => item !== imageUrl);
             }
@@ -85,36 +84,29 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
         });
     };
 
-    const handleSelectSticker = (imageUrl: string) => {
-        setSelectedSticker(prev => prev === imageUrl ? null : imageUrl);
-    };
-
     const handleViewImage = (index: number) => {
         setViewingImageIndex(index);
         setIsImageViewerOpen(true);
     };
 
-    const handleProceedToStrains = () => {
-        setStep('select_strain');
-    };
-
     const handleAddToCart = async () => {
-        if (!product || !tier || !selectedSticker) {
-             toast({ title: "No Strain Sticker Selected", description: "Please select your primary strain design first.", variant: "destructive" });
+        if (!product || !tier || selectedStickers.length === 0) {
+             toast({ title: "No Stickers Selected", description: "Please select at least one sticker design.", variant: "destructive" });
             return;
         }
         
         setIsProcessingCart(true);
 
-        if (selectedFreebies.length > 0) {
-            toast({ title: "Downloading Free Stickers...", description: `Preparing ${selectedFreebies.length} freebie(s) for download.`});
+        // Download selected stickers as ZIP
+        if (selectedStickers.length > 0) {
+            toast({ title: "Downloading Stickers...", description: `Preparing ${selectedStickers.length} sticker(s) for download.`});
             try {
                 const zip = new JSZip();
-                const imageFetchPromises = selectedFreebies.map(async (url) => {
+                const imageFetchPromises = selectedStickers.map(async (url) => {
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`Failed to fetch ${url}`);
                     const blob = await response.blob();
-                    const filename = url.split('/').pop() || 'sticker.jpg';
+                    const filename = url.split('/').pop() || 'sticker.png';
                     zip.file(filename, blob);
                 });
 
@@ -128,17 +120,15 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
-                 toast({ title: "Download Started", description: "Your free stickers are downloading.", variant: "default" });
+                 toast({ title: "Download Started", description: "Your stickers are downloading.", variant: "default" });
             } catch (error) {
                  console.error("Failed to create ZIP and download:", error);
-                 toast({ title: "Download Failed", description: "Could not download the bonus stickers. They will be available in your account.", variant: "destructive" });
+                 toast({ title: "Download Failed", description: "Could not download the stickers. They will be available in your account.", variant: "destructive" });
             }
         }
 
-        // --- THE DEFINITIVE FIX ---
-        // Call `addToCart` with the original product and tier,
-        // and pass the selected sticker URL as the override image.
-        addToCart(product, tier, 1, selectedSticker);
+        // Add to cart with the first selected sticker as the display image
+        addToCart(product, tier, 1, selectedStickers[0]);
         
         toast({ title: "Design Pack Added!", description: `Your custom "${product.name}" pack is in your cart.` });
         onOpenChange(false);
@@ -147,39 +137,54 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
 
     const handleNavigateViewer = (direction: 'next' | 'prev') => {
         const newIndex = direction === 'next'
-            ? (viewingImageIndex + 1) % allTripleSImages.length
-            : (viewingImageIndex - 1 + allTripleSImages.length) % allTripleSImages.length;
+            ? (viewingImageIndex + 1) % stickerImages.length
+            : (viewingImageIndex - 1 + stickerImages.length) % stickerImages.length;
         setViewingImageIndex(newIndex);
     };
 
-    const viewingImage = allTripleSImages[viewingImageIndex];
-    const isViewingImageSelected = viewingImage ? selectedFreebies.includes(viewingImage) : false;
+    const viewingImage = stickerImages[viewingImageIndex];
+    const isViewingImageSelected = viewingImage ? selectedStickers.includes(viewingImage) : false;
 
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
-                    {step === 'select_freebies' && (
+                    <DialogHeader className="px-6 pt-6 pb-4 border-b">
+                        <DialogTitle>Select Your Triple S Sticker Set</DialogTitle>
+                        <DialogDescription>
+                            Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our premium Triple S design collection.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {isLoading ? (
+                        <div className="flex-grow flex items-center justify-center">
+                            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                        </div>
+                    ) : (
                         <>
-                            <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                                <DialogTitle>Create Your Triple S Canna Club Pack</DialogTitle>
-                                <DialogDescription>
-                                    Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our collection to bundle with your unique Triple S bud generated design.
-                                </DialogDescription>
-                            </DialogHeader>
                             <ScrollArea className="flex-grow px-6 pt-4">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
-                                    {allTripleSImages.map((imgSrc, index) => (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 pb-4">
+                                    {stickerImages.map((imgSrc, index) => (
                                         <Card
-                                            key={index}
-                                            className="cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square"
+                                            key={`${imgSrc}-${index}`}
+                                            className="cursor-pointer transition-all duration-200 overflow-hidden relative group p-0 aspect-square bg-white rounded-lg shadow-md hover:shadow-xl border-2 hover:border-[#006B3E]"
                                             onClick={() => handleViewImage(index)}
+                                            style={{
+                                                borderColor: selectedStickers.includes(imgSrc) ? '#006B3E' : 'rgba(0, 107, 62, 0.2)'
+                                            }}
                                         >
-                                            <Image src={imgSrc} alt={`Triple S Sticker ${index + 1}`} layout="fill" objectFit="cover" />
+                                            <Image 
+                                                src={imgSrc} 
+                                                alt={`Triple S Sticker ${index + 1}`} 
+                                                fill
+                                                className="object-contain p-4" 
+                                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                                                unoptimized
+                                            />
                                             <div 
                                                 className={cn(
                                                     "absolute top-1 right-1 h-6 w-6 rounded-md flex items-center justify-center border transition-colors z-10",
-                                                    selectedFreebies.includes(imgSrc)
+                                                    selectedStickers.includes(imgSrc)
                                                         ? 'bg-primary border-primary-foreground/50'
                                                         : 'bg-black/40 border-white/50'
                                                 )}
@@ -188,87 +193,45 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                                     handleSelectFreebie(imgSrc);
                                                 }}
                                             >
-                                                <CheckSquare className={cn("h-4 w-4", selectedFreebies.includes(imgSrc) ? 'text-white' : 'text-transparent')}/>
+                                                <CheckSquare className={cn("h-4 w-4", selectedStickers.includes(imgSrc) ? 'text-white' : 'text-transparent')}/>
                                             </div>
+                                            <div className="absolute inset-0 bg-gradient-to-t from-[#006B3E]/0 to-[#006B3E]/0 group-hover:from-[#006B3E]/10 group-hover:to-transparent transition-all duration-200" />
                                         </Card>
                                     ))}
                                 </div>
                             </ScrollArea>
                             <DialogFooter className="p-6 border-t">
-                                <Button size="lg" className="w-full" onClick={handleProceedToStrains}>
-                                    <Sparkles className="mr-2 h-5 w-5" />
-                                    Next. Select Your Triple S bud sticker design
-                                </Button>
+                                <div className="w-full flex flex-col gap-2">
+                                    <div className="text-center text-sm text-muted-foreground mb-2">
+                                        Selected: {selectedStickers.length} / {maxSelectable} stickers
+                                    </div>
+                                    <Button 
+                                        size="lg" 
+                                        className="w-full bg-green-600 hover:bg-green-700" 
+                                        onClick={handleAddToCart} 
+                                        disabled={isProcessingCart || selectedStickers.length === 0}
+                                    >
+                                        {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
+                                        Add Design Pack to Cart
+                                    </Button>
+                                </div>
                             </DialogFooter>
                         </>
                     )}
-
-                    {step === 'select_strain' && (
-                        <div className="flex flex-col flex-grow min-h-0">
-                             <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-                                <DialogTitle>Select your Triple S bud sticker</DialogTitle>
-                                <DialogDescription>
-                                You've selected {selectedFreebies.length} freebie design(s). Now select your bud sticker. A high res design will be emailed to You and your free garden delight sample will sent to you after succesful check out.
-                                </DialogDescription>
-                            </DialogHeader>
-                            
-                            {!isRandomSetReady ? (
-                                <div className="flex-grow flex items-center justify-center">
-                                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                                </div>
-                            ) : (
-                                <ScrollArea className="flex-grow w-full">
-                                    <div className="flex space-x-4 p-6">
-                                        {randomStrainImages.map((imgSrc) => (
-                                            <Card
-                                                key={imgSrc}
-                                                className={cn(
-                                                    "cursor-pointer transition-all duration-200 overflow-hidden relative group shrink-0 w-64 h-64 border-4",
-                                                    selectedSticker === imgSrc ? 'border-primary' : 'border-transparent'
-                                                )}
-                                                onClick={() => handleSelectSticker(imgSrc)}
-                                            >
-                                                <Image src={imgSrc} alt="Strain Sticker" layout="fill" objectFit="cover" />
-                                                <div 
-                                                    className={cn(
-                                                        "absolute top-2 right-2 h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all",
-                                                        selectedSticker === imgSrc
-                                                            ? 'bg-primary border-primary-foreground'
-                                                            : 'bg-black/40 border-white/60'
-                                                    )}
-                                                >
-                                                    <CheckSquare className={cn("h-5 w-5", selectedSticker === imgSrc ? 'text-white' : 'text-transparent')} />
-                                                </div>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                    <ScrollBar orientation="horizontal" />
-                                </ScrollArea>
-                            )}
-
-                            <DialogFooter className="p-6 border-t bg-background shrink-0">
-                                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700" onClick={handleAddToCart} disabled={isProcessingCart || !selectedSticker || !isRandomSetReady}>
-                                    {isProcessingCart ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShoppingCart className="mr-2 h-5 w-5" />}
-                                    Add Design to Cart
-                                </Button>
-                            </DialogFooter>
-                        </div>
-                    )}
-
                 </DialogContent>
             </Dialog>
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-xl w-full p-0 flex flex-col h-auto sm:h-[90vh] sm:max-h-[800px]">
                     <DialogHeader className="p-4 border-b shrink-0">
-                        <DialogTitle>Triple S Canna Club Design</DialogTitle>
+                        <DialogTitle>Triple S Sticker Design</DialogTitle>
                          <DialogDescription>
-                            Selected: {selectedFreebies.length} / {maxSelectable} sticker(s).
+                            Selected: {selectedStickers.length} / {maxSelectable} sticker(s).
                         </DialogDescription>
                     </DialogHeader>
                     <div className="relative flex-grow flex items-center justify-center">
                         {viewingImage && (
                             <div className="relative w-full h-full max-h-[60vh] sm:max-h-full">
-                                <Image src={viewingImage} alt="Sticker preview" layout="fill" objectFit="contain" className="p-2"/>
+                                <Image src={viewingImage} alt="Sticker preview" fill className="object-contain p-2"/>
                             </div>
                         )}
                         <Button
@@ -292,14 +255,14 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                                 size="lg"
                                 variant={isViewingImageSelected ? 'default' : 'secondary'}
                                 onClick={() => viewingImage && handleSelectFreebie(viewingImage)}
-                                disabled={!isViewingImageSelected && selectedFreebies.length >= maxSelectable}
+                                disabled={!isViewingImageSelected && selectedStickers.length >= maxSelectable}
                                 className={cn(
                                     "flex items-center gap-2 shadow-md",
                                     isViewingImageSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                                 )}
                             >
-                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5" />}
-                                {isViewingImageSelected ? 'Selected' : 'Select This Design'}
+                                {isViewingImageSelected ? <CheckSquare className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
+                                {isViewingImageSelected ? 'Selected' : 'Select This Sticker'}
                             </Button>
                         </div>
                     </DialogFooter>
