@@ -287,39 +287,42 @@ export default function LeafVideoLibraryPage() {
 
       {/* Video Player Dialog */}
       <Dialog open={!!selectedVideo} onOpenChange={(open) => !open && setSelectedVideo(null)}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white border-[#006B3E]/30 p-0">
-          <div className="relative">
+        <DialogContent className="max-w-fit max-h-[95vh] overflow-hidden bg-transparent border-none p-0 gap-0">
+          <div className="relative flex flex-col max-w-[95vw] max-h-[95vh]">
             {selectedVideo && (() => {
               // If custom embed code exists, use it
               if (selectedVideo.embedCode && selectedVideo.embedCode.trim()) {
                 return (
-                  <div className="relative">
+                  <div className="flex flex-col">
                     <div
-                      className="w-full min-h-[400px] max-h-[70vh] bg-black flex items-center justify-center"
+                      className="flex items-center justify-center bg-black rounded-t-lg overflow-hidden"
+                      style={{ maxHeight: '80vh' }}
                       dangerouslySetInnerHTML={{ __html: selectedVideo.embedCode }}
                     />
-                    <div className="p-6 space-y-4">
+                    <div className="bg-muted/95 backdrop-blur-sm rounded-b-lg p-6 space-y-4 border-t-2 border-[#006B3E]">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h3 className="text-2xl font-extrabold text-[#3D2E17] mb-2">
+                          <h3 className="text-2xl font-black text-[#3D2E17] mb-2">
                             {selectedVideo.title}
                           </h3>
-                          <p className="text-[#5D4E37] leading-relaxed">
+                          <p className="text-[#5D4E37] font-bold leading-relaxed">
                             {selectedVideo.description}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {getSourceIcon(selectedVideo.source)}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="scale-150">
+                            {getSourceIcon(selectedVideo.source)}
+                          </div>
                         </div>
                       </div>
 
                       {selectedVideo.tags && selectedVideo.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-[#5D4E37]/10">
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3D2E17]/20">
                           {selectedVideo.tags.map((tag, idx) => (
                             <Badge
                               key={idx}
                               variant="outline"
-                              className="border-[#006B3E] text-[#006B3E] font-semibold"
+                              className="border-[#006B3E] text-[#006B3E] font-black bg-white/80"
                             >
                               {tag}
                             </Badge>
@@ -334,105 +337,100 @@ export default function LeafVideoLibraryPage() {
               // Otherwise, parse the video URL
               const parsed = parseVideoUrl(selectedVideo.videoUrl);
               return parsed ? (
-                <div className="relative">
-                  <div className="w-full min-h-[400px] max-h-[70vh] bg-black flex items-center justify-center">
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-center bg-black rounded-t-lg overflow-hidden" style={{ maxHeight: '80vh' }}>
                     {parsed.source === 'youtube' && (
                       <iframe
-                        width="100%"
-                        height="600"
                         src={`${parsed.embedUrl}?autoplay=1`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        className="w-full h-full min-h-[400px]"
+                        className="w-full aspect-video"
+                        style={{ maxHeight: '80vh', minHeight: '400px' }}
                       />
                     )}
                     {parsed.source === 'tiktok' && (
                       <iframe
-                        width="100%"
-                        height="100%"
                         src={parsed.embedUrl}
                         allow="encrypted-media;"
                         allowFullScreen
-                        className="w-full h-full"
+                        className="w-auto h-[80vh]"
+                        style={{ aspectRatio: '9/16', maxWidth: '95vw' }}
                       />
                     )}
                     {parsed.source === 'facebook' && (
                       <iframe
-                        width="100%"
-                        height="100%"
                         src={parsed.embedUrl}
                         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
                         allowFullScreen
-                        className="w-full h-full"
+                        className="w-full aspect-video"
+                        style={{ maxHeight: '80vh', minHeight: '400px' }}
                       />
                     )}
                     {parsed.source === 'instagram' && (
                       <iframe
-                        width="100%"
-                        height="100%"
                         src={parsed.embedUrl}
                         allowFullScreen
-                        className="w-full h-full"
+                        className="w-auto h-[80vh]"
+                        style={{ aspectRatio: '9/16', maxWidth: '95vw' }}
                       />
                     )}
                     {parsed.source === 'vimeo' && (
                       <iframe
-                        width="100%"
-                        height="100%"
                         src={parsed.embedUrl}
                         allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
-                        className="w-full h-full"
-                      />
+                        className="w-full aspect-video"
+                        style={{ maxHeight: '80vh', minHeight: '400px' }}
+                        />
                     )}
                     {parsed.source === 'dailymotion' && (
                       <iframe
-                        width="100%"
-                        height="100%"
                         src={parsed.embedUrl}
                         allow="autoplay; fullscreen"
                         allowFullScreen
-                        className="w-full h-full"
+                        className="w-full aspect-video"
+                        style={{ maxHeight: '80vh', minHeight: '400px' }}
                       />
                     )}
                     {parsed.source === 'twitter' && (
                       <iframe
-                        width="100%"
-                        height="100%"
                         src={parsed.embedUrl}
                         allowFullScreen
-                        className="w-full h-full"
+                        className="w-full aspect-video"
+                        style={{ maxHeight: '80vh', minHeight: '400px' }}
                       />
                     )}
                     {parsed.source === 'direct' && (
-                      <video controls autoPlay className="w-full h-full">
+                      <video controls autoPlay className="w-full h-auto" style={{ maxHeight: '80vh' }}>
                         <source src={parsed.embedUrl} type="video/mp4" />
                       </video>
                     )}
                   </div>
 
-                  <div className="p-6 space-y-4">
+                  <div className="bg-muted/95 backdrop-blur-sm rounded-b-lg p-6 space-y-4 border-t-2 border-[#006B3E]">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className="text-2xl font-extrabold text-[#3D2E17] mb-2">
+                        <h3 className="text-2xl font-black text-[#3D2E17] mb-2">
                           {selectedVideo.title}
                         </h3>
-                        <p className="text-[#5D4E37] leading-relaxed">
+                        <p className="text-[#5D4E37] font-bold leading-relaxed">
                           {selectedVideo.description}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {getSourceIcon(selectedVideo.source)}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="scale-150">
+                          {getSourceIcon(selectedVideo.source)}
+                        </div>
                       </div>
                     </div>
 
                     {selectedVideo.tags && selectedVideo.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-[#5D4E37]/10">
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-[#3D2E17]/20">
                         {selectedVideo.tags.map((tag, idx) => (
                           <Badge
                             key={idx}
                             variant="outline"
-                            className="border-[#006B3E] text-[#006B3E] font-semibold"
+                            className="border-[#006B3E] text-[#006B3E] font-black bg-white/80"
                           >
                             {tag}
                           </Badge>
