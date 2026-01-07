@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt, Calendar } from 'lucide-react';
+import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt, Calendar, Share2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { SocialShareHub } from '@/components/social-share/SocialShareHub';
 
 interface QuickActionCardProps {
     title: string;
@@ -51,6 +52,7 @@ export default function WellnessAdminOverviewPage() {
   const { currentDispensary, loading: authLoading } = useAuth();
   const router = useRouter();
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [showShareHub, setShowShareHub] = useState(false);
 
   useEffect(() => {
     if (!authLoading && currentDispensary) {
@@ -89,6 +91,34 @@ export default function WellnessAdminOverviewPage() {
             Welcome to your control panel. Manage products, pool interactions, and settings.
           </CardDescription>
         </CardHeader>
+      </Card>
+
+      {/* Epic Share Button - Featured Prominently */}
+      <Card className="shadow-2xl bg-gradient-to-br from-[#006B3E]/20 via-[#3D2E17]/10 to-[#006B3E]/20 border-2 border-[#006B3E] relative overflow-hidden group">
+        <div className="absolute inset-0 bg-gradient-to-r from-[#006B3E]/0 via-[#006B3E]/10 to-[#006B3E]/0 animate-pulse" />
+        <CardContent className="relative p-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-shrink-0 h-16 w-16 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+              <Share2 className="h-8 w-8 text-white animate-pulse" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-2xl font-black text-[#3D2E17] mb-2">
+                🚀 Share Your Store & Grow!
+              </h3>
+              <p className="text-sm text-[#5D4E37] font-bold">
+                Share your store across all social platforms, track performance, and unlock achievements! Get discovered by more customers.
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowShareHub(true)}
+              size="lg"
+              className="bg-gradient-to-r from-[#006B3E] to-[#3D2E17] hover:from-[#3D2E17] hover:to-[#006B3E] text-white font-black px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            >
+              <Share2 className="h-5 w-5 mr-2" />
+              Open Share Hub
+            </Button>
+          </div>
+        </CardContent>
       </Card>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -228,6 +258,12 @@ export default function WellnessAdminOverviewPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Social Share Hub Dialog */}
+      <SocialShareHub 
+        isOpen={showShareHub} 
+        onOpenChange={setShowShareHub}
+      />
     </div>
   );
 }

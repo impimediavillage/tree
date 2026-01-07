@@ -661,3 +661,69 @@ export type DispensaryBadge =
   | 'community_favorite' // 100+ reviews
   | 'excellent_value'   // 8+ value rating
   | 'fresh_products';   // 9+ freshness rating
+
+// Social Share Configuration
+export interface ShareConfig {
+  title: string;
+  description: string;
+  shareImage?: string | null; // Custom OG image URL
+  preferredPlatforms: SocialPlatform[];
+  customMetadata?: {
+    hashtags?: string[];
+    defaultMessage?: string;
+  };
+  lastUpdated?: Timestamp | Date;
+}
+
+// Social Platform Types
+export type SocialPlatform = 
+  | 'facebook' 
+  | 'twitter' 
+  | 'linkedin' 
+  | 'whatsapp' 
+  | 'telegram' 
+  | 'instagram' 
+  | 'tiktok' 
+  | 'email' 
+  | 'sms';
+
+// Share Analytics Event
+export interface ShareEvent {
+  id?: string;
+  dispensaryId: string;
+  platform: SocialPlatform;
+  timestamp: Timestamp | Date;
+  clicks?: number;
+  referrer?: string;
+  userAgent?: string;
+}
+
+// Share Achievement Types
+export type ShareAchievement = 
+  | 'first_share'           // First time sharing
+  | 'social_butterfly'      // Shared on 5+ platforms
+  | 'century_club'          // 100 total shares
+  | 'viral_master'          // 1000+ clicks
+  | 'omni_channel'          // Shared on all platforms
+  | 'daily_sharer'          // Shared 7 days in a row
+  | 'qr_master';            // Generated 10+ QR codes
+
+export interface Achievement {
+  id: ShareAchievement;
+  title: string;
+  description: string;
+  icon: string;
+  unlockedAt?: Timestamp | Date;
+  progress?: number; // 0-100
+}
+
+// Share Statistics
+export interface ShareStats {
+  totalShares: number;
+  sharesByPlatform: Record<SocialPlatform, number>;
+  totalClicks: number;
+  clicksByPlatform: Record<SocialPlatform, number>;
+  topPerformingPlatform: SocialPlatform | null;
+  achievements: Achievement[];
+  lastShareDate?: Timestamp | Date;
+}
