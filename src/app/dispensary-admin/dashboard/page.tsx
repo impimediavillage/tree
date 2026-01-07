@@ -94,12 +94,11 @@ export default function WellnessAdminOverviewPage() {
       </Card>
 
       {/* Epic Share Button - Featured Prominently */}
-      <Card className="shadow-2xl bg-gradient-to-br from-[#006B3E]/20 via-[#3D2E17]/10 to-[#006B3E]/20 border-2 border-[#006B3E] relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#006B3E]/0 via-[#006B3E]/10 to-[#006B3E]/0 animate-pulse" />
-        <CardContent className="relative p-6">
+      <Card className="shadow-lg bg-muted/50 hover:shadow-xl transition-shadow">
+        <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="flex-shrink-0 h-16 w-16 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-              <Share2 className="h-8 w-8 text-white animate-pulse" />
+            <div className="flex-shrink-0 h-16 w-16 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+              <Share2 className="h-8 w-8 text-white" />
             </div>
             <div className="flex-1 text-center sm:text-left">
               <h3 className="text-2xl font-black text-[#3D2E17] mb-2">
@@ -112,7 +111,7 @@ export default function WellnessAdminOverviewPage() {
             <Button
               onClick={() => setShowShareHub(true)}
               size="lg"
-              className="bg-gradient-to-r from-[#006B3E] to-[#3D2E17] hover:from-[#3D2E17] hover:to-[#006B3E] text-white font-black px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105"
+              className="bg-gradient-to-r from-[#006B3E] to-[#3D2E17] hover:from-[#3D2E17] hover:to-[#006B3E] text-white font-black px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <Share2 className="h-5 w-5 mr-2" />
               Open Share Hub

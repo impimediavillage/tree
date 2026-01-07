@@ -80,21 +80,29 @@ export function DispensaryListingCard({ dispensary, typeBannerImageUrl, typeIcon
   useEffect(() => {
     let bannerUrl = defaultPlaceholderUrl; 
 
-    // First priority: dispensary's own bannerUrl
-    if (dispensary.bannerUrl && typeof dispensary.bannerUrl === 'string' && dispensary.bannerUrl.trim() !== '') {
+    // First priority: dispensary's own storeImage (new)
+    if (dispensary.storeImage && typeof dispensary.storeImage === 'string' && dispensary.storeImage.trim() !== '') {
+      bannerUrl = dispensary.storeImage;
+    }
+    // Second priority: dispensary's storeIcon (new) 
+    else if (dispensary.storeIcon && typeof dispensary.storeIcon === 'string' && dispensary.storeIcon.trim() !== '') {
+      bannerUrl = dispensary.storeIcon;
+    }
+    // Third priority: dispensary's own bannerUrl (legacy)
+    else if (dispensary.bannerUrl && typeof dispensary.bannerUrl === 'string' && dispensary.bannerUrl.trim() !== '') {
       bannerUrl = dispensary.bannerUrl;
     }
-    // Second priority: typeBannerImageUrl prop
+    // Fourth priority: typeBannerImageUrl prop
     else if (typeBannerImageUrl && typeof typeBannerImageUrl === 'string' && typeBannerImageUrl.trim() !== '') {
       bannerUrl = typeBannerImageUrl;
     } 
-    // Third priority: hardcoded type images
+    // Fifth priority: hardcoded type images
     else if (dispensary.dispensaryType && hardcodedTypeImages[dispensary.dispensaryType]) {
       bannerUrl = hardcodedTypeImages[dispensary.dispensaryType]!;
     }
     
     setCurrentBannerUrl(bannerUrl);
-  }, [typeBannerImageUrl, dispensary.dispensaryType, dispensary.bannerUrl, dispensary.dispensaryName, defaultPlaceholderUrl]);
+  }, [typeBannerImageUrl, dispensary.dispensaryType, dispensary.bannerUrl, dispensary.storeImage, dispensary.storeIcon, dispensary.dispensaryName, defaultPlaceholderUrl]);
 
   const handleImageError = () => {
     if (currentBannerUrl !== defaultPlaceholderUrl) {

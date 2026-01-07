@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
   Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar
@@ -103,8 +104,20 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   
   const SidebarNavigation = () => (
     <>
-       <div className="flex items-center gap-2 p-3 border-b border-sidebar-border">
-          <Store className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
+       <div className="flex items-center gap-3 p-3 border-b border-sidebar-border">
+          {/* Display Store Image (or Icon fallback or Store icon) */}
+          {currentDispensary.storeImage || currentDispensary.storeIcon ? (
+            <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+              <Image
+                src={currentDispensary.storeImage || currentDispensary.storeIcon!}
+                alt={currentDispensary.dispensaryName}
+                fill
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <Store className="h-6 w-6 sm:h-7 sm:w-7 text-primary flex-shrink-0" />
+          )}
           <div className="overflow-hidden flex-1 min-w-0">
             <p className="text-base sm:text-lg font-semibold text-foreground truncate" title={currentDispensary.dispensaryName}>
               {currentDispensary.dispensaryName}

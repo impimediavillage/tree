@@ -107,8 +107,13 @@ export const ownerEditDispensarySchema = z.object({
   
   // In-house delivery fields
   inHouseDeliveryPrice: z.number().optional().nullable(),
+  pricePerKm: z.number().optional().nullable(),
   sameDayDeliveryCutoff: z.string().optional().nullable(),
   inHouseDeliveryCutoffTime: z.string().optional().nullable(),
+  
+  // Store branding fields
+  storeImage: z.string().url().optional().nullable(),
+  storeIcon: z.string().url().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.openTime && data.closeTime && data.openTime >= data.closeTime) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Open time must be before close time.', path: ['openTime'] });
@@ -122,6 +127,25 @@ export const ownerEditDispensarySchema = z.object({
       message: 'An origin locker must be selected for Locker to Locker or Locker to Door shipping.',
       path: ['originLocker'],
     });
+  }
+
+  // In-house delivery validation
+  const inHouseDeliverySelected = data.shippingMethods.includes('in_house');
+  if (inHouseDeliverySelected) {
+    if (!data.deliveryRadius || data.deliveryRadius === 'none') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Delivery radius must be set when in-house delivery service is selected.',
+        path: ['deliveryRadius'],
+      });
+    }
+    if (!data.pricePerKm || data.pricePerKm <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Price per kilometer must be set when in-house delivery service is selected.',
+        path: ['pricePerKm'],
+      });
+    }
   }
 });
 

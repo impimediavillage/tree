@@ -30,6 +30,77 @@ export default function DispensaryStorePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  // Dynamically inject the PWA manifest link for this dispensary
+  useEffect(() => {
+    if (!dispensaryId) return;
+
+    // Remove existing manifest link (if any)
+    const existingManifest = document.querySelector('link[rel="manifest"]');
+    if (existingManifest) {
+      existingManifest.remove();
+    }
+
+    // Add dispensary-specific manifest link
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = `/api/manifest/${dispensaryId}`;
+    document.head.appendChild(manifestLink);
+
+    // Cleanup: restore default manifest on unmount
+    return () => {
+      manifestLink.remove();
+      const defaultManifest = document.createElement('link');
+      defaultManifest.rel = 'manifest';
+      defaultManifest.href = '/manifest.json';
+      document.head.appendChild(defaultManifest);
+    };
+  }, [dispensaryId]);
+
+  // Update Open Graph meta tags when dispensary loads
+  useEffect(() => {
+    if (!dispensary) return;
+
+    const ogImage = dispensary.storeImage || dispensary.storeIcon;
+    
+    if (ogImage) {
+      // Update or create OG image meta tag
+      let ogImageTag = document.querySelector('meta[property="og:image"]');
+      if (!ogImageTag) {
+        ogImageTag = document.createElement('meta');
+        ogImageTag.setAttribute('property', 'og:image');
+        document.head.appendChild(ogImageTag);
+      }
+      ogImageTag.setAttribute('content', ogImage);
+
+      // Update or create Twitter card image
+      let twitterImageTag = document.querySelector('meta[name="twitter:image"]');
+      if (!twitterImageTag) {
+        twitterImageTag = document.createElement('meta');
+        twitterImageTag.setAttribute('name', 'twitter:image');
+        document.head.appendChild(twitterImageTag);
+      }
+      twitterImageTag.setAttribute('content', ogImage);
+    }
+
+    // Update OG title
+    let ogTitleTag = document.querySelector('meta[property="og:title"]');
+    if (!ogTitleTag) {
+      ogTitleTag = document.createElement('meta');
+      ogTitleTag.setAttribute('property', 'og:title');
+      document.head.appendChild(ogTitleTag);
+    }
+    ogTitleTag.setAttribute('content', dispensary.dispensaryName || 'Wellness Store');
+
+    // Update OG description
+    let ogDescTag = document.querySelector('meta[property="og:description"]');
+    if (!ogDescTag) {
+      ogDescTag = document.createElement('meta');
+      ogDescTag.setAttribute('property', 'og:description');
+      document.head.appendChild(ogDescTag);
+    }
+    ogDescTag.setAttribute('content', `Visit ${dispensary.dispensaryName} for quality wellness products`);
+  }, [dispensary]);
+
   useEffect(() => {
     const fetchDispensaryAndProducts = async () => {
       if (!dispensaryId) {

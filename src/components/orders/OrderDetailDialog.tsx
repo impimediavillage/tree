@@ -177,29 +177,29 @@ export function OrderDetailDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <PackageCheck className="h-6 w-6" />
-            Order #{order.orderNumber}
+      <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-4 sm:p-6">
+        <DialogHeader className="pb-3">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+            <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+            <span className="truncate">Order #{order.orderNumber}</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm">
             Placed on {orderDate}
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="shipments">Shipments</TabsTrigger>
-            <TabsTrigger value="shipping-label">Labels</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-5 h-auto">
+            <TabsTrigger value="details" className="text-xs sm:text-sm px-2 py-2">Details</TabsTrigger>
+            <TabsTrigger value="shipments" className="text-xs sm:text-sm px-2 py-2">Ships</TabsTrigger>
+            <TabsTrigger value="shipping-label" className="text-xs sm:text-sm px-2 py-2">Labels</TabsTrigger>
+            <TabsTrigger value="notes" className="text-xs sm:text-sm px-2 py-2">Notes</TabsTrigger>
+            <TabsTrigger value="documents" className="text-xs sm:text-sm px-2 py-2">Docs</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="flex-1 mt-4">
-            <ScrollArea className="h-[60vh]">
-              <div className="space-y-6">
+          <TabsContent value="details" className="flex-1 mt-4 overflow-hidden">
+            <ScrollArea className="h-[calc(95vh-220px)] sm:h-[calc(90vh-200px)]">
+              <div className="space-y-4 pr-4">
                 {/* Order Information */}
                 <Card>
                   <CardHeader>
@@ -209,24 +209,24 @@ export function OrderDetailDialog({
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Order Number</p>
-                        <p className="font-semibold">#{order.orderNumber}</p>
+                        <p className="font-semibold text-sm sm:text-base">#{order.orderNumber}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Order Date</p>
-                        <p className="font-semibold">{orderDate}</p>
+                        <p className="font-semibold text-sm sm:text-base">{orderDate}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Payment Status</p>
-                        <Badge variant={order.paymentStatus === 'completed' ? 'default' : 'secondary'}>
+                        <Badge variant={order.paymentStatus === 'completed' ? 'default' : 'secondary'} className="text-xs">
                           {order.paymentStatus || 'pending'}
                         </Badge>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
-                        <p className="font-semibold capitalize">{order.paymentMethod || 'N/A'}</p>
+                        <p className="font-semibold capitalize text-sm sm:text-base">{order.paymentMethod || 'N/A'}</p>
                       </div>
                     </div>
                   </CardContent>

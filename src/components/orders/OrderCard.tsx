@@ -131,10 +131,10 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
     >
       <div className="p-6 space-y-5">
         {/* Header */}
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-4">
+        <div className="flex justify-between items-start gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {showSelection && (
-              <div className={`w-6 h-6 rounded-md border-2 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'} flex items-center justify-center transition-colors`}>
+              <div className={`w-6 h-6 rounded-md border-2 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'} flex items-center justify-center transition-colors flex-shrink-0`}>
                 {selected && (
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-primary-foreground">
                     <polyline points="20 6 9 17 4 12" />
@@ -142,30 +142,28 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                 )}
               </div>
             )}
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1 min-w-0">
               <div className="flex items-center gap-3">
-                <Package2 className="h-7 w-7 text-green-800" />
-                <span className="text-xl font-bold">#{order.orderNumber || 'No Number'}</span>
+                <Package2 className="h-7 w-7 text-green-800 flex-shrink-0" />
+                <span className="text-xl font-bold truncate">#{order.orderNumber || 'No Number'}</span>
               </div>
+              <p className="text-2xl font-bold text-primary">{formatCurrency(order.total || 0)}</p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                {orderDate}
+                <Clock className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{orderDate}</span>
               </div>
             </div>
           </div>
-          <div className="text-right space-y-2">
-            <p className="text-2xl font-bold text-primary">{formatCurrency(order.total || 0)}</p>
-            <Badge 
-              variant={
-                order.status === 'delivered' ? 'default' :
-                order.status === 'cancelled' ? 'destructive' :
-                'secondary'
-              }
-              className="text-xs font-semibold"
-            >
-              {statusDescriptions[order.status as keyof typeof statusDescriptions] || statusDescriptions.pending}
-            </Badge>
-          </div>
+          <Badge 
+            variant={
+              order.status === 'delivered' ? 'default' :
+              order.status === 'cancelled' ? 'destructive' :
+              'secondary'
+            }
+            className="text-xs font-semibold flex-shrink-0"
+          >
+            {statusDescriptions[order.status as keyof typeof statusDescriptions] || statusDescriptions.pending}
+          </Badge>
         </div>
 
         {/* Customer Info */}
@@ -342,7 +340,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         </div>
 
         {/* Footer */}
-        <div className="flex justify-between items-center gap-3 pt-4 border-t-2">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 border-t-2">
           {order.status === 'delivered' && onRateExperience && (
             <Button 
               variant="outline" 
@@ -354,14 +352,15 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
               className="flex-1 font-semibold border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 text-yellow-900 hover:text-yellow-950"
             >
               <Star className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-600" />
-              Rate Experience
+              <span className="hidden sm:inline">Rate Experience</span>
+              <span className="sm:hidden">Rate</span>
             </Button>
           )}
           <Button 
             variant="default" 
             size="lg" 
             onClick={onClick} 
-            className={`font-semibold ${order.status === 'delivered' && onRateExperience ? '' : 'flex-1'}`}
+            className={`font-semibold ${order.status === 'delivered' && onRateExperience ? '' : 'w-full'}`}
           >
             View Details <ArrowRight className="ml-2 h-5 w-5" />
           </Button>

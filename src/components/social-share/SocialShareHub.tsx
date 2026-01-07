@@ -211,14 +211,40 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
       const configSnap = await getDoc(configRef);
       
       if (configSnap.exists()) {
-        setShareConfig(configSnap.data() as ShareConfig);
-        setCustomMessage(configSnap.data().customMetadata?.defaultMessage || '');
+        const config = configSnap.data() as ShareConfig;
+        // Use dispensary storeImage/storeIcon as defaults for platforms without custom images
+        const defaultImage = currentDispensary.storeImage || currentDispensary.storeIcon;
+        if (defaultImage && config.platformImages) {
+          // Fill in missing platform images with store branding
+          const platforms: SocialPlatform[] = ['facebook', 'twitter', 'linkedin', 'whatsapp', 'telegram', 'instagram', 'tiktok'];
+          platforms.forEach(platform => {
+            if (!config.platformImages![platform]) {
+              config.platformImages![platform] = defaultImage;
+            }
+          });
+        }
+        setShareConfig(config);
+        setCustomMessage(config.customMetadata?.defaultMessage || '');
       } else {
-        // Initialize with defaults
+        // Initialize with defaults using store branding
+        const defaultImage = currentDispensary.storeImage || currentDispensary.storeIcon;
+        const defaultPlatformImages: Partial<Record<SocialPlatform, string>> = defaultImage ? {
+          facebook: defaultImage,
+          twitter: defaultImage,
+          linkedin: defaultImage,
+          whatsapp: defaultImage,
+          telegram: defaultImage,
+          instagram: defaultImage,
+          tiktok: defaultImage,
+          email: defaultImage,
+          sms: defaultImage,
+        } : {};
+        
         const defaultConfig: ShareConfig = {
           title: `Check out ${currentDispensary.dispensaryName}!`,
           description: `Visit my wellness store for quality products and great service.`,
           preferredPlatforms: ['facebook', 'whatsapp', 'instagram'],
+          platformImages: defaultPlatformImages,
           customMetadata: {
             hashtags: ['wellness', 'natural', 'health'],
             defaultMessage: `🌿 Check out my store!\n\n`,

@@ -80,8 +80,11 @@ export interface Dispensary {
   reviewCount?: number;
   inHouseDeliveryFee?: number; // Legacy field
   inHouseDeliveryPrice?: number; // New field - cost for in-house delivery
+  pricePerKm?: number | null; // Price per kilometer for in-house delivery
   sameDayDeliveryCutoff?: string; // Time orders must be placed by for same-day delivery (format: "14:00")
   bannerUrl?: string | null;
+  storeImage?: string | null; // Store logo/image - displays in cards and headers
+  storeIcon?: string | null; // Store icon (512x512) - used for PWA installation and social sharing
 }
 
 // Represents the structure for Wellness Type documents (basic info)

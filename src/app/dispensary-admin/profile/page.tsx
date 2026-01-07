@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, Store as StoreIcon, MapPin, Search, Shield } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, Store as StoreIcon, MapPin, Search, Shield, Image as ImageIcon } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { Loader } from '@googlemaps/js-api-loader';
 import countryDialCodes from '@/../docs/country-dial-codes.json';
+import { ImageUpload } from '@/components/ui/image-upload';
 
 
 const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -33,8 +34,20 @@ const currencyOptions = [
 ];
 
 const deliveryRadiusOptions = [
-  { value: "none", label: "No same-day delivery" }, { value: "5", label: "5 km" },
-  { value: "10", label: "10 km" }, { value: "20", label: "20 km" }, { value: "50", label: "50 km" },
+  { value: "none", label: "No same-day delivery" }, 
+  { value: "5", label: "5 km" },
+  { value: "10", label: "10 km" }, 
+  { value: "15", label: "15 km" },
+  { value: "20", label: "20 km" }, 
+  { value: "25", label: "25 km" },
+  { value: "30", label: "30 km" },
+  { value: "40", label: "40 km" },
+  { value: "50", label: "50 km" },
+  { value: "60", label: "60 km" },
+  { value: "70", label: "70 km" },
+  { value: "80", label: "80 km" },
+  { value: "90", label: "90 km" },
+  { value: "100", label: "100 km" },
 ];
 
 
@@ -141,9 +154,12 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
             shippingMethods: dispensary.shippingMethods || [],
             deliveryRadius: dispensary.deliveryRadius || 'none',
             inHouseDeliveryPrice: dispensary.inHouseDeliveryPrice || null,
+            pricePerKm: dispensary.pricePerKm || null,
             sameDayDeliveryCutoff: dispensary.sameDayDeliveryCutoff || '',
             message: dispensary.message || '',
             originLocker: dispensary.originLocker || null,
+            storeImage: dispensary.storeImage || null,
+            storeIcon: dispensary.storeIcon || null,
         },
     });
 
@@ -326,6 +342,7 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
             shippingMethods: data.shippingMethods,
             deliveryRadius: data.deliveryRadius,
             inHouseDeliveryPrice: data.inHouseDeliveryPrice,
+            pricePerKm: data.pricePerKm,
             sameDayDeliveryCutoff: data.sameDayDeliveryCutoff,
             message: data.message,
         };
@@ -490,6 +507,61 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                             </section>
 
                             <section>
+                                <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground flex items-center gap-2">
+                                    <ImageIcon className="h-6 w-6 text-green-800" />
+                                    Store Branding
+                                </h2>
+                                <p className="text-sm text-muted-foreground mb-6">
+                                    Upload your store logo and icon for branding across the platform, social sharing, and PWA installation.
+                                </p>
+                                <div className="grid md:grid-cols-2 gap-8">
+                                    <FormField
+                                        control={form.control}
+                                        name="storeImage"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <ImageUpload
+                                                        label="Store Logo / Image"
+                                                        description="Main logo displayed in store cards and header"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        storagePath={`dispensaries/${dispensary.id}/branding`}
+                                                        maxSizeMB={5}
+                                                        aspectRatio="16:9"
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="storeIcon"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <ImageUpload
+                                                        label="Store Icon"
+                                                        description="Icon for PWA installation and social sharing"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        storagePath={`dispensaries/${dispensary.id}/branding`}
+                                                        maxSizeMB={2}
+                                                        maxDimensions={{ width: 512, height: 512 }}
+                                                        aspectRatio="1:1"
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </section>
+
+                            <section>
                                 <h2 className="text-xl font-semibold border-b pb-2 mb-6 text-foreground">Location Details</h2>
                                 <div className="space-y-6">
                                     <FormField control={form.control} name="showLocation" render={({ field }) => (<FormItem><FormLabel>Show Full Address Publicly</FormLabel><Select onValueChange={(value) => field.onChange(value === 'true')} value={String(field.value)}><FormControl><SelectTrigger><SelectValue placeholder="Select an option..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="true">Yes, show full address</SelectItem><SelectItem value="false">No, hide full address</SelectItem></SelectContent></Select><FormDescription>Controls if the street address is visible on the public profile.</FormDescription><FormMessage /></FormItem>)} />
@@ -544,10 +616,43 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                         </FormItem>
                                     )}
 
-                                    <FormField control={form.control} name="deliveryRadius" render={({ field }) => (<FormItem><FormLabel>Same-day Delivery Radius</FormLabel><Select onValueChange={field.onChange} value={field.value || 'none'}><FormControl><SelectTrigger><SelectValue placeholder="Select a delivery radius" /></SelectTrigger></FormControl><SelectContent>{deliveryRadiusOptions.map(option => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent></Select><FormDescription>Requires an in-house delivery fleet.</FormDescription><FormMessage /></FormItem>)} />
+                                    <FormField 
+                                      control={form.control} 
+                                      name="deliveryRadius" 
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>
+                                            Same-day Delivery Radius
+                                            {watchedShippingMethods?.includes('in_house') && (
+                                              <span className="text-destructive ml-1">*</span>
+                                            )}
+                                          </FormLabel>
+                                          <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                                            <FormControl>
+                                              <SelectTrigger>
+                                                <SelectValue placeholder="Select a delivery radius" />
+                                              </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                              {deliveryRadiusOptions.map(option => (
+                                                <SelectItem key={option.value} value={option.value}>
+                                                  {option.label}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                          <FormDescription>
+                                            {watchedShippingMethods?.includes('in_house') 
+                                              ? 'Required when in-house delivery service is selected.'
+                                              : 'Requires an in-house delivery fleet.'}
+                                          </FormDescription>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )} 
+                                    />
                                     
                                     {/* In-House Delivery Settings */}
-                                    {watchedShippingMethods?.includes('in-house') && (
+                                    {watchedShippingMethods?.includes('in_house') && (
                                       <>
                                         <FormField
                                           control={form.control}
@@ -572,6 +677,35 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                               </FormControl>
                                               <FormDescription>
                                                 Cost charged to customers for in-house delivery. Leave empty for free delivery.
+                                              </FormDescription>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+
+                                        <FormField
+                                          control={form.control}
+                                          name="pricePerKm"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Price per Kilometer {watchedShippingMethods?.includes('in_house') && <span className="text-destructive">*</span>}</FormLabel>
+                                              <FormControl>
+                                                <div className="relative">
+                                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
+                                                  <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    placeholder="0.00"
+                                                    className="pl-7"
+                                                    {...field}
+                                                    value={field.value || ''}
+                                                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                                  />
+                                                </div>
+                                              </FormControl>
+                                              <FormDescription>
+                                                Cost per kilometer for in-house delivery. Required when in-house delivery is enabled.
                                               </FormDescription>
                                               <FormMessage />
                                             </FormItem>
