@@ -7,7 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { UserPlus, Mail, Lock, ArrowLeft, CheckSquare, Square, Loader2, ListFilter } from 'lucide-react';
+import { UserPlus, Mail, Lock, ArrowLeft, CheckSquare, Square, Loader2, ListFilter, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,8 @@ function SignUpContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [wellnessTypes, setWellnessTypes] = useState<DispensaryType[]>([]);
   const [isLoadingTypes, setIsLoadingTypes] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<UserSignupFormData>({
     resolver: zodResolver(userSignupSchema),
@@ -186,7 +188,15 @@ function SignUpContent() {
                     <FormLabel className="text-base">Password</FormLabel>
                     <FormControl><div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="password" placeholder="Create a strong password" {...field} className="pl-10 text-base h-12" disabled={isLoading} />
+                        <Input type={showPassword ? "text" : "password"} placeholder="Create a strong password" {...field} className="pl-10 pr-10 text-base h-12" disabled={isLoading} />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
                       </div></FormControl>
                     <FormMessage />
                   </FormItem>)}
@@ -196,7 +206,15 @@ function SignUpContent() {
                     <FormLabel className="text-base">Confirm Password</FormLabel>
                     <FormControl><div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="password" placeholder="Re-enter your password" {...field} className="pl-10 text-base h-12" disabled={isLoading} />
+                        <Input type={showConfirmPassword ? "text" : "password"} placeholder="Re-enter your password" {...field} className="pl-10 pr-10 text-base h-12" disabled={isLoading} />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          tabIndex={-1}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
                       </div></FormControl>
                     <FormMessage />
                   </FormItem>)}

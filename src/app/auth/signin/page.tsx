@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LogInIcon, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { LogInIcon, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ function SignInContent() {
   const { fetchUserProfile } = useAuth();
   const { loadCart, cartItems } = useCart(); // Get loadCart function and cartItems
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<UserSigninFormData>({
     resolver: zodResolver(userSigninSchema),
@@ -164,7 +165,15 @@ function SignInContent() {
                     <FormLabel className="text-base">Password</FormLabel>
                     <FormControl><div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input type="password" placeholder="••••••••" {...field} className="pl-10 text-base h-12"/>
+                        <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pl-10 pr-10 text-base h-12"/>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          tabIndex={-1}
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
                     </div></FormControl>
                     <FormMessage />
                   </FormItem>)}

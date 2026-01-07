@@ -1,0 +1,238 @@
+import * as nodemailer from 'nodemailer';
+import { logger } from 'firebase-functions/v2';
+
+// Email configuration - using Gmail SMTP (free)
+// For production, use environment variables or Firebase secrets
+const SMTP_CONFIG = {
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER || 'your-email@gmail.com', // Replace with your Gmail
+    pass: process.env.SMTP_PASS || 'your-app-password', // Use Gmail App Password, not your account password
+  },
+};
+
+interface DispensaryApprovalEmailData {
+  dispensaryName: string;
+  ownerName: string;
+  ownerEmail: string;
+  temporaryPassword: string;
+  loginUrl: string;
+  dispensaryId: string;
+}
+
+/**
+ * Creates a styled HTML email template for dispensary approval
+ */
+function createApprovalEmailTemplate(data: DispensaryApprovalEmailData): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Wellness Store Has Been Approved!</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header with Logo and Banner -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #006B3E 0%, #3D2E17 100%); padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <div style="background-color: #ffffff; display: inline-block; padding: 15px 25px; border-radius: 50px; margin-bottom: 20px;">
+                <h1 style="margin: 0; color: #006B3E; font-size: 24px; font-weight: bold;">🌿 The Wellness Tree</h1>
+              </div>
+              <h2 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Congratulations!</h2>
+              <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">Your Wellness Store Has Been Approved</p>
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              
+              <!-- Welcome Message -->
+              <div style="background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%); padding: 25px; border-radius: 8px; border-left: 5px solid #006B3E; margin-bottom: 30px;">
+                <h3 style="color: #3D2E17; margin: 0 0 10px 0; font-size: 20px;">Welcome to The Wellness Tree, ${data.ownerName}! 🎉</h3>
+                <p style="color: #3D2E17; margin: 0; line-height: 1.6; font-size: 15px;">
+                  We're excited to have <strong>${data.dispensaryName}</strong> join our wellness community. Your store is now live and ready to serve customers!
+                </p>
+              </div>
+
+              <!-- Login Credentials Box -->
+              <div style="background-color: #fff3e0; padding: 25px; border-radius: 8px; border: 2px solid #ff9800; margin-bottom: 30px;">
+                <h3 style="color: #3D2E17; margin: 0 0 15px 0; font-size: 18px; display: flex; align-items: center;">
+                  🔑 Your Login Credentials
+                </h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 10px 0; color: #666; font-size: 14px; font-weight: bold;">Username (Email):</td>
+                    <td style="padding: 10px 0; color: #3D2E17; font-size: 14px; font-family: 'Courier New', monospace; background-color: #ffffff; padding: 8px 12px; border-radius: 4px;">${data.ownerEmail}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; color: #666; font-size: 14px; font-weight: bold;">Temporary Password:</td>
+                    <td style="padding: 10px 0; color: #3D2E17; font-size: 14px; font-family: 'Courier New', monospace; background-color: #ffffff; padding: 8px 12px; border-radius: 4px; font-weight: bold;">${data.temporaryPassword}</td>
+                  </tr>
+                </table>
+                <div style="background-color: #ffe0b2; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #ff9800;">
+                  <p style="margin: 0; color: #3D2E17; font-size: 13px; line-height: 1.5;">
+                    <strong>⚠️ Important:</strong> Please change your password immediately after logging in for security. Go to your profile settings.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Action Button -->
+              <div style="text-align: center; margin: 35px 0;">
+                <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #006B3E 0%, #3D2E17 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 107, 62, 0.3);">
+                  🚀 Access Your Dashboard
+                </a>
+              </div>
+
+              <!-- Next Steps -->
+              <div style="background-color: #f9f9f9; padding: 25px; border-radius: 8px; margin-top: 30px;">
+                <h3 style="color: #3D2E17; margin: 0 0 15px 0; font-size: 18px;">📋 Next Steps to Get Started:</h3>
+                <ol style="color: #3D2E17; line-height: 2; margin: 0; padding-left: 20px; font-size: 14px;">
+                  <li><strong>Complete your profile</strong> - Set shipping methods, operating hours, and origin locker</li>
+                  <li><strong>Add your products</strong> - Build your product catalog</li>
+                  <li><strong>Upload store branding</strong> - Add your logo and icon for a professional look</li>
+                  <li><strong>Share your store URL</strong> - Start inviting customers</li>
+                  <li><strong>Enable PWA installation</strong> - Let customers install your store as an app</li>
+                </ol>
+              </div>
+
+              <!-- Quick Links -->
+              <div style="margin-top: 30px; padding-top: 25px; border-top: 2px solid #e0e0e0;">
+                <h4 style="color: #3D2E17; margin: 0 0 15px 0; font-size: 16px;">🔗 Useful Links:</h4>
+                <table style="width: 100%;">
+                  <tr>
+                    <td style="padding: 8px 0;">
+                      <a href="${data.loginUrl.replace('/auth/login', '/dispensary-admin/profile')}" style="color: #006B3E; text-decoration: none; font-weight: bold; font-size: 14px;">📝 Complete Profile</a>
+                    </td>
+                    <td style="padding: 8px 0;">
+                      <a href="${data.loginUrl.replace('/auth/login', '/dispensary-admin/products')}" style="color: #006B3E; text-decoration: none; font-weight: bold; font-size: 14px;">📦 Add Products</a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0;">
+                      <a href="${data.loginUrl.replace('/auth/login', '/dispensary-admin/dashboard')}" style="color: #006B3E; text-decoration: none; font-weight: bold; font-size: 14px;">📊 View Dashboard</a>
+                    </td>
+                    <td style="padding: 8px 0;">
+                      <a href="mailto:support@thewellnesstree.com" style="color: #006B3E; text-decoration: none; font-weight: bold; font-size: 14px;">💬 Contact Support</a>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f5f5f5; padding: 25px 30px; text-align: center; border-radius: 0 0 10px 10px;">
+              <p style="color: #666; margin: 0 0 10px 0; font-size: 13px;">
+                If you have any questions, our team is here to help!
+              </p>
+              <p style="color: #999; margin: 0; font-size: 12px;">
+                © ${new Date().getFullYear()} The Wellness Tree. All rights reserved.
+              </p>
+              <div style="margin-top: 15px;">
+                <p style="color: #999; margin: 0; font-size: 11px;">
+                  This email was sent to ${data.ownerEmail} regarding your dispensary application.
+                </p>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Sends a welcome email when a dispensary is approved
+ */
+export async function sendDispensaryApprovalEmail(emailData: DispensaryApprovalEmailData): Promise<void> {
+  try {
+    // Create transporter
+    const transporter = nodemailer.createTransport(SMTP_CONFIG);
+
+    // Email options
+    const mailOptions = {
+      from: {
+        name: 'The Wellness Tree',
+        address: SMTP_CONFIG.auth.user,
+      },
+      to: emailData.ownerEmail,
+      subject: `🎉 ${emailData.dispensaryName} Has Been Approved! - Access Your Dashboard`,
+      html: createApprovalEmailTemplate(emailData),
+      // Plain text fallback
+      text: `
+Congratulations ${emailData.ownerName}!
+
+Your wellness store "${emailData.dispensaryName}" has been approved and is now live on The Wellness Tree platform.
+
+LOGIN CREDENTIALS:
+Username: ${emailData.ownerEmail}
+Temporary Password: ${emailData.temporaryPassword}
+
+IMPORTANT: Please change your password immediately after logging in.
+
+Access your dashboard: ${emailData.loginUrl}
+
+Next Steps:
+1. Complete your profile (shipping methods, operating hours, origin locker)
+2. Add your products
+3. Upload store branding (logo and icon)
+4. Share your store URL with customers
+5. Enable PWA installation
+
+If you have any questions, contact our support team.
+
+Best regards,
+The Wellness Tree Team
+      `,
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    
+    logger.info(`Approval email sent successfully to ${emailData.ownerEmail}`, {
+      messageId: info.messageId,
+      dispensaryId: emailData.dispensaryId,
+    });
+
+  } catch (error: any) {
+    logger.error('Failed to send dispensary approval email:', {
+      error: error.message,
+      stack: error.stack,
+      emailData: {
+        ownerEmail: emailData.ownerEmail,
+        dispensaryId: emailData.dispensaryId,
+      },
+    });
+    throw new Error(`Email sending failed: ${error.message}`);
+  }
+}
+
+/**
+ * Verify SMTP connection (useful for testing)
+ */
+export async function verifyEmailConnection(): Promise<boolean> {
+  try {
+    const transporter = nodemailer.createTransport(SMTP_CONFIG);
+    await transporter.verify();
+    logger.info('SMTP connection verified successfully');
+    return true;
+  } catch (error: any) {
+    logger.error('SMTP connection verification failed:', error.message);
+    return false;
+  }
+}

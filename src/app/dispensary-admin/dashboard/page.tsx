@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SocialShareHub } from '@/components/social-share/SocialShareHub';
+import { ProfileCompletionDialog, checkProfileCompleteness } from '@/components/dispensary-admin/ProfileCompletionDialog';
 
 interface QuickActionCardProps {
     title: string;
@@ -56,11 +57,18 @@ export default function WellnessAdminOverviewPage() {
 
   useEffect(() => {
     if (!authLoading && currentDispensary) {
-      // Check for first login parameter
+      // Check for first login or if profile is incomplete
       const params = new URLSearchParams(window.location.search);
-      if (params.get('firstLogin') === 'true') {
+      const isFirstLogin = params.get('firstLogin') === 'true';
+      const completionStatus = checkProfileCompleteness(currentDispensary);
+      
+      // Show dialog if first login OR if profile is incomplete
+      if (isFirstLogin || !completionStatus.isComplete) {
         setShowWelcomeDialog(true);
-        // Clean up URL
+      }
+      
+      // Clean up URL if first login
+      if (isFirstLogin) {
         router.replace('/dispensary-admin/dashboard');
       }
     }
@@ -195,68 +203,12 @@ export default function WellnessAdminOverviewPage() {
         />
       </div>
 
-      {/* Welcome Dialog for First Login */}
-      <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="text-2xl text-[#3D2E17] font-bold flex items-center gap-2">
-              <Store className="h-8 w-8 text-[#006B3E]" />
-              Welcome to Your Dispensary Dashboard! 🎉
-            </DialogTitle>
-            <DialogDescription className="text-base text-[#3D2E17] font-semibold pt-4">
-              Your store has been successfully activated and you're now logged in!
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-4 rounded-r-lg">
-              <h3 className="font-bold text-[#3D2E17] text-lg mb-2">🎯 Quick Start Guide</h3>
-              <p className="text-[#3D2E17] font-semibold text-sm">
-                Welcome to your dashboard! From here you can manage every aspect of your dispensary.
-              </p>
-            </div>
-
-            <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-4 rounded-r-lg">
-              <h3 className="font-bold text-[#3D2E17] text-lg mb-2">📦 Add Your Products</h3>
-              <p className="text-[#3D2E17] font-semibold text-sm mb-2">
-                Start by clicking <strong>"Manage My Products"</strong> to add your inventory. This is the foundation of your store!
-              </p>
-            </div>
-
-            <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-4 rounded-r-lg">
-              <h3 className="font-bold text-[#3D2E17] text-lg mb-2">🚚 Setup Shipping (Important!)</h3>
-              <p className="text-[#3D2E17] font-semibold text-sm mb-2">
-                Visit your <strong>Wellness Profile</strong> to configure your shipping methods and <strong>Origin Locker</strong>:
-              </p>
-              <ul className="list-disc list-inside text-[#3D2E17] font-semibold text-sm space-y-1 ml-2">
-                <li>Set your delivery radius for DTD (Door to Door)</li>
-                <li>Configure an Origin Locker for LTD (Locker to Door) and LTL (Locker to Locker)</li>
-                <li>Enable bulk shipping for larger orders</li>
-              </ul>
-              <p className="text-[#3D2E17] font-semibold text-xs mt-2 italic">
-                💡 Even if you don't use locker shipping now, setting it up gives you flexibility later!
-              </p>
-            </div>
-
-            <div className="bg-[#3D2E17]/10 border-l-4 border-[#3D2E17] p-4 rounded-r-lg">
-              <h3 className="font-bold text-[#3D2E17] text-lg mb-2">🤝 Join the Product Pool</h3>
-              <p className="text-[#3D2E17] font-semibold text-sm">
-                Check out <strong>"Product Sharing Pool"</strong> to share products with other dispensaries and expand your offerings!
-              </p>
-            </div>
-
-            <div className="bg-green-100 border-l-4 border-green-600 p-4 rounded-r-lg">
-              <p className="text-[#3D2E17] font-bold text-sm">
-                ✅ Ready to get started? Click any card above to dive in!
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setShowWelcomeDialog(false)} className="bg-[#006B3E] hover:bg-[#3D2E17] text-white font-bold">
-              Got It, Let's Get Started!
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Enhanced Profile Completion Dialog */}
+      <ProfileCompletionDialog
+        isOpen={showWelcomeDialog}
+        onOpenChange={setShowWelcomeDialog}
+        dispensary={currentDispensary}
+      />
 
       {/* Social Share Hub Dialog */}
       <SocialShareHub 

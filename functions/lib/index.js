@@ -67,6 +67,8 @@ Object.defineProperty(exports, "createPayoutRequest", { enumerable: true, get: f
 var dispensary_earnings_1 = require("./dispensary-earnings");
 Object.defineProperty(exports, "recordDispensaryEarning", { enumerable: true, get: function () { return dispensary_earnings_1.recordDispensaryEarning; } });
 Object.defineProperty(exports, "createDispensaryPayoutRequest", { enumerable: true, get: function () { return dispensary_earnings_1.createDispensaryPayoutRequest; } });
+// Import email service
+const email_service_1 = require("./email-service");
 // Export Dispensary Review functions
 var dispensary_reviews_1 = require("./dispensary-reviews");
 Object.defineProperty(exports, "processDispensaryReview", { enumerable: true, get: function () { return dispensary_reviews_1.processDispensaryReview; } });
@@ -741,6 +743,9 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('invalid-argument', 'Email, display name, and dispensary ID are required.');
     }
     try {
+        // Fetch dispensary data for email
+        const dispensaryDoc = await db.collection('dispensaries').doc(dispensaryId).get();
+        const dispensaryData = dispensaryDoc.exists ? dispensaryDoc.data() : null;
         const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
         if (existingUser) {
             const userDoc = await db.collection('users').doc(existingUser.uid).get();
@@ -783,10 +788,29 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
                 signupSource: 'admin_created',
             };
             await db.collection('users').doc(newUserRecord.uid).set(userDocData);
+            // Send welcome email with credentials
+            try {
+                const loginUrl = process.env.FUNCTIONS_EMULATOR
+                    ? 'http://localhost:3000/auth/login'
+                    : 'https://thewellnesstree.com/auth/login'; // Replace with your actual production domain
+                await (0, email_service_1.sendDispensaryApprovalEmail)({
+                    dispensaryName: dispensaryData?.dispensaryName || 'Your Wellness Store',
+                    ownerName: displayName,
+                    ownerEmail: email,
+                    temporaryPassword: temporaryPassword,
+                    loginUrl: loginUrl,
+                    dispensaryId: dispensaryId,
+                });
+                logger.info(`Welcome email sent successfully to ${email}`);
+            }
+            catch (emailError) {
+                // Log error but don't fail the function - user is created successfully
+                logger.error(`Failed to send welcome email to ${email}:`, emailError);
+            }
             // Return the UID of the newly created user
             return {
                 success: true,
-                message: 'New user account created successfully. Please provide them with their temporary password.',
+                message: 'New user account created successfully and welcome email sent.',
                 temporaryPassword: temporaryPassword,
                 uid: newUserRecord.uid
             };
@@ -800,6 +824,15 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
     }
 });
+try { }
+catch (error) {
+    logger.error(`Error creating dispensary user for ${email}:`, error);
+    if (error instanceof https_1.HttpsError) {
+        throw error;
+    }
+    throw new https_1.HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
+}
+;
 exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
     if (request.auth?.token.role !== 'Super Admin') {
         throw new https_1.HttpsError('permission-denied', 'Only Super Admins can update users.');
@@ -1336,8 +1369,6 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
     if (data.acceptTerms !== true) {
         throw new https_1.HttpsError('failed-precondition', 'You must accept the Terms of Usage Agreement to submit an application.');
     }
-    // TESTING MODE: Auto-approve for friend testing (R100 payment hidden for later)
-    const autoApprove = data.autoApprove === true; // Flag from frontend
     // 2. Prepare the New Dispensary Document
     // CORRECTED: This version captures all fields from the signup form.
     const newApplicationData = {
@@ -1365,12 +1396,12 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
         deliveryRadius: data.deliveryRadius || 'none', // CORRECTED: Included from form
         message: data.message || '', // CORRECTED: Included from form
         // --- System-set initial values ---
-        status: autoApprove ? 'Approved' : 'Pending Approval',
+        status: 'Pending Approval', // All new signups start as pending
         acceptTerms: true,
         // --- Server-side timestamps for data integrity ---
         applicationDate: admin.firestore.FieldValue.serverTimestamp(),
         lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
-        approvedDate: autoApprove ? admin.firestore.FieldValue.serverTimestamp() : null,
+        approvedDate: null,
         // --- Fields to be populated later in the workflow ---
         ownerId: null,
         publicStoreUrl: null,
@@ -1381,8 +1412,8 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
     try {
         const dispensaryRef = await db.collection('dispensaries').add(newApplicationData);
         logger.info(`New dispensary application created with ID: ${dispensaryRef.id} for email: ${data.ownerEmail}`);
-        // If auto-approve, create user immediately and return auth token
-        if (autoApprove) {
+        // Always create user immediately for auto-login (status will be Pending Approval)
+        {
             try {
                 // Check if user already exists
                 let userUid;
@@ -1428,11 +1459,12 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
                 await dispensaryRef.update({ ownerId: userUid });
                 // Create custom token for auto-login
                 const customToken = await admin.auth().createCustomToken(userUid);
-                logger.info(`Auto-approved dispensary ${dispensaryRef.id} and created/updated user ${userUid}`);
+                logger.info(`Created dispensary ${dispensaryRef.id} (Pending Approval) and created/updated user ${userUid}`);
                 return {
                     success: true,
-                    autoApproved: true,
-                    message: "Your store has been activated! Logging you in...",
+                    autoApproved: false,
+                    pendingApproval: true,
+                    message: "Your application has been submitted! You can log in now to set up your profile. You'll be notified once approved.",
                     customToken,
                     email: data.ownerEmail,
                     temporaryPassword,
@@ -1440,21 +1472,17 @@ exports.submitDispensaryApplication = (0, https_1.onCall)({ cors: true }, async 
                 };
             }
             catch (userError) {
-                logger.error(`Error creating user during auto-approval:`, userError);
+                logger.error(`Error creating user during signup:`, userError);
                 // Dispensary created but user creation failed - return partial success
                 return {
                     success: true,
                     autoApproved: false,
+                    pendingApproval: true,
                     message: "Application submitted but auto-login failed. Please contact support.",
                     dispensaryId: dispensaryRef.id
                 };
             }
         }
-        return {
-            success: true,
-            autoApproved: false,
-            message: "Your application has been submitted successfully. You will be notified once it has been reviewed by an administrator."
-        };
     }
     catch (error) {
         logger.error(`CRITICAL ERROR in submitDispensaryApplication for email ${data.ownerEmail}:`, error);

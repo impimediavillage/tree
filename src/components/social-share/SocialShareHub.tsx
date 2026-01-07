@@ -228,7 +228,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
       } else {
         // Initialize with defaults using store branding
         const defaultImage = currentDispensary.storeImage || currentDispensary.storeIcon;
-        const defaultPlatformImages: Partial<Record<SocialPlatform, string>> = defaultImage ? {
+        const defaultPlatformImages: Record<SocialPlatform, string> | undefined = defaultImage ? {
           facebook: defaultImage,
           twitter: defaultImage,
           linkedin: defaultImage,
@@ -238,7 +238,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
           tiktok: defaultImage,
           email: defaultImage,
           sms: defaultImage,
-        } : {};
+        } : undefined;
         
         const defaultConfig: ShareConfig = {
           title: `Check out ${currentDispensary.dispensaryName}!`,

@@ -14,29 +14,24 @@ import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { Loader2, User as UserIcon, Mail, Lock, Shield, Save } from 'lucide-react';
+import { Loader2, User as UserIcon, Mail, Lock, Shield, Save, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 
 const profileFormSchema = z.object({
-  displayName: z.string().min(2, "Display name must be at least 2 characters.").optional(),
+  displayName: z.string().min(2, "Display name must be at least 2 characters.").or(z.literal('')),
   currentPassword: z.string().optional(),
-  newPassword: z.string().min(6, "New password must be at least 6 characters.").optional(),
+  newPassword: z.string().min(6, "New password must be at least 6 characters.").or(z.literal('')).optional(),
   confirmNewPassword: z.string().optional(),
 }).refine(data => {
-  if (data.newPassword && !data.confirmNewPassword) return false;
-  return data.newPassword === data.confirmNewPassword;
+  if (data.newPassword && data.newPassword.length > 0 && !data.confirmNewPassword) return false;
+  if (data.newPassword && data.confirmNewPassword) {
+    return data.newPassword === data.confirmNewPassword;
+  }
+  return true;
 }, {
   message: "New passwords don't match.",
   path: ['confirmNewPassword'],
-}).refine(data => {
-    if (data.newPassword) {
-        return !!data.currentPassword;
-    }
-    return true;
-}, {
-    message: "Current password is required to change your password.",
-    path: ["currentPassword"],
 });
 
 
@@ -46,6 +41,9 @@ export default function LeafProfilePage() {
   const { toast } = useToast();
   const { currentUser, setCurrentUser, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // Check if user is from checkout (they don't know their auto-generated password)
   const isCheckoutUser = currentUser?.signupSource === 'checkout';
@@ -80,9 +78,37 @@ export default function LeafProfilePage() {
       const firebaseUser = auth.currentUser;
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       let somethingChanged = false;
+      
+      // Check if this is a checkout user (they don't know their auto-generated password)
+      const isCheckoutUserNow = currentUser?.signupSource === 'checkout';
+
+      // Validate password fields
+      if (data.newPassword && data.newPassword.length > 0) {
+        // Check if passwords match
+        if (data.newPassword !== data.confirmNewPassword) {
+          toast({ 
+            title: "Passwords Don't Match", 
+            description: "New password and confirmation password must match.",
+            variant: "destructive" 
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // For non-checkout users, require current password
+        if (!isCheckoutUserNow && (!data.currentPassword || data.currentPassword.length === 0)) {
+          toast({ 
+            title: "Current Password Required", 
+            description: "Please enter your current password to change it.",
+            variant: "destructive" 
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
 
       // Update display name if it has changed
-      if (data.displayName && data.displayName !== currentUser?.displayName) {
+      if (data.displayName && data.displayName.trim().length >= 2 && data.displayName !== currentUser?.displayName) {
         await updateProfile(firebaseUser, { displayName: data.displayName });
         await updateDoc(userDocRef, { displayName: data.displayName });
         
@@ -91,11 +117,8 @@ export default function LeafProfilePage() {
       }
       
       // Update password if new password is provided
-      if (data.newPassword) {
-        // Check if this is a checkout user (they don't know their auto-generated password)
-        const isCheckoutUser = currentUser?.signupSource === 'checkout';
-        
-        if (isCheckoutUser) {
+      if (data.newPassword && data.newPassword.length > 0) {
+        if (isCheckoutUserNow) {
           // For checkout users, we can update password without re-authentication
           // since they were just created and don't know their random password
           try {
@@ -119,16 +142,7 @@ export default function LeafProfilePage() {
           }
         } else {
           // For regular users, require current password
-          if (!data.currentPassword) {
-            toast({ 
-              title: "Current Password Required", 
-              description: "Please enter your current password to change it.",
-              variant: "destructive" 
-            });
-            setIsLoading(false);
-            return;
-          }
-          const credential = EmailAuthProvider.credential(firebaseUser.email!, data.currentPassword);
+          const credential = EmailAuthProvider.credential(firebaseUser.email!, data.currentPassword!);
           await reauthenticateWithCredential(firebaseUser, credential);
           await updatePassword(firebaseUser, data.newPassword);
           somethingChanged = true;
@@ -230,7 +244,17 @@ export default function LeafProfilePage() {
                   <Lock className="h-4 w-4 text-[#006B3E]" />
                   Current Password
                 </Label>
-                <Input id="currentPassword" type="password" {...form.register("currentPassword")} className="font-semibold" />
+                <div className="relative">
+                  <Input id="currentPassword" type={showCurrentPassword ? "text" : "password"} {...form.register("currentPassword")} className="font-semibold pr-10" />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {form.formState.errors.currentPassword && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.currentPassword.message}</p>}
               </div>
             )}
@@ -239,7 +263,17 @@ export default function LeafProfilePage() {
                 <Lock className="h-4 w-4 text-[#006B3E]" />
                 New Password
               </Label>
-              <Input id="newPassword" type="password" {...form.register("newPassword")} className="font-semibold" />
+              <div className="relative">
+                <Input id="newPassword" type={showNewPassword ? "text" : "password"} {...form.register("newPassword")} className="font-semibold pr-10" />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {form.formState.errors.newPassword && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.newPassword.message}</p>}
             </div>
             <div>
@@ -247,7 +281,17 @@ export default function LeafProfilePage() {
                 <Lock className="h-4 w-4 text-[#006B3E]" />
                 Confirm New Password
               </Label>
-              <Input id="confirmNewPassword" type="password" {...form.register("confirmNewPassword")} className="font-semibold" />
+              <div className="relative">
+                <Input id="confirmNewPassword" type={showConfirmPassword ? "text" : "password"} {...form.register("confirmNewPassword")} className="font-semibold pr-10" />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {form.formState.errors.confirmNewPassword && <p className="text-sm text-destructive mt-1 font-semibold">{form.formState.errors.confirmNewPassword.message}</p>}
             </div>
             <Button 
