@@ -755,18 +755,44 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
         const existingUser = await admin.auth().getUserByEmail(email).catch(() => null);
         if (existingUser) {
             const userDoc = await db.collection('users').doc(existingUser.uid).get();
-            if (userDoc.exists && userDoc.data()?.dispensaryId) {
-                throw new https_1.HttpsError('already-exists', `User with email ${email} already exists and is linked to a dispensary.`);
+            const existingDispensaryId = userDoc.exists ? userDoc.data()?.dispensaryId : null;
+            // Check if user is already linked to a DIFFERENT dispensary
+            if (existingDispensaryId && existingDispensaryId !== dispensaryId) {
+                throw new https_1.HttpsError('already-exists', `User with email ${email} already exists and is linked to a different dispensary.`);
             }
+            // User exists and is either not linked or linked to THIS dispensary - update/ensure correct data
             await db.collection('users').doc(existingUser.uid).update({
                 dispensaryId: dispensaryId,
                 role: 'DispensaryOwner',
                 status: 'Active',
             });
+            // Send approval email if user is already linked to this dispensary (signup flow)
+            if (existingDispensaryId === dispensaryId) {
+                try {
+                    // User was created during signup, now send approval email with their existing password info
+                    const loginUrl = process.env.FUNCTIONS_EMULATOR
+                        ? 'http://localhost:3000/auth/login'
+                        : 'https://thewellnesstree.com/auth/login';
+                    await (0, email_service_1.sendDispensaryApprovalEmail)({
+                        dispensaryName: dispensaryData?.dispensaryName || 'Your Wellness Store',
+                        ownerName: displayName,
+                        ownerEmail: email,
+                        temporaryPassword: '[Use your existing password or reset it]',
+                        loginUrl: loginUrl,
+                        dispensaryId: dispensaryId,
+                    });
+                    logger.info(`Approval email sent successfully to existing user ${email}`);
+                }
+                catch (emailError) {
+                    logger.error(`Failed to send approval email to ${email}:`, emailError);
+                }
+            }
             // Return the UID of the existing user
             return {
                 success: true,
-                message: `Existing user ${email} successfully linked as DispensaryOwner.`,
+                message: existingDispensaryId === dispensaryId
+                    ? `User ${email} was already created during signup. Approval email sent.`
+                    : `Existing user ${email} successfully linked as DispensaryOwner.`,
                 uid: existingUser.uid
             };
         }
