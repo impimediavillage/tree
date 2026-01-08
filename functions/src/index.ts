@@ -41,6 +41,14 @@ export {
   calculateCommissionOnOrderDelivered
 } from './influencer-commissions';
 
+// Export Notification functions
+export {
+  onOrderCreated,
+  onPaymentCompleted,
+  onShippingStatusChange,
+  sendAchievementNotification
+} from './notifications';
+
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
     // Check authentication

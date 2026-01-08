@@ -12,6 +12,8 @@ import { CartProvider } from '@/contexts/CartContext'; // Import CartProvider
 import { ReferralProvider } from '@/contexts/ReferralContext'; // Import ReferralProvider
 import { CartDrawer } from '@/components/cart/CartDrawer'; // Import CartDrawer
 import BackgroundVideo from '@/components/layout/BackgroundVideo';
+import { Toaster as HotToaster } from 'react-hot-toast'; // For notification toasts
+import { SoundSystemInitializer } from '@/components/notifications/SoundSystemInitializer';
 
 export const metadata: Metadata = {
   title: 'The Wellness Tree - AI-Powered Wellness Hub - ',
@@ -48,6 +50,7 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider> {/* Wrap with CartProvider */}
             <ReferralProvider> {/* Wrap with ReferralProvider for influencer tracking */}
+              <SoundSystemInitializer /> {/* Initialize notification sounds */}
               <Header />
               <main className="flex-grow">
                 {children}
@@ -55,6 +58,7 @@ export default function RootLayout({
               <Footer />
               <CartDrawer /> {/* Add CartDrawer here to be accessible globally */}
               <Toaster />
+              <HotToaster position="top-right" /> {/* For animated notification toasts */}
             </ReferralProvider>
           </CartProvider>
         </AuthProvider>

@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Badge } from '@/components/ui/badge';
 import { DispensaryAdminProvider } from '@/contexts/DispensaryAdminContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { NotificationBell, NotificationCenter } from '@/components/notifications';
 
 interface NavItem {
   title: string;
@@ -73,6 +74,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensary, isDispensaryOwner, isDispensaryStaff, logout } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
   
   useEffect(() => {
     if (!authLoading && !canAccessDispensaryPanel) {
@@ -348,7 +350,15 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
                       {currentDispensary.dispensaryName}
                   </h1>
               </div>
+              {/* Notification Bell - Mobile */}
+              <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
           </header>
+          
+          {/* Desktop Top Bar with Notifications */}
+          <div className="hidden md:flex items-center justify-end gap-4 border-b bg-background px-6 py-3">
+            <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+          </div>
+          
           <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
               {children}
           </main>
@@ -365,6 +375,12 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
           <SidebarNavigation />
           </SheetContent>
       </Sheet>
+      
+      {/* Notification Center Drawer */}
+      <NotificationCenter 
+        isOpen={showNotificationCenter} 
+        onClose={() => setShowNotificationCenter(false)} 
+      />
     </div>
   );
 }

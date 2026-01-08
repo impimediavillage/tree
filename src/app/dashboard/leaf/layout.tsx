@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { NotificationBell, NotificationCenter } from '@/components/notifications';
 
 interface NavItem {
   title: string;
@@ -58,6 +59,7 @@ export default function LeafDashboardLayout({
   const { toast } = useToast();
   const { currentUser, loading: authLoading, logout, isLeafUser } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isLeafUser) {
@@ -184,30 +186,46 @@ export default function LeafDashboardLayout({
         >
           Leaf Dashboard
         </Link>
-        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col bg-card">
-            <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary z-10">
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-            </SheetClose>
-            <SidebarContentLayout />
-          </SheetContent>
-        </Sheet>
+        <div className="flex items-center gap-2">
+          <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+          <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0 flex flex-col bg-card">
+              <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary z-10">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+              </SheetClose>
+              <SidebarContentLayout />
+            </SheetContent>
+          </Sheet>
+        </div>
       </header>
 
       <aside className="hidden md:flex md:flex-col w-64 border-r bg-card text-card-foreground shadow-sm">
         <SidebarContentLayout />
       </aside>
       
-      <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
-        {children}
-      </main>
+      <div className="flex-1 flex flex-col">
+        {/* Desktop Top Bar with Notifications */}
+        <div className="hidden md:flex items-center justify-end gap-4 border-b bg-background px-6 py-3">
+          <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+        </div>
+        
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+      
+      {/* Notification Center Drawer */}
+      <NotificationCenter 
+        isOpen={showNotificationCenter} 
+        onClose={() => setShowNotificationCenter(false)} 
+      />
     </div>
   );
 }

@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.calculateCommissionOnOrderDelivered = exports.getInfluencerStats = exports.processInfluencerCommission = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.sendAchievementNotification = exports.onShippingStatusChange = exports.onPaymentCompleted = exports.onOrderCreated = exports.calculateCommissionOnOrderDelivered = exports.getInfluencerStats = exports.processInfluencerCommission = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -82,6 +82,12 @@ var influencer_commissions_1 = require("./influencer-commissions");
 Object.defineProperty(exports, "processInfluencerCommission", { enumerable: true, get: function () { return influencer_commissions_1.processInfluencerCommission; } });
 Object.defineProperty(exports, "getInfluencerStats", { enumerable: true, get: function () { return influencer_commissions_1.getInfluencerStats; } });
 Object.defineProperty(exports, "calculateCommissionOnOrderDelivered", { enumerable: true, get: function () { return influencer_commissions_1.calculateCommissionOnOrderDelivered; } });
+// Export Notification functions
+var notifications_1 = require("./notifications");
+Object.defineProperty(exports, "onOrderCreated", { enumerable: true, get: function () { return notifications_1.onOrderCreated; } });
+Object.defineProperty(exports, "onPaymentCompleted", { enumerable: true, get: function () { return notifications_1.onPaymentCompleted; } });
+Object.defineProperty(exports, "onShippingStatusChange", { enumerable: true, get: function () { return notifications_1.onShippingStatusChange; } });
+Object.defineProperty(exports, "sendAchievementNotification", { enumerable: true, get: function () { return notifications_1.sendAchievementNotification; } });
 // Upload Apparel Templates to Storage
 exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
     // Check authentication
@@ -824,15 +830,6 @@ exports.createDispensaryUser = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
     }
 });
-try { }
-catch (error) {
-    logger.error(`Error creating dispensary user for ${email}:`, error);
-    if (error instanceof https_1.HttpsError) {
-        throw error;
-    }
-    throw new https_1.HttpsError('internal', 'An unexpected server error occurred while creating the user account.');
-}
-;
 exports.adminUpdateUser = (0, https_1.onCall)(async (request) => {
     if (request.auth?.token.role !== 'Super Admin') {
         throw new https_1.HttpsError('permission-denied', 'Only Super Admins can update users.');
