@@ -1,16 +1,19 @@
 import * as nodemailer from 'nodemailer';
 import { logger } from 'firebase-functions/v2';
 
-// Email configuration - using Gmail SMTP (free)
-// For production, use environment variables or Firebase secrets
+// Email configuration - using AfroHost SMTP
+// Using Firebase secrets for production security
 const SMTP_CONFIG = {
-  host: 'smtp.gmail.com',
+  host: 'mail.thewellnesstree.co.za',
   port: 587,
-  secure: false, // true for 465, false for other ports
+  secure: false, // true for 465, false for 587
   auth: {
-    user: process.env.SMTP_USER || 'your-email@gmail.com', // Replace with your Gmail
-    pass: process.env.SMTP_PASS || 'your-app-password', // Use Gmail App Password, not your account password
+    user: process.env.SMTP_USER || 'support@thewellnesstree.co.za',
+    pass: process.env.SMTP_PASS || 'KI(jJIGHW-aimV&F', // Stored in Firebase secrets for production
   },
+  tls: {
+    rejectUnauthorized: false // Allow self-signed certificates (common with hosting providers)
+  }
 };
 
 interface DispensaryApprovalEmailData {
@@ -168,7 +171,7 @@ export async function sendDispensaryApprovalEmail(emailData: DispensaryApprovalE
     const mailOptions = {
       from: {
         name: 'The Wellness Tree',
-        address: SMTP_CONFIG.auth.user,
+        address: 'support@thewellnesstree.co.za',
       },
       to: emailData.ownerEmail,
       subject: `🎉 ${emailData.dispensaryName} Has Been Approved! - Access Your Dashboard`,
