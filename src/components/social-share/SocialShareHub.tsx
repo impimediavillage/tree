@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -517,53 +517,83 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-[#006B3E]/10 to-[#3D2E17]/10">
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-5xl p-0 overflow-hidden">
+        <SheetHeader className="px-4 sm:px-6 pt-6 pb-4 border-b bg-gradient-to-r from-[#006B3E]/10 to-[#3D2E17]/10">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] shadow-lg">
               <Share2 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-3xl font-black text-[#3D2E17] flex items-center gap-2">
+              <SheetTitle className="text-2xl sm:text-3xl font-black text-[#3D2E17] flex items-center gap-2">
                 Share & Grow Hub
-                <Sparkles className="h-6 w-6 text-[#006B3E] animate-pulse" />
-              </DialogTitle>
-              <DialogDescription className="text-[#5D4E37] font-bold">
+                <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E] animate-pulse" />
+              </SheetTitle>
+              <SheetDescription className="text-[#5D4E37] font-bold text-sm">
                 Amplify your reach across all platforms
-              </DialogDescription>
+              </SheetDescription>
             </div>
           </div>
-        </DialogHeader>
+        </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as typeof activeTab)} className="flex-1">
-          <div className="px-6 pt-2">
-            <TabsList className="grid w-full grid-cols-5 bg-muted">
-              <TabsTrigger value="share" className="font-bold">
-                <Rocket className="h-4 w-4 mr-2" />
-                Share
+          <div className="px-2 sm:px-6 pt-2 border-b bg-muted/50">
+            {/* Mobile: Vertical icon tabs with text underneath */}
+            <TabsList className="grid grid-cols-5 gap-1 sm:gap-2 bg-transparent h-auto p-1 w-full">
+              <TabsTrigger 
+                value="share" 
+                className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+              >
+                <div className="p-2 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] text-white">
+                  <Rocket className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-center">Share</span>
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="font-bold">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
+              
+              <TabsTrigger 
+                value="analytics" 
+                className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+              >
+                <div className="p-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                  <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-center">Stats</span>
               </TabsTrigger>
-              <TabsTrigger value="achievements" className="font-bold">
-                <Trophy className="h-4 w-4 mr-2" />
-                Achievements
+              
+              <TabsTrigger 
+                value="achievements" 
+                className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+              >
+                <div className="p-2 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 text-white">
+                  <Trophy className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-center">Awards</span>
               </TabsTrigger>
-              <TabsTrigger value="schedule" className="font-bold">
-                <CalendarClock className="h-4 w-4 mr-2" />
-                Schedule
+              
+              <TabsTrigger 
+                value="schedule" 
+                className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+              >
+                <div className="p-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                  <CalendarClock className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-center">Schedule</span>
               </TabsTrigger>
-              <TabsTrigger value="leaderboard" className="font-bold">
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Leaderboard
+              
+              <TabsTrigger 
+                value="leaderboard" 
+                className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+              >
+                <div className="p-2 rounded-full bg-gradient-to-br from-red-500 to-pink-600 text-white">
+                  <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
+                </div>
+                <span className="text-[10px] sm:text-xs font-bold text-center">Leaders</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <ScrollArea className="h-[calc(95vh-200px)] px-6">
-            <TabsContent value="share" className="space-y-6 pb-6">
+          <ScrollArea className="h-[calc(100vh-220px)] px-4 sm:px-6">
+            <TabsContent value="share" className="space-y-4 sm:space-y-6 pb-6 mt-4">
               {/* Custom Images Button */}
               <Button
                 onClick={() => setShowImageUpload(true)}
@@ -716,7 +746,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               </Card>
             </TabsContent>
 
-            <TabsContent value="analytics" className="space-y-6 pb-6">
+            <TabsContent value="analytics" className="space-y-4 sm:space-y-6 pb-6 mt-4">
               {shareStats ? (
                 <>
                   {/* Export Buttons */}
@@ -835,7 +865,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               )}
             </TabsContent>
 
-            <TabsContent value="schedule" className="space-y-6 pb-6">
+            <TabsContent value="schedule" className="space-y-4 sm:space-y-6 pb-6 mt-4">
               {/* Schedule Share Button */}
               <Button
                 onClick={() => setShowScheduleDialog(true)}
@@ -867,7 +897,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               />
             </TabsContent>
 
-            <TabsContent value="leaderboard" className="space-y-6 pb-6">
+            <TabsContent value="leaderboard" className="space-y-4 sm:space-y-6 pb-6 mt-4">
               {currentDispensary?.id && shareStats && (
                 <SharePerformanceLeaderboard 
                   currentDispensaryId={currentDispensary.id}
@@ -877,7 +907,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               )}
             </TabsContent>
 
-            <TabsContent value="achievements" className="space-y-6 pb-6">
+            <TabsContent value="achievements" className="space-y-4 sm:space-y-6 pb-6 mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.values(achievementDefinitions).map((achievement) => {
                   const unlocked = shareStats?.achievements.some(a => a.id === achievement.id);
@@ -913,7 +943,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
             </TabsContent>
           </ScrollArea>
         </Tabs>
-      </DialogContent>
+      </SheetContent>
 
       {/* Schedule Share Dialog */}
       <ScheduleShareDialog
@@ -936,6 +966,6 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
           }));
         }}
       />
-    </Dialog>
+    </Sheet>
   );
 }
