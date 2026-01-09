@@ -450,26 +450,6 @@ export default function DispensaryOrdersPage() {
                 <span className="hidden sm:inline">{showArchived ? 'Show Active' : 'Show Archived'}</span>
                 <span className="sm:hidden">{showArchived ? 'Active' : 'Archived'}</span>
               </Button>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none whitespace-nowrap">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">View Analytics</span>
-                    <span className="sm:hidden">Analytics</span>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto w-[95vw]">
-                  <DialogHeader className="sticky top-0 bg-background z-10 pb-4">
-                    <DialogTitle className="text-lg sm:text-xl">Order Analytics Dashboard</DialogTitle>
-                    <DialogDescription className="text-xs sm:text-sm">
-                      Comprehensive overview of your order and shipping performance
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="mt-4">
-                    <OrderAnalyticsDashboard />
-                  </div>
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
         </CardHeader>

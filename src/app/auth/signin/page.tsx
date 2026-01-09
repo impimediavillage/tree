@@ -7,8 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LogInIcon, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+import { LogInIcon, Mail, Lock, ArrowLeft, Loader2, Eye, EyeOff, Sparkles, TreePine } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -142,20 +141,15 @@ function SignInContent() {
        
       <Card className="w-full max-w-md shadow-xl bg-muted/50 border-border/50">
         <CardHeader className="text-center space-y-4">
-          {/* Colorful Tree Icon - Centrally Placed */}
+          {/* Colorful Icon - Centrally Placed */}
           <Link href="/" className="inline-block mx-auto group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#006B3E] via-[#3D2E17] to-[#FFD700] rounded-full blur-lg opacity-75 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative p-4 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] shadow-2xl group-hover:scale-110 transition-transform">
-                <Image 
-                  src="/images/the-leaf-logo.png" 
-                  alt="The Wellness Tree" 
-                  width={64} 
-                  height={64}
-                  className="relative z-10"
-                />
-                <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-[#FFD700] animate-pulse" />
+            <div className="flex flex-col items-center gap-2">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-[#006B3E] via-[#3D2E17] to-[#FFD700] shadow-xl group-hover:scale-110 transition-transform">
+                <TreePine className="h-16 w-16 text-white" />
               </div>
+              <span className="text-sm font-bold text-[#006B3E] group-hover:text-[#3D2E17] transition-colors">
+                Back to Home
+              </span>
             </div>
           </Link>
           
