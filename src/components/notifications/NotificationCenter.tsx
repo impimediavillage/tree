@@ -25,6 +25,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   getUserNotificationPreferences,
+  playNotificationSound,
 } from '@/lib/notificationService';
 import type { Notification, NotificationPreferences } from '@/types/notification';
 import { useRouter } from 'next/navigation';
@@ -53,6 +54,11 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
       currentUser.uid,
       (notification) => {
         setNotifications(prev => [notification, ...prev]);
+        
+        // Play sound for new notification
+        if (notification.sound && preferences?.enableSounds) {
+          playNotificationSound(notification.sound, preferences);
+        }
       }
     );
 
@@ -60,7 +66,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     getUserNotificationPreferences(currentUser.uid).then(setPreferences);
 
     return unsubscribe;
-  }, [currentUser?.uid]);
+  }, [currentUser?.uid, preferences]);
 
   // Filter notifications
   useEffect(() => {
@@ -164,86 +170,101 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:w-[540px] p-0">
-        <SheetHeader className="p-6 border-b">
+      <SheetContent side="right" className="w-full sm:w-[540px] p-0 bg-gradient-to-br from-white via-white/95 to-white/90 backdrop-blur-sm">
+        <SheetHeader className="p-6 border-b border-[#3D2E17]/10 bg-gradient-to-r from-[#006B3E]/5 to-[#3D2E17]/5">
           <div className="flex items-center justify-between">
-            <SheetTitle className="text-2xl font-black">Notification Center</SheetTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-5 w-5" />
+            <SheetTitle className="text-3xl font-black text-[#3D2E17]">Notification Center</SheetTitle>
+            <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-red-500/10 transition-all duration-200">
+              <X className="h-6 w-6 text-[#3D2E17]/60 hover:text-red-500" />
             </Button>
           </div>
           
           {unreadCount > 0 && (
-            <div className="flex items-center justify-between mt-4 bg-blue-50 rounded-lg p-3">
-              <p className="text-sm font-semibold text-blue-900">
-                You have {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between mt-4 bg-gradient-to-r from-blue-50 via-green-50 to-yellow-50 rounded-lg p-3 border-2 border-[#006B3E]/30 shadow-md"
+            >
+              <p className="text-sm font-black text-[#3D2E17]">
+                🔔 You have {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
               </p>
               <Button
                 size="sm"
-                variant="outline"
                 onClick={handleMarkAllRead}
-                className="text-xs"
+                className="text-xs font-bold bg-[#006B3E] hover:bg-[#005230] text-white transition-all duration-200 hover:scale-105"
               >
                 Mark all read
               </Button>
-            </div>
+            </motion.div>
           )}
         </SheetHeader>
 
         {/* Filters */}
-        <div className="p-4 border-b space-y-3">
+        <div className="p-4 border-b border-[#3D2E17]/10 space-y-3 bg-white/50">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-[#006B3E]/60" />
             <Input
               placeholder="Search notifications..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-10 font-bold text-[#3D2E17] border-[#3D2E17]/20 focus:border-[#006B3E] transition-all duration-200"
             />
           </div>
           
           <div className="flex gap-2">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="flex-1">
+              <SelectTrigger className="flex-1 font-bold text-[#3D2E17] border-[#3D2E17]/20">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="order">💰 Orders</SelectItem>
-                <SelectItem value="payment">💳 Payments</SelectItem>
-                <SelectItem value="shipment">🚚 Shipping</SelectItem>
-                <SelectItem value="achievement">🏆 Achievements</SelectItem>
-                <SelectItem value="product">📦 Products</SelectItem>
-                <SelectItem value="influencer">🌟 Influencer</SelectItem>
-                <SelectItem value="treehouse">🎨 Treehouse</SelectItem>
-                <SelectItem value="system">⚙️ System</SelectItem>
+                <SelectItem value="all" className="font-bold">All Types</SelectItem>
+                <SelectItem value="order" className="font-bold">💰 Orders</SelectItem>
+                <SelectItem value="payment" className="font-bold">💳 Payments</SelectItem>
+                <SelectItem value="shipment" className="font-bold">🚚 Shipping</SelectItem>
+                <SelectItem value="achievement" className="font-bold">🏆 Achievements</SelectItem>
+                <SelectItem value="product" className="font-bold">📦 Products</SelectItem>
+                <SelectItem value="influencer" className="font-bold">🌟 Influencer</SelectItem>
+                <SelectItem value="treehouse" className="font-bold">🎨 Treehouse</SelectItem>
+                <SelectItem value="system" className="font-bold">⚙️ System</SelectItem>
               </SelectContent>
             </Select>
             
             <Select value={filterRead} onValueChange={setFilterRead}>
-              <SelectTrigger className="flex-1">
+              <SelectTrigger className="flex-1 font-bold text-[#3D2E17] border-[#3D2E17]/20">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="unread">Unread Only</SelectItem>
-                <SelectItem value="read">Read Only</SelectItem>
+                <SelectItem value="all" className="font-bold">All</SelectItem>
+                <SelectItem value="unread" className="font-bold">Unread Only</SelectItem>
+                <SelectItem value="read" className="font-bold">Read Only</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {/* Notifications List */}
-        <ScrollArea className="h-[calc(100vh-280px)]">
+        <ScrollArea className="h-[calc(100vh-280px)] bg-white/30">
           {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-              <Bell className="h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg font-semibold text-foreground mb-2">
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 10, -10, 0]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Bell className="h-20 w-20 text-[#3D2E17]/20" />
+              </motion.div>
+              <p className="text-xl font-black text-[#3D2E17]/70 mb-2 mt-6">
                 {searchQuery || filterType !== 'all' || filterRead !== 'all'
                   ? 'No notifications found'
                   : 'No notifications yet'}
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-bold text-[#3D2E17]/40">
                 {searchQuery || filterType !== 'all' || filterRead !== 'all'
                   ? 'Try adjusting your filters'
                   : "You'll be notified when something important happens"}
@@ -253,7 +274,8 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
             <div className="p-4 space-y-6">
               {groupedNotifications.map(([groupName, groupNotifications]) => (
                 <div key={groupName}>
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                  <h4 className="text-xs font-black text-[#006B3E] uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <div className="h-1 w-8 bg-gradient-to-r from-[#006B3E] to-transparent rounded-full" />
                     {groupName}
                   </h4>
                   <div className="space-y-2">
@@ -262,11 +284,13 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                         key={notification.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.02, x: 4 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => handleNotificationClick(notification)}
-                        className={`w-full p-4 rounded-lg text-left hover:shadow-md transition-all ${
+                        className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
                           !notification.read
-                            ? 'bg-blue-50 border-2 border-blue-200'
-                            : 'bg-muted/30 border border-border'
+                            ? 'bg-gradient-to-r from-blue-50/90 via-green-50/70 to-yellow-50/50 border-2 border-[#006B3E] shadow-lg hover:shadow-xl'
+                            : 'bg-white/60 border border-[#3D2E17]/10 hover:bg-white/80 hover:shadow-md'
                         }`}
                       >
                         <div className="flex gap-3">
@@ -276,22 +300,26 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
-                              <p className={`text-sm font-bold ${
-                                !notification.read ? 'text-foreground' : 'text-muted-foreground'
+                              <p className={`text-sm font-black ${
+                                !notification.read ? 'text-[#3D2E17]' : 'text-[#3D2E17]/60'
                               }`}>
                                 {notification.title}
                               </p>
                               {!notification.read && (
-                                <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-1" />
+                                <motion.div 
+                                  className="flex-shrink-0 w-3 h-3 bg-[#006B3E] rounded-full mt-1 shadow-lg"
+                                  animate={{ scale: [1, 1.3, 1] }}
+                                  transition={{ duration: 1, repeat: Infinity }}
+                                />
                               )}
                             </div>
                             
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="text-sm font-semibold text-[#3D2E17]/70 mb-2">
                               {notification.message}
                             </p>
                             
                             <div className="flex items-center justify-between">
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs font-bold text-[#006B3E]/60">
                                 {format(
                                   notification.createdAt?.toDate?.() || new Date(notification.createdAt),
                                   'MMM d, yyyy h:mm a'
@@ -299,8 +327,8 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                               </p>
                               
                               {notification.priority === 'critical' && (
-                                <span className="text-xs font-semibold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                                  Urgent
+                                <span className="text-xs font-black text-red-600 bg-red-100 px-2 py-0.5 rounded-full border border-red-300">
+                                  ⚠️ Urgent
                                 </span>
                               )}
                             </div>
@@ -316,16 +344,16 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
         </ScrollArea>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-background">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-[#3D2E17]/10 bg-gradient-to-r from-[#006B3E]/5 to-[#3D2E17]/5 backdrop-blur-sm">
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full font-black text-[#3D2E17] border-[#3D2E17]/30 hover:bg-[#006B3E]/10 hover:border-[#006B3E] transition-all duration-200 hover:scale-105"
             onClick={() => {
               router.push('/dashboard/leaf/settings?tab=notifications');
               onClose();
             }}
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="h-5 w-5 mr-2" />
             Notification Settings
           </Button>
         </div>
