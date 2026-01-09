@@ -129,28 +129,28 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
       className={`group rounded-xl border-2 bg-card text-card-foreground shadow-lg hover:shadow-xl hover:border-primary/50 transition-all duration-200 ${selected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
       onClick={() => onSelect && showSelection ? onSelect(order.id) : onClick?.()}
     >
-      <div className="p-6 space-y-5">
+      <div className="p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-5">
         {/* Header */}
-        <div className="flex justify-between items-start gap-3">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex justify-between items-start gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             {showSelection && (
-              <div className={`w-6 h-6 rounded-md border-2 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'} flex items-center justify-center transition-colors flex-shrink-0`}>
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md border-2 ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'} flex items-center justify-center transition-colors flex-shrink-0`}>
                 {selected && (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-primary-foreground">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 )}
               </div>
             )}
-            <div className="space-y-2 flex-1 min-w-0">
-              <div className="flex items-center gap-3">
-                <Package2 className="h-7 w-7 text-green-800 flex-shrink-0" />
-                <span className="text-xl font-bold truncate">#{order.orderNumber || 'No Number'}</span>
+            <div className="space-y-1 sm:space-y-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Package2 className="h-6 w-6 sm:h-7 sm:w-7 text-[#006B3E] flex-shrink-0" />
+                <span className="text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17] truncate">#{order.orderNumber || 'No Number'}</span>
               </div>
-              <p className="text-2xl font-bold text-primary">{formatCurrency(order.total || 0)}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{orderDate}</span>
+              <p className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#006B3E]">{formatCurrency(order.total || 0)}</p>
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                <span className="truncate font-bold">{orderDate}</span>
               </div>
             </div>
           </div>
@@ -160,7 +160,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
               order.status === 'cancelled' ? 'destructive' :
               'secondary'
             }
-            className="text-xs font-semibold flex-shrink-0"
+            className="text-[10px] sm:text-xs font-extrabold flex-shrink-0"
           >
             {statusDescriptions[order.status as keyof typeof statusDescriptions] || statusDescriptions.pending}
           </Badge>
@@ -168,43 +168,43 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
 
         {/* Customer Info */}
         {order.customerDetails && (
-          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-6 w-6 text-green-800" />
+          <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gradient-to-r from-muted/80 to-muted/50 rounded-lg border border-border/30">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[#006B3E]/10 flex items-center justify-center flex-shrink-0">
+              <User className="h-4 w-4 sm:h-6 sm:w-6 text-[#006B3E]" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{order.customerDetails.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{order.customerDetails.email}</p>
+              <p className="text-xs sm:text-sm font-extrabold text-[#3D2E17] truncate">{order.customerDetails.name}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate font-bold">{order.customerDetails.email}</p>
             </div>
           </div>
         )}
 
         {/* Product Details */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <ShoppingBag className="h-6 w-6 text-green-800" />
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#3D2E17]">
+            <ShoppingBag className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E]" />
             <span>Products ({totalItems} items)</span>
           </div>
-          <div className="space-y-2 pl-7">
+          <div className="space-y-1 sm:space-y-2 pl-6 sm:pl-7">
             {order.items?.slice(0, 3).map((item, idx) => (
-              <div key={idx} className="flex justify-between items-start text-sm gap-2">
+              <div key={idx} className="flex justify-between items-start text-xs sm:text-sm gap-2">
                 {item.productType === 'THC' ? (
                   <div className="flex-1 truncate">
-                    <div className="text-muted-foreground font-medium">{item.name}</div>
-                    <div className="text-xs text-muted-foreground/80 mt-0.5">
+                    <div className="text-muted-foreground font-bold">{item.name}</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground/80 mt-0.5 font-bold">
                       {item.quantity} FREE {item.unit}{item.quantity > 1 ? 's' : ''} {item.originalName}
                     </div>
                   </div>
                 ) : (
-                  <span className="text-muted-foreground truncate flex-1">
+                  <span className="text-muted-foreground truncate flex-1 font-bold">
                     {item.quantity}x {item.name}
                   </span>
                 )}
-                <span className="font-medium ml-2 flex-shrink-0">{formatCurrency(item.price * item.quantity)}</span>
+                <span className="font-extrabold ml-2 flex-shrink-0 text-[#006B3E]">{formatCurrency(item.price * item.quantity)}</span>
               </div>
             ))}
             {order.items && order.items.length > 3 && (
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-[10px] sm:text-xs text-muted-foreground italic font-bold">
                 +{order.items.length - 3} more items
               </p>
             )}
@@ -212,28 +212,28 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         </div>
 
         {/* Shipping Method */}
-        <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-            <Truck className="h-6 w-6 text-green-800" />
+        <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-r from-[#006B3E]/10 to-[#006B3E]/5 rounded-lg border-2 border-[#006B3E]/20">
+          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[#006B3E]/20 flex items-center justify-center flex-shrink-0">
+            <Truck className="h-4 w-4 sm:h-6 sm:w-6 text-[#006B3E]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Shipping Method</p>
-            <p className="text-sm font-semibold">{getShippingTypeLabel(shippingMethod)}</p>
+            <p className="text-[10px] sm:text-xs font-extrabold text-muted-foreground mb-1">Shipping Method</p>
+            <p className="text-xs sm:text-sm font-extrabold text-[#3D2E17] line-clamp-2">{getShippingTypeLabel(shippingMethod)}</p>
             {shippingMethod?.delivery_time && (
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 font-bold">
                 Est. delivery: {shippingMethod.delivery_time}
               </p>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Shipping</p>
-            <p className="text-sm font-bold">{formatCurrency(order.shippingCost || order.shippingTotal || 0)}</p>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] sm:text-xs text-muted-foreground font-bold">Shipping</p>
+            <p className="text-xs sm:text-sm font-extrabold text-[#006B3E]">{formatCurrency(order.shippingCost || order.shippingTotal || 0)}</p>
           </div>
         </div>
 
         {/* Locker Information (for PUDO deliveries) */}
         {Object.values(order.shipments || {}).some(s => s.originLocker || s.destinationLocker) && (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {Object.values(order.shipments || {}).map((shipment, idx) => {
               if (!shipment.originLocker && !shipment.destinationLocker) return null;
               
@@ -244,11 +244,11 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
               return (
                 <div key={idx} className="space-y-2">
                   {showOrigin && shipment.originLocker && typeof shipment.originLocker === 'object' && (
-                    <div className="p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                    <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg shadow-md">
                       <div className="flex items-start gap-2">
-                        <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
+                          <p className="text-[10px] sm:text-xs font-extrabold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
                           {(() => {
                             const name = getLockerProp(shipment.originLocker, 'name');
                             const address = getLockerProp(shipment.originLocker, 'address');
@@ -256,9 +256,9 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                             
                             return (
                               <>
-                                {name && <p className="text-base font-bold text-blue-900 truncate">{name}</p>}
-                                {address && <p className="text-xs text-blue-700 mt-1 truncate">{address}</p>}
-                                {id && <p className="text-xs text-blue-600 mt-1 font-mono">ID: {id}</p>}
+                                {name && <p className="text-xs sm:text-sm font-extrabold text-blue-900 truncate">{name}</p>}
+                                {address && <p className="text-[10px] sm:text-xs text-blue-700 mt-1 truncate">{address}</p>}
+                                {id && <p className="text-[10px] sm:text-xs text-blue-600 mt-1 font-mono font-bold">ID: {id}</p>}
                               </>
                             );
                           })()}
@@ -268,11 +268,11 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                   )}
                   
                   {showDestination && shipment.destinationLocker && typeof shipment.destinationLocker === 'object' && (
-                    <div className="p-3 bg-green-50 border-2 border-green-300 rounded-lg">
+                    <div className="p-2 sm:p-3 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-lg shadow-md">
                       <div className="flex items-start gap-2">
-                        <MapPin className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
+                          <p className="text-[10px] sm:text-xs font-extrabold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
                           {(() => {
                             const name = getLockerProp(shipment.destinationLocker, 'name');
                             const address = getLockerProp(shipment.destinationLocker, 'address');
@@ -282,7 +282,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                               <>
                                 {name && <p className="text-base font-bold text-green-900 truncate">{name}</p>}
                                 {address && <p className="text-xs text-green-700 mt-1 truncate">{address}</p>}
-                                {id && <p className="text-xs text-green-600 mt-1 font-mono">ID: {id}</p>}
+                                {id && <p className="text-[10px] sm:text-xs text-green-600 mt-1 font-mono font-bold">ID: {id}</p>}
                               </>
                             );
                           })()}
@@ -297,38 +297,38 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         )}
 
         {/* Shipment Status */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Package className="h-6 w-6 text-green-800" />
+        <div className="space-y-2 sm:space-y-3">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#3D2E17]">
+            <Package className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E]" />
             <span>Shipment Status</span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {Object.entries(order.shipments || {}).map(([dispensaryId, shipment], idx) => {
               const status = shipment.status || 'pending';
               const statusColor = statusColors[status as keyof typeof statusColors] || statusColors.pending;
               
               return (
-                <div key={dispensaryId} className="p-4 rounded-lg bg-gradient-to-r from-muted/50 to-muted/30 border border-border space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Shipment {idx + 1}</span>
-                    <Badge variant="outline" className={`${statusColor} font-semibold`}>
+                <div key={dispensaryId} className="p-3 sm:p-4 rounded-xl bg-gradient-to-r from-muted/80 to-muted/50 border-2 border-border/50 space-y-2 shadow-md">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs sm:text-sm font-extrabold text-[#3D2E17]">Shipment {idx + 1}</span>
+                    <Badge variant="outline" className={`${statusColor} font-extrabold text-[10px] sm:text-xs`}>
                       {status.replace('_', ' ')}
                     </Badge>
                   </div>
                   {shipment.trackingNumber && (
-                    <div className="flex items-center gap-2 pt-2 border-t">
-                      <span className="text-xs text-muted-foreground">Tracking:</span>
-                      <span className="text-xs font-mono font-medium text-foreground">
-                        {shipment.trackingNumber.length > 15 
-                          ? `${shipment.trackingNumber.slice(0, 15)}...` 
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 pt-2 border-t border-border/30">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground font-bold">Tracking:</span>
+                      <span className="text-[10px] sm:text-xs font-mono font-extrabold text-[#3D2E17] break-all">
+                        {shipment.trackingNumber.length > 20 
+                          ? `${shipment.trackingNumber.slice(0, 20)}...` 
                           : shipment.trackingNumber}
                       </span>
                     </div>
                   )}
                   {shipment.accessCode && (
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="text-xs text-muted-foreground">Access Code:</span>
-                      <span className="text-xs font-mono font-bold text-primary">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 pt-1">
+                      <span className="text-[10px] sm:text-xs text-muted-foreground font-bold">Access Code:</span>
+                      <span className="text-xs sm:text-sm font-mono font-extrabold text-[#006B3E]">
                         {shipment.accessCode}
                       </span>
                     </div>
@@ -340,7 +340,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 border-t-2">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t-2 border-border/50">
           {order.status === 'delivered' && onRateExperience && (
             <Button 
               variant="outline" 
@@ -349,9 +349,9 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
                 e.stopPropagation();
                 onRateExperience(order);
               }}
-              className="flex-1 font-semibold border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 text-yellow-900 hover:text-yellow-950"
+              className="flex-1 font-extrabold border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100 text-yellow-900 hover:text-yellow-950 text-sm"
             >
-              <Star className="mr-2 h-5 w-5 fill-yellow-400 text-yellow-600" />
+              <Star className="mr-2 h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-600" />
               <span className="hidden sm:inline">Rate Experience</span>
               <span className="sm:hidden">Rate</span>
             </Button>
@@ -360,9 +360,9 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             variant="default" 
             size="lg" 
             onClick={onClick} 
-            className={`font-semibold ${order.status === 'delivered' && onRateExperience ? '' : 'w-full'}`}
+            className={`font-extrabold text-sm sm:text-base ${order.status === 'delivered' && onRateExperience ? '' : 'w-full'}`}
           >
-            View Details <ArrowRight className="ml-2 h-5 w-5" />
+            View Details <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         </div>
       </div>

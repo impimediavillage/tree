@@ -100,17 +100,17 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="text-3xl font-extrabold text-[#3D2E17]">
+          <DialogTitle className="text-2xl sm:text-3xl font-extrabold text-[#3D2E17]">
             Choose Your Apparel Canvas 👕
           </DialogTitle>
-          <DialogDescription className="text-[#5D4E37] text-base font-semibold">
+          <DialogDescription className="text-[#5D4E37] text-sm sm:text-base font-semibold">
             Pick your favorite apparel item to design on. Each item has a fixed price and you'll earn 25% commission on every sale! 🎨💰
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -139,7 +139,7 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
           ) : (
             <>
               {/* Apparel Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {apparelItems.map((item) => {
                   const mappedType = mapItemTypeToApparelType(item.itemType);
                   const isSelected = selectedItem === mappedType;
@@ -165,16 +165,16 @@ export function ApparelSelector({ open, onOpenChange, onSelect }: ApparelSelecto
                           className="object-cover"
                         />
                       </div>
-                      <div className="p-3 bg-white">
-                        <p className="font-extrabold text-[#3D2E17]">{item.name}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-lg font-bold text-[#006B3E]">R{price.toFixed(2)}</span>
-                          <Badge variant="secondary" className="bg-green-100 text-green-700 font-bold text-xs">
+                      <div className="p-2 sm:p-3 bg-white">
+                        <p className="font-extrabold text-[#3D2E17] text-sm sm:text-base truncate">{item.name}</p>
+                        <div className="flex items-center justify-between mt-1 flex-wrap gap-1">
+                          <span className="text-base sm:text-lg font-bold text-[#006B3E]">R{price.toFixed(2)}</span>
+                          <Badge variant="secondary" className="bg-green-100 text-green-700 font-bold text-[10px] sm:text-xs">
                             Earn R{commission}
                           </Badge>
                         </div>
                         {item.restrictions && (
-                          <p className="text-xs text-[#5D4E37] mt-2">{item.restrictions}</p>
+                          <p className="text-[10px] sm:text-xs text-[#5D4E37] mt-2">{item.restrictions}</p>
                         )}
                       </div>
                       {isSelected && (

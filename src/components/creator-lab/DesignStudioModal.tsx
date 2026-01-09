@@ -314,17 +314,17 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[95vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg sm:rounded-2xl w-full max-w-6xl max-h-[95vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b-2 border-[#5D4E37]/20 p-6 flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
-            <Sparkles className="h-8 w-8 text-[#006B3E]" />
-            <div>
-              <h2 className="text-3xl font-extrabold text-[#3D2E17]">
+        <div className="sticky top-0 bg-white border-b-2 border-[#5D4E37]/20 p-3 sm:p-6 flex items-center justify-between z-10">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E] flex-shrink-0" />
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-2xl md:text-3xl font-extrabold text-[#3D2E17] truncate">
                 Design Your {apparelType}
               </h2>
-              <p className="text-[#5D4E37] font-semibold">
+              <p className="text-xs sm:text-sm text-[#5D4E37] font-semibold truncate">
                 {surface ? `${surface} side` : 'Front design'} • 10 credits
               </p>
             </div>
@@ -333,14 +333,14 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
             variant="ghost"
             size="icon"
             onClick={onCancel}
-            className="rounded-full hover:bg-[#5D4E37]/10"
+            className="rounded-full hover:bg-[#5D4E37]/10 flex-shrink-0 h-8 w-8 sm:h-10 sm:w-10"
           >
-            <X className="h-6 w-6" />
+            <X className="h-4 w-4 sm:h-6 sm:w-6" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-3 sm:p-6">
           {!generatedDesign ? (
             <div className="grid md:grid-cols-2 gap-6">
               {/* Left: Apparel Preview */}
@@ -607,20 +607,20 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
             </div>
           ) : isPositioning ? (
             /* Logo Positioning Interface - Two Panel */
-            <div className="space-y-4">
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900 font-semibold">
-                  🎨 <strong>Position Your Logo:</strong> Drag, drop, and resize the logo on the right panel. The left shows your original transparent PNG.
+            <div className="space-y-3 sm:space-y-4">
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-blue-900 font-semibold">
+                  🎨 <strong>Position Your Logo:</strong> Drag, drop, and resize the logo. On mobile, scroll down to see controls.
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* LEFT: Original Transparent Logo */}
-                <div className="space-y-3">
-                  <p className="text-sm font-bold text-[#3D2E17]">
+                <div className="space-y-2 sm:space-y-3">
+                  <p className="text-xs sm:text-sm font-bold text-[#3D2E17]">
                     Original Logo (Transparent PNG):
                   </p>
-                  <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-8 flex items-center justify-center bg-[size:20px_20px] bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)]">
+                  <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-4 sm:p-8 flex items-center justify-center bg-[size:20px_20px] bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)]">
                     <div className="relative w-full h-full">
                       {generatedDesign?.logoImageUrl && (
                         <Image
@@ -632,14 +632,14 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
                       )}
                     </div>
                   </div>
-                  <p className="text-xs text-[#5D4E37] text-center">
+                  <p className="text-[10px] sm:text-xs text-[#5D4E37] text-center">
                     High-res transparent PNG for printing
                   </p>
                 </div>
 
                 {/* RIGHT: Apparel with Draggable Logo Overlay */}
-                <div className="space-y-3">
-                  <p className="text-sm font-bold text-[#3D2E17]">
+                <div className="space-y-2 sm:space-y-3">
+                  <p className="text-xs sm:text-sm font-bold text-[#3D2E17]">
                     Position on {apparelType} {surface ? `(${surface})` : ''}:
                   </p>
                   <div 
@@ -701,33 +701,37 @@ export function DesignStudioModal({ apparelType, surface, onComplete, onCancel }
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                 <Button
                   onClick={handleRegenerate}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-[#5D4E37]/30 font-bold"
+                  className="flex-1 h-10 sm:h-12 border-2 border-[#5D4E37]/30 font-bold text-xs sm:text-sm"
                 >
                   🎨 Remix Prompt
                 </Button>
                 <Button
                   onClick={handleResetPosition}
                   variant="outline"
-                  className="flex-1 h-12 border-2 border-[#5D4E37]/30 font-bold"
+                  className="flex-1 h-10 sm:h-12 border-2 border-[#5D4E37]/30 font-bold text-xs sm:text-sm"
                 >
                   Reset Position
                 </Button>
                 <Button
                   onClick={handleConfirmPosition}
                   disabled={isFinalizing}
-                  className="flex-1 h-12 bg-[#006B3E] hover:bg-[#005230] font-extrabold"
+                  className="flex-1 h-10 sm:h-12 bg-[#006B3E] hover:bg-[#005230] font-extrabold text-xs sm:text-sm"
                 >
                   {isFinalizing ? (
                     <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Creating Mockup...
+                      <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                      <span className="hidden sm:inline">Creating Mockup...</span>
+                      <span className="sm:hidden">Creating...</span>
                     </>
                   ) : (
-                    'Confirm Position & Continue'
+                    <>
+                      <span className="hidden sm:inline">Confirm Position & Continue</span>
+                      <span className="sm:hidden">Confirm & Continue</span>
+                    </>
                   )}
                 </Button>
               </div>

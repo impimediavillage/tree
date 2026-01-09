@@ -347,35 +347,39 @@ function NewEventForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/dispensary-admin/events">
-          <Button variant="outline" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-black text-[#3D2E17]">
-            {eventId ? '✏️ Edit Event' : '✨ Create New Event'}
-          </h1>
-          <p className="text-[#5D4E37]">
-            {eventId ? 'Update your event details' : 'Create an awesome event for your community'}
-          </p>
-        </div>
-      </div>
+      <Card className="bg-muted/50 border-border/50 shadow-lg">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/dispensary-admin/events">
+              <Button variant="outline" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[#3D2E17]">
+                {eventId ? '✏️ Edit Event' : '✨ Create New Event'}
+              </h1>
+              <p className="text-xs sm:text-sm text-[#5D4E37] font-bold">
+                {eventId ? 'Update your event details' : 'Create an awesome event for your community'}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Form Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-[#3D2E17]">Event Details</CardTitle>
+      <Card className="bg-muted/50">
+        <CardHeader className="p-3 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl font-extrabold text-[#3D2E17]">Event Details</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="p-3 sm:p-6 pt-0">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Flyer Upload */}
             <div className="space-y-2">
-              <Label className="text-[#3D2E17] font-bold">Event Flyer (Optional)</Label>
-              <div className="border-2 border-dashed border-[#006B3E]/30 rounded-lg p-4 hover:border-[#006B3E] transition-colors">
+              <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Event Flyer (Optional)</Label>
+              <div className="border-2 border-dashed border-[#006B3E]/30 rounded-lg p-3 sm:p-4 hover:border-[#006B3E] transition-colors">
                 {flyerPreview ? (
                   <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
                     <Image src={flyerPreview} alt="Flyer preview" fill className="object-contain" />
@@ -383,20 +387,20 @@ function NewEventForm() {
                       type="button"
                       size="icon"
                       variant="destructive"
-                      className="absolute top-2 right-2"
+                      className="absolute top-2 right-2 h-8 w-8 sm:h-10 sm:w-10"
                       onClick={() => {
                         setFlyerFile(null);
                         setFlyerPreview(null);
                       }}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center cursor-pointer py-8">
-                    <Upload className="h-12 w-12 text-[#006B3E] mb-2" />
-                    <span className="text-[#3D2E17] font-bold">Upload Event Flyer</span>
-                    <span className="text-xs text-[#5D4E37] mt-1">PNG, JPG up to 5MB</span>
+                  <label className="flex flex-col items-center justify-center cursor-pointer py-6 sm:py-8">
+                    <Upload className="h-10 w-10 sm:h-12 sm:w-12 text-[#006B3E] mb-2" />
+                    <span className="text-sm sm:text-base text-[#3D2E17] font-extrabold">Upload Event Flyer</span>
+                    <span className="text-xs text-[#5D4E37] mt-1 font-bold">PNG, JPG up to 5MB</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -410,31 +414,33 @@ function NewEventForm() {
 
             {/* Title */}
             <div className="space-y-2">
-              <Label className="text-[#3D2E17] font-bold">Event Title *</Label>
+              <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Event Title *</Label>
               <Input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="e.g., Summer Wellness Workshop"
                 required
+                className="font-bold text-sm sm:text-base"
               />
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label className="text-[#3D2E17] font-bold">Description *</Label>
+              <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Description *</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Tell your community about this amazing event..."
                 rows={4}
                 required
+                className="font-bold text-sm sm:text-base"
               />
             </div>
 
             {/* Category & Tags */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
-                <Label className="text-[#3D2E17] font-bold">Category *</Label>
+                <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Category *</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => setFormData({ ...formData, category: value as any })}
@@ -453,17 +459,18 @@ function NewEventForm() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[#3D2E17] font-bold">Tags (comma-separated)</Label>
+                <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Tags (comma-separated)</Label>
                 <Input
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                   placeholder="wellness, community, fun"
+                  className="font-bold text-sm sm:text-base"
                 />
               </div>
             </div>
 
             {/* Dates with Analog Clock TimePicker */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label className="text-[#3D2E17] font-bold">Start Date *</Label>
                 <Input
@@ -484,16 +491,17 @@ function NewEventForm() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[#3D2E17] font-bold">End Date (Optional)</Label>
+                <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">End Date (Optional)</Label>
                 <Input
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="font-bold text-sm sm:text-base"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[#3D2E17] font-bold">End Time (Optional)</Label>
+                <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">End Time (Optional)</Label>
                 <TimePicker
                   value={formData.endTime}
                   onChange={(value) => setFormData({ ...formData, endTime: value || '' })}
@@ -502,10 +510,10 @@ function NewEventForm() {
             </div>
 
             {/* Virtual Event Toggle */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-muted/50 rounded-lg">
               <div>
-                <Label className="text-[#3D2E17] font-bold">Virtual Event?</Label>
-                <p className="text-xs text-[#5D4E37]">Event will be held online</p>
+                <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Virtual Event?</Label>
+                <p className="text-[10px] sm:text-xs text-[#5D4E37] font-bold">Event will be held online</p>
               </div>
               <Switch
                 checked={formData.isVirtual}
@@ -516,35 +524,37 @@ function NewEventForm() {
             {/* Location or Virtual Link */}
             {formData.isVirtual ? (
               <div className="space-y-2">
-                <Label className="text-[#3D2E17] font-bold">Virtual Link</Label>
+                <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Virtual Link</Label>
                 <Input
                   value={formData.virtualLink}
                   onChange={(e) => setFormData({ ...formData, virtualLink: e.target.value })}
                   placeholder="https://zoom.us/..."
+                  className="font-bold text-sm sm:text-base"
                 />
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-[#3D2E17] font-bold">Event Location *</Label>
+                  <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Event Location *</Label>
                   <Input
                     ref={locationInputRef}
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="Start typing to search for an address..."
+                    className="font-bold text-sm sm:text-base"
                   />
-                  <p className="text-xs text-[#5D4E37]">Use Google autocomplete to auto-fill address details</p>
+                  <p className="text-[10px] sm:text-xs text-[#5D4E37] font-bold">Use Google autocomplete to auto-fill address details</p>
                 </div>
 
                 {/* Display address fields if populated */}
                 {(formData.streetAddress || formData.city) && (
-                  <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-4 rounded-r-lg space-y-1">
-                    <p className="text-xs text-[#3D2E17] font-bold">📍 Address Details:</p>
-                    {formData.streetAddress && <p className="text-sm text-[#5D4E37]"><strong>Street:</strong> {formData.streetAddress}</p>}
-                    {formData.city && <p className="text-sm text-[#5D4E37]"><strong>City:</strong> {formData.city}</p>}
-                    {formData.state && <p className="text-sm text-[#5D4E37]"><strong>State:</strong> {formData.state}</p>}
-                    {formData.postalCode && <p className="text-sm text-[#5D4E37]"><strong>Postal Code:</strong> {formData.postalCode}</p>}
-                    {formData.country && <p className="text-sm text-[#5D4E37]"><strong>Country:</strong> {formData.country}</p>}
+                  <div className="bg-[#006B3E]/10 border-l-4 border-[#006B3E] p-3 sm:p-4 rounded-r-lg space-y-1">
+                    <p className="text-[10px] sm:text-xs text-[#3D2E17] font-extrabold">📍 Address Details:</p>
+                    {formData.streetAddress && <p className="text-xs sm:text-sm text-[#5D4E37] font-bold"><strong>Street:</strong> {formData.streetAddress}</p>}
+                    {formData.city && <p className="text-xs sm:text-sm text-[#5D4E37] font-bold"><strong>City:</strong> {formData.city}</p>}
+                    {formData.state && <p className="text-xs sm:text-sm text-[#5D4E37] font-bold"><strong>State:</strong> {formData.state}</p>}
+                    {formData.postalCode && <p className="text-xs sm:text-sm text-[#5D4E37] font-bold"><strong>Postal Code:</strong> {formData.postalCode}</p>}
+                    {formData.country && <p className="text-xs sm:text-sm text-[#5D4E37] font-bold"><strong>Country:</strong> {formData.country}</p>}
                   </div>
                 )}
               </div>
@@ -552,21 +562,22 @@ function NewEventForm() {
 
             {/* Max Attendees */}
             <div className="space-y-2">
-              <Label className="text-[#3D2E17] font-bold">Max Attendees (Optional)</Label>
+              <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Max Attendees (Optional)</Label>
               <Input
                 type="number"
                 value={formData.maxAttendees}
                 onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
                 placeholder="Leave empty for unlimited"
+                className="font-bold text-sm sm:text-base"
               />
             </div>
 
             {/* Publishing Options */}
-            <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+            <div className="space-y-3 p-3 sm:p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-[#3D2E17] font-bold">Publish Immediately</Label>
-                  <p className="text-xs text-[#5D4E37]">Make event visible to users</p>
+                  <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Publish Immediately</Label>
+                  <p className="text-[10px] sm:text-xs text-[#5D4E37] font-bold">Make event visible to users</p>
                 </div>
                 <Switch
                   checked={formData.isPublished}
@@ -576,8 +587,8 @@ function NewEventForm() {
 
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="text-[#3D2E17] font-bold">Featured Event</Label>
-                  <p className="text-xs text-[#5D4E37]">Show on top of the list</p>
+                  <Label className="text-[#3D2E17] font-extrabold text-sm sm:text-base">Featured Event</Label>
+                  <p className="text-[10px] sm:text-xs text-[#5D4E37] font-bold">Show on top of the list</p>
                 </div>
                 <Switch
                   checked={formData.isFeatured}
@@ -587,20 +598,20 @@ function NewEventForm() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push('/dispensary-admin/events')}
                 disabled={uploading}
-                className="flex-1"
+                className="flex-1 font-extrabold w-full"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={uploading}
-                className="flex-1 bg-[#006B3E] hover:bg-[#3D2E17]"
+                className="flex-1 bg-[#006B3E] hover:bg-[#3D2E17] font-extrabold w-full"
               >
                 {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {eventId ? 'Update Event' : 'Create Event'}

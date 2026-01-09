@@ -167,51 +167,53 @@ export default function WellnessProductsPage() {
   }
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6 md:p-8">
       {/* Header */}
-      <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-extrabold text-[#3D2E17]">My Products</h1>
-            <p className="text-muted-foreground mt-1">Manage all products for your wellness store</p>
+      <div className="p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+            <Package className="h-10 w-10 sm:h-14 sm:w-14 text-[#006B3E] flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#3D2E17] truncate">My Products</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage all products for your wellness store</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Package className="h-14 w-14 text-[#006B3E]" />
-            <Button asChild>
-              <Link href={addProductPath}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
-              </Link>
-            </Button>
-          </div>
+          <Button asChild className="w-full sm:w-auto shrink-0">
+            <Link href={addProductPath}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">Add New Product</span>
+              <span className="sm:hidden">Add Product</span>
+            </Link>
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-col gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-muted/50 shadow-sm">
         <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
             <Input
                 type="text"
-                placeholder="Search by name, description, category, tag..."
+                placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full"
+                className="pl-9 sm:pl-10 w-full text-sm sm:text-base"
             />
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full sm:w-[220px]">
+            <SelectTrigger className="w-full sm:w-[220px] text-sm sm:text-base">
                 <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
                 {categories.map(category => (
-                    <SelectItem key={category} value={category}>
+                    <SelectItem key={category} value={category} className="text-sm sm:text-base">
                         {category === 'all' ? 'All Categories' : category}
                     </SelectItem>
                 ))}
             </SelectContent>
         </Select>
         {(searchTerm || selectedCategory !== 'all') && (
-             <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto text-muted-foreground hover:text-destructive">
+             <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto text-sm text-muted-foreground hover:text-destructive">
                 <FilterX className="mr-2 h-4 w-4"/> Clear Filters
             </Button>
         )}
@@ -219,18 +221,18 @@ export default function WellnessProductsPage() {
       </div>
       
       {displayItems.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 py-3 sm:py-6">
           {displayItems.map((item) => (
             <ProductCard key={item.key} product={item.product} tier={item.tier} onDelete={handleDeleteProduct} />
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 col-span-full">
-          <PackageSearch className="mx-auto h-16 w-16 text-[#006B3E]" />
-          <h3 className="mt-4 text-xl font-bold text-[#3D2E17]">
+        <div className="text-center py-8 sm:py-12 col-span-full">
+          <PackageSearch className="mx-auto h-12 w-12 sm:h-16 sm:w-16 text-[#006B3E]" />
+          <h3 className="mt-4 text-lg sm:text-xl font-bold text-[#3D2E17]">
             No Products Found
           </h3>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground mt-2">
             {allProducts.length === 0 ? "You haven't added any products yet." : "No products match your current filters."}
           </p>
         </div>

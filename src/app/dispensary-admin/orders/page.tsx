@@ -327,33 +327,33 @@ export default function DispensaryOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-            <div>
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Package2 className="h-6 w-6 text-primary" />
-                Manage Orders
-              </CardTitle>
-              <CardDescription>
-                View and manage all orders for {currentDispensary?.dispensaryName}
-              </CardDescription>
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
+      <Card className="bg-muted/50 border-border/50">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <Package2 className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-primary flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#3D2E17] truncate">Manage Orders</CardTitle>
+                <CardDescription className="text-xs sm:text-sm mt-1">
+                  View and manage all orders for {currentDispensary?.dispensaryName}
+                </CardDescription>
+              </div>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               <OrdersDashboardHelp />
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="whitespace-nowrap">
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none whitespace-nowrap">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">View Analytics</span>
                     <span className="sm:hidden">Analytics</span>
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto w-[95vw]">
                   <DialogHeader className="sticky top-0 bg-background z-10 pb-4">
-                    <DialogTitle className="text-xl">Order Analytics Dashboard</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-lg sm:text-xl">Order Analytics Dashboard</DialogTitle>
+                    <DialogDescription className="text-xs sm:text-sm">
                       Comprehensive overview of your order and shipping performance
                     </DialogDescription>
                   </DialogHeader>
@@ -367,8 +367,8 @@ export default function DispensaryOrdersPage() {
         </CardHeader>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="bg-muted/50 border-border/50">
+        <CardContent className="p-3 sm:p-4 md:pt-6">
           <OrderFilters
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -390,7 +390,7 @@ export default function DispensaryOrdersPage() {
         orders={filteredOrders}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
         {isLoading ? (
           <div className="col-span-full flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />

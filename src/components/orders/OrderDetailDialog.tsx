@@ -177,10 +177,10 @@ export function OrderDetailDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-4 sm:p-6">
-        <DialogHeader className="pb-3">
-          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <PackageCheck className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0" />
+      <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-3 sm:p-4 md:p-6">
+        <DialogHeader className="pb-2 sm:pb-3">
+          <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl font-extrabold text-[#3D2E17]">
+            <PackageCheck className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-[#006B3E] flex-shrink-0" />
             <span className="truncate">Order #{order.orderNumber}</span>
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm">
@@ -189,44 +189,44 @@ export function OrderDetailDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger value="details" className="text-xs sm:text-sm px-2 py-2">Details</TabsTrigger>
-            <TabsTrigger value="shipments" className="text-xs sm:text-sm px-2 py-2">Ships</TabsTrigger>
-            <TabsTrigger value="shipping-label" className="text-xs sm:text-sm px-2 py-2">Labels</TabsTrigger>
-            <TabsTrigger value="notes" className="text-xs sm:text-sm px-2 py-2">Notes</TabsTrigger>
-            <TabsTrigger value="documents" className="text-xs sm:text-sm px-2 py-2">Docs</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 h-auto gap-1 bg-muted/50 p-1">
+            <TabsTrigger value="details" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Details</TabsTrigger>
+            <TabsTrigger value="shipments" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Ships</TabsTrigger>
+            <TabsTrigger value="shipping-label" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Labels</TabsTrigger>
+            <TabsTrigger value="notes" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Notes</TabsTrigger>
+            <TabsTrigger value="documents" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Docs</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="flex-1 mt-4 overflow-hidden">
-            <ScrollArea className="h-[calc(95vh-220px)] sm:h-[calc(90vh-200px)]">
-              <div className="space-y-4 pr-4">
+          <TabsContent value="details" className="flex-1 mt-3 sm:mt-4 overflow-hidden">
+            <ScrollArea className="h-[calc(95vh-180px)] sm:h-[calc(90vh-180px)]">
+              <div className="space-y-3 sm:space-y-4 pr-2 sm:pr-4">
                 {/* Order Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package2 className="h-6 w-6 text-green-800" />
+                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                      <Package2 className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                       Order Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Order Number</p>
-                        <p className="font-semibold text-sm sm:text-base">#{order.orderNumber}</p>
+                  <CardContent className="space-y-3 sm:space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                      <div className="p-3 bg-background/60 rounded-lg border border-border/30">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 font-bold">Order Number</p>
+                        <p className="font-extrabold text-sm sm:text-base md:text-lg text-[#3D2E17]">#{order.orderNumber}</p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Order Date</p>
-                        <p className="font-semibold text-sm sm:text-base">{orderDate}</p>
+                      <div className="p-3 bg-background/60 rounded-lg border border-border/30">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 font-bold">Order Date</p>
+                        <p className="font-extrabold text-sm sm:text-base md:text-lg text-[#3D2E17]">{orderDate}</p>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Payment Status</p>
-                        <Badge variant={order.paymentStatus === 'completed' ? 'default' : 'secondary'} className="text-xs">
+                      <div className="p-3 bg-background/60 rounded-lg border border-border/30">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 font-bold">Payment Status</p>
+                        <Badge variant={order.paymentStatus === 'completed' ? 'default' : 'secondary'} className="text-xs font-bold">
                           {order.paymentStatus || 'pending'}
                         </Badge>
                       </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Payment Method</p>
-                        <p className="font-semibold capitalize text-sm sm:text-base">{order.paymentMethod || 'N/A'}</p>
+                      <div className="p-3 bg-background/60 rounded-lg border border-border/30">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 font-bold">Payment Method</p>
+                        <p className="font-extrabold capitalize text-sm sm:text-base md:text-lg text-[#3D2E17]">{order.paymentMethod || 'N/A'}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -234,27 +234,27 @@ export function OrderDetailDialog({
 
                 {/* Customer Details */}
                 {order.customerDetails && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-6 w-6 text-green-800" />
+                  <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                        <User className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                         Customer Details
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                          <User className="h-7 w-7 text-green-800" />
+                      <div className="flex items-center gap-3 sm:gap-4 p-3 bg-background/60 rounded-lg">
+                        <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-[#006B3E]/10 flex items-center justify-center">
+                          <User className="h-6 w-6 sm:h-9 sm:w-9 text-[#006B3E]" />
                         </div>
-                        <div className="flex-1">
-                          <p className="font-semibold">{order.customerDetails.name}</p>
-                          <p className="text-sm text-muted-foreground">{order.customerDetails.email}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-extrabold text-sm sm:text-base md:text-lg text-[#3D2E17] truncate">{order.customerDetails.name}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground truncate">{order.customerDetails.email}</p>
                         </div>
                       </div>
                       {order.customerDetails.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>{order.customerDetails.phone}</span>
+                        <div className="flex items-center gap-2 sm:gap-3 text-sm sm:text-base p-3 bg-background/60 rounded-lg">
+                          <Phone className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E]" />
+                          <span className="font-bold text-[#3D2E17]">{order.customerDetails.phone}</span>
                         </div>
                       )}
                     </CardContent>
@@ -263,14 +263,14 @@ export function OrderDetailDialog({
 
                 {/* Locker Details (for PUDO deliveries) */}
                 {Object.values(order.shipments || {}).some(s => s.originLocker || s.destinationLocker) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <MapPin className="h-6 w-6 text-green-800" />
+                  <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                        <MapPin className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                         Locker Details
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 sm:space-y-4">
                       {Object.entries(order.shipments || {})
                         .filter(([_, shipment]) => shipment.originLocker || shipment.destinationLocker)
                         .map(([dispensaryId, shipment]) => {
@@ -279,19 +279,19 @@ export function OrderDetailDialog({
                         const showDestination = method.includes('dtl') || method.includes('ltl') || method.includes('d2l') || method.includes('l2l');
                         
                         return (
-                          <div key={dispensaryId} className="space-y-3">
+                          <div key={dispensaryId} className="space-y-2 sm:space-y-3">
                             {shipment.items[0]?.dispensaryName && (
-                              <p className="text-sm font-bold text-[#3D2E17]">
+                              <p className="text-xs sm:text-sm font-extrabold text-[#3D2E17]">
                                 {shipment.items[0].dispensaryName}
                               </p>
                             )}
                             
                             {showOrigin && shipment.originLocker && typeof shipment.originLocker === 'object' && (
-                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="flex items-start gap-2">
-                                  <MapPin className="h-5 w-5 text-blue-600 mt-1" />
-                                  <div className="flex-1">
-                                    <p className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
+                              <div className="p-3 sm:p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl shadow-md">
+                                <div className="flex items-start gap-2 sm:gap-3">
+                                  <MapPin className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mt-1 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] sm:text-xs font-extrabold text-blue-900 uppercase tracking-wide mb-1">Origin Locker</p>
                                     {(() => {
                                       const name = getLockerProp(shipment.originLocker, 'name');
                                       const address = getLockerProp(shipment.originLocker, 'address');
@@ -300,10 +300,10 @@ export function OrderDetailDialog({
                                       
                                       return (
                                         <>
-                                          {name && <p className="text-base font-bold text-blue-900">{String(name)}</p>}
-                                          {address && <p className="text-sm text-blue-700 mt-1">{String(address)}</p>}
-                                          {city && <p className="text-sm text-blue-600">{String(city)}</p>}
-                                          {id && <p className="text-xs text-blue-600 mt-2">Locker ID: {String(id)}</p>}
+                                          {name && <p className="text-sm sm:text-base md:text-lg font-extrabold text-blue-900 truncate">{String(name)}</p>}
+                                          {address && <p className="text-xs sm:text-sm text-blue-700 mt-1">{String(address)}</p>}
+                                          {city && <p className="text-xs sm:text-sm text-blue-600">{String(city)}</p>}
+                                          {id && <p className="text-[10px] sm:text-xs text-blue-600 mt-2 font-bold">Locker ID: {String(id)}</p>}
                                         </>
                                       );
                                     })()}
@@ -313,11 +313,11 @@ export function OrderDetailDialog({
                             )}
                             
                             {showDestination && shipment.destinationLocker && typeof shipment.destinationLocker === 'object' && (
-                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-start gap-2">
-                                  <MapPin className="h-5 w-5 text-green-600 mt-1" />
-                                  <div className="flex-1">
-                                    <p className="text-xs font-semibold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
+                              <div className="p-3 sm:p-4 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl shadow-md">
+                                <div className="flex items-start gap-2 sm:gap-3">
+                                  <MapPin className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 mt-1 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] sm:text-xs font-extrabold text-green-900 uppercase tracking-wide mb-1">Destination Locker</p>
                                     {(() => {
                                       const name = getLockerProp(shipment.destinationLocker, 'name');
                                       const address = getLockerProp(shipment.destinationLocker, 'address');
@@ -327,13 +327,13 @@ export function OrderDetailDialog({
                                       
                                       return (
                                         <>
-                                          {name && <p className="text-base font-bold text-green-900">{String(name)}</p>}
-                                          {address && <p className="text-sm text-green-700 mt-1">{String(address)}</p>}
-                                          {city && <p className="text-sm text-green-600">{String(city)}</p>}
+                                          {name && <p className="text-sm sm:text-base md:text-lg font-extrabold text-green-900 truncate">{String(name)}</p>}
+                                          {address && <p className="text-xs sm:text-sm text-green-700 mt-1">{String(address)}</p>}
+                                          {city && <p className="text-xs sm:text-sm text-green-600">{String(city)}</p>}
                                           {distanceKm && typeof distanceKm === 'number' && (
-                                            <p className="text-sm text-green-600 mt-1">{distanceKm.toFixed(1)} km from customer</p>
+                                            <p className="text-xs sm:text-sm text-green-600 mt-1 font-bold">{distanceKm.toFixed(1)} km from customer</p>
                                           )}
-                                          {id && <p className="text-xs text-green-600 mt-2">Locker ID: {String(id)}</p>}
+                                          {id && <p className="text-[10px] sm:text-xs text-green-600 mt-2 font-bold">Locker ID: {String(id)}</p>}
                                         </>
                                       );
                                     })()}
@@ -349,10 +349,10 @@ export function OrderDetailDialog({
                 )}
 
                 {/* Order Status Management */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-6 w-6 text-green-800" />
+                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                      <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                       Order Status
                     </CardTitle>
                   </CardHeader>
@@ -404,44 +404,44 @@ export function OrderDetailDialog({
                 </Card>
 
                 {/* Items Breakdown */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <ShoppingBag className="h-6 w-6 text-green-800" />
+                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                      <ShoppingBag className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                       Items ({order.items?.length || 0})
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {order.items?.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                            <Package className="h-6 w-6 text-muted-foreground" />
+                        <div key={idx} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 border-2 rounded-xl hover:bg-muted/50 transition-all duration-200 hover:shadow-md bg-background/60">
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-lg bg-gradient-to-br from-[#006B3E]/10 to-[#006B3E]/20 flex items-center justify-center flex-shrink-0">
+                            <Package className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             {item.productType === 'THC' ? (
                               <>
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="font-extrabold text-sm sm:text-base text-[#3D2E17] truncate">{item.name}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground font-bold">
                                   {item.quantity} FREE {item.unit}{item.quantity > 1 ? 's' : ''} {item.originalName}
                                 </p>
                               </>
                             ) : (
                               <>
-                                <p className="font-medium truncate">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="font-extrabold text-sm sm:text-base text-[#3D2E17] truncate">{item.name}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground font-bold">
                                   Qty: {item.quantity} × {formatCurrency(item.price)}
                                 </p>
                               </>
                             )}
                             {item.dispensaryName && (
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] sm:text-xs text-muted-foreground font-bold">
                                 From: {item.dispensaryName}
                               </p>
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(item.price * item.quantity)}</p>
+                            <p className="font-extrabold text-sm sm:text-base md:text-lg text-[#006B3E]">{formatCurrency(item.price * item.quantity)}</p>
                           </div>
                         </div>
                       ))}
@@ -450,30 +450,30 @@ export function OrderDetailDialog({
                 </Card>
 
                 {/* Shipping Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Truck className="h-6 w-6 text-green-800" />
+                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                      <Truck className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                       Shipping Information
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-3 sm:space-y-4">
                     {/* Shipping Method */}
                     {Object.values(order.shipments || {}).map((shipment, idx) => (
-                      <div key={idx} className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-                        <p className="text-xs text-muted-foreground mb-2">Shipment {idx + 1}</p>
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                            <Truck className="h-6 w-6 text-green-800" />
+                      <div key={idx} className="p-3 sm:p-4 bg-gradient-to-r from-[#006B3E]/10 to-[#006B3E]/5 rounded-xl border-2 border-[#006B3E]/20 shadow-md">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-2 font-bold">Shipment {idx + 1}</p>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-[#006B3E]/20 flex items-center justify-center flex-shrink-0">
+                            <Truck className="h-5 w-5 sm:h-7 sm:w-7 text-[#006B3E]" />
                           </div>
-                          <div className="flex-1">
-                            <p className="font-semibold">{shipment.shippingMethod?.courier_name || shipment.shippingMethod?.name}</p>
-                            <p className="text-xs text-muted-foreground">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-extrabold text-sm sm:text-base text-[#3D2E17] truncate">{shipment.shippingMethod?.courier_name || shipment.shippingMethod?.name}</p>
+                            <p className="text-[10px] sm:text-xs text-muted-foreground font-bold">
                               {shipment.shippingMethod?.delivery_time || 'Standard delivery'}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold">{formatCurrency(shipment.shippingMethod?.rate || 0)}</p>
+                            <p className="font-extrabold text-base sm:text-lg text-[#006B3E]">{formatCurrency(shipment.shippingMethod?.rate || 0)}</p>
                           </div>
                         </div>
                       </div>
@@ -481,18 +481,18 @@ export function OrderDetailDialog({
 
                     {/* Delivery Address */}
                     <div className="space-y-2">
-                      <p className="text-sm font-medium">Delivery Address</p>
-                      <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                        <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                        <div className="text-sm">
-                          <p className="font-medium">{order.shippingAddress.streetAddress}</p>
-                          <p className="text-muted-foreground">{order.shippingAddress.suburb}</p>
-                          <p className="text-muted-foreground">
+                      <p className="text-xs sm:text-sm font-extrabold text-[#3D2E17]">Delivery Address</p>
+                      <div className="flex items-start gap-2 sm:gap-3 p-3 sm:p-4 bg-background/60 rounded-xl border-2 border-border/30">
+                        <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-[#006B3E] shrink-0 mt-0.5" />
+                        <div className="text-xs sm:text-sm min-w-0 flex-1">
+                          <p className="font-extrabold text-[#3D2E17]">{order.shippingAddress.streetAddress}</p>
+                          <p className="text-muted-foreground font-bold">{order.shippingAddress.suburb}</p>
+                          <p className="text-muted-foreground font-bold">
                             {order.shippingAddress.city}, {order.shippingAddress.province}
                           </p>
-                          <p className="text-muted-foreground">{order.shippingAddress.postalCode}</p>
+                          <p className="text-muted-foreground font-bold">{order.shippingAddress.postalCode}</p>
                           {order.shippingAddress.country && (
-                            <p className="text-muted-foreground">{order.shippingAddress.country}</p>
+                            <p className="text-muted-foreground font-bold">{order.shippingAddress.country}</p>
                           )}
                         </div>
                       </div>
@@ -501,33 +501,33 @@ export function OrderDetailDialog({
                 </Card>
 
                 {/* Order Summary */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-6 w-6 text-green-800" />
+                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                      <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
                       Order Summary
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm py-2">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span className="font-medium">{formatCurrency(order.subtotal)}</span>
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex justify-between text-xs sm:text-sm py-2 px-3 bg-background/60 rounded-lg">
+                        <span className="text-muted-foreground font-bold">Subtotal</span>
+                        <span className="font-extrabold text-[#3D2E17]">{formatCurrency(order.subtotal)}</span>
                       </div>
-                      <div className="flex justify-between text-sm py-2">
-                        <span className="text-muted-foreground">Shipping Cost</span>
-                        <span className="font-medium">{formatCurrency(order.shippingTotal || order.shippingCost || 0)}</span>
+                      <div className="flex justify-between text-xs sm:text-sm py-2 px-3 bg-background/60 rounded-lg">
+                        <span className="text-muted-foreground font-bold">Shipping Cost</span>
+                        <span className="font-extrabold text-[#3D2E17]">{formatCurrency(order.shippingTotal || order.shippingCost || 0)}</span>
                       </div>
                       {(order as any).tax && (order as any).tax > 0 && (
-                        <div className="flex justify-between text-sm py-2">
-                          <span className="text-muted-foreground">Tax</span>
-                          <span className="font-medium">{formatCurrency((order as any).tax)}</span>
+                        <div className="flex justify-between text-xs sm:text-sm py-2 px-3 bg-background/60 rounded-lg">
+                          <span className="text-muted-foreground font-bold">Tax</span>
+                          <span className="font-extrabold text-[#3D2E17]">{formatCurrency((order as any).tax)}</span>
                         </div>
                       )}
                       <Separator />
-                      <div className="flex justify-between font-bold text-lg py-2">
-                        <span>Total</span>
-                        <span className="text-primary">{formatCurrency(order.total)}</span>
+                      <div className="flex justify-between font-extrabold text-base sm:text-lg md:text-xl py-3 px-4 bg-gradient-to-r from-[#006B3E]/10 to-[#006B3E]/5 rounded-xl border-2 border-[#006B3E]/20">
+                        <span className="text-[#3D2E17]">Total</span>
+                        <span className="text-[#006B3E]">{formatCurrency(order.total)}</span>
                       </div>
                     </div>
                   </CardContent>

@@ -328,30 +328,32 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen"> 
-      <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm">
+    <div className="flex min-h-screen w-full overflow-x-hidden"> 
+      <aside className="hidden md:flex md:flex-col w-64 border-r bg-background shadow-sm flex-shrink-0">
           <SidebarNavigation />
       </aside>
       
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-          <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> 
+          <div className="flex flex-1 flex-col min-w-0">
+          <header className="sticky top-0 z-30 flex h-14 items-center gap-2 sm:gap-4 border-b bg-background/80 px-3 sm:px-4 backdrop-blur-sm sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 md:hidden"> 
               <SheetTrigger asChild>
-                  <Button size="icon" variant="outline" className="md:hidden">
+                  <Button size="icon" variant="outline" className="md:hidden flex-shrink-0">
                       <Menu className="h-5 w-5" />
                       <span className="sr-only">Toggle Menu</span>
                   </Button>
               </SheetTrigger>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                   <h1 
-                      className="text-lg font-semibold text-foreground truncate"
+                      className="text-sm sm:text-lg font-semibold text-foreground truncate"
                       style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
                   >
                       {currentDispensary.dispensaryName}
                   </h1>
               </div>
               {/* Notification Bell - Mobile */}
-              <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+              <div className="flex-shrink-0">
+                <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
+              </div>
           </header>
           
           {/* Desktop Top Bar with Notifications */}

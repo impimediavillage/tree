@@ -231,15 +231,15 @@ export default function CreatorLabPage() {
 
         {/* Dynamic ADD NEW Button */}
         {selectedCategory && (
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-6 sm:mb-8 px-4">
             <Button
               onClick={handleAddNew}
               size="lg"
-              className="h-20 px-12 bg-[#006B3E] hover:bg-[#005230] text-white font-extrabold text-xl shadow-lg"
+              className="h-14 sm:h-20 px-6 sm:px-12 bg-[#006B3E] hover:bg-[#005230] text-white font-extrabold text-base sm:text-xl shadow-lg w-full max-w-md sm:w-auto"
             >
-              <Wand2 className="h-8 w-8 mr-3" />
-              <Plus className="h-8 w-8 mr-2" />
-              ADD NEW
+              <Wand2 className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3" />
+              <Plus className="h-6 w-6 sm:h-8 sm:w-8 mr-1 sm:mr-2" />
+              <span className="truncate">ADD NEW</span>
             </Button>
           </div>
         )}
