@@ -215,7 +215,17 @@ export interface ProductRequest {
     weightKgs?: number;
   };
   preferredDeliveryDate?: string | null;
-  deliveryAddress: string;
+  deliveryAddress: string | {
+    address: string;
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  };
   destinationLocker?: PUDOLocker | null;
   contactPerson: string;
   contactPhone: string;

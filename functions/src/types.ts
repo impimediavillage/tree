@@ -194,7 +194,17 @@ export interface ProductRequest {
 
   quantityRequested: number;
   preferredDeliveryDate?: string | null;
-  deliveryAddress: string;
+  deliveryAddress: string | {
+    address: string;
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  };
   contactPerson: string;
   contactPhone: string;
 

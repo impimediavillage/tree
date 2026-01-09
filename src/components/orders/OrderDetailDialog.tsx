@@ -179,11 +179,11 @@ export function OrderDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-3 sm:p-4 md:p-6">
         <DialogHeader className="pb-2 sm:pb-3">
-          <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl font-extrabold text-[#3D2E17]">
+          <DialogTitle className="flex items-center gap-2 sm:gap-3 pr-10 sm:pr-12 text-lg sm:text-xl md:text-2xl font-extrabold text-[#3D2E17]">
             <PackageCheck className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-[#006B3E] flex-shrink-0" />
-            <span className="truncate">Order #{order.orderNumber}</span>
+            <span className="flex-1 min-w-0 truncate">Order #{order.orderNumber}</span>
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
+          <DialogDescription className="text-xs sm:text-sm pr-10 sm:pr-12">
             Placed on {orderDate}
           </DialogDescription>
         </DialogHeader>
@@ -200,6 +200,61 @@ export function OrderDetailDialog({
           <TabsContent value="details" className="flex-1 mt-3 sm:mt-4 overflow-hidden">
             <ScrollArea className="h-[calc(95vh-180px)] sm:h-[calc(90vh-180px)]">
               <div className="space-y-3 sm:space-y-4 pr-2 sm:pr-4">
+                {/* Order Status Management */}
+                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
+                      <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
+                      Order Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isDispensaryView ? (
+                      <OrderStatusManagement
+                        order={order}
+                        onUpdateStatus={onUpdateStatus}
+                      />
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                          <span className="font-medium">Current Status:</span>
+                          <Badge 
+                            variant={
+                              order.status === 'delivered' ? 'default' :
+                              order.status === 'cancelled' ? 'destructive' :
+                              'secondary'
+                            }
+                            className="text-sm font-semibold"
+                          >
+                            {order.status.replace(/_/g, ' ').toUpperCase()}
+                          </Badge>
+                        </div>
+                        {(() => {
+                          // Get status history from shipment if available, otherwise from order
+                          const shipment = Object.values(order.shipments || {})[0];
+                          const statusHistory = shipment?.statusHistory || order.statusHistory || [];
+                          
+                          return statusHistory.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-muted-foreground">Status History:</p>
+                              <div className="space-y-2">
+                                {statusHistory.slice().reverse().map((history, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                                    <span className="capitalize">{history.status.replace(/_/g, ' ')}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {history.timestamp?.toDate().toLocaleString()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {/* Order Information */}
                 <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
                   <CardHeader className="pb-3">
@@ -347,61 +402,6 @@ export function OrderDetailDialog({
                     </CardContent>
                   </Card>
                 )}
-
-                {/* Order Status Management */}
-                <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-lg md:text-xl font-extrabold text-[#3D2E17]">
-                      <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-[#006B3E]" />
-                      Order Status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isDispensaryView ? (
-                      <OrderStatusManagement
-                        order={order}
-                        onUpdateStatus={onUpdateStatus}
-                      />
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                          <span className="font-medium">Current Status:</span>
-                          <Badge 
-                            variant={
-                              order.status === 'delivered' ? 'default' :
-                              order.status === 'cancelled' ? 'destructive' :
-                              'secondary'
-                            }
-                            className="text-sm font-semibold"
-                          >
-                            {order.status.replace(/_/g, ' ').toUpperCase()}
-                          </Badge>
-                        </div>
-                        {(() => {
-                          // Get status history from shipment if available, otherwise from order
-                          const shipment = Object.values(order.shipments || {})[0];
-                          const statusHistory = shipment?.statusHistory || order.statusHistory || [];
-                          
-                          return statusHistory.length > 0 && (
-                            <div className="space-y-2">
-                              <p className="text-sm font-medium text-muted-foreground">Status History:</p>
-                              <div className="space-y-2">
-                                {statusHistory.slice().reverse().map((history, idx) => (
-                                  <div key={idx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
-                                    <span className="capitalize">{history.status.replace(/_/g, ' ')}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {history.timestamp?.toDate().toLocaleString()}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
 
                 {/* Items Breakdown */}
                 <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">

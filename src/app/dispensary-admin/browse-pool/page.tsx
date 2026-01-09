@@ -196,9 +196,9 @@ export default function BrowsePoolPage() {
 
   return (
     <>
-      <div className="space-y-6 p-8">
+      <div className="space-y-6 p-3 sm:p-4 md:p-6 lg:p-8">
         {/* Header */}
-        <div className="p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
+        <div className="p-4 sm:p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-extrabold text-[#3D2E17]">Browse Product Pool</h1>

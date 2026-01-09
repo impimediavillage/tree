@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { db } from '@/lib/firebase';
@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Loader } from '@googlemaps/js-api-loader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,7 +26,17 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const requestFormSchema = z.object({
   quantityRequested: z.number().int().positive('Quantity must be at least 1'),
   preferredDeliveryDate: z.string().optional(),
-  deliveryAddress: z.string().min(5, 'Delivery address is required'),
+  deliveryAddress: z.object({
+    address: z.string().min(5, 'A full address is required. Please select one from the map.'),
+    streetAddress: z.string().min(5, 'A valid street address is required.'),
+    suburb: z.string().min(2, 'A valid suburb is required.'),
+    city: z.string().min(2, 'A valid city is required.'),
+    province: z.string().min(2, 'A valid province is required.'),
+    postalCode: z.string().min(4, 'A valid postal code is required.'),
+    country: z.string().min(2, 'A valid country is required.'),
+    latitude: z.number().refine(val => val !== 0, "Please select an address from the map."),
+    longitude: z.number().refine(val => val !== 0, "Please select an address from the map."),
+  }),
   contactPerson: z.string().min(2, 'Contact person name is required'),
   contactPhone: z.string().min(10, 'Valid contact phone number is required'),
   additionalNotes: z.string().optional(),
@@ -49,18 +60,135 @@ function BrowsePoolRequestPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingRequest, setExistingRequest] = useState<ProductRequest | null>(null);
+  
+  const locationInputRef = useRef<HTMLInputElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInitialized = useRef(false);
 
   const form = useForm<RequestFormData>({
     resolver: zodResolver(requestFormSchema),
     defaultValues: {
       quantityRequested: 1,
       preferredDeliveryDate: '',
-      deliveryAddress: `${currentDispensary?.streetAddress || ''}, ${currentDispensary?.suburb || ''}, ${currentDispensary?.city || ''}, ${currentDispensary?.province || ''}`.trim().replace(/,\s*,/g, ',').replace(/^,\s*/, '').replace(/,\s*$/, ''),
+      deliveryAddress: {
+        address: '',
+        streetAddress: currentDispensary?.streetAddress || '',
+        suburb: currentDispensary?.suburb || '',
+        city: currentDispensary?.city || '',
+        province: currentDispensary?.province || '',
+        postalCode: currentDispensary?.postalCode || '',
+        country: currentDispensary?.country || 'South Africa',
+        latitude: 0,
+        longitude: 0,
+      },
       contactPerson: currentUser?.displayName || '',
       contactPhone: currentDispensary?.phone || '',
       additionalNotes: '',
     },
   });
+
+  const initializeMap = useCallback(async () => {
+    if (mapInitialized.current || !mapContainerRef.current || !locationInputRef.current) return;
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.error("Google Maps API key is missing.");
+      toast({ title: "Map Error", description: "Google Maps API key is not configured.", variant: "destructive" });
+      return;
+    }
+    mapInitialized.current = true;
+
+    try {
+      const loader = new Loader({ apiKey: apiKey, version: 'weekly', libraries: ['places', 'geocoding'] });
+      const google = await loader.load();
+      const initialPosition = { lat: -29.8587, lng: 31.0218 }; // South Africa center
+      
+      const mapInstance = new google.maps.Map(mapContainerRef.current!, {
+        center: initialPosition,
+        zoom: 5,
+        mapId: 'b39f3f8b7139051d',
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+
+      const markerInstance = new google.maps.Marker({ 
+        map: mapInstance, 
+        position: initialPosition, 
+        draggable: true, 
+        title: 'Drag to set delivery location' 
+      });
+
+      const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string, useShortName = false): string =>
+        components.find(c => c.types.includes(type))?.[useShortName ? 'short_name' : 'long_name'] || '';
+
+      const setAddressFields = (place: google.maps.places.PlaceResult | google.maps.GeocoderResult) => {
+        const components = place.address_components;
+        if (!components) return;
+        
+        const formattedAddress = place.formatted_address;
+        if (formattedAddress) {
+          form.setValue('deliveryAddress.address', formattedAddress, { shouldValidate: true, shouldDirty: true });
+        }
+
+        const streetNumber = getAddressComponent(components, 'street_number');
+        const route = getAddressComponent(components, 'route');
+        
+        form.setValue('deliveryAddress.streetAddress', `${streetNumber} ${route}`.trim(), { shouldValidate: true, shouldDirty: true });
+        form.setValue('deliveryAddress.suburb', getAddressComponent(components, 'locality'), { shouldValidate: true, shouldDirty: true });
+        form.setValue('deliveryAddress.city', getAddressComponent(components, 'administrative_area_level_2'), { shouldValidate: true, shouldDirty: true });
+        form.setValue('deliveryAddress.province', getAddressComponent(components, 'administrative_area_level_1'), { shouldValidate: true, shouldDirty: true });
+        form.setValue('deliveryAddress.postalCode', getAddressComponent(components, 'postal_code'), { shouldValidate: true, shouldDirty: true });
+        form.setValue('deliveryAddress.country', getAddressComponent(components, 'country'), { shouldValidate: true, shouldDirty: true });
+      };
+      
+      const autocomplete = new google.maps.places.Autocomplete(locationInputRef.current!, {
+        fields: ['formatted_address', 'address_components', 'geometry.location'],
+        types: ['address'],
+        componentRestrictions: { country: 'za' }, // Prioritize South Africa
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry?.location) {
+          const loc = place.geometry.location;
+          mapInstance.setCenter(loc);
+          mapInstance.setZoom(17);
+          markerInstance.setPosition(loc);
+          form.setValue('deliveryAddress.latitude', loc.lat(), { shouldValidate: true });
+          form.setValue('deliveryAddress.longitude', loc.lng(), { shouldValidate: true });
+          setAddressFields(place);
+        }
+      });
+
+      const geocoder = new google.maps.Geocoder();
+      const handleMapInteraction = (latLng: google.maps.LatLng) => {
+        markerInstance.setPosition(latLng);
+        mapInstance.panTo(latLng);
+        form.setValue('deliveryAddress.latitude', latLng.lat(), { shouldValidate: true, shouldDirty: true });
+        form.setValue('deliveryAddress.longitude', latLng.lng(), { shouldValidate: true, shouldDirty: true });
+        geocoder.geocode({ location: latLng }, (results, status) => {
+          if (status === 'OK' && results?.[0]) {
+            if(locationInputRef.current) locationInputRef.current.value = results[0].formatted_address || '';
+            setAddressFields(results[0]);
+          }
+        });
+      };
+      
+      markerInstance.addListener('dragend', () => handleMapInteraction(markerInstance.getPosition()!));
+      mapInstance.addListener('click', (e: google.maps.MapMouseEvent) => e.latLng && handleMapInteraction(e.latLng));
+
+    } catch (err) {
+      console.error('Google Maps API Error:', err);
+      toast({ title: 'Map Error', description: 'Could not load Google Maps.', variant: 'destructive' });
+    }
+  }, [form, toast]);
+
+  useEffect(() => {
+    if (mapContainerRef.current && !mapInitialized.current && !authLoading) {
+      initializeMap();
+    }
+  }, [initializeMap, authLoading]);
 
   const fetchProductAndCheckExisting = useCallback(async () => {
     if (!productId || !collectionName || !currentUser?.dispensaryId || authLoading) {
@@ -484,20 +612,150 @@ function BrowsePoolRequestPageContent() {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="deliveryAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Address *</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} rows={3} />
-                      </FormControl>
-                      <FormDescription>Full address where the product should be delivered</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Delivery Address Section with Google Places */}
+                <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                  <h4 className="text-lg font-extrabold text-[#3D2E17]">Delivery Address *</h4>
+                  
+                  <FormItem>
+                    <FormLabel>Location Search</FormLabel>
+                    <FormControl>
+                      <Input 
+                        ref={locationInputRef} 
+                        placeholder="Start typing an address to search..." 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Select an address to auto-fill the fields below. You can also click the map or drag the pin.
+                    </FormDescription>
+                  </FormItem>
+
+                  <div ref={mapContainerRef} className="h-[250px] w-full rounded-md border bg-muted" />
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress.streetAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Street Address</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Auto-filled from map" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress.suburb"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Suburb</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Auto-filled from map" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress.city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Auto-filled from map" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress.province"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Province</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Auto-filled from map" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress.postalCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Postal Code</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Auto-filled from map" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress.country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Auto-filled from map" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Hidden fields for latitude and longitude */}
+                  <FormField
+                    control={form.control}
+                    name="deliveryAddress.latitude"
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input type="hidden" {...field} value={field.value} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="deliveryAddress.longitude"
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input type="hidden" {...field} value={field.value} onChange={(e) => field.onChange(parseFloat(e.target.value))} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="deliveryAddress.address"
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormControl>
+                          <Input type="hidden" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

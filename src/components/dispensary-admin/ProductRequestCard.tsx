@@ -112,12 +112,12 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                 // Buyer info (for shipping to)
                 buyerDispensaryAddress: {
                     name: buyerDispensary.name || '',
-                    streetAddress: buyerDispensary.address || request.deliveryAddress || '',
-                    city: buyerDispensary.city || '',
-                    province: buyerDispensary.province || '',
-                    postalCode: buyerDispensary.postalCode || '',
-                    latitude: buyerDispensary.latitude,
-                    longitude: buyerDispensary.longitude,
+                    streetAddress: buyerDispensary.address || (typeof request.deliveryAddress === 'string' ? request.deliveryAddress : request.deliveryAddress.streetAddress) || '',
+                    city: buyerDispensary.city || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.city : ''),
+                    province: buyerDispensary.province || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.province : ''),
+                    postalCode: buyerDispensary.postalCode || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.postalCode : ''),
+                    latitude: buyerDispensary.latitude || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.latitude : 0),
+                    longitude: buyerDispensary.longitude || (typeof request.deliveryAddress === 'object' ? request.deliveryAddress.longitude : 0),
                     contactName: request.contactPerson || buyerDispensary.contactPerson || '',
                     contactPhone: request.contactPhone || buyerDispensary.phone || '',
                     contactEmail: buyerDispensary.email || '',
@@ -256,7 +256,7 @@ const ManageRequestDialog = ({ request, type, onUpdate }: { request: ProductRequ
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                 <div className="space-y-1"><p className="text-muted-foreground">Quantity Requested</p><p className="font-semibold">{request.quantityRequested} x {request.requestedTier?.unit || 'unit'}</p></div>
                                 <div className="space-y-1"><p className="text-muted-foreground">Est. Value</p><p className="font-semibold">{request.productDetails?.currency} {(request.quantityRequested * (request.requestedTier?.price || 0)).toFixed(2)}</p></div>
-                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{request.deliveryAddress}</p></div>
+                                <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><MapPin className="h-4 w-4"/>Delivery Address</p><p>{typeof request.deliveryAddress === 'string' ? request.deliveryAddress : `${request.deliveryAddress.streetAddress}, ${request.deliveryAddress.suburb}, ${request.deliveryAddress.city}, ${request.deliveryAddress.province}, ${request.deliveryAddress.postalCode}`}</p></div>
                                 <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><User className="h-4 w-4"/>Contact Person</p><p>{request.contactPerson}</p></div>
                                 <div className="space-y-1"><p className="text-muted-foreground flex items-center gap-1"><Phone className="h-4 w-4"/>Contact Phone</p><p>{request.contactPhone}</p></div>
                                 
