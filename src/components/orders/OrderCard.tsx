@@ -6,6 +6,10 @@ import type { Order, OrderItem, OrderStatus } from "@/types/order";
 import type { OrderShipment, ShippingStatus } from "@/types/shipping";
 import { formatCurrency } from "@/lib/utils";
 import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag, Star } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import type { Dispensary } from '@/types';
 
 // Helper to safely get locker properties
 const getLockerProp = (locker: any, prop: string): string | null => {
@@ -72,15 +76,48 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience }: OrderCardProps) {
-  console.log('Rendering OrderCard with order:', {
-    id: order.id,
-    orderNumber: order.orderNumber,
-    status: order.status,
-    hasShipments: !!order.shipments,
-    shipmentKeys: Object.keys(order.shipments || {}),
-    hasCustomerDetails: !!order.customerDetails,
-    customerDetails: order.customerDetails
-  });
+  const [dispensaries, setDispensaries] = useState<Record<string, { name: string; type: string; storeImage?: string | null; storeIcon?: string | null; }>>({});
+  const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(true);
+
+  // Fetch dispensary details for all shipments in this order
+  useEffect(() => {
+    const fetchDispensaries = async () => {
+      const dispensaryIds = Object.keys(order.shipments || {});
+      if (dispensaryIds.length === 0) {
+        setIsLoadingDispensaries(false);
+        return;
+      }
+
+      const dispensaryData: Record<string, any> = {};
+      
+      await Promise.all(
+        dispensaryIds.map(async (dispensaryId) => {
+          try {
+            const dispensaryRef = doc(db, 'dispensaries', dispensaryId);
+            const dispensarySnap = await getDoc(dispensaryRef);
+            
+            if (dispensarySnap.exists()) {
+              const data = dispensarySnap.data() as Dispensary;
+              dispensaryData[dispensaryId] = {
+                name: data.dispensaryName || 'Unknown Dispensary',
+                type: data.dispensaryType || 'general',
+                storeImage: data.storeImage || null,
+                storeIcon: data.storeIcon || null,
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching dispensary ${dispensaryId}:`, error);
+          }
+        })
+      );
+
+      setDispensaries(dispensaryData);
+      setIsLoadingDispensaries(false);
+    };
+
+    fetchDispensaries();
+  }, [order.id, order.shipments]);
+
   // Count total items across all shipments
   const totalItems = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
   
@@ -178,6 +215,32 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             </div>
           </div>
         )}
+
+        {/* Dispensary Info */}
+        {!isLoadingDispensaries && Object.keys(dispensaries).map((dispensaryId) => {
+          const dispData = dispensaries[dispensaryId];
+          if (!dispData) return null;
+
+          const logoUrl = dispData.storeIcon || dispData.storeImage;
+          const dispensaryName = dispData.name;
+          const dispensaryType = dispData.type;
+          
+          return (
+            <div key={dispensaryId} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-lg border-2 border-green-200 dark:border-green-800 shadow-sm">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center flex-shrink-0 shadow-md border-2 border-green-300 dark:border-green-700 overflow-hidden">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={dispensaryName} className="h-full w-full object-cover" />
+                ) : (
+                  <Package2 className="h-5 w-5 sm:h-7 sm:w-7 text-[#006B3E]" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] sm:text-xs font-bold text-green-700 dark:text-green-400 uppercase tracking-wide">{dispensaryType} Dispensary</p>
+                <p className="text-xs sm:text-sm font-extrabold text-[#3D2E17] dark:text-white truncate">{dispensaryName}</p>
+              </div>
+            </div>
+          );
+        })}
 
         {/* Product Details */}
         <div className="space-y-2 sm:space-y-3">

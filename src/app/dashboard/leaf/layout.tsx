@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { DollarSign, History, LayoutDashboard, UserCircle, Menu, X, LogOut, Settings, Package, Brain, Sparkles, Loader2, AlertTriangle, UserCheck, BarChart3, Video, Calendar } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,14 @@ export default function LeafDashboardLayout({
   const SidebarContentLayout = () => (
     <>
       <div className="p-3 border-b">
-        <h2 className="text-lg sm:text-xl font-semibold text-primary px-1">Leaf Dashboard</h2>
+        <Link href="/dashboard/leaf" className="flex items-center gap-3 px-1 hover:opacity-80 transition-opacity">
+          <img 
+            src="/logo.svg" 
+            alt="The Wellness Tree" 
+            className="h-8 w-8 object-contain flex-shrink-0"
+          />
+          <h2 className="text-lg sm:text-xl font-semibold text-primary">Leaf Dashboard</h2>
+        </Link>
       </div>
       <div className="flex-grow overflow-y-auto p-2 space-y-1">
         <nav className="flex flex-col space-y-1">
@@ -181,10 +189,21 @@ export default function LeafDashboardLayout({
       <header className="md:hidden sticky top-0 z-40 flex items-center justify-between p-3 border-b bg-card text-card-foreground shadow-sm">
         <Link 
           href="/dashboard/leaf" 
-          className="text-lg font-semibold text-foreground"
-          style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          className="flex items-center gap-2"
         >
-          Leaf Dashboard
+          <Image 
+            src="/images/the-leaf-logo.png" 
+            alt="The Wellness Tree" 
+            width={32}
+            height={32}
+            className="rounded-lg object-contain"
+          />
+          <span 
+            className="text-lg font-semibold text-foreground"
+            style={{ textShadow: '0 0 8px #fff, 0 0 15px #fff, 0 0 20px #fff' }}
+          >
+            Leaf Dashboard
+          </span>
         </Link>
         <div className="flex items-center gap-2">
           <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
@@ -212,7 +231,15 @@ export default function LeafDashboardLayout({
       
       <div className="flex-1 flex flex-col">
         {/* Desktop Top Bar with Notifications */}
-        <div className="hidden md:flex items-center justify-end gap-4 border-b bg-background px-6 py-3">
+        <div className="hidden md:flex items-center justify-between gap-4 border-b bg-background px-6 py-3">
+          <Link href="/dashboard/leaf" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <img 
+              src="/logo.svg" 
+              alt="The Wellness Tree" 
+              className="h-10 w-10 object-contain"
+            />
+            <h1 className="text-2xl font-extrabold text-[#3D2E17]">Leaf Dashboard</h1>
+          </Link>
           <NotificationBell onOpenCenter={() => setShowNotificationCenter(true)} />
         </div>
         
