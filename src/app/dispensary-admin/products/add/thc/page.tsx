@@ -814,6 +814,7 @@ export default function AddTHCProductPage() {
                             </Button>
                         </CardFooter>
                     </div>
+                </div>
                   </CardContent>
                 </Card>
             )}
