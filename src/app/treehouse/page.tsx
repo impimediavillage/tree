@@ -38,7 +38,39 @@ export default function TreehousePage() {
         ...doc.data(),
       })) as CreatorStore[];
 
-      setStores(storesData);
+      // Fetch actual product counts for each store (real-time data)
+      const storesWithRealStats = await Promise.all(
+        storesData.map(async (store) => {
+          try {
+            // Query all products for this creator
+            const productsQuery = query(
+              collection(db, 'treehouseProducts'),
+              where('creatorId', '==', store.ownerId),
+              where('isActive', '==', true)
+            );
+            const productsSnapshot = await getDocs(productsQuery);
+            const products = productsSnapshot.docs.map(doc => doc.data());
+            
+            // Calculate actual stats from products
+            const actualStats = {
+              totalProducts: products.length,
+              totalSales: products.reduce((sum, p: any) => sum + (p.salesCount || 0), 0),
+              totalRevenue: products.reduce((sum, p: any) => sum + (p.totalRevenue || 0), 0),
+            };
+            
+            return {
+              ...store,
+              stats: actualStats,
+            };
+          } catch (error) {
+            console.error(`Error loading stats for store ${store.id}:`, error);
+            // Return store with default stats if error
+            return store;
+          }
+        })
+      );
+
+      setStores(storesWithRealStats);
     } catch (error) {
       console.error('Error loading stores:', error);
       toast({
