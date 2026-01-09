@@ -8,7 +8,7 @@ import { OrderStatusManagement } from "./OrderStatusManagement";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy, ExternalLink, CheckCircle2, MessageSquare, Package2, User, Phone, ShoppingBag, Package, Printer, Trash2, ArchiveRestore } from "lucide-react";
+import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy, ExternalLink, CheckCircle2, MessageSquare, Package2, User, Phone, ShoppingBag, Package, Printer, Trash2, ArchiveRestore, Info, Tag } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { updateOrderStatus } from "@/lib/orders";
@@ -286,17 +286,61 @@ export function OrderDetailDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-5 h-auto gap-1 bg-muted/50 p-1">
-            <TabsTrigger value="details" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Details</TabsTrigger>
-            <TabsTrigger value="shipments" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Ships</TabsTrigger>
-            <TabsTrigger value="shipping-label" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Labels</TabsTrigger>
-            <TabsTrigger value="notes" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Notes</TabsTrigger>
-            <TabsTrigger value="documents" className="text-[10px] sm:text-xs md:text-sm px-1 sm:px-2 py-2 font-bold data-[state=active]:bg-[#006B3E] data-[state=active]:text-white">Docs</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 gap-1 sm:gap-2 bg-transparent h-auto p-1">
+            <TabsTrigger 
+              value="details" 
+              className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+            >
+              <div className="p-2 rounded-full bg-gradient-to-br from-[#006B3E] to-[#3D2E17] text-white">
+                <Info className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-center">Details</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="shipments" 
+              className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+            >
+              <div className="p-2 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-center">Ships</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="shipping-label" 
+              className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+            >
+              <div className="p-2 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+                <Tag className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-center">Labels</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="notes" 
+              className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+            >
+              <div className="p-2 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 text-white">
+                <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-center">Notes</span>
+            </TabsTrigger>
+            
+            <TabsTrigger 
+              value="documents" 
+              className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all h-auto"
+            >
+              <div className="p-2 rounded-full bg-gradient-to-br from-red-500 to-pink-600 text-white">
+                <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-bold text-center">Docs</span>
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="details" className="flex-1 mt-3 sm:mt-4 overflow-hidden">
-            <ScrollArea className="h-[calc(95vh-180px)] sm:h-[calc(90vh-180px)]">
-              <div className="space-y-3 sm:space-y-4 pr-2 sm:pr-4">
+          <TabsContent value="details" className="flex-1 mt-3 sm:mt-4 overflow-hidden max-w-full">
+            <ScrollArea className="h-[calc(95vh-200px)] sm:h-[calc(90vh-200px)]">
+              <div className="space-y-3 sm:space-y-4 pr-2 sm:pr-4 max-w-full overflow-x-hidden">
                 {/* Order Status Management */}
                 <Card className="bg-gradient-to-br from-muted/80 to-muted/50 border-border/50 shadow-lg">
                   <CardHeader className="pb-3">
@@ -633,9 +677,9 @@ export function OrderDetailDialog({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="shipments" className="mt-4">
+          <TabsContent value="shipments" className="mt-4 max-w-full overflow-x-hidden">
             <ScrollArea className="h-[60vh]">
-              <div className="space-y-4">
+              <div className="space-y-4 max-w-full">
                 {/* Label Generation Section - Show if labels not generated yet and not in label_generated status */}
                 {isDispensaryView && Object.values(order.shipments).some(s => {
                   // Show button if no label exists AND status is not label_generated and not shipped/in-transit/delivered
@@ -675,9 +719,9 @@ export function OrderDetailDialog({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="shipping-label" className="mt-4">
+          <TabsContent value="shipping-label" className="mt-4 max-w-full overflow-x-hidden">
             <ScrollArea className="h-[60vh]">
-              <div className="space-y-4">
+              <div className="space-y-4 max-w-full">
                 {/* Generate New Label Section - Only show if not yet shipped/in-transit/delivered and not label_generated */}
                 {isDispensaryView && Object.values(order.shipments).some(s => {
                   const hasNoLabel = !s.trackingNumber || !s.labelUrl;
@@ -837,7 +881,7 @@ export function OrderDetailDialog({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="notes" className="mt-4">
+          <TabsContent value="notes" className="mt-4 max-w-full overflow-x-hidden">
             {isDispensaryView ? (
               <OrderNotes orderId={order.id} orderNumber={order.orderNumber} />
             ) : (
@@ -854,7 +898,7 @@ export function OrderDetailDialog({
             )}
           </TabsContent>
 
-          <TabsContent value="documents" className="mt-4">
+          <TabsContent value="documents" className="mt-4 max-w-full overflow-x-hidden">
             <Card>
               <CardContent className="pt-6">
                 <div className="space-y-4">
