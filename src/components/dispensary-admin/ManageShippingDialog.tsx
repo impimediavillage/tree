@@ -17,6 +17,25 @@ interface ManageShippingDialogProps {
 export function ManageShippingDialog({ isOpen, onOpenChange, order }: ManageShippingDialogProps) {
   const { toast } = useToast();
 
+  // Format delivery address for display
+  const formatDeliveryAddress = (address: string | {
+    address: string;
+    streetAddress: string;
+    suburb: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    country: string;
+  }): string => {
+    if (typeof address === 'string') {
+      return address;
+    }
+    // Format structured address
+    return `${address.streetAddress}, ${address.suburb}, ${address.city}, ${address.province}, ${address.postalCode}, ${address.country}`;
+  };
+
+  const deliveryAddressText = formatDeliveryAddress(order.deliveryAddress);
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copied to Clipboard", description: `${label} has been copied.` });
@@ -50,8 +69,8 @@ export function ManageShippingDialog({ isOpen, onOpenChange, order }: ManageShip
             <div className="space-y-1">
                 <p className="font-medium">Delivery Address:</p>
                  <div className="p-2 border rounded-md bg-muted/50 flex justify-between items-center">
-                    <p className="flex-grow">{order.deliveryAddress}</p>
-                    <Button variant="ghost" size="sm" onClick={() => copyToClipboard(order.deliveryAddress, 'Delivery Address')}>
+                    <p className="flex-grow">{deliveryAddressText}</p>
+                    <Button variant="ghost" size="sm" onClick={() => copyToClipboard(deliveryAddressText, 'Delivery Address')}>
                         <ClipboardCopy className="h-4 w-4" />
                     </Button>
                 </div>
