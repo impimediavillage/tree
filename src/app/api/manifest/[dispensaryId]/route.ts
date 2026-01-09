@@ -3,10 +3,10 @@ import { db } from '@/lib/firebase';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { dispensaryId: string } }
+  { params }: { params: Promise<{ dispensaryId: string }> }
 ) {
   try {
-    const { dispensaryId } = params;
+    const { dispensaryId } = await params;
 
     if (!dispensaryId) {
       return NextResponse.json(
