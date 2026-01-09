@@ -324,6 +324,10 @@ export function subscribeToNotifications(
     limit(options.limit || 50)
   );
   
+  let isInitialLoad = true;
+  const now = Date.now();
+  const recentThreshold = 5000; // Only treat notifications from last 5 seconds as "new"
+  
   return onSnapshot(q, (snapshot) => {
     snapshot.docChanges().forEach((change) => {
       if (change.type === 'added') {
@@ -331,9 +335,24 @@ export function subscribeToNotifications(
           id: change.doc.id,
           ...change.doc.data(),
         } as Notification;
-        onNotification(notification);
+        
+        // Check if notification is truly new (created recently)
+        const createdAt = notification.createdAt instanceof Timestamp 
+          ? notification.createdAt.toMillis() 
+          : Date.now();
+        
+        const isRecentNotification = (now - createdAt) < recentThreshold;
+        
+        // Only call onNotification for truly new items (not initial load backlog)
+        // OR if it's recent enough to be considered "new"
+        if (!isInitialLoad || isRecentNotification) {
+          onNotification(notification);
+        }
       }
     });
+    
+    // After first snapshot, all subsequent changes are real-time updates
+    isInitialLoad = false;
   });
 }
 

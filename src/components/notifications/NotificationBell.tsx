@@ -108,6 +108,33 @@ export function NotificationBell({ onOpenCenter }: NotificationBellProps) {
     }
   };
 
+  const getNotificationGradient = (type: string, isRead: boolean) => {
+    if (isRead) {
+      return 'bg-white/30 hover:bg-white/60';
+    }
+    
+    switch (type) {
+      case 'order':
+        return 'bg-gradient-to-r from-emerald-50/80 via-green-50/60 to-lime-50/40 hover:from-emerald-50 hover:via-green-50 hover:to-lime-50 border-l-4 border-emerald-500';
+      case 'payment':
+        return 'bg-gradient-to-r from-blue-50/80 via-cyan-50/60 to-sky-50/40 hover:from-blue-50 hover:via-cyan-50 hover:to-sky-50 border-l-4 border-blue-500';
+      case 'shipment':
+        return 'bg-gradient-to-r from-purple-50/80 via-violet-50/60 to-indigo-50/40 hover:from-purple-50 hover:via-violet-50 hover:to-indigo-50 border-l-4 border-purple-500';
+      case 'achievement':
+        return 'bg-gradient-to-r from-yellow-50/80 via-amber-50/60 to-orange-50/40 hover:from-yellow-50 hover:via-amber-50 hover:to-orange-50 border-l-4 border-yellow-500';
+      case 'product':
+        return 'bg-gradient-to-r from-teal-50/80 via-cyan-50/60 to-blue-50/40 hover:from-teal-50 hover:via-cyan-50 hover:to-blue-50 border-l-4 border-teal-500';
+      case 'influencer':
+        return 'bg-gradient-to-r from-pink-50/80 via-rose-50/60 to-red-50/40 hover:from-pink-50 hover:via-rose-50 hover:to-red-50 border-l-4 border-pink-500';
+      case 'treehouse':
+        return 'bg-gradient-to-r from-fuchsia-50/80 via-purple-50/60 to-violet-50/40 hover:from-fuchsia-50 hover:via-purple-50 hover:to-violet-50 border-l-4 border-fuchsia-500';
+      case 'system':
+        return 'bg-gradient-to-r from-gray-50/80 via-slate-50/60 to-zinc-50/40 hover:from-gray-50 hover:via-slate-50 hover:to-zinc-50 border-l-4 border-gray-500';
+      default:
+        return 'bg-gradient-to-r from-blue-50/80 via-green-50/50 to-yellow-50/30 hover:from-blue-50 hover:via-green-50 hover:to-yellow-50 border-l-4 border-[#006B3E]';
+    }
+  };
+
   if (!currentUser) return null;
 
   return (
@@ -228,11 +255,7 @@ export function NotificationBell({ onOpenCenter }: NotificationBellProps) {
                   whileHover={{ scale: 1.02, x: 4 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`w-full p-4 text-left transition-all duration-200 ${
-                    !notification.read 
-                      ? 'bg-gradient-to-r from-blue-50/80 via-green-50/50 to-yellow-50/30 hover:from-blue-50 hover:via-green-50 hover:to-yellow-50 border-l-4 border-[#006B3E]' 
-                      : 'bg-white/30 hover:bg-white/60'
-                  }`}
+                  className={`w-full p-4 text-left transition-all duration-200 ${getNotificationGradient(notification.type, notification.read)}`}
                 >
                   <div className="flex gap-3">
                     <div className="flex-shrink-0 text-3xl">

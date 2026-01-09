@@ -128,6 +128,33 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
     }
   };
 
+  const getNotificationGradient = (type: string, isRead: boolean) => {
+    if (isRead) {
+      return 'bg-white/60 border border-[#3D2E17]/10 hover:bg-white/80 hover:shadow-md';
+    }
+    
+    switch (type) {
+      case 'order':
+        return 'bg-gradient-to-r from-emerald-50/90 via-green-50/80 to-lime-50/70 border-2 border-emerald-400 shadow-lg hover:shadow-xl';
+      case 'payment':
+        return 'bg-gradient-to-r from-blue-50/90 via-cyan-50/80 to-sky-50/70 border-2 border-blue-400 shadow-lg hover:shadow-xl';
+      case 'shipment':
+        return 'bg-gradient-to-r from-purple-50/90 via-violet-50/80 to-indigo-50/70 border-2 border-purple-400 shadow-lg hover:shadow-xl';
+      case 'achievement':
+        return 'bg-gradient-to-r from-yellow-50/90 via-amber-50/80 to-orange-50/70 border-2 border-yellow-400 shadow-lg hover:shadow-xl';
+      case 'product':
+        return 'bg-gradient-to-r from-teal-50/90 via-cyan-50/80 to-blue-50/70 border-2 border-teal-400 shadow-lg hover:shadow-xl';
+      case 'influencer':
+        return 'bg-gradient-to-r from-pink-50/90 via-rose-50/80 to-red-50/70 border-2 border-pink-400 shadow-lg hover:shadow-xl';
+      case 'treehouse':
+        return 'bg-gradient-to-r from-fuchsia-50/90 via-purple-50/80 to-violet-50/70 border-2 border-fuchsia-400 shadow-lg hover:shadow-xl';
+      case 'system':
+        return 'bg-gradient-to-r from-gray-50/90 via-slate-50/80 to-zinc-50/70 border-2 border-gray-400 shadow-lg hover:shadow-xl';
+      default:
+        return 'bg-gradient-to-r from-blue-50/90 via-green-50/70 to-yellow-50/50 border-2 border-[#006B3E] shadow-lg hover:shadow-xl';
+    }
+  };
+
   const groupNotificationsByDate = (notifications: Notification[]) => {
     const groups: { [key: string]: Notification[] } = {
       Today: [],
@@ -287,11 +314,7 @@ export function NotificationCenter({ isOpen, onClose }: NotificationCenterProps)
                         whileHover={{ scale: 1.02, x: 4 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handleNotificationClick(notification)}
-                        className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
-                          !notification.read
-                            ? 'bg-gradient-to-r from-blue-50/90 via-green-50/70 to-yellow-50/50 border-2 border-[#006B3E] shadow-lg hover:shadow-xl'
-                            : 'bg-white/60 border border-[#3D2E17]/10 hover:bg-white/80 hover:shadow-md'
-                        }`}
+                        className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${getNotificationGradient(notification.type, notification.read)}`}
                       >
                         <div className="flex gap-3">
                           <div className="flex-shrink-0 text-3xl">

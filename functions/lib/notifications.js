@@ -276,33 +276,61 @@ exports.onShippingStatusChange = (0, firestore_1.onDocumentUpdated)('orders/{ord
             let animation = 'truck-drive';
             let title = 'Shipping Update 🚚';
             let message = `Order #${afterData.orderNumber} status changed`;
-            // Customize based on status
+            // Customize based on status - Enhanced with detailed descriptions
             switch (newStatus) {
+                case 'label_generated':
+                    title = 'Label Generated! 📋';
+                    message = `Your order #${afterData.orderNumber} shipping label has been created. The dispensary is preparing your package for shipment.`;
+                    sound = 'success-chime';
+                    animation = 'checkmark-bounce';
+                    break;
+                case 'ready_for_pickup':
+                    title = 'Package Ready! 📦';
+                    message = `Order #${afterData.orderNumber} is securely packaged and awaiting courier collection. Shipment will begin soon.`;
+                    sound = 'package-ready';
+                    animation = 'box-seal';
+                    break;
                 case 'shipped':
-                    title = 'Order Shipped! 🚚';
-                    message = `Your order #${afterData.orderNumber} has been shipped`;
+                    title = 'Shipped! 🚚';
+                    message = `Great news! Order #${afterData.orderNumber} has been collected by the courier and is now in transit to you.`;
+                    sound = 'vroom';
+                    animation = 'truck-drive';
                     break;
                 case 'in_transit':
-                    title = 'In Transit 📦';
-                    message = `Your order #${afterData.orderNumber} is on its way`;
+                    title = 'In Transit 🚛';
+                    message = `Order #${afterData.orderNumber} is moving through the courier network. Track your package for real-time updates.`;
+                    sound = 'vroom';
+                    animation = 'truck-drive';
                     break;
                 case 'out_for_delivery':
-                    title = 'Out for Delivery! 🚚';
-                    message = `Your order #${afterData.orderNumber} will arrive today`;
+                    title = 'Out for Delivery! 🏃';
+                    message = `Exciting! Order #${afterData.orderNumber} is on the delivery vehicle and heading to your address today.`;
                     sound = 'nearby';
                     animation = 'map-pulse';
                     break;
                 case 'delivered':
                     title = 'Delivered! 🎉';
-                    message = `Your order #${afterData.orderNumber} has been delivered successfully`;
+                    message = `Order #${afterData.orderNumber} has been successfully delivered to your address. Enjoy your purchase!`;
                     sound = 'delivered';
                     animation = 'gift-open';
                     break;
-                case 'ready_for_pickup':
-                    title = 'Ready for Pickup! 📦';
-                    message = `Order #${afterData.orderNumber} is ready for collection`;
+                case 'collection_ready':
+                    title = 'Ready for Pickup! 🏪';
+                    message = `Order #${afterData.orderNumber} is ready and waiting for you at the dispensary. Bring your ID for collection.`;
                     sound = 'package-ready';
                     animation = 'box-seal';
+                    break;
+                case 'processing':
+                    title = 'Processing Order 🔄';
+                    message = `Order #${afterData.orderNumber} is being carefully prepared by the dispensary. You'll be notified once it's ready.`;
+                    sound = 'notification-pop';
+                    animation = 'spinner';
+                    break;
+                default:
+                    title = 'Order Update 📋';
+                    message = `Order #${afterData.orderNumber} status has been updated to: ${newStatus.replace(/_/g, ' ')}`;
+                    sound = 'notification-pop';
+                    animation = 'spinner';
                     break;
             }
             // Notify customer
