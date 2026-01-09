@@ -417,15 +417,18 @@ export default function WellnessSignupPage() {
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-4xl mx-auto my-8 shadow-xl">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-3xl flex items-center text-[#3D2E17] font-extrabold">
-                <Building className="mr-3 h-12 w-12 text-[#006B3E]" /> Store / Club Signup
-              </CardTitle>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Home</Link>
-              </Button>
-            </div>
-            <CardDescription className="text-[#3D2E17] font-bold">Join our network by filling in the details below.</CardDescription>
+            <CardTitle className="text-3xl flex items-center gap-3 text-[#3D2E17] font-extrabold">
+              <Link 
+                href="/" 
+                className="p-2 rounded-full hover:bg-muted transition-colors group"
+                aria-label="Back to home"
+              >
+                <ArrowLeft className="h-8 w-8 text-[#006B3E] group-hover:text-[#3D2E17] transition-colors" />
+              </Link>
+              <Building className="h-12 w-12 text-[#006B3E]" /> 
+              Store / Club Signup
+            </CardTitle>
+            <CardDescription className="text-[#3D2E17] font-bold ml-16">Join our network by filling in the details below.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
