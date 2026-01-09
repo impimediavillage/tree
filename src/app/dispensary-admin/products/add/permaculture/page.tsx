@@ -142,7 +142,7 @@ export default function AddPermacultureProductPage() {
     });
   };
 
-  const scrollToRef = (ref: React.RefObject<HTMLDivElement>) => {
+  const scrollToRef = (ref: React.RefObject<HTMLDivElement | null>) => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -329,6 +329,8 @@ export default function AddPermacultureProductPage() {
 
            <div ref={finalFormRef}>
              {showFinalForm && (
+                 <Card className="bg-muted/50 border-border/50 shadow-lg">
+                   <CardContent className="p-6">
                  <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                      <Separator />
                      <h3 className="text-2xl font-semibold border-b pb-2">Step 3: Finalize Product Details</h3>
@@ -447,6 +449,8 @@ export default function AddPermacultureProductPage() {
                           </CardFooter>
                       </div>
                   </div>
+                   </CardContent>
+                 </Card>
               )}
           </div>
           <datalist id="regular-units-list"> {regularUnits.map(unit => <option key={unit} value={unit} />)} </datalist>

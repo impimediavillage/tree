@@ -22,7 +22,7 @@ export async function sendDispensaryNotification({
     const notification: Notification = {
       id: Date.now().toString(),
       recipient_id: dispensaryId,
-      recipient_role: 'DispensaryAdmin',
+      recipient_role: 'DispensaryOwner',
       title,
       message,
       type,

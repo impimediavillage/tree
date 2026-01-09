@@ -163,7 +163,7 @@ export default function EditHomeopathyProductPage() {
   }
 
   return (
-    <Card className="max-w-4xl mx-auto my-8 shadow-xl">
+    <Card className="max-w-4xl mx-auto my-8 bg-muted/50 border-border/50 shadow-lg">
       <CardHeader>
         <div className="flex items-center justify-between">
             <CardTitle className="text-3xl flex items-center text-[#5D4E37] font-extrabold"> <Save className="mr-3 h-10 w-10 text-[#006B3E]" /> Edit Homeopathy Product </CardTitle>

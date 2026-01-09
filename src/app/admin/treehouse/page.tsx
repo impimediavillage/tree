@@ -17,7 +17,7 @@ function TreehouseContent() {
 
   // Handle URL query parameter for tab selection
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
+    const tabParam = searchParams?.get('tab');
     if (tabParam && ['stores', 'orders', 'payouts', 'earnings', 'apparel', 'origin'].includes(tabParam)) {
       setActiveTab(tabParam);
     }

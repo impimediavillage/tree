@@ -149,7 +149,7 @@ export default function AddTHCProductPage() {
       }
   }, [toast]);
   
-  const scrollToRef = (ref: React.RefObject<HTMLDivElement>, block: 'start' | 'center' = 'center') => {
+  const scrollToRef = (ref: React.RefObject<HTMLDivElement | null>, block: 'start' | 'center' = 'center') => {
     ref.current?.scrollIntoView({ behavior: 'smooth', block });
   };
 
@@ -201,7 +201,7 @@ export default function AddTHCProductPage() {
     }
   };
   
-  const handleStrainSelect = (strainData: any) => {
+  const handleStrainSelect = async (strainData: any) => {
     form.setValue('name', strainData.name);
     form.setValue('strain', strainData.name);
     form.setValue('strainType', strainData.strainType);
@@ -214,6 +214,12 @@ export default function AddTHCProductPage() {
     form.setValue('flavors', strainData.flavors);
     setZeroPercentEffects(strainData.zeroPercentEffects || []);
     setZeroPercentMedical(strainData.zeroPercentMedical || []);
+
+    // Fetch categories before showing category selector if not already loaded
+    if (Object.keys(deliveryMethods).length === 0 && selectedProductStream) {
+      await fetchCannabinoidCategories(selectedProductStream as 'THC' | 'CBD');
+    }
+    
     setShowCategorySelector(true); 
 
     toast({ title: "Strain Loaded", description: `${strainData.name} details have been filled in. Please select a product category.` });
@@ -632,6 +638,8 @@ export default function AddTHCProductPage() {
           )}
     <div ref={productDetailsRef}>
             {showProductForm && (
+                <Card className="bg-muted/50 border-border/50 shadow-lg">
+                  <CardContent className="p-6">
                 <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                     <Separator />
                     <h3 className="text-2xl font-bold border-b pb-2">Product Details</h3>
@@ -806,7 +814,8 @@ export default function AddTHCProductPage() {
                             </Button>
                         </CardFooter>
                     </div>
-                </div>
+                  </CardContent>
+                </Card>
             )}
           </div>
           <datalist id="regular-units-list">

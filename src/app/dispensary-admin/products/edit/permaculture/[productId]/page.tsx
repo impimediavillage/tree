@@ -221,7 +221,7 @@ export default function EditPermacultureProductPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto my-8 space-y-8">
+    <div className="max-w-5xl mx-auto my-8 space-y-8 p-6 bg-muted/50 border border-border/50 rounded-lg shadow-lg">
       <div className="flex items-center justify-between bg-muted/50 p-6 rounded-lg border border-primary/20">
         <div>
           <h1 className="text-3xl font-extrabold flex items-center gap-2 text-[#5D4E37]"><Leaf className="h-10 w-10 text-[#006B3E]"/> Edit Product</h1>

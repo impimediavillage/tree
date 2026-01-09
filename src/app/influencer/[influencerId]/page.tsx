@@ -21,7 +21,7 @@ import Link from 'next/link';
 export default function InfluencerProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const influencerId = params.influencerId as string;
+  const influencerId = params?.influencerId as string;
 
   const [profile, setProfile] = useState<(InfluencerProfile & { id: string }) | null>(null);
   const [journey, setJourney] = useState<(HealingJourney & { id: string }) | null>(null);
