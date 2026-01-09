@@ -48,7 +48,7 @@ const managementSidebarNavItems: NavItem[] = [
   { title: 'Payouts', href: '/dispensary-admin/payouts', icon: DollarSign },
   { title: 'Credits', href: '/dispensary-admin/credits', icon: CreditCard },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Palette },
-  { title: 'Manage Staff', href: '/dispensary-admin/users', icon: Users, ownerOnly: true },
+  { title: 'My Crew', href: '/dispensary-admin/users', icon: Users, ownerOnly: true },
   { title: 'Marketing', href: '/dispensary-admin/marketing', icon: Megaphone, disabled: true, badge: 'Soon' },
 ];
 

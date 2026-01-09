@@ -61,7 +61,25 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newLeafUserData);
 
-      toast({ title: "Leaf User Added", description: `${data.displayName} has been added and activated.` });
+      // Send welcome email with store branding
+      try {
+        await fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: data.email,
+            userName: data.displayName,
+            userType: 'leaf',
+            dispensaryId: dispensaryId,
+            temporaryPassword: data.password,
+          }),
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the entire operation if email fails
+      }
+
+      toast({ title: "Leaf User Added", description: `${data.displayName} has been added and activated. A welcome email has been sent with 10 credits.` });
       onUserAdded();
       setIsOpen(false);
       form.reset();
@@ -84,7 +102,7 @@ export function DispensaryAddLeafUserDialog({ onUserAdded, dispensaryId }: Dispe
       <DialogTrigger asChild>
         <Button variant="default"><Leaf className="mr-2 h-4 w-4" /> Add Leaf User</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scroll-smooth">
         <DialogHeader>
           <DialogTitle>Add New Leaf User (Linked)</DialogTitle>
           <DialogDescription>Create an account for a Leaf User associated with your wellness profile. They will be activated immediately and receive welcome credits.</DialogDescription>

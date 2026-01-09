@@ -64,13 +64,31 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
 
       await setDoc(doc(db, 'users', firebaseUser.uid), newStaffUserData);
 
-      toast({ title: "Wellness Staff Added", description: `${data.displayName} has been added with status: ${data.status}.` });
+      // Send welcome email with store branding
+      try {
+        await fetch('/api/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userEmail: data.email,
+            userName: data.displayName,
+            userType: 'crew',
+            dispensaryId: dispensaryId,
+            temporaryPassword: data.password,
+          }),
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the entire operation if email fails
+      }
+
+      toast({ title: "Crew Member Added", description: `${data.displayName} has been added successfully. A welcome email has been sent.` });
       onUserAdded();
       setIsOpen(false);
       form.reset();
     } catch (error: any) {
       console.error("Error adding staff member:", error);
-      let errorMessage = "Could not add wellness staff.";
+      let errorMessage = "Could not add crew member.";
       if (error.code === 'auth/email-already-in-use') {
         errorMessage = "This email address is already in use by another account.";
       } else if (error.code === 'auth/weak-password') {
@@ -85,12 +103,12 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) form.reset({displayName: '', email: '', password: '', status: 'PendingApproval'}); }}>
       <DialogTrigger asChild>
-        <Button variant="outline"><UserPlus className="mr-2 h-4 w-4" /> Add Wellness Staff</Button>
+        <Button variant="outline"><UserPlus className="mr-2 h-4 w-4" /> Add Crew Member</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scroll-smooth">
         <DialogHeader>
-          <DialogTitle>Add New Wellness Staff</DialogTitle>
-          <DialogDescription>Create an account for a new staff member for your wellness profile.</DialogDescription>
+          <DialogTitle>Add New Crew Member</DialogTitle>
+          <DialogDescription>Create an account for a new crew member at your dispensary.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
@@ -119,7 +137,7 @@ export function DispensaryAddStaffDialog({ onUserAdded, dispensaryId }: Dispensa
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSubmitting}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Wellness Staff
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Add Crew Member
               </Button>
             </DialogFooter>
           </form>
