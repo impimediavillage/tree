@@ -60,10 +60,20 @@ function BrowsePoolRequestPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingRequest, setExistingRequest] = useState<ProductRequest | null>(null);
+  const [dispensaryTypeIcon, setDispensaryTypeIcon] = useState<string | null>(null);
   
   const locationInputRef = useRef<HTMLInputElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInitialized = useRef(false);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerInstanceRef = useRef<google.maps.Marker | null>(null);
+
+  // Get initial coordinates from dispensary or use default
+  const initialLat = currentDispensary?.latitude || -29.8587;
+  const initialLng = currentDispensary?.longitude || 31.0218;
+  const initialAddress = currentDispensary ? 
+    `${currentDispensary.streetAddress || ''}, ${currentDispensary.suburb || ''}, ${currentDispensary.city || ''}, ${currentDispensary.province || ''}, ${currentDispensary.postalCode || ''}`.replace(/,\s*,/g, ',').trim() 
+    : '';
 
   const form = useForm<RequestFormData>({
     resolver: zodResolver(requestFormSchema),
@@ -71,15 +81,15 @@ function BrowsePoolRequestPageContent() {
       quantityRequested: 1,
       preferredDeliveryDate: '',
       deliveryAddress: {
-        address: '',
+        address: initialAddress,
         streetAddress: currentDispensary?.streetAddress || '',
         suburb: currentDispensary?.suburb || '',
         city: currentDispensary?.city || '',
         province: currentDispensary?.province || '',
         postalCode: currentDispensary?.postalCode || '',
         country: currentDispensary?.country || 'South Africa',
-        latitude: 0,
-        longitude: 0,
+        latitude: initialLat,
+        longitude: initialLng,
       },
       contactPerson: currentUser?.displayName || '',
       contactPhone: currentDispensary?.phone || '',
@@ -101,23 +111,46 @@ function BrowsePoolRequestPageContent() {
     try {
       const loader = new Loader({ apiKey: apiKey, version: 'weekly', libraries: ['places', 'geocoding'] });
       const google = await loader.load();
-      const initialPosition = { lat: -29.8587, lng: 31.0218 }; // South Africa center
+      
+      // Use dispensary coordinates if available, otherwise default to South Africa center
+      const initialPosition = { lat: initialLat, lng: initialLng };
+      const hasDispensaryLocation = currentDispensary?.latitude && currentDispensary?.longitude;
       
       const mapInstance = new google.maps.Map(mapContainerRef.current!, {
         center: initialPosition,
-        zoom: 5,
+        zoom: hasDispensaryLocation ? 15 : 5, // Zoom in if we have dispensary location
         mapId: 'b39f3f8b7139051d',
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
       });
 
+      // Store map instance in ref
+      mapInstanceRef.current = mapInstance;
+
+      // Use dispensary type icon, or fallback to store icon, or use default
+      const iconUrl = dispensaryTypeIcon || currentDispensary?.storeIcon || undefined;
+      const markerIcon = iconUrl ? {
+        url: iconUrl,
+        scaledSize: new google.maps.Size(40, 40),
+        anchor: new google.maps.Point(20, 40),
+      } : undefined;
+
       const markerInstance = new google.maps.Marker({ 
         map: mapInstance, 
         position: initialPosition, 
         draggable: true, 
-        title: 'Drag to set delivery location' 
+        title: 'Drag to set delivery location',
+        icon: markerIcon,
       });
+
+      // Store marker instance in ref
+      markerInstanceRef.current = markerInstance;
+
+      // Set initial address in the input field
+      if (locationInputRef.current && initialAddress) {
+        locationInputRef.current.value = initialAddress;
+      }
 
       const getAddressComponent = (components: google.maps.GeocoderAddressComponent[], type: string, useShortName = false): string =>
         components.find(c => c.types.includes(type))?.[useShortName ? 'short_name' : 'long_name'] || '';
@@ -182,13 +215,34 @@ function BrowsePoolRequestPageContent() {
       console.error('Google Maps API Error:', err);
       toast({ title: 'Map Error', description: 'Could not load Google Maps.', variant: 'destructive' });
     }
-  }, [form, toast]);
+  }, [form, toast, initialLat, initialLng, currentDispensary, initialAddress, dispensaryTypeIcon]);
 
   useEffect(() => {
     if (mapContainerRef.current && !mapInitialized.current && !authLoading) {
       initializeMap();
     }
   }, [initializeMap, authLoading]);
+
+  // Fetch dispensary type icon
+  useEffect(() => {
+    const fetchDispensaryTypeIcon = async () => {
+      if (!currentDispensary?.dispensaryType) return;
+      
+      try {
+        const dispensaryTypeRef = doc(db, 'dispensaryTypes', currentDispensary.dispensaryType);
+        const dispensaryTypeSnap = await getDoc(dispensaryTypeRef);
+        
+        if (dispensaryTypeSnap.exists()) {
+          const typeData = dispensaryTypeSnap.data();
+          setDispensaryTypeIcon(typeData.iconPath || null);
+        }
+      } catch (error) {
+        console.error('Error fetching dispensary type icon:', error);
+      }
+    };
+
+    fetchDispensaryTypeIcon();
+  }, [currentDispensary]);
 
   const fetchProductAndCheckExisting = useCallback(async () => {
     if (!productId || !collectionName || !currentUser?.dispensaryId || authLoading) {

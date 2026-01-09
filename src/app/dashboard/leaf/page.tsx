@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DollarSign, History, Lightbulb, Store, Loader2, AlertTriangle, Tag, Heart } from 'lucide-react';
+import { DollarSign, History, Lightbulb, Store, Loader2, AlertTriangle, Tag, Heart, Users } from 'lucide-react';
 import Link from 'next/link';
 import type { User, DispensaryType } from '@/types';
 import { useEffect, useState } from 'react';
@@ -175,7 +175,7 @@ export default function LeafDashboardOverviewPage() {
         >
             <Lightbulb className="mr-3 h-9 w-9 text-green-800" /> Quick Actions
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="hover:shadow-lg transition-shadow bg-muted/50 border-primary/20">
             <CardHeader><CardTitle className="flex items-center gap-2"><History className="text-orange-500 h-8 w-8" />Interaction History</CardTitle></CardHeader>
             <CardContent>
@@ -189,6 +189,14 @@ export default function LeafDashboardOverviewPage() {
             <CardContent>
                 <p className="text-foreground font-semibold mb-4">Discover insights by consulting our specialized AI advisors.</p>
                 <Button asChild className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl"><Link href="/dashboard/advisors">See All Advisors</Link></Button>
+            </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow bg-muted/50 border-primary/20">
+            <CardHeader><CardTitle className="flex items-center gap-2"><Users className="text-orange-500 h-8 w-8" />Become an Influencer</CardTitle></CardHeader>
+            <CardContent>
+                <p className="text-foreground font-semibold mb-4">Learn how to earn commissions by sharing The Wellness Tree.</p>
+                <Button onClick={() => setShowOnboarding(true)} className="w-full bg-green-600 hover:bg-[#5D4E37] active:bg-green-800 text-white text-lg font-bold py-4 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl">Learn More</Button>
             </CardContent>
             </Card>
         </div>

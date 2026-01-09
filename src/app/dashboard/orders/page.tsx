@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserOrders } from '@/lib/orders';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import type { Order } from '@/types/order';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,28 +59,38 @@ function OrderHistoryContent() {
     }
   }, [searchParams, currentUser, router]);
 
+  // Real-time listener for user orders
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (!currentUser?.uid) return;
-      setIsLoading(true);
+    if (!currentUser?.uid) return;
+    
+    setIsLoading(true);
+    
+    const ordersRef = collection(db, 'orders');
+    const q = query(
+      ordersRef,
+      where('userId', '==', currentUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const userOrders = snapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as Order));
       
-      try {
-        // Fetch all orders from the single orders collection
-        const userOrders = await getUserOrders(currentUser.uid);
-        setOrders(userOrders);
-      } catch (error: any) {
-        console.error('Error fetching orders:', error);
-        toast({ 
-          title: 'Error', 
-          description: 'Failed to load your orders. Please try again later.',
-          variant: 'destructive'
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setOrders(userOrders);
+      setIsLoading(false);
+    }, (error) => {
+      console.error('Error fetching orders:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to load your orders. Please try again later.',
+        variant: 'destructive'
+      });
+      setIsLoading(false);
+    });
 
-    fetchOrders();
+    return () => unsubscribe();
   }, [currentUser, toast]);
 
   // Group orders by status

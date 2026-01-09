@@ -312,23 +312,28 @@ async function checkAndUpdateTier(influencerId) {
     const now = new Date();
     const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const currentMonthSales = monthlySales[currentMonthKey] || 0;
-    // Tier thresholds
-    const SILVER_THRESHOLD = 5000;
-    const GOLD_THRESHOLD = 15000;
-    const PLATINUM_THRESHOLD = 30000;
-    let newTier = 'Bronze';
+    // Tier thresholds (nature-themed progression)
+    const SPROUT_THRESHOLD = 5000; // R5,000
+    const GROWTH_THRESHOLD = 15000; // R15,000
+    const BLOOM_THRESHOLD = 30000; // R30,000
+    const FOREST_THRESHOLD = 50000; // R50,000
+    let newTier = 'Seed';
     let newCommissionRate = 5;
-    if (currentMonthSales >= PLATINUM_THRESHOLD) {
-        newTier = 'Platinum';
+    if (currentMonthSales >= FOREST_THRESHOLD) {
+        newTier = 'Forest';
         newCommissionRate = 20;
     }
-    else if (currentMonthSales >= GOLD_THRESHOLD) {
-        newTier = 'Gold';
+    else if (currentMonthSales >= BLOOM_THRESHOLD) {
+        newTier = 'Bloom';
         newCommissionRate = 15;
     }
-    else if (currentMonthSales >= SILVER_THRESHOLD) {
-        newTier = 'Silver';
-        newCommissionRate = 10;
+    else if (currentMonthSales >= GROWTH_THRESHOLD) {
+        newTier = 'Growth';
+        newCommissionRate = 12;
+    }
+    else if (currentMonthSales >= SPROUT_THRESHOLD) {
+        newTier = 'Sprout';
+        newCommissionRate = 8;
     }
     // Only update if tier changed
     if (newTier !== influencer?.tier) {

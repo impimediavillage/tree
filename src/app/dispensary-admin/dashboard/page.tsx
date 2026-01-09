@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt, Calendar, Share2 } from 'lucide-react';
+import { Package, Store, ShoppingBasket, BarChart3, Users, CreditCard, PackageCheck, Receipt, Calendar, Share2, Users2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SocialShareHub } from '@/components/social-share/SocialShareHub';
 import { ProfileCompletionDialog, checkProfileCompleteness } from '@/components/dispensary-admin/ProfileCompletionDialog';
+import { InfluencerOnboarding } from '@/components/influencer/InfluencerOnboarding';
 
 interface QuickActionCardProps {
     title: string;
@@ -54,6 +55,7 @@ export default function WellnessAdminOverviewPage() {
   const router = useRouter();
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [showShareHub, setShowShareHub] = useState(false);
+  const [showInfluencerOnboarding, setShowInfluencerOnboarding] = useState(false);
 
   useEffect(() => {
     if (!authLoading && currentDispensary) {
@@ -203,6 +205,33 @@ export default function WellnessAdminOverviewPage() {
         />
       </div>
 
+      {/* Influencer Program Card */}
+      <Card className="shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-xl transition-shadow border-green-200">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-shrink-0 h-16 w-16 rounded-full bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+              <Users2 className="h-8 w-8 text-white" />
+            </div>
+            <div className="flex-1 text-center sm:text-left">
+              <h3 className="text-2xl font-black text-[#3D2E17] mb-2">
+                💰 Influencer Program
+              </h3>
+              <p className="text-sm text-[#5D4E37] font-bold">
+                Learn how customers can earn commissions by sharing The Wellness Tree. Perfect for educating your staff and customers!
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowInfluencerOnboarding(true)}
+              size="lg"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-emerald-600 hover:to-green-600 text-white font-black px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            >
+              <Users2 className="h-5 w-5 mr-2" />
+              Learn More
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Enhanced Profile Completion Dialog */}
       <ProfileCompletionDialog
         isOpen={showWelcomeDialog}
@@ -214,6 +243,13 @@ export default function WellnessAdminOverviewPage() {
       <SocialShareHub 
         isOpen={showShareHub} 
         onOpenChange={setShowShareHub}
+      />
+
+      {/* Influencer Onboarding Dialog */}
+      <InfluencerOnboarding
+        open={showInfluencerOnboarding}
+        onOpenChange={setShowInfluencerOnboarding}
+        onComplete={() => setShowInfluencerOnboarding(false)}
       />
     </div>
   );
