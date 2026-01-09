@@ -13,7 +13,8 @@ import {
   doc,
   getDoc,
   updateDoc,
-  onSnapshot
+  onSnapshot,
+  deleteDoc
 } from 'firebase/firestore';
 import type { Order } from '@/types/order';
 import type { ShippingStatus } from '@/types/shipping';
@@ -31,7 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Printer, Download, RefreshCw, Package2, Search, Filter, Loader2, BarChart3 } from 'lucide-react';
+import { Printer, Download, RefreshCw, Package2, Search, Filter, Loader2, BarChart3, Archive, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,8 @@ export default function DispensaryOrdersPage() {
   const [shippingStatusFilter, setShippingStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState<DateRange>();
   const [sortBy, setSortBy] = useState('date_desc');
+  const [showArchived, setShowArchived] = useState(false);
+  const [isDeletingOrder, setIsDeletingOrder] = useState<string | null>(null);
 
   const shippingStatuses = [
     { value: 'all', label: 'All Shipping Statuses' },
@@ -92,7 +95,16 @@ export default function DispensaryOrdersPage() {
       (snapshot) => {
         console.log('Real-time update:', snapshot.docs.length, 'documents found');
         
-        const fetchedOrders = snapshot.docs.map(doc => {
+        const fetchedOrders = snapshot.docs
+          .filter(doc => {
+            const data = doc.data();
+            // Filter based on archived status
+            if (showArchived) {
+              return data.archived === true;
+            }
+            return !data.archived;
+          })
+          .map(doc => {
           const data = doc.data();
           console.log('Order data structure:', {
             id: doc.id,
@@ -162,7 +174,7 @@ export default function DispensaryOrdersPage() {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [currentUser?.dispensaryId, isDispensaryOwner, toast, searchTerm, statusFilter, shippingStatusFilter, dateRange, sortBy]);
+  }, [currentUser?.dispensaryId, isDispensaryOwner, toast, searchTerm, statusFilter, shippingStatusFilter, dateRange, sortBy, showArchived]);
 
   // Single, optimized filter implementation
   useEffect(() => {
@@ -326,6 +338,92 @@ export default function DispensaryOrdersPage() {
     }
   };
 
+  const handleArchiveOrder = async (orderId: string) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, {
+        archived: true,
+        archivedAt: Timestamp.now(),
+        archivedBy: currentUser?.uid,
+      });
+
+      toast({
+        title: 'Order Archived',
+        description: 'Order has been moved to archives.',
+      });
+
+      // Close dialog if this was the selected order
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      console.error('Error archiving order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to archive order',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUnarchiveOrder = async (orderId: string) => {
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      await updateDoc(orderRef, {
+        archived: false,
+        unarchivedAt: Timestamp.now(),
+      });
+
+      toast({
+        title: 'Order Restored',
+        description: 'Order has been restored from archives.',
+      });
+
+      // Close dialog if this was the selected order
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      console.error('Error unarchiving order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to restore order',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to permanently delete this order? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeletingOrder(orderId);
+    try {
+      const orderRef = doc(db, 'orders', orderId);
+      await deleteDoc(orderRef);
+
+      toast({
+        title: 'Order Deleted',
+        description: 'Order has been permanently deleted.',
+      });
+
+      // Close dialog if this was the selected order
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder(null);
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete order',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingOrder(null);
+    }
+  };
+
   return (
     <div className="container mx-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
       <Card className="bg-muted/50 border-border/50">
@@ -342,6 +440,16 @@ export default function DispensaryOrdersPage() {
             </div>
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
               <OrdersDashboardHelp />
+              <Button
+                variant={showArchived ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowArchived(!showArchived)}
+                className="flex-1 sm:flex-none whitespace-nowrap font-bold"
+              >
+                <Archive className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">{showArchived ? 'Show Active' : 'Show Archived'}</span>
+                <span className="sm:hidden">{showArchived ? 'Active' : 'Archived'}</span>
+              </Button>
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="flex-1 sm:flex-none whitespace-nowrap">
@@ -429,6 +537,9 @@ export default function DispensaryOrdersPage() {
         onOpenChange={(open: boolean) => !open && setSelectedOrder(null)}
         onUpdateStatus={updateOrderStatus}
         isDispensaryView={true}
+        onArchive={handleArchiveOrder}
+        onUnarchive={handleUnarchiveOrder}
+        onDelete={handleDeleteOrder}
       />
     </div>
   );

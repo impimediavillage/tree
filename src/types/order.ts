@@ -125,4 +125,10 @@ export interface Order {
     platformCommission?: number; // 75% for Treehouse orders (legacy, use totalPlatformCommission)
     creatorCommission?: number; // 25% for Treehouse orders
     creatorId?: string; // Creator user ID for Treehouse orders
+    
+    // Archive management
+    archived?: boolean;
+    archivedAt?: Timestamp;
+    archivedBy?: string;
+    unarchivedAt?: Timestamp;
 }

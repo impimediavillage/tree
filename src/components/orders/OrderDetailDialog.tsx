@@ -8,7 +8,7 @@ import { OrderStatusManagement } from "./OrderStatusManagement";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy, ExternalLink, CheckCircle2, MessageSquare, Package2, User, Phone, ShoppingBag, Package, Printer } from "lucide-react";
+import { Clock, MapPin, PackageCheck, RefreshCw, Truck, FileText, Archive, Copy, ExternalLink, CheckCircle2, MessageSquare, Package2, User, Phone, ShoppingBag, Package, Printer, Trash2, ArchiveRestore } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { updateOrderStatus } from "@/lib/orders";
@@ -23,6 +23,9 @@ interface OrderDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onUpdateStatus?: (orderId: string, dispensaryId: string, newStatus: ShippingStatus) => Promise<void>;
   isDispensaryView?: boolean;
+  onArchive?: (orderId: string) => Promise<void>;
+  onUnarchive?: (orderId: string) => Promise<void>;
+  onDelete?: (orderId: string) => Promise<void>;
 }
 
 // Helper function to safely extract string values from potentially nested objects
@@ -64,11 +67,15 @@ export function OrderDetailDialog({
   open, 
   onOpenChange, 
   onUpdateStatus,
-  isDispensaryView = false 
+  isDispensaryView = false,
+  onArchive,
+  onUnarchive,
+  onDelete
 }: OrderDetailDialogProps) {
   const [activeTab, setActiveTab] = useState('details');
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { currentUser, currentDispensary } = useAuth();
 
@@ -79,6 +86,45 @@ export function OrderDetailDialog({
     month: 'short',
     year: 'numeric',
   });
+
+  const handleArchive = async () => {
+    if (!onArchive) return;
+    setIsProcessing(true);
+    try {
+      await onArchive(order.id);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error archiving order:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleUnarchive = async () => {
+    if (!onUnarchive) return;
+    setIsProcessing(true);
+    try {
+      await onUnarchive(order.id);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error unarchiving order:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!onDelete) return;
+    setIsProcessing(true);
+    try {
+      await onDelete(order.id);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleReorder = async () => {
     setIsReordering(true);
@@ -179,13 +225,64 @@ export function OrderDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[95vh] w-[95vw] sm:w-full flex flex-col p-3 sm:p-4 md:p-6">
         <DialogHeader className="pb-2 sm:pb-3">
-          <DialogTitle className="flex items-center gap-2 sm:gap-3 pr-10 sm:pr-12 text-lg sm:text-xl md:text-2xl font-extrabold text-[#3D2E17]">
-            <PackageCheck className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-[#006B3E] flex-shrink-0" />
-            <span className="flex-1 min-w-0 truncate">Order #{order.orderNumber}</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm pr-10 sm:pr-12">
-            Placed on {orderDate}
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="flex items-center gap-2 sm:gap-3 text-lg sm:text-xl md:text-2xl font-extrabold text-[#3D2E17]">
+                <PackageCheck className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-[#006B3E] flex-shrink-0" />
+                <span className="flex-1 min-w-0 truncate">Order #{order.orderNumber}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
+                Placed on {orderDate}
+              </DialogDescription>
+            </div>
+            {isDispensaryView && (onArchive || onUnarchive || onDelete) && (
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                {order.archived ? (
+                  <>
+                    {onUnarchive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUnarchive}
+                        disabled={isProcessing}
+                        className="font-bold hover:bg-[#006B3E] hover:text-white transition-colors"
+                      >
+                        <ArchiveRestore className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Restore</span>
+                      </Button>
+                    )}
+                    {onDelete && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDelete}
+                        disabled={isProcessing}
+                        className="font-bold"
+                      >
+                        <Trash2 className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Delete</span>
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {onArchive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleArchive}
+                        disabled={isProcessing}
+                        className="font-bold hover:bg-amber-600 hover:text-white transition-colors"
+                      >
+                        <Archive className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Archive</span>
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
