@@ -143,12 +143,9 @@ function SignInContent() {
         <CardHeader className="text-center space-y-4">
           {/* Colorful Icon - Centrally Placed */}
           <Link href="/" className="inline-block mx-auto group">
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-[#006B3E] via-[#3D2E17] to-[#FFD700] shadow-xl group-hover:scale-110 transition-transform">
-                <TreePine className="h-16 w-16 text-white" />
-              </div>
-              <span className="text-sm font-bold text-[#006B3E] group-hover:text-[#3D2E17] transition-colors">
-                Back to Home
+        <div className="flex flex-col items-center gap-3">
+          <TreePine className="h-20 w-20 text-[#3D2E17] group-hover:scale-110 transition-transform" />
+          <span className="text-sm font-bold text-[#3D2E17] group-hover:text-[#006B3E] transition-colors">
               </span>
             </div>
           </Link>

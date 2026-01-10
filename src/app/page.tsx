@@ -137,31 +137,60 @@ export default function HolisticAiHubPage() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">Learn more</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
-                      <Store className="h-8 w-8 text-[#006B3E]" />
-                      Transform Your Wellness Business
+                    <DialogTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] flex items-center justify-center gap-3">
+                      <Store className="h-10 w-10 text-[#006B3E] animate-pulse" />
+                      Transform Your Wellness Empire!
                     </DialogTitle>
-                    <DialogDescription className="text-base">
-                      Join South Africa's premier wellness marketplace and grow your business with our comprehensive e-commerce platform.
+                    <DialogDescription className="text-base text-center font-semibold">
+                      🚀 Level up your business with South Africa's most EPIC wellness marketplace! 🌟
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 p-4">
-                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
-                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">What You Get:</h3>
-                      <ul className="space-y-3">
-                        {wellnessBenefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{benefit.text}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="space-y-3 p-4">
+                    <div className="p-4 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20 rounded-xl border-2 border-emerald-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ShoppingCart className="h-6 w-6 text-emerald-700" />
+                        <h3 className="font-extrabold text-lg text-emerald-900">🛍️ FULL E-COMMERCE POWERHOUSE</h3>
+                      </div>
+                      <p className="text-sm text-emerald-800 font-medium">Product listings, shopping cart, integrated Payfast payments & your OWN public URL! Build your empire online! 💪</p>
                     </div>
-                    <div className="text-center pt-2">
-                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
-                        <Link href="/dispensary-signup">Start Your Store Today</Link>
+                    
+                    <div className="p-4 bg-gradient-to-br from-purple-500/20 via-pink-500/20 to-rose-500/20 rounded-xl border-2 border-purple-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-6 w-6 text-purple-700" />
+                        <h3 className="font-extrabold text-lg text-purple-900">🤝 PRODUCT POOL = UNLIMITED INVENTORY</h3>
+                      </div>
+                      <p className="text-sm text-purple-800 font-medium">Share products with other stores & access THOUSANDS of items instantly! No stock? No problem! Private bulk trading too! 🔥</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-yellow-500/20 rounded-xl border-2 border-amber-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-6 w-6 text-amber-700" />
+                        <h3 className="font-extrabold text-lg text-amber-900">💰 GET PAID WEEKLY!</h3>
+                      </div>
+                      <p className="text-sm text-amber-800 font-medium">Direct bank deposits every week! Secure Payfast processing means YOUR MONEY, YOUR WAY! 🤑💸</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-violet-500/20 rounded-xl border-2 border-blue-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Settings className="h-6 w-6 text-blue-700" />
+                        <h3 className="font-extrabold text-lg text-blue-900">⚙️ ULTIMATE CONTROL CENTER</h3>
+                      </div>
+                      <p className="text-sm text-blue-800 font-medium">Manage inventory, orders, customers & analytics from ONE powerful dashboard! You're the boss! 👑</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-green-500/20 via-lime-500/20 to-emerald-500/20 rounded-xl border-2 border-green-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Briefcase className="h-6 w-6 text-green-700" />
+                        <h3 className="font-extrabold text-lg text-green-900">🌍 REACH ALL OF SOUTH AFRICA</h3>
+                      </div>
+                      <p className="text-sm text-green-800 font-medium">Build your brand, grow your tribe, dominate your niche! This is YOUR stage! 🎯🚀</p>
+                    </div>
+                    
+                    <div className="text-center pt-3">
+                      <Button asChild size="lg" className="bg-gradient-to-r from-[#006B3E] via-[#3D2E17] to-[#FFD700] hover:scale-105 transition-transform w-full text-lg font-black shadow-xl">
+                        <Link href="/dispensary-signup">🔥 START YOUR EMPIRE NOW! 🔥</Link>
                       </Button>
                     </div>
                   </div>
@@ -188,36 +217,74 @@ export default function HolisticAiHubPage() {
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full">Learn more</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-[#3D2E17] flex items-center gap-2">
-                      <Leaf className="h-8 w-8 text-[#006B3E]" />
-                      Your Wellness Journey Starts Here
+                    <DialogTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center gap-3">
+                      <Leaf className="h-10 w-10 text-[#006B3E] animate-bounce" />
+                      Your Ultimate Wellness Adventure! 🌟
                     </DialogTitle>
-                    <DialogDescription className="text-base">
-                      Join for FREE and unlock instant access to AI-powered wellness guidance with 10 complimentary credits.
+                    <DialogDescription className="text-base text-center font-semibold">
+                      🎉 100% FREE! Unlock INSANE features & get 10 FREE credits NOW! 🎁
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="space-y-4 p-4">
-                    <div className="bg-[#006B3E]/10 p-4 rounded-lg border-2 border-[#006B3E]/30">
-                      <h3 className="font-bold text-lg mb-2 text-[#006B3E]">Free Leaf Member Benefits:</h3>
-                      <ul className="space-y-3">
-                        {leafUserBenefits.map((benefit, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <benefit.icon className="h-6 w-6 text-[#006B3E] mt-0.5 flex-shrink-0" />
-                            <span className="text-sm">{benefit.text}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="space-y-3 p-4">
+                    <div className="p-4 bg-gradient-to-br from-purple-500/20 via-fuchsia-500/20 to-pink-500/20 rounded-xl border-2 border-purple-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Brain className="h-6 w-6 text-purple-700 animate-pulse" />
+                        <h3 className="font-extrabold text-lg text-purple-900">🧠 AI ADVISOR ARMY!</h3>
+                      </div>
+                      <p className="text-sm text-purple-800 font-medium">Access ALL AI wellness experts: Herbalist, Nutritionist, Fitness Guru, Mental Health Coach & MORE! Instant wisdom at your fingertips! 🚀</p>
                     </div>
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        <strong>Important:</strong> Always include your gender, age, diet, and current medications when consulting AI advisors for personalized wellness advice.
+                    
+                    <div className="p-4 bg-gradient-to-br from-amber-500/20 via-orange-500/20 to-red-500/20 rounded-xl border-2 border-amber-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Gift className="h-6 w-6 text-amber-700" />
+                        <h3 className="font-extrabold text-lg text-amber-900">🎁 10 FREE CREDITS = INSTANT POWER!</h3>
+                      </div>
+                      <p className="text-sm text-amber-800 font-medium">Get wellness advice RIGHT NOW! Can't afford help? WE'VE GOT YOU! Pro tip: Add your age, gender, diet & meds for ULTRA-personalized guidance! 💪</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-cyan-500/20 rounded-xl border-2 border-emerald-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Palette className="h-6 w-6 text-emerald-700" />
+                        <h3 className="font-extrabold text-lg text-emerald-900">🎨 CREATOR LAB = MAKE MONEY!</h3>
+                      </div>
+                      <p className="text-sm text-emerald-800 font-medium">Design EPIC apparel with AI & earn 25% on EVERY sale! R100 on a R400 hoodie?! YES PLEASE! Your own mini-store with custom URL! 🤑💸</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-violet-500/20 rounded-xl border-2 border-blue-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ShoppingCart className="h-6 w-6 text-blue-700" />
+                        <h3 className="font-extrabold text-lg text-blue-900">🛍️ SHOP LIKE A WELLNESS BOSS!</h3>
+                      </div>
+                      <p className="text-sm text-blue-800 font-medium">Browse curated stores across South Africa! Cannabinoids, organics, homeopathy, mushrooms & MORE! All in ONE place! 🌿✨</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-rose-500/20 via-pink-500/20 to-fuchsia-500/20 rounded-xl border-2 border-rose-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap className="h-6 w-6 text-rose-700" />
+                        <h3 className="font-extrabold text-lg text-rose-900">⚡ GAMIFIED EXPERIENCE!</h3>
+                      </div>
+                      <p className="text-sm text-rose-800 font-medium">Earn XP, level up, unlock achievements, climb leaderboards! Your wellness journey just became an EPIC game! 🎮🏆</p>
+                    </div>
+                    
+                    <div className="p-4 bg-gradient-to-br from-green-500/20 via-lime-500/20 to-emerald-500/20 rounded-xl border-2 border-green-400/40 shadow-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Star className="h-6 w-6 text-green-700" />
+                        <h3 className="font-extrabold text-lg text-green-900">🌟 BECOME AN INFLUENCER!</h3>
+                      </div>
+                      <p className="text-sm text-green-800 font-medium">Join our influencer program! Promote brands you LOVE & earn BIG! Turn your passion into PROFIT! 💎🔥</p>
+                    </div>
+                    
+                    <div className="bg-gradient-to-r from-yellow-200/50 to-amber-200/50 p-3 rounded-lg border-2 border-yellow-400/60 shadow-md">
+                      <p className="text-sm text-amber-900 font-bold text-center">
+                        💡 PRO TIP: Include gender, age, diet & current meds in your AI chats for ULTRA-PERSONALIZED advice! 🎯
                       </p>
                     </div>
-                    <div className="text-center pt-2">
-                      <Button asChild size="lg" className="bg-[#006B3E] hover:bg-[#3D2E17] w-full">
-                        <Link href="/auth/signup">Join Free Today</Link>
+                    
+                    <div className="text-center pt-3">
+                      <Button asChild size="lg" className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:scale-105 transition-transform w-full text-lg font-black shadow-xl text-white">
+                        <Link href="/auth/signup">🚀 BLAST OFF FOR FREE! 🚀</Link>
                       </Button>
                     </div>
                   </div>

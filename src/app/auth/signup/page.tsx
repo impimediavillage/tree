@@ -158,16 +158,33 @@ function SignUpContent() {
        </Button>
       <Card className="w-full max-w-md shadow-xl bg-white/80 overflow-hidden p-0">
         <div className="relative h-80 w-full">
-          <Image src="/icons/square2.gif" alt="Wellness Tree" layout="fill" objectFit="cover" />
+          <Image src="/icons/square2.gif" alt="Wellness Tree" layout="fill" objectFit="contain" className="object-top" />
         </div>
         <CardHeader className="text-center pt-6">
           <UserPlus className="mx-auto h-12 w-12 text-primary mb-4" />
           <CardTitle className="text-3xl font-bold text-foreground">Create Your Leaf User Account</CardTitle>
-          <CardDescription className="text-foreground">Join The Wellness Tree community.</CardDescription>
-          <div className="mt-4 p-4 bg-[#006B3E]/10 rounded-lg border border-[#006B3E]/20">
-            <p className="text-sm text-[#3D2E17] font-semibold leading-relaxed">
-              Get 10 free credits and instant access to The Creator Lab and Treehouse store - Create and Earn with our Print on Demand service - Design your new T or Cap or backpack with the Creator Lab. Earn 25% on every design sold in the Treehouse store.
-            </p>
+          <CardDescription className="text-foreground">Join The Wellness Tree community and unlock amazing features!</CardDescription>
+          <div className="mt-4 space-y-3">
+            <div className="p-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-400/30">
+              <p className="text-xs font-bold text-purple-900 mb-1">🧠 AI Wellness Advisors</p>
+              <p className="text-xs text-purple-800">Get personalized advice from AI experts in wellness, growing, and business</p>
+            </div>
+            <div className="p-3 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-lg border border-amber-400/30">
+              <p className="text-xs font-bold text-amber-900 mb-1">🎮 Gamified Experience</p>
+              <p className="text-xs text-amber-800">Earn XP, level up, unlock achievements, and compete on leaderboards</p>
+            </div>
+            <div className="p-3 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-lg border border-emerald-400/30">
+              <p className="text-xs font-bold text-emerald-900 mb-1">💰 10 Free Credits + Earn More</p>
+              <p className="text-xs text-emerald-800">Start with free credits, earn by designing in Creator Lab - 25% on every sale!</p>
+            </div>
+            <div className="p-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-lg border border-blue-400/30">
+              <p className="text-xs font-bold text-blue-900 mb-1">🛍️ Multi-Dispensary Shopping</p>
+              <p className="text-xs text-blue-800">Browse products from multiple dispensaries in one seamless experience</p>
+            </div>
+            <div className="p-3 bg-gradient-to-r from-rose-500/20 to-red-500/20 rounded-lg border border-rose-400/30">
+              <p className="text-xs font-bold text-rose-900 mb-1">🌟 Become an Influencer</p>
+              <p className="text-xs text-rose-800">Join our influencer program and earn by promoting brands you love</p>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

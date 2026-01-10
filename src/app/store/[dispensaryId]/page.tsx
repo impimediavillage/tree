@@ -16,6 +16,15 @@ import { PublicProductCard } from '@/components/cards/PublicProductCard';
 import { Badge } from '@/components/ui/badge';
 import { VideoLibraryGallery } from '@/components/video-library/VideoLibraryGallery';
 import { DispensaryEventsShowcase } from '@/components/dispensary/DispensaryEventsShowcase';
+import { AdBanner } from '@/components/advertising/AdBanner';
+import { FeaturedAdCard } from '@/components/advertising/FeaturedAdCard';
+import { SidebarAd } from '@/components/advertising/SidebarAd';
+import { AdBanner } from '@/components/advertising/AdBanner';
+import { FeaturedAdCard } from '@/components/advertising/FeaturedAdCard';
+import { SidebarAd } from '@/components/advertising/SidebarAd';
+import { AdBanner } from '@/components/advertising/AdBanner';
+import { FeaturedAdCard } from '@/components/advertising/FeaturedAdCard';
+import { SidebarAd } from '@/components/advertising/SidebarAd';
 
 export default function DispensaryStorePage() {
   const params = useParams();
@@ -257,6 +266,13 @@ export default function DispensaryStorePage() {
       </div>
 
       <div className="container mx-auto py-6 px-4 md:px-6 lg:px-8">
+        {/* Ad Banner - Top of Store */}
+        <AdBanner 
+          dispensaryId={dispensary.id} 
+          placement="store_top"
+          className="mb-6"
+        />
+
         {/* About Section - Collapsible/Compact */}
         {dispensary.message && (
           <Card className="mb-6 border-2 bg-muted/50 border-border/50">
@@ -327,8 +343,19 @@ export default function DispensaryStorePage() {
           </CardContent>
         </Card>
 
-        {/* Products Grid */}
-        <div>
+        {/* Main Content with Sidebar */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content - Products */}
+          <div className="lg:col-span-3">
+            {/* Featured Ad Card */}
+            <FeaturedAdCard
+              dispensaryId={dispensary.id}
+              placement="store_featured"
+              className="mb-6"
+            />
+
+            {/* Products Grid */}
+            <div>
           {filteredProducts.length > 0 ? (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -380,6 +407,17 @@ export default function DispensaryStorePage() {
               </CardContent>
             </Card>
           )}
+            </div>
+          </div>
+
+          {/* Sidebar - Ads & Promotions */}
+          <div className="lg:col-span-1">
+            <SidebarAd 
+              dispensaryId={dispensary.id}
+              placement="store_sidebar"
+              className="sticky top-20"
+            />
+          </div>
         </div>
       </div>
     </div>

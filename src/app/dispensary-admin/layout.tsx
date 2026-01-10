@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -45,6 +45,7 @@ const productPoolNavItems: NavItem[] = [
 const managementSidebarNavItems: NavItem[] = [
   { title: 'Analytics', href: '/dispensary-admin/analytics', icon: BarChart3 },
   { title: 'Events Calendar', href: '/dispensary-admin/events', icon: Calendar, ownerOnly: true },
+  { title: 'Advertising', href: '/dispensary-admin/advertising', icon: Tv, ownerOnly: true },
   { title: 'Payouts', href: '/dispensary-admin/payouts', icon: DollarSign },
   { title: 'Credits', href: '/dispensary-admin/credits', icon: CreditCard },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Palette },
