@@ -49,6 +49,16 @@ export {
   sendAchievementNotification
 } from './notifications';
 
+// Export Advertising functions
+export {
+  trackAdImpression,
+  trackAdClick,
+  trackAdConversion,
+  aggregateDailyAdAnalytics,
+  cleanupExpiredAds,
+  activateScheduledAds
+} from './advertising';
+
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
     // Check authentication

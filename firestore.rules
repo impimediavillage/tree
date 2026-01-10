@@ -230,6 +230,119 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ========================================
+    // ADVERTISING SYSTEM RULES
+    // ========================================
+    
+    // Advertisements Collection
+    match /advertisements/{adId} {
+      // Public read for active ads
+      allow read: if resource.data.status == 'active' || 
+                     (request.auth != null && isDispensaryStaffOrOwner() && 
+                      isOwnerOfDispensary(resource.data.dispensaryId)) ||
+                     (request.auth != null && request.auth.token.role == 'SuperAdmin');
+      
+      // Dispensary owners can create ads for their dispensary
+      allow create: if request.auth != null && isDispensaryStaffOrOwner() && 
+                       isOwnerOfDispensary(request.resource.data.dispensaryId) &&
+                       request.resource.data.dispensaryId == request.auth.token.dispensaryId;
+      
+      // Dispensary owners can update their own ads
+      allow update: if request.auth != null && isDispensaryStaffOrOwner() && 
+                       isOwnerOfDispensary(resource.data.dispensaryId);
+      
+      // Dispensary owners can delete their own ads
+      allow delete: if request.auth != null && isDispensaryStaffOrOwner() && 
+                       isOwnerOfDispensary(resource.data.dispensaryId);
+      
+      // Super Admins have full access
+      allow read, write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Influencer Ad Selections Collection
+    match /influencerAdSelections/{selectionId} {
+      // Influencers can read their own selections
+      allow read: if request.auth != null && request.auth.uid == resource.data.influencerId;
+      
+      // Dispensary owners can read selections for their ads
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     exists(/databases/$(database)/documents/advertisements/$(resource.data.adId)) &&
+                     isOwnerOfDispensary(get(/databases/$(database)/documents/advertisements/$(resource.data.adId)).data.dispensaryId);
+      
+      // Influencers can create selections (select ads to promote)
+      allow create: if request.auth != null && 
+                       request.resource.data.influencerId == request.auth.uid &&
+                       exists(/databases/$(database)/documents/advertisements/$(request.resource.data.adId));
+      
+      // Influencers can update their own selections (pause/resume)
+      allow update: if request.auth != null && request.auth.uid == resource.data.influencerId;
+      
+      // Super Admins have full access
+      allow read, write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Ad Impressions Collection
+    match /adImpressions/{impressionId} {
+      // Anyone can create impressions (for tracking)
+      allow create: if true;
+      
+      // Dispensary owners can read impressions for their ads
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     exists(/databases/$(database)/documents/advertisements/$(resource.data.adId)) &&
+                     isOwnerOfDispensary(get(/databases/$(database)/documents/advertisements/$(resource.data.adId)).data.dispensaryId);
+      
+      // Influencers can read impressions for their tracking codes
+      allow read: if request.auth != null && resource.data.influencerId == request.auth.uid;
+      
+      // Super Admins have full access
+      allow read: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Ad Clicks Collection
+    match /adClicks/{clickId} {
+      // Anyone can create clicks (for tracking)
+      allow create: if true;
+      
+      // Dispensary owners can read clicks for their ads
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     exists(/databases/$(database)/documents/advertisements/$(resource.data.adId)) &&
+                     isOwnerOfDispensary(get(/databases/$(database)/documents/advertisements/$(resource.data.adId)).data.dispensaryId);
+      
+      // Influencers can read clicks for their tracking codes
+      allow read: if request.auth != null && resource.data.influencerId == request.auth.uid;
+      
+      // Super Admins have full access
+      allow read: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Ad Conversions Collection
+    match /adConversions/{conversionId} {
+      // Authenticated users can create conversions (from Cloud Functions)
+      allow create: if request.auth != null;
+      
+      // Dispensary owners can read conversions for their ads
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     exists(/databases/$(database)/documents/advertisements/$(resource.data.adId)) &&
+                     isOwnerOfDispensary(get(/databases/$(database)/documents/advertisements/$(resource.data.adId)).data.dispensaryId);
+      
+      // Influencers can read conversions for their tracking codes
+      allow read: if request.auth != null && resource.data.influencerId == request.auth.uid;
+      
+      // Super Admins have full access
+      allow read: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Ad Daily Analytics Collection
+    match /adDailyAnalytics/{analyticsId} {
+      // Dispensary owners can read analytics for their ads
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     exists(/databases/$(database)/documents/advertisements/$(resource.data.adId)) &&
+                     isOwnerOfDispensary(get(/databases/$(database)/documents/advertisements/$(resource.data.adId)).data.dispensaryId);
+      
+      // Super Admins have full access
+      allow read, write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
     // Placeholder for other rules - you can add more rules for other collections here
     match /{document=**} {
       allow read, write: if false;
