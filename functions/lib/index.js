@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.sendAchievementNotification = exports.onShippingStatusChange = exports.onPaymentCompleted = exports.onOrderCreated = exports.calculateCommissionOnOrderDelivered = exports.getInfluencerStats = exports.processInfluencerCommission = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
+exports.submitDispensaryApplication = exports.updateDispensaryProfile = exports.getShiplogicRates = exports.getPudoRates = exports.getPudoLockers = exports.adminUpdateUser = exports.createDispensaryUser = exports.searchStrains = exports.getCannabinoidProductCategories = exports.seedAIAdvisors = exports.chatWithAdvisor = exports.deductCreditsAndLogInteraction = exports.getUserProfile = exports.onUserWriteSetClaims = exports.uploadApparelTemplates = exports.activateScheduledAds = exports.cleanupExpiredAds = exports.aggregateDailyAdAnalytics = exports.trackAdConversion = exports.trackAdClick = exports.trackAdImpression = exports.sendAchievementNotification = exports.onShippingStatusChange = exports.onPaymentCompleted = exports.onOrderCreated = exports.calculateCommissionOnOrderDelivered = exports.getInfluencerStats = exports.processInfluencerCommission = exports.createPudoShipment = exports.createShiplogicShipment = exports.recalculateDispensaryReviewStats = exports.processDispensaryReview = exports.createDispensaryPayoutRequest = exports.recordDispensaryEarning = exports.createPayoutRequest = exports.recordTreehouseEarning = exports.deleteTreehouseProduct = exports.toggleProductStatus = exports.updateTreehouseProduct = exports.publishCreatorProduct = exports.generateModelShowcase = exports.finalizeDesignComposite = exports.generateCreatorDesign = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const admin = __importStar(require("firebase-admin"));
@@ -88,6 +88,14 @@ Object.defineProperty(exports, "onOrderCreated", { enumerable: true, get: functi
 Object.defineProperty(exports, "onPaymentCompleted", { enumerable: true, get: function () { return notifications_1.onPaymentCompleted; } });
 Object.defineProperty(exports, "onShippingStatusChange", { enumerable: true, get: function () { return notifications_1.onShippingStatusChange; } });
 Object.defineProperty(exports, "sendAchievementNotification", { enumerable: true, get: function () { return notifications_1.sendAchievementNotification; } });
+// Export Advertising functions
+var advertising_1 = require("./advertising");
+Object.defineProperty(exports, "trackAdImpression", { enumerable: true, get: function () { return advertising_1.trackAdImpression; } });
+Object.defineProperty(exports, "trackAdClick", { enumerable: true, get: function () { return advertising_1.trackAdClick; } });
+Object.defineProperty(exports, "trackAdConversion", { enumerable: true, get: function () { return advertising_1.trackAdConversion; } });
+Object.defineProperty(exports, "aggregateDailyAdAnalytics", { enumerable: true, get: function () { return advertising_1.aggregateDailyAdAnalytics; } });
+Object.defineProperty(exports, "cleanupExpiredAds", { enumerable: true, get: function () { return advertising_1.cleanupExpiredAds; } });
+Object.defineProperty(exports, "activateScheduledAds", { enumerable: true, get: function () { return advertising_1.activateScheduledAds; } });
 // Upload Apparel Templates to Storage
 exports.uploadApparelTemplates = (0, https_1.onCall)(async (request) => {
     // Check authentication
