@@ -592,8 +592,8 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
             </TabsList>
           </div>
 
-          <ScrollArea className="h-[calc(100vh-220px)] px-4 sm:px-6">
-            <TabsContent value="share" className="space-y-4 sm:space-y-6 pb-6 mt-4 max-w-full overflow-x-hidden">
+          <ScrollArea className="h-[calc(100vh-220px)]">
+            <TabsContent value="share" className="space-y-4 sm:space-y-6 pb-6 mt-4 px-3 sm:px-6 w-full max-w-full overflow-x-hidden">
               {/* Custom Images Button */}
               <Button
                 onClick={() => setShowImageUpload(true)}
@@ -653,7 +653,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               </Button>
 
               {/* Platform Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-full">
                 {Object.entries(platformConfig).map(([key, config]) => {
                   const Icon = config.icon;
                   return (
@@ -746,7 +746,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               </Card>
             </TabsContent>
 
-            <TabsContent value="analytics" className="space-y-4 sm:space-y-6 pb-6 mt-4 max-w-full overflow-x-hidden">
+            <TabsContent value="analytics" className="space-y-4 sm:space-y-6 pb-6 mt-4 px-3 sm:px-6 w-full max-w-full overflow-x-hidden">
               {shareStats ? (
                 <>
                   {/* Export Buttons */}
@@ -798,7 +798,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
                   </Card>
 
                   {/* Stats Overview */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-full">
                     <Card className="bg-gradient-to-br from-[#006B3E]/10 to-[#006B3E]/20 border-[#006B3E]/30">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-bold text-[#5D4E37]">Total Shares</CardTitle>
@@ -867,7 +867,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               )}
             </TabsContent>
 
-            <TabsContent value="schedule" className="space-y-4 sm:space-y-6 pb-6 mt-4 max-w-full overflow-x-hidden">
+            <TabsContent value="schedule" className="space-y-4 sm:space-y-6 pb-6 mt-4 px-3 sm:px-6 w-full max-w-full overflow-x-hidden">
               {/* Schedule Share Button */}
               <Button
                 onClick={() => setShowScheduleDialog(true)}
@@ -899,7 +899,7 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               />
             </TabsContent>
 
-            <TabsContent value="leaderboard" className="space-y-4 sm:space-y-6 pb-6 mt-4 max-w-full overflow-x-hidden">
+            <TabsContent value="leaderboard" className="space-y-4 sm:space-y-6 pb-6 mt-4 px-3 sm:px-6 w-full max-w-full overflow-x-hidden">
               {currentDispensary?.id && shareStats && (
                 <SharePerformanceLeaderboard 
                   currentDispensaryId={currentDispensary.id}
@@ -909,8 +909,8 @@ export function SocialShareHub({ isOpen, onOpenChange }: SocialShareHubProps) {
               )}
             </TabsContent>
 
-            <TabsContent value="achievements" className="space-y-4 sm:space-y-6 pb-6 mt-4 max-w-full overflow-x-hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
+            <TabsContent value="achievements" className="space-y-4 sm:space-y-6 pb-6 mt-4 px-3 sm:px-6 w-full max-w-full overflow-x-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-full">
                 {Object.values(achievementDefinitions).map((achievement) => {
                   const unlocked = shareStats?.achievements.some(a => a.id === achievement.id);
                   return (
