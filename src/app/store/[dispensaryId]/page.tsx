@@ -19,12 +19,6 @@ import { DispensaryEventsShowcase } from '@/components/dispensary/DispensaryEven
 import { AdBanner } from '@/components/advertising/AdBanner';
 import { FeaturedAdCard } from '@/components/advertising/FeaturedAdCard';
 import { SidebarAd } from '@/components/advertising/SidebarAd';
-import { AdBanner } from '@/components/advertising/AdBanner';
-import { FeaturedAdCard } from '@/components/advertising/FeaturedAdCard';
-import { SidebarAd } from '@/components/advertising/SidebarAd';
-import { AdBanner } from '@/components/advertising/AdBanner';
-import { FeaturedAdCard } from '@/components/advertising/FeaturedAdCard';
-import { SidebarAd } from '@/components/advertising/SidebarAd';
 
 export default function DispensaryStorePage() {
   const params = useParams();
