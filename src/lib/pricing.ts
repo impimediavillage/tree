@@ -72,31 +72,39 @@ export function calculateTax(subtotal: number, taxRate: number): number {
 }
 
 /**
- * Calculate full price breakdown with NEW logic
- * @param dispensarySetPrice - Price entered by dispensary (includes their tax)
- * @param taxRate - Tax rate percentage (e.g., 15 for 15%)
+ * Calculate full price breakdown - Commission on BASE price, NO double taxation
+ * @param dispensarySetPrice - Price entered by dispensary (INCLUDES their tax already)
+ * @param taxRate - Tax rate percentage (e.g., 15 for 15%) - for extracting base only
  * @param isProductPool - Whether this is a product pool item (5% vs 25% commission)
+ * 
+ * CORRECT LOGIC: Dispensary price ALREADY includes tax
+ * - Dispensary enters: R115 (R100 base + R15 tax already paid)
+ * - Extract base: R115 / 1.15 = R100
+ * - Commission: R100 × 0.25 = R25 (on base only)
+ * - Customer pays: R115 + R25 = R140
+ * 
+ * NO additional tax charged - dispensary price already includes their tax!
  */
 export function calculatePriceBreakdown(
   dispensarySetPrice: number,
   taxRate: number = 0,
   isProductPool: boolean = false
 ): PriceBreakdown {
-  // Step 1: Extract base price (remove dispensary's tax)
+  // Step 1: Extract base price (for commission calculation)
   const basePrice = extractBasePrice(dispensarySetPrice, taxRate);
   
-  // Step 2: Calculate platform commission on base
+  // Step 2: Calculate platform commission on BASE price only
   const commissionRate = isProductPool ? PRODUCT_POOL_COMMISSION_RATE : PLATFORM_COMMISSION_RATE;
   const commission = basePrice * commissionRate;
   
-  // Step 3: Add commission to base
-  const subtotalBeforeTax = basePrice + commission;
+  // Step 3: Customer pays dispensary price + commission (NO additional tax)
+  const subtotalBeforeTax = dispensarySetPrice + commission;
   
-  // Step 4: Apply tax to new subtotal
-  const tax = calculateTax(subtotalBeforeTax, taxRate);
+  // Step 4: Tax is 0 - dispensary price ALREADY includes their tax
+  const tax = 0;
   
   // Step 5: Final customer price
-  const finalPrice = subtotalBeforeTax + tax;
+  const finalPrice = subtotalBeforeTax;
 
   return {
     dispensarySetPrice,
@@ -104,8 +112,8 @@ export function calculatePriceBreakdown(
     commission,
     commissionRate,
     subtotalBeforeTax,
-    tax,
-    taxRate,
+    tax, // 0 - tax already in dispensary price
+    taxRate, // For reference only
     finalPrice
   };
 }
