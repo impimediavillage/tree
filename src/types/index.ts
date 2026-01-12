@@ -42,6 +42,9 @@ export interface Dispensary {
   suburb?: string;
   showLocation?: boolean;
   inHouseDeliveryFee?: number;
+  deliveryRadius?: string; // e.g., "5", "10", "20", "50" km or "none"
+  pricePerKm?: number; // Price per kilometer for in-house delivery
+  sameDayDeliveryCutoff?: string; // e.g., "14:00" for 2 PM cutoff
 }
 
 export interface PriceTier {

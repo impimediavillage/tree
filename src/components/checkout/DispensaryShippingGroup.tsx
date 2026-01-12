@@ -315,7 +315,67 @@ export const DispensaryShippingGroup = ({
       const collectionRate = { id: 'collection', name: 'In-Store Collection', rate: 0, service_level: 'collection', delivery_time: 'N/A', courier_name: dispensaryName };
       setRates([collectionRate]);
     } else if (tier === 'in_house') {
-      const inHouseRate = { id: 'in_house', name: 'Local Delivery', rate: dispensary?.inHouseDeliveryPrice ?? dispensary?.inHouseDeliveryFee ?? 50, service_level: 'local', delivery_time: dispensary?.sameDayDeliveryCutoff ? `Same-day if ordered before ${dispensary.sameDayDeliveryCutoff}` : 'Same-day or next-day', courier_name: dispensaryName };
+      // Calculate distance between dispensary and customer address
+      const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371; // Radius of the Earth in km
+        const dLat = (lat2 - lat1) * (Math.PI / 180);
+        const dLon = (lon2 - lon1) * (Math.PI / 180);
+        const a = 
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; // Distance in km
+      };
+
+      // Get customer and dispensary coordinates
+      const customerLat = addressData.shippingAddress.latitude;
+      const customerLon = addressData.shippingAddress.longitude;
+      const dispensaryLat = dispensary?.latitude;
+      const dispensaryLon = dispensary?.longitude;
+
+      let deliveryFee = 50; // Default fallback
+      let deliveryTime = 'Same-day or next-day';
+
+      if (customerLat && customerLon && dispensaryLat && dispensaryLon) {
+        const distanceKm = calculateDistance(dispensaryLat, dispensaryLon, customerLat, customerLon);
+        const deliveryRadiusKm = dispensary?.deliveryRadius && dispensary.deliveryRadius !== 'none' 
+          ? parseFloat(dispensary.deliveryRadius) 
+          : null;
+
+        // Scenario 1: Flat fee (if set AND within radius)
+        if (dispensary?.inHouseDeliveryPrice && deliveryRadiusKm && distanceKm <= deliveryRadiusKm) {
+          deliveryFee = dispensary.inHouseDeliveryPrice;
+          deliveryTime = dispensary?.sameDayDeliveryCutoff 
+            ? `Same-day if ordered before ${dispensary.sameDayDeliveryCutoff}` 
+            : 'Same-day delivery';
+        } 
+        // Scenario 2: Per km pricing (if flat fee not set OR outside radius)
+        else if (dispensary?.pricePerKm) {
+          const roundedDistance = Math.ceil(distanceKm); // Round up
+          deliveryFee = dispensary.pricePerKm * roundedDistance;
+          deliveryTime = `${roundedDistance}km away - Estimated ${roundedDistance < 10 ? 'same-day' : '1-2 days'}`;
+        }
+        // Scenario 3: Fallback to legacy inHouseDeliveryFee if exists
+        else if (dispensary?.inHouseDeliveryFee) {
+          deliveryFee = dispensary.inHouseDeliveryFee;
+        }
+      } else {
+        // Fallback if coordinates missing
+        deliveryFee = dispensary?.inHouseDeliveryPrice ?? dispensary?.inHouseDeliveryFee ?? 50;
+        deliveryTime = dispensary?.sameDayDeliveryCutoff 
+          ? `Same-day if ordered before ${dispensary.sameDayDeliveryCutoff}` 
+          : 'Same-day or next-day';
+      }
+
+      const inHouseRate = { 
+        id: 'in_house', 
+        name: 'Local Delivery', 
+        rate: deliveryFee, 
+        service_level: 'local', 
+        delivery_time: deliveryTime, 
+        courier_name: dispensaryName 
+      };
       setRates([inHouseRate]);
     }
   };
