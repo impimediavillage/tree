@@ -97,7 +97,8 @@ export default function AdminAdvertisingPage() {
       // Group by dispensary
       const dispensaryMap = new Map<string, { name: string; revenue: number; ads: number }>();
       adsData.forEach(ad => {
-        const existing = dispensaryMap.get(ad.dispensaryId) || { name: ad.dispensaryName, revenue: 0, ads: 0 };
+        if (!ad.dispensaryId) return; // Skip ads without dispensary ID
+        const existing = dispensaryMap.get(ad.dispensaryId) || { name: ad.dispensaryName || 'Unknown', revenue: 0, ads: 0 };
         existing.revenue += ad.analytics?.revenue || 0;
         existing.ads += 1;
         dispensaryMap.set(ad.dispensaryId, existing);
