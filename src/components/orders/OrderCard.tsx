@@ -5,11 +5,12 @@ import { Timestamp } from 'firebase/firestore';
 import type { Order, OrderItem, OrderStatus } from "@/types/order";
 import type { OrderShipment, ShippingStatus } from "@/types/shipping";
 import { formatCurrency } from "@/lib/utils";
-import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag, Star } from "lucide-react";
+import { ArrowRight, Clock, Package2, User, Truck, MapPin, Package, ShoppingBag, Star, Navigation } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import type { Dispensary } from '@/types';
+import { useRouter } from 'next/navigation';
 
 // Helper to safely get locker properties
 const getLockerProp = (locker: any, prop: string): string | null => {
@@ -76,8 +77,16 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, onClick, selected = false, onSelect, showSelection = false, onRateExperience }: OrderCardProps) {
+  const router = useRouter();
   const [dispensaries, setDispensaries] = useState<Record<string, { name: string; type: string; storeImage?: string | null; storeIcon?: string | null; }>>({});
   const [isLoadingDispensaries, setIsLoadingDispensaries] = useState(true);
+
+  // Check if order has active in-house delivery for live tracking
+  const hasLiveTracking = Object.values(order.shipments || {}).some(
+    (shipment) =>
+      shipment.shippingProvider === 'in_house' &&
+      ['picked_up', 'out_for_delivery', 'claimed_by_driver'].includes(shipment.status)
+  );
 
   // Fetch dispensary details for all shipments in this order
   useEffect(() => {
@@ -404,6 +413,21 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
 
         {/* Footer */}
         <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t-2 border-border/50">
+          {hasLiveTracking && (
+            <Button 
+              variant="default" 
+              size="lg" 
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/orders/${order.id}/track`);
+              }}
+              className="flex-1 font-extrabold border-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-sm animate-pulse"
+            >
+              <Navigation className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden sm:inline">Track Live 📍</span>
+              <span className="sm:hidden">Track</span>
+            </Button>
+          )}
           {order.status === 'delivered' && onRateExperience && (
             <Button 
               variant="outline" 
@@ -423,7 +447,7 @@ export function OrderCard({ order, onClick, selected = false, onSelect, showSele
             variant="default" 
             size="lg" 
             onClick={onClick} 
-            className={`font-extrabold text-sm sm:text-base ${order.status === 'delivered' && onRateExperience ? '' : 'w-full'}`}
+            className={`font-extrabold text-sm sm:text-base ${(order.status === 'delivered' && onRateExperience) || hasLiveTracking ? '' : 'w-full'}`}
           >
             View Details <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
