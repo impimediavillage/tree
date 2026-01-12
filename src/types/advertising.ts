@@ -28,7 +28,10 @@ export type AdPlacement =
   | 'modal'            // Pop-up modal
   | 'floating'         // Floating corner badge
   | 'footer'           // Footer promotional block
-  | 'navigation';      // Navigation bar promo
+  | 'navigation'       // Navigation bar promo
+  | 'store_top'        // Top of store page
+  | 'store_featured'   // Featured section in store
+  | 'store_sidebar';   // Store page sidebar
 
 export type AdTemplate = 
   | 'gradient_hero'

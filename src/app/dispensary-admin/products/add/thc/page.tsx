@@ -648,7 +648,7 @@ export default function AddTHCProductPage() {
                         <FormItem><FormLabel>Category</FormLabel><Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
                         <FormItem><FormLabel>Subcategory</FormLabel><Input value={form.getValues('subcategory') || 'N/A'} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem>
                          { watchSubSubcategory && <FormItem><FormLabel>Type</FormLabel><Input value={watchSubSubcategory} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" /></FormItem> }
-                      </div>
+                 </div>
 
                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />

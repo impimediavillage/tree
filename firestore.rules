@@ -343,6 +343,86 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
     }
 
+    // ========================================
+    // DRIVER MANAGEMENT SYSTEM RULES
+    // ========================================
+    
+    // Driver Profiles Collection
+    match /driver_profiles/{driverId} {
+      // Drivers can read their own profile
+      allow read: if request.auth != null && request.auth.uid == driverId;
+      
+      // Dispensary owners and staff can read drivers from their dispensary
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     isOwnerOfDispensary(resource.data.dispensaryId);
+      
+      // Dispensary owners and staff can write (create/update) driver profiles for their dispensary
+      allow write: if request.auth != null && isDispensaryStaffOrOwner() && 
+                      isOwnerOfDispensary(request.resource.data.dispensaryId);
+      
+      // Super Admins have full access
+      allow read, write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Deliveries Collection
+    match /deliveries/{deliveryId} {
+      // Drivers can read deliveries from their dispensary (for browsing available deliveries)
+      allow read: if request.auth != null;
+      
+      // Dispensary owners and staff can create deliveries
+      allow create: if request.auth != null && isDispensaryStaffOrOwner() && 
+                       isOwnerOfDispensary(request.resource.data.dispensaryId);
+      
+      // Drivers can update deliveries they've claimed (for status updates)
+      allow update: if request.auth != null && request.auth.uid == resource.data.driverId;
+      
+      // Dispensary owners and staff can update deliveries from their dispensary
+      allow update: if request.auth != null && isDispensaryStaffOrOwner() && 
+                       isOwnerOfDispensary(resource.data.dispensaryId);
+      
+      // Super Admins have full access
+      allow read, write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Driver Notifications Collection
+    match /driver_notifications/{notificationId} {
+      // Drivers can read their own notifications
+      allow read: if request.auth != null && request.auth.uid == resource.data.driverId;
+      
+      // Drivers can update (mark as read) their own notifications
+      allow update: if request.auth != null && request.auth.uid == resource.data.driverId &&
+                       resource.data.driverId == request.resource.data.driverId;
+      
+      // Only Cloud Functions can create/delete notifications
+      allow create, delete: if false;
+      
+      // Super Admins can read all
+      allow read: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+    
+    // Driver Payout Requests Collection
+    match /driver_payout_requests/{payoutId} {
+      // Drivers can read their own payout requests
+      allow read: if request.auth != null && request.auth.uid == resource.data.driverId;
+      
+      // Drivers can create their own payout requests
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.driverId;
+      
+      // Dispensary owners can read payout requests from their dispensary
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() && 
+                     isOwnerOfDispensary(resource.data.dispensaryId);
+      
+      // Dispensary owners can update (approve/reject) payout requests from their dispensary
+      allow update: if request.auth != null && isDispensaryStaffOrOwner() && 
+                       isOwnerOfDispensary(resource.data.dispensaryId);
+      
+      // Super Admins have full access
+      allow read, update: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+      
+      // No deletes allowed
+      allow delete: if false;
+    }
+
     // Placeholder for other rules - you can add more rules for other collections here
     match /{document=**} {
       allow read, write: if false;

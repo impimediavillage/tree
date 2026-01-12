@@ -314,6 +314,31 @@ export interface User {
   signupSource?: string; 
   updatedAt?: Timestamp | Date | string | null;
   
+  // Crew member fields (for DispensaryStaff)
+  crewMemberType?: 'Vendor' | 'In-house Staff' | 'Driver'; // Added for driver feature
+  isDriver?: boolean; // Quick flag to identify drivers
+  
+  // Driver-specific fields (only when crewMemberType === 'Driver')
+  driverProfile?: {
+    phoneNumber?: string;
+    dialCode?: string; // e.g., "+27"
+    vehicle?: {
+      type?: string;
+      registrationNumber?: string;
+      color?: string;
+      description?: string;
+      imageUrl?: string;
+      verified?: boolean;
+    };
+    documents?: {
+      driverLicense?: string; // URL
+      idDocument?: string; // URL
+      vehiclePhoto?: string; // URL
+    };
+    documentsVerified?: boolean;
+    driverStatus?: 'available' | 'on_delivery' | 'offline' | 'suspended';
+  };
+  
   // Checkout workflow fields (optional for backward compatibility)
   name?: string; // Alternative to displayName for checkout forms
   phoneNumber?: string;

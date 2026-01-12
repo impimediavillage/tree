@@ -5,6 +5,7 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getFunctions, type Functions } from 'firebase/functions';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
+import { getDatabase, type Database } from 'firebase/database'; // Added for real-time location tracking
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,6 +15,7 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID, // Add this line
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL, // For Realtime Database
 };
 
 // Singleton pattern to initialize Firebase app only once
@@ -29,6 +31,7 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 const functions: Functions = getFunctions(app, 'us-central1');
+const realtimeDb: Database = getDatabase(app); // Real-time database for live location tracking
 
 // Initialize Analytics only on the client-side
 let analytics: Analytics | undefined;
@@ -41,4 +44,4 @@ if (typeof window !== 'undefined') {
     }
 }
 
-export { app, auth, db, storage, functions, analytics };
+export { app, auth, db, storage, functions, analytics, realtimeDb };

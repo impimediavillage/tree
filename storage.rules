@@ -63,5 +63,21 @@ service firebase.storage {
                    && request.resource.contentType.matches('image/.*');
     }
 
+    // Driver document uploads (license, ID, vehicle photo)
+    // Dispensary owners/staff can upload for their dispensary's drivers
+    match /drivers/{dispensaryId}/{userId}/{allPaths=**} {
+      allow write: if request.auth != null
+                   && request.auth.token.dispensaryId == dispensaryId
+                   && (request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff')
+                   && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+      
+      // Drivers can upload their own documents
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024 // Max 5MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+
   }
 }

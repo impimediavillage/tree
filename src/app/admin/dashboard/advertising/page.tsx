@@ -33,6 +33,8 @@ interface PlatformStats {
 const COLORS = ['#006B3E', '#3D2E17', '#FFD700', '#8B4513', '#2E8B57'];
 
 export default function AdminAdvertisingPage() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [ads, setAds] = useState<Advertisement[]>([]);
   const [stats, setStats] = useState<PlatformStats>({
@@ -48,7 +50,6 @@ export default function AdminAdvertisingPage() {
     topInfluencers: []
   });
   const [selectedTab, setSelectedTab] = useState('overview');
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchAdvertisingData();
@@ -148,9 +149,11 @@ export default function AdminAdvertisingPage() {
   const getStatusBadge = (status: AdStatus) => {
     const config = {
       draft: { variant: 'secondary' as const, icon: Clock, label: 'Draft' },
+      scheduled: { variant: 'outline' as const, icon: Calendar, label: 'Scheduled' },
       active: { variant: 'default' as const, icon: CheckCircle, label: 'Active' },
       paused: { variant: 'outline' as const, icon: AlertCircle, label: 'Paused' },
-      expired: { variant: 'destructive' as const, icon: XCircle, label: 'Expired' }
+      ended: { variant: 'destructive' as const, icon: XCircle, label: 'Ended' },
+      archived: { variant: 'secondary' as const, icon: XCircle, label: 'Archived' }
     };
 
     const { variant, icon: Icon, label } = config[status] || config.draft;
@@ -173,7 +176,7 @@ export default function AdminAdvertisingPage() {
     { name: 'Active', value: ads.filter(ad => ad.status === 'active').length },
     { name: 'Paused', value: ads.filter(ad => ad.status === 'paused').length },
     { name: 'Draft', value: ads.filter(ad => ad.status === 'draft').length },
-    { name: 'Expired', value: ads.filter(ad => ad.status === 'expired').length }
+    { name: 'Ended', value: ads.filter(ad => ad.status === 'ended').length }
   ];
 
   if (loading) {
@@ -363,21 +366,21 @@ export default function AdminAdvertisingPage() {
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
-                      {ad.status === 'paused' && (
+                      {ad.status === 'paused' && ad.id && (
                         <Button
                           size="sm"
                           variant="default"
-                          onClick={() => updateAdStatus(ad.id, 'active')}
+                          onClick={() => updateAdStatus(ad.id!, 'active')}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Activate
                         </Button>
                       )}
-                      {ad.status === 'active' && (
+                      {ad.status === 'active' && ad.id && (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => updateAdStatus(ad.id, 'paused')}
+                          onClick={() => updateAdStatus(ad.id!, 'paused')}
                         >
                           <AlertCircle className="h-4 w-4 mr-1" />
                           Pause

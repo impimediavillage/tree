@@ -49,6 +49,14 @@ export {
   sendAchievementNotification
 } from './notifications';
 
+// Export Driver Management functions
+export {
+  onInHouseDeliveryCreated,
+  onDeliveryStatusUpdate,
+  onDriverStatsUpdate,
+  onPayoutRequestUpdate
+} from './driver-functions';
+
 // Export Advertising functions
 export {
   trackAdImpression,
