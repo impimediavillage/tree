@@ -27,11 +27,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 
 const AD_PLACEMENTS: { value: AdPlacement; label: string; description: string }[] = [
-  { value: 'home_hero', label: 'Home Page Hero', description: 'Top banner on homepage (highest visibility)' },
-  { value: 'home_featured', label: 'Home Page Featured', description: 'Featured section on homepage' },
-  { value: 'browse_types', label: 'Browse Types Page', description: 'Store types browsing page' },
-  { value: 'dispensaries_list', label: 'Dispensaries List', description: 'Store listing pages' },
-  { value: 'global_sidebar', label: 'Global Sidebar', description: 'Sidebar across the platform' },
+  { value: 'hero_banner', label: 'Home Page Hero', description: 'Top banner on homepage (highest visibility)' },
+  { value: 'product_grid', label: 'Home Page Featured', description: 'Featured section on homepage' },
+  { value: 'inline', label: 'Browse Types Page', description: 'Store types browsing page' },
+  { value: 'sidebar', label: 'Dispensaries List', description: 'Store listing pages' },
+  { value: 'floating', label: 'Global Sidebar', description: 'Sidebar across the platform' },
 ];
 
 export default function AdminCreateAdPage() {
