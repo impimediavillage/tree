@@ -61,8 +61,8 @@ export function ProfileCompletionDialog({ isOpen, onOpenChange, dispensary }: Pr
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open ? null : onOpenChange(open)}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-3xl text-[#3D2E17] font-black flex items-center gap-3">
             <Store className="h-10 w-10 text-[#006B3E]" />
@@ -218,15 +218,7 @@ export function ProfileCompletionDialog({ isOpen, onOpenChange, dispensary }: Pr
           </div>
         </div>
 
-        <DialogFooter>
-          <Button 
-            onClick={() => onOpenChange(false)} 
-            variant="outline" 
-            className="font-bold"
-          >
-            I'll Do This Later
-          </Button>
-        </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

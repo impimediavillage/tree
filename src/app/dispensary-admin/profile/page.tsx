@@ -676,7 +676,36 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                                 </div>
                                               </FormControl>
                                               <FormDescription>
-                                                Cost charged to customers for in-house delivery. Leave empty for free delivery.
+                                                Cost charged to customers for in-house delivery. <strong>Leave blank if using Per km pricing.</strong>
+                                              </FormDescription>
+                                              <FormMessage />
+                                            </FormItem>
+                                          )}
+                                        />
+
+                                        <FormField
+                                          control={form.control}
+                                          name="minimumOrderAmount"
+                                          render={({ field }) => (
+                                            <FormItem>
+                                              <FormLabel>Minimum Order Amount</FormLabel>
+                                              <FormControl>
+                                                <div className="relative">
+                                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R</span>
+                                                  <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    placeholder="0.00"
+                                                    className="pl-7"
+                                                    {...field}
+                                                    value={field.value || ''}
+                                                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                                                  />
+                                                </div>
+                                              </FormControl>
+                                              <FormDescription>
+                                                Minimum order value required for in-house delivery. Leave blank for no minimum.
                                               </FormDescription>
                                               <FormMessage />
                                             </FormItem>
