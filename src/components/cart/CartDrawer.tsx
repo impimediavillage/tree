@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { ShoppingCart, Trash2, Plus, Minus, Info, Gift } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { CartItem } from '@/types';
+import { getDisplayPrice } from '@/lib/pricing';
 
 export function CartDrawer() {
   const {
@@ -96,7 +97,7 @@ export function CartDrawer() {
                       <div>
                         <h3 className="font-semibold text-md">{item.name}</h3>
                         <p className="text-md font-semibold text-accent mt-1">
-                          ZAR {(item.price * item.quantity).toFixed(2)}
+                          ZAR {(getDisplayPrice(item.price, 0, item.dispensaryType === 'Product Pool') * item.quantity).toFixed(2)}
                         </p>
                       </div>
                       
@@ -134,7 +135,7 @@ export function CartDrawer() {
               <div className="space-y-4 w-full">
                   <div className="flex justify-between items-center text-lg font-semibold">
                       <span>Subtotal:</span>
-                      <span>ZAR {getCartTotal().toFixed(2)}</span>
+                      <span>ZAR {cartItems.reduce((total, item) => total + (getDisplayPrice(item.price, 0, item.dispensaryType === 'Product Pool') * item.quantity), 0).toFixed(2)}</span>
                   </div>
                   <Separator />
                   <div className="space-y-3">

@@ -14,6 +14,7 @@ import * as z from 'zod';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useToast } from '@/hooks/use-toast';
 import countryDialCodes from '@/../docs/country-dial-codes.json';
+import { getDisplayPrice } from '@/lib/pricing';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardDescription } from '@/components/ui/card';
@@ -487,7 +488,7 @@ export function CheckoutFlow({ groupedCart }: { groupedCart: GroupedCart }) {
                                             </div>
                                             <div className="flex-shrink-0">
                                                 <div className="bg-[#006B3E]/10 px-3 py-1.5 rounded-lg">
-                                                    <p className="text-sm font-black text-[#006B3E]">R{((item.price || 0) * item.quantity).toFixed(2)}</p>
+                                                    <p className="text-sm font-black text-[#006B3E]">R{(getDisplayPrice(item.price || 0, 0, item.dispensaryType === 'Product Pool') * item.quantity).toFixed(2)}</p>
                                                 </div>
                                             </div>
                                         </div>

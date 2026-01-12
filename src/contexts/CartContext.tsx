@@ -4,6 +4,7 @@
 import type { Product, CartItem, PriceTier } from '@/types';
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { getDisplayPrice } from '@/lib/pricing';
 
 export interface GroupedCart {
   [dispensaryId: string]: {
@@ -129,7 +130,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    return cartItems.reduce((total, item) => {
+      const isProductPool = item.dispensaryType === 'Product Pool';
+      const displayPrice = getDisplayPrice(item.price, 0, isProductPool);
+      return total + (displayPrice * item.quantity);
+    }, 0);
   };
 
   const getTotalItems = () => {
