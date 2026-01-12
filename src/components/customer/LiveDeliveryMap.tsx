@@ -601,8 +601,8 @@ export default function LiveDeliveryMap({ delivery, orderId, onStatusUpdate }: L
                 <span className="font-medium">{delivery.distance.toFixed(1)} km</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Items</span>
-                <span className="font-medium">{delivery.items?.length || 0} items</span>
+                <span className="text-muted-foreground">Distance</span>
+                <span className="font-medium">{delivery.distance.toFixed(1)} km</span>
               </div>
             </div>
           </CardContent>

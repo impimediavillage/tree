@@ -18,7 +18,7 @@ export default function TrackOrderPage() {
   const params = useParams();
   const router = useRouter();
   const { currentUser, loading: authLoading } = useAuth();
-  const orderId = params.orderId as string;
+  const orderId = params?.orderId as string;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [delivery, setDelivery] = useState<DriverDelivery | null>(null);
