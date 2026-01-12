@@ -110,6 +110,7 @@ export const ownerEditDispensarySchema = z.object({
   pricePerKm: z.number().optional().nullable(),
   sameDayDeliveryCutoff: z.string().optional().nullable(),
   inHouseDeliveryCutoffTime: z.string().optional().nullable(),
+  minimumOrderAmount: z.number().optional().nullable(),
   
   // Store branding fields
   storeImage: z.string().url().optional().nullable(),
