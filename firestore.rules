@@ -50,9 +50,44 @@ service cloud.firestore {
         allow read: if resource.data.isActive == true;
     }
 
-    // Rules for all product collections
-    match /{collectionName=**_products}/{productId} {
+    // Products Collection
+    match /products/{productId} {
         allow read: if true; // Publicly readable
+        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+        allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Cannibinoid Store Products Collection
+    match /cannibinoid_store_products/{productId} {
+        allow read: if true;
+        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+        allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Traditional Medicine Products Collection
+    match /traditional_medicine_products/{productId} {
+        allow read: if true;
+        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+        allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Mushroom Store Products Collection
+    match /mushroom_store_products/{productId} {
+        allow read: if true;
+        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+        allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Homeopathy Store Products Collection
+    match /homeopathy_store_products/{productId} {
+        allow read: if true;
+        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+        allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Permaculture Store Products Collection
+    match /permaculture_store_products/{productId} {
+        allow read: if true;
         allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
         allow delete: if isDispensaryMember(resource.data.dispensaryId);
     }
