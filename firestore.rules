@@ -24,9 +24,15 @@ service cloud.firestore {
 
     // Public read for approved dispensaries
     match /dispensaries/{dispensaryId} {
-      allow read: if resource.data.status == 'Approved';
+      allow read: if true; // Allow public read for all dispensaries
       allow update: if isDispensaryMember(dispensaryId) && (isRole('DispensaryOwner') || isRole('DispensaryStaff'));
       allow create, delete: if isRole('Super Admin');
+    }
+
+    // Allow read for AI Advisors
+    match /aiAdvisors/{advisorId} {
+        allow read: if true; // Public read
+        allow write: if isRole('Super Admin');
     }
 
     // Allow read for dispensary types
@@ -74,6 +80,182 @@ service cloud.firestore {
         allow read: if resource.data.isPublic == true;
         allow create: if request.auth.uid != null;
         allow update, delete: if request.auth.uid == resource.data.creatorUid;
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if request.auth.uid == resource.data.userId || isDispensaryMember(resource.data.dispensaryId);
+      allow create: if request.auth.uid != null;
+      allow update: if request.auth.uid == resource.data.userId || isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Notifications Collection
+    match /notifications/{notificationId} {
+      allow read: if request.auth.uid == resource.data.userId;
+      allow create: if true;
+      allow update: if request.auth.uid == resource.data.userId;
+    }
+
+    // Notification Preferences
+    match /notificationPreferences/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Reviews Collections
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth.uid != null;
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /dispensaryReviews/{reviewId} {
+      allow read: if true;
+      allow create: if request.auth.uid != null;
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /dispensaryReviewStats/{dispensaryId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Carts and Wishlists
+    match /carts/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    match /wishlists/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Advisor Chats
+    match /advisor_chats/{chatId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+
+    // Events
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /dispensaryEvents/{eventId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isRole('Super Admin');
+    }
+
+    // Educational Videos
+    match /educationalVideos/{videoId} {
+      allow read: if true;
+      allow write: if isRole('Super Admin');
+    }
+
+    // Influencer System
+    match /influencerProfiles/{profileId} {
+      allow read: if true;
+      allow create, update: if request.auth.uid == request.resource.data.userId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /referralClicks/{clickId} {
+      allow create: if true;
+      allow read: if request.auth.uid == resource.data.influencerId || isRole('Super Admin');
+    }
+
+    match /influencerCommissions/{commissionId} {
+      allow read: if request.auth.uid == resource.data.influencerId || isRole('Super Admin');
+      allow write: if false;
+    }
+
+    // AI Interactions Log
+    match /aiInteractionsLog/{logId} {
+      allow read: if request.auth.uid == resource.data.userId || isDispensaryMember(resource.data.dispensaryId);
+      allow create: if request.auth.uid != null;
+    }
+
+    // Treehouse Collections
+    match /treehouseProducts/{productId} {
+      allow read: if true;
+      allow create, update: if request.auth.uid == request.resource.data.creatorId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /creator_stores/{storeId} {
+      allow read: if true;
+      allow create: if request.auth.uid == request.resource.data.ownerId;
+      allow update: if request.auth.uid == resource.data.ownerId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /creator_earnings/{userId} {
+      allow read: if request.auth.uid == userId || isRole('Super Admin');
+      allow write: if isRole('Super Admin');
+    }
+
+    match /earnings_transactions/{transactionId} {
+      allow read: if request.auth.uid == resource.data.creatorId || isRole('Super Admin');
+      allow write: if isRole('Super Admin');
+    }
+
+    match /treehouse_orders/{orderId} {
+      allow read: if request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.creatorId;
+      allow create: if request.auth.uid != null;
+      allow update: if request.auth.uid == resource.data.creatorId;
+    }
+
+    match /creatorDesigns/{designId} {
+      allow read: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth.uid == resource.data.userId;
+    }
+
+    match /apparel_items/{itemId} {
+      allow read: if true;
+      allow write: if isRole('Super Admin');
+    }
+
+    // Dispensary Earnings & Payouts
+    match /dispensary_earnings/{userId} {
+      allow read: if request.auth.uid == userId || isDispensaryMember(resource.data.dispensaryId);
+      allow write: if isRole('Super Admin');
+    }
+
+    match /dispensary_transactions/{transactionId} {
+      allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+      allow write: if isRole('Super Admin');
+    }
+
+    match /dispensary_payout_requests/{requestId} {
+      allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if isRole('Super Admin');
+    }
+
+    // Subcollections
+    match /dispensaries/{dispensaryId}/scheduledShares/{shareId} {
+      allow read, write: if isDispensaryMember(dispensaryId);
+    }
+
+    match /dispensaries/{dispensaryId}/shareAnalytics/{analyticsId} {
+      allow read: if isDispensaryMember(dispensaryId);
+      allow write: if true;
+    }
+
+    match /pricing_rules/{ruleId} {
+      allow read: if true;
+      allow write: if isRole('Super Admin');
+    }
+
+    match /payment_methods/{methodId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
+    }
+
+    match /shipping_addresses/{addressId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
     }
 
     // Driver System Collections
@@ -127,6 +309,11 @@ service cloud.firestore {
     match /adConversions/{conversionId} {
         allow create: if true;
         allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+    }
+
+    match /adDailyAnalytics/{analyticsId} {
+        allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+        allow write: if false;
     }
   }
 }
