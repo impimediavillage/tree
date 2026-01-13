@@ -1,0 +1,35 @@
+﻿rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Helper function to check if a user is a dispensary owner or staff
+    function isDispensaryStaffOrOwner() {
+      return request.auth.token.role == 'DispensaryOwner' || request.auth.token.role == 'DispensaryStaff';
+    }
+    
+    // Helper function to check if the user belongs to the dispensary associated with a resource
+    function isOwnerOfDispensary(dispensaryId) {
+      return request.auth.token.dispensaryId == dispensaryId;
+    }
+
+    // Rules for productPoolOrders
+    match /productPoolOrders/{orderId} {
+      // Only the product owner or the requester can read the order
+      allow read: if isDispensaryStaffOrOwner() && 
+                      (isOwnerOfDispensary(resource.data.productOwnerDispensaryId) || 
+                       isOwnerOfDispensary(resource.data.requesterDispensaryId));
+      
+      // Only the requester's staff can create an order (as part of the final confirmation)
+      allow create: if isDispensaryStaffOrOwner() && isOwnerOfDispensary(request.resource.data.requesterDispensaryId);
+      
+      // No one can update or delete finalized orders directly
+      allow update, delete: if false;
+    }
+
+    // Placeholder for other rules - you can add more rules for other collections here
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
