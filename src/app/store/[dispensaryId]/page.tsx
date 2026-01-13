@@ -360,7 +360,7 @@ export default function DispensaryStorePage() {
                   {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredProducts.flatMap(product => 
                   product.priceTiers.map((tier, tierIndex) => (
                     <PublicProductCard
