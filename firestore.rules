@@ -3,298 +3,73 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
     function isDispensaryMember(dispensaryId) {
-      return request.auth.token.dispensaryId == dispensaryId;
+      return request.auth != null && request.auth.token.dispensaryId == dispensaryId;
     }
   
     function isRole(role) {
-      return request.auth.token.role == role;
+      return request.auth != null && request.auth.token.role == role;
+    }
+    
+    function isDispensaryOwner() {
+      return isRole('DispensaryOwner');
+    }
+    
+    function isDispensaryStaff() {
+      return isRole('DispensaryStaff');
     }
 
-    // Allow Super Admins full read/write access to all collections
+    // ===== SUPER ADMIN ACCESS =====
     match /{document=**} {
       allow read, write: if isRole('Super Admin');
     }
 
-    // Users can read/update their own document
+    // ===== USER MANAGEMENT =====
     match /users/{userId} {
-      allow read, update: if request.auth.uid == userId;
-      allow create, delete: if isRole('Super Admin');
+      allow read, update: if isAuthenticated() && request.auth.uid == userId;
+      // Allow public user creation during checkout (guest checkout flow)
+      allow create: if request.auth.uid == userId || isRole('Super Admin');
+      allow delete: if isRole('Super Admin');
     }
 
-    // Public read for approved dispensaries
+    // ===== DISPENSARIES =====
     match /dispensaries/{dispensaryId} {
-      allow read: if true; // Allow public read for all dispensaries
-      allow update: if isDispensaryMember(dispensaryId) || isRole('Super Admin');
+      allow read: if true; // Public read for browsing
+      allow update: if isDispensaryMember(dispensaryId);
       allow create, delete: if isRole('Super Admin');
     }
 
-    // Allow read for AI Advisors
+    // ===== PUBLIC REFERENCES =====
     match /aiAdvisors/{advisorId} {
-        allow read: if true; // Public read
-        allow write: if isRole('Super Admin');
+      allow read: if true;
+      allow write: if isRole('Super Admin');
     }
 
-    // Allow read for dispensary types
     match /dispensaryTypes/{typeId} {
-        allow read: if true;
+      allow read: if true;
+      allow write: if isRole('Super Admin');
     }
     
-    // Allow read for product categories
     match /dispensaryTypeProductCategories/{docId} {
-        allow read: if true;
+      allow read: if true;
+      allow update: if isDispensaryOwner() && 
+                      request.resource.data.name == get(/databases/$(database)/documents/dispensaries/$(request.auth.token.dispensaryId)).data.dispensaryType;
+      allow write: if isRole('Super Admin');
     }
     
-    // Allow read for active credit packages
     match /creditPackages/{packageId} {
-        allow read: if resource.data.isActive == true;
+      allow read: if resource.data.isActive == true;
+      allow write: if isRole('Super Admin');
     }
 
-    // Products Collection
-    match /products/{productId} {
-        allow read: if true; // Publicly readable
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-
-    // Cannibinoid Store Products Collection
-    match /cannibinoid_store_products/{productId} {
-        allow read: if true;
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-
-    // Traditional Medicine Products Collection
-    match /traditional_medicine_products/{productId} {
-        allow read: if true;
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-
-    // Mushroom Store Products Collection
-    match /mushroom_store_products/{productId} {
-        allow read: if true;
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-
-    // Homeopathy Store Products Collection
-    match /homeopathy_store_products/{productId} {
-        allow read: if true;
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-
-    // Permaculture Store Products Collection
-    match /permaculture_store_products/{productId} {
-        allow read: if true;
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-    
-    // Product Pool Products Collection
-    match /productPoolProducts/{productId} {
-        allow read: if true; // Publicly readable for pool browsing
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId);
-    }
-    
-    // Rules for product requests
-    match /productRequests/{requestId} {
-        allow create: if request.auth.uid != null;
-        allow read: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
-                       isDispensaryMember(resource.data.requesterDispensaryId);
-        allow update: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
-                         isDispensaryMember(resource.data.requesterDispensaryId);
-        allow delete: if isRole('Super Admin');
-    }
-    
-    // Rules for the new product pool orders collection
-    match /productPoolOrders/{orderId} {
-        allow create: if request.auth.uid != null;
-        allow read: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
-                       isDispensaryMember(resource.data.requesterDispensaryId);
-        allow update: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
-                         isDispensaryMember(resource.data.requesterDispensaryId);
-        allow delete: if isRole('Super Admin');
-    }
-    
-    // Rules for pool issues
-    match /poolIssues/{issueId} {
-        allow create: if request.auth.uid != null;
-        allow read, update: if isDispensaryMember(resource.data.reporterDispensaryId) || isDispensaryMember(resource.data.reportedDispensaryId);
-    }
-    
-    // Rules for sticker sets
-    match /stickersets/{setId} {
-        allow read: if resource.data.isPublic == true;
-        allow create: if request.auth.uid != null;
-        allow update, delete: if request.auth.uid == resource.data.creatorUid;
-    }
-
-    // Orders Collection
-    match /orders/{orderId} {
-      allow read: if request.auth.uid == resource.data.userId || 
-                     request.auth.token.dispensaryId in resource.data.shipments.keys();
-      allow create: if request.auth.uid != null;
-      allow update: if request.auth.uid == resource.data.userId || 
-                       request.auth.token.dispensaryId in resource.data.shipments.keys();
-      allow delete: if isRole('Super Admin');
-    }
-
-    // Notifications Collection
-    match /notifications/{notificationId} {
-      allow read: if request.auth.uid == resource.data.userId;
-      allow create: if true;
-      allow update: if request.auth.uid == resource.data.userId;
-    }
-
-    // Notification Preferences
-    match /notificationPreferences/{userId} {
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    // Reviews Collections
-    match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if request.auth.uid != null;
-      allow update: if request.auth.uid == resource.data.userId;
-      allow delete: if isRole('Super Admin');
-    }
-
-    match /dispensaryReviews/{reviewId} {
-      allow read: if true;
-      allow create: if request.auth.uid != null;
-      allow update: if request.auth.uid == resource.data.userId;
-      allow delete: if isRole('Super Admin');
-    }
-
-    match /dispensaryReviewStats/{dispensaryId} {
-      allow read: if true;
-      allow write: if false;
-    }
-
-    // Carts and Wishlists
-    match /carts/{userId} {
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    match /wishlists/{userId} {
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    // Advisor Chats
-    match /advisor_chats/{chatId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-    }
-
-    // Events
-    match /events/{eventId} {
-      allow read: if true;
-      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow delete: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
-    }
-
-    match /dispensaryEvents/{eventId} {
-      allow read: if true;
-      allow create, update, delete: if isDispensaryMember(request.resource.data.dispensaryId);
-    }
-
-    // Educational Videos
     match /educationalVideos/{videoId} {
       allow read: if true;
       allow write: if isRole('Super Admin');
-    }
-
-    // Influencer System
-    match /influencerProfiles/{profileId} {
-      allow read: if true;
-      allow create, update: if request.auth.uid == request.resource.data.userId;
-      allow delete: if isRole('Super Admin');
-    }
-
-    match /referralClicks/{clickId} {
-      allow create: if true;
-      allow read: if request.auth.uid == resource.data.influencerId || isRole('Super Admin');
-    }
-
-    match /influencerCommissions/{commissionId} {
-      allow read: if request.auth.uid == resource.data.influencerId || isRole('Super Admin');
-      allow write: if false;
-    }
-
-    // AI Interactions Log
-    match /aiInteractionsLog/{logId} {
-      allow read: if request.auth.uid == resource.data.userId || isDispensaryMember(resource.data.dispensaryId);
-      allow create: if request.auth.uid != null;
-    }
-
-    // Treehouse Collections
-    match /treehouseProducts/{productId} {
-      allow read: if true;
-      allow create, update: if request.auth.uid == request.resource.data.creatorId;
-      allow delete: if isRole('Super Admin');
-    }
-
-    match /creator_stores/{storeId} {
-      allow read: if true;
-      allow create: if request.auth.uid == request.resource.data.ownerId;
-      allow update: if request.auth.uid == resource.data.ownerId;
-      allow delete: if isRole('Super Admin');
-    }
-
-    match /creator_earnings/{userId} {
-      allow read: if request.auth.uid == userId || isRole('Super Admin');
-      allow write: if isRole('Super Admin');
-    }
-
-    match /earnings_transactions/{transactionId} {
-      allow read: if request.auth.uid == resource.data.creatorId || isRole('Super Admin');
-      allow write: if isRole('Super Admin');
-    }
-
-    match /treehouse_orders/{orderId} {
-      allow read: if request.auth.uid == resource.data.buyerId || request.auth.uid == resource.data.creatorId;
-      allow create: if request.auth.uid != null;
-      allow update: if request.auth.uid == resource.data.creatorId;
-    }
-
-    match /creatorDesigns/{designId} {
-      allow read: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid == request.resource.data.userId;
-      allow update: if request.auth.uid == resource.data.userId;
-    }
-
-    match /apparel_items/{itemId} {
-      allow read: if true;
-      allow write: if isRole('Super Admin');
-    }
-
-    // Dispensary Earnings & Payouts
-    match /dispensary_earnings/{userId} {
-      allow read: if request.auth.uid == userId || isDispensaryMember(resource.data.dispensaryId);
-      allow write: if isRole('Super Admin');
-    }
-
-    match /dispensary_transactions/{transactionId} {
-      allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
-      allow write: if isRole('Super Admin');
-    }
-
-    match /dispensary_payout_requests/{requestId} {
-      allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
-      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
-      allow update: if isRole('Super Admin');
-    }
-
-    // Subcollections
-    match /dispensaries/{dispensaryId}/scheduledShares/{shareId} {
-      allow read, write: if isDispensaryMember(dispensaryId);
-    }
-
-    match /dispensaries/{dispensaryId}/shareAnalytics/{analyticsId} {
-      allow read: if isDispensaryMember(dispensaryId);
-      allow write: if true;
     }
 
     match /pricing_rules/{ruleId} {
@@ -302,70 +77,344 @@ service cloud.firestore {
       allow write: if isRole('Super Admin');
     }
 
-    match /payment_methods/{methodId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
+    match /apparel_items/{itemId} {
+      allow read: if true;
+      allow write: if isRole('Super Admin');
     }
 
-    match /shipping_addresses/{addressId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
+    match /apparel_items/{itemId} {
+      allow read: if true;
+      allow write: if isRole('Super Admin');
     }
 
-    // Driver System Collections
-    match /driver_profiles/{driverId} {
-        allow read: if request.auth.uid != null;
-        allow create, update: if request.auth.uid == driverId || isRole('DispensaryOwner') || isRole('DispensaryStaff');
-        allow delete: if isRole('Super Admin');
+    // ===== PRODUCT COLLECTIONS =====
+    // Main products collection (fallback)
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
     }
 
-    match /deliveries/{deliveryId} {
-        allow read: if request.auth.uid != null;
-        allow create: if isRole('DispensaryOwner') || isRole('DispensaryStaff');
-        allow update: if request.auth.uid == resource.data.driverId || isDispensaryMember(resource.data.dispensaryId);
+    // Cannibinoid Store Products
+    match /cannibinoid_store_products/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Traditional Medicine Products
+    match /traditional_medicine_dispensary_products/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Mushroom Store Products
+    match /mushroom_store_products/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Homeopathy Store Products
+    match /homeopathy_store_products/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // Permaculture Store Products
+    match /permaculture_store_products/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+    
+    // Product Pool Products
+    match /productPoolProducts/{productId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // ===== PRODUCT POOL SYSTEM =====
+    match /productRequests/{requestId} {
+      allow create: if isAuthenticated();
+      allow read: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
+                     isDispensaryMember(resource.data.requesterDispensaryId);
+      allow update: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
+                       isDispensaryMember(resource.data.requesterDispensaryId);
+      allow delete: if isRole('Super Admin');
+    }
+    
+    match /productPoolOrders/{orderId} {
+      allow create: if isAuthenticated();
+      allow read: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
+                     isDispensaryMember(resource.data.requesterDispensaryId);
+      allow update: if isDispensaryMember(resource.data.productOwnerDispensaryId) || 
+                       isDispensaryMember(resource.data.requesterDispensaryId);
+      allow delete: if isRole('Super Admin');
+    }
+    
+    match /poolIssues/{issueId} {
+      allow create: if isAuthenticated();
+      allow read, update: if isDispensaryMember(resource.data.reporterDispensaryId) || 
+                             isDispensaryMember(resource.data.reportedDispensaryId);
+    }
+
+    // ===== ORDERS SYSTEM =====
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.userId || 
+                     request.auth.token.dispensaryId in resource.data.shipments.keys());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                      (request.auth.uid == resource.data.userId || 
+                       request.auth.token.dispensaryId in resource.data.shipments.keys());
+      allow delete: if isRole('Super Admin');
+    }
+
+    // ===== NOTIFICATIONS =====
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if true; // System can create notifications
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    match /notificationPreferences/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
     match /driver_notifications/{notificationId} {
-        allow read: if request.auth.uid == resource.data.driverId;
-        allow create: if true;
-        allow update: if request.auth.uid == resource.data.driverId;
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.driverId;
+      allow create: if true;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.driverId;
     }
 
-    match /driver_payout_requests/{payoutId} {
-        allow read: if request.auth.uid == resource.data.driverId || isDispensaryMember(resource.data.dispensaryId);
-        allow create: if request.auth.uid == resource.data.driverId;
-        allow update: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+    // ===== REVIEWS SYSTEM =====
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isRole('Super Admin');
     }
 
-    // Advertising System Collections
-    match /advertisements/{adId} {
-        allow read: if true;
-        allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
-        allow delete: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+    match /dispensaryReviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /dispensaryReviewStats/{dispensaryId} {
+      allow read: if true;
+      allow write: if false; // Updated by Cloud Functions only
+    }
+
+    // ===== USER DATA =====
+    match /carts/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /wishlists/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /payment_methods/{methodId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    match /shipping_addresses/{addressId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // ===== ADVISOR CHATS =====
+    match /advisor_chats/{chatId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    match /aiInteractionsLog/{logId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.userId || 
+                     isDispensaryMember(resource.data.dispensaryId));
+      allow create: if isAuthenticated();
+    }
+
+    // ===== EVENTS SYSTEM =====
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    match /dispensaryEvents/{eventId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
+    }
+
+    // ===== INFLUENCER SYSTEM =====
+    match /influencerProfiles/{profileId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /referralClicks/{clickId} {
+      allow create: if true;
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.influencerId || isRole('Super Admin'));
+    }
+
+    match /influencerCommissions/{commissionId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.influencerId || isRole('Super Admin'));
+      allow write: if false; // Updated by Cloud Functions
     }
 
     match /influencerAdSelections/{selectionId} {
-        allow read: if request.auth.uid == resource.data.influencerId || isDispensaryMember(resource.data.dispensaryId);
-        allow create: if request.auth.uid == request.resource.data.influencerId;
-        allow update: if request.auth.uid == resource.data.influencerId || isDispensaryMember(resource.data.dispensaryId);
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.influencerId || 
+                     isDispensaryMember(resource.data.dispensaryId));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.influencerId;
+      allow update: if isAuthenticated() && 
+                      (request.auth.uid == resource.data.influencerId || 
+                       isDispensaryMember(resource.data.dispensaryId));
+    }
+
+    // ===== TREEHOUSE SYSTEM =====
+    match /treehouseProducts/{productId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.creatorId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /creator_stores/{storeId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.ownerId;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.ownerId;
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /creator_earnings/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isRole('Super Admin'));
+      allow write: if isRole('Super Admin');
+    }
+
+    match /earnings_transactions/{transactionId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.creatorId || isRole('Super Admin'));
+      allow write: if isRole('Super Admin');
+    }
+
+    match /treehouse_orders/{orderId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.buyerId || 
+                     request.auth.uid == resource.data.creatorId);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.creatorId;
+    }
+
+    match /creatorDesigns/{designId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // ===== DISPENSARY EARNINGS =====
+    match /dispensary_earnings/{userId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == userId || isDispensaryMember(resource.data.dispensaryId));
+      allow write: if isRole('Super Admin');
+    }
+
+    match /dispensary_transactions/{transactionId} {
+      allow read: if isAuthenticated() && 
+                    (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
+      allow write: if isRole('Super Admin');
+    }
+
+    match /dispensary_payout_requests/{requestId} {
+      allow read: if isAuthenticated() && 
+                    (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
+      allow create: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow update: if isRole('Super Admin');
+    }
+
+    // ===== DRIVER SYSTEM =====
+    match /driver_profiles/{driverId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && 
+                              (request.auth.uid == driverId || 
+                               isDispensaryOwner() || 
+                               isDispensaryStaff());
+      allow delete: if isRole('Super Admin');
+    }
+
+    match /deliveries/{deliveryId} {
+      allow read: if isAuthenticated();
+      allow create: if isDispensaryOwner() || isDispensaryStaff();
+      allow update: if isAuthenticated() && 
+                      (request.auth.uid == resource.data.driverId || 
+                       isDispensaryMember(resource.data.dispensaryId));
+    }
+
+    match /driver_payout_requests/{payoutId} {
+      allow read: if isAuthenticated() && 
+                    (request.auth.uid == resource.data.driverId || 
+                     isDispensaryMember(resource.data.dispensaryId));
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.driverId;
+      allow update: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+    }
+
+    // ===== ADVERTISING SYSTEM =====
+    match /advertisements/{adId} {
+      allow read: if true;
+      allow create, update: if isDispensaryMember(request.resource.data.dispensaryId);
+      allow delete: if isDispensaryMember(resource.data.dispensaryId);
     }
 
     match /adImpressions/{impressionId} {
-        allow create: if true;
-        allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+      allow create: if true;
+      allow read: if isAuthenticated() && 
+                    (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
     }
 
     match /adClicks/{clickId} {
-        allow create: if true;
-        allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+      allow create: if true;
+      allow read: if isAuthenticated() && 
+                    (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
     }
 
     match /adConversions/{conversionId} {
-        allow create: if true;
-        allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
+      allow create: if true;
+      allow read: if isAuthenticated() && 
+                    (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
     }
 
     match /adDailyAnalytics/{analyticsId} {
-        allow read: if isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin');
-        allow write: if false;
+      allow read: if isAuthenticated() && 
+                    (isDispensaryMember(resource.data.dispensaryId) || isRole('Super Admin'));
+      allow write: if false; // Updated by Cloud Functions
+    }
+
+    // ===== STICKER SYSTEM =====
+    match /stickersets/{setId} {
+      allow read: if resource.data.isPublic == true || 
+                    (isAuthenticated() && request.auth.uid == resource.data.creatorUid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.creatorUid;
+    }
+
+    // ===== SUBCOLLECTIONS =====
+    match /dispensaries/{dispensaryId}/scheduledShares/{shareId} {
+      allow read, write: if isDispensaryMember(dispensaryId);
+    }
+
+    match /dispensaries/{dispensaryId}/shareAnalytics/{analyticsId} {
+      allow read: if isDispensaryMember(dispensaryId);
+      allow write: if true; // Allow external tracking
     }
   }
 }

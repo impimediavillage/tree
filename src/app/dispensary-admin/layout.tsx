@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv, Truck, Share2
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv, Truck, Share2, FolderTree
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ interface NavItem {
   disabled?: boolean;
   badge?: string | number;
   ownerOnly?: boolean;
+  dispensaryTypeOnly?: string; // Only show for specific dispensary type
 }
 
 const mainSidebarNavItems: NavItem[] = [
@@ -45,6 +46,7 @@ const productPoolNavItems: NavItem[] = [
 
 const managementSidebarNavItems: NavItem[] = [
   { title: 'Analytics', href: '/dispensary-admin/analytics', icon: BarChart3 },
+  { title: 'Category Manager', href: '/dispensary-admin/category-manager', icon: FolderTree, ownerOnly: true, dispensaryTypeOnly: 'Mushroom store' },
   { title: 'Events Calendar', href: '/dispensary-admin/events', icon: Calendar, ownerOnly: true },
   { title: 'Advertising', href: '/dispensary-admin/advertising', icon: Tv, ownerOnly: true },
   { title: 'Social Share Hub', href: '#social-share', icon: Share2, ownerOnly: true },
@@ -231,6 +233,10 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             {managementSidebarNavItems.map((item) => {
               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
               const isSpecialHref = item.href.startsWith('#');
+              // Hide item if it's for a specific dispensary type and current doesn't match
+              if (item.dispensaryTypeOnly && currentDispensary?.dispensaryType !== item.dispensaryTypeOnly) {
+                return null;
+              }
               return (
                 <Button
                   key={item.title}
