@@ -42,8 +42,6 @@ runConfig:
   timeoutSeconds: 60
 
 # Defines environment variables that are available to your app's build process and at runtime.
-# env:
-#   - variable: API_KEY
-#     value: "your_api_key_here" # It's recommended to use secrets for sensitive data.
-#   - variable: SECRET_API_KEY
-#     secret: SECRET_API_KEY_NAME # Name of the secret stored in Cloud Secret Manager.
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_DATABASE_URL
+    value: "https://dispensary-tree-default-rtdb.firebaseio.com"
