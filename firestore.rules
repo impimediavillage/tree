@@ -441,7 +441,7 @@ service cloud.firestore {
     }
     
     // Dispensary Types Collection (PUBLIC BROWSING)
-    match /dispensary-types/{typeId} {
+    match /dispensaryTypes/{typeId} {
       // Public read access for browsing
       allow read: if true;
       
