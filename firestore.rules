@@ -463,7 +463,7 @@ service cloud.firestore {
     }
     
     // AI Advisors Collection (PUBLIC BROWSING)
-    match /ai_advisors/{advisorId} {
+    match /aiAdvisors/{advisorId} {
       // Public read access for browsing advisors
       allow read: if true;
       
@@ -618,6 +618,118 @@ service cloud.firestore {
     match /shipping_addresses/{addressId} {
       // Users can read/write their own addresses
       allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Notification Preferences Collection
+    match /notificationPreferences/{userId} {
+      // Users can read/write their own preferences
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Dispensary Reviews Collection  
+    match /dispensaryReviews/{reviewId} {
+      // Public read access
+      allow read: if true;
+      // Authenticated users can create reviews
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Users can update their own reviews
+      allow update: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Super Admins can delete
+      allow delete: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // Credit Packages Collection (PUBLIC BROWSING)
+    match /creditPackages/{packageId} {
+      // Public read access for pricing page
+      allow read: if true;
+      // Only Super Admins can write
+      allow write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // Educational Videos Collection (PUBLIC BROWSING)
+    match /educationalVideos/{videoId} {
+      // Public read access
+      allow read: if true;
+      // Only Super Admins can write
+      allow write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // Influencer Profiles Collection
+    match /influencerProfiles/{profileId} {
+      // Public read access for browsing
+      allow read: if true;
+      // Users can create/update their own profile
+      allow create, update: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Super Admins can manage all
+      allow write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // Referral Clicks Collection
+    match /referralClicks/{clickId} {
+      // Public write for tracking clicks
+      allow create: if true;
+      // Only owner and admins can read
+      allow read: if request.auth != null && 
+                     (request.auth.uid == resource.data.influencerId || 
+                      request.auth.token.role == 'SuperAdmin');
+    }
+
+    // Influencer Commissions Collection
+    match /influencerCommissions/{commissionId} {
+      // Influencers can read their own commissions
+      allow read: if request.auth != null && request.auth.uid == resource.data.influencerId;
+      // Super Admins can read all
+      allow read: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+      // Only system can write
+      allow write: if false;
+    }
+
+    // Dispensary Events Collection
+    match /dispensaryEvents/{eventId} {
+      // Public read access
+      allow read: if true;
+      // Dispensary staff can create/update their own events
+      allow create, update: if request.auth != null && isDispensaryStaffOrOwner() &&
+                               isOwnerOfDispensary(request.resource.data.dispensaryId);
+      // Super Admins can delete
+      allow delete: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // Dispensary Type Product Categories Collection
+    match /dispensaryTypeProductCategories/{categoryId} {
+      // Public read access
+      allow read: if true;
+      // Only Super Admins can write
+      allow write: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // AI Interactions Log Collection
+    match /aiInteractionsLog/{logId} {
+      // Users can read their own logs
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Users can create logs
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      // Dispensary staff can read logs for their dispensary
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() &&
+                     isOwnerOfDispensary(resource.data.dispensaryId);
+      // Super Admins can read all
+      allow read: if request.auth != null && request.auth.token.role == 'SuperAdmin';
+    }
+
+    // Scheduled Shares Subcollection
+    match /dispensaries/{dispensaryId}/scheduledShares/{shareId} {
+      // Dispensary staff can manage their own scheduled shares
+      allow read, write: if request.auth != null && isDispensaryStaffOrOwner() &&
+                            isOwnerOfDispensary(dispensaryId);
+    }
+
+    // Share Analytics Subcollection
+    match /dispensaries/{dispensaryId}/shareAnalytics/{analyticsId} {
+      // Dispensary staff can read their own analytics
+      allow read: if request.auth != null && isDispensaryStaffOrOwner() &&
+                     isOwnerOfDispensary(dispensaryId);
+      // System can write
+      allow write: if true;
     }
   }
 }
