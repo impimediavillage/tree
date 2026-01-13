@@ -31,7 +31,16 @@ const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 const functions: Functions = getFunctions(app, 'us-central1');
-const realtimeDb: Database = getDatabase(app); // Real-time database for live location tracking
+
+// Initialize Realtime Database only if URL is provided
+let realtimeDb: Database | null = null;
+try {
+  if (process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL) {
+    realtimeDb = getDatabase(app);
+  }
+} catch (error) {
+  console.warn('Realtime Database not available:', error);
+}
 
 // Initialize Analytics only on the client-side
 let analytics: Analytics | undefined;

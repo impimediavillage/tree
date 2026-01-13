@@ -37,6 +37,11 @@ export async function updateDriverLocation(
   deliveryId?: string | null
 ): Promise<void> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return;
+    }
+
     const locationData: DriverLocationUpdate = {
       ...location,
       timestamp: Date.now(),
@@ -119,6 +124,10 @@ export function startDriverLocationTracking(
  */
 export async function stopDriverLocationTracking(driverId: string): Promise<void> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return;
+    }
     const locationRef = ref(realtimeDb, `driver_locations/${driverId}`);
     await remove(locationRef);
   } catch (error) {
@@ -142,6 +151,10 @@ export async function initializeDeliveryTracking(
   destinationLocation: { latitude: number; longitude: number }
 ): Promise<void> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return;
+    }
     const trackingData: DeliveryTracking = {
       deliveryId,
       orderId,
@@ -177,6 +190,10 @@ export async function updateDeliveryTracking(
   driverLocation: { latitude: number; longitude: number; heading?: number; speed?: number }
 ): Promise<void> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return;
+    }
     // Get current tracking data
     const trackingRef = ref(realtimeDb, `delivery_tracking/${deliveryId}`);
     const snapshot = await get(trackingRef);
@@ -237,6 +254,10 @@ export function subscribeToDeliveryTracking(
   onError?: (error: Error) => void
 ): Unsubscribe {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return () => {};
+    }
     const trackingRef = ref(realtimeDb, `delivery_tracking/${deliveryId}`);
     
     const unsubscribe = onValue(
@@ -271,6 +292,10 @@ export function subscribeToDriverLocation(
   onError?: (error: Error) => void
 ): Unsubscribe {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return () => {};
+    }
     const locationRef = ref(realtimeDb, `driver_locations/${driverId}`);
     
     const unsubscribe = onValue(
@@ -300,6 +325,10 @@ export function subscribeToDriverLocation(
  */
 export async function cleanupDeliveryTracking(deliveryId: string): Promise<void> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return;
+    }
     const trackingRef = ref(realtimeDb, `delivery_tracking/${deliveryId}`);
     await remove(trackingRef);
   } catch (error) {
@@ -313,6 +342,10 @@ export async function cleanupDeliveryTracking(deliveryId: string): Promise<void>
  */
 export async function getDriverLocation(driverId: string): Promise<DriverLocationUpdate | null> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return null;
+    }
     const locationRef = ref(realtimeDb, `driver_locations/${driverId}`);
     const snapshot = await get(locationRef);
     
@@ -332,6 +365,10 @@ export async function getDriverLocation(driverId: string): Promise<DriverLocatio
  */
 export async function getAllActiveDriverLocations(): Promise<Record<string, DriverLocationUpdate>> {
   try {
+    if (!realtimeDb) {
+      console.warn('Realtime Database not available');
+      return {};
+    }
     const locationsRef = ref(realtimeDb, 'driver_locations');
     const snapshot = await get(locationsRef);
     
