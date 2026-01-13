@@ -126,6 +126,28 @@ export interface Order {
     creatorCommission?: number; // 25% for Treehouse orders
     creatorId?: string; // Creator user ID for Treehouse orders
     
+    // Stock tracking
+    stockDeducted?: boolean; // Flag indicating stock was deducted
+    stockDeductedAt?: Timestamp; // When stock was deducted
+    stockRestored?: boolean; // Flag indicating stock was restored after cancellation
+    stockRestoredAt?: Timestamp; // When stock was restored
+    stockUpdates?: Array<{
+        productId: string;
+        productName: string;
+        tierUnit: string;
+        quantityOrdered: number;
+        stockBefore: number;
+        stockAfter: number;
+    }>;
+    restorationUpdates?: Array<{
+        productId: string;
+        productName: string;
+        tierUnit: string;
+        quantityRestored: number;
+        stockBefore: number;
+        stockAfter: number;
+    }>;
+    
     // Archive management
     archived?: boolean;
     archivedAt?: Timestamp;

@@ -67,6 +67,13 @@ export {
   activateScheduledAds
 } from './advertising';
 
+// Export Stock Management functions
+export {
+  deductStockOnOrderCreated,
+  restoreStockOnOrderCancelled,
+  lowStockAlert
+} from './stock-management';
+
 // Upload Apparel Templates to Storage
 export const uploadApparelTemplates = onCall(async (request: CallableRequest) => {
     // Check authentication

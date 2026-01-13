@@ -555,7 +555,7 @@ export default function CreateAdPage() {
                                   {product.category}
                                 </p>
                                 <p className="text-xs text-[#5D4E37]/50 mt-1">
-                                  Stock: {product.quantityInStock} • SKU: {product.sku || 'N/A'}
+                                  Stock: {product.quantityInStock} units
                                 </p>
                               </div>
                             </div>
