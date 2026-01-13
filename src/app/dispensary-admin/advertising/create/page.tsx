@@ -530,38 +530,91 @@ export default function CreateAdPage() {
                           <button
                             key={product.id}
                             onClick={() => handleProductToggle(product)}
-                            className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                            className={`w-full flex flex-col gap-3 p-4 rounded-xl border-2 transition-all ${
                               isSelected
                                 ? 'border-purple-500 bg-purple-50 shadow-lg'
                                 : 'border-gray-200 hover:border-purple-300 hover:shadow-md bg-white'
                             }`}
                           >
-                            <Checkbox checked={!!isSelected} className="pointer-events-none" />
-                            
-                            {product.imageUrl && (
-                              <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                                <img
-                                  src={product.imageUrl}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                />
+                            <div className="flex items-center gap-4 w-full">
+                              <Checkbox checked={!!isSelected} className="pointer-events-none flex-shrink-0" />
+                              
+                              {product.imageUrl && (
+                                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                                  <img
+                                    src={product.imageUrl}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              
+                              <div className="flex-1 text-left min-w-0">
+                                <h4 className="font-bold text-[#5D4E37] truncate">{product.name}</h4>
+                                <p className="text-sm text-[#5D4E37]/70">
+                                  {product.category}
+                                </p>
+                                <p className="text-xs text-[#5D4E37]/50 mt-1">
+                                  Stock: {product.quantityInStock} • SKU: {product.sku || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Product Tiers Detail */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pl-10">
+                              {product.priceTiers && product.priceTiers.map((tier, index) => (
+                                <div
+                                  key={index}
+                                  className={`flex items-center justify-between p-2 rounded-lg ${
+                                    isSelected ? 'bg-white' : 'bg-gray-50'
+                                  }`}
+                                >
+                                  <div>
+                                    <p className="text-xs font-semibold text-[#5D4E37]/70">
+                                      {tier.weight}g
+                                    </p>
+                                    <p className="text-xs text-[#5D4E37]/50">
+                                      {tier.packagingType}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm font-bold text-[#006B3E]">
+                                      R{tier.price.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-[#5D4E37]/40">
+                                      R{(tier.price / tier.weight).toFixed(2)}/g
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Product Description */}
+                            {product.description && (
+                              <div className="pl-10 text-left">
+                                <p className="text-xs text-[#5D4E37]/60 line-clamp-2">
+                                  {product.description}
+                                </p>
                               </div>
                             )}
-                            
-                            <div className="flex-1 text-left">
-                              <h4 className="font-bold text-[#5D4E37]">{product.name}</h4>
-                              <p className="text-sm text-[#5D4E37]/70 line-clamp-1">
-                                {product.category}
-                              </p>
-                            </div>
-                            
-                            <div className="text-right">
-                              <p className="text-lg font-black text-[#006B3E]">
-                                R{price.toFixed(2)}
-                              </p>
-                              <p className="text-xs text-[#5D4E37]/50">
-                                Stock: {product.quantityInStock}
-                              </p>
+
+                            {/* Additional Product Info */}
+                            <div className="flex items-center gap-3 pl-10 pt-2 border-t border-gray-200">
+                              {product.thcContent && (
+                                <Badge variant="outline" className="text-xs">
+                                  THC: {product.thcContent}%
+                                </Badge>
+                              )}
+                              {product.cbdContent && (
+                                <Badge variant="outline" className="text-xs">
+                                  CBD: {product.cbdContent}%
+                                </Badge>
+                              )}
+                              {product.strain && (
+                                <Badge variant="outline" className="text-xs">
+                                  {product.strain}
+                                </Badge>
+                              )}
                             </div>
                           </button>
                         );

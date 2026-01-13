@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   LayoutDashboard, Package, Users, Settings, LogOut, UserCircle, Store,
-  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv
+  Bell, ListOrdered, AlertTriangle, Menu, X, ShoppingBasket, History, BarChart3, Megaphone, CreditCard, Palette, Loader2, PackageCheck, DollarSign, Calendar, Tv, Truck, Share2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { DispensaryAdminProvider } from '@/contexts/DispensaryAdminContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { NotificationBell, NotificationCenter } from '@/components/notifications';
+import { SocialShareHub } from '@/components/social-share/SocialShareHub';
 
 interface NavItem {
   title: string;
@@ -46,17 +47,17 @@ const managementSidebarNavItems: NavItem[] = [
   { title: 'Analytics', href: '/dispensary-admin/analytics', icon: BarChart3 },
   { title: 'Events Calendar', href: '/dispensary-admin/events', icon: Calendar, ownerOnly: true },
   { title: 'Advertising', href: '/dispensary-admin/advertising', icon: Tv, ownerOnly: true },
+  { title: 'Social Share Hub', href: '#social-share', icon: Share2, ownerOnly: true },
   { title: 'Payouts', href: '/dispensary-admin/payouts', icon: DollarSign },
   { title: 'Credits', href: '/dispensary-admin/credits', icon: CreditCard },
   { title: 'The Creator Lab', href: '/dashboard/creator-lab', icon: Palette },
   { title: 'My Crew', href: '/dispensary-admin/users', icon: Users, ownerOnly: true },
-  { title: 'Marketing', href: '/dispensary-admin/marketing', icon: Megaphone, disabled: true, badge: 'Soon' },
+  { title: 'Driver Management', href: '/dispensary-admin/drivers', icon: Truck, ownerOnly: true },
 ];
 
 const settingsSidebarNavItems: NavItem[] = [
   { title: 'My Profile', href: '/dispensary-admin/profile', icon: Store },
-  { title: 'Notifications', href: '/dispensary-admin/notifications', icon: Bell, disabled: true, badge: 'Soon' },
-  { title: 'Account Settings', href: '/dispensary-admin/account', icon: UserCircle, disabled: true, badge: 'Soon' },
+  { title: 'Notifications', href: '#notifications', icon: Bell },
 ];
 
 
@@ -76,6 +77,7 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
   const { currentUser, loading: authLoading, canAccessDispensaryPanel, currentDispensary, isDispensaryOwner, isDispensaryStaff, logout } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+  const [showSocialShareHub, setShowSocialShareHub] = useState(false);
   
   useEffect(() => {
     if (!authLoading && !canAccessDispensaryPanel) {
@@ -88,6 +90,22 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
         }
     }
   }, [authLoading, canAccessDispensaryPanel, currentUser, router, toast]);
+
+  const handleNavClick = (href: string, e: React.MouseEvent) => {
+    if (href === '#notifications') {
+      e.preventDefault();
+      setShowNotificationCenter(true);
+      setIsMobileSidebarOpen(false);
+      return false;
+    }
+    if (href === '#social-share') {
+      e.preventDefault();
+      setShowSocialShareHub(true);
+      setIsMobileSidebarOpen(false);
+      return false;
+    }
+    setIsMobileSidebarOpen(false);
+  };
 
   if (authLoading || !canAccessDispensaryPanel || !currentUser || !currentDispensary) {
      return (
@@ -212,31 +230,45 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             </div>
             {managementSidebarNavItems.map((item) => {
               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+              const isSpecialHref = item.href.startsWith('#');
               return (
                 <Button
                   key={item.title}
-                  variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
+                  variant={pathname?.startsWith(item.href) && !isSpecialHref ? 'secondary' : 'ghost'}
                   className={cn(
                     'w-full justify-start text-sm',
-                    pathname?.startsWith(item.href)
+                    pathname?.startsWith(item.href) && !isSpecialHref
                       ? 'bg-primary/10 text-primary hover:bg-primary/20'
                       : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                     itemDisabled && 'opacity-50 cursor-not-allowed'
                   )}
-                  asChild
-                  onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                  asChild={!isSpecialHref}
+                  onClick={(e) => isSpecialHref ? handleNavClick(item.href, e) : isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
                   disabled={itemDisabled}
                 >
-                  <Link href={itemDisabled ? '#' : item.href}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                    {item.badge && (
-                      <Badge className={cn(
-                        "ml-auto",
-                        item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
-                      )}>{item.badge}</Badge>
-                    )}
-                  </Link>
+                  {isSpecialHref ? (
+                    <>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.title}
+                      {item.badge && (
+                        <Badge className={cn(
+                          "ml-auto",
+                          item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                        )}>{item.badge}</Badge>
+                      )}
+                    </>
+                  ) : (
+                    <Link href={itemDisabled ? '#' : item.href}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.title}
+                      {item.badge && (
+                        <Badge className={cn(
+                          "ml-auto",
+                          item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                        )}>{item.badge}</Badge>
+                      )}
+                    </Link>
+                  )}
                 </Button>
               );
             })}
@@ -248,31 +280,45 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
             </div>
             {settingsSidebarNavItems.map((item) => {
               const itemDisabled = item.disabled || (item.ownerOnly && !isDispensaryOwner);
+              const isSpecialHref = item.href.startsWith('#');
               return (
                 <Button
                   key={item.title}
-                  variant={pathname?.startsWith(item.href) ? 'secondary' : 'ghost'}
+                  variant={pathname?.startsWith(item.href) && !isSpecialHref ? 'secondary' : 'ghost'}
                   className={cn(
                     'w-full justify-start text-sm',
-                    pathname?.startsWith(item.href)
+                    pathname?.startsWith(item.href) && !isSpecialHref
                       ? 'bg-primary/10 text-primary hover:bg-primary/20'
                       : 'hover:bg-accent/80 hover:text-accent-foreground text-foreground',
                     itemDisabled && 'opacity-50 cursor-not-allowed'
                   )}
-                  asChild
-                  onClick={() => isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
+                  asChild={!isSpecialHref}
+                  onClick={(e) => isSpecialHref ? handleNavClick(item.href, e) : isMobileSidebarOpen && setIsMobileSidebarOpen(false)}
                   disabled={itemDisabled}
                 >
-                  <Link href={itemDisabled ? '#' : item.href}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                    {item.badge && (
-                      <Badge className={cn(
-                        "ml-auto",
-                        item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
-                      )}>{item.badge}</Badge>
-                    )}
-                  </Link>
+                  {isSpecialHref ? (
+                    <>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.title}
+                      {item.badge && (
+                        <Badge className={cn(
+                          "ml-auto",
+                          item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                        )}>{item.badge}</Badge>
+                      )}
+                    </>
+                  ) : (
+                    <Link href={itemDisabled ? '#' : item.href}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.title}
+                      {item.badge && (
+                        <Badge className={cn(
+                          "ml-auto",
+                          item.badge === 'Soon' && "bg-[#006B3E] hover:bg-[#005230] text-white"
+                        )}>{item.badge}</Badge>
+                      )}
+                    </Link>
+                  )}
                 </Button>
               );
             })}
@@ -383,6 +429,12 @@ function WellnessAdminLayoutContent({ children }: { children: ReactNode }) {
       <NotificationCenter 
         isOpen={showNotificationCenter} 
         onClose={() => setShowNotificationCenter(false)} 
+      />
+      
+      {/* Social Share Hub Dialog */}
+      <SocialShareHub 
+        isOpen={showSocialShareHub}
+        onOpenChange={setShowSocialShareHub}
       />
     </div>
   );
