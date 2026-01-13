@@ -78,11 +78,13 @@ export default function NotificationBell() {
 
   const playNotificationSound = (soundName: string) => {
     try {
-      const audio = new Audio(`/sounds/${soundName}.mp3`);
+      const audio = new Audio(`/api/sounds/${soundName}.mp3`);
       audio.volume = 0.3;
-      audio.play().catch(console.error);
+      audio.play().catch((err) => {
+        console.error('Error playing sound:', soundName, err);
+      });
     } catch (error) {
-      console.error('Error playing sound:', error);
+      console.error('Error playing sound:', soundName, error);
     }
   };
 

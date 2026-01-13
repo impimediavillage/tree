@@ -285,9 +285,11 @@ export default function LiveDeliveryMap({ delivery, orderId, onStatusUpdate }: L
 
   const playNotificationSound = () => {
     try {
-      const audio = new Audio('/sounds/notification-pop.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(console.error);
+      const audio = new Audio('/api/sounds/notification-pop.mp3');
+      audio.volume = 0.3;
+      audio.play().catch((err) => {
+        console.error('Error playing proximity alert sound:', err);
+      });
     } catch (error) {
       console.error('Error playing sound:', error);
     }
