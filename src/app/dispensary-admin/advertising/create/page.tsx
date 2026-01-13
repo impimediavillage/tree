@@ -571,10 +571,10 @@ export default function CreateAdPage() {
                                 >
                                   <div>
                                     <p className="text-xs font-semibold text-[#5D4E37]/70">
-                                      {tier.weight}g
+                                      {tier.unit}
                                     </p>
                                     <p className="text-xs text-[#5D4E37]/50">
-                                      {tier.packagingType}
+                                      Stock: {tier.quantityInStock ?? 0}
                                     </p>
                                   </div>
                                   <div className="text-right">
@@ -582,7 +582,7 @@ export default function CreateAdPage() {
                                       R{tier.price.toFixed(2)}
                                     </p>
                                     <p className="text-xs text-[#5D4E37]/40">
-                                      R{(tier.price / tier.weight).toFixed(2)}/g
+                                      per {tier.unit}
                                     </p>
                                   </div>
                                 </div>
