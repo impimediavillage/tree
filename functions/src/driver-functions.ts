@@ -162,7 +162,7 @@ export const onDeliveryStatusUpdate = onDocumentUpdated(
       // Update order status if needed
       if (orderStatus) {
         const orderRef = db.collection('orders').doc(orderId);
-        await orderRef.update({
+        const updateData: any = {
           [`shipments.${dispensaryId}.status`]: orderStatus,
           [`shipments.${dispensaryId}.lastStatusUpdate`]: admin.firestore.FieldValue.serverTimestamp(),
           [`shipments.${dispensaryId}.statusHistory`]: admin.firestore.FieldValue.arrayUnion({
@@ -172,7 +172,15 @@ export const onDeliveryStatusUpdate = onDocumentUpdated(
             updatedBy: afterData.driverId || 'system'
           }),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        };
+
+        // Add driver info to shipment when claimed
+        if (newStatus === 'claimed' && afterData.driverId && afterData.driverName) {
+          updateData[`shipments.${dispensaryId}.driverId`] = afterData.driverId;
+          updateData[`shipments.${dispensaryId}.driverName`] = afterData.driverName;
+        }
+
+        await orderRef.update(updateData);
       }
 
       // Send notification to customer
