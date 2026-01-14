@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
 import JSZip from 'jszip';
 import type { Product, PriceTier } from '@/types';
+import { PLATFORM_COMMISSION_RATE } from '@/lib/pricing';
 
 interface DesignPackDialogProps {
   isOpen: boolean;
@@ -33,6 +34,8 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [viewingImageIndex, setViewingImageIndex] = useState<number>(0);
 
+    // Calculate price with 25% platform commission
+    const priceWithCommission = product && tier ? tier.price * (1 + PLATFORM_COMMISSION_RATE) : 0;
     const maxSelectable = product && tier ? Math.ceil(tier.price / 100) : 1;
 
     useEffect(() => {
@@ -150,9 +153,11 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
                     <DialogHeader className="px-6 pt-6 pb-4 border-b">
-                        <DialogTitle>Select Your Triple S Sticker Set</DialogTitle>
-                        <DialogDescription>
-                            Based on the price of **ZAR {tier?.price.toFixed(2)}**, you can select **{maxSelectable}** sticker(s) from our premium Triple S design collection.
+                        <DialogTitle className="text-3xl font-black text-[#3D2E17]">
+                            Select Your Triple S Canna Club Design Pack
+                        </DialogTitle>
+                        <DialogDescription className="text-base text-[#5D4E37] mt-2">
+                            Your design pack price of <span className="font-bold text-[#006B3E]">R {priceWithCommission.toFixed(2)}</span> gives you <span className="font-bold">{maxSelectable}</span> {maxSelectable === 1 ? 'design' : 'designs'} to select. <span className="text-[#006B3E] font-semibold">Enjoy!</span>
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -228,10 +233,17 @@ export const DesignPackDialog: React.FC<DesignPackDialogProps> = ({ isOpen, onOp
                             Selected: {selectedStickers.length} / {maxSelectable} sticker(s).
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="relative flex-grow flex items-center justify-center">
+                    <div className="relative flex-grow flex items-center justify-center min-h-[300px] sm:min-h-[400px] bg-muted/20">
                         {viewingImage && (
-                            <div className="relative w-full h-full max-h-[60vh] sm:max-h-full">
-                                <Image src={viewingImage} alt="Sticker preview" fill className="object-contain p-2"/>
+                            <div className="relative w-full h-full min-h-[300px] sm:min-h-[400px]">
+                                <Image 
+                                    src={viewingImage} 
+                                    alt="Sticker preview" 
+                                    fill 
+                                    className="object-contain p-4"
+                                    priority
+                                    unoptimized
+                                />
                             </div>
                         )}
                         <Button
