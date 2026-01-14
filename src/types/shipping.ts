@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase/firestore';
 import type { OrderItem } from './order';
 import type { OrderStatus } from './order';
 
-export type ShippingStatus = 'pending' | 'ready_for_shipping' | 'label_generated' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'cancelled' | 'returned';
+export type ShippingStatus = 'pending' | 'ready_for_shipping' | 'label_generated' | 'ready_for_pickup' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'cancelled' | 'returned';
 
 export interface TrackingUpdate {
     timestamp: Date;
