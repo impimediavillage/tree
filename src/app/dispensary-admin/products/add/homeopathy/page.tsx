@@ -199,10 +199,10 @@ export default function AddHomeopathyProductPage() {
 
   return (
     <div className="max-w-5xl mx-auto my-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between bg-white/80 backdrop-blur-sm p-4 rounded-lg border shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold">Add Homeopathy Product</h1>
-          <p className="text-muted-foreground mt-1">Select a category to begin.</p>
+          <h1 className="text-3xl font-extrabold text-[#3D2E17]">Add Homeopathy Product</h1>
+          <p className="text-[#3D2E17] font-bold mt-1">Select a category to begin.</p>
         </div>
         <Button variant="outline" asChild>
             <Link href="/dispensary-admin/products"><ArrowLeft className="mr-2 h-4 w-4" />Back to Products</Link>
@@ -212,7 +212,7 @@ export default function AddHomeopathyProductPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             
             <Card>
-                <CardHeader><CardTitle>Step 1: Select a Product Category</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="font-bold text-[#3D2E17]">Step 1: Select a Product Category</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {categoryStructure.map(cat => (
                         <Card 
@@ -259,42 +259,42 @@ export default function AddHomeopathyProductPage() {
                     <CardContent className="p-6">
                   <div className="space-y-6 animate-fade-in-scale-up" style={{animationDuration: '0.4s'}}>
                       <Separator />
-                      <h3 className="text-2xl font-bold border-b pb-2">Step 2: Product Details</h3>
+                      <h3 className="text-2xl font-extrabold text-[#3D2E17] border-b pb-2">Step 2: Product Details</h3>
                       <div className="grid grid-cols-2 gap-4 bg-muted/50 p-3 rounded-md border">
                         <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <Input value={form.getValues('category')} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                          <FormLabel className="font-bold text-[#3D2E17]">Category</FormLabel>
+                          <Input value={form.getValues('category')} disabled className="font-bold text-[#3D2E17] disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
                         <FormItem>
-                          <FormLabel>Subcategory</FormLabel>
-                          <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-primary disabled:opacity-100 disabled:cursor-default" />
+                          <FormLabel className="font-bold text-[#3D2E17]">Subcategory</FormLabel>
+                          <Input value={form.getValues('subcategory') || ''} disabled className="font-bold text-[#3D2E17] disabled:opacity-100 disabled:cursor-default" />
                         </FormItem>
                       </div>
-                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Product Name *</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Product Name *</FormLabel><FormControl><Input {...field} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
+                      <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Product Description *</FormLabel><FormControl><Textarea {...field} rows={4} className="font-medium text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
                       
                       <div className="space-y-6">
                           <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Pricing, Stock & Visibility</h3>
+                          <h3 className="text-xl font-extrabold text-[#3D2E17] border-b pb-2">Pricing, Stock & Visibility</h3>
                           <div className="space-y-4">
                           {priceTierFields.map((field, index) => (
                               <div key={field.id} className="p-3 border rounded-md relative bg-muted/30 space-y-4">
                                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                                    <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel>Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel>Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} /></FormControl><FormMessage /></FormItem> )} />
-                                    <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel>Stock *</FormLabel><FormControl><Input type="number" {...f} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.unit`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Unit *</FormLabel><FormControl><Input {...f} list="regular-units-list" className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.price`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Price ({currentDispensary?.currency}) *</FormLabel><FormControl><Input type="number" step="0.01" {...f} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
+                                    <FormField control={form.control} name={`priceTiers.${index}.quantityInStock`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Stock *</FormLabel><FormControl><Input type="number" {...f} value={f.value ?? ''} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
                                   </div>
                                   {priceTierFields.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => removePriceTier(index)} className="absolute top-1 right-1 h-7 w-7 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>}
                                   <Collapsible>
                                       <CollapsibleTrigger asChild>
-                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span>Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
+                                          <Button variant="outline" size="sm" className="w-full flex items-center justify-center space-x-2"><Package className="h-4 w-4"/><span className="font-bold text-[#3D2E17]">Packaging Details (Required for Delivery)</span><ChevronsUpDown className="h-4 w-4"/></Button>
                                       </CollapsibleTrigger>
                                       <CollapsibleContent className="pt-4 space-y-4">
                                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end p-3 border rounded-md bg-background">
-                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel>Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel>Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
-                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel>Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.weightKgs`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Weight (kgs)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.lengthCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Length (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.widthCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Width (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
+                                              <FormField control={form.control} name={`priceTiers.${index}.heightCm`} render={({ field: f }) => ( <FormItem><FormLabel className="font-bold text-[#3D2E17]">Height (cm)</FormLabel><FormControl><Input type="number" step="0.01" {...f} value={f.value ?? ''} className="font-semibold text-[#3D2E17]" /></FormControl><FormMessage /></FormItem> )} />
                                           </div>
                                       </CollapsibleContent>
                                   </Collapsible>
@@ -303,8 +303,8 @@ export default function AddHomeopathyProductPage() {
                           <Button type="button" variant="outline" size="sm" onClick={() => appendPriceTier({ unit: '', price: '' as any, quantityInStock: '' as any, description: '', weightKgs: null, lengthCm: null, widthCm: null, heightCm: null })}>Add Price Tier</Button>
                           </div>
                           <Separator />
-                          <h3 className="text-xl font-semibold border-b pb-2">Product Pool Settings</h3>
-                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base">Available for Product Pool</FormLabel><FormDescription>Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                          <h3 className="text-xl font-extrabold text-[#3D2E17] border-b pb-2">Product Pool Settings</h3>
+                          <FormField control={form.control} name="isAvailableForPool" render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm"><div className="space-y-0.5"><FormLabel className="text-base font-bold text-[#3D2E17]">Available for Product Pool</FormLabel><FormDescription className="font-medium text-[#3D2E17]/70">Allow other stores of the same type to request this product.</FormDescription></div><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                           {watchIsAvailableForPool && (
                              <Card className="p-4 bg-muted/50 space-y-4">
                               <FormField control={form.control} name="poolSharingRule" render={({ field }) => (
