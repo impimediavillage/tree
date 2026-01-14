@@ -1582,7 +1582,9 @@ export const updateDispensaryProfile = onCall({ cors: true }, async (request: Ca
         shippingMethods: data.shippingMethods || [],
         deliveryRadius: data.deliveryRadius || 'none',
         message: data.message || '',
-        originLocker: data.originLocker || null, 
+        originLocker: data.originLocker || null,
+        storeImage: data.storeImage || null,
+        storeIcon: data.storeIcon || null,
         lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
     };
 

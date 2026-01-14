@@ -345,6 +345,8 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
             pricePerKm: data.pricePerKm,
             sameDayDeliveryCutoff: data.sameDayDeliveryCutoff,
             message: data.message,
+            storeImage: data.storeImage,
+            storeIcon: data.storeIcon,
         };
 
         // 2. Handle the 'originLocker' object - preserve complete PUDO structure for shipping compatibility.
@@ -590,31 +592,34 @@ function EditProfileForm({ dispensary, user, showWelcome, onCloseWelcome }: { di
                                     <FormField control={form.control} name="operatingDays" render={({ field }) => (<FormItem><FormLabel>Operating Days</FormLabel><div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2 rounded-lg border p-4">{weekDays.map((day) => (<FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value?.includes(day)} onCheckedChange={(checked) => {const currentDays = field.value || []; return checked ? field.onChange([...currentDays, day]) : field.onChange(currentDays.filter((value) => value !== day));}} /></FormControl><FormLabel className="font-normal text-sm">{day}</FormLabel></FormItem>))}</div><FormMessage /></FormItem>)} />
                                     <FormField control={form.control} name="shippingMethods" render={({ field }) => (<FormItem><FormLabel>Shipping Methods Offered</FormLabel><FormDescription>Select all shipping methods your store supports.</FormDescription><div className="grid grid-cols-1 md:grid-cols-2 gap-2 rounded-lg border p-4">{allShippingMethods.map((method) => (<FormItem key={method.id} className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(method.id)} onCheckedChange={(checked) => { const currentMethods = field.value || []; return checked ? field.onChange([...currentMethods, method.id]) : field.onChange(currentMethods.filter((value) => value !== method.id)); }} /></FormControl><FormLabel className="font-normal">{method.label}</FormLabel></FormItem>))}</div><FormMessage /></FormItem>)} />
 
-                                    {needsOriginLocker && (
-                                        <FormItem>
-                                            <FormLabel>Origin Locker for LTL/LTD Shipping</FormLabel>
-                                            <Card className="border-dashed">
-                                                <CardContent className="p-4">
-                                                    {watchedOriginLocker ? (
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                <p className="font-semibold">{watchedOriginLocker.name}</p>
-                                                                <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
-                                                            </div>
-                                                            <Button variant="outline" type="button" onClick={handleOpenLockerModal}>Change Locker</Button>
+                                    <FormItem>
+                                        <FormLabel>Origin Locker for LTL/LTD Shipping {needsOriginLocker && <span className="text-destructive ml-1">*</span>}</FormLabel>
+                                        <FormDescription>
+                                            {needsOriginLocker 
+                                                ? "An origin locker is required for Locker to Locker (LTL) or Locker to Door (LTD) shipping methods."
+                                                : "Setting up an origin locker now gives you flexibility to enable LTL/LTD shipping methods later without extra setup."}
+                                        </FormDescription>
+                                        <Card className="border-dashed">
+                                            <CardContent className="p-4">
+                                                {watchedOriginLocker ? (
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="font-semibold">{watchedOriginLocker.name}</p>
+                                                            <p className="text-sm text-muted-foreground">{watchedOriginLocker.address}</p>
                                                         </div>
-                                                    ) : (
-                                                        <div className="flex items-center justify-center flex-col gap-2 text-center">
-                                                            <MapPin className="w-10 h-10 text-muted-foreground" />
-                                                            <p className="text-muted-foreground mb-2">An origin locker is required. Please set a location on the map first.</p>
-                                                            <Button onClick={handleOpenLockerModal} type="button" disabled={!locationIsSet}>Select Origin Locker</Button>
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                                        <Button variant="outline" type="button" onClick={handleOpenLockerModal}>Change Locker</Button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center justify-center flex-col gap-2 text-center">
+                                                        <MapPin className="w-10 h-10 text-muted-foreground" />
+                                                        <p className="text-muted-foreground mb-2">{locationIsSet ? "Select a locker near your location" : "Please set a location on the map first."}</p>
+                                                        <Button onClick={handleOpenLockerModal} type="button" disabled={!locationIsSet}>Select Origin Locker</Button>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                        <FormMessage />
+                                    </FormItem>
 
                                     <FormField 
                                       control={form.control} 

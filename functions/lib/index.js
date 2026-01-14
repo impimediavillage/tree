@@ -1371,6 +1371,8 @@ exports.updateDispensaryProfile = (0, https_1.onCall)({ cors: true }, async (req
         deliveryRadius: data.deliveryRadius || 'none',
         message: data.message || '',
         originLocker: data.originLocker || null,
+        storeImage: data.storeImage || null,
+        storeIcon: data.storeIcon || null,
         lastActivityDate: admin.firestore.FieldValue.serverTimestamp(),
     };
     // 4. Database Operation

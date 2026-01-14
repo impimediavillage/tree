@@ -442,6 +442,8 @@ export interface OwnerUpdateDispensaryPayload {
     address: string;
     distanceKm?: number;
   } | null;
+  storeImage?: string | null;
+  storeIcon?: string | null;
 }
 
 // --- AI ADVISOR INTERFACES ---
