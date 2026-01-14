@@ -167,16 +167,12 @@ export function PaymentStep({ cart, groupedCart, shippingSelections, shippingAdd
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Order Summary</h3>
             <div className="space-y-2 text-sm">
-              {cart.map(item => {
-                // Calculate customer price (with markup and tax)
-                const customerPrice = item.price * (1 + (item.taxRate || 0.15));
-                return (
-                  <div key={item.id} className="flex justify-between items-center">
-                    <span>{item.name} (x{item.quantity})</span>
-                    <span>R {(customerPrice * item.quantity).toFixed(2)}</span>
-                  </div>
-                );
-              })}
+              {cart.map(item => (
+                <div key={item.id} className="flex justify-between items-center">
+                  <span>{item.name} (x{item.quantity})</span>
+                  <span>R {(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
             <hr />
             <div className="space-y-2 font-medium">
