@@ -31,6 +31,7 @@ interface DeliveryData {
   customerId: string;
   dispensaryId: string;
   driverId: string;
+  driverName?: string;
   status: string;
   pickupAddress: {
     street: string;
@@ -392,7 +393,7 @@ export function DeliveryTrackingMap({ orderId, dispensaryId, deliveryId, driverI
         </div>
 
         {/* Driver Info */}
-        {shipment?.driverName && (
+        {deliveryData?.driverName && (
           <div className="p-4 bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg border border-gray-200">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center">
@@ -400,7 +401,7 @@ export function DeliveryTrackingMap({ orderId, dispensaryId, deliveryId, driverI
               </div>
               <div>
                 <p className="text-xs text-muted-foreground font-bold uppercase">Driver</p>
-                <p className="text-lg font-extrabold text-gray-900">{shipment.driverName}</p>
+                <p className="text-lg font-extrabold text-gray-900">{deliveryData.driverName}</p>
               </div>
             </div>
           </div>
